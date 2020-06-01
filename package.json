@@ -12,5 +12,9 @@
   },
   "dependencies": {
     "playwright": "^1.0.2"
+  },
+  "husky": {
+    "pre-commit": "echo 'precommit hook here!🚀'",
+    "pre-push": "echo 'prepush hook here 💩'"
   }
 }
