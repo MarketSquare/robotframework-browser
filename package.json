@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "main": "index.js",
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "husky": "^4.2.5",
     "ts-node": "^8.10.2",
