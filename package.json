@@ -22,7 +22,7 @@
   },
   "lint-staged": {
     "**/*.py": [
-      "black"
+      "poetry run black"
     ]
   }
 }
