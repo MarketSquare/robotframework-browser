@@ -6,6 +6,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "husky": "^4.2.5",
+    "lint-staged": "^10.2.7",
     "ts-node": "^8.10.2",
     "tslint": "^6.1.2",
     "typescript": "^3.9.3"
@@ -15,8 +16,13 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "echo 'precommit hook here 💩'",
+      "pre-commit": "echo 'precommit hook here 💩' && lint-staged --shell",
       "pre-push": "echo 'prepush hook here 💩'"
     }
+  },
+  "lint-staged": {
+    "**/*.py": [
+      "black"
+    ]
   }
 }
