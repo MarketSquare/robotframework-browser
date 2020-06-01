@@ -14,7 +14,7 @@
     "playwright": "^1.0.2"
   },
   "husky": {
-    "pre-commit": "echo 'precommit hook here!🚀'",
+    "pre-commit": "yarn tslint",
     "pre-push": "echo 'prepush hook here 💩'"
   }
 }
