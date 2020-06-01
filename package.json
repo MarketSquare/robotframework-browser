@@ -1,0 +1,16 @@
+{
+  "name": "robotframework-playwright",
+  "version": "0.0.1",
+  "main": "index.js",
+  "author": "Mikko Korpela <mikko.korpela@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "husky": "^4.2.5",
+    "ts-node": "^8.10.2",
+    "tslint": "^6.1.2",
+    "typescript": "^3.9.3"
+  },
+  "dependencies": {
+    "playwright": "^1.0.2"
+  }
+}
