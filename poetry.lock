@@ -219,6 +219,14 @@ python-versions = "*"
 version = "2020.5.14"
 
 [[package]]
+category = "main"
+description = "Generic automation framework for acceptance testing and robotic process automation (RPA)"
+name = "robotframework"
+optional = false
+python-versions = "*"
+version = "3.2.1"
+
+[[package]]
 category = "dev"
 description = "Python 2 and 3 compatibility utilities"
 name = "six"
@@ -259,7 +267,7 @@ python-versions = "*"
 version = "0.2.3"
 
 [metadata]
-content-hash = "f776133d25988d0f3a89ce6f25aad73b6eda96ec31c466023c467d7752a1fa6f"
+content-hash = "3977bcd44c6fbbbc3a9497386ac20978bf7b6d1d950541fd83064771638c5d22"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -373,6 +381,10 @@ regex = [
     {file = "regex-2020.5.14-cp38-cp38-win32.whl", hash = "sha256:1386e75c9d1574f6aa2e4eb5355374c8e55f9aac97e224a8a5a6abded0f9c927"},
     {file = "regex-2020.5.14-cp38-cp38-win_amd64.whl", hash = "sha256:7e61be8a2900897803c293247ef87366d5df86bf701083b6c43119c7c6c99108"},
     {file = "regex-2020.5.14.tar.gz", hash = "sha256:ce450ffbfec93821ab1fea94779a8440e10cf63819be6e176eb1973a6017aff5"},
+]
+robotframework = [
+    {file = "robotframework-3.2.1-py2.py3-none-any.whl", hash = "sha256:34923415afd9491141630ad1d7146b638ee869f1c7f97c450c0da5ce79e1ac23"},
+    {file = "robotframework-3.2.1.zip", hash = "sha256:d693e6d06b17f48669e2a8c4cb6c1f0d56e5f1a74835d18b8ea2118da7bf2d79"},
 ]
 six = [
     {file = "six-1.15.0-py2.py3-none-any.whl", hash = "sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"},

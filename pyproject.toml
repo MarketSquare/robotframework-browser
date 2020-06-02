@@ -9,6 +9,7 @@ repository = "https://github.com/mkorpela/robotframework-playwright"
 
 [tool.poetry.dependencies]
 python = "^3.8"
+robotframework = "^3.2.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.6"
