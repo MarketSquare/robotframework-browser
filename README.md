@@ -1,7 +1,13 @@
 # robotframework-playwright
+
 Robot Framework Playwright library
 
 # Development
+
+- https://www.python.org/downloads/
+- `python -m pip install poetry`
+- https://nodejs.org/
+- https://classic.yarnpkg.com/en/docs/install
 
 Install `yarn install` and `poetry install`.
 
