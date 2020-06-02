@@ -9,6 +9,15 @@ repository = "https://github.com/mkorpela/robotframework-playwright"
 packages = [
     { include = "Playwright" }
 ]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Testing",
+    "Framework :: Robot Framework",
+    "Framework :: Robot Framework :: Library"
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
