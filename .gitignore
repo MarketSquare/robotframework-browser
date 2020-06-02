@@ -1,3 +1,5 @@
+.mypy_cache
+
 # Logs
 logs
 *.log
