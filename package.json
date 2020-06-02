@@ -17,7 +17,7 @@
   "husky": {
     "hooks": {
       "pre-commit": "echo 'precommit 🔱' && lint-staged --shell && poetry run mypy .",
-      "pre-push": "echo 'prepush 🚀 && poetry run pytest'"
+      "pre-push": "echo 'prepush 🚀' && poetry run pytest"
     }
   },
   "lint-staged": {
