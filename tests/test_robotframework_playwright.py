@@ -1,4 +1,4 @@
-from robotframework_playwright import __version__
+from playwright import __version__
 
 
 def test_version():
