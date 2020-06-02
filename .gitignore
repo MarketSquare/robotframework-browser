@@ -1,6 +1,11 @@
 .mypy_cache
 __pycache__
 
+# Robot Framework outputs
+log.html
+output.xml
+report.html
+
 # Logs
 logs
 *.log
