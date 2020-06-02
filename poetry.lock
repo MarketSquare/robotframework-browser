@@ -219,7 +219,7 @@ python-versions = "*"
 version = "2020.5.14"
 
 [[package]]
-category = "main"
+category = "dev"
 description = "Generic automation framework for acceptance testing and robotic process automation (RPA)"
 name = "robotframework"
 optional = false
@@ -267,7 +267,7 @@ python-versions = "*"
 version = "0.2.3"
 
 [metadata]
-content-hash = "3977bcd44c6fbbbc3a9497386ac20978bf7b6d1d950541fd83064771638c5d22"
+content-hash = "e63592616688c8ee812a380e750d8f025e433f0065a4c1af6b64d58965aa2fed"
 python-versions = "^3.8"
 
 [metadata.files]
