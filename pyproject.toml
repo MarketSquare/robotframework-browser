@@ -2,7 +2,10 @@
 name = "robotframework-playwright"
 version = "0.1.0"
 description = ""
+license = "Apache-2.0"
 authors = ["Mikko Korpela <mikko.korpela@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/mkorpela/robotframework-playwright"
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -11,6 +14,7 @@ python = "^3.8"
 pytest = "^4.6"
 black = "^19.10b0"
 mypy = "^0.770"
+flake8 = "^3.8.2"
 
 [build-system]
 requires = ["poetry>=0.12"]
