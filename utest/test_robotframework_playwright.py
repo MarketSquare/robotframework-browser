@@ -1,4 +1,4 @@
-from playwright import __version__
+from Playwright import __version__
 
 
 def test_version():
