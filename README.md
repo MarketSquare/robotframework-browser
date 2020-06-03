@@ -11,5 +11,9 @@ Robot Framework Playwright library
 
 Install `yarn install` and `poetry install`.
 
-Run robot framework tests `poetry run robot atest`.
 Run pytests `poetry run pytest`.
+
+### Make it do magic
+
+- `yarn ts-node src/index.ts`
+- `poetry run robot atest`
