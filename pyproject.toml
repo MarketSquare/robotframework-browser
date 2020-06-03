@@ -29,6 +29,7 @@ black = "^19.10b0"
 mypy = "^0.770"
 flake8 = "^3.8.2"
 robotframework = "^3.2.1"
+grpcio-tools = "^1.29.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
