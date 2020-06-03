@@ -1,4 +1,8 @@
+syntax = "proto3";
+
+message Empty {}
+
 service  Playwright {
-  rpc OpenBrowser() returns () {}
-  rpc CloseBrowser() returns () {}
+  rpc OpenBrowser(Empty) returns (Empty) {}
+  rpc CloseBrowser(Empty) returns (Empty) {}
 }
