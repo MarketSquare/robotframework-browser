@@ -1,10 +1,6 @@
 # robotframework-playwright
 
-Robot Framework [Playwright](https://playwright.dev/) library
-
-# Goal
-
-Porting [SeleniumLibrary](https://github.com/robotframework/SeleniumLibrary) based tests to Playwright.
+Robot Framework [Playwright](https://playwright.dev/) library. Moving browser automation to year 2020 (or 2021)!
 
 # Development
 
