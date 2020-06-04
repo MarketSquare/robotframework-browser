@@ -2,6 +2,10 @@
 
 Robot Framework [Playwright](https://playwright.dev/) library
 
+# Goal
+
+Porting SeleniumLibrary based tests to Playwright.
+
 # Development
 
 - https://www.python.org/downloads/
@@ -17,3 +21,7 @@ Run pytests `poetry run pytest`.
 
 - `yarn ts-node src/index.ts`
 - `poetry run robot atest`
+
+## Architechture
+
+Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.typescriptlang.org/) and [Playwright](https://playwright.dev/)
