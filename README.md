@@ -1,6 +1,6 @@
 # robotframework-playwright
 
-Robot Framework (Playwright)[https://playwright.dev/] library
+Robot Framework [Playwright](https://playwright.dev/) library
 
 # Development
 
