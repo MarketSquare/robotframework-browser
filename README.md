@@ -22,6 +22,6 @@ Run pytests `poetry run pytest`.
 - `yarn ts-node src/index.ts`
 - `poetry run robot atest`
 
-## Architechture
+## Architecture
 
 Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.typescriptlang.org/) and [Playwright](https://playwright.dev/)
