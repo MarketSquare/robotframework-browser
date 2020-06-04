@@ -4,7 +4,7 @@ Robot Framework [Playwright](https://playwright.dev/) library
 
 # Goal
 
-Porting SeleniumLibrary based tests to Playwright.
+Porting [SeleniumLibrary](https://github.com/robotframework/SeleniumLibrary) based tests to Playwright.
 
 # Development
 
