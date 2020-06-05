@@ -1,20 +1,38 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
-import { chromium } from 'playwright';
+import { chromium, firefox, webkit } from 'playwright';
 import * as grpc from "grpc";
 import {sendUnaryData, ServerUnaryCall} from "grpc";
-import {Empty} from "./generated/playwright_pb";
+import {openBrowserRequest, Empty, Response} from "./generated/playwright_pb";
 
 
 class PlaywrightServer implements IPlaywrightServer {
     private browser: any;
-    async closeBrowser(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Empty>): Promise<void> {
+    async closeBrowser(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response>): Promise<void> {
+        console.log("Closing browser")
         await this.browser.close();
-        callback(null, new Empty());
+        const response = new Response();
+        response.setLog('Log message here')
+        callback(null, response);
     }
 
-    async openBrowser(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Empty>): Promise<void> {
-        this.browser = await chromium.launch({headless:true});
-        callback(null, new Empty());
+    async openBrowser(call: ServerUnaryCall<openBrowserRequest>, callback: sendUnaryData<Response>): Promise<void> {
+        const browserType = call.request.getBrowser()
+        const url = call.request.getUrl()
+        console.log("Open browser: " + browserType)
+        if (browserType === 'firefox') {
+            this.browser = await firefox.launch({headless: true});    
+        } else if (browserType === 'chrome') {
+            this.browser = await chromium.launch({headless: true})
+        } else {
+            this.browser = await webkit.launch()
+        }
+        const context = await this.browser.newContext();
+        const page = await context.newPage();
+        console.log('Go to url' + url)
+        await page.goto(url);
+        const response = new Response()
+        response.setLog('Log message here')
+        callback(null, response);
     }
 }
 
