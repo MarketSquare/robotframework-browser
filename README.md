@@ -30,3 +30,10 @@ Run pytests `poetry run pytest`.
 ## Architecture
 
 Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.typescriptlang.org/) and [Playwright](https://playwright.dev/)
+
+## Contributors
+
+This project is community driven and becames reality only through the work of all the people who contribute.
+<a href="https://github.com/MarketSquare/robotframework-playwright/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=MarketSquare/robotframework-playwright" />
+</a>
