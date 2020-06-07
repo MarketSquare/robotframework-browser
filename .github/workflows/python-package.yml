@@ -23,8 +23,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      uses: borales/actions-yarn@v2.3.0
+    - uses: borales/actions-yarn@v2.3.0
+      with:
+        install
+    - name: Install python dependencies
       run: |
         yarn install
         python -m pip install --upgrade pip
