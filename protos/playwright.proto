@@ -2,7 +2,16 @@ syntax = "proto3";
 
 message Empty {}
 
+message openBrowserRequest {
+  string url = 1;
+  string browser = 2;
+}
+
+message Response {
+  string log = 1;
+}
+
 service  Playwright {
-  rpc OpenBrowser(Empty) returns (Empty) {}
-  rpc CloseBrowser(Empty) returns (Empty) {}
+  rpc OpenBrowser(openBrowserRequest) returns (Response) {}
+  rpc CloseBrowser(Empty) returns (Response) {}
 }

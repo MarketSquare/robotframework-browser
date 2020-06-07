@@ -18,7 +18,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty2O\n\nPlaywright\x12\x1f\n\x0bOpenBrowser\x12\x06.Empty\x1a\x06.Empty\"\x00\x12 \n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x06.Empty\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x17\n\x08Response\x12\x0b\n\x03log\x18\x01 \x01(\t2b\n\nPlaywright\x12/\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\t.Response\"\x00\x12#\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\t.Response\"\x00\x62\x06proto3'
 )
 
 
@@ -47,7 +47,78 @@ _EMPTY = _descriptor.Descriptor(
   serialized_end=27,
 )
 
+
+_OPENBROWSERREQUEST = _descriptor.Descriptor(
+  name='openBrowserRequest',
+  full_name='openBrowserRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='url', full_name='openBrowserRequest.url', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='browser', full_name='openBrowserRequest.browser', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=29,
+  serialized_end=79,
+)
+
+
+_RESPONSE = _descriptor.Descriptor(
+  name='Response',
+  full_name='Response',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='log', full_name='Response.log', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=81,
+  serialized_end=104,
+)
+
 DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
+DESCRIPTOR.message_types_by_name['openBrowserRequest'] = _OPENBROWSERREQUEST
+DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
@@ -57,6 +128,20 @@ Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
   })
 _sym_db.RegisterMessage(Empty)
 
+openBrowserRequest = _reflection.GeneratedProtocolMessageType('openBrowserRequest', (_message.Message,), {
+  'DESCRIPTOR' : _OPENBROWSERREQUEST,
+  '__module__' : 'playwright_pb2'
+  # @@protoc_insertion_point(class_scope:openBrowserRequest)
+  })
+_sym_db.RegisterMessage(openBrowserRequest)
+
+Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Message,), {
+  'DESCRIPTOR' : _RESPONSE,
+  '__module__' : 'playwright_pb2'
+  # @@protoc_insertion_point(class_scope:Response)
+  })
+_sym_db.RegisterMessage(Response)
+
 
 
 _PLAYWRIGHT = _descriptor.ServiceDescriptor(
@@ -65,16 +150,16 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=29,
-  serialized_end=108,
+  serialized_start=106,
+  serialized_end=204,
   methods=[
   _descriptor.MethodDescriptor(
     name='OpenBrowser',
     full_name='Playwright.OpenBrowser',
     index=0,
     containing_service=None,
-    input_type=_EMPTY,
-    output_type=_EMPTY,
+    input_type=_OPENBROWSERREQUEST,
+    output_type=_RESPONSE,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
@@ -83,7 +168,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
     index=1,
     containing_service=None,
     input_type=_EMPTY,
-    output_type=_EMPTY,
+    output_type=_RESPONSE,
     serialized_options=None,
   ),
 ])
