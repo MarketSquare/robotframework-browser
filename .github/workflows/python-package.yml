@@ -16,6 +16,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8]
+        node-version: [12.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -23,10 +24,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install nodejs dependencies
-      uses: borales/actions-yarn@v2.3.0
+    - name: Use Node.js
+      uses: actions/setup-node@v1
       with:
-        cmd: install
+        node-version: ${{ matrix.node-version }}
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
