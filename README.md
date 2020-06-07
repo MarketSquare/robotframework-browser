@@ -1,5 +1,7 @@
 # robotframework-playwright
 
+[![Actions Status](https://github.com/MarketSquare/robotframework-playwright/workflows/Python%20package/badge.svg)](https://github.com/MarketSquare/robotframework-playwright/actions)
+
 Robot Framework [Playwright](https://playwright.dev/) library. Moving browser automation to year 2020 (or 2021)!
 
 # Development
