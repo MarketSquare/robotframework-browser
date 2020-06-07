@@ -33,7 +33,7 @@ Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.type
 
 ## Contributors
 
-This project is community driven and becames reality only through the work of all the people who contribute.
+This project is community driven and becomes a reality only through the work of all the people who contribute.
 <a href="https://github.com/MarketSquare/robotframework-playwright/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=MarketSquare/robotframework-playwright" />
 </a>
