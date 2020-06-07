@@ -55,6 +55,6 @@ jobs:
     - name: Run pytests
       run: |
         poetry run pytest
-    - name: Check chromes
+    - name: Run Robot Framework tests
       run: |
-        ldd chrome | grep not
+        poetry run robot atest

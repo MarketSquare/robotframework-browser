@@ -1,5 +1,5 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
-import { firefox } from 'playwright';
+import { chromium } from 'playwright';
 import * as grpc from "grpc";
 import {sendUnaryData, ServerUnaryCall} from "grpc";
 import {Empty} from "./generated/playwright_pb";
@@ -13,7 +13,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async openBrowser(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Empty>): Promise<void> {
-        this.browser = await firefox.launch({headless:false});
+        this.browser = await chromium.launch({headless:true});
         callback(null, new Empty());
     }
 }
