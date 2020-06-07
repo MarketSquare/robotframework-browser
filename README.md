@@ -3,7 +3,7 @@
 [![Contributors](https://img.shields.io/github/contributors/commonality/readme-inspector.svg)](https://github.com/MarketSquare/robotframework-playwright/graphs/contributors)
 [![Version](https://img.shields.io/pypi/v/robotframework-playwright.svg)](https://pypi.python.org/pypi/robotframework-playwright)
 [![Actions Status](https://github.com/MarketSquare/robotframework-playwright/workflows/Python%20package/badge.svg)](https://github.com/MarketSquare/robotframework-playwright/actions)
-[![License](https://img.shields.io/github/license/commonality/readme-inspector.svg)]
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ----
 
