@@ -5,7 +5,7 @@ email, or any other method with the owners of this repository before making a ch
 
 Please note we have a code of conduct, please follow it in all your interactions with the project.
 
-This project uses [allcontributors.org](https://allcontributors.org/) bot to list contributors in README.
+This project uses [allcontributors.org](https://allcontributors.org/) bot to list contributors in README.md.
 You may interact with the bot by following the [bot usage guide](https://allcontributors.org/docs/en/bot/usage).
 
 ## Pull Request Process
