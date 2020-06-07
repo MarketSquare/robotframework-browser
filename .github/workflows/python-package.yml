@@ -24,7 +24,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
+      uses: borales/actions-yarn@v2.3.0
       run: |
+        yarn install
         python -m pip install --upgrade pip
         pip install poetry
         poetry install
@@ -37,4 +39,7 @@ jobs:
     - name: Run pytests
       run: |
         poetry run pytest
-      
+    - name: Run Robot Framework tests
+      run: |
+        yarn ts-node src/index.ts
+        poetry run robot atest
