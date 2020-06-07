@@ -2,8 +2,6 @@
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
-
-[![Contributors](https://img.shields.io/github/contributors/commonality/readme-inspector.svg)](https://github.com/MarketSquare/robotframework-playwright/graphs/contributors)
 [![Version](https://img.shields.io/pypi/v/robotframework-playwright.svg)](https://pypi.python.org/pypi/robotframework-playwright)
 [![Actions Status](https://github.com/MarketSquare/robotframework-playwright/workflows/Python%20package/badge.svg)](https://github.com/MarketSquare/robotframework-playwright/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -49,6 +47,3 @@ This project is community driven and becomes a reality only through the work of 
 <!-- markdownlint-enable -->
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-<a href="https://github.com/MarketSquare/robotframework-playwright/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=MarketSquare/robotframework-playwright" />
-</a>
