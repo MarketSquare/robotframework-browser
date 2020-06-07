@@ -1,4 +1,7 @@
 # robotframework-playwright
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Contributors](https://img.shields.io/github/contributors/commonality/readme-inspector.svg)](https://github.com/MarketSquare/robotframework-playwright/graphs/contributors)
 [![Version](https://img.shields.io/pypi/v/robotframework-playwright.svg)](https://pypi.python.org/pypi/robotframework-playwright)
@@ -34,6 +37,18 @@ Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.type
 ## Contributors
 
 This project is community driven and becomes a reality only through the work of all the people who contribute.
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/mkorpela"><img src="https://avatars1.githubusercontent.com/u/136885?v=4" width="100px;" alt=""/><br /><sub><b>Mikko Korpela</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-playwright/commits?author=mkorpela" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-enable -->
+<!-- prettier-ignore-end -->
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 <a href="https://github.com/MarketSquare/robotframework-playwright/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=MarketSquare/robotframework-playwright" />
 </a>
