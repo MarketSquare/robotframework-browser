@@ -48,7 +48,7 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
-        python get-poetry.py
+        python -m pip install poetry
         source $HOME/.poetry/env
         poetry config virtualenvs.in-project true
     - uses: actions/cache@v2
