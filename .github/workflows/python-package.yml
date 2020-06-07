@@ -58,5 +58,5 @@ jobs:
     - name: Run Robot Framework tests
       run: |
         yarn ts-node src/index.ts &
-        sleep 5
+        sleep 15
         poetry run robot atest
