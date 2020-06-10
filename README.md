@@ -12,7 +12,7 @@
 
 Robot Framework [Playwright](https://playwright.dev/) library. Moving browser automation to year 2020 (or 2021)!
 
-Aiming for speed, reliability and visibility.
+Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visibility.
 
 Official post about this [venture](https://forum.robotframework.org/t/moving-robot-framework-browser-automation-to-2020-or-2021/323).
 
