@@ -22,6 +22,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "aikarjal",
+      "name": "Antti Karjalainen",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/8512727?v=4",
+      "profile": "https://robocorp.com",
+      "contributions": [
+        "fundingFinding"
+      ]
     }
   ],
   "contributorsPerLine": 7,
