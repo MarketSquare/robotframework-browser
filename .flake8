@@ -5,3 +5,4 @@ exclude =
    Playwright/generated,
    build,
    dist
+max-line-length = 100
