@@ -13,7 +13,7 @@ class PlaywrightStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.OpenBrowser = channel.unary_unary(
+        self.OpenBrowser = channel.unary_stream(
                 '/Playwright/OpenBrowser',
                 request_serializer=playwright__pb2.openBrowserRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.FromString,
@@ -43,7 +43,7 @@ class PlaywrightServicer(object):
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'OpenBrowser': grpc.unary_unary_rpc_method_handler(
+            'OpenBrowser': grpc.unary_stream_rpc_method_handler(
                     servicer.OpenBrowser,
                     request_deserializer=playwright__pb2.openBrowserRequest.FromString,
                     response_serializer=playwright__pb2.Response.SerializeToString,
@@ -73,7 +73,7 @@ class Playwright(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Playwright/OpenBrowser',
+        return grpc.experimental.unary_stream(request, target, '/Playwright/OpenBrowser',
             playwright__pb2.openBrowserRequest.SerializeToString,
             playwright__pb2.Response.FromString,
             options, channel_credentials,

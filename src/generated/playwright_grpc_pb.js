@@ -42,7 +42,7 @@ var PlaywrightService = exports.PlaywrightService = {
   openBrowser: {
     path: '/Playwright/OpenBrowser',
     requestStream: false,
-    responseStream: false,
+    responseStream: true,
     requestType: playwright_pb.openBrowserRequest,
     responseType: playwright_pb.Response,
     requestSerialize: serialize_openBrowserRequest,
