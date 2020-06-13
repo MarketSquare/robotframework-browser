@@ -30,7 +30,7 @@ Run pytests `poetry run pytest`.
 ### Make it do magic
 
 - `yarn ts-node src/index.ts`
-- `poetry run robot --outputdir atest/output  atest`
+- `poetry run robot --outputdir atest/output atest/test`
 
 ## Architecture
 
