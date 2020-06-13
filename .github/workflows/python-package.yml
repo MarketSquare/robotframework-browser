@@ -48,4 +48,9 @@ jobs:
       run: |
         yarn ts-node src/index.ts &
         sleep 15
-        poetry run robot atest
+        poetry run robot --outputdir atest/output atest/test
+    - uses: actions/upload-artifact@v1
+      if: success() || failure()
+      with:
+        name: Test results
+        path: atest/output
