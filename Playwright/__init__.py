@@ -22,10 +22,10 @@ class Playwright:
             )
         with grpc.insecure_channel("localhost:50051") as channel:
             stub = playwright_pb2_grpc.PlaywrightStub(channel)
-            response = stub.OpenBrowser(
+            for response in stub.OpenBrowser(
                 playwright_pb2.openBrowserRequest(url=url, browser=browser_)
-            )
-            logger.info(response.log)
+            ):
+                logger.info(response.log)
 
     @staticmethod
     def close_browser():
