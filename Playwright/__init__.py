@@ -3,6 +3,7 @@ __version__ = "0.1.0"
 import os
 from subprocess import Popen, PIPE
 from functools import cached_property
+from typing import Optional
 
 import grpc  # type: ignore
 
@@ -75,6 +76,7 @@ class Playwright:
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Playwright"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
+    port: Optional[str] = None
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
@@ -95,7 +97,8 @@ class Playwright:
         if stdout is None:
             raise RuntimeError("No expected output from Playwright process")
         for line in stdout:
-            if line == b"Listening on 50051\n":
+            if line.startswith(b"Listening on "):
+                self.port = str(line).strip()[15:-3]
                 return popen
         raise RuntimeError("No expected output from Playwright process")
 
@@ -115,7 +118,7 @@ class Playwright:
             )
         if self._playwright_process.poll() is not None:
             raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel("localhost:50051") as channel:
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
             stub = playwright_pb2_grpc.PlaywrightStub(channel)
             response = stub.OpenBrowser(
                 playwright_pb2.openBrowserRequest(url=url, browser=browser_)
@@ -125,7 +128,7 @@ class Playwright:
     def close_browser(self):
         if self._playwright_process.poll() is not None:
             raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel("localhost:50051") as channel:
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
             stub = playwright_pb2_grpc.PlaywrightStub(channel)
             response = stub.CloseBrowser(playwright_pb2.Empty())
             logger.info(response.log)

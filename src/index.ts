@@ -38,6 +38,6 @@ class PlaywrightServer implements IPlaywrightServer {
 
 const server = new grpc.Server();
 server.addService<IPlaywrightServer>(PlaywrightService, new PlaywrightServer());
-console.log(`Listening on 50051`);
-server.bind(`localhost:50051`, grpc.ServerCredentials.createInsecure());
+const port = server.bind(`localhost:0`, grpc.ServerCredentials.createInsecure());
+console.log(`Listening on ${port}`);
 server.start();
