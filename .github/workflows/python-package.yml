@@ -46,8 +46,6 @@ jobs:
         poetry run pytest
     - name: Run Robot Framework tests
       run: |
-        yarn ts-node src/index.ts &
-        sleep 15
         poetry run robot --outputdir atest/output atest/test
     - uses: actions/upload-artifact@v1
       if: success() || failure()
