@@ -1,4 +1,9 @@
 __version__ = "0.1.0"
+
+import os
+from subprocess import Popen
+from functools import cached_property
+
 import grpc  # type: ignore
 
 from robot.api import logger  # type: ignore
@@ -67,8 +72,28 @@ class Playwright:
     | text         | Playwright text engine. | ``text:Login``                 |
     """
 
-    @staticmethod
-    def open_browser(browser="Chrome", url=None):
+    ROBOT_LISTENER_API_VERSION = 2
+    ROBOT_LIBRARY_LISTENER: "Playwright"
+
+    def __init__(self):
+        self.ROBOT_LIBRARY_LISTENER = self
+
+    @cached_property
+    def _playwright_process(self) -> Popen:
+        path_to_script = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "src", "index.ts"
+        )
+        return Popen(["yarn", "ts-node", path_to_script], shell=True)
+
+    def _close(self):
+        logger.debug("Closing Playwright process")
+        with grpc.insecure_channel("localhost:50051") as channel:
+            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+            stub.Shutdown()
+        self._playwright_process.wait()
+        logger.debug("Playwright process closed")
+
+    def open_browser(self, browser="Chrome", url=None):
         if url is None:
             url = "about:blank"
         browser_ = browser.lower().strip()
@@ -77,6 +102,8 @@ class Playwright:
                 f"{browser} is not supported, "
                 f'it should be one of: {", ".join(_SUPPORTED_BROWSERS)}'
             )
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
         with grpc.insecure_channel("localhost:50051") as channel:
             stub = playwright_pb2_grpc.PlaywrightStub(channel)
             response = stub.OpenBrowser(
@@ -84,8 +111,9 @@ class Playwright:
             )
             logger.info(response.log)
 
-    @staticmethod
-    def close_browser():
+    def close_browser(self):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
         with grpc.insecure_channel("localhost:50051") as channel:
             stub = playwright_pb2_grpc.PlaywrightStub(channel)
             response = stub.CloseBrowser(playwright_pb2.Empty())
