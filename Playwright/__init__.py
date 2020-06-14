@@ -1,9 +1,8 @@
 __version__ = "0.1.0"
 
 import os
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from functools import cached_property
-from time import sleep
 
 import grpc  # type: ignore
 
@@ -75,7 +74,7 @@ class Playwright:
 
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Playwright"
-    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
+    ROBOT_LIBRARY_SCOPE = "GLOBAL"
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
@@ -85,10 +84,13 @@ class Playwright:
         cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
         path_to_script = os.path.join("src", "index.ts")
         logger.debug("Starting Playwright process")
-        print(repr(["yarn", "ts-node", path_to_script]))
-        p = Popen(f"yarn ts-node '{path_to_script}'", shell=True, cwd=cwd_dir)
-        sleep(0.3)
-        return p
+        return Popen(
+            f"yarn ts-node '{path_to_script}'",
+            shell=True,
+            cwd=cwd_dir,
+            stdout=PIPE,
+            stderr=PIPE,
+        )
 
     def _close(self):
         logger.debug("Closing Playwright process")

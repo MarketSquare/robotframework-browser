@@ -11,7 +11,7 @@ class PlaywrightServer implements IPlaywrightServer {
         console.log("Closing browser")
         await this.browser.close();
         const response = new Response();
-        response.setLog('Log message here')
+        response.setLog('Log message from closeBrowser here')
         callback(null, response);
     }
 
@@ -31,7 +31,7 @@ class PlaywrightServer implements IPlaywrightServer {
         console.log('Go to url' + url)
         await page.goto(url);
         const response = new Response()
-        response.setLog('Log message here')
+        response.setLog('Log message from openBrowser here')
         callback(null, response);
     }
 }
