@@ -27,10 +27,7 @@ Install `yarn install` and `poetry install`.
 
 Run pytests `poetry run pytest`.
 
-### Make it do magic
-
-- `yarn ts-node src/index.ts`
-- `poetry run robot --outputdir atest/output atest/test`
+Run Robot Framework tests `poetry run robot --outputdir atest/output atest/test`
 
 ## Architecture
 
