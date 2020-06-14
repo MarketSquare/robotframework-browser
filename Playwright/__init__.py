@@ -93,7 +93,7 @@ class Playwright:
             stderr=PIPE,
         )
         sleep(
-            1.5
+            15
         )  # FIXME: Not the correct way to ensure that server is in healthy state
         return p
 
