@@ -3,7 +3,6 @@ __version__ = "0.1.0"
 import os
 from subprocess import Popen, PIPE
 from functools import cached_property
-from time import sleep
 
 import grpc  # type: ignore
 
@@ -85,17 +84,20 @@ class Playwright:
         cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
         path_to_script = os.path.join("src", "index.ts")
         logger.debug("Starting Playwright process")
-        p = Popen(
+        popen = Popen(
             f"yarn ts-node '{path_to_script}'",
             shell=True,
             cwd=cwd_dir,
             stdout=PIPE,
             stderr=PIPE,
         )
-        sleep(
-            15
-        )  # FIXME: Not the correct way to ensure that server is in healthy state
-        return p
+        stdout = popen.stdout
+        if stdout is None:
+            raise RuntimeError("No expected output from Playwright process")
+        for line in stdout:
+            if line == b"Listening on 50051\n":
+                return popen
+        raise RuntimeError("No expected output from Playwright process")
 
     def _close(self):
         logger.debug("Closing Playwright process")
