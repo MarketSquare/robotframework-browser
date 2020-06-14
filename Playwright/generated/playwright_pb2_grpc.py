@@ -23,6 +23,11 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.FromString,
                 )
+        self.Shutdown = channel.unary_unary(
+                '/Playwright/Shutdown',
+                request_serializer=playwright__pb2.Empty.SerializeToString,
+                response_deserializer=playwright__pb2.Response.FromString,
+                )
 
 
 class PlaywrightServicer(object):
@@ -40,6 +45,12 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Shutdown(self, request, context):
+        """Missing associated documentation comment in .proto file"""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -50,6 +61,11 @@ def add_PlaywrightServicer_to_server(servicer, server):
             ),
             'CloseBrowser': grpc.unary_unary_rpc_method_handler(
                     servicer.CloseBrowser,
+                    request_deserializer=playwright__pb2.Empty.FromString,
+                    response_serializer=playwright__pb2.Response.SerializeToString,
+            ),
+            'Shutdown': grpc.unary_unary_rpc_method_handler(
+                    servicer.Shutdown,
                     request_deserializer=playwright__pb2.Empty.FromString,
                     response_serializer=playwright__pb2.Response.SerializeToString,
             ),
@@ -90,6 +106,22 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/CloseBrowser',
+            playwright__pb2.Empty.SerializeToString,
+            playwright__pb2.Response.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Shutdown(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/Shutdown',
             playwright__pb2.Empty.SerializeToString,
             playwright__pb2.Response.FromString,
             options, channel_credentials,
