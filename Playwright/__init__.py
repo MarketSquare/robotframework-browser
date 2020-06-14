@@ -3,6 +3,7 @@ __version__ = "0.1.0"
 import os
 from subprocess import Popen
 from functools import cached_property
+from time import sleep
 
 import grpc  # type: ignore
 
@@ -74,24 +75,25 @@ class Playwright:
 
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Playwright"
+    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
 
     @cached_property
     def _playwright_process(self) -> Popen:
-        path_to_script = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "src", "index.ts"
-        )
-        return Popen(["yarn", "ts-node", path_to_script], shell=True)
+        cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+        path_to_script = os.path.join("src", "index.ts")
+        logger.debug("Starting Playwright process")
+        print(repr(["yarn", "ts-node", path_to_script]))
+        p = Popen(f"yarn ts-node '{path_to_script}'", shell=True, cwd=cwd_dir)
+        sleep(0.3)
+        return p
 
     def _close(self):
         logger.debug("Closing Playwright process")
-        with grpc.insecure_channel("localhost:50051") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
-            stub.Shutdown()
-        self._playwright_process.wait()
-        logger.debug("Playwright process closed")
+        self._playwright_process.kill()
+        logger.debug("Playwright process killed")
 
     def open_browser(self, browser="Chrome", url=None):
         if url is None:

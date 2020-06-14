@@ -18,7 +18,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x17\n\x08Response\x12\x0b\n\x03log\x18\x01 \x01(\t2\x83\x01\n\nPlaywright\x12/\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\t.Response\"\x00\x12#\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\t.Response\"\x00\x12\x1f\n\x08Shutdown\x12\x06.Empty\x1a\t.Response\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x17\n\x08Response\x12\x0b\n\x03log\x18\x01 \x01(\t2b\n\nPlaywright\x12/\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\t.Response\"\x00\x12#\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\t.Response\"\x00\x62\x06proto3'
 )
 
 
@@ -150,8 +150,8 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=107,
-  serialized_end=238,
+  serialized_start=106,
+  serialized_end=204,
   methods=[
   _descriptor.MethodDescriptor(
     name='OpenBrowser',
@@ -166,15 +166,6 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
     name='CloseBrowser',
     full_name='Playwright.CloseBrowser',
     index=1,
-    containing_service=None,
-    input_type=_EMPTY,
-    output_type=_RESPONSE,
-    serialized_options=None,
-  ),
-  _descriptor.MethodDescriptor(
-    name='Shutdown',
-    full_name='Playwright.Shutdown',
-    index=2,
     containing_service=None,
     input_type=_EMPTY,
     output_type=_RESPONSE,

@@ -14,5 +14,4 @@ message Response {
 service  Playwright {
   rpc OpenBrowser(openBrowserRequest) returns (Response) {}
   rpc CloseBrowser(Empty) returns (Response) {}
-  rpc Shutdown(Empty) returns (Response) {}
 }

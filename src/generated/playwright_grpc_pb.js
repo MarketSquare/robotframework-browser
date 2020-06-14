@@ -61,17 +61,6 @@ var PlaywrightService = exports.PlaywrightService = {
     responseSerialize: serialize_Response,
     responseDeserialize: deserialize_Response,
   },
-  shutdown: {
-    path: '/Playwright/Shutdown',
-    requestStream: false,
-    responseStream: false,
-    requestType: playwright_pb.Empty,
-    responseType: playwright_pb.Response,
-    requestSerialize: serialize_Empty,
-    requestDeserialize: deserialize_Empty,
-    responseSerialize: serialize_Response,
-    responseDeserialize: deserialize_Response,
-  },
 };
 
 exports.PlaywrightClient = grpc.makeGenericClientConstructor(PlaywrightService);
