@@ -84,10 +84,10 @@ class Playwright:
     @cached_property
     def _playwright_process(self) -> Popen:
         cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-        path_to_script = os.path.join("src", "index.ts")
+        path_to_script = os.path.join("src", "index.js")
         logger.debug("Starting Playwright process")
         popen = Popen(
-            f"yarn ts-node '{path_to_script}'",
+            f"node '{path_to_script}'",
             shell=True,
             cwd=cwd_dir,
             stdout=PIPE,
