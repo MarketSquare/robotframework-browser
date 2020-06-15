@@ -19,15 +19,9 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "echo 'precommit 🔱' && lint-staged --shell && poetry run mypy .",
-      "pre-push": "echo 'prepush 🚀' && poetry run pytest utest && poetry run robot --outputdir atest/output atest/test"
+      "pre-commit": "echo 'precommit 🔱' && make lint-python && poetry run mypy .",
+      "pre-push": "echo 'prepush 🚀' && make utest && make atest"
     }
-  },
-  "lint-staged": {
-    "!(Playwright/generated)/**/*.py": [
-      "poetry run black",
-      "poetry run flake8"
-    ]
   },
   "scripts": {
     "build": "tsc && cp package.json Playwright/wrapper"

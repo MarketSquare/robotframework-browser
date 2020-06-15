@@ -10,6 +10,7 @@ import grpc  # type: ignore
 from robot.api import logger  # type: ignore
 
 import Playwright.generated.playwright_pb2 as playwright_pb2
+from Playwright.generated.playwright_pb2 import Empty
 import Playwright.generated.playwright_pb2_grpc as playwright_pb2_grpc
 
 _SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
@@ -108,6 +109,7 @@ class Playwright:
         self._playwright_process.kill()
         logger.debug("Playwright process killed")
 
+    # Control keywords
     def open_browser(self, browser="Chrome", url=None):
         if url is None:
             url = "about:blank"
@@ -131,5 +133,26 @@ class Playwright:
             raise ConnectionError("Playwright process has been terminated")
         with grpc.insecure_channel(f"localhost:{self.port}") as channel:
             stub = playwright_pb2_grpc.PlaywrightStub(channel)
-            response = stub.CloseBrowser(playwright_pb2.Empty())
+            response = stub.CloseBrowser(Empty())
             logger.info(response.log)
+
+    def go_to(self, url: str):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+            response = stub.GoTo(playwright_pb2.goToRequest(url=url))
+            logger.info(response.log)
+
+    # Validation keywords
+    def title_should_be(self, title: str):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+            response = stub.GetTitle(Empty())
+            logger.info(response.log)
+            if response.body != title:
+                raise AssertionError(
+                    "Title should be {} but was {}".format(title, response)
+                )

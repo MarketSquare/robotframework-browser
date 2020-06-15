@@ -15,15 +15,37 @@ function deserialize_Empty(buffer_arg) {
   return playwright_pb.Empty.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_Response(arg) {
-  if (!(arg instanceof playwright_pb.Response)) {
-    throw new Error('Expected argument of type Response');
+function serialize_Response_Empty(arg) {
+  if (!(arg instanceof playwright_pb.Response.Empty)) {
+    throw new Error('Expected argument of type Response.Empty');
   }
   return Buffer.from(arg.serializeBinary());
 }
 
-function deserialize_Response(buffer_arg) {
-  return playwright_pb.Response.deserializeBinary(new Uint8Array(buffer_arg));
+function deserialize_Response_Empty(buffer_arg) {
+  return playwright_pb.Response.Empty.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_Response_String(arg) {
+  if (!(arg instanceof playwright_pb.Response.String)) {
+    throw new Error('Expected argument of type Response.String');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Response_String(buffer_arg) {
+  return playwright_pb.Response.String.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_goToRequest(arg) {
+  if (!(arg instanceof playwright_pb.goToRequest)) {
+    throw new Error('Expected argument of type goToRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_goToRequest(buffer_arg) {
+  return playwright_pb.goToRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_openBrowserRequest(arg) {
@@ -44,22 +66,44 @@ var PlaywrightService = exports.PlaywrightService = {
     requestStream: false,
     responseStream: false,
     requestType: playwright_pb.openBrowserRequest,
-    responseType: playwright_pb.Response,
+    responseType: playwright_pb.Response.Empty,
     requestSerialize: serialize_openBrowserRequest,
     requestDeserialize: deserialize_openBrowserRequest,
-    responseSerialize: serialize_Response,
-    responseDeserialize: deserialize_Response,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
   },
   closeBrowser: {
     path: '/Playwright/CloseBrowser',
     requestStream: false,
     responseStream: false,
     requestType: playwright_pb.Empty,
-    responseType: playwright_pb.Response,
+    responseType: playwright_pb.Response.Empty,
     requestSerialize: serialize_Empty,
     requestDeserialize: deserialize_Empty,
-    responseSerialize: serialize_Response,
-    responseDeserialize: deserialize_Response,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  goTo: {
+    path: '/Playwright/GoTo',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.goToRequest,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_goToRequest,
+    requestDeserialize: deserialize_goToRequest,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  getTitle: {
+    path: '/Playwright/GetTitle',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Empty,
+    responseType: playwright_pb.Response.String,
+    requestSerialize: serialize_Empty,
+    requestDeserialize: deserialize_Empty,
+    responseSerialize: serialize_Response_String,
+    responseDeserialize: deserialize_Response_String,
   },
 };
 

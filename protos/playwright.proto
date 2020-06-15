@@ -7,11 +7,23 @@ message openBrowserRequest {
   string browser = 2;
 }
 
+message goToRequest {
+  string url = 1;
+}
+
 message Response {
-  string log = 1;
+  message Empty {
+    string log = 1;
+  }
+  message String {
+    string log = 1;
+    string body = 2;
+  }
 }
 
 service  Playwright {
-  rpc OpenBrowser(openBrowserRequest) returns (Response) {}
-  rpc CloseBrowser(Empty) returns (Response) {}
+  rpc OpenBrowser(openBrowserRequest) returns (Response.Empty) {}
+  rpc CloseBrowser(Empty) returns (Response.Empty) {}
+  rpc GoTo(goToRequest) returns (Response.Empty) {}
+  rpc GetTitle(Empty) returns (Response.String) {}
 }

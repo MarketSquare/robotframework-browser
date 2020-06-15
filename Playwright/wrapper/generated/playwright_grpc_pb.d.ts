@@ -10,49 +10,83 @@ import * as playwright_pb from "./playwright_pb";
 interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
     openBrowser: IPlaywrightService_IOpenBrowser;
     closeBrowser: IPlaywrightService_ICloseBrowser;
+    goTo: IPlaywrightService_IGoTo;
+    getTitle: IPlaywrightService_IGetTitle;
 }
 
-interface IPlaywrightService_IOpenBrowser extends grpc.MethodDefinition<playwright_pb.openBrowserRequest, playwright_pb.Response> {
+interface IPlaywrightService_IOpenBrowser extends grpc.MethodDefinition<playwright_pb.openBrowserRequest, playwright_pb.Response.Empty> {
     path: string; // "/.Playwright/OpenBrowser"
     requestStream: boolean; // false
     responseStream: boolean; // false
     requestSerialize: grpc.serialize<playwright_pb.openBrowserRequest>;
     requestDeserialize: grpc.deserialize<playwright_pb.openBrowserRequest>;
-    responseSerialize: grpc.serialize<playwright_pb.Response>;
-    responseDeserialize: grpc.deserialize<playwright_pb.Response>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
 }
-interface IPlaywrightService_ICloseBrowser extends grpc.MethodDefinition<playwright_pb.Empty, playwright_pb.Response> {
+interface IPlaywrightService_ICloseBrowser extends grpc.MethodDefinition<playwright_pb.Empty, playwright_pb.Response.Empty> {
     path: string; // "/.Playwright/CloseBrowser"
     requestStream: boolean; // false
     responseStream: boolean; // false
     requestSerialize: grpc.serialize<playwright_pb.Empty>;
     requestDeserialize: grpc.deserialize<playwright_pb.Empty>;
-    responseSerialize: grpc.serialize<playwright_pb.Response>;
-    responseDeserialize: grpc.deserialize<playwright_pb.Response>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_IGoTo extends grpc.MethodDefinition<playwright_pb.goToRequest, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/GoTo"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.goToRequest>;
+    requestDeserialize: grpc.deserialize<playwright_pb.goToRequest>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_IGetTitle extends grpc.MethodDefinition<playwright_pb.Empty, playwright_pb.Response.String> {
+    path: string; // "/.Playwright/GetTitle"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.Empty>;
+    requestDeserialize: grpc.deserialize<playwright_pb.Empty>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.String>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.String>;
 }
 
 export const PlaywrightService: IPlaywrightService;
 
 export interface IPlaywrightServer {
-    openBrowser: grpc.handleUnaryCall<playwright_pb.openBrowserRequest, playwright_pb.Response>;
-    closeBrowser: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response>;
+    openBrowser: grpc.handleUnaryCall<playwright_pb.openBrowserRequest, playwright_pb.Response.Empty>;
+    closeBrowser: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.Empty>;
+    goTo: grpc.handleUnaryCall<playwright_pb.goToRequest, playwright_pb.Response.Empty>;
+    getTitle: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
 }
 
 export interface IPlaywrightClient {
-    openBrowser(request: playwright_pb.openBrowserRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    closeBrowser(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    closeBrowser(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    closeBrowser(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
+    openBrowser(request: playwright_pb.openBrowserRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    closeBrowser(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    closeBrowser(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    closeBrowser(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goTo(request: playwright_pb.goToRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goTo(request: playwright_pb.goToRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goTo(request: playwright_pb.goToRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    getTitle(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    getTitle(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    getTitle(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
 }
 
 export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     constructor(address: string, credentials: grpc.ChannelCredentials, options?: object);
-    public openBrowser(request: playwright_pb.openBrowserRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    public openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    public openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    public closeBrowser(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    public closeBrowser(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
-    public closeBrowser(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response) => void): grpc.ClientUnaryCall;
+    public openBrowser(request: playwright_pb.openBrowserRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public closeBrowser(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public closeBrowser(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public closeBrowser(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goTo(request: playwright_pb.goToRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goTo(request: playwright_pb.goToRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goTo(request: playwright_pb.goToRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public getTitle(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    public getTitle(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    public getTitle(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
 }

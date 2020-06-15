@@ -48,10 +48,28 @@ export namespace openBrowserRequest {
     }
 }
 
-export class Response extends jspb.Message { 
-    getLog(): string;
-    setLog(value: string): Response;
+export class goToRequest extends jspb.Message { 
+    getUrl(): string;
+    setUrl(value: string): goToRequest;
 
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): goToRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: goToRequest): goToRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: goToRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): goToRequest;
+    static deserializeBinaryFromReader(message: goToRequest, reader: jspb.BinaryReader): goToRequest;
+}
+
+export namespace goToRequest {
+    export type AsObject = {
+        url: string,
+    }
+}
+
+export class Response extends jspb.Message { 
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): Response.AsObject;
@@ -65,6 +83,53 @@ export class Response extends jspb.Message {
 
 export namespace Response {
     export type AsObject = {
-        log: string,
     }
+
+
+    export class Empty extends jspb.Message { 
+        getLog(): string;
+        setLog(value: string): Empty;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): Empty.AsObject;
+        static toObject(includeInstance: boolean, msg: Empty): Empty.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: Empty, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): Empty;
+        static deserializeBinaryFromReader(message: Empty, reader: jspb.BinaryReader): Empty;
+    }
+
+    export namespace Empty {
+        export type AsObject = {
+            log: string,
+        }
+    }
+
+    export class String extends jspb.Message { 
+        getLog(): string;
+        setLog(value: string): String;
+
+        getBody(): string;
+        setBody(value: string): String;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): String.AsObject;
+        static toObject(includeInstance: boolean, msg: String): String.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: String, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): String;
+        static deserializeBinaryFromReader(message: String, reader: jspb.BinaryReader): String;
+    }
+
+    export namespace String {
+        export type AsObject = {
+            log: string,
+            body: string,
+        }
+    }
+
 }

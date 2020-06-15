@@ -16,12 +16,22 @@ class PlaywrightStub(object):
         self.OpenBrowser = channel.unary_unary(
                 '/Playwright/OpenBrowser',
                 request_serializer=playwright__pb2.openBrowserRequest.SerializeToString,
-                response_deserializer=playwright__pb2.Response.FromString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.CloseBrowser = channel.unary_unary(
                 '/Playwright/CloseBrowser',
                 request_serializer=playwright__pb2.Empty.SerializeToString,
-                response_deserializer=playwright__pb2.Response.FromString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.GoTo = channel.unary_unary(
+                '/Playwright/GoTo',
+                request_serializer=playwright__pb2.goToRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.GetTitle = channel.unary_unary(
+                '/Playwright/GetTitle',
+                request_serializer=playwright__pb2.Empty.SerializeToString,
+                response_deserializer=playwright__pb2.Response.String.FromString,
                 )
 
 
@@ -40,18 +50,40 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GoTo(self, request, context):
+        """Missing associated documentation comment in .proto file"""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetTitle(self, request, context):
+        """Missing associated documentation comment in .proto file"""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'OpenBrowser': grpc.unary_unary_rpc_method_handler(
                     servicer.OpenBrowser,
                     request_deserializer=playwright__pb2.openBrowserRequest.FromString,
-                    response_serializer=playwright__pb2.Response.SerializeToString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'CloseBrowser': grpc.unary_unary_rpc_method_handler(
                     servicer.CloseBrowser,
                     request_deserializer=playwright__pb2.Empty.FromString,
-                    response_serializer=playwright__pb2.Response.SerializeToString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'GoTo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GoTo,
+                    request_deserializer=playwright__pb2.goToRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'GetTitle': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetTitle,
+                    request_deserializer=playwright__pb2.Empty.FromString,
+                    response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -75,7 +107,7 @@ class Playwright(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/OpenBrowser',
             playwright__pb2.openBrowserRequest.SerializeToString,
-            playwright__pb2.Response.FromString,
+            playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -91,6 +123,38 @@ class Playwright(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/CloseBrowser',
             playwright__pb2.Empty.SerializeToString,
-            playwright__pb2.Response.FromString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GoTo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GoTo',
+            playwright__pb2.goToRequest.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetTitle(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GetTitle',
+            playwright__pb2.Empty.SerializeToString,
+            playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
