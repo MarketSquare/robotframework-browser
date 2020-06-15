@@ -43,15 +43,15 @@ class Playwright:
     == Locator syntax ==
 
     Playwright library supports same locator strategies as the underlying
-    Playwright None module: xpath, css and text. The strategy can either be
-    explicitly specified with a prefix or the strategy can be implicit.
+    Playwright None module: xpath, css, id and text. The strategy can either
+    be explicitly specified with a prefix or the strategy can be implicit.
 
     === Implicit locator strategy ===
 
     The default locator strategy is `css`. If locator does not contain
-    one of the know locator strategies, `css`, `xpath` or `text` it is
-    assumed to contain css locator. Also `locators` starting with `//` or
-    `(//` are considered as xpath locators.
+    one of the know locator strategies, `css`, `xpath`, `id` or `text` it is
+    assumed to contain css locator. Also `locators` starting with `//` is
+    considered as xpath locators.
 
     Examples:
 
@@ -67,10 +67,11 @@ class Playwright:
     Locator strategies that are supported by default are listed in the table
     below.
 
-    | = Strategy = |    = Match based on =   |         = Example =            |
-    | css          | CSS selector.           | ``css:div#example``            |
-    | xpath        | XPath expression.       | ``xpath://div[@id="example"]`` |
-    | text         | Playwright text engine. | ``text:Login``                 |
+    | = Strategy = |     = Match based on =     |         = Example =            |
+    | css          | CSS selector.              | ``css:div#example``            |
+    | xpath        | XPath expression.          | ``xpath://div[@id="example"]`` |
+    | text         | Playwright text engine.    | ``text:Login``                 |
+    | id           | Converted to CSS selector. | ``id:example``                 |
     """
 
     ROBOT_LISTENER_API_VERSION = 2
