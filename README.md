@@ -16,6 +16,12 @@ Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visib
 
 Official post about this [venture](https://forum.robotframework.org/t/moving-robot-framework-browser-automation-to-2020-or-2021/323).
 
+# Installation
+
+1. Install node.js e.g. from https://nodejs.org/en/download/
+2. Install playwright on node.js from the commandline: `[sudo] npm install --global playwright`
+3. Install robotframework-playwright from the commandline: `pip install robotframework-playwright`
+
 # Development
 
 - https://www.python.org/downloads/
