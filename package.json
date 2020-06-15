@@ -1,7 +1,7 @@
 {
   "name": "robotframework-playwright",
   "version": "0.0.1",
-  "main": "index.js",
+  "main": "index.ts",
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
@@ -28,5 +28,8 @@
       "poetry run black",
       "poetry run flake8"
     ]
+  },
+  "scripts": {
+    "build": "tsc"
   }
 }
