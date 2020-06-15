@@ -49,6 +49,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "xylix",
+      "name": "Kerkko Pelttari",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/13387304?v=4",
+      "profile": "http://xylix.fi",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
