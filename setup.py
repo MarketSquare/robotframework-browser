@@ -2,13 +2,13 @@
 from setuptools import setup  # type: ignore
 
 packages = \
-['Playwright', 'Playwright.generated', 'Playwright.locators']
+    ['Playwright', 'Playwright.generated', 'Playwright.locators']
 
 package_data = \
-{'': ['*'], 'Playwright': ['wrapper/*', 'wrapper/generated/*']}
+    {'': ['*'], 'Playwright': ['wrapper/*', 'wrapper/generated/*']}
 
 install_requires = \
-['grpcio-tools>=1.29.0,<2.0.0', 'grpcio>=1.29.0,<2.0.0']
+    ['grpcio-tools>=1.29.0,<2.0.0', 'grpcio>=1.29.0,<2.0.0']
 
 setup_kwargs = {
     'name': 'robotframework-playwright',
