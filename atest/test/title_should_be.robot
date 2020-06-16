@@ -5,6 +5,10 @@ Test Setup	Open Browser	chrome
 Test Teardown	Close Browser
 
 *** Test Cases ***
-Google.com title
+test loginpage title
    GoTo		http://localhost:7272/
    TitleShouldBe	Login Page
+
+about:blank title
+    TitleShouldBe	${EMPTY}
+
