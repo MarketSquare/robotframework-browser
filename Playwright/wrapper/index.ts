@@ -1,7 +1,6 @@
-import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
 import { chromium, firefox, webkit } from 'playwright';
-import * as grpc from "grpc";
-import {sendUnaryData, ServerUnaryCall} from "grpc";
+import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
+import {sendUnaryData, ServerUnaryCall, Server, ServerCredentials} from "grpc";
 import {openBrowserRequest, Empty, Response} from "./generated/playwright_pb";
 
 
@@ -36,8 +35,8 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 }
 
-const server = new grpc.Server();
+const server = new Server();
 server.addService<IPlaywrightServer>(PlaywrightService, new PlaywrightServer());
-const port = server.bind(`localhost:0`, grpc.ServerCredentials.createInsecure());
+const port = server.bind(`localhost:0`, ServerCredentials.createInsecure());
 console.log(`Listening on ${port}`);
 server.start();

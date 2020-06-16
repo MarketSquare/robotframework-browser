@@ -2,7 +2,7 @@
 # Python code generation
 poetry run python -m grpc_tools.protoc -Iprotos --python_out=Playwright/generated --grpc_python_out=Playwright/generated protos/*.proto
 
-PROTO_DEST=./src/generated
+PROTO_DEST=./Playwright/wrapper/generated
 
 # JavaScript code generation
 yarn run grpc_tools_node_protoc \
