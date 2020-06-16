@@ -25,7 +25,11 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - name: Install nodejs dependencies
-      run: yarn --frozen-lockfile
+      run: |
+        yarn --frozen-lockfile
+        npm install --global playwright
+        yarn install
+        yarn build
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
