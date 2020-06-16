@@ -6,5 +6,5 @@ Test Teardown	Close Browser
 
 *** Test Cases ***
 Google.com title
-   GoTo		https://www.google.com
-   TitleShouldBe	Google
+   GoTo		http://localhost:7272/
+   TitleShouldBe	Login Page

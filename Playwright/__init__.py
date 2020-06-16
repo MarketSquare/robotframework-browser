@@ -154,5 +154,5 @@ class Playwright:
             logger.info(response.log)
             if response.body != title:
                 raise AssertionError(
-                    "Title should be {} but was {}".format(title, response)
+                    "Title should be {} but was {}".format(title, response.body)
                 )
