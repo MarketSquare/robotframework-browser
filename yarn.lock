@@ -939,9 +939,9 @@ extglob@^2.0.4:
     to-regex "^3.0.1"
 
 extract-zip@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/extract-zip/-/extract-zip-2.0.0.tgz#f53b71d44f4ff5a4527a2259ade000fb8b303492"
-  integrity sha512-i42GQ498yibjdvIhivUsRslx608whtGoFIhF26Z7O4MYncBxp8CwalOs1lnHy21A9sIohWO2+uiE4SRtC9JXDg==
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/extract-zip/-/extract-zip-2.0.1.tgz#663dca56fe46df890d5f131ef4a06d22bb8ba13a"
+  integrity sha512-GDhU9ntwuKyGXdZBUgTIe+vXnWj0fppUEtMDL0+idd5Sta8TGpHssn/eusA9mrPr9qNDym6SxAYZjNvCn/9RBg==
   dependencies:
     debug "^4.1.1"
     get-stream "^5.1.0"
@@ -2173,9 +2173,9 @@ pkg-dir@^4.2.0:
     find-up "^4.0.0"
 
 playwright@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.1.0.tgz#e75fb38e0a2e19502f08817fb090d83a873a5f00"
-  integrity sha512-5LtKEQL65MvI1bf+Wevny7Ntz7DcKBqFVjwUNOJHUMrZJPw50M9UmIyh5EAsXdHDP2F2y2bYkE1fLTrB/kXd2w==
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.1.1.tgz#20746124542bddd7e925c128b6ec1ace679ffe6a"
+  integrity sha512-abAB/gFdMQueapllosYyEzeKyEu6x/83JykqxmUwSu2foGnLT7E4jPUvbJdOSEpzpDGxN01KmonyskcfXxfcpA==
   dependencies:
     debug "^4.1.1"
     extract-zip "^2.0.0"
