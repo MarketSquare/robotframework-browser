@@ -42,7 +42,7 @@ Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.type
 ## Contributors
 
 This project is community driven and becomes a reality only through the work of all the people who contribute.
-Supported by [Robocorp ![robocorp](https://avatars3.githubusercontent.com/u/54288445?s=88&v=4 "Robocorp")](https://robocorp.com/) through [Robot Framework Foundation](https://robotframework.org/foundation/).
+Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundation](https://robotframework.org/foundation/).
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
