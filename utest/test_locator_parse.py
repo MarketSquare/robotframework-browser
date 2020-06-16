@@ -12,6 +12,7 @@ def test_parse_css_locator(parse: LocatorParse):
     assert parse.parse_locator("div") == "css=div"
     assert parse.parse_locator("css:div") == "css=div"
     assert parse.parse_locator("css  :  div") == "css=div"
+    assert parse.parse_locator("css:light  :  div") == "css:light=div"
 
 
 def test_parse_xpath(parse: LocatorParse):
@@ -28,3 +29,9 @@ def test_parse_text(parse: LocatorParse):
 
 def test_parse_id(parse: LocatorParse):
     assert parse.parse_locator("id:password") == "id=password"
+
+
+def test_strategy_index(parse: LocatorParse):
+    assert parse._strategy_index('id:password') == 2
+    assert parse._strategy_index('password') == -1
+    assert parse._strategy_index('css:light:div') == 9
