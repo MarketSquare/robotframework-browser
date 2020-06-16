@@ -5,7 +5,7 @@ Test Setup	Open Browser	chrome
 Test Teardown	Close Browser
 
 *** Test Cases ***
-test loginpage title
+test server title
    GoTo		http://localhost:7272/
    TitleShouldBe	Login Page
 
