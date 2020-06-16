@@ -18,7 +18,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x1a\n\x0bgoToRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\"E\n\x08Response\x1a\x14\n\x05\x45mpty\x12\x0b\n\x03log\x18\x01 \x01(\t\x1a#\n\x06String\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t2\xbf\x01\n\nPlaywright\x12\x35\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\x0f.Response.Empty\"\x00\x12)\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x0f.Response.Empty\"\x00\x12\'\n\x04GoTo\x12\x0c.goToRequest\x1a\x0f.Response.Empty\"\x00\x12&\n\x08GetTitle\x12\x06.Empty\x1a\x10.Response.String\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x1a\n\x0bgoToRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\"3\n\x10inputTextRequest\x12\r\n\x05input\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\"#\n\x0fselectorRequest\x12\x10\n\x08selector\x18\x01 \x01(\t\"E\n\x08Response\x1a\x14\n\x05\x45mpty\x12\x0b\n\x03log\x18\x01 \x01(\t\x1a#\n\x06String\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t2\xa3\x02\n\nPlaywright\x12\x35\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\x0f.Response.Empty\"\x00\x12)\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x0f.Response.Empty\"\x00\x12\'\n\x04GoTo\x12\x0c.goToRequest\x1a\x0f.Response.Empty\"\x00\x12&\n\x08GetTitle\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x31\n\tInputText\x12\x11.inputTextRequest\x1a\x0f.Response.Empty\"\x00\x12/\n\x07GetText\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x62\x06proto3'
 )
 
 
@@ -117,6 +117,75 @@ _GOTOREQUEST = _descriptor.Descriptor(
 )
 
 
+_INPUTTEXTREQUEST = _descriptor.Descriptor(
+  name='inputTextRequest',
+  full_name='inputTextRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='input', full_name='inputTextRequest.input', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='selector', full_name='inputTextRequest.selector', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=109,
+  serialized_end=160,
+)
+
+
+_SELECTORREQUEST = _descriptor.Descriptor(
+  name='selectorRequest',
+  full_name='selectorRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='selector', full_name='selectorRequest.selector', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=162,
+  serialized_end=197,
+)
+
+
 _RESPONSE_EMPTY = _descriptor.Descriptor(
   name='Empty',
   full_name='Response.Empty',
@@ -143,8 +212,8 @@ _RESPONSE_EMPTY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=121,
-  serialized_end=141,
+  serialized_start=211,
+  serialized_end=231,
 )
 
 _RESPONSE_STRING = _descriptor.Descriptor(
@@ -180,8 +249,8 @@ _RESPONSE_STRING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=143,
-  serialized_end=178,
+  serialized_start=233,
+  serialized_end=268,
 )
 
 _RESPONSE = _descriptor.Descriptor(
@@ -203,8 +272,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=109,
-  serialized_end=178,
+  serialized_start=199,
+  serialized_end=268,
 )
 
 _RESPONSE_EMPTY.containing_type = _RESPONSE
@@ -212,6 +281,8 @@ _RESPONSE_STRING.containing_type = _RESPONSE
 DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
 DESCRIPTOR.message_types_by_name['openBrowserRequest'] = _OPENBROWSERREQUEST
 DESCRIPTOR.message_types_by_name['goToRequest'] = _GOTOREQUEST
+DESCRIPTOR.message_types_by_name['inputTextRequest'] = _INPUTTEXTREQUEST
+DESCRIPTOR.message_types_by_name['selectorRequest'] = _SELECTORREQUEST
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -235,6 +306,20 @@ goToRequest = _reflection.GeneratedProtocolMessageType('goToRequest', (_message.
   # @@protoc_insertion_point(class_scope:goToRequest)
   })
 _sym_db.RegisterMessage(goToRequest)
+
+inputTextRequest = _reflection.GeneratedProtocolMessageType('inputTextRequest', (_message.Message,), {
+  'DESCRIPTOR' : _INPUTTEXTREQUEST,
+  '__module__' : 'playwright_pb2'
+  # @@protoc_insertion_point(class_scope:inputTextRequest)
+  })
+_sym_db.RegisterMessage(inputTextRequest)
+
+selectorRequest = _reflection.GeneratedProtocolMessageType('selectorRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SELECTORREQUEST,
+  '__module__' : 'playwright_pb2'
+  # @@protoc_insertion_point(class_scope:selectorRequest)
+  })
+_sym_db.RegisterMessage(selectorRequest)
 
 Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Message,), {
 
@@ -267,8 +352,8 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=181,
-  serialized_end=372,
+  serialized_start=271,
+  serialized_end=562,
   methods=[
   _descriptor.MethodDescriptor(
     name='OpenBrowser',
@@ -303,6 +388,24 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
     index=3,
     containing_service=None,
     input_type=_EMPTY,
+    output_type=_RESPONSE_STRING,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='InputText',
+    full_name='Playwright.InputText',
+    index=4,
+    containing_service=None,
+    input_type=_INPUTTEXTREQUEST,
+    output_type=_RESPONSE_EMPTY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='GetText',
+    full_name='Playwright.GetText',
+    index=5,
+    containing_service=None,
+    input_type=_SELECTORREQUEST,
     output_type=_RESPONSE_STRING,
     serialized_options=None,
   ),

@@ -11,6 +11,15 @@ message goToRequest {
   string url = 1;
 }
 
+message inputTextRequest {
+  string input = 1;
+  string selector = 2;
+}
+
+message selectorRequest {
+  string selector = 1;
+}
+
 message Response {
   message Empty {
     string log = 1;
@@ -26,4 +35,6 @@ service  Playwright {
   rpc CloseBrowser(Empty) returns (Response.Empty) {}
   rpc GoTo(goToRequest) returns (Response.Empty) {}
   rpc GetTitle(Empty) returns (Response.String) {}
+  rpc InputText(inputTextRequest) returns (Response.Empty) {}
+  rpc GetText(selectorRequest) returns (Response.String) {}
 }

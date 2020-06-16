@@ -69,6 +69,52 @@ export namespace goToRequest {
     }
 }
 
+export class inputTextRequest extends jspb.Message { 
+    getInput(): string;
+    setInput(value: string): inputTextRequest;
+
+    getSelector(): string;
+    setSelector(value: string): inputTextRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): inputTextRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: inputTextRequest): inputTextRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: inputTextRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): inputTextRequest;
+    static deserializeBinaryFromReader(message: inputTextRequest, reader: jspb.BinaryReader): inputTextRequest;
+}
+
+export namespace inputTextRequest {
+    export type AsObject = {
+        input: string,
+        selector: string,
+    }
+}
+
+export class selectorRequest extends jspb.Message { 
+    getSelector(): string;
+    setSelector(value: string): selectorRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): selectorRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: selectorRequest): selectorRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: selectorRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): selectorRequest;
+    static deserializeBinaryFromReader(message: selectorRequest, reader: jspb.BinaryReader): selectorRequest;
+}
+
+export namespace selectorRequest {
+    export type AsObject = {
+        selector: string,
+    }
+}
+
 export class Response extends jspb.Message { 
 
     serializeBinary(): Uint8Array;

@@ -144,7 +144,32 @@ class Playwright:
             response = stub.GoTo(playwright_pb2.goToRequest(url=url))
             logger.info(response.log)
 
+    # Input keywords
+    def input_text(self, text: str, selector: str):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+            response = stub.InputText(
+                playwright_pb2.inputTextRequest(input=text, selector=selector)
+            )
+            logger.info(response.log)
+
     # Validation keywords
+    def textfield_value_should_be(self, text: str, selector: str):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+            response = stub.GetText(playwright_pb2.selectorRequest(selector=selector))
+            logger.info(response.log)
+            if response.body != text:
+                raise AssertionError(
+                    "Textfield {} content should be {} but was {}".format(
+                        selector, text, response.body
+                    )
+                )
+
     def title_should_be(self, title: str):
         if self._playwright_process.poll() is not None:
             raise ConnectionError("Playwright process has been terminated")

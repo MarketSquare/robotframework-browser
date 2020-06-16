@@ -48,6 +48,17 @@ function deserialize_goToRequest(buffer_arg) {
   return playwright_pb.goToRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_inputTextRequest(arg) {
+  if (!(arg instanceof playwright_pb.inputTextRequest)) {
+    throw new Error('Expected argument of type inputTextRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_inputTextRequest(buffer_arg) {
+  return playwright_pb.inputTextRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_openBrowserRequest(arg) {
   if (!(arg instanceof playwright_pb.openBrowserRequest)) {
     throw new Error('Expected argument of type openBrowserRequest');
@@ -57,6 +68,17 @@ function serialize_openBrowserRequest(arg) {
 
 function deserialize_openBrowserRequest(buffer_arg) {
   return playwright_pb.openBrowserRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_selectorRequest(arg) {
+  if (!(arg instanceof playwright_pb.selectorRequest)) {
+    throw new Error('Expected argument of type selectorRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_selectorRequest(buffer_arg) {
+  return playwright_pb.selectorRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 
@@ -102,6 +124,28 @@ var PlaywrightService = exports.PlaywrightService = {
     responseType: playwright_pb.Response.String,
     requestSerialize: serialize_Empty,
     requestDeserialize: deserialize_Empty,
+    responseSerialize: serialize_Response_String,
+    responseDeserialize: deserialize_Response_String,
+  },
+  inputText: {
+    path: '/Playwright/InputText',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.inputTextRequest,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_inputTextRequest,
+    requestDeserialize: deserialize_inputTextRequest,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  getText: {
+    path: '/Playwright/GetText',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.selectorRequest,
+    responseType: playwright_pb.Response.String,
+    requestSerialize: serialize_selectorRequest,
+    requestDeserialize: deserialize_selectorRequest,
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
   },

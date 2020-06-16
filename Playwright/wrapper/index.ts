@@ -1,7 +1,7 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 import {sendUnaryData, ServerUnaryCall, Server, ServerCredentials} from "grpc";
-import {openBrowserRequest, Empty, Response, goToRequest } from "./generated/playwright_pb";
+import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest } from "./generated/playwright_pb";
 
 // This is necessary for improved typescript inference
 /* 
@@ -86,7 +86,6 @@ class PlaywrightServer implements IPlaywrightServer {
         const response = new Response.Empty()
         response.setLog("Succesfully opened URL")
         callback(null, response)
-
     }
 
     async getTitle(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
@@ -94,6 +93,30 @@ class PlaywrightServer implements IPlaywrightServer {
         const title = await this.browserState.page.title()
         const response = new Response.String()
         response.setBody(title)
+        callback(null, response)
+    }
+
+    async getText(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
+        exists(this.browserState, callback, "Tried to get text, no open browser")
+        const selector = call.request.getSelector()
+        const textContent = await this.browserState.page.innerText(selector)
+        const response = new Response.String()
+        response.setBody(textContent)
+        callback(null, response)
+    }
+    
+
+    async inputText(call: ServerUnaryCall<inputTextRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, "Tried to input text, no open browser")
+        const inputText = call.request.getInput()
+        const selector = call.request.getSelector()
+        this.browserState.page.fill(selector, inputText)
+            .catch((e: Error) => {
+                callback(e, null)
+            })
+        
+        const response = new Response.Empty()
+        response.setLog("Input text " + inputText)
         callback(null, response)
     }
 

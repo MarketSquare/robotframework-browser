@@ -33,6 +33,16 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
+        self.InputText = channel.unary_unary(
+                '/Playwright/InputText',
+                request_serializer=playwright__pb2.inputTextRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.GetText = channel.unary_unary(
+                '/Playwright/GetText',
+                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.String.FromString,
+                )
 
 
 class PlaywrightServicer(object):
@@ -62,6 +72,18 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def InputText(self, request, context):
+        """Missing associated documentation comment in .proto file"""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetText(self, request, context):
+        """Missing associated documentation comment in .proto file"""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -83,6 +105,16 @@ def add_PlaywrightServicer_to_server(servicer, server):
             'GetTitle': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTitle,
                     request_deserializer=playwright__pb2.Empty.FromString,
+                    response_serializer=playwright__pb2.Response.String.SerializeToString,
+            ),
+            'InputText': grpc.unary_unary_rpc_method_handler(
+                    servicer.InputText,
+                    request_deserializer=playwright__pb2.inputTextRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'GetText': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetText,
+                    request_deserializer=playwright__pb2.selectorRequest.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
     }
@@ -155,6 +187,38 @@ class Playwright(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GetTitle',
             playwright__pb2.Empty.SerializeToString,
+            playwright__pb2.Response.String.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def InputText(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/InputText',
+            playwright__pb2.inputTextRequest.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetText(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GetText',
+            playwright__pb2.selectorRequest.SerializeToString,
             playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
