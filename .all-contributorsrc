@@ -58,6 +58,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "robocorp",
+      "name": "Robocorp",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/54288445?v=4",
+      "profile": "https://robocorp.com",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
