@@ -14,7 +14,7 @@ function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): 
 }
 
 // Can't have an async constructor, this is a workaround
-async function createBrowserState(browserType: string, url: string): Promise<BrowserState> {
+async function createBrowserState(browserType: string): Promise<BrowserState> {
     const headless = true 
     let browser, context, page
     if (browserType === 'firefox') {
@@ -75,7 +75,7 @@ class PlaywrightServer implements IPlaywrightServer {
         const url = call.request.getUrl()
         console.log("Open browser: " + browserType)
         // TODO: accept a flag for headlessness
-        this.browserState = await createBrowserState(browserType, url)
+        this.browserState = await createBrowserState(browserType)
         const response = new Response.Empty()
         if (url) {
            const returnValue = await this.openUrlInPage(url, this.browserState?.page)
@@ -101,6 +101,16 @@ class PlaywrightServer implements IPlaywrightServer {
         const response = new Response.String()
         response.setBody(title)
         callback(null, response)
+    }
+
+    async getUrl(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+        exists(this.browserState, callback, "Tried to get page URL, no open browser")
+        console.log('Getting URL')
+        const url = this.browserState.page.url()
+        const response = new Response.String()
+        response.setBody(url)
+        callback(null, response)
+        
     }
     
     async getTextContent(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.String>): Promise<void> {

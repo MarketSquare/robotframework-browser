@@ -18,7 +18,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x1a\n\x0bgoToRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\"3\n\x10inputTextRequest\x12\r\n\x05input\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\"#\n\x0fselectorRequest\x12\x10\n\x08selector\x18\x01 \x01(\t\"E\n\x08Response\x1a\x14\n\x05\x45mpty\x12\x0b\n\x03log\x18\x01 \x01(\t\x1a#\n\x06String\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t2\x95\x03\n\nPlaywright\x12\x35\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\x0f.Response.Empty\"\x00\x12)\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x0f.Response.Empty\"\x00\x12\'\n\x04GoTo\x12\x0c.goToRequest\x1a\x0f.Response.Empty\"\x00\x12&\n\x08GetTitle\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x31\n\tInputText\x12\x11.inputTextRequest\x1a\x0f.Response.Empty\"\x00\x12\x35\n\rGetInputValue\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12\x36\n\x0eGetTextContent\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12\x32\n\x0b\x43lickButton\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x1a\n\x0bgoToRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\"3\n\x10inputTextRequest\x12\r\n\x05input\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\"#\n\x0fselectorRequest\x12\x10\n\x08selector\x18\x01 \x01(\t\"E\n\x08Response\x1a\x14\n\x05\x45mpty\x12\x0b\n\x03log\x18\x01 \x01(\t\x1a#\n\x06String\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t2\xbb\x03\n\nPlaywright\x12\x35\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\x0f.Response.Empty\"\x00\x12)\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x0f.Response.Empty\"\x00\x12\'\n\x04GoTo\x12\x0c.goToRequest\x1a\x0f.Response.Empty\"\x00\x12&\n\x08GetTitle\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x31\n\tInputText\x12\x11.inputTextRequest\x1a\x0f.Response.Empty\"\x00\x12\x35\n\rGetInputValue\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12\x36\n\x0eGetTextContent\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12$\n\x06GetUrl\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x32\n\x0b\x43lickButton\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x62\x06proto3'
 )
 
 
@@ -353,7 +353,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   serialized_start=271,
-  serialized_end=676,
+  serialized_end=714,
   methods=[
   _descriptor.MethodDescriptor(
     name='OpenBrowser',
@@ -419,9 +419,18 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
+    name='GetUrl',
+    full_name='Playwright.GetUrl',
+    index=7,
+    containing_service=None,
+    input_type=_EMPTY,
+    output_type=_RESPONSE_STRING,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
     name='ClickButton',
     full_name='Playwright.ClickButton',
-    index=7,
+    index=8,
     containing_service=None,
     input_type=_SELECTORREQUEST,
     output_type=_RESPONSE_EMPTY,

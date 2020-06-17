@@ -48,6 +48,11 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
+        self.GetUrl = channel.unary_unary(
+                '/Playwright/GetUrl',
+                request_serializer=playwright__pb2.Empty.SerializeToString,
+                response_deserializer=playwright__pb2.Response.String.FromString,
+                )
         self.ClickButton = channel.unary_unary(
                 '/Playwright/ClickButton',
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
@@ -105,6 +110,13 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetUrl(self, request, context):
+        """*Returns current playwright page url
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ClickButton(self, request, context):
         """Clicks button specified by selector 
         """
@@ -148,6 +160,11 @@ def add_PlaywrightServicer_to_server(servicer, server):
             'GetTextContent': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTextContent,
                     request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    response_serializer=playwright__pb2.Response.String.SerializeToString,
+            ),
+            'GetUrl': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetUrl,
+                    request_deserializer=playwright__pb2.Empty.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
             'ClickButton': grpc.unary_unary_rpc_method_handler(
@@ -273,6 +290,22 @@ class Playwright(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GetTextContent',
             playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Response.String.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetUrl(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GetUrl',
+            playwright__pb2.Empty.SerializeToString,
             playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

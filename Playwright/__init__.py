@@ -143,7 +143,7 @@ class Playwright:
             logger.info(response.log)
 
     # Input keywords
-    def input_text(self, text: str, selector: str):
+    def input_text(self, selector: str, text: str):
         if self._playwright_process.poll() is not None:
             raise ConnectionError("Playwright process has been terminated")
         with grpc.insecure_channel(f"localhost:{self.port}") as channel:
@@ -164,7 +164,18 @@ class Playwright:
             logger.info(response.log)
 
     # Validation keywords
-    def textfield_value_should_be(self, text: str, selector: str):
+    def location_should_be(self, url: str):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+            page_url = stub.GetUrl(Empty()).body
+            if url != page_url:
+                raise AssertionError(
+                    "URL should be `{}`  but was `{}`".format(url, page_url)
+                )
+
+    def textfield_value_should_be(self, selector: str, text: str):
         if self._playwright_process.poll() is not None:
             raise ConnectionError("Playwright process has been terminated")
         with grpc.insecure_channel(f"localhost:{self.port}") as channel:
@@ -201,5 +212,5 @@ class Playwright:
                 playwright_pb2.selectorRequest(selector="text=" + text)
             )
             logger.info(response.log)
-            if response.body == "":
+            if response.body != text:
                 raise AssertionError("No element with text `{}` on page".format(text))

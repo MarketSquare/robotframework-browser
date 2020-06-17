@@ -165,6 +165,18 @@ getTextContent: {
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
   },
+  // *Returns current playwright page url
+getUrl: {
+    path: '/Playwright/GetUrl',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Empty,
+    responseType: playwright_pb.Response.String,
+    requestSerialize: serialize_Empty,
+    requestDeserialize: deserialize_Empty,
+    responseSerialize: serialize_Response_String,
+    responseDeserialize: deserialize_Response_String,
+  },
   // Clicks button specified by selector 
 clickButton: {
     path: '/Playwright/ClickButton',
