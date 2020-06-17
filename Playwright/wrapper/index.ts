@@ -157,7 +157,7 @@ class PlaywrightServer implements IPlaywrightServer {
 
 const server = new Server();
 server.addService<IPlaywrightServer>(PlaywrightService, new PlaywrightServer());
-const port = "4004"
+const port = process.env.PORT || '0'
 server.bind(`localhost:${port}`, ServerCredentials.createInsecure());
 console.log(`Listening on ${port}`);
 server.start();

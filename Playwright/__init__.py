@@ -15,6 +15,8 @@ import Playwright.generated.playwright_pb2 as playwright_pb2
 from Playwright.generated.playwright_pb2 import Empty
 import Playwright.generated.playwright_pb2_grpc as playwright_pb2_grpc
 
+from .util import find_free_port
+
 _SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
 
 
@@ -92,16 +94,17 @@ class Playwright:
         path_to_script = os.path.join(cwd_dir, "index.js")
         logger.info(f"Starting Playwright process {path_to_script}")
         logfile = open(os.path.join(self.ROBOT_OUTPUT_DIR, "playwright-log.txt"), "w")
+        self.port = str(find_free_port())
         popen = Popen(
             f"node '{path_to_script}'",
             shell=True,
             cwd=cwd_dir,
+            env={"PORT": self.port},
             stdout=logfile,
             stderr=PIPE,
         )
         # FIXME: replace with status endpoint polling
-        time.sleep(0.5)
-        self.port = "4004"
+        time.sleep(1.5)
         return popen
 
     def _close(self):
