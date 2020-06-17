@@ -11,6 +11,7 @@ log.html
 output.xml
 report.html
 ./atest/output
+playwright-log.txt
 
 node_modules/
 dist

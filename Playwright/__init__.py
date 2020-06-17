@@ -3,11 +3,13 @@ __version__ = "0.1.0"
 import os
 from subprocess import Popen, PIPE
 from functools import cached_property
+import time
 from typing import Optional
 
 import grpc  # type: ignore
 
 from robot.api import logger  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
 import Playwright.generated.playwright_pb2 as playwright_pb2
 from Playwright.generated.playwright_pb2 import Empty
@@ -82,27 +84,25 @@ class Playwright:
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
+        self.ROBOT_OUTPUT_DIR = BuiltIn().get_variable_value("${OUTPUTDIR}")
 
     @cached_property
     def _playwright_process(self) -> Popen:
         cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
         path_to_script = os.path.join(cwd_dir, "index.js")
         logger.info(f"Starting Playwright process {path_to_script}")
+        logfile = open(os.path.join(self.ROBOT_OUTPUT_DIR, "playwright-log.txt"), "w")
         popen = Popen(
             f"node '{path_to_script}'",
             shell=True,
             cwd=cwd_dir,
-            stdout=PIPE,
+            stdout=logfile,
             stderr=PIPE,
         )
-        stdout = popen.stdout
-        if stdout is None:
-            raise RuntimeError("No expected output from Playwright process")
-        for line in stdout:
-            if line.startswith(b"Listening on "):
-                self.port = str(line).strip()[15:-3]
-                return popen
-        raise RuntimeError("No expected output from Playwright process")
+        # FIXME: replace with status endpoint polling
+        time.sleep(0.5)
+        self.port = "4004"
+        return popen
 
     def _close(self):
         logger.debug("Closing Playwright process")
@@ -111,8 +111,6 @@ class Playwright:
 
     # Control keywords
     def open_browser(self, browser="Chrome", url=None):
-        if url is None:
-            url = "about:blank"
         browser_ = browser.lower().strip()
         if browser_ not in _SUPPORTED_BROWSERS:
             raise ValueError(
@@ -124,7 +122,7 @@ class Playwright:
         with grpc.insecure_channel(f"localhost:{self.port}") as channel:
             stub = playwright_pb2_grpc.PlaywrightStub(channel)
             response = stub.OpenBrowser(
-                playwright_pb2.openBrowserRequest(url=url, browser=browser_)
+                playwright_pb2.openBrowserRequest(url=url or "", browser=browser_)
             )
             logger.info(response.log)
 

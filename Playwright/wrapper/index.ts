@@ -27,7 +27,6 @@ async function createBrowserState(browserType: string, url: string): Promise<Bro
     }
     context = await browser.newContext()
     page = await context.newPage()
-    page.goto(url)
     return new BrowserState(browser, context, page)
 }
 
@@ -70,11 +69,12 @@ class PlaywrightServer implements IPlaywrightServer {
         console.log("Open browser: " + browserType)
         // TODO: accept a flag for headlessness
         this.browserState = await createBrowserState(browserType, url)
-        
-        const returnValue = await this.openUrlInPage(url, this.browserState?.page)
         const response = new Response.Empty()
-        // Does using returnValue instead of "" here break things?
-        response.setLog(returnValue);
+        if (url) {
+           const returnValue = await this.openUrlInPage(url, this.browserState?.page)
+           response.setLog(returnValue);
+        }
+        console.log('Browser opened')
         callback(null, response);
     }
 
@@ -90,6 +90,7 @@ class PlaywrightServer implements IPlaywrightServer {
 
     async getTitle(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         exists(this.browserState, callback, "Tried to get title, no open browser")
+        console.log('Getting title')
         const title = await this.browserState.page.title()
         const response = new Response.String()
         response.setBody(title)
@@ -123,6 +124,7 @@ class PlaywrightServer implements IPlaywrightServer {
 
 const server = new Server();
 server.addService<IPlaywrightServer>(PlaywrightService, new PlaywrightServer());
-const port = server.bind(`localhost:0`, ServerCredentials.createInsecure());
+const port = "4004"
+server.bind(`localhost:${port}`, ServerCredentials.createInsecure());
 console.log(`Listening on ${port}`);
 server.start();
