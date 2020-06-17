@@ -19,11 +19,11 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "echo 'precommit 🔱' && make lint-python && poetry run mypy .",
+      "pre-commit": "echo 'precommit 🔱' && make lint-python &&  mypy .",
       "pre-push": "echo 'prepush 🚀' && make utest && make atest"
     }
   },
   "scripts": {
-    "build": "tsc && cp package.json Playwright/wrapper"
+    "build": "tsc"
   }
 }

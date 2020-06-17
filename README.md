@@ -16,7 +16,7 @@ Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visib
 
 Official post about this [venture](https://forum.robotframework.org/t/moving-robot-framework-browser-automation-to-2020-or-2021/323).
 
-# Installation
+# Installation instructions for users
 
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Install robotframework-playwright from the commandline: `pip install robotframework-playwright`
@@ -24,16 +24,29 @@ Official post about this [venture](https://forum.robotframework.org/t/moving-rob
 
 # Development
 
+## Development environment
+
+Install Python, nodejs and yarn. Make sure you have `make` available.
 - https://www.python.org/downloads/
-- `python -m pip install poetry`
 - https://nodejs.org/
 - https://classic.yarnpkg.com/en/docs/install
 
-Install `yarn install` and `poetry install`.
+Setup development environment with `make dev-env`.
+This creates a Python virtualenv in .venv directory, and install both Python and
+nodejs dependencies.
 
-Run pytests `poetry run pytest`.
+To update the dependencies use either `make dev-env` to update all or
+alternatively `make .venv` or `make node-deps` to update only Python or nodejs
+dependencies, respectively.
 
-Run Robot Framework tests `poetry run robot --outputdir atest/output atest/test`
+## Testing
+There are both unit tests written with pytest and acceptance test written with
+Robot Framework. These can be run manually with `make utest` and `make atest`.
+The tests are also executed in a prepush hook.
+
+## Code style
+Python code style is enforced with flake8 and black. These are executed in a
+precommit hook, but can also be invoked manually with `make lint-python`.
 
 ## Architecture
 
