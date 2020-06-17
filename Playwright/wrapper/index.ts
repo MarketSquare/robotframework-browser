@@ -15,11 +15,12 @@ function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): 
 
 // Can't have an async constructor, this is a workaround
 async function createBrowserState(browserType: string, url: string): Promise<BrowserState> {
+    const headless = true 
     let browser, context, page
     if (browserType === 'firefox') {
-        browser = await firefox.launch({headless: true})
+        browser = await firefox.launch({headless: headless})
     } else if (browserType === 'chrome') {
-        browser = await chromium.launch({headless: true})
+        browser = await chromium.launch({headless: headless})
     } else if (browserType === 'webkit'){
         browser = await webkit.launch()
     } else {
@@ -42,6 +43,12 @@ class BrowserState {
     page: Page
 }
 
+function emptyWithLog(text: string): Response.Empty {
+    const response = new Response.Empty()
+    response.setLog(text)
+    return response
+}
+
 class PlaywrightServer implements IPlaywrightServer {
     private browserState?: BrowserState
     // current open browsers main context and open page
@@ -58,8 +65,8 @@ class PlaywrightServer implements IPlaywrightServer {
 
         await this.browserState.browser.close()
         this.browserState = undefined
-        const response = new Response.Empty()
-        response.setLog('Closed browser')
+        console.log("Closed browser")
+        const response = emptyWithLog('Closed browser')
         callback(null, response)
     }
 
@@ -83,8 +90,7 @@ class PlaywrightServer implements IPlaywrightServer {
         console.log("Go to URL: " + url)
         exists(this.browserState, callback, "Tried to open URl but had no browser open")
         await this.browserState.page.goto(url)
-        const response = new Response.Empty()
-        response.setLog("Succesfully opened URL")
+        const response = emptyWithLog("Succesfully opened URL")
         callback(null, response)
     }
 
@@ -96,12 +102,22 @@ class PlaywrightServer implements IPlaywrightServer {
         response.setBody(title)
         callback(null, response)
     }
+    
+    async getTextContent(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
+        exists(this.browserState, callback, "Tried to find text on page, no open browser")
+        const selector = call.request.getSelector()
+        const content = await this.browserState.page.textContent(selector)
+        const response = new Response.String()
+        response.setBody(content?.toString() || "")
+        callback(null, response)
+    }
 
-    async getText(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
-        exists(this.browserState, callback, "Tried to get text, no open browser")
+    async getInputValue(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
+        exists(this.browserState, callback, "Tried to get input value, no open browser")
         const selector = call.request.getSelector()
         const element = await this.browserState.page.$(selector)
-        exists(element, callback, "Couldn't find element")
+        exists(element, callback, "Couldn't find element: " + selector)
+        // TODO: if this is done elsewhere write a helper function with error logging
         const property = await element.getProperty("value")
         const content = await property.jsonValue()
         const response = new Response.String()
@@ -114,12 +130,19 @@ class PlaywrightServer implements IPlaywrightServer {
         const inputText = call.request.getInput()
         const selector = call.request.getSelector()
         await this.browserState.page.fill(selector, inputText)
-        // await new Promise((resolve) => setTimeout(resolve, 1000))
-        const response = new Response.Empty()
-        response.setLog("Input text " + inputText)
+        
+        const response = emptyWithLog("Input text: " + inputText)
         callback(null, response)
     }
+    
+    async clickButton(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, "Tried to click button, no open browser")
 
+        const selector = call.request.getSelector()
+        await this.browserState.page.click(selector)
+        const response = emptyWithLog("Clicked button: " + selector)
+        callback(null, response)
+    }
 }
 
 const server = new Server();

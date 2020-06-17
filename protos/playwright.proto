@@ -33,8 +33,16 @@ message Response {
 service  Playwright {
   rpc OpenBrowser(openBrowserRequest) returns (Response.Empty) {}
   rpc CloseBrowser(Empty) returns (Response.Empty) {}
+  /* Opens the url in currently open Playwright page */ 
   rpc GoTo(goToRequest) returns (Response.Empty) {}
+  /* Gets title of currently open Playwright page */
   rpc GetTitle(Empty) returns (Response.String) {}
+  /* Wraps playwrights page.fill to input text into input specified with selector */ 
   rpc InputText(inputTextRequest) returns (Response.Empty) {}
-  rpc GetText(selectorRequest) returns (Response.String) {}
+  /* Gets the DOM property 'value' of selector specified element */
+  rpc GetInputValue(selectorRequest) returns (Response.String) {}
+  /* Wraps playwrights page.textContent, returns textcontent of element by selector */
+  rpc GetTextContent(selectorRequest) returns (Response.String) {}
+  /* Clicks button specified by selector */ 
+  rpc ClickButton(selectorRequest) returns (Response.Empty) {}
 }

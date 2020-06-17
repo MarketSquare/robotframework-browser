@@ -38,10 +38,20 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.inputTextRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
-        self.GetText = channel.unary_unary(
-                '/Playwright/GetText',
+        self.GetInputValue = channel.unary_unary(
+                '/Playwright/GetInputValue',
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
+                )
+        self.GetTextContent = channel.unary_unary(
+                '/Playwright/GetTextContent',
+                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.String.FromString,
+                )
+        self.ClickButton = channel.unary_unary(
+                '/Playwright/ClickButton',
+                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
 
 
@@ -61,25 +71,43 @@ class PlaywrightServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def GoTo(self, request, context):
-        """Missing associated documentation comment in .proto file"""
+        """Opens the url in currently open Playwright page 
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def GetTitle(self, request, context):
-        """Missing associated documentation comment in .proto file"""
+        """Gets title of currently open Playwright page 
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def InputText(self, request, context):
-        """Missing associated documentation comment in .proto file"""
+        """Wraps playwrights page.fill to input text into input specified with selector 
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetText(self, request, context):
-        """Missing associated documentation comment in .proto file"""
+    def GetInputValue(self, request, context):
+        """Gets the DOM property 'value' of selector specified element 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetTextContent(self, request, context):
+        """Wraps playwrights page.textContent, returns textcontent of element by selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ClickButton(self, request, context):
+        """Clicks button specified by selector 
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -112,10 +140,20 @@ def add_PlaywrightServicer_to_server(servicer, server):
                     request_deserializer=playwright__pb2.inputTextRequest.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
-            'GetText': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetText,
+            'GetInputValue': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetInputValue,
                     request_deserializer=playwright__pb2.selectorRequest.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
+            ),
+            'GetTextContent': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetTextContent,
+                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    response_serializer=playwright__pb2.Response.String.SerializeToString,
+            ),
+            'ClickButton': grpc.unary_unary_rpc_method_handler(
+                    servicer.ClickButton,
+                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -208,7 +246,7 @@ class Playwright(object):
             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetText(request,
+    def GetInputValue(request,
             target,
             options=(),
             channel_credentials=None,
@@ -217,8 +255,40 @@ class Playwright(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Playwright/GetText',
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GetInputValue',
             playwright__pb2.selectorRequest.SerializeToString,
             playwright__pb2.Response.String.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetTextContent(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GetTextContent',
+            playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Response.String.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ClickButton(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/ClickButton',
+            playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -105,7 +105,8 @@ var PlaywrightService = exports.PlaywrightService = {
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
-  goTo: {
+  // Opens the url in currently open Playwright page 
+goTo: {
     path: '/Playwright/GoTo',
     requestStream: false,
     responseStream: false,
@@ -116,7 +117,8 @@ var PlaywrightService = exports.PlaywrightService = {
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
-  getTitle: {
+  // Gets title of currently open Playwright page 
+getTitle: {
     path: '/Playwright/GetTitle',
     requestStream: false,
     responseStream: false,
@@ -127,7 +129,8 @@ var PlaywrightService = exports.PlaywrightService = {
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
   },
-  inputText: {
+  // Wraps playwrights page.fill to input text into input specified with selector 
+inputText: {
     path: '/Playwright/InputText',
     requestStream: false,
     responseStream: false,
@@ -138,8 +141,9 @@ var PlaywrightService = exports.PlaywrightService = {
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
-  getText: {
-    path: '/Playwright/GetText',
+  // Gets the DOM property 'value' of selector specified element 
+getInputValue: {
+    path: '/Playwright/GetInputValue',
     requestStream: false,
     responseStream: false,
     requestType: playwright_pb.selectorRequest,
@@ -148,6 +152,30 @@ var PlaywrightService = exports.PlaywrightService = {
     requestDeserialize: deserialize_selectorRequest,
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
+  },
+  // Wraps playwrights page.textContent, returns textcontent of element by selector 
+getTextContent: {
+    path: '/Playwright/GetTextContent',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.selectorRequest,
+    responseType: playwright_pb.Response.String,
+    requestSerialize: serialize_selectorRequest,
+    requestDeserialize: deserialize_selectorRequest,
+    responseSerialize: serialize_Response_String,
+    responseDeserialize: deserialize_Response_String,
+  },
+  // Clicks button specified by selector 
+clickButton: {
+    path: '/Playwright/ClickButton',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.selectorRequest,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_selectorRequest,
+    requestDeserialize: deserialize_selectorRequest,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
   },
 };
 

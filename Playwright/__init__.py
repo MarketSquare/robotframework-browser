@@ -153,13 +153,25 @@ class Playwright:
             )
             logger.info(response.log)
 
+    def click_button(self, selector: str):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+            response = stub.ClickButton(
+                playwright_pb2.selectorRequest(selector=selector)
+            )
+            logger.info(response.log)
+
     # Validation keywords
     def textfield_value_should_be(self, text: str, selector: str):
         if self._playwright_process.poll() is not None:
             raise ConnectionError("Playwright process has been terminated")
         with grpc.insecure_channel(f"localhost:{self.port}") as channel:
             stub = playwright_pb2_grpc.PlaywrightStub(channel)
-            response = stub.GetText(playwright_pb2.selectorRequest(selector=selector))
+            response = stub.GetInputValue(
+                playwright_pb2.selectorRequest(selector=selector)
+            )
             logger.info(response.log)
             if response.body != text:
                 raise AssertionError(
@@ -179,3 +191,15 @@ class Playwright:
                 raise AssertionError(
                     "Title should be {} but was `{}`".format(title, response.body)
                 )
+
+    def page_should_contain(self, text: str):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
+        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+            response = stub.GetTextContent(
+                playwright_pb2.selectorRequest(selector="text=" + text)
+            )
+            logger.info(response.log)
+            if response.body == "":
+                raise AssertionError("No element with text `{}` on page".format(text))
