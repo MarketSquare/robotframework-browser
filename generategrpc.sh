@@ -2,7 +2,8 @@
 # Python code generation
 poetry run python -m grpc_tools.protoc -Iprotos --python_out=Playwright/generated --grpc_python_out=Playwright/generated protos/*.proto
 # hack to fix import, empty -i '' is needed for macos sed compatibility
-sed -i '' 's/import playwright_pb2 as playwright__pb2/from Playwright.generated import playwright_pb2 as playwright__pb2/g' Playwright/generated/playwright_pb2_grpc.py
+sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Playwright.generated import playwright_pb2 as playwright__pb2/g' Playwright/generated/playwright_pb2_grpc.py
+rm Playwright/generated/playwright_pb2_grpc.py.bak
 
 PROTO_DEST=./Playwright/wrapper/generated
 
