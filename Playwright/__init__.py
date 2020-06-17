@@ -165,7 +165,7 @@ class Playwright:
             logger.info(response.log)
             if response.body != text:
                 raise AssertionError(
-                    "Textfield {} content should be {} but was {}".format(
+                    "Textfield {} content should be {} but was `{}`".format(
                         selector, text, response.body
                     )
                 )
@@ -179,5 +179,5 @@ class Playwright:
             logger.info(response.log)
             if response.body != title:
                 raise AssertionError(
-                    "Title should be {} but was {}".format(title, response.body)
+                    "Title should be {} but was `{}`".format(title, response.body)
                 )

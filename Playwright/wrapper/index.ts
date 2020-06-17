@@ -99,22 +99,21 @@ class PlaywrightServer implements IPlaywrightServer {
     async getText(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
         exists(this.browserState, callback, "Tried to get text, no open browser")
         const selector = call.request.getSelector()
-        const textContent = await this.browserState.page.innerText(selector)
+        const element = await this.browserState.page.$(selector)
+        exists(element, callback, "Couldn't find element")
+        const property = await element.getProperty("value")
+        const content = await property.jsonValue()
         const response = new Response.String()
-        response.setBody(textContent)
+        response.setBody(content)
         callback(null, response)
     }
     
-
     async inputText(call: ServerUnaryCall<inputTextRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, "Tried to input text, no open browser")
         const inputText = call.request.getInput()
         const selector = call.request.getSelector()
-        this.browserState.page.fill(selector, inputText)
-            .catch((e: Error) => {
-                callback(e, null)
-            })
-        
+        await this.browserState.page.fill(selector, inputText)
+        // await new Promise((resolve) => setTimeout(resolve, 1000))
         const response = new Response.Empty()
         response.setLog("Input text " + inputText)
         callback(null, response)

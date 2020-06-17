@@ -6,5 +6,5 @@ Test Teardown	Close Browser
 
 *** Test Cases ***
 Test inputting with css selector
-    Input Text		username	\#username_field	
-    TextField Value Should Be	username	\#username_field
+    Input Text		username	css=input#username_field
+    TextField Value Should Be	username	css=input#username_field
