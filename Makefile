@@ -16,7 +16,7 @@ utest:
 	pytest
 
 atest:
-	PYTHONPATH=. robot --outputdir atest/output atest/test
+	PYTHONPATH=. robot --loglevel DEBUG --outputdir atest/output atest/test
 
 lint-python:
 	black Playwright/ --exclude Playwright/generated

@@ -128,8 +128,11 @@ class Playwright:
     # closes channel after control returns
     @contextlib.contextmanager
     def insecure_stub(self):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
+        returncode = self._playwright_process.poll()
+        if returncode is not None:
+            raise ConnectionError(
+                "Playwright process has been terminated with code {}".format(returncode)
+            )
         channel = grpc.insecure_channel(f"localhost:{self.port}")
         yield playwright_pb2_grpc.PlaywrightStub(channel)
         channel.close()
