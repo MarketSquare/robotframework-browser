@@ -2,6 +2,7 @@ __version__ = "0.1.0"
 
 import os
 from subprocess import Popen, STDOUT
+import contextlib
 from functools import cached_property
 import time
 from typing import Optional
@@ -123,6 +124,16 @@ class Playwright:
         self._playwright_process.kill()
         logger.debug("Playwright process killed")
 
+    # Yields a PlayWrightstub on a newly initialized channel and
+    # closes channel after control returns
+    @contextlib.contextmanager
+    def insecure_stub(self):
+        if self._playwright_process.poll() is not None:
+            raise ConnectionError("Playwright process has been terminated")
+        channel = grpc.insecure_channel(f"localhost:{self.port}")
+        yield playwright_pb2_grpc.PlaywrightStub(channel)
+        channel.close()
+
     # Control keywords
     def open_browser(self, browser="Chrome", url=None):
         browser_ = browser.lower().strip()
@@ -131,47 +142,32 @@ class Playwright:
                 f"{browser} is not supported, "
                 f'it should be one of: {", ".join(_SUPPORTED_BROWSERS)}'
             )
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             response = stub.OpenBrowser(
                 playwright_pb2.openBrowserRequest(url=url or "", browser=browser_)
             )
             logger.info(response.log)
 
     def close_browser(self):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             response = stub.CloseBrowser(Empty())
             logger.info(response.log)
 
     def go_to(self, url: str):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             response = stub.GoTo(playwright_pb2.goToRequest(url=url))
             logger.info(response.log)
 
     # Input keywords
     def input_text(self, selector: str, text: str):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             response = stub.InputText(
                 playwright_pb2.inputTextRequest(input=text, selector=selector)
             )
             logger.info(response.log)
 
     def click_button(self, selector: str):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             response = stub.ClickButton(
                 playwright_pb2.selectorRequest(selector=selector)
             )
@@ -179,10 +175,7 @@ class Playwright:
 
     # Validation keywords
     def location_should_be(self, url: str):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             page_url = stub.GetUrl(Empty()).body
             if url != page_url:
                 raise AssertionError(
@@ -190,10 +183,7 @@ class Playwright:
                 )
 
     def textfield_value_should_be(self, selector: str, text: str):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             response = stub.GetInputValue(
                 playwright_pb2.selectorRequest(selector=selector)
             )
@@ -206,10 +196,7 @@ class Playwright:
                 )
 
     def title_should_be(self, title: str):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             response = stub.GetTitle(Empty())
             logger.info(response.log)
             if response.body != title:
@@ -218,10 +205,7 @@ class Playwright:
                 )
 
     def page_should_contain(self, text: str):
-        if self._playwright_process.poll() is not None:
-            raise ConnectionError("Playwright process has been terminated")
-        with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-            stub = playwright_pb2_grpc.PlaywrightStub(channel)
+        with self.insecure_stub() as stub:
             response = stub.GetTextContent(
                 playwright_pb2.selectorRequest(selector="text=" + text)
             )
