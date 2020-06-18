@@ -22,7 +22,7 @@ setup_kwargs = {
     'packages': packages,
     'package_data': package_data,
     'install_requires': install_requires,
-    'entry_points': {'console_scripts': ['robotframework-playwright=Playwright.entry:run']},
+    'entry_points': {'console_scripts': ['rfbrowser=Playwright.entry:run']},
     'python_requires': '>=3.8,<4.0',
 }
 
