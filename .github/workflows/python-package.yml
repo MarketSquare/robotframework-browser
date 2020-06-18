@@ -53,7 +53,7 @@ jobs:
         python setup.py install
     - name: Run Robot Framework tests
       run: |
-        robot --outputdir atest/output atest/test
+        ROBOT_SYSLOG_FILE=syslog.txt robot --outputdir atest/output atest/test
     - uses: actions/upload-artifact@v1
       if: success() || failure()
       with:
