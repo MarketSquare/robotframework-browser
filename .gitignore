@@ -4,7 +4,7 @@ Browser/wrapper/package.json
 .idea
 .mypy_cache
 __pycache__
-robotframework_playwright.egg-info
+robotframework_browser.egg-info/
 .venv
 
 # Robot Framework outputs
@@ -16,3 +16,4 @@ playwright-log.txt
 
 node_modules/
 dist
+build

@@ -30,3 +30,7 @@ build:
 	./generategrpc.sh
 	yarn build
 	cp package.json Browser/wrapper
+
+release:
+	.venv/bin/python setup.py sdist bdist_wheel
+	python3 -m twine upload --repository pypi dist/*
