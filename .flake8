@@ -3,6 +3,7 @@ exclude =
    .git,
    __pycache__,
    Browser/generated,
+   .venv,
    build,
    dist
 max-line-length = 100

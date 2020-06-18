@@ -22,9 +22,9 @@ atest:
 	PYTHONPATH=. robot --loglevel DEBUG --outputdir atest/output atest/test
 
 lint-python:
-	mypy Browser/
+	mypy .
 	black Browser/ --exclude Browser/generated
-	flake8 Browser/
+	flake8
 
 build:
 	./generategrpc.sh

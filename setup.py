@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 from setuptools import setup  # type: ignore
 
 with open('README.md', encoding='utf-8') as f:
