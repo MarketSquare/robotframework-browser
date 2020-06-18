@@ -39,6 +39,8 @@ To update the dependencies use either `make dev-env` to update all or
 alternatively `make .venv` or `make node-deps` to update only Python or nodejs
 dependencies, respectively.
 
+Make sure to run `source .venv/bin/activate` to activate the correct virtualenv
+
 ## Testing
 There are both unit tests written with pytest and acceptance test written with
 Robot Framework. These can be run manually with `make utest` and `make atest`.

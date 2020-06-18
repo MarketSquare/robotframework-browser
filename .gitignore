@@ -5,6 +5,7 @@ Playwright/wrapper/package.json
 .mypy_cache
 __pycache__
 robotframework_playwright.egg-info
+.venv
 
 # Robot Framework outputs
 log.html

@@ -4,8 +4,8 @@
 	if [ ! -d .venv ]; then \
 		python3 -m venv .venv ; \
 	fi
-	pip install -r requirements.txt
-	pip install -r dev-requirements.txt
+	.venv/bin/pip install -r requirements.txt
+	.venv/bin/pip install -r dev-requirements.txt
 
 node-deps:
 	yarn install
