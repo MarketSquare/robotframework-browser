@@ -139,6 +139,16 @@ class Playwright:
 
     # Control keywords
     def open_browser(self, browser="Chrome", url=None):
+        """Opens a new browser instance to the optional ``url``.
+        The ``browser`` argument specifies which browser to use. The
+        supported browsers are listed in the table below. The browser names
+        are case-insensitive and some browsers have multiple supported names.
+        |    = Browser =    |        = Name(s) =        |
+        | Firefox           | firefox                   |
+        | Google Chrome     | chrome                    |
+        | WebKit            | webkit                    |
+
+        """
         browser_ = browser.lower().strip()
         if browser_ not in _SUPPORTED_BROWSERS:
             raise ValueError(
@@ -152,17 +162,20 @@ class Playwright:
             logger.info(response.log)
 
     def close_browser(self):
+        """Closes the current browser."""
         with self.insecure_stub() as stub:
             response = stub.CloseBrowser(Empty())
             logger.info(response.log)
 
     def go_to(self, url: str):
+        """Navigates the current browser tab to the provided ``url``."""
         with self.insecure_stub() as stub:
             response = stub.GoTo(playwright_pb2.goToRequest(url=url))
             logger.info(response.log)
 
     # Input keywords
     def input_text(self, selector: str, text: str):
+        """ Types the given ``text`` into the text field identified by ``selector`` """
         with self.insecure_stub() as stub:
             response = stub.InputText(
                 playwright_pb2.inputTextRequest(input=text, selector=selector)
@@ -170,6 +183,7 @@ class Playwright:
             logger.info(response.log)
 
     def click_button(self, selector: str):
+        """ Clicks the button identified by ``selector``. """
         with self.insecure_stub() as stub:
             response = stub.ClickButton(
                 playwright_pb2.selectorRequest(selector=selector)
@@ -178,6 +192,7 @@ class Playwright:
 
     # Validation keywords
     def location_should_be(self, url: str):
+        """ Verifies that the current URL is exactly ``url``. """
         with self.insecure_stub() as stub:
             page_url = stub.GetUrl(Empty()).body
             if url != page_url:
@@ -185,20 +200,22 @@ class Playwright:
                     "URL should be `{}`  but was `{}`".format(url, page_url)
                 )
 
-    def textfield_value_should_be(self, selector: str, text: str):
+    def textfield_value_should_be(self, selector: str, expected: str):
+         """Verifies text field ``selector`` has exactly text ``expected``. """
         with self.insecure_stub() as stub:
             response = stub.GetInputValue(
                 playwright_pb2.selectorRequest(selector=selector)
             )
             logger.info(response.log)
-            if response.body != text:
+            if response.body != expected:
                 raise AssertionError(
                     "Textfield {} content should be {} but was `{}`".format(
-                        selector, text, response.body
+                        selector, expected, response.body
                     )
                 )
 
     def title_should_be(self, title: str):
+        """ Verifies that the current page title equals ``title`` """
         with self.insecure_stub() as stub:
             response = stub.GetTitle(Empty())
             logger.info(response.log)
@@ -208,6 +225,7 @@ class Playwright:
                 )
 
     def page_should_contain(self, text: str):
+        """Verifies that current page contains ``text``. """
         with self.insecure_stub() as stub:
             response = stub.GetTextContent(
                 playwright_pb2.selectorRequest(selector="text=" + text)
