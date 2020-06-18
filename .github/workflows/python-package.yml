@@ -50,7 +50,7 @@ jobs:
         pytest
     - name: Run Robot Framework tests
       run: |
-        robot --outputdir atest/output atest/test
+        robot --outputdir atest/output --pythonpath . atest/test
     - uses: actions/upload-artifact@v1
       if: success() || failure()
       with:
