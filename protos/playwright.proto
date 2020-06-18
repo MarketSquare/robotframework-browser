@@ -2,6 +2,10 @@ syntax = "proto3";
 
 message Empty {}
 
+message screenshotRequest {
+  string path = 1;
+}
+
 message openBrowserRequest {
   string url = 1;
   string browser = 2;
@@ -31,6 +35,7 @@ message Response {
 }
 
 service  Playwright {
+  rpc Screenshot(screenshotRequest) returns (Response.Empty) {}
   rpc OpenBrowser(openBrowserRequest) returns (Response.Empty) {}
   rpc CloseBrowser(Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */ 

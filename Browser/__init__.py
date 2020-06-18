@@ -130,6 +130,20 @@ class Browser:
         self._playwright_process.kill()
         logger.debug("Playwright process killed")
 
+    """ Sends screenshot message through the stub and then raises an AssertionError with message
+        Only works during testing since this uses robot's outputdir for output
+    """
+
+    def _test_error(self, message: str, stub: playwright_pb2_grpc.PlaywrightStub):
+        path = os.path.join(
+            BuiltIn().get_variable_value("${OUTPUTDIR}"),
+            BuiltIn().get_variable_value("${TEST NAME}") + "_FAILURE_SCREENSHOT",
+        )
+
+        response = stub.Screenshot(playwright_pb2.screenshotRequest(path=path))
+        print(response)
+        raise AssertionError(message)
+
     # Yields a PlayWrightstub on a newly initialized channel and
     # closes channel after control returns
     @contextlib.contextmanager
@@ -202,8 +216,8 @@ class Browser:
         with self._insecure_stub() as stub:
             page_url = stub.GetUrl(Empty()).body
             if url != page_url:
-                raise AssertionError(
-                    "URL should be `{}`  but was `{}`".format(url, page_url)
+                self._test_error(
+                    "URL should be `{}`  but was `{}`".format(url, page_url), stub
                 )
 
     def textfield_value_should_be(self, selector: str, expected: str):
@@ -214,10 +228,11 @@ class Browser:
             )
             logger.info(response.log)
             if response.body != expected:
-                raise AssertionError(
+                self._test_error(
                     "Textfield {} content should be {} but was `{}`".format(
                         selector, expected, response.body
-                    )
+                    ),
+                    stub,
                 )
 
     def title_should_be(self, title: str):
@@ -226,8 +241,8 @@ class Browser:
             response = stub.GetTitle(Empty())
             logger.info(response.log)
             if response.body != title:
-                raise AssertionError(
-                    "Title should be {} but was `{}`".format(title, response.body)
+                self._test_error(
+                    "Title should be {} but was `{}`".format(title, response.body), stub
                 )
 
     def page_should_contain(self, text: str):
@@ -238,4 +253,4 @@ class Browser:
             )
             logger.info(response.log)
             if response.body != text:
-                raise AssertionError("No element with text `{}` on page".format(text))
+                self._test_error("No element with text `{}` on page".format(text), stub)

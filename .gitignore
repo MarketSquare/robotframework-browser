@@ -11,7 +11,7 @@ robotframework_browser.egg-info/
 log.html
 output.xml
 report.html
-./atest/output
+atest/output
 playwright-log.txt
 
 node_modules/

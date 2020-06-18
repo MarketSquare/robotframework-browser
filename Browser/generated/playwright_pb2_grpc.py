@@ -13,6 +13,11 @@ class PlaywrightStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.Screenshot = channel.unary_unary(
+                '/Playwright/Screenshot',
+                request_serializer=playwright__pb2.screenshotRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
         self.OpenBrowser = channel.unary_unary(
                 '/Playwright/OpenBrowser',
                 request_serializer=playwright__pb2.openBrowserRequest.SerializeToString,
@@ -67,6 +72,12 @@ class PlaywrightStub(object):
 
 class PlaywrightServicer(object):
     """Missing associated documentation comment in .proto file"""
+
+    def Screenshot(self, request, context):
+        """Missing associated documentation comment in .proto file"""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def OpenBrowser(self, request, context):
         """Missing associated documentation comment in .proto file"""
@@ -139,6 +150,11 @@ class PlaywrightServicer(object):
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'Screenshot': grpc.unary_unary_rpc_method_handler(
+                    servicer.Screenshot,
+                    request_deserializer=playwright__pb2.screenshotRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
             'OpenBrowser': grpc.unary_unary_rpc_method_handler(
                     servicer.OpenBrowser,
                     request_deserializer=playwright__pb2.openBrowserRequest.FromString,
@@ -198,6 +214,22 @@ def add_PlaywrightServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class Playwright(object):
     """Missing associated documentation comment in .proto file"""
+
+    @staticmethod
+    def Screenshot(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/Screenshot',
+            playwright__pb2.screenshotRequest.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def OpenBrowser(request,

@@ -1,7 +1,7 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 import {sendUnaryData, ServerUnaryCall, Server, ServerCredentials} from "grpc";
-import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest } from "./generated/playwright_pb";
+import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest, screenshotRequest } from "./generated/playwright_pb";
 
 // This is necessary for improved typescript inference
 /* 
@@ -157,6 +157,17 @@ class PlaywrightServer implements IPlaywrightServer {
     async health(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         const response = new Response.String()
         response.setBody("OK")
+        callback(null, response)
+    }
+
+    async screenshot(call: ServerUnaryCall<screenshotRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, "Tried to take screenshot, no open browser")
+        // Add the file extension here because the image type is defined by playwrights defaults
+        const path = call.request.getPath() + ".png" 
+        console.log("Taking a screenshot of current page")
+        await this.browserState.page.screenshot({path: path})
+
+        const response = emptyWithLog("Succesfully took screenshot")
         callback(null, response)
     }
 }

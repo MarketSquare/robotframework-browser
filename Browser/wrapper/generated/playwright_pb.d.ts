@@ -23,6 +23,27 @@ export namespace Empty {
     }
 }
 
+export class screenshotRequest extends jspb.Message { 
+    getPath(): string;
+    setPath(value: string): screenshotRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): screenshotRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: screenshotRequest): screenshotRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: screenshotRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): screenshotRequest;
+    static deserializeBinaryFromReader(message: screenshotRequest, reader: jspb.BinaryReader): screenshotRequest;
+}
+
+export namespace screenshotRequest {
+    export type AsObject = {
+        path: string,
+    }
+}
+
 export class openBrowserRequest extends jspb.Message { 
     getUrl(): string;
     setUrl(value: string): openBrowserRequest;

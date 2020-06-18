@@ -18,7 +18,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x1a\n\x0bgoToRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\"3\n\x10inputTextRequest\x12\r\n\x05input\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\"#\n\x0fselectorRequest\x12\x10\n\x08selector\x18\x01 \x01(\t\"E\n\x08Response\x1a\x14\n\x05\x45mpty\x12\x0b\n\x03log\x18\x01 \x01(\t\x1a#\n\x06String\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t2\xe1\x03\n\nPlaywright\x12\x35\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\x0f.Response.Empty\"\x00\x12)\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x0f.Response.Empty\"\x00\x12\'\n\x04GoTo\x12\x0c.goToRequest\x1a\x0f.Response.Empty\"\x00\x12&\n\x08GetTitle\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x31\n\tInputText\x12\x11.inputTextRequest\x1a\x0f.Response.Empty\"\x00\x12\x35\n\rGetInputValue\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12\x36\n\x0eGetTextContent\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12$\n\x06GetUrl\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x32\n\x0b\x43lickButton\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x12$\n\x06Health\x12\x06.Empty\x1a\x10.Response.String\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"!\n\x11screenshotRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x1a\n\x0bgoToRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\"3\n\x10inputTextRequest\x12\r\n\x05input\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\"#\n\x0fselectorRequest\x12\x10\n\x08selector\x18\x01 \x01(\t\"E\n\x08Response\x1a\x14\n\x05\x45mpty\x12\x0b\n\x03log\x18\x01 \x01(\t\x1a#\n\x06String\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t2\x96\x04\n\nPlaywright\x12\x33\n\nScreenshot\x12\x12.screenshotRequest\x1a\x0f.Response.Empty\"\x00\x12\x35\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\x0f.Response.Empty\"\x00\x12)\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x0f.Response.Empty\"\x00\x12\'\n\x04GoTo\x12\x0c.goToRequest\x1a\x0f.Response.Empty\"\x00\x12&\n\x08GetTitle\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x31\n\tInputText\x12\x11.inputTextRequest\x1a\x0f.Response.Empty\"\x00\x12\x35\n\rGetInputValue\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12\x36\n\x0eGetTextContent\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12$\n\x06GetUrl\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x32\n\x0b\x43lickButton\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x12$\n\x06Health\x12\x06.Empty\x1a\x10.Response.String\"\x00\x62\x06proto3'
 )
 
 
@@ -45,6 +45,37 @@ _EMPTY = _descriptor.Descriptor(
   ],
   serialized_start=20,
   serialized_end=27,
+)
+
+
+_SCREENSHOTREQUEST = _descriptor.Descriptor(
+  name='screenshotRequest',
+  full_name='screenshotRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='path', full_name='screenshotRequest.path', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=29,
+  serialized_end=62,
 )
 
 
@@ -81,8 +112,8 @@ _OPENBROWSERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=29,
-  serialized_end=79,
+  serialized_start=64,
+  serialized_end=114,
 )
 
 
@@ -112,8 +143,8 @@ _GOTOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=81,
-  serialized_end=107,
+  serialized_start=116,
+  serialized_end=142,
 )
 
 
@@ -150,8 +181,8 @@ _INPUTTEXTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=109,
-  serialized_end=160,
+  serialized_start=144,
+  serialized_end=195,
 )
 
 
@@ -181,8 +212,8 @@ _SELECTORREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=162,
-  serialized_end=197,
+  serialized_start=197,
+  serialized_end=232,
 )
 
 
@@ -212,8 +243,8 @@ _RESPONSE_EMPTY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=211,
-  serialized_end=231,
+  serialized_start=246,
+  serialized_end=266,
 )
 
 _RESPONSE_STRING = _descriptor.Descriptor(
@@ -249,8 +280,8 @@ _RESPONSE_STRING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=233,
-  serialized_end=268,
+  serialized_start=268,
+  serialized_end=303,
 )
 
 _RESPONSE = _descriptor.Descriptor(
@@ -272,13 +303,14 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=199,
-  serialized_end=268,
+  serialized_start=234,
+  serialized_end=303,
 )
 
 _RESPONSE_EMPTY.containing_type = _RESPONSE
 _RESPONSE_STRING.containing_type = _RESPONSE
 DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
+DESCRIPTOR.message_types_by_name['screenshotRequest'] = _SCREENSHOTREQUEST
 DESCRIPTOR.message_types_by_name['openBrowserRequest'] = _OPENBROWSERREQUEST
 DESCRIPTOR.message_types_by_name['goToRequest'] = _GOTOREQUEST
 DESCRIPTOR.message_types_by_name['inputTextRequest'] = _INPUTTEXTREQUEST
@@ -292,6 +324,13 @@ Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), {
   # @@protoc_insertion_point(class_scope:Empty)
   })
 _sym_db.RegisterMessage(Empty)
+
+screenshotRequest = _reflection.GeneratedProtocolMessageType('screenshotRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SCREENSHOTREQUEST,
+  '__module__' : 'playwright_pb2'
+  # @@protoc_insertion_point(class_scope:screenshotRequest)
+  })
+_sym_db.RegisterMessage(screenshotRequest)
 
 openBrowserRequest = _reflection.GeneratedProtocolMessageType('openBrowserRequest', (_message.Message,), {
   'DESCRIPTOR' : _OPENBROWSERREQUEST,
@@ -352,13 +391,22 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=271,
-  serialized_end=752,
+  serialized_start=306,
+  serialized_end=840,
   methods=[
+  _descriptor.MethodDescriptor(
+    name='Screenshot',
+    full_name='Playwright.Screenshot',
+    index=0,
+    containing_service=None,
+    input_type=_SCREENSHOTREQUEST,
+    output_type=_RESPONSE_EMPTY,
+    serialized_options=None,
+  ),
   _descriptor.MethodDescriptor(
     name='OpenBrowser',
     full_name='Playwright.OpenBrowser',
-    index=0,
+    index=1,
     containing_service=None,
     input_type=_OPENBROWSERREQUEST,
     output_type=_RESPONSE_EMPTY,
@@ -367,7 +415,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='CloseBrowser',
     full_name='Playwright.CloseBrowser',
-    index=1,
+    index=2,
     containing_service=None,
     input_type=_EMPTY,
     output_type=_RESPONSE_EMPTY,
@@ -376,7 +424,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GoTo',
     full_name='Playwright.GoTo',
-    index=2,
+    index=3,
     containing_service=None,
     input_type=_GOTOREQUEST,
     output_type=_RESPONSE_EMPTY,
@@ -385,7 +433,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GetTitle',
     full_name='Playwright.GetTitle',
-    index=3,
+    index=4,
     containing_service=None,
     input_type=_EMPTY,
     output_type=_RESPONSE_STRING,
@@ -394,7 +442,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='InputText',
     full_name='Playwright.InputText',
-    index=4,
+    index=5,
     containing_service=None,
     input_type=_INPUTTEXTREQUEST,
     output_type=_RESPONSE_EMPTY,
@@ -403,7 +451,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GetInputValue',
     full_name='Playwright.GetInputValue',
-    index=5,
+    index=6,
     containing_service=None,
     input_type=_SELECTORREQUEST,
     output_type=_RESPONSE_STRING,
@@ -412,7 +460,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GetTextContent',
     full_name='Playwright.GetTextContent',
-    index=6,
+    index=7,
     containing_service=None,
     input_type=_SELECTORREQUEST,
     output_type=_RESPONSE_STRING,
@@ -421,7 +469,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GetUrl',
     full_name='Playwright.GetUrl',
-    index=7,
+    index=8,
     containing_service=None,
     input_type=_EMPTY,
     output_type=_RESPONSE_STRING,
@@ -430,7 +478,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ClickButton',
     full_name='Playwright.ClickButton',
-    index=8,
+    index=9,
     containing_service=None,
     input_type=_SELECTORREQUEST,
     output_type=_RESPONSE_EMPTY,
@@ -439,7 +487,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='Health',
     full_name='Playwright.Health',
-    index=9,
+    index=10,
     containing_service=None,
     input_type=_EMPTY,
     output_type=_RESPONSE_STRING,

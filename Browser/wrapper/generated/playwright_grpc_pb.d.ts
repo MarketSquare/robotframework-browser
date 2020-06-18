@@ -8,6 +8,7 @@ import * as grpc from "grpc";
 import * as playwright_pb from "./playwright_pb";
 
 interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
+    screenshot: IPlaywrightService_IScreenshot;
     openBrowser: IPlaywrightService_IOpenBrowser;
     closeBrowser: IPlaywrightService_ICloseBrowser;
     goTo: IPlaywrightService_IGoTo;
@@ -20,6 +21,15 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     health: IPlaywrightService_IHealth;
 }
 
+interface IPlaywrightService_IScreenshot extends grpc.MethodDefinition<playwright_pb.screenshotRequest, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/Screenshot"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.screenshotRequest>;
+    requestDeserialize: grpc.deserialize<playwright_pb.screenshotRequest>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
 interface IPlaywrightService_IOpenBrowser extends grpc.MethodDefinition<playwright_pb.openBrowserRequest, playwright_pb.Response.Empty> {
     path: string; // "/.Playwright/OpenBrowser"
     requestStream: boolean; // false
@@ -114,6 +124,7 @@ interface IPlaywrightService_IHealth extends grpc.MethodDefinition<playwright_pb
 export const PlaywrightService: IPlaywrightService;
 
 export interface IPlaywrightServer {
+    screenshot: grpc.handleUnaryCall<playwright_pb.screenshotRequest, playwright_pb.Response.Empty>;
     openBrowser: grpc.handleUnaryCall<playwright_pb.openBrowserRequest, playwright_pb.Response.Empty>;
     closeBrowser: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.Empty>;
     goTo: grpc.handleUnaryCall<playwright_pb.goToRequest, playwright_pb.Response.Empty>;
@@ -127,6 +138,9 @@ export interface IPlaywrightServer {
 }
 
 export interface IPlaywrightClient {
+    screenshot(request: playwright_pb.screenshotRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    screenshot(request: playwright_pb.screenshotRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    screenshot(request: playwright_pb.screenshotRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     openBrowser(request: playwright_pb.openBrowserRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
@@ -161,6 +175,9 @@ export interface IPlaywrightClient {
 
 export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     constructor(address: string, credentials: grpc.ChannelCredentials, options?: object);
+    public screenshot(request: playwright_pb.screenshotRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public screenshot(request: playwright_pb.screenshotRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public screenshot(request: playwright_pb.screenshotRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public openBrowser(request: playwright_pb.openBrowserRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public openBrowser(request: playwright_pb.openBrowserRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;

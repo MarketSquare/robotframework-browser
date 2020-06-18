@@ -70,6 +70,17 @@ function deserialize_openBrowserRequest(buffer_arg) {
   return playwright_pb.openBrowserRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_screenshotRequest(arg) {
+  if (!(arg instanceof playwright_pb.screenshotRequest)) {
+    throw new Error('Expected argument of type screenshotRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_screenshotRequest(buffer_arg) {
+  return playwright_pb.screenshotRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_selectorRequest(arg) {
   if (!(arg instanceof playwright_pb.selectorRequest)) {
     throw new Error('Expected argument of type selectorRequest');
@@ -83,6 +94,17 @@ function deserialize_selectorRequest(buffer_arg) {
 
 
 var PlaywrightService = exports.PlaywrightService = {
+  screenshot: {
+    path: '/Playwright/Screenshot',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.screenshotRequest,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_screenshotRequest,
+    requestDeserialize: deserialize_screenshotRequest,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
   openBrowser: {
     path: '/Playwright/OpenBrowser',
     requestStream: false,
