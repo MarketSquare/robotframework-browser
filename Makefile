@@ -16,7 +16,7 @@ keyword-docs:
 	.venv/bin/python -m robot.libdoc Browser docs/Browser.html
 
 utest:
-	pytest
+	pytest utest
 
 atest:
 	PYTHONPATH=. robot --loglevel DEBUG --outputdir atest/output atest/test
