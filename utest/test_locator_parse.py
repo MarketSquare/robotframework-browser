@@ -1,6 +1,6 @@
 import pytest
 
-from Playwright.locators import LocatorParse
+from Browser.locators import LocatorParse
 
 
 @pytest.fixture

@@ -13,7 +13,7 @@ node-deps:
 dev-env: .venv node-deps
 
 keyword-docs:
-	.venv/bin/python -m robot.libdoc Playwright docs/Playwright.html
+	.venv/bin/python -m robot.libdoc Browser docs/Browser.html
 
 utest:
 	pytest
@@ -22,10 +22,11 @@ atest:
 	PYTHONPATH=. robot --loglevel DEBUG --outputdir atest/output atest/test
 
 lint-python:
-	black Playwright/ --exclude Playwright/generated
-	flake8 Playwright/
+	mypy Browser/
+	black Browser/ --exclude Browser/generated
+	flake8 Browser/
 
 build:
 	./generategrpc.sh
 	yarn build
-	cp package.json Playwright/wrapper
+	cp package.json Browser/wrapper

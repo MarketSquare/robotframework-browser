@@ -1,5 +1,5 @@
 *** Settings ***
-Library		Playwright
+Library		Browser
 
 Test Setup	Run Keywords	Open Browser	chrome	AND	GoTo	http://localhost:7272
 Test Teardown	Close Browser

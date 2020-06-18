@@ -1,5 +1,5 @@
-Playwright/wrapper/index.js
-Playwright/wrapper/package.json
+Browser/wrapper/index.js
+Browser/wrapper/package.json
 
 .idea
 .mypy_cache

@@ -2,7 +2,7 @@
 exclude =
    .git,
    __pycache__,
-   Playwright/generated,
+   Browser/generated,
    build,
    dist
 max-line-length = 100

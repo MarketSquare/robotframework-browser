@@ -2,7 +2,7 @@
 Sourced with small modifications from https://robotframework.org/#examples
 
 *** Settings ***
-Library		Playwright
+Library		Browser
 
 *** Variables ***
 ${SERVER}         localhost:7272

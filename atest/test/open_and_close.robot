@@ -1,5 +1,5 @@
 *** Settings *** 
-Library  Playwright
+Library  Browser
 
 *** Test Cases ***
 Open and Close a Chrome Browser

@@ -7,7 +7,7 @@ authors = ["Mikko Korpela <mikko.korpela@gmail.com>"]
 readme = "README.md"
 repository = "https://github.com/mkorpela/robotframework-playwright"
 packages = [
-    { include = "Playwright" }
+    { include = "Browser" }
 ]
 include = ["src/index.js", "src/generated/*"]
 classifiers = [

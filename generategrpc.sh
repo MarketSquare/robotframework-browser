@@ -1,11 +1,11 @@
 #!/bin/sh
 # Python code generation
-python -m grpc_tools.protoc -Iprotos --python_out=Playwright/generated --grpc_python_out=Playwright/generated protos/*.proto
+python -m grpc_tools.protoc -Iprotos --python_out=Browser/generated --grpc_python_out=Browser/generated protos/*.proto
 # hack to fix import, empty -i '' is needed for macos sed compatibility
-sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Playwright.generated import playwright_pb2 as playwright__pb2/g' Playwright/generated/playwright_pb2_grpc.py
-rm Playwright/generated/playwright_pb2_grpc.py.bak
+sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Browser.generated import playwright_pb2 as playwright__pb2/g' Browser/generated/playwright_pb2_grpc.py
+rm Browser/generated/playwright_pb2_grpc.py.bak
 
-PROTO_DEST=./Playwright/wrapper/generated
+PROTO_DEST=./Browser/wrapper/generated
 
 # JavaScript code generation
 yarn run grpc_tools_node_protoc \

@@ -1,4 +1,4 @@
-from Playwright import __version__
+from Browser import __version__
 
 
 def test_version():

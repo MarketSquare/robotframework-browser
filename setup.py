@@ -6,10 +6,10 @@ with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 packages = \
-    ['Playwright', 'Playwright.generated', 'Playwright.locators']
+    ['Browser', 'Browser.generated', 'Browser.locators']
 
 package_data = \
-    {'': ['*'], 'Playwright': ['wrapper/*', 'wrapper/generated/*']}
+    {'': ['*'], 'Browser': ['wrapper/*', 'wrapper/generated/*']}
 
 install_requires = \
     open("requirements.txt").readlines()
@@ -28,7 +28,7 @@ setup_kwargs = {
     'packages': packages,
     'package_data': package_data,
     'install_requires': install_requires,
-    'entry_points': {'console_scripts': ['rfbrowser=Playwright.entry:run']},
+    'entry_points': {'console_scripts': ['rfbrowser=Browser.entry:run']},
     'python_requires': '>=3.8,<4.0',
     'classifiers': [
         "Development Status :: 1 - Planning",

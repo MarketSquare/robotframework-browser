@@ -1,5 +1,5 @@
 *** Settings ***
-Library  Playwright
+Library  Browser
 
 Test Setup	Open Browser	chrome
 Test Teardown	Close Browser

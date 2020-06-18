@@ -12,25 +12,25 @@ import grpc  # type: ignore
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
-import Playwright.generated.playwright_pb2 as playwright_pb2
-from Playwright.generated.playwright_pb2 import Empty
-import Playwright.generated.playwright_pb2_grpc as playwright_pb2_grpc
+import Browser.generated.playwright_pb2 as playwright_pb2
+from Browser.generated.playwright_pb2 import Empty
+import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 
 from .util import find_free_port
 
 _SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
 
 
-class Playwright:
-    """Playwright library is a web testing library for Robot Framework.
+class Browser:
+    """Browser library is a web testing library for Robot Framework.
 
-    This documents explains how to use keywords provided by the Playwright
+    This documents explains how to use keywords provided by the Browser
     library. For information about installation, support, and more, please
     visit the
     [https://github.com/MarketSquare/robotframework-playwright|project pages].
     For more information about Robot Framework, see http://robotframework.org.
 
-    Playwright library uses
+    Browser library uses
     [https://github.com/microsoft/playwright|Playwright Node module]
     to automate [https://www.chromium.org/Home|Chromium],
     [https://www.mozilla.org/en-US/firefox/new/|Firefox]
@@ -42,14 +42,14 @@ class Playwright:
 
     = Locating elements =
 
-    All keywords in Playwright library that need to interact with an element
+    All keywords in Browser library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
     how to find the element.
 
     == Locator syntax ==
 
-    Playwright library supports same selector strategies as the underlying
-    Playwright Ndne module: xpath, css, id and text. The strategy can either
+    Browser library supports same selector strategies as the underlying
+    Playwright node module: xpath, css, id and text. The strategy can either
     be explicitly specified with a prefix or the strategy can be implicit.
 
     === Implicit selector strategy ===
@@ -78,12 +78,12 @@ class Playwright:
     | = Strategy = |     = Match based on =     |         = Example =            |
     | css          | CSS selector.              | ``css=div#example``            |
     | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
-    | text         | Playwright text engine.    | ``text=Login``                 |
+    | text         | Browser text engine.    | ``text=Login``                 |
     """
 
     ROBOT_LIBRARY_VERSION = __version__
     ROBOT_LISTENER_API_VERSION = 2
-    ROBOT_LIBRARY_LISTENER: "Playwright"
+    ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     port: Optional[str] = None
 
@@ -94,7 +94,7 @@ class Playwright:
     def _playwright_process(self) -> Popen:
         cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
         path_to_script = os.path.join(cwd_dir, "index.js")
-        logger.info(f"Starting Playwright process {path_to_script}")
+        logger.info(f"Starting Browser process {path_to_script}")
         logfile = open(
             os.path.join(
                 BuiltIn().get_variable_value("${OUTPUTDIR}"), "playwright-log.txt"

@@ -1,5 +1,5 @@
 *** Settings ***
-Library		Playwright
+Library		Browser
 Resource          resource.robot
 
 *** Test Cases ***
