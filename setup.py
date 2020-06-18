@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
 from setuptools import setup  # type: ignore
+
+with open('README.md', encoding='utf-8') as f:
+    long_description = f.read()
 
 packages = \
     ['Playwright', 'Playwright.generated', 'Playwright.locators']
@@ -8,12 +12,14 @@ package_data = \
     {'': ['*'], 'Playwright': ['wrapper/*', 'wrapper/generated/*']}
 
 install_requires = \
-    ['grpcio-tools>=1.29.0,<2.0.0', 'grpcio>=1.29.0,<2.0.0']
+    open("requirements.txt").readlines()
 
 setup_kwargs = {
     'name': 'robotframework-browser',
     'version': '0.0.1',
     'description': '',
+    'long_description': long_description,
+    'long_description_content_type': 'text/markdown',
     'author': 'Mikko Korpela',
     'author_email': 'mikko.korpela@gmail.com',
     'maintainer': None,
@@ -24,6 +30,15 @@ setup_kwargs = {
     'install_requires': install_requires,
     'entry_points': {'console_scripts': ['rfbrowser=Playwright.entry:run']},
     'python_requires': '>=3.8,<4.0',
+    'classifiers': [
+        "Development Status :: 1 - Planning",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Topic :: Software Development :: Testing",
+        "Framework :: Robot Framework",
+        "Framework :: Robot Framework :: Library"
+    ]
 }
 
 
