@@ -80,6 +80,7 @@ class Playwright:
     | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
     | text         | Playwright text engine.    | ``text=Login``                 |
     """
+
     ROBOT_LIBRARY_VERSION = __version__
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Playwright"
@@ -94,7 +95,12 @@ class Playwright:
         cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
         path_to_script = os.path.join(cwd_dir, "index.js")
         logger.info(f"Starting Playwright process {path_to_script}")
-        logfile = open(os.path.join(BuiltIn().get_variable_value("${OUTPUTDIR}"), "playwright-log.txt"), "w")
+        logfile = open(
+            os.path.join(
+                BuiltIn().get_variable_value("${OUTPUTDIR}"), "playwright-log.txt"
+            ),
+            "w",
+        )
         self.port = str(find_free_port())
         popen = Popen(
             ["node", path_to_script],
@@ -201,8 +207,8 @@ class Playwright:
                 )
 
     def textfield_value_should_be(self, selector: str, expected: str):
-         """Verifies text field ``selector`` has exactly text ``expected``. """
-         with self._insecure_stub() as stub:
+        """Verifies text field ``selector`` has exactly text ``expected``. """
+        with self._insecure_stub() as stub:
             response = stub.GetInputValue(
                 playwright_pb2.selectorRequest(selector=selector)
             )
