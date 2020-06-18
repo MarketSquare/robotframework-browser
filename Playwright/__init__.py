@@ -1,7 +1,7 @@
 __version__ = "0.1.0"
 
 import os
-from subprocess import Popen, PIPE
+from subprocess import Popen, STDOUT
 from functools import cached_property
 import time
 from typing import Optional
@@ -96,12 +96,12 @@ class Playwright:
         logfile = open(os.path.join(self.ROBOT_OUTPUT_DIR, "playwright-log.txt"), "w")
         self.port = str(find_free_port())
         popen = Popen(
-            f"node '{path_to_script}'",
-            shell=True,
+            ["node", path_to_script],
+            shell=False,
             cwd=cwd_dir,
-            env={"PORT": self.port},
+            env={"PORT": self.port, "PATH": os.environ["PATH"]},
             stdout=logfile,
-            stderr=PIPE,
+            stderr=STDOUT,
         )
         for i in range(50):
             with grpc.insecure_channel(f"localhost:{self.port}") as channel:
