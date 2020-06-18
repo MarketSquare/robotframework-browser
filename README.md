@@ -19,8 +19,8 @@ Official post about this [venture](https://forum.robotframework.org/t/moving-rob
 # Installation instructions for users
 
 1. Install node.js e.g. from https://nodejs.org/en/download/
-2. Install robotframework-playwright from the commandline: `pip install robotframework-playwright`
-3. Install the node dependencies needed to run Playwright from the commandline: `robotframework-playwright init`
+2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
+3. Install the node dependencies needed to run Playwright from the commandline: `rfbrowser init`
 
 # Development
 
