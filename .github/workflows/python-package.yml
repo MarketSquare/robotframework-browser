@@ -50,7 +50,7 @@ jobs:
         pytest
     - name: Run Robot Framework tests
       run: |
-        ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output atest/test
+        ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output --pythonpath . atest/test
     - uses: actions/upload-artifact@v1
       if: success() || failure()
       with:
