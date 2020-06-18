@@ -103,9 +103,20 @@ class Playwright:
             stdout=logfile,
             stderr=PIPE,
         )
-        # FIXME: replace with status endpoint polling
-        time.sleep(1.5)
-        return popen
+        for i in range(50):
+            with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+                try:
+                    stub = playwright_pb2_grpc.PlaywrightStub(channel)
+                    response = stub.Health(Empty())
+                    logger.info(
+                        f"Connected to the playwright process at port ${self.port}: ${response}"
+                    )
+                    return popen
+                except grpc.RpcError:
+                    time.sleep(0.1)
+        raise RuntimeError(
+            f"Could not connect to the playwright process at port ${self.port}"
+        )
 
     def _close(self):
         logger.debug("Closing Playwright process")
