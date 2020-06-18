@@ -43,43 +43,44 @@ class Playwright:
     = Locating elements =
 
     All keywords in Playwright library that need to interact with an element
-    on a web page take an argument typically named ``locator`` that specifies
+    on a web page take an argument typically named ``selector`` that specifies
     how to find the element.
 
     == Locator syntax ==
 
-    Playwright library supports same locator strategies as the underlying
-    Playwright None module: xpath, css, id and text. The strategy can either
+    Playwright library supports same selector strategies as the underlying
+    Playwright Ndne module: xpath, css, id and text. The strategy can either
     be explicitly specified with a prefix or the strategy can be implicit.
 
-    === Implicit locator strategy ===
+    === Implicit selector strategy ===
+    == !!! THIS ISN'T IMPLEMENTED YET !!! ==
 
-    The default locator strategy is `css`. If locator does not contain
-    one of the know locator strategies, `css`, `xpath`, `id` or `text` it is
-    assumed to contain css locator. Also `locators` starting with `//` is
-    considered as xpath locators.
+    The default selector strategy is `css`. If selector does not contain
+    one of the know selector strategies, `css`, `xpath`, `id` or `text` it is
+    assumed to contain css selector. Also `selectors` starting with `//`
+    considered as xpath selectors.
 
     Examples:
 
-    | `Click` | span > button | # Use css locator strategy the element.   |
-    | `Click` | //span/button | # Use xpath locator strategy the element. |
+    | `Click` | span > button | # Use css selector strategy the element.   |
+    | `Click` | //span/button | # Use xpath selector strategy the element. |
 
-    === Explicit locator strategy ===
+    === Explicit selector strategy ===
 
-    The explicit locator strategy is specified with a prefix using syntax
-    ``strategy:value``. Spaces around the separator are ignored, so
-    ``css:foo``, ``css: foo`` and ``css : foo`` are all equivalent.
+    The explicit selector strategy is specified with a prefix using syntax
+    ``strategy=value``. Spaces around the separator are ignored, so
+    ``css=foo``, ``css= foo`` and ``css = foo`` are all equivalent.
 
-    Locator strategies that are supported by default are listed in the table
+
+    Selector strategies that are supported by default are listed in the table
     below.
 
     | = Strategy = |     = Match based on =     |         = Example =            |
-    | css          | CSS selector.              | ``css:div#example``            |
-    | xpath        | XPath expression.          | ``xpath://div[@id="example"]`` |
-    | text         | Playwright text engine.    | ``text:Login``                 |
-    | id           | Converted to CSS selector. | ``id:example``                 |
+    | css          | CSS selector.              | ``css=div#example``            |
+    | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
+    | text         | Playwright text engine.    | ``text=Login``                 |
     """
-
+    ROBOT_LIBRARY_VERSION = __version__
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Playwright"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
@@ -87,14 +88,13 @@ class Playwright:
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
-        self.ROBOT_OUTPUT_DIR = BuiltIn().get_variable_value("${OUTPUTDIR}")
 
     @cached_property
     def _playwright_process(self) -> Popen:
         cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
         path_to_script = os.path.join(cwd_dir, "index.js")
         logger.info(f"Starting Playwright process {path_to_script}")
-        logfile = open(os.path.join(self.ROBOT_OUTPUT_DIR, "playwright-log.txt"), "w")
+        logfile = open(os.path.join(BuiltIn().get_variable_value("${OUTPUTDIR}"), "playwright-log.txt"), "w")
         self.port = str(find_free_port())
         popen = Popen(
             ["node", path_to_script],
@@ -127,7 +127,7 @@ class Playwright:
     # Yields a PlayWrightstub on a newly initialized channel and
     # closes channel after control returns
     @contextlib.contextmanager
-    def insecure_stub(self):
+    def _insecure_stub(self):
         returncode = self._playwright_process.poll()
         if returncode is not None:
             raise ConnectionError(
@@ -155,7 +155,7 @@ class Playwright:
                 f"{browser} is not supported, "
                 f'it should be one of: {", ".join(_SUPPORTED_BROWSERS)}'
             )
-        with self.insecure_stub() as stub:
+        with self._insecure_stub() as stub:
             response = stub.OpenBrowser(
                 playwright_pb2.openBrowserRequest(url=url or "", browser=browser_)
             )
@@ -163,20 +163,20 @@ class Playwright:
 
     def close_browser(self):
         """Closes the current browser."""
-        with self.insecure_stub() as stub:
+        with self._insecure_stub() as stub:
             response = stub.CloseBrowser(Empty())
             logger.info(response.log)
 
     def go_to(self, url: str):
         """Navigates the current browser tab to the provided ``url``."""
-        with self.insecure_stub() as stub:
+        with self._insecure_stub() as stub:
             response = stub.GoTo(playwright_pb2.goToRequest(url=url))
             logger.info(response.log)
 
     # Input keywords
     def input_text(self, selector: str, text: str):
         """ Types the given ``text`` into the text field identified by ``selector`` """
-        with self.insecure_stub() as stub:
+        with self._insecure_stub() as stub:
             response = stub.InputText(
                 playwright_pb2.inputTextRequest(input=text, selector=selector)
             )
@@ -184,7 +184,7 @@ class Playwright:
 
     def click_button(self, selector: str):
         """ Clicks the button identified by ``selector``. """
-        with self.insecure_stub() as stub:
+        with self._insecure_stub() as stub:
             response = stub.ClickButton(
                 playwright_pb2.selectorRequest(selector=selector)
             )
@@ -193,7 +193,7 @@ class Playwright:
     # Validation keywords
     def location_should_be(self, url: str):
         """ Verifies that the current URL is exactly ``url``. """
-        with self.insecure_stub() as stub:
+        with self._insecure_stub() as stub:
             page_url = stub.GetUrl(Empty()).body
             if url != page_url:
                 raise AssertionError(
@@ -202,7 +202,7 @@ class Playwright:
 
     def textfield_value_should_be(self, selector: str, expected: str):
          """Verifies text field ``selector`` has exactly text ``expected``. """
-        with self.insecure_stub() as stub:
+         with self._insecure_stub() as stub:
             response = stub.GetInputValue(
                 playwright_pb2.selectorRequest(selector=selector)
             )
@@ -216,7 +216,7 @@ class Playwright:
 
     def title_should_be(self, title: str):
         """ Verifies that the current page title equals ``title`` """
-        with self.insecure_stub() as stub:
+        with self._insecure_stub() as stub:
             response = stub.GetTitle(Empty())
             logger.info(response.log)
             if response.body != title:
@@ -226,7 +226,7 @@ class Playwright:
 
     def page_should_contain(self, text: str):
         """Verifies that current page contains ``text``. """
-        with self.insecure_stub() as stub:
+        with self._insecure_stub() as stub:
             response = stub.GetTextContent(
                 playwright_pb2.selectorRequest(selector="text=" + text)
             )

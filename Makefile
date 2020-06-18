@@ -12,6 +12,9 @@ node-deps:
 
 dev-env: .venv node-deps
 
+keyword-docs:
+	.venv/bin/python -m robot.libdoc Playwright docs/Playwright.html
+
 utest:
 	pytest
 
