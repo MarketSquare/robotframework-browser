@@ -58,6 +58,11 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
+        self.Health = channel.unary_unary(
+                '/Playwright/Health',
+                request_serializer=playwright__pb2.Empty.SerializeToString,
+                response_deserializer=playwright__pb2.Response.String.FromString,
+                )
 
 
 class PlaywrightServicer(object):
@@ -124,6 +129,13 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Health(self, request, context):
+        """Health check endpoint for the service 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -171,6 +183,11 @@ def add_PlaywrightServicer_to_server(servicer, server):
                     servicer.ClickButton,
                     request_deserializer=playwright__pb2.selectorRequest.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'Health': grpc.unary_unary_rpc_method_handler(
+                    servicer.Health,
+                    request_deserializer=playwright__pb2.Empty.FromString,
+                    response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -323,5 +340,21 @@ class Playwright(object):
         return grpc.experimental.unary_unary(request, target, '/Playwright/ClickButton',
             playwright__pb2.selectorRequest.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Health(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/Health',
+            playwright__pb2.Empty.SerializeToString,
+            playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

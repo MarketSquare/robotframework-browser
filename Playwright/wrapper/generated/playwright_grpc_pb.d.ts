@@ -17,6 +17,7 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     getTextContent: IPlaywrightService_IGetTextContent;
     getUrl: IPlaywrightService_IGetUrl;
     clickButton: IPlaywrightService_IClickButton;
+    health: IPlaywrightService_IHealth;
 }
 
 interface IPlaywrightService_IOpenBrowser extends grpc.MethodDefinition<playwright_pb.openBrowserRequest, playwright_pb.Response.Empty> {
@@ -100,6 +101,15 @@ interface IPlaywrightService_IClickButton extends grpc.MethodDefinition<playwrig
     responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
 }
+interface IPlaywrightService_IHealth extends grpc.MethodDefinition<playwright_pb.Empty, playwright_pb.Response.String> {
+    path: string; // "/.Playwright/Health"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.Empty>;
+    requestDeserialize: grpc.deserialize<playwright_pb.Empty>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.String>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.String>;
+}
 
 export const PlaywrightService: IPlaywrightService;
 
@@ -113,6 +123,7 @@ export interface IPlaywrightServer {
     getTextContent: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.String>;
     getUrl: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
     clickButton: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
+    health: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
 }
 
 export interface IPlaywrightClient {
@@ -143,6 +154,9 @@ export interface IPlaywrightClient {
     clickButton(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     clickButton(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     clickButton(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    health(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    health(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    health(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
 }
 
 export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
@@ -174,4 +188,7 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public clickButton(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public clickButton(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public clickButton(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public health(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    public health(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    public health(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
 }

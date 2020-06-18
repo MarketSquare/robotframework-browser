@@ -47,4 +47,6 @@ service  Playwright {
   rpc GetUrl(Empty) returns (Response.String) {}
   /* Clicks button specified by selector */ 
   rpc ClickButton(selectorRequest) returns (Response.Empty) {}
+  /* Health check endpoint for the service */
+  rpc Health(Empty) returns (Response.String) {}
 }

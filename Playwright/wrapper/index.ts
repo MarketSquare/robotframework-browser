@@ -153,6 +153,12 @@ class PlaywrightServer implements IPlaywrightServer {
         const response = emptyWithLog("Clicked button: " + selector)
         callback(null, response)
     }
+
+    async health(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+        const response = new Response.String()
+        response.setBody("OK")
+        callback(null, response)
+    }
 }
 
 const server = new Server();

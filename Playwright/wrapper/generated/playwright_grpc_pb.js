@@ -189,6 +189,18 @@ clickButton: {
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
+  // Health check endpoint for the service 
+health: {
+    path: '/Playwright/Health',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Empty,
+    responseType: playwright_pb.Response.String,
+    requestSerialize: serialize_Empty,
+    requestDeserialize: deserialize_Empty,
+    responseSerialize: serialize_Response_String,
+    responseDeserialize: deserialize_Response_String,
+  },
 };
 
 exports.PlaywrightClient = grpc.makeGenericClientConstructor(PlaywrightService);
