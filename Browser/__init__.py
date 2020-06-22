@@ -11,15 +11,13 @@ import grpc  # type: ignore
 
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
-from robotlibcore import DynamicCore, keyword #type: ignore
+from robotlibcore import DynamicCore  # type: ignore
 
-import Browser.generated.playwright_pb2 as playwright_pb2
 from Browser.generated.playwright_pb2 import Empty
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 
+from .keywords import Validation, Control, Input
 from .util import find_free_port
-
-_SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
 
 
 class Browser(DynamicCore):
@@ -87,10 +85,15 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     port: Optional[str] = None
+    _SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
-        libraries = []
+        libraries = [
+            Validation(self._insecure_stub),
+            Control(self._insecure_stub, self._SUPPORTED_BROWSERS),
+            Input(self._insecure_stub),
+        ]
         DynamicCore.__init__(self, libraries)
 
     @cached_property
@@ -133,21 +136,8 @@ class Browser(DynamicCore):
         self._playwright_process.kill()
         logger.debug("Playwright process killed")
 
-    """ Sends screenshot message through the stub and then raises an AssertionError with message
-        Only works during testing since this uses robot's outputdir for output
-    """
+        # Yields a PlayWrightstub on a newly initialized channel and
 
-    def _test_error(self, message: str, stub: playwright_pb2_grpc.PlaywrightStub):
-        path = os.path.join(
-            BuiltIn().get_variable_value("${OUTPUTDIR}"),
-            BuiltIn().get_variable_value("${TEST NAME}") + "_FAILURE_SCREENSHOT",
-        )
-
-        response = stub.Screenshot(playwright_pb2.screenshotRequest(path=path))
-        print(response)
-        raise AssertionError(message)
-
-    # Yields a PlayWrightstub on a newly initialized channel and
     # closes channel after control returns
     @contextlib.contextmanager
     def _insecure_stub(self):
@@ -160,108 +150,20 @@ class Browser(DynamicCore):
         yield playwright_pb2_grpc.PlaywrightStub(channel)
         channel.close()
 
-    # Control keywords
-    @keyword
-    def open_browser(self, browser="Chrome", url=None):
-        """Opens a new browser instance to the optional ``url``.
-        The ``browser`` argument specifies which browser to use. The
-        supported browsers are listed in the table below. The browser names
-        are case-insensitive and some browsers have multiple supported names.
-        |    = Browser =    |        = Name(s) =        |
-        | Firefox           | firefox                   |
-        | Google Chrome     | chrome                    |
-        | WebKit            | webkit                    |
+    def run_keyword(self, name, args, kwargs):
+        try:
+            return DynamicCore.run_keyword(self, name, args, kwargs)
+        except Exception:
+            self._test_error()
+            raise
 
-        """
-        browser_ = browser.lower().strip()
-        if browser_ not in _SUPPORTED_BROWSERS:
-            raise ValueError(
-                f"{browser} is not supported, "
-                f'it should be one of: {", ".join(_SUPPORTED_BROWSERS)}'
-            )
-        with self._insecure_stub() as stub:
-            response = stub.OpenBrowser(
-                playwright_pb2.openBrowserRequest(url=url or "", browser=browser_)
-            )
-            logger.info(response.log)
+    """ Sends screenshot message through the stub and then raises an AssertionError with message
+        Only works during testing since this uses robot's outputdir for output
+    """
 
-    @keyword
-    def close_browser(self):
-        """Closes the current browser."""
-        with self._insecure_stub() as stub:
-            response = stub.CloseBrowser(Empty())
-            logger.info(response.log)
-
-    @keyword
-    def go_to(self, url: str):
-        """Navigates the current browser tab to the provided ``url``."""
-        with self._insecure_stub() as stub:
-            response = stub.GoTo(playwright_pb2.goToRequest(url=url))
-            logger.info(response.log)
-
-    # Input keywords
-    @keyword
-    def input_text(self, selector: str, text: str):
-        """ Types the given ``text`` into the text field identified by ``selector`` """
-        with self._insecure_stub() as stub:
-            response = stub.InputText(
-                playwright_pb2.inputTextRequest(input=text, selector=selector)
-            )
-            logger.info(response.log)
-
-    @keyword
-    def click_button(self, selector: str):
-        """ Clicks the button identified by ``selector``. """
-        with self._insecure_stub() as stub:
-            response = stub.ClickButton(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
-            logger.info(response.log)
-
-    # Validation keywords
-    @keyword
-    def location_should_be(self, url: str):
-        """ Verifies that the current URL is exactly ``url``. """
-        with self._insecure_stub() as stub:
-            page_url = stub.GetUrl(Empty()).body
-            if url != page_url:
-                self._test_error(
-                    "URL should be `{}`  but was `{}`".format(url, page_url), stub
-                )
-
-    @keyword
-    def textfield_value_should_be(self, selector: str, expected: str):
-        """Verifies text field ``selector`` has exactly text ``expected``. """
-        with self._insecure_stub() as stub:
-            response = stub.GetInputValue(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
-            logger.info(response.log)
-            if response.body != expected:
-                self._test_error(
-                    "Textfield {} content should be {} but was `{}`".format(
-                        selector, expected, response.body
-                    ),
-                    stub,
-                )
-
-    @keyword
-    def title_should_be(self, title: str):
-        """ Verifies that the current page title equals ``title`` """
-        with self._insecure_stub() as stub:
-            response = stub.GetTitle(Empty())
-            logger.info(response.log)
-            if response.body != title:
-                self._test_error(
-                    "Title should be {} but was `{}`".format(title, response.body), stub
-                )
-    @keyword
-    def page_should_contain(self, text: str):
-        """Verifies that current page contains ``text``. """
-        with self._insecure_stub() as stub:
-            response = stub.GetTextContent(
-                playwright_pb2.selectorRequest(selector="text=" + text)
-            )
-            logger.info(response.log)
-            if response.body != text:
-                self._test_error("No element with text `{}` on page".format(text), stub)
+    def _test_error(self):
+        path = os.path.join(
+            BuiltIn().get_variable_value("${OUTPUTDIR}"),
+            BuiltIn().get_variable_value("${TEST NAME}") + "_FAILURE_SCREENSHOT",
+        )
+        BuiltIn.run_keyword("Take Page Screenshot", path)
