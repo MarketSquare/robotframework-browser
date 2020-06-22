@@ -1,4 +1,4 @@
-from typing import Callable, ContextManager, List
+from typing import Callable, ContextManager, List, Optional
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -13,9 +13,11 @@ class Control:
         self,
         insecure_stub: Callable[[], ContextManager[PlaywrightStub]],
         supported_browsers: List[str],
+        get_screenshot_path: Callable[[], str]
     ):
         self._insecure_stub = insecure_stub
         self.supported_browsers = supported_browsers
+        self.get_screenshot_path = get_screenshot_path
 
     @keyword
     def open_browser(self, browser="Chrome", url=None):
@@ -56,7 +58,9 @@ class Control:
             logger.info(response.log)
 
     @keyword
-    def take_page_screenshot(self, path: str):
+    def take_page_screenshot(self, path: Optional[str] = None):
+        if path is None:
+            path = self.get_screenshot_path()
         with self._insecure_stub() as stub:
             response = stub.Screenshot(playwright_pb2.screenshotRequest(path=path))
             logger.info(response.log)
