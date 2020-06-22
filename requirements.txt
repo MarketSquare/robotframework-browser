@@ -1,3 +1,4 @@
 grpcio >=1.29.0,<2.0.0
 grpcio-tools >=1.29.0,<2.0.0
 robotframework >3.2
+robotframework-pythonlibcore >=2.0.2

@@ -11,6 +11,7 @@ import grpc  # type: ignore
 
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robotlibcore import DynamicCore, keyword #type: ignore
 
 import Browser.generated.playwright_pb2 as playwright_pb2
 from Browser.generated.playwright_pb2 import Empty
@@ -21,7 +22,7 @@ from .util import find_free_port
 _SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
 
 
-class Browser:
+class Browser(DynamicCore):
     """Browser library is a web testing library for Robot Framework.
 
     This documents explains how to use keywords provided by the Browser
@@ -89,6 +90,8 @@ class Browser:
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
+        libraries = []
+        DynamicCore.__init__(self, libraries)
 
     @cached_property
     def _playwright_process(self) -> Popen:
@@ -158,6 +161,7 @@ class Browser:
         channel.close()
 
     # Control keywords
+    @keyword
     def open_browser(self, browser="Chrome", url=None):
         """Opens a new browser instance to the optional ``url``.
         The ``browser`` argument specifies which browser to use. The
@@ -181,12 +185,14 @@ class Browser:
             )
             logger.info(response.log)
 
+    @keyword
     def close_browser(self):
         """Closes the current browser."""
         with self._insecure_stub() as stub:
             response = stub.CloseBrowser(Empty())
             logger.info(response.log)
 
+    @keyword
     def go_to(self, url: str):
         """Navigates the current browser tab to the provided ``url``."""
         with self._insecure_stub() as stub:
@@ -194,6 +200,7 @@ class Browser:
             logger.info(response.log)
 
     # Input keywords
+    @keyword
     def input_text(self, selector: str, text: str):
         """ Types the given ``text`` into the text field identified by ``selector`` """
         with self._insecure_stub() as stub:
@@ -202,6 +209,7 @@ class Browser:
             )
             logger.info(response.log)
 
+    @keyword
     def click_button(self, selector: str):
         """ Clicks the button identified by ``selector``. """
         with self._insecure_stub() as stub:
@@ -211,6 +219,7 @@ class Browser:
             logger.info(response.log)
 
     # Validation keywords
+    @keyword
     def location_should_be(self, url: str):
         """ Verifies that the current URL is exactly ``url``. """
         with self._insecure_stub() as stub:
@@ -220,6 +229,7 @@ class Browser:
                     "URL should be `{}`  but was `{}`".format(url, page_url), stub
                 )
 
+    @keyword
     def textfield_value_should_be(self, selector: str, expected: str):
         """Verifies text field ``selector`` has exactly text ``expected``. """
         with self._insecure_stub() as stub:
@@ -235,6 +245,7 @@ class Browser:
                     stub,
                 )
 
+    @keyword
     def title_should_be(self, title: str):
         """ Verifies that the current page title equals ``title`` """
         with self._insecure_stub() as stub:
@@ -244,7 +255,7 @@ class Browser:
                 self._test_error(
                     "Title should be {} but was `{}`".format(title, response.body), stub
                 )
-
+    @keyword
     def page_should_contain(self, text: str):
         """Verifies that current page contains ``text``. """
         with self._insecure_stub() as stub:
