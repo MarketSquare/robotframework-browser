@@ -48,6 +48,13 @@ There are both unit tests written with pytest and acceptance test written with
 Robot Framework. These can be run manually with `make utest` and `make atest`.
 The tests are also executed in a prepush hook.
 
+## Releasing
+1. Ensure generated code and types are up to date with `make build`
+2. Ensure tests and linting pass on CI
+3. Check that you have permissions to release on Github and PyPi
+4. Use `make release` to create and release artifacts and upload to PyPi
+5. Create Github release
+
 ## Code style
 Python code style is enforced with flake8 and black. These are executed in a
 precommit hook, but can also be invoked manually with `make lint-python`.
