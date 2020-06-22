@@ -115,6 +115,31 @@ export namespace inputTextRequest {
     }
 }
 
+export class getDomPropertyRequest extends jspb.Message { 
+    getProperty(): string;
+    setProperty(value: string): getDomPropertyRequest;
+
+    getSelector(): string;
+    setSelector(value: string): getDomPropertyRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): getDomPropertyRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: getDomPropertyRequest): getDomPropertyRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: getDomPropertyRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): getDomPropertyRequest;
+    static deserializeBinaryFromReader(message: getDomPropertyRequest, reader: jspb.BinaryReader): getDomPropertyRequest;
+}
+
+export namespace getDomPropertyRequest {
+    export type AsObject = {
+        property: string,
+        selector: string,
+    }
+}
+
 export class selectorRequest extends jspb.Message { 
     getSelector(): string;
     setSelector(value: string): selectorRequest;

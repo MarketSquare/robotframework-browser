@@ -43,9 +43,9 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.inputTextRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
-        self.GetInputValue = channel.unary_unary(
-                '/Playwright/GetInputValue',
-                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+        self.GetDomProperty = channel.unary_unary(
+                '/Playwright/GetDomProperty',
+                request_serializer=playwright__pb2.getDomPropertyRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
         self.GetTextContent = channel.unary_unary(
@@ -60,6 +60,16 @@ class PlaywrightStub(object):
                 )
         self.ClickButton = channel.unary_unary(
                 '/Playwright/ClickButton',
+                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.CheckCheckbox = channel.unary_unary(
+                '/Playwright/CheckCheckbox',
+                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.UncheckCheckbox = channel.unary_unary(
+                '/Playwright/UncheckCheckbox',
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
@@ -112,8 +122,8 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetInputValue(self, request, context):
-        """Gets the DOM property 'value' of selector specified element 
+    def GetDomProperty(self, request, context):
+        """Gets the DOM property 'property' of selector specified element 
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -135,6 +145,20 @@ class PlaywrightServicer(object):
 
     def ClickButton(self, request, context):
         """Clicks button specified by selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CheckCheckbox(self, request, context):
+        """Checks checkbox specified by selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UncheckCheckbox(self, request, context):
+        """Unchecks checkbox specified by selector 
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -180,9 +204,9 @@ def add_PlaywrightServicer_to_server(servicer, server):
                     request_deserializer=playwright__pb2.inputTextRequest.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
-            'GetInputValue': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetInputValue,
-                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+            'GetDomProperty': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetDomProperty,
+                    request_deserializer=playwright__pb2.getDomPropertyRequest.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
             'GetTextContent': grpc.unary_unary_rpc_method_handler(
@@ -197,6 +221,16 @@ def add_PlaywrightServicer_to_server(servicer, server):
             ),
             'ClickButton': grpc.unary_unary_rpc_method_handler(
                     servicer.ClickButton,
+                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'CheckCheckbox': grpc.unary_unary_rpc_method_handler(
+                    servicer.CheckCheckbox,
+                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'UncheckCheckbox': grpc.unary_unary_rpc_method_handler(
+                    servicer.UncheckCheckbox,
                     request_deserializer=playwright__pb2.selectorRequest.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
@@ -312,7 +346,7 @@ class Playwright(object):
             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetInputValue(request,
+    def GetDomProperty(request,
             target,
             options=(),
             channel_credentials=None,
@@ -321,8 +355,8 @@ class Playwright(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Playwright/GetInputValue',
-            playwright__pb2.selectorRequest.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GetDomProperty',
+            playwright__pb2.getDomPropertyRequest.SerializeToString,
             playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -370,6 +404,38 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/ClickButton',
+            playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def CheckCheckbox(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/CheckCheckbox',
+            playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UncheckCheckbox(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/UncheckCheckbox',
             playwright__pb2.selectorRequest.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,

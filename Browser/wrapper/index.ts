@@ -1,7 +1,7 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 import {sendUnaryData, ServerUnaryCall, Server, ServerCredentials} from "grpc";
-import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest, screenshotRequest } from "./generated/playwright_pb";
+import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest, screenshotRequest, getDomPropertyRequest} from "./generated/playwright_pb";
 
 // This is necessary for improved typescript inference
 /* 
@@ -122,14 +122,15 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response)
     }
 
-    async getInputValue(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getDomProperty(call: ServerUnaryCall<getDomPropertyRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
         exists(this.browserState, callback, "Tried to get input value, no open browser")
         const selector = call.request.getSelector()
+        const property = call.request.getProperty()
         const element = await this.browserState.page.$(selector)
         exists(element, callback, "Couldn't find element: " + selector)
         // TODO: if this is done elsewhere write a helper function with error logging
-        const property = await element.getProperty("value")
-        const content = await property.jsonValue()
+        const result = await element.getProperty(property)
+        const content = await result.jsonValue()
         const response = new Response.String()
         response.setBody(content)
         callback(null, response)
@@ -151,6 +152,21 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector()
         await this.browserState.page.click(selector)
         const response = emptyWithLog("Clicked button: " + selector)
+        callback(null, response)
+    }
+
+    async checkCheckbox(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, "Tried to check checkbox, no open browser")
+        const selector = call.request.getSelector()
+        await this.browserState.page.check(selector)
+        const response = emptyWithLog("Checked checkbox: " + selector)
+        callback(null, response)
+    } 
+    async uncheckCheckbox(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, "Tried to uncheck checkbox, no open browser")
+        const selector = call.request.getSelector()
+        await this.browserState.page.uncheck(selector)
+        const response = emptyWithLog("Unhecked checkbox: " + selector)
         callback(null, response)
     }
 

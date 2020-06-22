@@ -20,6 +20,11 @@ message inputTextRequest {
   string selector = 2;
 }
 
+message getDomPropertyRequest {
+  string property = 1;
+  string selector = 2;
+}
+
 message selectorRequest {
   string selector = 1;
 }
@@ -44,14 +49,18 @@ service  Playwright {
   rpc GetTitle(Empty) returns (Response.String) {}
   /* Wraps playwrights page.fill to input text into input specified with selector */ 
   rpc InputText(inputTextRequest) returns (Response.Empty) {}
-  /* Gets the DOM property 'value' of selector specified element */
-  rpc GetInputValue(selectorRequest) returns (Response.String) {}
+  /* Gets the DOM property 'property' of selector specified element */
+  rpc GetDomProperty(getDomPropertyRequest) returns (Response.String) {}
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
   rpc GetTextContent(selectorRequest) returns (Response.String) {}
   /* *Returns current playwright page url*/
   rpc GetUrl(Empty) returns (Response.String) {}
   /* Clicks button specified by selector */ 
   rpc ClickButton(selectorRequest) returns (Response.Empty) {}
+  /* Checks checkbox specified by selector */
+  rpc CheckCheckbox(selectorRequest) returns (Response.Empty) {}
+  /* Unchecks checkbox specified by selector */
+  rpc UncheckCheckbox(selectorRequest) returns (Response.Empty) {}
   /* Health check endpoint for the service */
   rpc Health(Empty) returns (Response.String) {}
 }

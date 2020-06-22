@@ -37,6 +37,17 @@ function deserialize_Response_String(buffer_arg) {
   return playwright_pb.Response.String.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_getDomPropertyRequest(arg) {
+  if (!(arg instanceof playwright_pb.getDomPropertyRequest)) {
+    throw new Error('Expected argument of type getDomPropertyRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_getDomPropertyRequest(buffer_arg) {
+  return playwright_pb.getDomPropertyRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_goToRequest(arg) {
   if (!(arg instanceof playwright_pb.goToRequest)) {
     throw new Error('Expected argument of type goToRequest');
@@ -163,15 +174,15 @@ inputText: {
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
-  // Gets the DOM property 'value' of selector specified element 
-getInputValue: {
-    path: '/Playwright/GetInputValue',
+  // Gets the DOM property 'property' of selector specified element 
+getDomProperty: {
+    path: '/Playwright/GetDomProperty',
     requestStream: false,
     responseStream: false,
-    requestType: playwright_pb.selectorRequest,
+    requestType: playwright_pb.getDomPropertyRequest,
     responseType: playwright_pb.Response.String,
-    requestSerialize: serialize_selectorRequest,
-    requestDeserialize: deserialize_selectorRequest,
+    requestSerialize: serialize_getDomPropertyRequest,
+    requestDeserialize: deserialize_getDomPropertyRequest,
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
   },
@@ -202,6 +213,30 @@ getUrl: {
   // Clicks button specified by selector 
 clickButton: {
     path: '/Playwright/ClickButton',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.selectorRequest,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_selectorRequest,
+    requestDeserialize: deserialize_selectorRequest,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Checks checkbox specified by selector 
+checkCheckbox: {
+    path: '/Playwright/CheckCheckbox',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.selectorRequest,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_selectorRequest,
+    requestDeserialize: deserialize_selectorRequest,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Unchecks checkbox specified by selector 
+uncheckCheckbox: {
+    path: '/Playwright/UncheckCheckbox',
     requestStream: false,
     responseStream: false,
     requestType: playwright_pb.selectorRequest,
