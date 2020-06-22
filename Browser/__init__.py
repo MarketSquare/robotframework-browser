@@ -90,12 +90,13 @@ class Browser(DynamicCore):
     def _GET_SCREENSHOT_PATH(self):
         BuiltIn().get_variable_value("${OUTPUTDIR}")
 
-
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
         libraries = [
             Validation(self._insecure_stub),
-            Control(self._insecure_stub, self._SUPPORTED_BROWSERS, self._GET_SCREENSHOT_PATH),
+            Control(
+                self._insecure_stub, self._SUPPORTED_BROWSERS, self._GET_SCREENSHOT_PATH
+            ),
             Input(self._insecure_stub),
         ]
         DynamicCore.__init__(self, libraries)
@@ -140,10 +141,10 @@ class Browser(DynamicCore):
         self._playwright_process.kill()
         logger.debug("Playwright process killed")
 
-
     """ Yields a PlayWrightstub on a newly initialized channel and
         closes channel after control returns
     """
+
     @contextlib.contextmanager
     def _insecure_stub(self):
         returncode = self._playwright_process.poll()
@@ -175,4 +176,6 @@ class Browser(DynamicCore):
             )
             BuiltIn().run_keyword(on_failure, path)
         except Exception as err:
-            logger.error("Keyword '{}' could not be run on failure: {}".format(on_failure, err))
+            logger.error(
+                "Keyword '{}' could not be run on failure: {}".format(on_failure, err)
+            )

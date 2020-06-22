@@ -13,7 +13,7 @@ class Control:
         self,
         insecure_stub: Callable[[], ContextManager[PlaywrightStub]],
         supported_browsers: List[str],
-        get_screenshot_path: Callable[[], str]
+        get_screenshot_path: Callable[[], str],
     ):
         self._insecure_stub = insecure_stub
         self.supported_browsers = supported_browsers
