@@ -17,3 +17,5 @@ playwright-log.txt
 node_modules/
 dist
 build
+tmp
+.vscode
