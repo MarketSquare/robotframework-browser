@@ -156,6 +156,25 @@ class PlaywrightServer implements IPlaywrightServer {
         response.setBody(content || false)
         callback(null, response)
     }
+
+    async getSelectContent(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.Select>): Promise<void> {
+        exists(this.browserState, callback, "Tried to get Select element contents, no open browser")
+        const selector = call.request.getSelector()
+
+        const element = await this.browserState.page.$(selector)
+        exists(element, callback, "Couldn't find element: " + selector)
+
+        //@ts-ignore
+        const content = element.options
+
+        console.log(`Retrieved ${selector} contents ${content}`)
+        
+        const response = new Response.Select()
+        for (let i in content) {
+            response.addEntry()
+        }
+        callback(null, response)
+    }
     
     async inputText(call: ServerUnaryCall<inputTextRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, "Tried to input text, no open browser")

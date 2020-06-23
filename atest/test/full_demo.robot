@@ -1,6 +1,6 @@
 *** Settings ***
 Library		Browser
-Resource          resource.robot
+Resource          demo-resource.robot
 
 *** Test Cases ***
 Valid Login

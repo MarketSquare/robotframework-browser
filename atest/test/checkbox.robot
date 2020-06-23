@@ -1,6 +1,7 @@
 *** Settings ***
+Resource	./resource.robot
 Library		Browser
-Test Setup	Run Keywords 	Open Browser	chrome	AND	Go To	http://localhost:7272/checkbox_and_radio.html
+Test Setup	Open Form
 Test Teardown	Close Browser
 
 *** Test Cases ***

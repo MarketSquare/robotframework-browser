@@ -49,16 +49,21 @@ class Validation:
                 raise AssertionError(message)
 
     @keyword
-    def page_should_contain(self, text: str):
-        """Verifies that current page contains ``text``. """
+    def page_should_contain_element(self, selector: str):
+        """Verifies that current page contains element specified by ``selector``. """
         with self._insecure_stub() as stub:
             response = stub.GetTextContent(
-                playwright_pb2.selectorRequest(selector="text=" + text)
+                playwright_pb2.selectorRequest(selector=selector)
             )
             logger.info(response.log)
-            if response.body != text:
-                message = "No element with text `{}` on page".format(text)
+            if not response.body:
+                message = "No element matching ``{}`` on page".format(selector)
                 raise AssertionError(message)
+
+    @keyword
+    def page_should_contain_list(self, selector: str):
+        """ Verifies that current page contains a list matching ``selector`` """
+        self.page_should_contain_element(selector + ">> list")
 
     class CheckboxState(Enum):
         checked = True
@@ -66,7 +71,7 @@ class Validation:
 
     @keyword
     def checkbox_should_be(self, selector: str, expected: CheckboxState):
-        """ Verifies that checkbox ``selector`` is in state ``expected`` """
+        """ Verifies that checkbox or radio button ``selector`` is in state ``expected`` """
         with self._insecure_stub() as stub:
             response = stub.GetBoolProperty(
                 playwright_pb2.getDomPropertyRequest(
@@ -79,3 +84,15 @@ class Validation:
                     selector, expected, response.body
                 )
                 raise AssertionError(message)
+
+    @keyword
+    def list_selection_should_be(self, selector: str, *expected):
+        """ Verifies list ``selector`` has ``expected`` options selected.
+            If no ``expected`` selections are given will verify none are selected.
+        """
+        with self._insecure_stub() as stub:
+            response = stub.GetSelectContent(
+                playwright_pb2.selectorRequest(selector=selector)
+            )
+            logger.info(response)
+            raise AssertionError("Assertion not implemented yet")

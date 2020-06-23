@@ -28,6 +28,12 @@ message getDomPropertyRequest {
 message selectorRequest {
   string selector = 1;
 }
+message SelectEntry {
+    string log = 1;
+    string value = 2;
+    string label = 3;
+    bool selected = 4;
+}
 
 message Response {
   message Empty {
@@ -41,6 +47,9 @@ message Response {
     string log = 1;
     bool body = 2;
   }
+  message Select {
+    repeated SelectEntry entry = 1;
+  }
 }
 
 service  Playwright {
@@ -49,8 +58,11 @@ service  Playwright {
   rpc CloseBrowser(Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */ 
   rpc GoTo(goToRequest) returns (Response.Empty) {}
+  /* *Returns current playwright page url*/
+  rpc GetUrl(Empty) returns (Response.String) {}
   /* Gets title of currently open Playwright page */
   rpc GetTitle(Empty) returns (Response.String) {}
+  
   /* Wraps playwrights page.fill to input text into input specified with selector */ 
   rpc InputText(inputTextRequest) returns (Response.Empty) {}
   /* Gets the DOM property 'property' of selector specified element */
@@ -59,14 +71,16 @@ service  Playwright {
   rpc GetBoolProperty(getDomPropertyRequest) returns (Response.Bool) {}
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
   rpc GetTextContent(selectorRequest) returns (Response.String) {}
-  /* *Returns current playwright page url*/
-  rpc GetUrl(Empty) returns (Response.String) {}
+  /* Gets the Select element specified by selector and returns the contents */
+  rpc GetSelectContent(selectorRequest) returns (Response.Select) {}
+  
   /* Clicks button specified by selector */ 
   rpc ClickButton(selectorRequest) returns (Response.Empty) {}
   /* Checks checkbox specified by selector */
   rpc CheckCheckbox(selectorRequest) returns (Response.Empty) {}
   /* Unchecks checkbox specified by selector */
   rpc UncheckCheckbox(selectorRequest) returns (Response.Empty) {}
+  
   /* Health check endpoint for the service */
   rpc Health(Empty) returns (Response.String) {}
 }

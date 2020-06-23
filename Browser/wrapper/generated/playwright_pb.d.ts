@@ -161,6 +161,39 @@ export namespace selectorRequest {
     }
 }
 
+export class SelectEntry extends jspb.Message { 
+    getLog(): string;
+    setLog(value: string): SelectEntry;
+
+    getValue(): string;
+    setValue(value: string): SelectEntry;
+
+    getLabel(): string;
+    setLabel(value: string): SelectEntry;
+
+    getSelected(): boolean;
+    setSelected(value: boolean): SelectEntry;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): SelectEntry.AsObject;
+    static toObject(includeInstance: boolean, msg: SelectEntry): SelectEntry.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: SelectEntry, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): SelectEntry;
+    static deserializeBinaryFromReader(message: SelectEntry, reader: jspb.BinaryReader): SelectEntry;
+}
+
+export namespace SelectEntry {
+    export type AsObject = {
+        log: string,
+        value: string,
+        label: string,
+        selected: boolean,
+    }
+}
+
 export class Response extends jspb.Message { 
 
     serializeBinary(): Uint8Array;
@@ -246,6 +279,29 @@ export namespace Response {
         export type AsObject = {
             log: string,
             body: boolean,
+        }
+    }
+
+    export class Select extends jspb.Message { 
+        clearEntryList(): void;
+        getEntryList(): Array<SelectEntry>;
+        setEntryList(value: Array<SelectEntry>): Select;
+        addEntry(value?: SelectEntry, index?: number): SelectEntry;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): Select.AsObject;
+        static toObject(includeInstance: boolean, msg: Select): Select.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: Select, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): Select;
+        static deserializeBinaryFromReader(message: Select, reader: jspb.BinaryReader): Select;
+    }
+
+    export namespace Select {
+        export type AsObject = {
+            entryList: Array<SelectEntry.AsObject>,
         }
     }
 

@@ -37,6 +37,17 @@ function deserialize_Response_Empty(buffer_arg) {
   return playwright_pb.Response.Empty.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_Response_Select(arg) {
+  if (!(arg instanceof playwright_pb.Response.Select)) {
+    throw new Error('Expected argument of type Response.Select');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Response_Select(buffer_arg) {
+  return playwright_pb.Response.Select.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_Response_String(arg) {
   if (!(arg instanceof playwright_pb.Response.String)) {
     throw new Error('Expected argument of type Response.String');
@@ -161,6 +172,18 @@ goTo: {
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
+  // *Returns current playwright page url
+getUrl: {
+    path: '/Playwright/GetUrl',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Empty,
+    responseType: playwright_pb.Response.String,
+    requestSerialize: serialize_Empty,
+    requestDeserialize: deserialize_Empty,
+    responseSerialize: serialize_Response_String,
+    responseDeserialize: deserialize_Response_String,
+  },
   // Gets title of currently open Playwright page 
 getTitle: {
     path: '/Playwright/GetTitle',
@@ -221,17 +244,17 @@ getTextContent: {
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
   },
-  // *Returns current playwright page url
-getUrl: {
-    path: '/Playwright/GetUrl',
+  // Gets the Select element specified by selector and returns the contents 
+getSelectContent: {
+    path: '/Playwright/GetSelectContent',
     requestStream: false,
     responseStream: false,
-    requestType: playwright_pb.Empty,
-    responseType: playwright_pb.Response.String,
-    requestSerialize: serialize_Empty,
-    requestDeserialize: deserialize_Empty,
-    responseSerialize: serialize_Response_String,
-    responseDeserialize: deserialize_Response_String,
+    requestType: playwright_pb.selectorRequest,
+    responseType: playwright_pb.Response.Select,
+    requestSerialize: serialize_selectorRequest,
+    requestDeserialize: deserialize_selectorRequest,
+    responseSerialize: serialize_Response_Select,
+    responseDeserialize: deserialize_Response_Select,
   },
   // Clicks button specified by selector 
 clickButton: {

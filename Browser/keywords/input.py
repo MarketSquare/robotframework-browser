@@ -34,7 +34,7 @@ class Input:
     # for clarity and PW consistency?
     @keyword
     def check_checkbox(self, selector: str):
-        """ Checks the checkbox identified by ``selector``.
+        """ Checks the checkbox or selects radio identified by ``selector``.
             If already checked does nothing
         """
         with self._insecure_stub() as stub:
