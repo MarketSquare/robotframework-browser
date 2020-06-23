@@ -15,6 +15,7 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     getTitle: IPlaywrightService_IGetTitle;
     inputText: IPlaywrightService_IInputText;
     getDomProperty: IPlaywrightService_IGetDomProperty;
+    getBoolProperty: IPlaywrightService_IGetBoolProperty;
     getTextContent: IPlaywrightService_IGetTextContent;
     getUrl: IPlaywrightService_IGetUrl;
     clickButton: IPlaywrightService_IClickButton;
@@ -86,6 +87,15 @@ interface IPlaywrightService_IGetDomProperty extends grpc.MethodDefinition<playw
     responseSerialize: grpc.serialize<playwright_pb.Response.String>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.String>;
 }
+interface IPlaywrightService_IGetBoolProperty extends grpc.MethodDefinition<playwright_pb.getDomPropertyRequest, playwright_pb.Response.Bool> {
+    path: string; // "/.Playwright/GetBoolProperty"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.getDomPropertyRequest>;
+    requestDeserialize: grpc.deserialize<playwright_pb.getDomPropertyRequest>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Bool>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Bool>;
+}
 interface IPlaywrightService_IGetTextContent extends grpc.MethodDefinition<playwright_pb.selectorRequest, playwright_pb.Response.String> {
     path: string; // "/.Playwright/GetTextContent"
     requestStream: boolean; // false
@@ -151,6 +161,7 @@ export interface IPlaywrightServer {
     getTitle: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
     inputText: grpc.handleUnaryCall<playwright_pb.inputTextRequest, playwright_pb.Response.Empty>;
     getDomProperty: grpc.handleUnaryCall<playwright_pb.getDomPropertyRequest, playwright_pb.Response.String>;
+    getBoolProperty: grpc.handleUnaryCall<playwright_pb.getDomPropertyRequest, playwright_pb.Response.Bool>;
     getTextContent: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.String>;
     getUrl: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
     clickButton: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
@@ -181,6 +192,9 @@ export interface IPlaywrightClient {
     getDomProperty(request: playwright_pb.getDomPropertyRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getDomProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getDomProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    getBoolProperty(request: playwright_pb.getDomPropertyRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Bool) => void): grpc.ClientUnaryCall;
+    getBoolProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Bool) => void): grpc.ClientUnaryCall;
+    getBoolProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Bool) => void): grpc.ClientUnaryCall;
     getTextContent(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getTextContent(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getTextContent(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
@@ -224,6 +238,9 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public getDomProperty(request: playwright_pb.getDomPropertyRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getDomProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getDomProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    public getBoolProperty(request: playwright_pb.getDomPropertyRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Bool) => void): grpc.ClientUnaryCall;
+    public getBoolProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Bool) => void): grpc.ClientUnaryCall;
+    public getBoolProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Bool) => void): grpc.ClientUnaryCall;
     public getTextContent(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getTextContent(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getTextContent(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;

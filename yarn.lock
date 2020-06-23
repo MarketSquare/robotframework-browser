@@ -1099,6 +1099,11 @@ google-protobuf@3.5.0:
   resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.5.0.tgz#b8cc63c74d83457bd8a9a904503c8efb26bca339"
   integrity sha1-uMxjx02DRXvYqakEUDyO+ya8ozk=
 
+google-protobuf@3.9.2:
+  version "3.9.2"
+  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.9.2.tgz#3ae89569ec8df1c9e83609f77b09f7ed56d2414e"
+  integrity sha512-TxK/kqHmVeqTXiuejN9aAy4Y/8bTa9k+F1/WXCOuIXCMheV1ySeSFfYS4ctzM6WZZbUo6rlshoX4/eqEK28Swg==
+
 grpc-tools@^1.9.0:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/grpc-tools/-/grpc-tools-1.9.0.tgz#57fd0f577dbf842e03215857582f5dc808d96cad"

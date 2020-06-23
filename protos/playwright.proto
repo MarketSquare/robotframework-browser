@@ -37,6 +37,10 @@ message Response {
     string log = 1;
     string body = 2;
   }
+  message Bool {
+    string log = 1;
+    bool body = 2;
+  }
 }
 
 service  Playwright {
@@ -51,6 +55,8 @@ service  Playwright {
   rpc InputText(inputTextRequest) returns (Response.Empty) {}
   /* Gets the DOM property 'property' of selector specified element */
   rpc GetDomProperty(getDomPropertyRequest) returns (Response.String) {}
+  /* Gets the boolean DOM property 'property' of selector specified element */
+  rpc GetBoolProperty(getDomPropertyRequest) returns (Response.Bool) {}
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
   rpc GetTextContent(selectorRequest) returns (Response.String) {}
   /* *Returns current playwright page url*/

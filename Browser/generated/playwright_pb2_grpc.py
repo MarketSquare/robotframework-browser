@@ -48,6 +48,11 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.getDomPropertyRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
+        self.GetBoolProperty = channel.unary_unary(
+                '/Playwright/GetBoolProperty',
+                request_serializer=playwright__pb2.getDomPropertyRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Bool.FromString,
+                )
         self.GetTextContent = channel.unary_unary(
                 '/Playwright/GetTextContent',
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
@@ -124,6 +129,13 @@ class PlaywrightServicer(object):
 
     def GetDomProperty(self, request, context):
         """Gets the DOM property 'property' of selector specified element 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetBoolProperty(self, request, context):
+        """Gets the boolean DOM property 'property' of selector specified element 
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -208,6 +220,11 @@ def add_PlaywrightServicer_to_server(servicer, server):
                     servicer.GetDomProperty,
                     request_deserializer=playwright__pb2.getDomPropertyRequest.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
+            ),
+            'GetBoolProperty': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetBoolProperty,
+                    request_deserializer=playwright__pb2.getDomPropertyRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Bool.SerializeToString,
             ),
             'GetTextContent': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTextContent,
@@ -358,6 +375,22 @@ class Playwright(object):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GetDomProperty',
             playwright__pb2.getDomPropertyRequest.SerializeToString,
             playwright__pb2.Response.String.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetBoolProperty(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GetBoolProperty',
+            playwright__pb2.getDomPropertyRequest.SerializeToString,
+            playwright__pb2.Response.Bool.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
 

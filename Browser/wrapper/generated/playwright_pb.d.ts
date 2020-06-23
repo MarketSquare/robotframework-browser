@@ -224,4 +224,29 @@ export namespace Response {
         }
     }
 
+    export class Bool extends jspb.Message { 
+        getLog(): string;
+        setLog(value: string): Bool;
+
+        getBody(): boolean;
+        setBody(value: boolean): Bool;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): Bool.AsObject;
+        static toObject(includeInstance: boolean, msg: Bool): Bool.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: Bool, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): Bool;
+        static deserializeBinaryFromReader(message: Bool, reader: jspb.BinaryReader): Bool;
+    }
+
+    export namespace Bool {
+        export type AsObject = {
+            log: string,
+            body: boolean,
+        }
+    }
+
 }

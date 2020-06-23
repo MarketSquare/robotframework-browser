@@ -27,7 +27,9 @@ class Validation:
         """Verifies text field ``selector`` has exactly text ``expected``. """
         with self._insecure_stub() as stub:
             response = stub.GetDomProperty(
-                playwright_pb2.getDomPropertyRequest(selector=selector,property="value")
+                playwright_pb2.getDomPropertyRequest(
+                    selector=selector, property="value"
+                )
             )
             logger.info(response.log)
             if response.body != expected:
@@ -59,15 +61,21 @@ class Validation:
                 raise AssertionError(message)
 
     class CheckboxState(Enum):
-        SELECTED = True
-        DESELECTED = False
+        checked = True
+        unchecked = False
+
     @keyword
     def checkbox_should_be(self, selector: str, expected: CheckboxState):
-        """ Verifies that checkbox ``selector`` is in state expected"""
+        """ Verifies that checkbox ``selector`` is in state ``expected`` """
         with self._insecure_stub() as stub:
-            response = stub.GetDomProperty(playwright_pb2.getDomPropertyRequest(selector=selector,property="checked"))
+            response = stub.GetBoolProperty(
+                playwright_pb2.getDomPropertyRequest(
+                    selector=selector, property="checked"
+                )
+            )
             logger.info(response.log)
             if response.body != expected.value:
-                message = "Checkbox `{}` should be `{}` but was `{}`".format(selector, expected, response.body)
+                message = "Checkbox `{}` should be `{}` but was `{}`".format(
+                    selector, expected, response.body
+                )
                 raise AssertionError(message)
-

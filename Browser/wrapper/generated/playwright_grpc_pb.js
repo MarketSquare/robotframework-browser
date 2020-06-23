@@ -15,6 +15,17 @@ function deserialize_Empty(buffer_arg) {
   return playwright_pb.Empty.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_Response_Bool(arg) {
+  if (!(arg instanceof playwright_pb.Response.Bool)) {
+    throw new Error('Expected argument of type Response.Bool');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Response_Bool(buffer_arg) {
+  return playwright_pb.Response.Bool.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_Response_Empty(arg) {
   if (!(arg instanceof playwright_pb.Response.Empty)) {
     throw new Error('Expected argument of type Response.Empty');
@@ -185,6 +196,18 @@ getDomProperty: {
     requestDeserialize: deserialize_getDomPropertyRequest,
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
+  },
+  // Gets the boolean DOM property 'property' of selector specified element 
+getBoolProperty: {
+    path: '/Playwright/GetBoolProperty',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.getDomPropertyRequest,
+    responseType: playwright_pb.Response.Bool,
+    requestSerialize: serialize_getDomPropertyRequest,
+    requestDeserialize: deserialize_getDomPropertyRequest,
+    responseSerialize: serialize_Response_Bool,
+    responseDeserialize: deserialize_Response_Bool,
   },
   // Wraps playwrights page.textContent, returns textcontent of element by selector 
 getTextContent: {

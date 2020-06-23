@@ -29,7 +29,8 @@ class Input:
                 playwright_pb2.selectorRequest(selector=selector)
             )
             logger.info(response.log)
-    # TODO: Should this be select_checkbox for consistency with SL or check_checkbox 
+
+    # TODO: Should this be select_checkbox for consistency with SL or check_checkbox
     # for clarity and PW consistency?
     @keyword
     def check_checkbox(self, selector: str):
@@ -37,14 +38,18 @@ class Input:
             If already checked does nothing
         """
         with self._insecure_stub() as stub:
-            response = stub.CheckCheckbox(playwright_pb2.req)
+            response = stub.CheckCheckbox(
+                playwright_pb2.selectorRequest(selector=selector)
+            )
             logger.info(response.log)
 
     @keyword
-    def check_checkbox(self, selector: str):
+    def uncheck_checkbox(self, selector: str):
         """ Unchecks the checkbox identified by ``selector``.
             If not checked does nothing
         """
         with self._insecure_stub() as stub:
-            response = stub.UncheckCheckbox(playwright_pb2.req)
+            response = stub.UncheckCheckbox(
+                playwright_pb2.selectorRequest(selector=selector)
+            )
             logger.info(response.log)

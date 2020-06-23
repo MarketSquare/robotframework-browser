@@ -122,17 +122,38 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response)
     }
 
+    // TODO: work some of getDomProperty and getBoolProperty's duplicate code into a root function
     async getDomProperty(call: ServerUnaryCall<getDomPropertyRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
-        exists(this.browserState, callback, "Tried to get input value, no open browser")
+        exists(this.browserState, callback, "Tried to get DOM property, no open browser")
         const selector = call.request.getSelector()
         const property = call.request.getProperty()
+        
         const element = await this.browserState.page.$(selector)
         exists(element, callback, "Couldn't find element: " + selector)
-        // TODO: if this is done elsewhere write a helper function with error logging
+        
         const result = await element.getProperty(property)
         const content = await result.jsonValue()
+        console.log(`Retrieved dom property for element ${selector} containing ${content}`)
+
         const response = new Response.String()
         response.setBody(content)
+        callback(null, response)
+    }
+
+    async getBoolProperty(call: ServerUnaryCall<getDomPropertyRequest>, callback: sendUnaryData<Response.Bool>): Promise<void> {
+        exists(this.browserState, callback, "Tried to get DOM property, no open browser")
+        const selector = call.request.getSelector()
+        const property = call.request.getProperty()
+        
+        const element = await this.browserState.page.$(selector)
+        exists(element, callback, "Couldn't find element: " + selector)
+        
+        const result = await element.getProperty(property)
+        const content = await result.jsonValue()
+        console.log(`Retrieved dom property for element ${selector} containing ${content}`)
+
+        const response = new Response.Bool()
+        response.setBody(content || false)
         callback(null, response)
     }
     
