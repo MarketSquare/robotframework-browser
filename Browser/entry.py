@@ -3,7 +3,7 @@ import sys
 from subprocess import Popen, PIPE
 
 USAGE = """USAGE
-  robotframework-playwright [command]
+  rf-browser [command]
 
 AVAILABLE COMMANDS
   init  Install required nodejs dependencies
@@ -21,7 +21,11 @@ def run():
             os.path.dirname(os.path.abspath(__file__)), "wrapper"
         )
         process = Popen(
-            "npm install", shell=True, cwd=installation_dir, stdout=PIPE, stderr=PIPE,
+            "npm install --production",
+            shell=True,
+            cwd=installation_dir,
+            stdout=PIPE,
+            stderr=PIPE,
         )
         if process.stdout is None:
             raise RuntimeError("problem installing node dependencies")
