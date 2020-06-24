@@ -1,9 +1,10 @@
 __version__ = "0.1.1"
 
+import re
 import os
 
 from robot.api import logger  # type: ignore
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .keywords import Validation, Control, Input
@@ -78,9 +79,10 @@ class Browser(DynamicCore):
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
+        self.browser_control = Control(self)
         libraries = [
             Validation(self),
-            Control(self),
+            self.browser_control,
             Input(self),
         ]
         self.playwright = Playwright()
@@ -100,21 +102,45 @@ class Browser(DynamicCore):
             self.test_error()
             raise e
 
+    def start_keyword(self, name, attrs):
+        """Take screenshot of tests that have failed due to timeout.
+
+        This can be done with BuiltIn keyword `Run Keyword If Timeout
+        Occurred`, but the problem there is that you have to remember to
+        put it into your Suite/Test Teardown. Since taking screenshot is
+        the most obvious thing to do on failure, let's do it automatically.
+
+        This cannot be implemented as a `end_test` listener method, since at
+        that time, the teardown has already been executed and browser may have
+        been closed already. This implementation will take the screenshot
+        before the teardown begins to execute.
+        """
+        if attrs["type"] == "Teardown":
+            timeout_pattern = "Test timeout .* exceeded."
+            test = EXECUTION_CONTEXTS.current.test
+            if test.status == "FAIL" and re.match(timeout_pattern, test.message):
+                self.browser_control.take_page_screenshot(
+                    self.failure_screenshot_path(test.name)
+                )
+
     def test_error(self):
         """Sends screenshot command to Playwright.
 
-        Only works during testing since this uses robot's outputdir for output
+        Only works during testing since this uses robot's outputdir for output.
         """
         on_failure_keyword = "take page screenshot"
         try:
-            path = os.path.join(
-                BuiltIn().get_variable_value("${OUTPUTDIR}"),
-                BuiltIn().get_variable_value("${TEST NAME}").replace(" ", "_")
-                + "_FAILURE_SCREENSHOT",
-            ).replace("\\", "\\\\")
+            test_name = BuiltIn().get_variable_value("${TEST NAME}")
+            path = self.failure_screenshot_path(test_name)
             logger.info(f"Running `{on_failure_keyword}` with arguments `{path}`")
             BuiltIn().run_keyword(on_failure_keyword, path)
         except Exception as err:
             logger.error(
                 f"Keyword '{on_failure_keyword}' could not be run on failure: {err}"
             )
+
+    def failure_screenshot_path(self, test_name):
+        return os.path.join(
+            BuiltIn().get_variable_value("${OUTPUTDIR}"),
+            test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT",
+        ).replace("\\", "\\\\")
