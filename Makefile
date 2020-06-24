@@ -43,6 +43,9 @@ lint-python:
 	black Browser/ --exclude Browser/generated
 	flake8
 
+lint-node:
+	yarn run lint
+
 build: protobuf
 	yarn build
 
