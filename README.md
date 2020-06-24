@@ -43,6 +43,15 @@ dependencies, respectively.
 
 Make sure to run `source .venv/bin/activate` to activate the correct virtualenv
 
+### Development in Windows
+
+Install [Chocolatey](https://chocolatey.org/) and then install development tools with
+`choco install sed make`.
+
+After that, the development workflow should work as described in the previous chapter.
+The only difference is that the virtualenv needs to be activated by running
+`.venv\Scripts\activate` in the command prompt.
+
 ## Testing
 There are both unit tests written with pytest and acceptance test written with
 Robot Framework. These can be run manually with `make utest` and `make atest`.
