@@ -5,10 +5,16 @@
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^3.4.0",
+    "@typescript-eslint/parser": "^3.4.0",
+    "eslint": "^7.3.1",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
     "grpc-tools": "^1.9.0",
     "grpc_tools_node_protoc_ts": "^4.0.0",
     "husky": "^4.2.5",
     "lint-staged": "^10.2.7",
+    "prettier": "^2.0.5",
     "ts-node": "^8.10.2",
     "tslint": "^6.1.2",
     "typescript": "^3.9.3"
@@ -25,6 +31,7 @@
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint 'Browser/**/*.ts' --quiet --fix"
   }
 }
