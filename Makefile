@@ -35,6 +35,9 @@ utest:
 atest:
 	robot --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
 
+test-failed: build
+	PYTHONPATH=. robot --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test 
+
 lint-python:
 	mypy .
 	black Browser/ --exclude Browser/generated
@@ -60,6 +63,7 @@ protobuf:
 		--ts_out=$(PROTO_DEST) \
 		-I ./protos \
 		protos/*.proto
+
 
 release:
 	rm -rf dist/
