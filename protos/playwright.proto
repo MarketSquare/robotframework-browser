@@ -28,6 +28,10 @@ message getDomPropertyRequest {
 message selectorRequest {
   string selector = 1;
 }
+message selectOptionRequest {
+  string selector = 1;
+  repeated string matcher = 2;
+}
 message SelectEntry {
     string log = 1;
     string value = 2;
@@ -80,6 +84,8 @@ service  Playwright {
   rpc CheckCheckbox(selectorRequest) returns (Response.Empty) {}
   /* Unchecks checkbox specified by selector */
   rpc UncheckCheckbox(selectorRequest) returns (Response.Empty) {}
+  /* Selects option matching matcher in Select element matching selector */
+  rpc SelectOption(selectOptionRequest) returns (Response.Empty) {}
   
   /* Health check endpoint for the service */
   rpc Health(Empty) returns (Response.String) {}

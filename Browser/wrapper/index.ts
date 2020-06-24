@@ -1,7 +1,7 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 import {sendUnaryData, ServerUnaryCall, Server, ServerCredentials} from "grpc";
-import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest, screenshotRequest, getDomPropertyRequest} from "./generated/playwright_pb";
+import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest, screenshotRequest, getDomPropertyRequest, SelectEntry, selectOptionRequest} from "./generated/playwright_pb";
 
 // This is necessary for improved typescript inference
 /* 
@@ -15,7 +15,7 @@ function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): 
 
 // Can't have an async constructor, this is a workaround
 async function createBrowserState(browserType: string): Promise<BrowserState> {
-    const headless = true 
+    const headless = true
     let browser, context, page
     if (browserType === 'firefox') {
         browser = await firefox.launch({headless: headless})
@@ -160,19 +160,22 @@ class PlaywrightServer implements IPlaywrightServer {
     async getSelectContent(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.Select>): Promise<void> {
         exists(this.browserState, callback, "Tried to get Select element contents, no open browser")
         const selector = call.request.getSelector()
+        const page = this.browserState.page
 
-        const element = await this.browserState.page.$(selector)
-        exists(element, callback, "Couldn't find element: " + selector)
-
-        //@ts-ignore
-        const content = element.options
-
-        console.log(`Retrieved ${selector} contents ${content}`)
+        const content = await page.$$eval(selector + " option", elements => elements.map(element => { 
+            //@ts-ignore
+            return [element.label, element.value, "" != element.selected]
+        }))
         
         const response = new Response.Select()
-        for (let i in content) {
-            response.addEntry()
-        }
+        content.forEach((option) => {
+            const [label, value, selected] = option
+            const entry = new SelectEntry()
+            entry.setLabel(label)
+            entry.setValue(value)
+            entry.setSelected(selected)
+            response.addEntry(entry)
+        })
         callback(null, response)
     }
     
@@ -207,6 +210,15 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector()
         await this.browserState.page.uncheck(selector)
         const response = emptyWithLog("Unhecked checkbox: " + selector)
+        callback(null, response)
+    }
+
+    async selectOption(call: ServerUnaryCall<selectOptionRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, "Tried to select ``select`` element option, no open browser")
+        const selector = call.request.getSelector()
+        const matcher = call.request.getMatcherList()
+        const result = await this.browserState.page.selectOption(selector, matcher)
+        const response = emptyWithLog(`Selected options ${result} in element ${selector}`)
         callback(null, response)
     }
 

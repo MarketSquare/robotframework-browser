@@ -60,11 +60,6 @@ class Validation:
                 message = "No element matching ``{}`` on page".format(selector)
                 raise AssertionError(message)
 
-    @keyword
-    def page_should_contain_list(self, selector: str):
-        """ Verifies that current page contains a list matching ``selector`` """
-        self.page_should_contain_element(selector + ">> list")
-
     class CheckboxState(Enum):
         checked = True
         unchecked = False
@@ -95,4 +90,32 @@ class Validation:
                 playwright_pb2.selectorRequest(selector=selector)
             )
             logger.info(response)
-            raise AssertionError("Assertion not implemented yet")
+            labels = {}
+            values = {}
+            for i in response.entry:
+                if i.selected:
+                    labels[i.label] = True
+                    values[i.value] = True
+
+            unexpected_false = []
+            for i in expected:
+                if not (i in labels or i in values):
+                    unexpected_false.append(i)
+
+            # When expected is empty we verify no elements are selected
+            unexpected_true = []
+            if not expected:
+                for i in labels:
+                    unexpected_true.append(i)
+
+            message = ""
+            if unexpected_false:
+                message += "Select {} options {} should have been selected.".format(
+                    selector, unexpected_false
+                )
+            if unexpected_true:
+                message += "Select {} options {} should not have been selected.".format(
+                    selector, unexpected_true
+                )
+            if message:
+                raise AssertionError(message)

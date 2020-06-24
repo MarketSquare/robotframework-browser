@@ -53,3 +53,24 @@ class Input:
                 playwright_pb2.selectorRequest(selector=selector)
             )
             logger.info(response.log)
+
+    @keyword
+    def select_from_list_by_value(self, selector: str, *values):
+        """Toggles options from selection list ``selector`` by ``values``.
+        """
+        with self._insecure_stub() as stub:
+            response = stub.SelectOption(
+                playwright_pb2.selectOptionRequest(selector=selector, matcher=values)
+            )
+            logger.info(response.log)
+
+    @keyword
+    def select_from_list_by_label(self, selector: str, *labels):
+        """Toggles options from selection list ``selector`` by ``labels``.
+        """
+        matchers = ["{ label: " + s + "}" for s in labels]
+        with self._insecure_stub() as stub:
+            response = stub.SelectOption(
+                playwright_pb2.selectOptionRequest(selector=selector, matcher=matchers)
+            )
+            logger.info(response.log)

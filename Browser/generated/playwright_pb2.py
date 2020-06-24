@@ -18,7 +18,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"!\n\x11screenshotRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x1a\n\x0bgoToRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\"3\n\x10inputTextRequest\x12\r\n\x05input\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\";\n\x15getDomPropertyRequest\x12\x10\n\x08property\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\"#\n\x0fselectorRequest\x12\x10\n\x08selector\x18\x01 \x01(\t\"J\n\x0bSelectEntry\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\x12\r\n\x05label\x18\x03 \x01(\t\x12\x10\n\x08selected\x18\x04 \x01(\x08\"\x8f\x01\n\x08Response\x1a\x14\n\x05\x45mpty\x12\x0b\n\x03log\x18\x01 \x01(\t\x1a#\n\x06String\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t\x1a!\n\x04\x42ool\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\x08\x1a%\n\x06Select\x12\x1b\n\x05\x65ntry\x18\x01 \x03(\x0b\x32\x0c.SelectEntry2\x82\x06\n\nPlaywright\x12\x33\n\nScreenshot\x12\x12.screenshotRequest\x1a\x0f.Response.Empty\"\x00\x12\x35\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\x0f.Response.Empty\"\x00\x12)\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x0f.Response.Empty\"\x00\x12\'\n\x04GoTo\x12\x0c.goToRequest\x1a\x0f.Response.Empty\"\x00\x12$\n\x06GetUrl\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12&\n\x08GetTitle\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x31\n\tInputText\x12\x11.inputTextRequest\x1a\x0f.Response.Empty\"\x00\x12<\n\x0eGetDomProperty\x12\x16.getDomPropertyRequest\x1a\x10.Response.String\"\x00\x12;\n\x0fGetBoolProperty\x12\x16.getDomPropertyRequest\x1a\x0e.Response.Bool\"\x00\x12\x36\n\x0eGetTextContent\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12\x38\n\x10GetSelectContent\x12\x10.selectorRequest\x1a\x10.Response.Select\"\x00\x12\x32\n\x0b\x43lickButton\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x12\x34\n\rCheckCheckbox\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x12\x36\n\x0fUncheckCheckbox\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x12$\n\x06Health\x12\x06.Empty\x1a\x10.Response.String\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x10playwright.proto\"\x07\n\x05\x45mpty\"!\n\x11screenshotRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\"2\n\x12openBrowserRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0f\n\x07\x62rowser\x18\x02 \x01(\t\"\x1a\n\x0bgoToRequest\x12\x0b\n\x03url\x18\x01 \x01(\t\"3\n\x10inputTextRequest\x12\r\n\x05input\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\";\n\x15getDomPropertyRequest\x12\x10\n\x08property\x18\x01 \x01(\t\x12\x10\n\x08selector\x18\x02 \x01(\t\"#\n\x0fselectorRequest\x12\x10\n\x08selector\x18\x01 \x01(\t\"8\n\x13selectOptionRequest\x12\x10\n\x08selector\x18\x01 \x01(\t\x12\x0f\n\x07matcher\x18\x02 \x03(\t\"J\n\x0bSelectEntry\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\x12\r\n\x05label\x18\x03 \x01(\t\x12\x10\n\x08selected\x18\x04 \x01(\x08\"\x8f\x01\n\x08Response\x1a\x14\n\x05\x45mpty\x12\x0b\n\x03log\x18\x01 \x01(\t\x1a#\n\x06String\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\t\x1a!\n\x04\x42ool\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x0c\n\x04\x62ody\x18\x02 \x01(\x08\x1a%\n\x06Select\x12\x1b\n\x05\x65ntry\x18\x01 \x03(\x0b\x32\x0c.SelectEntry2\xbb\x06\n\nPlaywright\x12\x33\n\nScreenshot\x12\x12.screenshotRequest\x1a\x0f.Response.Empty\"\x00\x12\x35\n\x0bOpenBrowser\x12\x13.openBrowserRequest\x1a\x0f.Response.Empty\"\x00\x12)\n\x0c\x43loseBrowser\x12\x06.Empty\x1a\x0f.Response.Empty\"\x00\x12\'\n\x04GoTo\x12\x0c.goToRequest\x1a\x0f.Response.Empty\"\x00\x12$\n\x06GetUrl\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12&\n\x08GetTitle\x12\x06.Empty\x1a\x10.Response.String\"\x00\x12\x31\n\tInputText\x12\x11.inputTextRequest\x1a\x0f.Response.Empty\"\x00\x12<\n\x0eGetDomProperty\x12\x16.getDomPropertyRequest\x1a\x10.Response.String\"\x00\x12;\n\x0fGetBoolProperty\x12\x16.getDomPropertyRequest\x1a\x0e.Response.Bool\"\x00\x12\x36\n\x0eGetTextContent\x12\x10.selectorRequest\x1a\x10.Response.String\"\x00\x12\x38\n\x10GetSelectContent\x12\x10.selectorRequest\x1a\x10.Response.Select\"\x00\x12\x32\n\x0b\x43lickButton\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x12\x34\n\rCheckCheckbox\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x12\x36\n\x0fUncheckCheckbox\x12\x10.selectorRequest\x1a\x0f.Response.Empty\"\x00\x12\x37\n\x0cSelectOption\x12\x14.selectOptionRequest\x1a\x0f.Response.Empty\"\x00\x12$\n\x06Health\x12\x06.Empty\x1a\x10.Response.String\"\x00\x62\x06proto3'
 )
 
 
@@ -255,6 +255,44 @@ _SELECTORREQUEST = _descriptor.Descriptor(
 )
 
 
+_SELECTOPTIONREQUEST = _descriptor.Descriptor(
+  name='selectOptionRequest',
+  full_name='selectOptionRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='selector', full_name='selectOptionRequest.selector', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='matcher', full_name='selectOptionRequest.matcher', index=1,
+      number=2, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=295,
+  serialized_end=351,
+)
+
+
 _SELECTENTRY = _descriptor.Descriptor(
   name='SelectEntry',
   full_name='SelectEntry',
@@ -302,8 +340,8 @@ _SELECTENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=295,
-  serialized_end=369,
+  serialized_start=353,
+  serialized_end=427,
 )
 
 
@@ -333,8 +371,8 @@ _RESPONSE_EMPTY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=384,
-  serialized_end=404,
+  serialized_start=442,
+  serialized_end=462,
 )
 
 _RESPONSE_STRING = _descriptor.Descriptor(
@@ -370,8 +408,8 @@ _RESPONSE_STRING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=406,
-  serialized_end=441,
+  serialized_start=464,
+  serialized_end=499,
 )
 
 _RESPONSE_BOOL = _descriptor.Descriptor(
@@ -407,8 +445,8 @@ _RESPONSE_BOOL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=443,
-  serialized_end=476,
+  serialized_start=501,
+  serialized_end=534,
 )
 
 _RESPONSE_SELECT = _descriptor.Descriptor(
@@ -437,8 +475,8 @@ _RESPONSE_SELECT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=478,
-  serialized_end=515,
+  serialized_start=536,
+  serialized_end=573,
 )
 
 _RESPONSE = _descriptor.Descriptor(
@@ -460,8 +498,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=372,
-  serialized_end=515,
+  serialized_start=430,
+  serialized_end=573,
 )
 
 _RESPONSE_EMPTY.containing_type = _RESPONSE
@@ -476,6 +514,7 @@ DESCRIPTOR.message_types_by_name['goToRequest'] = _GOTOREQUEST
 DESCRIPTOR.message_types_by_name['inputTextRequest'] = _INPUTTEXTREQUEST
 DESCRIPTOR.message_types_by_name['getDomPropertyRequest'] = _GETDOMPROPERTYREQUEST
 DESCRIPTOR.message_types_by_name['selectorRequest'] = _SELECTORREQUEST
+DESCRIPTOR.message_types_by_name['selectOptionRequest'] = _SELECTOPTIONREQUEST
 DESCRIPTOR.message_types_by_name['SelectEntry'] = _SELECTENTRY
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -528,6 +567,13 @@ selectorRequest = _reflection.GeneratedProtocolMessageType('selectorRequest', (_
   # @@protoc_insertion_point(class_scope:selectorRequest)
   })
 _sym_db.RegisterMessage(selectorRequest)
+
+selectOptionRequest = _reflection.GeneratedProtocolMessageType('selectOptionRequest', (_message.Message,), {
+  'DESCRIPTOR' : _SELECTOPTIONREQUEST,
+  '__module__' : 'playwright_pb2'
+  # @@protoc_insertion_point(class_scope:selectOptionRequest)
+  })
+_sym_db.RegisterMessage(selectOptionRequest)
 
 SelectEntry = _reflection.GeneratedProtocolMessageType('SelectEntry', (_message.Message,), {
   'DESCRIPTOR' : _SELECTENTRY,
@@ -583,8 +629,8 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=518,
-  serialized_end=1288,
+  serialized_start=576,
+  serialized_end=1403,
   methods=[
   _descriptor.MethodDescriptor(
     name='Screenshot',
@@ -713,9 +759,18 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
+    name='SelectOption',
+    full_name='Playwright.SelectOption',
+    index=14,
+    containing_service=None,
+    input_type=_SELECTOPTIONREQUEST,
+    output_type=_RESPONSE_EMPTY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
     name='Health',
     full_name='Playwright.Health',
-    index=14,
+    index=15,
     containing_service=None,
     input_type=_EMPTY,
     output_type=_RESPONSE_STRING,

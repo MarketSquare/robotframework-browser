@@ -83,6 +83,11 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
+        self.SelectOption = channel.unary_unary(
+                '/Playwright/SelectOption',
+                request_serializer=playwright__pb2.selectOptionRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
         self.Health = channel.unary_unary(
                 '/Playwright/Health',
                 request_serializer=playwright__pb2.Empty.SerializeToString,
@@ -188,6 +193,13 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SelectOption(self, request, context):
+        """Selects option matching matcher in Select element matching selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def Health(self, request, context):
         """Health check endpoint for the service 
         """
@@ -266,6 +278,11 @@ def add_PlaywrightServicer_to_server(servicer, server):
             'UncheckCheckbox': grpc.unary_unary_rpc_method_handler(
                     servicer.UncheckCheckbox,
                     request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'SelectOption': grpc.unary_unary_rpc_method_handler(
+                    servicer.SelectOption,
+                    request_deserializer=playwright__pb2.selectOptionRequest.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'Health': grpc.unary_unary_rpc_method_handler(
@@ -503,6 +520,22 @@ class Playwright(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/UncheckCheckbox',
             playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SelectOption(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/SelectOption',
+            playwright__pb2.selectOptionRequest.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

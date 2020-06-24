@@ -22,6 +22,7 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     clickButton: IPlaywrightService_IClickButton;
     checkCheckbox: IPlaywrightService_ICheckCheckbox;
     uncheckCheckbox: IPlaywrightService_IUncheckCheckbox;
+    selectOption: IPlaywrightService_ISelectOption;
     health: IPlaywrightService_IHealth;
 }
 
@@ -151,6 +152,15 @@ interface IPlaywrightService_IUncheckCheckbox extends grpc.MethodDefinition<play
     responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
 }
+interface IPlaywrightService_ISelectOption extends grpc.MethodDefinition<playwright_pb.selectOptionRequest, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/SelectOption"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.selectOptionRequest>;
+    requestDeserialize: grpc.deserialize<playwright_pb.selectOptionRequest>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
 interface IPlaywrightService_IHealth extends grpc.MethodDefinition<playwright_pb.Empty, playwright_pb.Response.String> {
     path: string; // "/.Playwright/Health"
     requestStream: boolean; // false
@@ -178,6 +188,7 @@ export interface IPlaywrightServer {
     clickButton: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
     checkCheckbox: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
     uncheckCheckbox: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
+    selectOption: grpc.handleUnaryCall<playwright_pb.selectOptionRequest, playwright_pb.Response.Empty>;
     health: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
 }
 
@@ -224,6 +235,9 @@ export interface IPlaywrightClient {
     uncheckCheckbox(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     uncheckCheckbox(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     uncheckCheckbox(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    selectOption(request: playwright_pb.selectOptionRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    selectOption(request: playwright_pb.selectOptionRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    selectOption(request: playwright_pb.selectOptionRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     health(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     health(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     health(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
@@ -273,6 +287,9 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public uncheckCheckbox(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public uncheckCheckbox(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public uncheckCheckbox(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public selectOption(request: playwright_pb.selectOptionRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public selectOption(request: playwright_pb.selectOptionRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public selectOption(request: playwright_pb.selectOptionRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public health(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public health(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public health(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;

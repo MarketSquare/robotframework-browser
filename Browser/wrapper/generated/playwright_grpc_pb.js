@@ -114,6 +114,17 @@ function deserialize_screenshotRequest(buffer_arg) {
   return playwright_pb.screenshotRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_selectOptionRequest(arg) {
+  if (!(arg instanceof playwright_pb.selectOptionRequest)) {
+    throw new Error('Expected argument of type selectOptionRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_selectOptionRequest(buffer_arg) {
+  return playwright_pb.selectOptionRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_selectorRequest(arg) {
   if (!(arg instanceof playwright_pb.selectorRequest)) {
     throw new Error('Expected argument of type selectorRequest');
@@ -289,6 +300,18 @@ uncheckCheckbox: {
     responseType: playwright_pb.Response.Empty,
     requestSerialize: serialize_selectorRequest,
     requestDeserialize: deserialize_selectorRequest,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Selects option matching matcher in Select element matching selector 
+selectOption: {
+    path: '/Playwright/SelectOption',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.selectOptionRequest,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_selectOptionRequest,
+    requestDeserialize: deserialize_selectOptionRequest,
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },

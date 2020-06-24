@@ -161,6 +161,33 @@ export namespace selectorRequest {
     }
 }
 
+export class selectOptionRequest extends jspb.Message { 
+    getSelector(): string;
+    setSelector(value: string): selectOptionRequest;
+
+    clearMatcherList(): void;
+    getMatcherList(): Array<string>;
+    setMatcherList(value: Array<string>): selectOptionRequest;
+    addMatcher(value: string, index?: number): string;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): selectOptionRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: selectOptionRequest): selectOptionRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: selectOptionRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): selectOptionRequest;
+    static deserializeBinaryFromReader(message: selectOptionRequest, reader: jspb.BinaryReader): selectOptionRequest;
+}
+
+export namespace selectOptionRequest {
+    export type AsObject = {
+        selector: string,
+        matcherList: Array<string>,
+    }
+}
+
 export class SelectEntry extends jspb.Message { 
     getLog(): string;
     setLog(value: string): SelectEntry;
