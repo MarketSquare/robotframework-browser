@@ -105,7 +105,6 @@ class Browser(DynamicCore):
     def _playwright_process(self) -> Popen:
         cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
         path_to_script = os.path.join(cwd_dir, "index.js")
-        logger.info(f"Starting Browser process {path_to_script}")
         logfile = open(
             os.path.join(
                 BuiltIn().get_variable_value("${OUTPUTDIR}"), "playwright-log.txt"
@@ -113,27 +112,31 @@ class Browser(DynamicCore):
             "w",
         )
         self.port = str(find_free_port())
+        env = dict(os.environ)
+        env["PORT"] = self.port
+        logger.info(f"Starting Browser process {path_to_script} using port {self.port}")
         popen = Popen(
             ["node", path_to_script],
             shell=False,
             cwd=cwd_dir,
-            env={"PORT": self.port, "PATH": os.environ["PATH"]},
+            env=env,
             stdout=logfile,
             stderr=STDOUT,
         )
-        for i in range(50):
+        for i in range(30):
             with grpc.insecure_channel(f"localhost:{self.port}") as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
                     response = stub.Health(Empty())
                     logger.info(
-                        f"Connected to the playwright process at port ${self.port}: ${response}"
+                        f"Connected to the playwright process at port {self.port}: {response}"
                     )
                     return popen
-                except grpc.RpcError:
+                except grpc.RpcError as err:
+                    logger.info(err)
                     time.sleep(0.1)
         raise RuntimeError(
-            f"Could not connect to the playwright process at port ${self.port}"
+            f"Could not connect to the playwright process at port {self.port}"
         )
 
     def _close(self):
