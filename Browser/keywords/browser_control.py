@@ -46,6 +46,14 @@ class Control:
             logger.info(response.log)
 
     @keyword
+    def get_url(self):
+        """Returns curent URL."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetUrl(playwright_pb2.Empty())
+            logger.info(response.log)
+            return response.body
+
+    @keyword
     def go_to(self, url: str):
         """Navigates the current browser tab to the provided ``url``."""
         with self.playwright.grpc_channel() as stub:

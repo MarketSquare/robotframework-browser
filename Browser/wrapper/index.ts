@@ -4,7 +4,7 @@ import {sendUnaryData, ServerUnaryCall, Server, ServerCredentials} from "grpc";
 import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest, screenshotRequest, getDomPropertyRequest} from "./generated/playwright_pb";
 
 // This is necessary for improved typescript inference
-/* 
+/*
  * If obj is not trueish call callback with new Error containing message
  */
 function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): asserts obj is NonNullable<T1> {
@@ -15,7 +15,7 @@ function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): 
 
 // Can't have an async constructor, this is a workaround
 async function createBrowserState(browserType: string): Promise<BrowserState> {
-    const headless = true 
+    const headless = true
     let browser, context, page
     if (browserType === 'firefox') {
         browser = await firefox.launch({headless: headless})
@@ -53,16 +53,13 @@ class PlaywrightServer implements IPlaywrightServer {
     private browserState?: BrowserState
     // current open browsers main context and open page
 
-    private async openUrlInPage(url: string, page: Page): Promise<string> {
-        console.log('Go to url' + url)
-        await page.goto(url)
-
-        return "Succesfully opened URL " + url
+    private async openUrl(url: string, callback: sendUnaryData<Response.Empty>) {
+        exists(this.browserState, callback, "Tried to open URl but had no browser open")
+        await this.browserState.page.goto(url)
     }
 
     async closeBrowser(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, "Tried to close browser but none was open")
-
         await this.browserState.browser.close()
         this.browserState = undefined
         console.log("Closed browser")
@@ -78,18 +75,17 @@ class PlaywrightServer implements IPlaywrightServer {
         this.browserState = await createBrowserState(browserType)
         const response = new Response.Empty()
         if (url) {
-           const returnValue = await this.openUrlInPage(url, this.browserState?.page)
-           response.setLog(returnValue);
+            await this.openUrl(url, callback)
+            callback(null, emptyWithLog(`Succesfully opened browser ${browserType} to ${url}.`))
+        } else {
+            callback(null, emptyWithLog(`Succesfully opened browser ${browserType}.`));
         }
-        console.log('Browser opened')
-        callback(null, response);
     }
 
     async goTo(call: ServerUnaryCall<goToRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         const url = call.request.getUrl()
         console.log("Go to URL: " + url)
-        exists(this.browserState, callback, "Tried to open URl but had no browser open")
-        await this.browserState.page.goto(url)
+        await this.openUrl(url, callback)
         const response = emptyWithLog("Succesfully opened URL")
         callback(null, response)
     }
@@ -110,9 +106,8 @@ class PlaywrightServer implements IPlaywrightServer {
         const response = new Response.String()
         response.setBody(url)
         callback(null, response)
-        
     }
-    
+
     async getTextContent(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.String>): Promise<void> {
         exists(this.browserState, callback, "Tried to find text on page, no open browser")
         const selector = call.request.getSelector()
@@ -127,10 +122,10 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, "Tried to get DOM property, no open browser")
         const selector = call.request.getSelector()
         const property = call.request.getProperty()
-        
+
         const element = await this.browserState.page.$(selector)
         exists(element, callback, "Couldn't find element: " + selector)
-        
+
         const result = await element.getProperty(property)
         const content = await result.jsonValue()
         console.log(`Retrieved dom property for element ${selector} containing ${content}`)
@@ -144,10 +139,10 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, "Tried to get DOM property, no open browser")
         const selector = call.request.getSelector()
         const property = call.request.getProperty()
-        
+
         const element = await this.browserState.page.$(selector)
         exists(element, callback, "Couldn't find element: " + selector)
-        
+
         const result = await element.getProperty(property)
         const content = await result.jsonValue()
         console.log(`Retrieved dom property for element ${selector} containing ${content}`)
@@ -156,17 +151,17 @@ class PlaywrightServer implements IPlaywrightServer {
         response.setBody(content || false)
         callback(null, response)
     }
-    
+
     async inputText(call: ServerUnaryCall<inputTextRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, "Tried to input text, no open browser")
         const inputText = call.request.getInput()
         const selector = call.request.getSelector()
         await this.browserState.page.fill(selector, inputText)
-        
+
         const response = emptyWithLog("Input text: " + inputText)
         callback(null, response)
     }
-    
+
     async clickButton(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, "Tried to click button, no open browser")
 
@@ -182,7 +177,7 @@ class PlaywrightServer implements IPlaywrightServer {
         await this.browserState.page.check(selector)
         const response = emptyWithLog("Checked checkbox: " + selector)
         callback(null, response)
-    } 
+    }
     async uncheckCheckbox(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, "Tried to uncheck checkbox, no open browser")
         const selector = call.request.getSelector()
@@ -200,7 +195,7 @@ class PlaywrightServer implements IPlaywrightServer {
     async screenshot(call: ServerUnaryCall<screenshotRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, "Tried to take screenshot, no open browser")
         // Add the file extension here because the image type is defined by playwrights defaults
-        const path = call.request.getPath() + ".png" 
+        const path = call.request.getPath() + ".png"
         console.log(`Taking a screenshot of current page to ${path}`)
         await this.browserState.page.screenshot({path: path})
 
