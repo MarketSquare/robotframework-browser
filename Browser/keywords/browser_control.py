@@ -1,21 +1,16 @@
-from typing import Callable, ContextManager, List, Optional
+from typing import List, Optional
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
-from Browser.generated.playwright_pb2_grpc import PlaywrightStub
-from Browser.generated.playwright_pb2 import Empty
-import Browser.generated.playwright_pb2 as playwright_pb2
+from ..generated import playwright_pb2
 
 
 class Control:
     def __init__(
-        self,
-        insecure_stub: Callable[[], ContextManager[PlaywrightStub]],
-        supported_browsers: List[str],
-        get_screenshot_path: Callable[[], str],
+        self, playwright, supported_browsers: List[str], get_screenshot_path: str,
     ):
-        self._insecure_stub = insecure_stub
+        self.playwright = playwright
         self.supported_browsers = supported_browsers
         self.get_screenshot_path = get_screenshot_path
 
@@ -37,7 +32,7 @@ class Control:
                 f"{browser} is not supported, "
                 f'it should be one of: {", ".join(self.supported_browsers)}'
             )
-        with self._insecure_stub() as stub:
+        with self.playwright.grpc_channel() as stub:
             response = stub.OpenBrowser(
                 playwright_pb2.openBrowserRequest(url=url or "", browser=browser_)
             )
@@ -46,22 +41,22 @@ class Control:
     @keyword
     def close_browser(self):
         """Closes the current browser."""
-        with self._insecure_stub() as stub:
-            response = stub.CloseBrowser(Empty())
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseBrowser(playwright_pb2.Empty())
             logger.info(response.log)
 
     @keyword
     def go_to(self, url: str):
         """Navigates the current browser tab to the provided ``url``."""
-        with self._insecure_stub() as stub:
+        with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(playwright_pb2.goToRequest(url=url))
             logger.info(response.log)
 
     @keyword
     def take_page_screenshot(self, path: Optional[str] = None):
         if path is None:
-            path = self.get_screenshot_path()
+            path = self.get_screenshot_path
         logger.info(f"Taking screenshot into ${path}")
-        with self._insecure_stub() as stub:
+        with self.playwright.grpc_channel() as stub:
             response = stub.Screenshot(playwright_pb2.screenshotRequest(path=path))
             logger.info(response.log)

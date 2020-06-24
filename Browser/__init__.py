@@ -1,23 +1,13 @@
 __version__ = "0.1.1"
 
 import os
-from subprocess import Popen, STDOUT
-import contextlib
-from functools import cached_property
-import time
-from typing import Optional
-
-import grpc  # type: ignore
 
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from Browser.generated.playwright_pb2 import Empty
-import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
-
 from .keywords import Validation, Control, Input
-from .util import find_free_port
+from .playwright import Playwright
 
 
 class Browser(DynamicCore):
@@ -84,80 +74,24 @@ class Browser(DynamicCore):
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    port: Optional[str] = None
-    _SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
-
-    def _GET_SCREENSHOT_PATH(self):
-        BuiltIn().get_variable_value("${OUTPUTDIR}")
+    SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
+        self.playwright = Playwright(self.outputdir)
         libraries = [
-            Validation(self._insecure_stub),
-            Control(
-                self._insecure_stub, self._SUPPORTED_BROWSERS, self._GET_SCREENSHOT_PATH
-            ),
-            Input(self._insecure_stub),
+            Validation(self.playwright),
+            Control(self.playwright, self.SUPPORTED_BROWSERS, self.outputdir),
+            Input(self.playwright),
         ]
         DynamicCore.__init__(self, libraries)
 
-    @cached_property
-    def _playwright_process(self) -> Popen:
-        cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
-        path_to_script = os.path.join(cwd_dir, "index.js")
-        logfile = open(
-            os.path.join(
-                BuiltIn().get_variable_value("${OUTPUTDIR}"), "playwright-log.txt"
-            ),
-            "w",
-        )
-        self.port = str(find_free_port())
-        env = dict(os.environ)
-        env["PORT"] = self.port
-        logger.info(f"Starting Browser process {path_to_script} using port {self.port}")
-        popen = Popen(
-            ["node", path_to_script],
-            shell=False,
-            cwd=cwd_dir,
-            env=env,
-            stdout=logfile,
-            stderr=STDOUT,
-        )
-        for i in range(30):
-            with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-                try:
-                    stub = playwright_pb2_grpc.PlaywrightStub(channel)
-                    response = stub.Health(Empty())
-                    logger.info(
-                        f"Connected to the playwright process at port {self.port}: {response}"
-                    )
-                    return popen
-                except grpc.RpcError as err:
-                    logger.info(err)
-                    time.sleep(0.1)
-        raise RuntimeError(
-            f"Could not connect to the playwright process at port {self.port}"
-        )
+    @property
+    def outputdir(self):
+        return BuiltIn().get_variable_value("${OUTPUTDIR}")
 
     def _close(self):
-        logger.debug("Closing Playwright process")
-        self._playwright_process.kill()
-        logger.debug("Playwright process killed")
-
-    """ Yields a PlayWrightstub on a newly initialized channel and
-        closes channel after control returns
-    """
-
-    @contextlib.contextmanager
-    def _insecure_stub(self):
-        returncode = self._playwright_process.poll()
-        if returncode is not None:
-            raise ConnectionError(
-                "Playwright process has been terminated with code {}".format(returncode)
-            )
-        channel = grpc.insecure_channel(f"localhost:{self.port}")
-        yield playwright_pb2_grpc.PlaywrightStub(channel)
-        channel.close()
+        self.playwright.close()
 
     def run_keyword(self, name, args, kwargs):
         try:
@@ -166,19 +100,21 @@ class Browser(DynamicCore):
             self.test_error()
             raise e
 
-    """ Sends screenshot message through the stub and then raises an AssertionError with message
-        Only works during testing since this uses robot's outputdir for output
-    """
-
     def test_error(self):
-        on_failure = "take page screenshot"
+        """Sends screenshot command to Playwright.
+
+        Only works during testing since this uses robot's outputdir for output
+        """
+        on_failure_keyword = "take page screenshot"
         try:
             path = os.path.join(
                 BuiltIn().get_variable_value("${OUTPUTDIR}"),
                 BuiltIn().get_variable_value("${TEST NAME}").replace(" ", "_")
                 + "_FAILURE_SCREENSHOT",
             ).replace("\\", "\\\\")
-            logger.info(f"Running {on_failure} {path}")
-            BuiltIn().run_keyword(on_failure, path)
+            logger.info(f"Running `{on_failure_keyword}` with arguments `{path}`")
+            BuiltIn().run_keyword(on_failure_keyword, path)
         except Exception as err:
-            logger.error(f"Keyword '{on_failure}' could not be run on failure: {err}")
+            logger.error(
+                f"Keyword '{on_failure_keyword}' could not be run on failure: {err}"
+            )
