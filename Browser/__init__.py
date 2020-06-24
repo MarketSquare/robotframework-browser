@@ -175,10 +175,10 @@ class Browser(DynamicCore):
         try:
             path = os.path.join(
                 BuiltIn().get_variable_value("${OUTPUTDIR}"),
-                BuiltIn().get_variable_value("${TEST NAME}") + "_FAILURE_SCREENSHOT",
-            )
+                BuiltIn().get_variable_value("${TEST NAME}").replace(" ", "_")
+                + "_FAILURE_SCREENSHOT",
+            ).replace("\\", "\\\\")
+            logger.info(f"Running {on_failure} {path}")
             BuiltIn().run_keyword(on_failure, path)
         except Exception as err:
-            logger.error(
-                "Keyword '{}' could not be run on failure: {}".format(on_failure, err)
-            )
+            logger.error(f"Keyword '{on_failure}' could not be run on failure: {err}")

@@ -5,9 +5,11 @@ Library		OperatingSystem
 Test Setup	Run Keywords	Open Browser	chrome	AND	GoTo	http://localhost:7272
 Test Teardown	Close Browser
 
+
+
 *** Variables ***
-${failure_screnshot}	${OUTPUT_DIR}/Test screenshotting failing test_FAILURE_SCREENSHOT.png
-${test_screenshot}	${OUTPUT_DIR}/test_screenshot
+${failure_screnshot}	${OUTPUT_DIR}${/}Test_screenshotting_failing_test_FAILURE_SCREENSHOT.png
+${test_screenshot}	${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
 Test screenshotting failing test

@@ -19,7 +19,7 @@ utest:
 	pytest utest
 
 atest:
-	PYTHONPATH=. robot --loglevel DEBUG --outputdir atest/output atest/test
+	robot --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
 
 lint-python:
 	mypy .

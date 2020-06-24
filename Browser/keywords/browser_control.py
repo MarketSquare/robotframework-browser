@@ -61,6 +61,7 @@ class Control:
     def take_page_screenshot(self, path: Optional[str] = None):
         if path is None:
             path = self.get_screenshot_path()
+        logger.info(f"Taking screenshot into ${path}")
         with self._insecure_stub() as stub:
             response = stub.Screenshot(playwright_pb2.screenshotRequest(path=path))
             logger.info(response.log)

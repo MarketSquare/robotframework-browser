@@ -201,7 +201,7 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, "Tried to take screenshot, no open browser")
         // Add the file extension here because the image type is defined by playwrights defaults
         const path = call.request.getPath() + ".png" 
-        console.log("Taking a screenshot of current page")
+        console.log(`Taking a screenshot of current page to ${path}`)
         await this.browserState.page.screenshot({path: path})
 
         const response = emptyWithLog("Succesfully took screenshot")
