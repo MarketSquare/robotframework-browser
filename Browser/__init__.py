@@ -78,12 +78,12 @@ class Browser(DynamicCore):
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
-        self.playwright = Playwright(self.outputdir)
         libraries = [
-            Validation(self.playwright),
-            Control(self.playwright, self.SUPPORTED_BROWSERS, self.outputdir),
-            Input(self.playwright),
+            Validation(self),
+            Control(self),
+            Input(self),
         ]
+        self.playwright = Playwright()
         DynamicCore.__init__(self, libraries)
 
     @property

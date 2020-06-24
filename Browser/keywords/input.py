@@ -5,10 +5,13 @@ from ..generated import playwright_pb2
 
 
 class Input:
-    def __init__(self, playwright):
-        self.playwright = playwright
+    def __init__(self, library):
+        self.library = library
 
-    # Input keywords
+    @property
+    def playwright(self):
+        return self.library.playwright
+
     @keyword
     def input_text(self, selector: str, text: str):
         """ Types the given ``text`` into the text field identified by ``selector`` """

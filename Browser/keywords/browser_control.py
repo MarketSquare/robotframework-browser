@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -7,12 +7,12 @@ from ..generated import playwright_pb2
 
 
 class Control:
-    def __init__(
-        self, playwright, supported_browsers: List[str], get_screenshot_path: str,
-    ):
-        self.playwright = playwright
-        self.supported_browsers = supported_browsers
-        self.get_screenshot_path = get_screenshot_path
+    def __init__(self, library):
+        self.library = library
+
+    @property
+    def playwright(self):
+        return self.library.playwright
 
     @keyword
     def open_browser(self, browser="Chrome", url=None):
@@ -27,10 +27,10 @@ class Control:
 
         """
         browser_ = browser.lower().strip()
-        if browser_ not in self.supported_browsers:
+        if browser_ not in self.library.SUPPORTED_BROWSERS:
             raise ValueError(
                 f"{browser} is not supported, "
-                f'it should be one of: {", ".join(self.supported_browsers)}'
+                f'it should be one of: {", ".join(self.library.SUPPORTED_BROWSERS)}'
             )
         with self.playwright.grpc_channel() as stub:
             response = stub.OpenBrowser(
@@ -63,7 +63,7 @@ class Control:
     @keyword
     def take_page_screenshot(self, path: Optional[str] = None):
         if path is None:
-            path = self.get_screenshot_path
+            path = self.library.get_screenshot_path
         logger.info(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
             response = stub.Screenshot(playwright_pb2.screenshotRequest(path=path))

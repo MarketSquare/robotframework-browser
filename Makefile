@@ -64,9 +64,10 @@ protobuf:
 		-I ./protos \
 		protos/*.proto
 
-
-release:
+package: keyword-docs
 	rm -rf dist/
 	cp package.json Browser/wrapper
 	.venv/bin/python setup.py sdist bdist_wheel
+
+release: package
 	python3 -m twine upload --repository pypi dist/*

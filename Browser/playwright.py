@@ -7,6 +7,7 @@ import time
 
 import grpc  # type: ignore
 from robot.api import logger  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
 from Browser.generated.playwright_pb2 import Empty
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
@@ -15,8 +16,9 @@ import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 class Playwright:
     """A wrapper for communicating with nodejs Playwirght process."""
 
-    def __init__(self, outputdir):
-        self.outputdir = outputdir
+    @property
+    def outputdir(self):
+        return BuiltIn().get_variable_value("${OUTPUTDIR}")
 
     @functools.cached_property
     def _playwright_process(self) -> Popen:

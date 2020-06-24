@@ -7,8 +7,12 @@ from ..generated import playwright_pb2
 
 
 class Validation:
-    def __init__(self, playwright):
-        self.playwright = playwright
+    def __init__(self, library):
+        self.library = library
+
+    @property
+    def playwright(self):
+        return self.library.playwright
 
     @keyword
     def location_should_be(self, url: str):
