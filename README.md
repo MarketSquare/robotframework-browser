@@ -18,6 +18,8 @@ Supporting testing and automation with [Robot Framework](https://robotframework.
 
 Official post about this [venture](https://forum.robotframework.org/t/moving-robot-framework-browser-automation-to-2020-or-2021/323).
 
+See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html).
+
 # Installation instructions for users
 
 1. Install node.js e.g. from https://nodejs.org/en/download/
