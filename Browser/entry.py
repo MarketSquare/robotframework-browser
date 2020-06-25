@@ -31,6 +31,7 @@ def run():
             raise RuntimeError("problem installing node dependencies")
         for line in process.stdout:
             print(line.decode("utf-8"))
+        print("rfbrowser init completed")
     else:
         print(f"Invalid command `{cmd}`")
         print(USAGE)
