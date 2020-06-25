@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -48,15 +47,35 @@ jobs:
     - name: Run pytests
       run: |
         pytest
-    - name: Install Robot Framework Browser
-      run: |
-        python setup.py install
-        rfbrowser init
     - name: Run Robot Framework tests
       run: |
-        ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output atest/test
+        ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output --pythonpath . atest/test
     - uses: actions/upload-artifact@v1
       if: success() || failure()
       with:
         name: Test results
         path: atest/output
+  test-install:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+        node-version: [12.x]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Robot Framework Browser
+        run: |
+          pip install .
+          rfbrowser init
+      - name: Run Robot Framework tests
+        run: |
+          ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output atest/test
+
