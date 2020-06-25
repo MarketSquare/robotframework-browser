@@ -20,7 +20,7 @@ Official post about this [venture](https://forum.robotframework.org/t/moving-rob
 
 See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html).
 
-# Installation instructions for users
+# Installation instructions
 
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
@@ -58,6 +58,14 @@ The only difference is that the virtualenv needs to be activated by running
 There are both unit tests written with pytest and acceptance test written with
 Robot Framework. These can be run manually with `make utest` and `make atest`.
 The tests are also executed in a prepush hook.
+
+## Running tests in docker container
+
+Docker container builds a clean install package. This can be used to check that builded package works correctly in clean environment without development dependencies.
+
+1. Build the container `docker build -t rfbrowser .`
+2. Run tests mounted from host machine `docker run -it -v /ABSOLUTEPATH/atest/:/atest rfbrowser robot -d /atest/output /atest`.
+3. See results in `atest/output`
 
 ## Releasing
 1. Ensure generated code and types are up to date with `make build`
