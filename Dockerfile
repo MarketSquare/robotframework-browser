@@ -34,8 +34,6 @@ RUN \
 
 FROM BrowserBase
 WORKDIR /app
-COPY ./atest /app/atest
 COPY --from=BrowserBuilder /app/dist /app/dist
 RUN pip install dist/robotframework_browser-*-py3-none-any.whl
 RUN rfbrowser init
-RUN ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output atest/test
