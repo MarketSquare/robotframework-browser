@@ -21,7 +21,7 @@ def run():
             os.path.dirname(os.path.abspath(__file__)), "wrapper"
         )
         process = Popen(
-            "npm install --production -g",
+            "npm install --production",
             shell=True,
             cwd=installation_dir,
             stdout=PIPE,
