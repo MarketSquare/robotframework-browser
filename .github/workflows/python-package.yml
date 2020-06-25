@@ -70,7 +70,7 @@ jobs:
       - name: Build nodejs dependencies
         run: |
           yarn --frozen-lockfile
-          yarn install
+          yarn install --global
           yarn build
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
