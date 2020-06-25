@@ -48,9 +48,13 @@ jobs:
     - name: Run pytests
       run: |
         pytest
+    - name: Install Robot Framework Browser
+      run: |
+        python setup.py install
+        rfbrowser init
     - name: Run Robot Framework tests
       run: |
-        ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output --pythonpath . atest/test
+        ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output atest/test
     - uses: actions/upload-artifact@v1
       if: success() || failure()
       with:
