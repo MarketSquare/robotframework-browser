@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from setuptools import setup  # type: ignore
+from setuptools import setup, find_packages  # type: ignore
 
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 packages = \
-    ['Browser', 'Browser.generated', 'Browser.locators']
+    find_packages(exclude=["utest", "atest"])
 
 package_data = \
     {'': ['*'], 'Browser': ['wrapper/*', 'wrapper/generated/*']}
@@ -15,7 +15,7 @@ install_requires = \
 
 setup_kwargs = {
     'name': 'robotframework-browser',
-    'version': '0.2.0',
+    'version': '0.2.1',
     'description': '',
     'long_description': long_description,
     'long_description_content_type': 'text/markdown',
