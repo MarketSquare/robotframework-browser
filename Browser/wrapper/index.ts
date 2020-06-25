@@ -1,6 +1,6 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
-import {sendUnaryData, ServerUnaryCall, Server, ServerCredentials} from "grpc";
+import {sendUnaryData, ServerUnaryCall, Server, ServerCredentials, ServiceError, status} from "grpc";
 import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, selectorRequest, screenshotRequest, getDomPropertyRequest, SelectEntry, selectOptionRequest} from "./generated/playwright_pb";
 
 // This is necessary for improved typescript inference
@@ -9,7 +9,15 @@ import {openBrowserRequest, Empty, Response, goToRequest, inputTextRequest, sele
  */
 function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): asserts obj is NonNullable<T1> {
     if (!obj) {
-        callback(new Error(message), null)
+        callback(new PwserverError(message, status.FAILED_PRECONDITION), null)
+    }
+}
+
+class PwserverError extends Error implements ServiceError {
+    code: number
+    constructor(details: string, code: number) {
+        super(details)
+        this.code = code
     }
 }
 
@@ -217,7 +225,13 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, "Tried to select ``select`` element option, no open browser")
         const selector = call.request.getSelector()
         const matcher = call.request.getMatcherList()
+        console.log(`Selecting from element ${selector} options ${matcher}`)
         const result = await this.browserState.page.selectOption(selector, matcher)
+        if  (result.length == 0) {
+            console.log("Couldn't select any options")
+            const error = new PwserverError(`No options matched ${matcher}`, status.NOT_FOUND)
+            callback(error, null)
+        }
         const response = emptyWithLog(`Selected options ${result} in element ${selector}`)
         callback(null, response)
     }

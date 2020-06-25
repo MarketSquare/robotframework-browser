@@ -68,7 +68,7 @@ class Input:
     def select_from_list_by_label(self, selector: str, *labels):
         """Toggles options from selection list ``selector`` by ``labels``.
         """
-        matchers = ["{ label: " + s + "}" for s in labels]
+        matchers = ['{label:"' + s + '"}' for s in labels]
         with self._insecure_stub() as stub:
             response = stub.SelectOption(
                 playwright_pb2.selectOptionRequest(selector=selector, matcher=matchers)

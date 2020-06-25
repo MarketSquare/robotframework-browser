@@ -34,9 +34,15 @@ List Selection Should Be
     Run Keyword And Expect Error       * options *'Direct mail'* should have been selected.
     ...    List Selection Should Be    css=select[name=possible_channels]    Email    Telephone    Direct mail
 
+Small Select From List 
+    Select From List By Label	css=select[name=preferred_channel]	Direct mail
+
 Select From List
     List Selection Should Be	 	    css=select[name=preferred_channel]    Telephone
-    Select By Label And Verify Selection    css=select[name=preferred_channel]    Email    Email
+    
+    Select From List By Label	css=select[name=preferred_channel]	Email
+    List Selection Should Be	 	    css=select[name=preferred_channel]    Email
+
     Select By Label And Verify Selection    css=select[name=preferred_channel]    Email    Email
     Select By Value And Verify Selection    css=select[name=preferred_channel]    directmail    directmail
     Select By Label And Verify Selection    css=select[name=preferred_channel]    Telephone
