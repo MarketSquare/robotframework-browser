@@ -8,3 +8,8 @@ Test Teardown	Close Browser
 Test inputting with css selector
     Input Text		css=input#username_field	username	
     TextField Value Should Be	css=input#username_field	username	
+
+Test inputting password
+    Input Password	css=input#password_field	password
+    TextField Value Should Be	css=input#password_field	password
+
