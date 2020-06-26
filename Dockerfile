@@ -73,7 +73,6 @@ RUN groupadd -r pwuser && useradd -r -g pwuser -G audio,video pwuser \
 RUN apt-get update && apt-get install -y xvfb
 COPY --from=BrowserBuilder /app/dist /app/dist
 RUN pip install dist/robotframework_browser-*-py3-none-any.whl
-RUN npm install -g node-pre-gyp
 RUN npm_config_user=root npm install -g grpc
 RUN npm install -g google-protobuf
 RUN npm_config_user=root npm install -g playwright
