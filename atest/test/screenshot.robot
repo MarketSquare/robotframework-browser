@@ -2,7 +2,7 @@
 Library		Browser
 Library		OperatingSystem
 
-Test Setup	Run Keywords	Open Browser	chrome	AND	GoTo	http://localhost:7272
+Test Setup	Open Browser	http://localhost:7272
 Test Teardown	Close Browser
 
 

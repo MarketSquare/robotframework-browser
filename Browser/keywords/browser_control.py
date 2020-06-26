@@ -15,9 +15,10 @@ class Control:
         return self.library.playwright
 
     @keyword
-    def open_browser(self, browser="Chrome", url=None):
-        """Opens a new browser instance to the optional ``url``.
-        The ``browser`` argument specifies which browser to use. The
+    def open_browser(self, url=None, browser="Chrome"):
+        """Opens a new browser instance.
+        The optional ``url`` argument specifies what to open.
+        The optional ``browser`` argument specifies which browser to use. The
         supported browsers are listed in the table below. The browser names
         are case-insensitive and some browsers have multiple supported names.
         |    = Browser =    |        = Name(s) =        |

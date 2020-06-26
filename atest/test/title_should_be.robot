@@ -1,7 +1,7 @@
 *** Settings ***
 Library  Browser
 
-Test Setup	Open Browser	chrome
+Test Setup	Open Browser
 Test Teardown	Close Browser
 
 *** Test Cases ***
