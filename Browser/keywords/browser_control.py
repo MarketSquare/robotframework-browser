@@ -62,6 +62,9 @@ class Control:
 
     @keyword
     def take_page_screenshot(self, path: Optional[str] = None):
+        """ Take screenshot of current browser state and saves it to path.
+            By default saves to robot output dir.
+        """
         if path is None:
             path = self.library.get_screenshot_path
         logger.info(f"Taking screenshot into ${path}")

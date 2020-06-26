@@ -67,13 +67,18 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Compile typescript
+        run: |
+          yarn install
+          yarn build
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Robot Framework Browser
         run: |
-          make package
+          rm -rf dist
+          cp package.json Browser/wrapper/package.json
           pip install .
           rfbrowser init
       - name: Run Robot Framework tests
