@@ -67,18 +67,13 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Build nodejs dependencies
-        run: |
-          yarn --frozen-lockfile
-          yarn install
-          yarn build
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Robot Framework Browser
         run: |
-          cp package.json Browser/wrapper/package.json
+          make package
           pip install .
           rfbrowser init
       - name: Run Robot Framework tests

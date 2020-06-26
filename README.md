@@ -56,7 +56,7 @@ The only difference is that the virtualenv needs to be activated by running
 
 ## Testing
 There are both unit tests written with pytest and acceptance test written with
-Robot Framework. These can be run manually with `make utest` and `make atest`.
+Robot Framework. These can be run manually with `make utest` and `make atest`. To rerun failed tests you can use `make test-failed` 
 The tests are also executed in a prepush hook.
 
 ## Running tests in docker container
@@ -65,8 +65,8 @@ Docker container builds a clean install package. This can be used to check that 
 
 Note atest test app start in `__init__.robot` requires a small change as the path is `/atest/demoapp/server.py` and not `atest/demoapp/server.py` in this case.
 
-1. Build the container `docker build -t rfbrowser .`
-2. Run tests mounted from host machine `docker run -it --rm --ipc=host --security-opt seccomp=chrome.json -v /ABSOLUTEPATH/atest/:/atest rfbrowser robot -d /atest/output /atest`.
+1. Build the container `make docker`
+2. Run tests mounted from host machine `make docker-test`.
 3. See results in `atest/output`
 
 ## Releasing
@@ -79,6 +79,8 @@ Note atest test app start in `__init__.robot` requires a small change as the pat
 ## Code style
 Python code style is enforced with flake8 and black. These are executed in a
 precommit hook, but can also be invoked manually with `make lint-python`.
+
+JS / TS code style is enforced with eslint. Lints are run in precommit hooks, but can be run manually with `make lint-node`.
 
 ## Architecture
 

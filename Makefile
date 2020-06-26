@@ -33,10 +33,17 @@ utest:
 	pytest utest
 
 atest:
+	rm -rf atest/output
 	robot --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
 
 test-failed: build
 	PYTHONPATH=. robot --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test 
+
+docker:
+	docker build --tag rfbrowser .
+docker-test:
+	rm -rf atest/output
+	docker run -it --rm --ipc=host --security-opt seccomp=chrome.json -v /ABSOLUTEPATH/atest/:/atest rfbrowser robot -d /atest/output /atest
 
 lint-python:
 	mypy .
