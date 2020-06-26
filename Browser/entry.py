@@ -1,6 +1,6 @@
 import os
 import sys
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
 
 USAGE = """USAGE
   rf-browser [command]
@@ -25,10 +25,13 @@ def run():
             shell=True,
             cwd=installation_dir,
             stdout=PIPE,
-            stderr=PIPE,
+            stderr=STDOUT,
         )
         if process.stdout is None:
-            raise RuntimeError("problem installing node dependencies")
+            raise RuntimeError(
+                "Problem installing node dependencies."
+                + "Node process returned with exit status {}".format(process.returncode)
+            )
         for line in process.stdout:
             print(line.decode("utf-8"))
         print("rfbrowser init completed")

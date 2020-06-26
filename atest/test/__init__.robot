@@ -1,5 +1,5 @@
 *** Settings ***
-Test Timeout	5 seconds
+Test Timeout	10 seconds
 
 Library		Process
 Suite Setup     Start Process	python  atest/demoapp/server.py
