@@ -2,3 +2,9 @@
 *Dockerfile*
 *docker-compose*
 node_modules
+atest
+utest
+.mypy_cache
+.pytest_cache
+.github
+.idea

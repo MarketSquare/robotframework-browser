@@ -78,5 +78,7 @@ RUN npm_config_user=root npm install -g grpc
 RUN npm install -g google-protobuf
 RUN npm_config_user=root npm install -g playwright
 # Run everything after as non-privileged user.
+RUN mv /root/.cache/ /home/pwuser/.cache
+RUN chmod a+rwx -R /home/pwuser/.cache
 USER pwuser
 ENV NODE_PATH=/usr/lib/node_modules
