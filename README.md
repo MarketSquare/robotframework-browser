@@ -63,8 +63,10 @@ The tests are also executed in a prepush hook.
 
 Docker container builds a clean install package. This can be used to check that builded package works correctly in clean environment without development dependencies.
 
+Note atest test app start in `__init__.robot` requires a small change as the path is `/atest/demoapp/server.py` and not `atest/demoapp/server.py` in this case.
+
 1. Build the container `docker build -t rfbrowser .`
-2. Run tests mounted from host machine `docker run -it -v /ABSOLUTEPATH/atest/:/atest rfbrowser robot -d /atest/output /atest`.
+2. Run tests mounted from host machine `docker run -it --rm --ipc=host --security-opt seccomp=chrome.json -v /ABSOLUTEPATH/atest/:/atest rfbrowser robot --loglevel debug -d /atest/output /atest`.
 3. See results in `atest/output`
 
 ## Releasing
