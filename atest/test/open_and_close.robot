@@ -10,10 +10,6 @@ Open and Close a Firefox Browser
     Open Browser	browser=firefox
     Close Browser
 
-Open and Close a WebKit Browser
-    Open Browser	browser=webkit
-    Close Browser
-
 Open Browser to URL
    Open Browser		http://localhost:7272
    ${url}=    Get URL
