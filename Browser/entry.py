@@ -20,6 +20,7 @@ def run():
         installation_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "wrapper"
         )
+        print("set working directory as {}".format(installation_dir))
         process = Popen(
             "npm install --production",
             shell=True,
