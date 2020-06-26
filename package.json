@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "google-protobuf": "3.9.2",
-    "grpc": "^1.24.2",
+    "grpc": "^1.24.3",
     "playwright": "^1.1.0"
   },
   "husky": {
