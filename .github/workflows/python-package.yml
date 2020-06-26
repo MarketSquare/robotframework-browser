@@ -83,6 +83,8 @@ jobs:
       - name: Run Robot Framework tests
         run: |
           ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output atest/test
+        env:
+          NODE_PATH: /usr/lib/node_modules
       - uses: actions/upload-artifact@v1
         if: success() || failure()
         with:
