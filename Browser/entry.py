@@ -20,9 +20,9 @@ def run():
         installation_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "wrapper"
         )
-        if not os.path.isfile(installation_dir + "package.json"):
+        if not os.path.isfile(os.path.join(installation_dir, "package.json")):
             print(
-                "Directory {} needs to contain package.json "
+                "Directory needs to contain package.json "
                 + "and have write permissions to succesfully install all dependencies. "
                 + "\nPrinting contents:"
             )
