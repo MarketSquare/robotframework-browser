@@ -49,17 +49,30 @@ class Validation:
                 message = "Title should be {} but was `{}`".format(title, response.body)
                 raise AssertionError(message)
 
+    @keyword  # Optional[str] didn't seem to work for text param here
+    def page_should_have(self, selector: str, text=""):
+        """Verifies that current page contains an element matching ``selector``.
+            Optionally verifies that the element contains ``text``
+            Page_should_contain keyword is syntactic sugar for page_should_have
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetTextContent(
+                playwright_pb2.selectorRequest(selector=selector)
+            )
+            logger.info(response.log)
+            if response.body == "":
+                message = "No element matching selector `{}` on page".format(selector)
+                raise AssertionError(message)
+            if text and text not in response.body:
+                message = "Element `{}` should have contained {} but it contained {}".format(
+                    selector, text, response.body
+                )
+
     @keyword
     def page_should_contain(self, text: str):
         """Verifies that current page contains ``text``. """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetTextContent(
-                playwright_pb2.selectorRequest(selector="text=" + text)
-            )
-            logger.info(response.log)
-            if response.body != text:
-                message = "No element with text `{}` on page".format(text)
-                raise AssertionError(message)
+        self.page_should_have("text=" + text)
 
     class CheckboxState(Enum):
         checked = True
