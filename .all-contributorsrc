@@ -67,10 +67,20 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "Snooz82",
+      "name": "René",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/41592183?v=4",
+      "profile": "https://robotframework.slack.com",
+      "contributions": [
+        "ideas",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
-  "projectName": "robotframework-playwright",
+  "projectName": "robotframework-browser",
   "projectOwner": "MarketSquare",
   "repoType": "github",
   "repoHost": "https://github.com",
