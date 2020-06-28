@@ -1,10 +1,12 @@
 from typing import Optional, Any
+from enum import Enum
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..generated import playwright_pb2
 
+AssertionOperator = Enum('AssertionOperator', 'NO_ASSERTION == !=')
 
 class Control:
     def __init__(self, library):
@@ -47,21 +49,22 @@ class Control:
             logger.info(response.log)
 
     @keyword
-    def get_url(self, assertion_operator: Optional[str] = None, assertion_value: Any = None) -> str:
+    def get_url(
+        self, assertion_operator: AssertionOperator = AssertionOperator["NO_ASSERTION"], assertion_value: Any = None
+    ) -> str:
         """Returns curent URL."""
-        value = ''
+        value = ""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(playwright_pb2.Empty())
             logger.info(response.log)
             value = response.body
-        if assertion_operator is not None:
-            self._verify_assertion(value, assertion_operator, assertion_value)
+        self._verify_assertion(value, assertion_operator, assertion_value)
         return value
 
-    def _verify_assertion(self, value: Any, operator: str, expected):
-        if operator == '==' and value != expected:
+    def _verify_assertion(self, value: Any, operator: AssertionOperator, expected):
+        if operator.name == "==" and value != expected:
             raise AssertionError(f"`{value}` should be `{expected}`")
-        if operator == '!=' and value == expected:
+        if operator.name == "!=" and value == expected:
             raise AssertionError(f"`{value}` should not be `{expected}`")
 
     @keyword
