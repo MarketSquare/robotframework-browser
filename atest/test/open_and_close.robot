@@ -12,6 +12,5 @@ Open and Close a Firefox Browser
 
 Open Browser to URL
    Open Browser		http://localhost:7272
-   ${url}=    Get URL
-   Should Be Equal    ${url}    http://localhost:7272/
+   Get URL  ==  http://localhost:7272/
    Close Browser

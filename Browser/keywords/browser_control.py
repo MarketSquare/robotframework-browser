@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -47,12 +47,22 @@ class Control:
             logger.info(response.log)
 
     @keyword
-    def get_url(self):
+    def get_url(self, assertion_operator: Optional[str] = None, assertion_value: Any = None) -> str:
         """Returns curent URL."""
+        value = ''
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(playwright_pb2.Empty())
             logger.info(response.log)
-            return response.body
+            value = response.body
+        if assertion_operator is not None:
+            self._verify_assertion(value, assertion_operator, assertion_value)
+        return value
+
+    def _verify_assertion(self, value: Any, operator: str, expected):
+        if operator == '==' and value != expected:
+            raise AssertionError(f"`{value}` should be `{expected}`")
+        if operator == '!=' and value == expected:
+            raise AssertionError(f"`{value}` should not be `{expected}`")
 
     @keyword
     def go_to(self, url: str):

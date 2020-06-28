@@ -6,7 +6,7 @@ Library		Browser
 
 *** Variables ***
 ${SERVER}         localhost:7272
-${BROWSER}        chrome 
+${BROWSER}        chrome
 ${DELAY}          0
 ${VALID USER}     demo
 ${VALID PASSWORD}    mode
@@ -40,6 +40,6 @@ Submit Credentials
     Click Button    css=input#login_button
 
 Welcome Page Should Be Open
-    Location Should Be    ${WELCOME URL}
+    Get Url  ==  ${WELCOME URL}
     Title Should Be    Welcome Page
 
