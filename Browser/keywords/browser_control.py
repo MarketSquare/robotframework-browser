@@ -6,7 +6,8 @@ from robotlibcore import keyword  # type: ignore
 
 from ..generated import playwright_pb2
 
-AssertionOperator = Enum('AssertionOperator', 'NO_ASSERTION == !=')
+AssertionOperator = Enum("AssertionOperator", "NO_ASSERTION == !=")
+
 
 class Control:
     def __init__(self, library):
@@ -50,7 +51,9 @@ class Control:
 
     @keyword
     def get_url(
-        self, assertion_operator: AssertionOperator = AssertionOperator["NO_ASSERTION"], assertion_value: Any = None
+        self,
+        assertion_operator: AssertionOperator = AssertionOperator["NO_ASSERTION"],
+        assertion_value: Any = None,
     ) -> str:
         """Returns curent URL."""
         value = ""
