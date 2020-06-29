@@ -32,10 +32,11 @@ class Getters:
     @keyword
     def get_url(
         self,
-        assertion_operator: AssertionOperator = AssertionOperator["NO_ASSERTION"],
+        assertion_operator=AssertionOperator.NO_ASSERTION,
         assertion_value: Any = None,
     ) -> str:
         """ Returns current URL.
+
             Optionally asserts that it matches the specified assertion.
         """
         value = ""
@@ -49,10 +50,11 @@ class Getters:
     @keyword
     def get_title(
         self,
-        assertion_operator: AssertionOperator = AssertionOperator["NO_ASSERTION"],
+        assertion_operator=AssertionOperator.NO_ASSERTION,
         assertion_value: Any = None,
     ):
         """ Returns current page Title.
+
             Optionally asserts that it matches the specified assertion.
         """
         value = None
@@ -67,10 +69,11 @@ class Getters:
     def get_textfield_value(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator["NO_ASSERTION"],
+        assertion_operator=AssertionOperator.NO_ASSERTION,
         assertion_value: Any = None,
     ):
         """ Returns textfieds value.
+
             Optionally asserts that it matches the specified assertion.
         """
         value = None
