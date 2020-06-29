@@ -66,6 +66,44 @@ class Getters:
         return value
 
     @keyword
+    def get_text(
+        self,
+        selector: str,
+        assertion_operator=AssertionOperator.NO_ASSERTION,
+        assertion_value: Any = None,
+    ):
+        """ Returns element's text attribute.
+
+            Optionally asserts that it matches the specified assertion.
+        """
+        value = None
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetDomProperty(playwright_pb2.getDomPropertyRequest(selector=selector, "text"))
+            logger.info(response.log)
+            value = response.body
+        _verify_assertion(value, assertion_operator, assertion_value, f"Text {selector}")
+        return value
+
+    @keyword
+    def get_element_attribute(
+        self,
+        selector: str,
+        attribute: str
+        assertion_operator=AssertionOperator.NO_ASSERTION,
+        assertion_value: Any = None,
+    ):
+        """ Returns specified attribute.
+
+            Optionally asserts that it matches the specified assertion.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetDomProperty(playwright_pb2.getDomPropertyRequest(selector=selector, property=attribute))
+            logger.info(response.log)
+            value = response.body
+        _verify_assertion(value, assertion_operator, assertion_value, f"Attribute {selector}")
+        return value
+
+    @keyword
     def get_textfield_value(
         self,
         selector: str,
