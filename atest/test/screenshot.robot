@@ -14,7 +14,7 @@ ${test_screenshot}	${OUTPUT_DIR}${/}test_screenshot
 *** Test Cases ***
 Test screenshotting failing test
     Input Text		css=input#username_field	username	
-    Run Keyword And Expect Error	*content should be not_username but was `username`	TextField Value Should Be	css=input#username_field	not_username
+    Run Keyword And Expect Error	*`username` should be `not_username`	Get TextField Value	css=input#username_field	==	not_username
     Should Exist	${failure_screnshot}
     Remove File		${failure_screnshot}
     Should Not Exist	${failure_screnshot}

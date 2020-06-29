@@ -7,7 +7,7 @@ from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .keywords import Validation, Control, Input
+from .keywords import Control, Getters, Input, Validation
 from .playwright import Playwright
 
 
@@ -68,7 +68,15 @@ class Browser(DynamicCore):
     | = Strategy = |     = Match based on =     |         = Example =            |
     | css          | CSS selector.              | ``css=div#example``            |
     | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
-    | text         | Browser text engine.    | ``text=Login``                 |
+    | text         | Browser text engine.       | ``text=Login``                 |
+
+    = Assertions =
+
+    Keywords that accept arguments ``assertion_operator`` and ``assertion_value``
+    can optionally assert. Currently supported assertion operators are ``==`` `and
+    ``!=``, which assert equality and inequality respectively. Assertion value can
+    be any valid robot value, and the keywords will provide an error message if the'
+    assertion fails.
     """
 
     ROBOT_LIBRARY_VERSION = __version__
@@ -84,6 +92,7 @@ class Browser(DynamicCore):
             Validation(self),
             self.browser_control,
             Input(self),
+            Getters(self),
         ]
         self.playwright = Playwright()
         DynamicCore.__init__(self, libraries)

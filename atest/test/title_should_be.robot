@@ -7,8 +7,8 @@ Test Teardown	Close Browser
 *** Test Cases ***
 test server title
    GoTo		http://localhost:7272/
-   TitleShouldBe	Login Page
+   Get Title	==	Login Page
 
 about:blank title
-    TitleShouldBe	${EMPTY}
+    Get Title	==	${EMPTY}
 
