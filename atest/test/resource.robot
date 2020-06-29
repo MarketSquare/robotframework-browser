@@ -22,7 +22,7 @@ Open Browser To Login Page
     Login Page Should Be Open
 
 Login Page Should Be Open
-    Title Should Be    Login Page
+    Get Title	==	Login Page
 
 Go To Login Page
     Go To    ${LOGIN URL}
@@ -41,5 +41,5 @@ Submit Credentials
 
 Welcome Page Should Be Open
     Get Url  ==  ${WELCOME URL}
-    Title Should Be    Welcome Page
+    Get Title	==  Welcome Page
 

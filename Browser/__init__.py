@@ -7,7 +7,7 @@ from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .keywords import Validation, Control, Input
+from .keywords import Control, Getters, Input, Validation
 from .playwright import Playwright
 
 
@@ -84,6 +84,7 @@ class Browser(DynamicCore):
             Validation(self),
             self.browser_control,
             Input(self),
+            Getters(self),
         ]
         self.playwright = Playwright()
         DynamicCore.__init__(self, libraries)
