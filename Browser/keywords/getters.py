@@ -78,17 +78,23 @@ class Getters:
         """
         value = None
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetDomProperty(playwright_pb2.getDomPropertyRequest(selector=selector, "text"))
+            response = stub.GetDomProperty(
+                playwright_pb2.getDomPropertyRequest(
+                    selector=selector, property="innerText"
+                )
+            )
             logger.info(response.log)
             value = response.body
-        _verify_assertion(value, assertion_operator, assertion_value, f"Text {selector}")
+        _verify_assertion(
+            value, assertion_operator, assertion_value, f"Text {selector}"
+        )
         return value
 
     @keyword
     def get_element_attribute(
         self,
         selector: str,
-        attribute: str
+        attribute: str,
         assertion_operator=AssertionOperator.NO_ASSERTION,
         assertion_value: Any = None,
     ):
@@ -97,10 +103,16 @@ class Getters:
             Optionally asserts that it matches the specified assertion.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetDomProperty(playwright_pb2.getDomPropertyRequest(selector=selector, property=attribute))
+            response = stub.GetDomProperty(
+                playwright_pb2.getDomPropertyRequest(
+                    selector=selector, property=attribute
+                )
+            )
             logger.info(response.log)
             value = response.body
-        _verify_assertion(value, assertion_operator, assertion_value, f"Attribute {selector}")
+        _verify_assertion(
+            value, assertion_operator, assertion_value, f"Attribute {selector}"
+        )
         return value
 
     @keyword
