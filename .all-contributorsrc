@@ -77,6 +77,15 @@
         "ideas",
         "test"
       ]
+    },
+    {
+      "login": "boakley",
+      "name": "Bryan Oakley",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/1123938?v=4",
+      "profile": "https://wordpress.com/read/feeds/39696435",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
