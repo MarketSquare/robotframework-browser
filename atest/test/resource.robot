@@ -37,7 +37,7 @@ Input Password
     Input Text    css=input#password_field    ${password}
 
 Submit Credentials
-    Click Button    css=input#login_button
+    Click	css=input#login_button
 
 Welcome Page Should Be Open
     Get Url  ==  ${WELCOME URL}

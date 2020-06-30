@@ -48,16 +48,14 @@ class Input:
                 BuiltIn().set_log_level(previous_level)
 
     @keyword
-    def click_button(self, selector: str):
-        """ Clicks the button identified by ``selector``. """
+    def click(self, selector: str):
+        """ Clicks element identified by ``selector``. """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClickButton(
                 playwright_pb2.selectorRequest(selector=selector)
             )
             logger.info(response.log)
 
-    # TODO: Should this be select_checkbox for consistency with SL or check_checkbox
-    # for clarity and PW consistency?
     @keyword
     def check_checkbox(self, selector: str):
         """ Checks the checkbox identified by ``selector``.

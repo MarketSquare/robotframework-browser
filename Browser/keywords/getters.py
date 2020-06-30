@@ -91,7 +91,7 @@ class Getters:
         return value
 
     @keyword
-    def get_element_attribute(
+    def get_attribute(
         self,
         selector: str,
         attribute: str,
