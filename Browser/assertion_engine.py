@@ -83,4 +83,3 @@ def verify_assertion(value: Any,
         raise SyntaxError(
             f"{message} `{operator.name}` is not a valid assertion operator"
         )
-
