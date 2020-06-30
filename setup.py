@@ -19,7 +19,7 @@ setup_kwargs = {
     'description': '',
     'long_description': long_description,
     'long_description_content_type': 'text/markdown',
-    'author': 'Mikko Korpela',
+    'author': 'MarketSquare - Robot Framework community',
     'author_email': 'mikko.korpela@gmail.com',
     'maintainer': None,
     'maintainer_email': None,
