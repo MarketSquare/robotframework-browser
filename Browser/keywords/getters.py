@@ -1,24 +1,10 @@
 from typing import Any
-from enum import Enum
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..generated import playwright_pb2
-
-
-AssertionOperator = Enum("AssertionOperator", "NO_ASSERTION == !=")
-
-
-def _verify_assertion(value: Any, operator: AssertionOperator, expected, message=""):
-    if operator.name == "==" and value != expected:
-        raise AssertionError(f"{message} `{value}` should be `{expected}`")
-    if operator.name == "!=" and value == expected:
-        raise AssertionError(f"{message} `{value}` should not be `{expected}`")
-    elif operator.name not in AssertionOperator.__members__:
-        raise AssertionError(
-            f"{message} `{operator.name}` is not a valid assertion operator"
-        )
+from ..assertion_engine import verify_assertion, AssertionOperator
 
 
 class Getters:
@@ -44,7 +30,7 @@ class Getters:
             response = stub.GetUrl(playwright_pb2.Empty())
             logger.info(response.log)
             value = response.body
-        _verify_assertion(value, assertion_operator, assertion_value, "URL ")
+        verify_assertion(value, assertion_operator, assertion_value, "URL ")
         return value
 
     @keyword
@@ -62,7 +48,7 @@ class Getters:
             response = stub.GetTitle(playwright_pb2.Empty())
             logger.info(response.log)
             value = response.body
-        _verify_assertion(value, assertion_operator, assertion_value, "Title ")
+        verify_assertion(value, assertion_operator, assertion_value, "Title ")
         return value
 
     @keyword
@@ -85,9 +71,7 @@ class Getters:
             )
             logger.info(response.log)
             value = response.body
-        _verify_assertion(
-            value, assertion_operator, assertion_value, f"Text {selector}"
-        )
+        verify_assertion(value, assertion_operator, assertion_value, f"Text {selector}")
         return value
 
     @keyword
@@ -110,7 +94,7 @@ class Getters:
             )
             logger.info(response.log)
             value = response.body
-        _verify_assertion(
+        verify_assertion(
             value, assertion_operator, assertion_value, f"Attribute {selector}"
         )
         return value
@@ -135,7 +119,7 @@ class Getters:
             )
             logger.info(response.log)
             value = response.body
-        _verify_assertion(
+        verify_assertion(
             value, assertion_operator, assertion_value, f"Element {selector} value "
         )
         return value
