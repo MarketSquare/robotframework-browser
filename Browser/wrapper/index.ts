@@ -36,6 +36,8 @@ async function createBrowserState(browserType: string): Promise<BrowserState> {
         throw new Error('unsupported browser');
     }
     const context = await browser.newContext();
+    const defaultTimeout = parseInt(process.env.DEFAULT_TIMEOUT!);
+    context.setDefaultTimeout(defaultTimeout);
     const page = await context.newPage();
     return new BrowserState(browser, context, page);
 }
@@ -59,7 +61,6 @@ function emptyWithLog(text: string): Response.Empty {
 
 class PlaywrightServer implements IPlaywrightServer {
     private browserState?: BrowserState;
-    // current open browsers main context and open page
 
     private async openUrl(url: string, callback: sendUnaryData<Response.Empty>) {
         exists(this.browserState, callback, 'Tried to open URl but had no browser open');
@@ -82,9 +83,7 @@ class PlaywrightServer implements IPlaywrightServer {
         const browserType = call.request.getBrowser();
         const url = call.request.getUrl();
         console.log('Open browser: ' + browserType);
-        // TODO: accept a flag for headlessness
         this.browserState = await createBrowserState(browserType);
-        const response = new Response.Empty();
         if (url) {
             await this.openUrl(url, callback);
             callback(null, emptyWithLog(`Succesfully opened browser ${browserType} to ${url}.`));
@@ -96,7 +95,11 @@ class PlaywrightServer implements IPlaywrightServer {
     async goTo(call: ServerUnaryCall<goToRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         const url = call.request.getUrl();
         console.log('Go to URL: ' + url);
-        await this.openUrl(url, callback);
+        try {
+            await this.openUrl(url, callback);
+        } catch (e) {
+            callback(e, null);
+        }
         const response = emptyWithLog('Succesfully opened URL');
         callback(null, response);
     }
