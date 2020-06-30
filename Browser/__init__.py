@@ -85,9 +85,10 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
 
-    def __init__(self, default_timeout=10):
+    def __init__(self, timeout=10.0):
         self.ROBOT_LIBRARY_LISTENER = self
         self.browser_control = Control(self)
+        self.timeout = timeout
         libraries = [
             Validation(self),
             self.browser_control,
@@ -95,7 +96,7 @@ class Browser(DynamicCore):
             Getters(self),
         ]
         # Convert from seconds to millis
-        self.playwright = Playwright(default_timeout * 1000)
+        self.playwright = Playwright()
         DynamicCore.__init__(self, libraries)
 
     @property

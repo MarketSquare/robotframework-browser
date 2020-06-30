@@ -16,9 +16,6 @@ import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 class Playwright:
     """A wrapper for communicating with nodejs Playwirght process."""
 
-    def __init__(self, default_timeout: int):
-        self.default_timeout = default_timeout
-
     @property
     def outputdir(self):
         return BuiltIn().get_variable_value("${OUTPUTDIR}")
@@ -36,7 +33,6 @@ class Playwright:
         port = str(self.find_free_port())
         env = dict(os.environ)
         env["PORT"] = port
-        env["DEFAULT_TIMEOUT"] = str(self.default_timeout)
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
         return Popen(

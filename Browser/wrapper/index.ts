@@ -27,8 +27,6 @@ async function createBrowserState(browserType: string): Promise<BrowserState> {
         throw new Error('unsupported browser');
     }
     const context = await browser.newContext();
-    const defaultTimeout = parseInt(process.env.DEFAULT_TIMEOUT!);
-    context.setDefaultTimeout(defaultTimeout);
     const page = await context.newPage();
     return new BrowserState(browser, context, page);
 }
@@ -50,22 +48,8 @@ function emptyWithLog(text: string): Response.Empty {
     return response;
 }
 
-// If function f needs context like `this` it should be an arrow function
-async function tryCatch<T1>(f: Function, args: any, callback: sendUnaryData<T1>) {
-    try {
-        await f(args);
-    } catch (e) {
-        callback(e, null);
-    }
-}
-
 class PlaywrightServer implements IPlaywrightServer {
     private browserState?: BrowserState;
-
-    openUrl = async (url: string, callback: sendUnaryData<Response.Empty>) => {
-        exists(this.browserState, callback, 'Tried to open URl but had no browser open');
-        await this.browserState.page.goto(url);
-    };
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to close browser but none was open');
@@ -85,7 +69,7 @@ class PlaywrightServer implements IPlaywrightServer {
         console.log('Open browser: ' + browserType);
         this.browserState = await createBrowserState(browserType);
         if (url) {
-            await this.openUrl(url, callback);
+            await this.browserState.page.goto(url);
             callback(null, emptyWithLog(`Succesfully opened browser ${browserType} to ${url}.`));
         } else {
             callback(null, emptyWithLog(`Succesfully opened browser ${browserType}.`));
@@ -93,10 +77,17 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async goTo(call: ServerUnaryCall<Request.goTo>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to open URl but had no browser open');
         const url = call.request.getUrl();
+        const timeout = call.request.getTimeout();
         console.log('Go to URL: ' + url);
 
-        await tryCatch(this.openUrl, [url, callback], callback);
+        try {
+            await this.browserState.page.goto(url, { timeout: timeout });
+        } catch (e) {
+            callback(e, null);
+        }
+
         const response = emptyWithLog('Succesfully opened URL');
         callback(null, response);
     }

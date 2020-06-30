@@ -801,7 +801,7 @@ proto.Request.goTo.prototype.toObject = function(opt_includeInstance) {
 proto.Request.goTo.toObject = function(includeInstance, msg) {
   var f, obj = {
     url: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    timeout: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    timeout: jspb.Message.getFloatingPointFieldWithDefault(msg, 2, 0.0)
   };
 
   if (includeInstance) {
@@ -843,7 +843,7 @@ proto.Request.goTo.deserializeBinaryFromReader = function(msg, reader) {
       msg.setUrl(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readInt32());
+      var value = /** @type {number} */ (reader.readFloat());
       msg.setTimeout(value);
       break;
     default:
@@ -883,8 +883,8 @@ proto.Request.goTo.serializeBinaryToWriter = function(message, writer) {
     );
   }
   f = message.getTimeout();
-  if (f !== 0) {
-    writer.writeInt32(
+  if (f !== 0.0) {
+    writer.writeFloat(
       2,
       f
     );
@@ -911,11 +911,11 @@ proto.Request.goTo.prototype.setUrl = function(value) {
 
 
 /**
- * optional int32 timeout = 2;
+ * optional float timeout = 2;
  * @return {number}
  */
 proto.Request.goTo.prototype.getTimeout = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 2, 0.0));
 };
 
 
@@ -924,7 +924,7 @@ proto.Request.goTo.prototype.getTimeout = function() {
  * @return {!proto.Request.goTo} returns this
  */
 proto.Request.goTo.prototype.setTimeout = function(value) {
-  return jspb.Message.setProto3IntField(this, 2, value);
+  return jspb.Message.setProto3FloatField(this, 2, value);
 };
 
 
@@ -1008,7 +1008,7 @@ proto.Request.inputText.deserializeBinaryFromReader = function(msg, reader) {
       msg.setSelector(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readInt32());
+      var value = /** @type {number} */ (reader.readInt64());
       msg.setTimeout(value);
       break;
     default:
@@ -1056,7 +1056,7 @@ proto.Request.inputText.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getTimeout();
   if (f !== 0) {
-    writer.writeInt32(
+    writer.writeInt64(
       3,
       f
     );
@@ -1101,7 +1101,7 @@ proto.Request.inputText.prototype.setSelector = function(value) {
 
 
 /**
- * optional int32 timeout = 3;
+ * optional int64 timeout = 3;
  * @return {number}
  */
 proto.Request.inputText.prototype.getTimeout = function() {
@@ -1198,7 +1198,7 @@ proto.Request.getDomProperty.deserializeBinaryFromReader = function(msg, reader)
       msg.setSelector(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readInt32());
+      var value = /** @type {number} */ (reader.readInt64());
       msg.setTimeout(value);
       break;
     default:
@@ -1246,7 +1246,7 @@ proto.Request.getDomProperty.serializeBinaryToWriter = function(message, writer)
   }
   f = message.getTimeout();
   if (f !== 0) {
-    writer.writeInt32(
+    writer.writeInt64(
       3,
       f
     );
@@ -1291,7 +1291,7 @@ proto.Request.getDomProperty.prototype.setSelector = function(value) {
 
 
 /**
- * optional int32 timeout = 3;
+ * optional int64 timeout = 3;
  * @return {number}
  */
 proto.Request.getDomProperty.prototype.getTimeout = function() {
@@ -1383,7 +1383,7 @@ proto.Request.selector.deserializeBinaryFromReader = function(msg, reader) {
       msg.setSelector(value);
       break;
     case 2:
-      var value = /** @type {number} */ (reader.readInt32());
+      var value = /** @type {number} */ (reader.readInt64());
       msg.setTimeout(value);
       break;
     default:
@@ -1424,7 +1424,7 @@ proto.Request.selector.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getTimeout();
   if (f !== 0) {
-    writer.writeInt32(
+    writer.writeInt64(
       2,
       f
     );
@@ -1451,7 +1451,7 @@ proto.Request.selector.prototype.setSelector = function(value) {
 
 
 /**
- * optional int32 timeout = 2;
+ * optional int64 timeout = 2;
  * @return {number}
  */
 proto.Request.selector.prototype.getTimeout = function() {

@@ -1,13 +1,14 @@
 *** Settings ***
-Library  Browser  0.01
+Library  Browser  timeout=0.001
 Test Setup	Open Browser
 Test Teardown  Close Browser
 Resource          resource.robot
 
 *** Test Cases ***
-Test GoTo Timeout
-    Run Keyword And Expect Error  *Timeout 10ms exceeded during page.goto*  GoTo   ${LOGIN_URL}
-    GoTo  ${LOGIN_URL}	10.0
-Test Get Title Timeout
-    GoTo  ${LOGIN_URL}  10.0
-    Run Keyword And Expect Error  *Timeout 10ms exceeded during asdasd*  Get Title
+Test GoTo With Short Default Timeout
+    Run Keyword And Expect Error  *Timeout 1ms exceeded during page.goto*  GoTo   ${LOGIN_URL}
+Test Overriding GoTo Timeout With Short
+    Run Keyword And Expect Error  *Timeout 1ms exceeded during page.goto*  GoTo   ${LOGIN_URL}  0.001
+Test Overriding GoTo Timeout With Long
+    GoTo  ${LOGIN_URL}	1
+
