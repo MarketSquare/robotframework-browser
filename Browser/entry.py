@@ -43,13 +43,16 @@ def run():
             stdout=PIPE,
             stderr=STDOUT,
         )
-        if process.stdout is None:
-            raise RuntimeError(
-                "Problem installing node dependencies."
-                + "Node process returned with exit status {}".format(process.returncode)
-            )
+
         for line in process.stdout:
             print(line.decode("utf-8"))
+
+        if process.returncode is not None:
+            raise RuntimeError(
+                "Problem installing node dependencies."
+                + f"Node process returned with exit status {process.returncode}"
+            )
+
         print("rfbrowser init completed")
     else:
         print(f"Invalid command `{cmd}`")
