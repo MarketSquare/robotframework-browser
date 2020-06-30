@@ -127,7 +127,11 @@ class Browser(DynamicCore):
         if attrs["type"] == "Teardown":
             timeout_pattern = "Test timeout .* exceeded."
             test = EXECUTION_CONTEXTS.current.test
-            if test is not None and test.status == "FAIL" and re.match(timeout_pattern, test.message):
+            if (
+                test is not None
+                and test.status == "FAIL"
+                and re.match(timeout_pattern, test.message)
+            ):
                 self.browser_control.take_page_screenshot(
                     self.failure_screenshot_path(test.name)
                 )
