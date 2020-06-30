@@ -34,3 +34,13 @@ def test_greater_or_equal():
 
 def test_less_or_equal():
     _validate_operator(AssertionOperator[">="], 2, 2, 3)
+
+
+def test_match():
+    _validate_operator(AssertionOperator["matches"], "Actual", "(?i)actual", "/(\\d)+/")
+    _validate_operator(
+        AssertionOperator["matches"],
+        "Actual\nmultiline",
+        "(?m)Actual\nmultiline$",
+        "/(\\d)+/",
+    )
