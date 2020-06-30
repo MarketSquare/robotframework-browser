@@ -2,7 +2,7 @@ from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
-from ..generated import playwright_pb2
+from ..generated.playwright_pb2 import Request
 
 
 class Input:
@@ -18,7 +18,7 @@ class Input:
         """ Types the given ``text`` into the text field identified by ``selector`` """
         with self.playwright.grpc_channel() as stub:
             response = stub.InputText(
-                playwright_pb2.inputTextRequest(input=text, selector=selector)
+                Request().inputText(input=text, selector=selector)
             )
             logger.info(response.log)
 
@@ -41,9 +41,7 @@ class Input:
             try:
                 # Should prevent logging in case of failure keywords
                 previous_level = BuiltIn().set_log_level("NONE")
-                stub.InputText(
-                    playwright_pb2.inputTextRequest(input=password, selector=selector)
-                )
+                stub.InputText(Request().inputText(input=password, selector=selector))
             finally:
                 BuiltIn().set_log_level(previous_level)
 
@@ -51,9 +49,7 @@ class Input:
     def click(self, selector: str):
         """ Clicks element identified by ``selector``. """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ClickButton(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
+            response = stub.ClickButton(Request().selector(selector=selector))
             logger.info(response.log)
 
     @keyword
@@ -62,9 +58,7 @@ class Input:
             If already checked does nothing
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.CheckCheckbox(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
+            response = stub.CheckCheckbox(Request().selector(selector=selector))
             logger.info(response.log)
 
     @keyword
@@ -73,7 +67,5 @@ class Input:
             If not checked does nothing
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.UncheckCheckbox(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
+            response = stub.UncheckCheckbox(Request().selector(selector=selector))
             logger.info(response.log)

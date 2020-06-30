@@ -3,7 +3,7 @@ from typing import Optional
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
-from ..generated import playwright_pb2
+from ..generated.playwright_pb2 import Request
 
 
 class Control:
@@ -35,7 +35,7 @@ class Control:
             )
         with self.playwright.grpc_channel() as stub:
             response = stub.OpenBrowser(
-                playwright_pb2.openBrowserRequest(url=url or "", browser=browser_)
+                Request().openBrowser(url=url or "", browser=browser_)
             )
             logger.info(response.log)
 
@@ -43,14 +43,14 @@ class Control:
     def close_browser(self):
         """Closes the current browser."""
         with self.playwright.grpc_channel() as stub:
-            response = stub.CloseBrowser(playwright_pb2.Empty())
+            response = stub.CloseBrowser(Request.Empty())
             logger.info(response.log)
 
     @keyword
-    def go_to(self, url: str):
+    def go_to(self, url: str, timeout: Optional[int] = None):
         """Navigates the current browser tab to the provided ``url``."""
         with self.playwright.grpc_channel() as stub:
-            response = stub.GoTo(playwright_pb2.goToRequest(url=url))
+            response = stub.GoTo(Request().goTo(url=url, timeout=timeout))
             logger.info(response.log)
 
     @keyword
@@ -62,5 +62,5 @@ class Control:
             path = self.library.get_screenshot_path
         logger.info(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
-            response = stub.Screenshot(playwright_pb2.screenshotRequest(path=path))
+            response = stub.Screenshot(Request().screenshot(path=path))
             logger.info(response.log)

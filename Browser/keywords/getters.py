@@ -4,7 +4,7 @@ from enum import Enum
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
-from ..generated import playwright_pb2
+from ..generated.playwright_pb2 import Request
 
 
 AssertionOperator = Enum("AssertionOperator", "NO_ASSERTION == !=")
@@ -41,7 +41,7 @@ class Getters:
         """
         value = ""
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetUrl(playwright_pb2.Empty())
+            response = stub.GetUrl(Request().Empty())
             logger.info(response.log)
             value = response.body
         _verify_assertion(value, assertion_operator, assertion_value, "URL ")
@@ -59,7 +59,7 @@ class Getters:
         """
         value = None
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetTitle(playwright_pb2.Empty())
+            response = stub.GetTitle(Request().Empty())
             logger.info(response.log)
             value = response.body
         _verify_assertion(value, assertion_operator, assertion_value, "Title ")
@@ -79,9 +79,7 @@ class Getters:
         value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                playwright_pb2.getDomPropertyRequest(
-                    selector=selector, property="innerText"
-                )
+                Request().getDomProperty(selector=selector, property="innerText")
             )
             logger.info(response.log)
             value = response.body
@@ -104,9 +102,7 @@ class Getters:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                playwright_pb2.getDomPropertyRequest(
-                    selector=selector, property=attribute
-                )
+                Request().getDomProperty(selector=selector, property=attribute)
             )
             logger.info(response.log)
             value = response.body
@@ -129,9 +125,7 @@ class Getters:
         value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                playwright_pb2.getDomPropertyRequest(
-                    selector=selector, property="value"
-                )
+                Request().getDomProperty(selector=selector, property="value")
             )
             logger.info(response.log)
             value = response.body

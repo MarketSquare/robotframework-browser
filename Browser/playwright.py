@@ -9,7 +9,7 @@ import grpc  # type: ignore
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
-from Browser.generated.playwright_pb2 import Empty
+from Browser.generated.playwright_pb2 import Request
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 
 
@@ -53,7 +53,7 @@ class Playwright:
             with grpc.insecure_channel(f"localhost:{self.port}") as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
-                    response = stub.Health(Empty())
+                    response = stub.Health(Request().Empty())
                     logger.info(
                         f"Connected to the playwright process at port {self.port}: {response}"
                     )

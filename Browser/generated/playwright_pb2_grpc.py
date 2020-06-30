@@ -15,72 +15,72 @@ class PlaywrightStub(object):
         """
         self.Screenshot = channel.unary_unary(
                 '/Playwright/Screenshot',
-                request_serializer=playwright__pb2.screenshotRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.screenshot.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.OpenBrowser = channel.unary_unary(
                 '/Playwright/OpenBrowser',
-                request_serializer=playwright__pb2.openBrowserRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.openBrowser.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.CloseBrowser = channel.unary_unary(
                 '/Playwright/CloseBrowser',
-                request_serializer=playwright__pb2.Empty.SerializeToString,
+                request_serializer=playwright__pb2.Request.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.GoTo = channel.unary_unary(
                 '/Playwright/GoTo',
-                request_serializer=playwright__pb2.goToRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.goTo.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.GetTitle = channel.unary_unary(
                 '/Playwright/GetTitle',
-                request_serializer=playwright__pb2.Empty.SerializeToString,
+                request_serializer=playwright__pb2.Request.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
         self.InputText = channel.unary_unary(
                 '/Playwright/InputText',
-                request_serializer=playwright__pb2.inputTextRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.inputText.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.GetDomProperty = channel.unary_unary(
                 '/Playwright/GetDomProperty',
-                request_serializer=playwright__pb2.getDomPropertyRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.getDomProperty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
         self.GetBoolProperty = channel.unary_unary(
                 '/Playwright/GetBoolProperty',
-                request_serializer=playwright__pb2.getDomPropertyRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.getDomProperty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Bool.FromString,
                 )
         self.GetTextContent = channel.unary_unary(
                 '/Playwright/GetTextContent',
-                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.selector.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
         self.GetUrl = channel.unary_unary(
                 '/Playwright/GetUrl',
-                request_serializer=playwright__pb2.Empty.SerializeToString,
+                request_serializer=playwright__pb2.Request.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
         self.ClickButton = channel.unary_unary(
                 '/Playwright/ClickButton',
-                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.selector.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.CheckCheckbox = channel.unary_unary(
                 '/Playwright/CheckCheckbox',
-                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.selector.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.UncheckCheckbox = channel.unary_unary(
                 '/Playwright/UncheckCheckbox',
-                request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                request_serializer=playwright__pb2.Request.selector.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.Health = channel.unary_unary(
                 '/Playwright/Health',
-                request_serializer=playwright__pb2.Empty.SerializeToString,
+                request_serializer=playwright__pb2.Request.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
 
@@ -188,72 +188,72 @@ def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Screenshot': grpc.unary_unary_rpc_method_handler(
                     servicer.Screenshot,
-                    request_deserializer=playwright__pb2.screenshotRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.screenshot.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'OpenBrowser': grpc.unary_unary_rpc_method_handler(
                     servicer.OpenBrowser,
-                    request_deserializer=playwright__pb2.openBrowserRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.openBrowser.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'CloseBrowser': grpc.unary_unary_rpc_method_handler(
                     servicer.CloseBrowser,
-                    request_deserializer=playwright__pb2.Empty.FromString,
+                    request_deserializer=playwright__pb2.Request.Empty.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'GoTo': grpc.unary_unary_rpc_method_handler(
                     servicer.GoTo,
-                    request_deserializer=playwright__pb2.goToRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.goTo.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'GetTitle': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTitle,
-                    request_deserializer=playwright__pb2.Empty.FromString,
+                    request_deserializer=playwright__pb2.Request.Empty.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
             'InputText': grpc.unary_unary_rpc_method_handler(
                     servicer.InputText,
-                    request_deserializer=playwright__pb2.inputTextRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.inputText.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'GetDomProperty': grpc.unary_unary_rpc_method_handler(
                     servicer.GetDomProperty,
-                    request_deserializer=playwright__pb2.getDomPropertyRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.getDomProperty.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
             'GetBoolProperty': grpc.unary_unary_rpc_method_handler(
                     servicer.GetBoolProperty,
-                    request_deserializer=playwright__pb2.getDomPropertyRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.getDomProperty.FromString,
                     response_serializer=playwright__pb2.Response.Bool.SerializeToString,
             ),
             'GetTextContent': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTextContent,
-                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.selector.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
             'GetUrl': grpc.unary_unary_rpc_method_handler(
                     servicer.GetUrl,
-                    request_deserializer=playwright__pb2.Empty.FromString,
+                    request_deserializer=playwright__pb2.Request.Empty.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
             'ClickButton': grpc.unary_unary_rpc_method_handler(
                     servicer.ClickButton,
-                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.selector.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'CheckCheckbox': grpc.unary_unary_rpc_method_handler(
                     servicer.CheckCheckbox,
-                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.selector.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'UncheckCheckbox': grpc.unary_unary_rpc_method_handler(
                     servicer.UncheckCheckbox,
-                    request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    request_deserializer=playwright__pb2.Request.selector.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'Health': grpc.unary_unary_rpc_method_handler(
                     servicer.Health,
-                    request_deserializer=playwright__pb2.Empty.FromString,
+                    request_deserializer=playwright__pb2.Request.Empty.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
     }
@@ -277,7 +277,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/Screenshot',
-            playwright__pb2.screenshotRequest.SerializeToString,
+            playwright__pb2.Request.screenshot.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -293,7 +293,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/OpenBrowser',
-            playwright__pb2.openBrowserRequest.SerializeToString,
+            playwright__pb2.Request.openBrowser.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -309,7 +309,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/CloseBrowser',
-            playwright__pb2.Empty.SerializeToString,
+            playwright__pb2.Request.Empty.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -325,7 +325,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GoTo',
-            playwright__pb2.goToRequest.SerializeToString,
+            playwright__pb2.Request.goTo.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -341,7 +341,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GetTitle',
-            playwright__pb2.Empty.SerializeToString,
+            playwright__pb2.Request.Empty.SerializeToString,
             playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -357,7 +357,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/InputText',
-            playwright__pb2.inputTextRequest.SerializeToString,
+            playwright__pb2.Request.inputText.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -373,7 +373,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GetDomProperty',
-            playwright__pb2.getDomPropertyRequest.SerializeToString,
+            playwright__pb2.Request.getDomProperty.SerializeToString,
             playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -389,7 +389,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GetBoolProperty',
-            playwright__pb2.getDomPropertyRequest.SerializeToString,
+            playwright__pb2.Request.getDomProperty.SerializeToString,
             playwright__pb2.Response.Bool.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -405,7 +405,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GetTextContent',
-            playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Request.selector.SerializeToString,
             playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -421,7 +421,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GetUrl',
-            playwright__pb2.Empty.SerializeToString,
+            playwright__pb2.Request.Empty.SerializeToString,
             playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -437,7 +437,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/ClickButton',
-            playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Request.selector.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -453,7 +453,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/CheckCheckbox',
-            playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Request.selector.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -469,7 +469,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/UncheckCheckbox',
-            playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Request.selector.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
@@ -485,7 +485,7 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/Health',
-            playwright__pb2.Empty.SerializeToString,
+            playwright__pb2.Request.Empty.SerializeToString,
             playwright__pb2.Response.String.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
