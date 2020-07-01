@@ -72,7 +72,7 @@ class Browser(DynamicCore):
 
     = Assertions =
 
-    Keywords that accept arguments ``assertion_operator`` and ``assertion_value``
+    Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
     can optionally assert.
     Currently supported assertion operators are ``==`` for equality, ``!=`` for inequality,
     ``>``, ``>=``, ``<``, ``<=`` for value comparison,
