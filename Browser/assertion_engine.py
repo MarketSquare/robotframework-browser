@@ -31,20 +31,7 @@ AssertionOperator = Enum(  # type: ignore
 )
 
 
-def _normalize(operator: str):
-    return operator.lower().replace("_", "").replace(" ", "")
-
-
 def verify_assertion(value: Any, operator: AssertionOperator, expected, message=""):
-    if isinstance(operator, str):
-        operator = _normalize(operator)
-        try:
-            operator = AssertionOperator[operator]  # type: ignore
-        except NameError:
-            raise RuntimeError(
-                f"{message}" f" `{operator}` is not a valid assertion operator."
-            )
-
     if operator.value == "==" and not value == expected:
         raise AssertionError(f"{message} `{value}` should be `{expected}`")
     elif operator.value == "!=" and not value != expected:
