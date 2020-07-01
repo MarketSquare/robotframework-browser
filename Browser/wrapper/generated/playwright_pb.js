@@ -808,7 +808,8 @@ proto.inputTextRequest.prototype.toObject = function(opt_includeInstance) {
 proto.inputTextRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
     input: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    selector: jspb.Message.getFieldWithDefault(msg, 2, "")
+    selector: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    type: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
   };
 
   if (includeInstance) {
@@ -853,6 +854,10 @@ proto.inputTextRequest.deserializeBinaryFromReader = function(msg, reader) {
       var value = /** @type {string} */ (reader.readString());
       msg.setSelector(value);
       break;
+    case 3:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setType(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -896,6 +901,13 @@ proto.inputTextRequest.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
+  f = message.getType();
+  if (f) {
+    writer.writeBool(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -932,6 +944,24 @@ proto.inputTextRequest.prototype.getSelector = function() {
  */
 proto.inputTextRequest.prototype.setSelector = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional bool type = 3;
+ * @return {boolean}
+ */
+proto.inputTextRequest.prototype.getType = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 3, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.inputTextRequest} returns this
+ */
+proto.inputTextRequest.prototype.setType = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 3, value);
 };
 
 

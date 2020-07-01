@@ -14,11 +14,19 @@ class Input:
         return self.library.playwright
 
     @keyword
-    def input_text(self, selector: str, text: str):
-        """ Types the given ``text`` into the text field identified by ``selector`` """
+    def input_text(self, selector: str, text: str, type=False):
+        """ Inputs the given ``text`` into the text field identified by ``selector``
+
+            By default text is inputted via filling (instantly), only triggering the
+            input event. By toggling the ``type`` boolean text will be typed into the
+            field instead. Typing triggers keydown, keypress/input and keyup events
+            for every character of input.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.InputText(
-                playwright_pb2.inputTextRequest(input=text, selector=selector)
+                playwright_pb2.inputTextRequest(
+                    input=text, selector=selector, type=type
+                )
             )
             logger.info(response.log)
 

@@ -176,7 +176,12 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const inputText = call.request.getInput();
         const selector = call.request.getSelector();
-        await this.browserState.page.fill(selector, inputText);
+        const type = call.request.getType();
+        if (type) {
+            await this.browserState.page.type(selector, inputText);
+        } else {
+            await this.browserState.page.fill(selector, inputText);
+        }
 
         const response = emptyWithLog('Input text: ' + inputText);
         callback(null, response);

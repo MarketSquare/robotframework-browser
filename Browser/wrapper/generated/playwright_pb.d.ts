@@ -97,6 +97,9 @@ export class inputTextRequest extends jspb.Message {
     getSelector(): string;
     setSelector(value: string): inputTextRequest;
 
+    getType(): boolean;
+    setType(value: boolean): inputTextRequest;
+
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): inputTextRequest.AsObject;
@@ -112,6 +115,7 @@ export namespace inputTextRequest {
     export type AsObject = {
         input: string,
         selector: string,
+        type: boolean,
     }
 }
 

@@ -18,6 +18,7 @@ message goToRequest {
 message inputTextRequest {
   string input = 1;
   string selector = 2;
+  bool type = 3;
 }
 
 message getDomPropertyRequest {
