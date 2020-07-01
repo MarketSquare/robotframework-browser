@@ -18,7 +18,6 @@ def test_not_equals():
 
 def test_contains():
     _validate_operator(AssertionOperator["contains"], "actual", "ctua", "nope")
-    _validate_operator("CoNtaiNs", "actual", "ctua", "nope")
     _validate_operator(AssertionOperator["*="], "actual", "tual", "nope")
 
 
@@ -54,7 +53,7 @@ def test_match():
 
 def test_start_with():
     _validate_operator(AssertionOperator["^="], "Hello Robots", "Hello", "Robots")
-    _validate_operator("Should Start With", "Hello Robots", "Hello", "Robots")
+    _validate_operator(AssertionOperator["shouldstartwith"], "Hello Robots", "Hello", "Robots")
     _validate_operator(AssertionOperator["^="], "Hel[4,5]?[1-9]+ Robots", "Hel[4,5]?[1-", ".*")
 
 
