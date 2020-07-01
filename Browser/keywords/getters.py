@@ -110,16 +110,4 @@ class Getters:
 
             Optionally asserts that it matches the specified assertion.
         """
-        value = None
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetDomProperty(
-                playwright_pb2.getDomPropertyRequest(
-                    selector=selector, property="value"
-                )
-            )
-            logger.info(response.log)
-            value = response.body
-        verify_assertion(
-            value, assertion_operator, assertion_value, f"Element {selector} value "
-        )
-        return value
+        return self.get_attribute(selector, "value", assertion_operator, assertion_value)
