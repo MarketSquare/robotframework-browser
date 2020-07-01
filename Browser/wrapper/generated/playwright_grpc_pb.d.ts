@@ -18,7 +18,8 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     getBoolProperty: IPlaywrightService_IGetBoolProperty;
     getTextContent: IPlaywrightService_IGetTextContent;
     getUrl: IPlaywrightService_IGetUrl;
-    clickButton: IPlaywrightService_IClickButton;
+    click: IPlaywrightService_IClick;
+    keypress: IPlaywrightService_IKeypress;
     checkCheckbox: IPlaywrightService_ICheckCheckbox;
     uncheckCheckbox: IPlaywrightService_IUncheckCheckbox;
     health: IPlaywrightService_IHealth;
@@ -114,12 +115,21 @@ interface IPlaywrightService_IGetUrl extends grpc.MethodDefinition<playwright_pb
     responseSerialize: grpc.serialize<playwright_pb.Response.String>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.String>;
 }
-interface IPlaywrightService_IClickButton extends grpc.MethodDefinition<playwright_pb.selectorRequest, playwright_pb.Response.Empty> {
-    path: string; // "/.Playwright/ClickButton"
+interface IPlaywrightService_IClick extends grpc.MethodDefinition<playwright_pb.selectorRequest, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/Click"
     requestStream: boolean; // false
     responseStream: boolean; // false
     requestSerialize: grpc.serialize<playwright_pb.selectorRequest>;
     requestDeserialize: grpc.deserialize<playwright_pb.selectorRequest>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_IKeypress extends grpc.MethodDefinition<playwright_pb.keypressRequest, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/Keypress"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.keypressRequest>;
+    requestDeserialize: grpc.deserialize<playwright_pb.keypressRequest>;
     responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
 }
@@ -164,7 +174,8 @@ export interface IPlaywrightServer {
     getBoolProperty: grpc.handleUnaryCall<playwright_pb.getDomPropertyRequest, playwright_pb.Response.Bool>;
     getTextContent: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.String>;
     getUrl: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
-    clickButton: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
+    click: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
+    keypress: grpc.handleUnaryCall<playwright_pb.keypressRequest, playwright_pb.Response.Empty>;
     checkCheckbox: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
     uncheckCheckbox: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.Empty>;
     health: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
@@ -201,9 +212,12 @@ export interface IPlaywrightClient {
     getUrl(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getUrl(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getUrl(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
-    clickButton(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
-    clickButton(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
-    clickButton(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    click(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    click(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    click(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    keypress(request: playwright_pb.keypressRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    keypress(request: playwright_pb.keypressRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    keypress(request: playwright_pb.keypressRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     checkCheckbox(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     checkCheckbox(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     checkCheckbox(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
@@ -247,9 +261,12 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public getUrl(request: playwright_pb.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getUrl(request: playwright_pb.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getUrl(request: playwright_pb.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
-    public clickButton(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
-    public clickButton(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
-    public clickButton(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public click(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public click(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public click(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public keypress(request: playwright_pb.keypressRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public keypress(request: playwright_pb.keypressRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public keypress(request: playwright_pb.keypressRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public checkCheckbox(request: playwright_pb.selectorRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public checkCheckbox(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public checkCheckbox(request: playwright_pb.selectorRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;

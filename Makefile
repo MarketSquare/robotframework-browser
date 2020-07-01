@@ -53,6 +53,8 @@ lint-python:
 lint-node:
 	yarn run lint
 
+lint: lint-node lint-python
+
 build: protobuf
 	yarn build
 

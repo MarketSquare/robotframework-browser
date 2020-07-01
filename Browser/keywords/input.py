@@ -56,12 +56,29 @@ class Input:
                 BuiltIn().set_log_level(previous_level)
 
     @keyword
+    def press_keys(self, selector: str, *keys: str):
+        """ Inputs given ``key``s into element specifid by selector.
+
+            Supports values like "a, b" which will be automatically inputted.
+            Also supports identifiers for keys like ``ArrowLeft`` or ``Backspace``.
+            Using + to chain combine modifiers with a single keypress
+            ``Control+Shift+T`` is supported.
+
+            See playwright's documentation for a more comprehensive list of
+            supported input keys.
+            [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
+        """  # noqa
+        with self.playwright.grpc_channel() as stub:
+            response = stub.Keypress(
+                playwright_pb2.keypressRequest(selector=selector, key=keys)
+            )
+            logger.info(response.log)
+
+    @keyword
     def click(self, selector: str):
         """ Clicks element identified by ``selector``. """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ClickButton(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
+            response = stub.Click(playwright_pb2.selectorRequest(selector=selector))
             logger.info(response.log)
 
     @keyword

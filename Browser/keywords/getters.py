@@ -110,4 +110,6 @@ class Getters:
 
             Optionally asserts that it matches the specified assertion.
         """
-        return self.get_attribute(selector, "value", assertion_operator, assertion_value)
+        return self.get_attribute(
+            selector, "value", assertion_operator, assertion_value
+        )

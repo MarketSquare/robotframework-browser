@@ -13,7 +13,6 @@ Test Typing
     Input Text		css=input#username_field	username	type=True
     Get TextField Value		css=input#username_field	==	username	
 
-
 Test inputting password
     Input Password	css=input#password_field	password
     Get TextField Value		css=input#password_field	==	password

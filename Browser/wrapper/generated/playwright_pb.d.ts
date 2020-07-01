@@ -119,6 +119,33 @@ export namespace inputTextRequest {
     }
 }
 
+export class keypressRequest extends jspb.Message { 
+    getSelector(): string;
+    setSelector(value: string): keypressRequest;
+
+    clearKeyList(): void;
+    getKeyList(): Array<string>;
+    setKeyList(value: Array<string>): keypressRequest;
+    addKey(value: string, index?: number): string;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): keypressRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: keypressRequest): keypressRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: keypressRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): keypressRequest;
+    static deserializeBinaryFromReader(message: keypressRequest, reader: jspb.BinaryReader): keypressRequest;
+}
+
+export namespace keypressRequest {
+    export type AsObject = {
+        selector: string,
+        keyList: Array<string>,
+    }
+}
+
 export class getDomPropertyRequest extends jspb.Message { 
     getProperty(): string;
     setProperty(value: string): getDomPropertyRequest;

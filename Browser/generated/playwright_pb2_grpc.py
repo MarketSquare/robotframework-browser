@@ -63,9 +63,14 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
-        self.ClickButton = channel.unary_unary(
-                '/Playwright/ClickButton',
+        self.Click = channel.unary_unary(
+                '/Playwright/Click',
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.Keypress = channel.unary_unary(
+                '/Playwright/Keypress',
+                request_serializer=playwright__pb2.keypressRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.CheckCheckbox = channel.unary_unary(
@@ -155,8 +160,15 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def ClickButton(self, request, context):
-        """Clicks button specified by selector 
+    def Click(self, request, context):
+        """Clicks element specified by selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Keypress(self, request, context):
+        """Inputs a list of keypresses to element specified by selector 
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -236,9 +248,14 @@ def add_PlaywrightServicer_to_server(servicer, server):
                     request_deserializer=playwright__pb2.Empty.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
             ),
-            'ClickButton': grpc.unary_unary_rpc_method_handler(
-                    servicer.ClickButton,
+            'Click': grpc.unary_unary_rpc_method_handler(
+                    servicer.Click,
                     request_deserializer=playwright__pb2.selectorRequest.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'Keypress': grpc.unary_unary_rpc_method_handler(
+                    servicer.Keypress,
+                    request_deserializer=playwright__pb2.keypressRequest.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'CheckCheckbox': grpc.unary_unary_rpc_method_handler(
@@ -427,7 +444,7 @@ class Playwright(object):
             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def ClickButton(request,
+    def Click(request,
             target,
             options=(),
             channel_credentials=None,
@@ -436,8 +453,24 @@ class Playwright(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Playwright/ClickButton',
+        return grpc.experimental.unary_unary(request, target, '/Playwright/Click',
             playwright__pb2.selectorRequest.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Keypress(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/Keypress',
+            playwright__pb2.keypressRequest.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
