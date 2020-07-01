@@ -1,6 +1,6 @@
 *** Settings ***
-Library		Browser
-Resource          resource.robot
+Library           Browser
+Resource          keywords.resource
 
 *** Test Cases ***
 Valid Login
