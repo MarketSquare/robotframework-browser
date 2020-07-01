@@ -18,7 +18,7 @@ class Getters:
     @keyword
     def get_url(
         self,
-        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,  # type: ignore
         assertion_expected: Any = None,
     ) -> str:
         """ Returns current URL.
@@ -36,7 +36,7 @@ class Getters:
     @keyword
     def get_title(
         self,
-        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,  # type: ignore
         assertion_expected: Any = None,
     ):
         """ Returns current page Title.
@@ -55,7 +55,7 @@ class Getters:
     def get_text(
         self,
         selector: str,
-        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,  # type: ignore
         assertion_expected: Any = None,
     ):
         """ Returns element's text attribute.
@@ -81,7 +81,7 @@ class Getters:
         self,
         selector: str,
         attribute: str,
-        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,  # type: ignore
         assertion_expected: Any = None,
     ):
         """ Returns specified attribute.
@@ -105,7 +105,7 @@ class Getters:
     def get_textfield_value(
         self,
         selector: str,
-        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,  # type: ignore
         assertion_expected: Any = None,
     ):
         """ Returns textfieds value.
