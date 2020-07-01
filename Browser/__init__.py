@@ -2,6 +2,7 @@ __version__ = "0.3.0"
 
 import re
 import os
+from typing import Optional
 
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
@@ -172,3 +173,9 @@ class Browser(DynamicCore):
             BuiltIn().get_variable_value("${OUTPUTDIR}"),
             test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT",
         ).replace("\\", "\\\\")
+
+    def parse_timeout(self, timeout: Optional[float]):
+        if not timeout:
+            return self.timeout * 1000
+        else:
+            return float(timeout) * 1000

@@ -49,13 +49,10 @@ class Control:
     @keyword
     def go_to(self, url: str, timeout: Optional[float] = None):
         """Navigates the current browser tab to the provided ``url``."""
-        if timeout is None:
-            timeout = self.library.timeout * 1000
-        else:
-            timeout = float(timeout) * 1000
+        timeout = self.library.parse_timeout(timeout)
+
         with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(Request().goTo(url=url, timeout=timeout))
-
             logger.info(response.log)
 
     @keyword
