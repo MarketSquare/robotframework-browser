@@ -2,8 +2,8 @@
 Library  Browser
 
 *** Test Cases ***
-Open and Close a Chrome Browser
-   Open Browser		browser=Chrome
+Open and Close a Chromium Browser
+   Open Browser		browser=Chromium
    Close Browser
 
 Open and Close a Firefox Browser

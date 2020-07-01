@@ -6,7 +6,7 @@ Library		Browser
 
 *** Variables ***
 ${SERVER}         localhost:7272
-${BROWSER}        chrome
+${BROWSER}        chromium
 ${DELAY}          0
 ${VALID USER}     demo
 ${VALID PASSWORD}    mode

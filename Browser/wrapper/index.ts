@@ -29,7 +29,7 @@ async function createBrowserState(browserType: string): Promise<BrowserState> {
     let browser;
     if (browserType === 'firefox') {
         browser = await firefox.launch({ headless: headless });
-    } else if (browserType === 'chrome') {
+    } else if (browserType === 'chromium') {
         browser = await chromium.launch({ headless: headless });
     } else if (browserType === 'webkit') {
         browser = await webkit.launch();
