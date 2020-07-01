@@ -96,7 +96,7 @@ class Browser(DynamicCore):
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
+    SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
 
     def __init__(self):
         self.ROBOT_LIBRARY_LISTENER = self
