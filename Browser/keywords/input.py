@@ -69,8 +69,8 @@ class Input:
             [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
         """  # noqa
         with self.playwright.grpc_channel() as stub:
-            response = stub.Keypress(
-                playwright_pb2.keypressRequest(selector=selector, key=keys)
+            response = stub.Press(
+                playwright_pb2.pressRequest(selector=selector, key=keys)
             )
             logger.info(response.log)
 

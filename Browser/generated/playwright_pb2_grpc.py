@@ -68,9 +68,9 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.selectorRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
-        self.Keypress = channel.unary_unary(
-                '/Playwright/Keypress',
-                request_serializer=playwright__pb2.keypressRequest.SerializeToString,
+        self.Press = channel.unary_unary(
+                '/Playwright/Press',
+                request_serializer=playwright__pb2.pressRequest.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
         self.CheckCheckbox = channel.unary_unary(
@@ -167,7 +167,7 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Keypress(self, request, context):
+    def Press(self, request, context):
         """Inputs a list of keypresses to element specified by selector 
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -253,9 +253,9 @@ def add_PlaywrightServicer_to_server(servicer, server):
                     request_deserializer=playwright__pb2.selectorRequest.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
-            'Keypress': grpc.unary_unary_rpc_method_handler(
-                    servicer.Keypress,
-                    request_deserializer=playwright__pb2.keypressRequest.FromString,
+            'Press': grpc.unary_unary_rpc_method_handler(
+                    servicer.Press,
+                    request_deserializer=playwright__pb2.pressRequest.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'CheckCheckbox': grpc.unary_unary_rpc_method_handler(
@@ -460,7 +460,7 @@ class Playwright(object):
             call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def Keypress(request,
+    def Press(request,
             target,
             options=(),
             channel_credentials=None,
@@ -469,8 +469,8 @@ class Playwright(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/Playwright/Keypress',
-            playwright__pb2.keypressRequest.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/Playwright/Press',
+            playwright__pb2.pressRequest.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

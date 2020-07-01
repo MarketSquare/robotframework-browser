@@ -81,17 +81,6 @@ function deserialize_inputTextRequest(buffer_arg) {
   return playwright_pb.inputTextRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_keypressRequest(arg) {
-  if (!(arg instanceof playwright_pb.keypressRequest)) {
-    throw new Error('Expected argument of type keypressRequest');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_keypressRequest(buffer_arg) {
-  return playwright_pb.keypressRequest.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_openBrowserRequest(arg) {
   if (!(arg instanceof playwright_pb.openBrowserRequest)) {
     throw new Error('Expected argument of type openBrowserRequest');
@@ -101,6 +90,17 @@ function serialize_openBrowserRequest(arg) {
 
 function deserialize_openBrowserRequest(buffer_arg) {
   return playwright_pb.openBrowserRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pressRequest(arg) {
+  if (!(arg instanceof playwright_pb.pressRequest)) {
+    throw new Error('Expected argument of type pressRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pressRequest(buffer_arg) {
+  return playwright_pb.pressRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_screenshotRequest(arg) {
@@ -257,14 +257,14 @@ click: {
     responseDeserialize: deserialize_Response_Empty,
   },
   // Inputs a list of keypresses to element specified by selector 
-keypress: {
-    path: '/Playwright/Keypress',
+press: {
+    path: '/Playwright/Press',
     requestStream: false,
     responseStream: false,
-    requestType: playwright_pb.keypressRequest,
+    requestType: playwright_pb.pressRequest,
     responseType: playwright_pb.Response.Empty,
-    requestSerialize: serialize_keypressRequest,
-    requestDeserialize: deserialize_keypressRequest,
+    requestSerialize: serialize_pressRequest,
+    requestDeserialize: deserialize_pressRequest,
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },

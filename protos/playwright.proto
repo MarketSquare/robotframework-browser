@@ -70,7 +70,7 @@ service  Playwright {
   /* Clicks element specified by selector */ 
   rpc Click(selectorRequest) returns (Response.Empty) {}
   /* Inputs a list of keypresses to element specified by selector */
-  rpc Keypress(pressRequest) returns (Response.Empty) {}
+  rpc Press(pressRequest) returns (Response.Empty) {}
   /* Checks checkbox specified by selector */
   rpc CheckCheckbox(selectorRequest) returns (Response.Empty) {}
   /* Unchecks checkbox specified by selector */

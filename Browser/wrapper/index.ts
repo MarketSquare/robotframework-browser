@@ -10,7 +10,7 @@ import {
     selectorRequest,
     screenshotRequest,
     getDomPropertyRequest,
-    keypressRequest,
+    pressRequest,
 } from './generated/playwright_pb';
 
 // This is necessary for improved typescript inference
@@ -188,7 +188,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async press(call: ServerUnaryCall<keypressRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async press(call: ServerUnaryCall<pressRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const selector = call.request.getSelector();
         const keyList = call.request.getKeyList();
