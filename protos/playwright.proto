@@ -18,6 +18,12 @@ message goToRequest {
 message inputTextRequest {
   string input = 1;
   string selector = 2;
+  bool type = 3;
+}
+
+message pressRequest {
+  string selector = 1;
+  repeated string key = 2;
 }
 
 message getDomPropertyRequest {
@@ -61,8 +67,10 @@ service  Playwright {
   rpc GetTextContent(selectorRequest) returns (Response.String) {}
   /* *Returns current playwright page url*/
   rpc GetUrl(Empty) returns (Response.String) {}
-  /* Clicks button specified by selector */ 
-  rpc ClickButton(selectorRequest) returns (Response.Empty) {}
+  /* Clicks element specified by selector */ 
+  rpc Click(selectorRequest) returns (Response.Empty) {}
+  /* Inputs a list of keypresses to element specified by selector */
+  rpc Press(pressRequest) returns (Response.Empty) {}
   /* Checks checkbox specified by selector */
   rpc CheckCheckbox(selectorRequest) returns (Response.Empty) {}
   /* Unchecks checkbox specified by selector */

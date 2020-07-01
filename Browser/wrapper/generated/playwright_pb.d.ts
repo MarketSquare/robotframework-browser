@@ -97,6 +97,9 @@ export class inputTextRequest extends jspb.Message {
     getSelector(): string;
     setSelector(value: string): inputTextRequest;
 
+    getType(): boolean;
+    setType(value: boolean): inputTextRequest;
+
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): inputTextRequest.AsObject;
@@ -112,6 +115,34 @@ export namespace inputTextRequest {
     export type AsObject = {
         input: string,
         selector: string,
+        type: boolean,
+    }
+}
+
+export class pressRequest extends jspb.Message { 
+    getSelector(): string;
+    setSelector(value: string): pressRequest;
+
+    clearKeyList(): void;
+    getKeyList(): Array<string>;
+    setKeyList(value: Array<string>): pressRequest;
+    addKey(value: string, index?: number): string;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): pressRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: pressRequest): pressRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: pressRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): pressRequest;
+    static deserializeBinaryFromReader(message: pressRequest, reader: jspb.BinaryReader): pressRequest;
+}
+
+export namespace pressRequest {
+    export type AsObject = {
+        selector: string,
+        keyList: Array<string>,
     }
 }
 

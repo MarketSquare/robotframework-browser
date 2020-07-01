@@ -19,7 +19,7 @@ class Getters:
     def get_url(
         self,
         assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_expected: Any = None,
     ) -> str:
         """ Returns current URL.
 
@@ -30,14 +30,14 @@ class Getters:
             response = stub.GetUrl(playwright_pb2.Empty())
             logger.info(response.log)
             value = response.body
-        verify_assertion(value, assertion_operator, assertion_value, "URL ")
+        verify_assertion(value, assertion_operator, assertion_expected, "URL ")
         return value
 
     @keyword
     def get_title(
         self,
         assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_expected: Any = None,
     ):
         """ Returns current page Title.
 
@@ -48,7 +48,7 @@ class Getters:
             response = stub.GetTitle(playwright_pb2.Empty())
             logger.info(response.log)
             value = response.body
-        verify_assertion(value, assertion_operator, assertion_value, "Title ")
+        verify_assertion(value, assertion_operator, assertion_expected, "Title ")
         return value
 
     @keyword
@@ -56,7 +56,7 @@ class Getters:
         self,
         selector: str,
         assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_expected: Any = None,
     ):
         """ Returns element's text attribute.
 
@@ -71,7 +71,9 @@ class Getters:
             )
             logger.info(response.log)
             value = response.body
-        verify_assertion(value, assertion_operator, assertion_value, f"Text {selector}")
+        verify_assertion(
+            value, assertion_operator, assertion_expected, f"Text {selector}"
+        )
         return value
 
     @keyword
@@ -80,7 +82,7 @@ class Getters:
         selector: str,
         attribute: str,
         assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_expected: Any = None,
     ):
         """ Returns specified attribute.
 
@@ -95,7 +97,7 @@ class Getters:
             logger.info(response.log)
             value = response.body
         verify_assertion(
-            value, assertion_operator, assertion_value, f"Attribute {selector}"
+            value, assertion_operator, assertion_expected, f"Attribute {selector}"
         )
         return value
 
@@ -104,22 +106,12 @@ class Getters:
         self,
         selector: str,
         assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_expected: Any = None,
     ):
         """ Returns textfieds value.
 
             Optionally asserts that it matches the specified assertion.
         """
-        value = None
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetDomProperty(
-                playwright_pb2.getDomPropertyRequest(
-                    selector=selector, property="value"
-                )
-            )
-            logger.info(response.log)
-            value = response.body
-        verify_assertion(
-            value, assertion_operator, assertion_value, f"Element {selector} value "
+        return self.get_attribute(
+            selector, "value", assertion_operator, assertion_expected
         )
-        return value

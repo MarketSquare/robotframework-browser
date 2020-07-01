@@ -14,11 +14,19 @@ class Input:
         return self.library.playwright
 
     @keyword
-    def input_text(self, selector: str, text: str):
-        """ Types the given ``text`` into the text field identified by ``selector`` """
+    def input_text(self, selector: str, text: str, type=False):
+        """ Inputs the given ``text`` into the text field identified by ``selector``
+
+            By default text is inputted via filling (instantly), only triggering the
+            input event. By toggling the ``type`` boolean text will be typed into the
+            field instead. Typing triggers keydown, keypress/input and keyup events
+            for every character of input.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.InputText(
-                playwright_pb2.inputTextRequest(input=text, selector=selector)
+                playwright_pb2.inputTextRequest(
+                    input=text, selector=selector, type=type
+                )
             )
             logger.info(response.log)
 
@@ -48,12 +56,29 @@ class Input:
                 BuiltIn().set_log_level(previous_level)
 
     @keyword
+    def press_keys(self, selector: str, *keys: str):
+        """ Inputs given ``key``s into element specifid by selector.
+
+            Supports values like "a, b" which will be automatically inputted.
+            Also supports identifiers for keys like ``ArrowLeft`` or ``Backspace``.
+            Using + to chain combine modifiers with a single keypress
+            ``Control+Shift+T`` is supported.
+
+            See playwright's documentation for a more comprehensive list of
+            supported input keys.
+            [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
+        """  # noqa
+        with self.playwright.grpc_channel() as stub:
+            response = stub.Press(
+                playwright_pb2.pressRequest(selector=selector, key=keys)
+            )
+            logger.info(response.log)
+
+    @keyword
     def click(self, selector: str):
         """ Clicks element identified by ``selector``. """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ClickButton(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
+            response = stub.Click(playwright_pb2.selectorRequest(selector=selector))
             logger.info(response.log)
 
     @keyword

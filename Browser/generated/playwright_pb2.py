@@ -188,7 +188,45 @@ _INPUTTEXTREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=144,
-  serialized_end=195,
+  serialized_end=209,
+)
+
+
+_PRESSREQUEST = _descriptor.Descriptor(
+  name='pressRequest',
+  full_name='pressRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='selector', full_name='pressRequest.selector', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='key', full_name='pressRequest.key', index=1,
+      number=2, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=211,
+  serialized_end=256,
 )
 
 
@@ -226,8 +264,8 @@ _GETDOMPROPERTYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=197,
-  serialized_end=256,
+  serialized_start=258,
+  serialized_end=317,
 )
 
 
@@ -258,8 +296,8 @@ _SELECTORREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=258,
-  serialized_end=293,
+  serialized_start=319,
+  serialized_end=354,
 )
 
 
@@ -290,8 +328,8 @@ _RESPONSE_EMPTY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=307,
-  serialized_end=327,
+  serialized_start=368,
+  serialized_end=388,
 )
 
 _RESPONSE_STRING = _descriptor.Descriptor(
@@ -328,8 +366,8 @@ _RESPONSE_STRING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=329,
-  serialized_end=364,
+  serialized_start=390,
+  serialized_end=425,
 )
 
 _RESPONSE_BOOL = _descriptor.Descriptor(
@@ -366,8 +404,8 @@ _RESPONSE_BOOL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=366,
-  serialized_end=399,
+  serialized_start=427,
+  serialized_end=460,
 )
 
 _RESPONSE = _descriptor.Descriptor(
@@ -390,8 +428,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=295,
-  serialized_end=399,
+  serialized_start=356,
+  serialized_end=460,
 )
 
 _RESPONSE_EMPTY.containing_type = _RESPONSE
@@ -402,6 +440,7 @@ DESCRIPTOR.message_types_by_name['screenshotRequest'] = _SCREENSHOTREQUEST
 DESCRIPTOR.message_types_by_name['openBrowserRequest'] = _OPENBROWSERREQUEST
 DESCRIPTOR.message_types_by_name['goToRequest'] = _GOTOREQUEST
 DESCRIPTOR.message_types_by_name['inputTextRequest'] = _INPUTTEXTREQUEST
+DESCRIPTOR.message_types_by_name['pressRequest'] = _PRESSREQUEST
 DESCRIPTOR.message_types_by_name['getDomPropertyRequest'] = _GETDOMPROPERTYREQUEST
 DESCRIPTOR.message_types_by_name['selectorRequest'] = _SELECTORREQUEST
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
@@ -441,6 +480,13 @@ inputTextRequest = _reflection.GeneratedProtocolMessageType('inputTextRequest', 
   # @@protoc_insertion_point(class_scope:inputTextRequest)
   })
 _sym_db.RegisterMessage(inputTextRequest)
+
+pressRequest = _reflection.GeneratedProtocolMessageType('pressRequest', (_message.Message,), {
+  'DESCRIPTOR' : _PRESSREQUEST,
+  '__module__' : 'playwright_pb2'
+  # @@protoc_insertion_point(class_scope:pressRequest)
+  })
+_sym_db.RegisterMessage(pressRequest)
 
 getDomPropertyRequest = _reflection.GeneratedProtocolMessageType('getDomPropertyRequest', (_message.Message,), {
   'DESCRIPTOR' : _GETDOMPROPERTYREQUEST,
@@ -600,8 +646,8 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
-    name='ClickButton',
-    full_name='Playwright.ClickButton',
+    name='Click',
+    full_name='Playwright.Click',
     index=10,
     containing_service=None,
     input_type=_SELECTORREQUEST,
@@ -610,9 +656,18 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
+    name='Press',
+    full_name='Playwright.Press',
+    index=11,
+    containing_service=None,
+    input_type=_PRESSREQUEST,
+    output_type=_RESPONSE_EMPTY,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
     name='CheckCheckbox',
     full_name='Playwright.CheckCheckbox',
-    index=11,
+    index=12,
     containing_service=None,
     input_type=_SELECTORREQUEST,
     output_type=_RESPONSE_EMPTY,
@@ -622,7 +677,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='UncheckCheckbox',
     full_name='Playwright.UncheckCheckbox',
-    index=12,
+    index=13,
     containing_service=None,
     input_type=_SELECTORREQUEST,
     output_type=_RESPONSE_EMPTY,
@@ -632,7 +687,7 @@ _PLAYWRIGHT = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='Health',
     full_name='Playwright.Health',
-    index=13,
+    index=14,
     containing_service=None,
     input_type=_EMPTY,
     output_type=_RESPONSE_STRING,
