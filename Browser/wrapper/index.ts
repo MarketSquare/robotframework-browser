@@ -2,7 +2,6 @@ import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grp
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 import { sendUnaryData, ServerUnaryCall, Server, ServerCredentials } from 'grpc';
 import { Response, Request } from './generated/playwright_pb';
-
 // This is necessary for improved typescript inference
 /*
  * If obj is not trueish call callback with new Error containing message
@@ -167,13 +166,29 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const inputText = call.request.getInput();
         const selector = call.request.getSelector();
-        await this.browserState.page.fill(selector, inputText);
+        const type = call.request.getType();
+        if (type) {
+            await this.browserState.page.type(selector, inputText);
+        } else {
+            await this.browserState.page.fill(selector, inputText);
+        }
 
         const response = emptyWithLog('Input text: ' + inputText);
         callback(null, response);
     }
 
-    async clickButton(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async press(call: ServerUnaryCall<Request.press>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to input text, no open browser');
+        const selector = call.request.getSelector();
+        const keyList = call.request.getKeyList();
+        for (const i of keyList) {
+            await this.browserState.page.press(selector, i);
+        }
+        const response = emptyWithLog('Pressed keys: ' + keyList);
+        callback(null, response);
+    }
+
+    async click(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to click button, no open browser');
 
         const selector = call.request.getSelector();

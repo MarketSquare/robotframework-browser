@@ -118,6 +118,9 @@ export namespace Request {
         getSelector(): string;
         setSelector(value: string): inputText;
 
+        getType(): boolean;
+        setType(value: boolean): inputText;
+
         getTimeout(): number;
         setTimeout(value: number): inputText;
 
@@ -136,6 +139,7 @@ export namespace Request {
         export type AsObject = {
             input: string,
             selector: string,
+            type: boolean,
             timeout: number,
         }
     }
@@ -166,6 +170,33 @@ export namespace Request {
             property: string,
             selector: string,
             timeout: number,
+        }
+    }
+
+    export class press extends jspb.Message { 
+        getSelector(): string;
+        setSelector(value: string): press;
+
+        clearKeyList(): void;
+        getKeyList(): Array<string>;
+        setKeyList(value: Array<string>): press;
+        addKey(value: string, index?: number): string;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): press.AsObject;
+        static toObject(includeInstance: boolean, msg: press): press.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: press, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): press;
+        static deserializeBinaryFromReader(message: press, reader: jspb.BinaryReader): press;
+    }
+
+    export namespace press {
+        export type AsObject = {
+            selector: string,
+            keyList: Array<string>,
         }
     }
 

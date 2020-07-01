@@ -1,24 +1,10 @@
 from typing import Any
-from enum import Enum
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..generated.playwright_pb2 import Request
-
-
-AssertionOperator = Enum("AssertionOperator", "NO_ASSERTION == !=")
-
-
-def _verify_assertion(value: Any, operator: AssertionOperator, expected, message=""):
-    if operator.name == "==" and value != expected:
-        raise AssertionError(f"{message} `{value}` should be `{expected}`")
-    if operator.name == "!=" and value == expected:
-        raise AssertionError(f"{message} `{value}` should not be `{expected}`")
-    elif operator.name not in AssertionOperator.__members__:
-        raise AssertionError(
-            f"{message} `{operator.name}` is not a valid assertion operator"
-        )
+from ..assertion_engine import verify_assertion, AssertionOperator
 
 
 class Getters:
@@ -32,8 +18,8 @@ class Getters:
     @keyword
     def get_url(
         self,
-        assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_expected: Any = None,
     ) -> str:
         """ Returns current URL.
 
@@ -44,14 +30,14 @@ class Getters:
             response = stub.GetUrl(Request().Empty())
             logger.info(response.log)
             value = response.body
-        _verify_assertion(value, assertion_operator, assertion_value, "URL ")
+        verify_assertion(value, assertion_operator, assertion_expected, "URL ")
         return value
 
     @keyword
     def get_title(
         self,
-        assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_expected: Any = None,
     ):
         """ Returns current page Title.
 
@@ -62,15 +48,15 @@ class Getters:
             response = stub.GetTitle(Request().Empty())
             logger.info(response.log)
             value = response.body
-        _verify_assertion(value, assertion_operator, assertion_value, "Title ")
+        verify_assertion(value, assertion_operator, assertion_expected, "Title ")
         return value
 
     @keyword
     def get_text(
         self,
         selector: str,
-        assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_expected: Any = None,
     ):
         """ Returns element's text attribute.
 
@@ -83,8 +69,8 @@ class Getters:
             )
             logger.info(response.log)
             value = response.body
-        _verify_assertion(
-            value, assertion_operator, assertion_value, f"Text {selector}"
+        verify_assertion(
+            value, assertion_operator, assertion_expected, f"Text {selector}"
         )
         return value
 
@@ -93,8 +79,8 @@ class Getters:
         self,
         selector: str,
         attribute: str,
-        assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_expected: Any = None,
     ):
         """ Returns specified attribute.
 
@@ -106,8 +92,8 @@ class Getters:
             )
             logger.info(response.log)
             value = response.body
-        _verify_assertion(
-            value, assertion_operator, assertion_value, f"Attribute {selector}"
+        verify_assertion(
+            value, assertion_operator, assertion_expected, f"Attribute {selector}"
         )
         return value
 
@@ -115,21 +101,13 @@ class Getters:
     def get_textfield_value(
         self,
         selector: str,
-        assertion_operator=AssertionOperator.NO_ASSERTION,
-        assertion_value: Any = None,
+        assertion_operator=AssertionOperator.NO_ASSERTION,  # type: ignore
+        assertion_expected: Any = None,
     ):
         """ Returns textfieds value.
 
             Optionally asserts that it matches the specified assertion.
         """
-        value = None
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetDomProperty(
-                Request().getDomProperty(selector=selector, property="value")
-            )
-            logger.info(response.log)
-            value = response.body
-        _verify_assertion(
-            value, assertion_operator, assertion_value, f"Element {selector} value "
+        return self.get_attribute(
+            selector, "value", assertion_operator, assertion_expected
         )
-        return value

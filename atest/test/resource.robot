@@ -22,7 +22,7 @@ Open Browser To Login Page
     Login Page Should Be Open
 
 Login Page Should Be Open
-    Get Title	==	Login Page
+    Get Title	matches	 (?i)login
 
 Go To Login Page
     Go To    ${LOGIN URL}

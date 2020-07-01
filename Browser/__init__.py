@@ -72,11 +72,24 @@ class Browser(DynamicCore):
 
     = Assertions =
 
-    Keywords that accept arguments ``assertion_operator`` and ``assertion_value``
-    can optionally assert. Currently supported assertion operators are ``==`` `and
-    ``!=``, which assert equality and inequality respectively. Assertion value can
-    be any valid robot value, and the keywords will provide an error message if the'
-    assertion fails.
+    Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
+    can optionally assert.
+    Currently supported assertion operators are:
+
+    |      = Operator =               |              = Descrition =                   |
+    | ``==`` or ``should be``         | equal                                         |
+    | ``!=`` or ``should not be``     | not equal                                     |
+    | ``>``                           | greater than                                  |
+    | ``>=``                          | greater than or equal                         |
+    | ``<``                           | less than                                     |
+    | ``<=``                          | less than or equal                            |
+    | ``*=`` or ``contains``          | for checking that a value contains an element |
+    | ``matches``                     | for matching against a regular expression.    |
+    | ``^=`` or ``should start with`` | starts with                                   |
+    | ``$=`` or ``should end with``   | ends with                                     |
+
+    Assertion value can be any valid robot value, and the keywords will provide an error
+    message if the assertion fails.
     """
 
     ROBOT_LIBRARY_VERSION = __version__

@@ -59,6 +59,17 @@ function deserialize_Request_openBrowser(buffer_arg) {
   return playwright_pb.Request.openBrowser.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_Request_press(arg) {
+  if (!(arg instanceof playwright_pb.Request.press)) {
+    throw new Error('Expected argument of type Request.press');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Request_press(buffer_arg) {
+  return playwright_pb.Request.press.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_Request_screenshot(arg) {
   if (!(arg instanceof playwright_pb.Request.screenshot)) {
     throw new Error('Expected argument of type Request.screenshot');
@@ -233,15 +244,27 @@ getUrl: {
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
   },
-  // Clicks button specified by selector 
-clickButton: {
-    path: '/Playwright/ClickButton',
+  // Clicks element specified by selector 
+click: {
+    path: '/Playwright/Click',
     requestStream: false,
     responseStream: false,
     requestType: playwright_pb.Request.selector,
     responseType: playwright_pb.Response.Empty,
     requestSerialize: serialize_Request_selector,
     requestDeserialize: deserialize_Request_selector,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Inputs a list of keypresses to element specified by selector 
+press: {
+    path: '/Playwright/Press',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.press,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_press,
+    requestDeserialize: deserialize_Request_press,
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
