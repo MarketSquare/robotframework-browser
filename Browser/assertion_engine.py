@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, Tuple, Callable
 import re
 
 AssertionOperator = Enum(  # type: ignore
@@ -31,30 +31,30 @@ AssertionOperator = Enum(  # type: ignore
 )
 
 
+handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
+    AssertionOperator["=="]: (lambda a, b: a == b, "should be"),
+    AssertionOperator["!="]: (lambda a, b: a != b, "should not be"),
+    AssertionOperator["<"]: (lambda a, b: a < b, "should be less than"),
+    AssertionOperator[">"]: (lambda a, b: a > b, "should be greater than"),
+    AssertionOperator["<="]: (lambda a, b: a <= b, "should be less than or equal"),
+    AssertionOperator[">="]: (lambda a, b: a >= b, "should be greater than or equal"),
+    AssertionOperator["*="]: (lambda a, b: b in a, "should contain"),
+    AssertionOperator["matches"]: (lambda a, b: re.search(b, a), "should match"),
+    AssertionOperator["^="]: (
+        lambda a, b: re.search(f"^{re.escape(b)}", a),
+        "should start with",
+    ),
+    AssertionOperator["$="]: (
+        lambda a, b: re.search(f"{re.escape(b)}$", a),
+        "should end with",
+    ),
+}
+
+
 def verify_assertion(value: Any, operator: AssertionOperator, expected, message=""):
-    if operator.value == "==" and not value == expected:
-        raise AssertionError(f"{message} `{value}` should be `{expected}`")
-    elif operator.value == "!=" and not value != expected:
-        raise AssertionError(f"{message} `{value}` should not be `{expected}`")
-    elif operator.value == "<" and not value < expected:
-        raise AssertionError(f"{message} `{value}` should be less than `{expected}`")
-    elif operator.value == ">" and not value > expected:
-        raise AssertionError(f"{message} `{value}` should be greater than `{expected}`")
-    elif operator.value == "<=" and not value <= expected:
-        raise AssertionError(
-            f"{message} `{value}` should be less than or equal `{expected}`"
-        )
-    elif operator.value == ">=" and not value >= expected:
-        raise AssertionError(
-            f"{message} `{value}` should be greater than or equal `{expected}`"
-        )
-    elif operator.value == "*=" and expected not in value:
-        raise AssertionError(f"{message} `{value}` should contain `{expected}`")
-    elif operator.value == "$" and not re.search(expected, value):
-        raise AssertionError(f"{message} `{value}` should match `{expected}`")
-    elif operator.value == "^=" and not re.search(f"^{re.escape(expected)}", value):
-        raise AssertionError(f"{message} `{value}` should start with `{expected}`")
-    elif operator.value == "$=" and not re.search(f"{re.escape(expected)}$", value):
-        raise AssertionError(f"{message} `{value}` should end with `{expected}`")
-    elif operator not in AssertionOperator:
+    handler = handlers.get(operator)
+    if handler is None:
         raise RuntimeError(f"{message} `{operator}` is not a valid assertion operator")
+    validator, text = handler
+    if not validator(value, expected):
+        raise AssertionError(f"{message} `{value}` {text} `{expected}`")
