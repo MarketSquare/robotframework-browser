@@ -28,7 +28,6 @@ jobs:
         yarn --frozen-lockfile
         npm install --global playwright
         yarn install
-        yarn build
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -44,6 +43,9 @@ jobs:
     - name: Check with flake8
       run: |
         flake8
+    - name: Build Protos and check with tsc
+      run: |
+        make build
     - name: Run pytests
       run: |
         pytest
@@ -70,13 +72,13 @@ jobs:
       - name: Compile typescript
         run: |
           yarn install
-          yarn build
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Robot Framework Browser
         run: |
+          make build
           rm -rf dist
           cp package.json Browser/wrapper/package.json
           pip install .
