@@ -34,8 +34,7 @@ class Input:
 
     @keyword
     def type_text(
-            self, selector: str, text: str, delay: str = "0 ms",
-            clear: bool = True
+        self, selector: str, text: str, delay: str = "0 ms", clear: bool = True
     ):
         """ Types the given ``text`` into the text field identified by ``selector``.
 
@@ -53,10 +52,7 @@ class Input:
             delay_ms = timestr_to_secs(delay) * 1000
             response = stub.TypeText(
                 Request().typeText(
-                    selector=selector,
-                    text=text,
-                    delay=int(delay_ms),
-                    clear=clear
+                    selector=selector, text=text, delay=int(delay_ms), clear=clear
                 )
             )
             logger.info(response.log)
@@ -75,8 +71,7 @@ class Input:
         See `Type Text` for keyboard like typing of single characters.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.FillText(
-                Request().fillText(selector=selector, text=text))
+            response = stub.FillText(Request().fillText(selector=selector, text=text))
             logger.info(response.log)
 
     @keyword
@@ -92,11 +87,7 @@ class Input:
 
     @keyword
     def type_secret(
-            self,
-            selector: str,
-            secret: str,
-            delay: str = "0 ms",
-            clear: bool = True
+        self, selector: str, secret: str, delay: str = "0 ms", clear: bool = True
     ):
         """ Types the given ``secret`` into the text field identified by ``selector`` without logging.
 
@@ -139,8 +130,7 @@ class Input:
             try:
                 # Should prevent logging in case of failure keywords
                 previous_level = BuiltIn().set_log_level("NONE")
-                stub.InputText(
-                    Request().inputText(input=password, selector=selector))
+                stub.InputText(Request().inputText(input=password, selector=selector))
             finally:
                 BuiltIn().set_log_level(previous_level)
 
@@ -169,15 +159,16 @@ class Input:
             logger.info(response.log)
 
     @keyword
-    def click_with_options(self,
-                           selector: str,
-                           button: str,
-                           click_count: Optional[int] = None,
-                           delay: Optional[str] = None,
-                           position_x: Optional[int] = None,
-                           position_y: Optional[int] = None,
-                           *modifiers: str
-                           ):
+    def click_with_options(
+        self,
+        selector: str,
+        button: str,
+        click_count: Optional[int] = None,
+        delay: Optional[str] = None,
+        position_x: Optional[int] = None,
+        position_y: Optional[int] = None,
+        *modifiers: str,
+    ):
         """ Clicks element identified by ``selector``. 
         
         ``button``: ``<"left"|"right"|"middle">`` Defaults to ``left`` if invalid.
@@ -205,16 +196,15 @@ class Input:
             if delay:
                 options["delay"] = int(timestr_to_secs(delay) * 1000)
             if position_x and position_y:
-                options["position"] = dict()
-                options["position"]["x"] = position_x
-                options["position"]["y"] = position_y
+                positions: Dict[str, object] = {"x": position_x, "y": position_y}
+                options["position"] = positions
             if modifiers:
                 options["modifiers"] = modifiers
             options_json = json.dumps(options)
             logger.debug(f"Click Options are: {options_json}")
             response = stub.Click(
-                Request().selectorOptions(
-                    selector=selector, options=options_json))
+                Request().selectorOptions(selector=selector, options=options_json)
+            )
             logger.info(response.log)
 
     @keyword
@@ -242,6 +232,5 @@ class Input:
             If not checked does nothing
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.UncheckCheckbox(
-                Request().selector(selector=selector))
+            response = stub.UncheckCheckbox(Request().selector(selector=selector))
             logger.info(response.log)
