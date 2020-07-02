@@ -86,9 +86,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Robot Framework Browser
         env:
-          BROWSERLIBRARY-VERSION: 0.3.0
+          VERSION: 0.3.0
         run: |
-          pip install built/dist/dist/robotframework_browser-$BROWSERLIBRARY-VERSION-py3-none-any.whl
+          pip install "built/dist/dist/robotframework_browser-$VERSION-py3-none-any.whl"
           rfbrowser init
       - name: Run Robot Framework tests
         run: |
