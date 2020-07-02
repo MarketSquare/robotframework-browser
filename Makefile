@@ -58,10 +58,9 @@ lint-robot:
 
 lint: lint-node lint-python lint-robot
 
-build: protobuf
-	yarn build
-
 protobuf:
+	mkdir -p Browser/generated/
+	mkdir -p Browser/wrapper/generated/
 	python -m grpc_tools.protoc -Iprotos --python_out=Browser/generated --grpc_python_out=Browser/generated protos/*.proto
 	touch Browser/generated/__init__.py
 	sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Browser.generated import playwright_pb2 as playwright__pb2/g' Browser/generated/playwright_pb2_grpc.py
@@ -80,7 +79,10 @@ protobuf:
 		-I ./protos \
 		protos/*.proto
 
-package: keyword-docs
+build: protobuf
+	yarn build
+
+package: build keyword-docs
 	rm -rf dist/
 	cp package.json Browser/wrapper
 	.venv/bin/python setup.py sdist bdist_wheel
