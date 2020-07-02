@@ -61,7 +61,7 @@ jobs:
         path: atest/output
     - uses: actions/upload-artifact@v1
       with:
-        name: built
+        name: artifacts
         path: dist/
   test-install:
     needs: build
@@ -75,7 +75,7 @@ jobs:
       - name: Download package for install testing
         uses: actions/download-artifact@v1
         with: 
-          name: built
+          name: artifacts 
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
@@ -88,7 +88,7 @@ jobs:
         env:
           VERSION: 0.3.0
         run: |
-          pip install "dist/robotframework_browser-$VERSION-py3-none-any.whl"
+          pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
           rfbrowser init
       - name: Run Robot Framework tests
         run: |
