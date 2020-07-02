@@ -4,6 +4,7 @@ from robot.api import logger  # type: ignore
 from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
+from typing import Optional
 
 from ..generated.playwright_pb2 import Request
 
@@ -171,11 +172,11 @@ class Input:
     def click_with_options(self,
                            selector: str,
                            button: str,
-                           click_count: int = None,
-                           delay: str = None,
-                           position_x: int = None,
-                           position_y: int = None,
-                           *modifiers
+                           click_count: Optional[int] = None,
+                           delay: Optional[str] = None,
+                           position_x: Optional[int] = None,
+                           position_y: Optional[int] = None,
+                           *modifiers: str
                            ):
         """ Clicks element identified by ``selector``. 
         
