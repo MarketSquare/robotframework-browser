@@ -99,20 +99,19 @@ class Input:
 
     @keyword
     def type_secret(self,
-                  selector: str,
-                  secret: str,
-                  delay: str = "0 ms",
-                  clear: bool = True):
+                    selector: str,
+                    secret: str,
+                    delay: str = "0 ms",
+                    clear: bool = True):
         """ Types the given ``secret`` into the text field identified by ``selector`` without logging.
 
         See `Type Text` for details.
-        """        
+        """
         try:
             previous_level = BuiltIn().set_log_level("NONE")
             self.type_text(selector, secret, delay, clear)
         finally:
             BuiltIn().set_log_level(previous_level)
-
 
     @keyword
     def fill_secret(self, selector: str, secret: str):
