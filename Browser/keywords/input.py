@@ -1,4 +1,5 @@
 from robot.api import logger  # type: ignore
+from robot.utils import timestr_to_secs
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
@@ -15,7 +16,7 @@ class Input:
 
     @keyword
     def input_text(self, selector: str, text: str, type=False):
-        """ Inputs the given ``text`` into the text field identified by ``selector``
+        """ DEPRECATED Inputs the given ``text`` into the text field identified by ``selector``
 
             By default text is inputted via filling (instantly), only triggering the
             input event. By toggling the ``type`` boolean text will be typed into the
@@ -31,8 +32,103 @@ class Input:
             logger.info(response.log)
 
     @keyword
+    def type_text(self,
+                  selector: str,
+                  text: str,
+                  delay: str = "0 ms",
+                  clear: bool = True):
+        """ Types the given ``text`` into the text field identified by ``selector``.
+
+        Sends a ``keydown``, ``keypress/input``, and ``keyup`` event for each
+        character in the text.
+
+        ``delay``: delay between the single key strokes. It may be either a
+        number or a Robot Framework time string. Time strings are fully
+        explained in an appendix of Robot Framework User Guide.
+        Example: ``50 ms``
+
+        See `Fill Text` for direct filling of the full text at once.
+        """
+        with self.playwright.grpc_channel() as stub:
+            delay_ms = timestr_to_secs(delay) * 1000
+            response = stub.TypeText(
+                playwright_pb2.typeTextRequest(
+                    selector=selector,
+                    text=text,
+                    delay=int(delay_ms),
+                    clear=clear
+                )
+            )
+            logger.info(response.log)
+
+    @keyword
+    def fill_text(self, selector: str, text: str):
+        """ Clears and Fills the given ``text`` into the text field identified by ``selector``.
+
+        This method waits for an element matching selector, waits for
+        actionability checks, focuses the element, fills it and triggers an
+        input event after filling. If the element matching selector is not
+        an <input>, <textarea> or [contenteditable] element, this method
+        throws an error. Note that you can pass an empty string to clear
+        the input field.
+
+        See `Type Text` for keyboard like typing of single characters.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.FillText(
+                playwright_pb2.fillTextRequest(
+                    selector=selector, text=text
+                )
+            )
+            logger.info(response.log)
+
+    @keyword
+    def clear_text(self, selector: str):
+        """ Clears the text field identified by ``selector``.
+
+        See `Type Text` for keyboard like typing of single characters.
+        See `Fill Text` for direct filling of the full text at once.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ClearText(
+                playwright_pb2.clearTextRequest(
+                    selector=selector
+                )
+            )
+            logger.info(response.log)
+
+    @keyword
+    def type_secret(self,
+                  selector: str,
+                  secret: str,
+                  delay: str = "0 ms",
+                  clear: bool = True):
+        """ Types the given ``secret`` into the text field identified by ``selector`` without logging.
+
+        See `Type Text` for details.
+        """        
+        try:
+            previous_level = BuiltIn().set_log_level("NONE")
+            self.type_text(selector, secret, delay, clear)
+        finally:
+            BuiltIn().set_log_level(previous_level)
+
+
+    @keyword
+    def fill_secret(self, selector: str, secret: str):
+        """ Fills the given ``secret`` into the text field identified by ``selector`` without logging.
+
+        See `Fill Text` for details.
+        """
+        try:
+            previous_level = BuiltIn().set_log_level("NONE")
+            self.fill_text(selector, secret)
+        finally:
+            BuiltIn().set_log_level(previous_level)
+
+    @keyword
     def input_password(self, selector: str, password: str):
-        """ Types the given ``password`` into the field identified by ``selector``
+        """ DEPRECATED Types the given ``password`` into the field identified by ``selector``
             Disables logging to avoid leaking sensitive information.
         Difference compared to `Input Text` is that this keyword does not
         log the given password on the INFO level. Notice that if you use

@@ -14,6 +14,9 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     goTo: IPlaywrightService_IGoTo;
     getTitle: IPlaywrightService_IGetTitle;
     inputText: IPlaywrightService_IInputText;
+    typeText: IPlaywrightService_ITypeText;
+    fillText: IPlaywrightService_IFillText;
+    clearText: IPlaywrightService_IClearText;
     getDomProperty: IPlaywrightService_IGetDomProperty;
     getBoolProperty: IPlaywrightService_IGetBoolProperty;
     getTextContent: IPlaywrightService_IGetTextContent;
@@ -76,6 +79,33 @@ interface IPlaywrightService_IInputText extends grpc.MethodDefinition<playwright
     responseStream: boolean; // false
     requestSerialize: grpc.serialize<playwright_pb.inputTextRequest>;
     requestDeserialize: grpc.deserialize<playwright_pb.inputTextRequest>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_ITypeText extends grpc.MethodDefinition<playwright_pb.typeTextRequest, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/TypeText"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.typeTextRequest>;
+    requestDeserialize: grpc.deserialize<playwright_pb.typeTextRequest>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_IFillText extends grpc.MethodDefinition<playwright_pb.fillTextRequest, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/FillText"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.fillTextRequest>;
+    requestDeserialize: grpc.deserialize<playwright_pb.fillTextRequest>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_IClearText extends grpc.MethodDefinition<playwright_pb.clearTextRequest, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/ClearText"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.clearTextRequest>;
+    requestDeserialize: grpc.deserialize<playwright_pb.clearTextRequest>;
     responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
 }
@@ -170,6 +200,9 @@ export interface IPlaywrightServer {
     goTo: grpc.handleUnaryCall<playwright_pb.goToRequest, playwright_pb.Response.Empty>;
     getTitle: grpc.handleUnaryCall<playwright_pb.Empty, playwright_pb.Response.String>;
     inputText: grpc.handleUnaryCall<playwright_pb.inputTextRequest, playwright_pb.Response.Empty>;
+    typeText: grpc.handleUnaryCall<playwright_pb.typeTextRequest, playwright_pb.Response.Empty>;
+    fillText: grpc.handleUnaryCall<playwright_pb.fillTextRequest, playwright_pb.Response.Empty>;
+    clearText: grpc.handleUnaryCall<playwright_pb.clearTextRequest, playwright_pb.Response.Empty>;
     getDomProperty: grpc.handleUnaryCall<playwright_pb.getDomPropertyRequest, playwright_pb.Response.String>;
     getBoolProperty: grpc.handleUnaryCall<playwright_pb.getDomPropertyRequest, playwright_pb.Response.Bool>;
     getTextContent: grpc.handleUnaryCall<playwright_pb.selectorRequest, playwright_pb.Response.String>;
@@ -200,6 +233,15 @@ export interface IPlaywrightClient {
     inputText(request: playwright_pb.inputTextRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     inputText(request: playwright_pb.inputTextRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     inputText(request: playwright_pb.inputTextRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    typeText(request: playwright_pb.typeTextRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    typeText(request: playwright_pb.typeTextRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    typeText(request: playwright_pb.typeTextRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    fillText(request: playwright_pb.fillTextRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    fillText(request: playwright_pb.fillTextRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    fillText(request: playwright_pb.fillTextRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    clearText(request: playwright_pb.clearTextRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    clearText(request: playwright_pb.clearTextRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    clearText(request: playwright_pb.clearTextRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     getDomProperty(request: playwright_pb.getDomPropertyRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getDomProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getDomProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
@@ -249,6 +291,15 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public inputText(request: playwright_pb.inputTextRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public inputText(request: playwright_pb.inputTextRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public inputText(request: playwright_pb.inputTextRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public typeText(request: playwright_pb.typeTextRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public typeText(request: playwright_pb.typeTextRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public typeText(request: playwright_pb.typeTextRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public fillText(request: playwright_pb.fillTextRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public fillText(request: playwright_pb.fillTextRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public fillText(request: playwright_pb.fillTextRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public clearText(request: playwright_pb.clearTextRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public clearText(request: playwright_pb.clearTextRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public clearText(request: playwright_pb.clearTextRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public getDomProperty(request: playwright_pb.getDomPropertyRequest, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getDomProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getDomProperty(request: playwright_pb.getDomPropertyRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;

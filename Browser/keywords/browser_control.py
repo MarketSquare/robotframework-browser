@@ -15,7 +15,7 @@ class Control:
         return self.library.playwright
 
     @keyword
-    def open_browser(self, url=None, browser="Chromium"):
+    def open_browser(self, url=None, browser="Chromium", headless: bool=True):
         """Opens a new browser instance.
         The optional ``url`` argument specifies what to open.
         The optional ``browser`` argument specifies which browser to use. The
@@ -35,7 +35,7 @@ class Control:
             )
         with self.playwright.grpc_channel() as stub:
             response = stub.OpenBrowser(
-                playwright_pb2.openBrowserRequest(url=url or "", browser=browser_)
+                playwright_pb2.openBrowserRequest(url=url or "", browser=browser_, headless=headless)
             )
             logger.info(response.log)
 

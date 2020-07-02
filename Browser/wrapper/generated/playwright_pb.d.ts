@@ -51,6 +51,9 @@ export class openBrowserRequest extends jspb.Message {
     getBrowser(): string;
     setBrowser(value: string): openBrowserRequest;
 
+    getHeadless(): boolean;
+    setHeadless(value: boolean): openBrowserRequest;
+
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): openBrowserRequest.AsObject;
@@ -66,6 +69,7 @@ export namespace openBrowserRequest {
     export type AsObject = {
         url: string,
         browser: string,
+        headless: boolean,
     }
 }
 
@@ -116,6 +120,85 @@ export namespace inputTextRequest {
         input: string,
         selector: string,
         type: boolean,
+    }
+}
+
+export class typeTextRequest extends jspb.Message { 
+    getSelector(): string;
+    setSelector(value: string): typeTextRequest;
+
+    getText(): string;
+    setText(value: string): typeTextRequest;
+
+    getDelay(): number;
+    setDelay(value: number): typeTextRequest;
+
+    getClear(): boolean;
+    setClear(value: boolean): typeTextRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): typeTextRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: typeTextRequest): typeTextRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: typeTextRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): typeTextRequest;
+    static deserializeBinaryFromReader(message: typeTextRequest, reader: jspb.BinaryReader): typeTextRequest;
+}
+
+export namespace typeTextRequest {
+    export type AsObject = {
+        selector: string,
+        text: string,
+        delay: number,
+        clear: boolean,
+    }
+}
+
+export class fillTextRequest extends jspb.Message { 
+    getSelector(): string;
+    setSelector(value: string): fillTextRequest;
+
+    getText(): string;
+    setText(value: string): fillTextRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): fillTextRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: fillTextRequest): fillTextRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: fillTextRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): fillTextRequest;
+    static deserializeBinaryFromReader(message: fillTextRequest, reader: jspb.BinaryReader): fillTextRequest;
+}
+
+export namespace fillTextRequest {
+    export type AsObject = {
+        selector: string,
+        text: string,
+    }
+}
+
+export class clearTextRequest extends jspb.Message { 
+    getSelector(): string;
+    setSelector(value: string): clearTextRequest;
+
+
+    serializeBinary(): Uint8Array;
+    toObject(includeInstance?: boolean): clearTextRequest.AsObject;
+    static toObject(includeInstance: boolean, msg: clearTextRequest): clearTextRequest.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+    static serializeBinaryToWriter(message: clearTextRequest, writer: jspb.BinaryWriter): void;
+    static deserializeBinary(bytes: Uint8Array): clearTextRequest;
+    static deserializeBinaryFromReader(message: clearTextRequest, reader: jspb.BinaryReader): clearTextRequest;
+}
+
+export namespace clearTextRequest {
+    export type AsObject = {
+        selector: string,
     }
 }
 

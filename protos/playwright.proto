@@ -9,6 +9,7 @@ message screenshotRequest {
 message openBrowserRequest {
   string url = 1;
   string browser = 2;
+  bool headless = 3;
 }
 
 message goToRequest {
@@ -19,6 +20,22 @@ message inputTextRequest {
   string input = 1;
   string selector = 2;
   bool type = 3;
+}
+
+message typeTextRequest {
+  string selector = 1;
+  string text = 2;
+  int32 delay = 3;
+  bool clear = 4;
+}
+
+message fillTextRequest {
+  string selector = 1;
+  string text = 2;
+}
+
+message clearTextRequest {
+  string selector = 1;
 }
 
 message pressRequest {
@@ -59,6 +76,12 @@ service  Playwright {
   rpc GetTitle(Empty) returns (Response.String) {}
   /* Wraps playwrights page.fill to input text into input specified with selector */ 
   rpc InputText(inputTextRequest) returns (Response.Empty) {}
+   /* Wraps playwrights page.type to type text into input specified with selector */ 
+  rpc TypeText(typeTextRequest) returns (Response.Empty) {}
+  /* Wraps playwrights page.fill to fill text of input specified with selector */ 
+  rpc FillText(fillTextRequest) returns (Response.Empty) {}
+  /* Wraps playwrights page.fill with empty text to clear input specified with selector */ 
+  rpc ClearText(clearTextRequest) returns (Response.Empty) {}
   /* Gets the DOM property 'property' of selector specified element */
   rpc GetDomProperty(getDomPropertyRequest) returns (Response.String) {}
   /* Gets the boolean DOM property 'property' of selector specified element */
