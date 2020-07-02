@@ -47,12 +47,10 @@ class Control:
             logger.info(response.log)
 
     @keyword
-    def go_to(self, url: str, timeout: Optional[float] = None):
+    def go_to(self, url: str):
         """Navigates the current browser tab to the provided ``url``."""
-        timeout = self.library.parse_timeout(timeout)
-
         with self.playwright.grpc_channel() as stub:
-            response = stub.GoTo(Request().goTo(url=url, timeout=timeout))
+            response = stub.GoTo(Request().goTo(url=url))
             logger.info(response.log)
 
     @keyword
@@ -65,4 +63,13 @@ class Control:
         logger.info(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
             response = stub.Screenshot(Request().screenshot(path=path))
+            logger.info(response.log)
+
+    @keyword
+    def set_timeout(self, timeout: str):
+        """ Sets the timeout that is used by most input and getter keywords
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetTimeout(Request().timeout(timeout=timeout))
             logger.info(response.log)

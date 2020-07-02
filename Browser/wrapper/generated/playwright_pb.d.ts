@@ -90,9 +90,6 @@ export namespace Request {
         getUrl(): string;
         setUrl(value: string): goTo;
 
-        getTimeout(): number;
-        setTimeout(value: number): goTo;
-
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): goTo.AsObject;
@@ -107,7 +104,6 @@ export namespace Request {
     export namespace goTo {
         export type AsObject = {
             url: string,
-            timeout: number,
         }
     }
 
@@ -120,9 +116,6 @@ export namespace Request {
 
         getType(): boolean;
         setType(value: boolean): inputText;
-
-        getTimeout(): number;
-        setTimeout(value: number): inputText;
 
 
         serializeBinary(): Uint8Array;
@@ -140,7 +133,6 @@ export namespace Request {
             input: string,
             selector: string,
             type: boolean,
-            timeout: number,
         }
     }
 
@@ -150,9 +142,6 @@ export namespace Request {
 
         getSelector(): string;
         setSelector(value: string): getDomProperty;
-
-        getTimeout(): number;
-        setTimeout(value: number): getDomProperty;
 
 
         serializeBinary(): Uint8Array;
@@ -169,7 +158,6 @@ export namespace Request {
         export type AsObject = {
             property: string,
             selector: string,
-            timeout: number,
         }
     }
 
@@ -204,9 +192,6 @@ export namespace Request {
         getSelector(): string;
         setSelector(value: string): selector;
 
-        getTimeout(): number;
-        setTimeout(value: number): selector;
-
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): selector.AsObject;
@@ -221,6 +206,26 @@ export namespace Request {
     export namespace selector {
         export type AsObject = {
             selector: string,
+        }
+    }
+
+    export class timeout extends jspb.Message { 
+        getTimeout(): number;
+        setTimeout(value: number): timeout;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): timeout.AsObject;
+        static toObject(includeInstance: boolean, msg: timeout): timeout.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: timeout, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): timeout;
+        static deserializeBinaryFromReader(message: timeout, reader: jspb.BinaryReader): timeout;
+    }
+
+    export namespace timeout {
+        export type AsObject = {
             timeout: number,
         }
     }

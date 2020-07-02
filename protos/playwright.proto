@@ -12,29 +12,28 @@ message Request {
   }
   message goTo {
     string url= 1;
-    float timeout = 2;
   }
 
   message inputText {
     string input = 1;
     string selector = 2;
     bool type = 3;
-    int64 timeout = 4;
   }
   message getDomProperty {
     string property = 1;
     string selector = 2;
-    int64 timeout = 3;
   }
 
   message press {
     string selector = 1;
     repeated string key = 2;
-}
+  }
 
   message selector {
     string selector = 1;
-    int64 timeout = 2;
+  }
+  message timeout {
+    int64 timeout = 1;
   }
 }
 
@@ -81,4 +80,6 @@ service  Playwright {
   rpc UncheckCheckbox(Request.selector) returns (Response.Empty) {}
   /* Health check endpoint for the service */
   rpc Health(Request.Empty) returns (Response.String) {}
+  /* Set's  playwright timeout */
+  rpc SetTimeout(Request.timeout) returns (Response.Empty) {}
 }

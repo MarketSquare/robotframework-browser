@@ -88,6 +88,11 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Request.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.String.FromString,
                 )
+        self.SetTimeout = channel.unary_unary(
+                '/Playwright/SetTimeout',
+                request_serializer=playwright__pb2.Request.timeout.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
 
 
 class PlaywrightServicer(object):
@@ -195,6 +200,13 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetTimeout(self, request, context):
+        """Set's  playwright timeout 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -272,6 +284,11 @@ def add_PlaywrightServicer_to_server(servicer, server):
                     servicer.Health,
                     request_deserializer=playwright__pb2.Request.Empty.FromString,
                     response_serializer=playwright__pb2.Response.String.SerializeToString,
+            ),
+            'SetTimeout': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetTimeout,
+                    request_deserializer=playwright__pb2.Request.timeout.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -520,5 +537,21 @@ class Playwright(object):
         return grpc.experimental.unary_unary(request, target, '/Playwright/Health',
             playwright__pb2.Request.Empty.SerializeToString,
             playwright__pb2.Response.String.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SetTimeout(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/SetTimeout',
+            playwright__pb2.Request.timeout.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

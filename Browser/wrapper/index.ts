@@ -78,11 +78,10 @@ class PlaywrightServer implements IPlaywrightServer {
     async goTo(call: ServerUnaryCall<Request.goTo>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to open URl but had no browser open');
         const url = call.request.getUrl();
-        const timeout = call.request.getTimeout();
         console.log('Go to URL: ' + url);
 
         try {
-            await this.browserState.page.goto(url, { timeout: timeout });
+            await this.browserState.page.goto(url);
         } catch (e) {
             callback(e, null);
         }
@@ -215,6 +214,14 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector();
         await this.browserState.page.uncheck(selector);
         const response = emptyWithLog('Unhecked checkbox: ' + selector);
+        callback(null, response);
+    }
+
+    async setTimeout(call: ServerUnaryCall<Request.timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to set timeout, no open browser');
+        const timeout = call.request.getTimeout();
+        this.browserState.context.setDefaultTimeout(timeout);
+        const response = emptyWithLog('Set timeout to: ' + timeout);
         callback(null, response);
     }
 

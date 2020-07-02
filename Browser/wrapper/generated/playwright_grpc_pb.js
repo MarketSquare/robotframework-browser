@@ -92,6 +92,17 @@ function deserialize_Request_selector(buffer_arg) {
   return playwright_pb.Request.selector.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_Request_timeout(arg) {
+  if (!(arg instanceof playwright_pb.Request.timeout)) {
+    throw new Error('Expected argument of type Request.timeout');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Request_timeout(buffer_arg) {
+  return playwright_pb.Request.timeout.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_Response_Bool(arg) {
   if (!(arg instanceof playwright_pb.Response.Bool)) {
     throw new Error('Expected argument of type Response.Bool');
@@ -303,6 +314,18 @@ health: {
     requestDeserialize: deserialize_Request_Empty,
     responseSerialize: serialize_Response_String,
     responseDeserialize: deserialize_Response_String,
+  },
+  // Set's  playwright timeout 
+setTimeout: {
+    path: '/Playwright/SetTimeout',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.timeout,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_timeout,
+    requestDeserialize: deserialize_Request_timeout,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
   },
 };
 

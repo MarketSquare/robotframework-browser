@@ -8,7 +8,8 @@ Resource          resource.robot
 Test GoTo With Short Default Timeout
     Run Keyword And Expect Error  *Timeout 1ms exceeded during page.goto*  GoTo   ${LOGIN_URL}
 Test Overriding GoTo Timeout With Short
-    Run Keyword And Expect Error  *Timeout 1ms exceeded during page.goto*  GoTo   ${LOGIN_URL}  0.001
+    Set Timeout  0.001
+    Run Keyword And Expect Error  *Timeout 1ms exceeded during page.goto*  GoTo   ${LOGIN_URL}
 Test Overriding GoTo Timeout With Long
-    GoTo  ${LOGIN_URL}	1
-
+    Set Timeout 10s
+    GoTo  ${LOGIN_URL}

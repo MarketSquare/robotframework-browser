@@ -23,6 +23,7 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     checkCheckbox: IPlaywrightService_ICheckCheckbox;
     uncheckCheckbox: IPlaywrightService_IUncheckCheckbox;
     health: IPlaywrightService_IHealth;
+    setTimeout: IPlaywrightService_ISetTimeout;
 }
 
 interface IPlaywrightService_IScreenshot extends grpc.MethodDefinition<playwright_pb.Request.screenshot, playwright_pb.Response.Empty> {
@@ -160,6 +161,15 @@ interface IPlaywrightService_IHealth extends grpc.MethodDefinition<playwright_pb
     responseSerialize: grpc.serialize<playwright_pb.Response.String>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.String>;
 }
+interface IPlaywrightService_ISetTimeout extends grpc.MethodDefinition<playwright_pb.Request.timeout, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/SetTimeout"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.Request.timeout>;
+    requestDeserialize: grpc.deserialize<playwright_pb.Request.timeout>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
 
 export const PlaywrightService: IPlaywrightService;
 
@@ -179,6 +189,7 @@ export interface IPlaywrightServer {
     checkCheckbox: grpc.handleUnaryCall<playwright_pb.Request.selector, playwright_pb.Response.Empty>;
     uncheckCheckbox: grpc.handleUnaryCall<playwright_pb.Request.selector, playwright_pb.Response.Empty>;
     health: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.String>;
+    setTimeout: grpc.handleUnaryCall<playwright_pb.Request.timeout, playwright_pb.Response.Empty>;
 }
 
 export interface IPlaywrightClient {
@@ -227,6 +238,9 @@ export interface IPlaywrightClient {
     health(request: playwright_pb.Request.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     health(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     health(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    setTimeout(request: playwright_pb.Request.timeout, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    setTimeout(request: playwright_pb.Request.timeout, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    setTimeout(request: playwright_pb.Request.timeout, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
 }
 
 export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
@@ -276,4 +290,7 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public health(request: playwright_pb.Request.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public health(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public health(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
+    public setTimeout(request: playwright_pb.Request.timeout, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public setTimeout(request: playwright_pb.Request.timeout, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public setTimeout(request: playwright_pb.Request.timeout, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
 }
