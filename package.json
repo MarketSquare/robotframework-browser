@@ -27,7 +27,7 @@
   "husky": {
     "hooks": {
       "pre-commit": "echo 'precommit 🔱' && make lint-python &&  make lint-node",
-      "pre-push": "echo 'prepush 🚀' && make utest && make atest"
+      "pre-push": "echo 'prepush 🚀' && make build && make utest && make atest"
     }
   },
   "scripts": {
