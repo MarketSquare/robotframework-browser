@@ -2,9 +2,9 @@ from enum import Enum
 from typing import Any, Dict, Tuple, Callable
 import re
 
-AssertionOperator = Enum(  # type: ignore
-    value="AssertionOperator",
-    names={
+AssertionOperator = Enum(
+    "AssertionOperator",
+    {
         "noassertion": "NO_ASSERTION",
         "NO_ASSERTION": "NO_ASSERTION",
         "equal": "==",
