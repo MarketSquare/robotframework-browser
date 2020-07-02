@@ -1,5 +1,5 @@
 from robot.api import logger  # type: ignore
-from robot.utils import timestr_to_secs
+from robot.utils.robottime import timestr_to_secs
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
