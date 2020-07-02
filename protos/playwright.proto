@@ -61,6 +61,11 @@ message Request {
   message addStyleTag {
     string content = 1;
   }
+
+  message selectorOptions {
+    string selector = 1;
+    string options = 2;
+  }
 }
 
 
@@ -120,4 +125,8 @@ service  Playwright {
   rpc SetTimeout(Request.timeout) returns (Response.Empty) {}
   /* Adds a <style> to head of side. */
   rpc AddStyleTag(Request.addStyleTag) returns (Response.Empty) {}
+  /* Clicks element specified by selector and options */ 
+  rpc ClickWithOptions(Request.selectorOptions) returns (Response.Empty) {}
+  /* Focuses element specified by selector */ 
+  rpc Focus(Request.selector) returns (Response.Empty) {}
 }

@@ -30,6 +30,8 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     health: IPlaywrightService_IHealth;
     setTimeout: IPlaywrightService_ISetTimeout;
     addStyleTag: IPlaywrightService_IAddStyleTag;
+    clickWithOptions: IPlaywrightService_IClickWithOptions;
+    focus: IPlaywrightService_IFocus;
 }
 
 interface IPlaywrightService_IScreenshot extends grpc.MethodDefinition<playwright_pb.Request.screenshot, playwright_pb.Response.Empty> {
@@ -230,6 +232,24 @@ interface IPlaywrightService_IAddStyleTag extends grpc.MethodDefinition<playwrig
     responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
 }
+interface IPlaywrightService_IClickWithOptions extends grpc.MethodDefinition<playwright_pb.Request.selectorOptions, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/ClickWithOptions"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.Request.selectorOptions>;
+    requestDeserialize: grpc.deserialize<playwright_pb.Request.selectorOptions>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_IFocus extends grpc.MethodDefinition<playwright_pb.Request.selector, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/Focus"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.Request.selector>;
+    requestDeserialize: grpc.deserialize<playwright_pb.Request.selector>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
 
 export const PlaywrightService: IPlaywrightService;
 
@@ -256,6 +276,8 @@ export interface IPlaywrightServer {
     health: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.String>;
     setTimeout: grpc.handleUnaryCall<playwright_pb.Request.timeout, playwright_pb.Response.Empty>;
     addStyleTag: grpc.handleUnaryCall<playwright_pb.Request.addStyleTag, playwright_pb.Response.Empty>;
+    clickWithOptions: grpc.handleUnaryCall<playwright_pb.Request.selectorOptions, playwright_pb.Response.Empty>;
+    focus: grpc.handleUnaryCall<playwright_pb.Request.selector, playwright_pb.Response.Empty>;
 }
 
 export interface IPlaywrightClient {
@@ -325,6 +347,12 @@ export interface IPlaywrightClient {
     addStyleTag(request: playwright_pb.Request.addStyleTag, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     addStyleTag(request: playwright_pb.Request.addStyleTag, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     addStyleTag(request: playwright_pb.Request.addStyleTag, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    clickWithOptions(request: playwright_pb.Request.selectorOptions, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    clickWithOptions(request: playwright_pb.Request.selectorOptions, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    clickWithOptions(request: playwright_pb.Request.selectorOptions, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    focus(request: playwright_pb.Request.selector, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    focus(request: playwright_pb.Request.selector, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    focus(request: playwright_pb.Request.selector, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
 }
 
 export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
@@ -395,4 +423,10 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public addStyleTag(request: playwright_pb.Request.addStyleTag, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public addStyleTag(request: playwright_pb.Request.addStyleTag, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public addStyleTag(request: playwright_pb.Request.addStyleTag, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public clickWithOptions(request: playwright_pb.Request.selectorOptions, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public clickWithOptions(request: playwright_pb.Request.selectorOptions, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public clickWithOptions(request: playwright_pb.Request.selectorOptions, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public focus(request: playwright_pb.Request.selector, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public focus(request: playwright_pb.Request.selector, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public focus(request: playwright_pb.Request.selector, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
 }

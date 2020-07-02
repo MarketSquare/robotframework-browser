@@ -125,6 +125,17 @@ function deserialize_Request_selector(buffer_arg) {
   return playwright_pb.Request.selector.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_Request_selectorOptions(arg) {
+  if (!(arg instanceof playwright_pb.Request.selectorOptions)) {
+    throw new Error('Expected argument of type Request.selectorOptions');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Request_selectorOptions(buffer_arg) {
+  return playwright_pb.Request.selectorOptions.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_Request_timeout(arg) {
   if (!(arg instanceof playwright_pb.Request.timeout)) {
     throw new Error('Expected argument of type Request.timeout');
@@ -440,6 +451,30 @@ addStyleTag: {
     responseType: playwright_pb.Response.Empty,
     requestSerialize: serialize_Request_addStyleTag,
     requestDeserialize: deserialize_Request_addStyleTag,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Clicks element specified by selector and options 
+clickWithOptions: {
+    path: '/Playwright/ClickWithOptions',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.selectorOptions,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_selectorOptions,
+    requestDeserialize: deserialize_Request_selectorOptions,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Focuses element specified by selector 
+focus: {
+    path: '/Playwright/Focus',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.selector,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_selector,
+    requestDeserialize: deserialize_Request_selector,
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },

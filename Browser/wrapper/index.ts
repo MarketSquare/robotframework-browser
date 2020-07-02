@@ -253,11 +253,31 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async click(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        exists(this.browserState, callback, 'Tried to click button, no open browser');
+        exists(this.browserState, callback, 'Tried to click element, no open browser');
 
         const selector = call.request.getSelector();
         await this.browserState.page.click(selector).catch((e) => callback(e, null));
-        const response = emptyWithLog('Clicked button: ' + selector);
+        const response = emptyWithLog('Clicked element: ' + selector);
+        callback(null, response);
+    }
+
+
+    async clickWithOptions(call: ServerUnaryCall<Request.selectorOptions>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to click element, no open browser');
+
+        const selector = call.request.getSelector();
+        const options = call.request.getOptions();
+        await this.browserState.page.click(selector, JSON.parse(options)).catch((e) => callback(e, null));
+        const response = emptyWithLog('Clicked element: ' + selector + ' \nWith options: ' + options);
+        callback(null, response);
+    }
+
+    async focus(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to focus element, no open browser');
+
+        const selector = call.request.getSelector();
+        await this.browserState.page.focus(selector).catch((e) => callback(e, null));
+        const response = emptyWithLog('Focused element: ' + selector);
         callback(null, response);
     }
 
@@ -314,8 +334,7 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, 'Tried to add style tag, no open browser');
         const content = call.request.getContent();
         await this.browserState.page.addStyleTag({ content: content });
-
-        const response = emptyWithLog('added Style Tag: ' + content);
+        const response = emptyWithLog('added Style: ' + content);
         callback(null, response);
     }
 }

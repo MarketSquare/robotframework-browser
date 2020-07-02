@@ -123,6 +123,16 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Request.addStyleTag.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
+        self.ClickWithOptions = channel.unary_unary(
+                '/Playwright/ClickWithOptions',
+                request_serializer=playwright__pb2.Request.selectorOptions.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.Focus = channel.unary_unary(
+                '/Playwright/Focus',
+                request_serializer=playwright__pb2.Request.selector.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
 
 
 class PlaywrightServicer(object):
@@ -279,6 +289,20 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ClickWithOptions(self, request, context):
+        """Clicks element specified by selector and options 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Focus(self, request, context):
+        """Focuses element specified by selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -390,6 +414,16 @@ def add_PlaywrightServicer_to_server(servicer, server):
             'AddStyleTag': grpc.unary_unary_rpc_method_handler(
                     servicer.AddStyleTag,
                     request_deserializer=playwright__pb2.Request.addStyleTag.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'ClickWithOptions': grpc.unary_unary_rpc_method_handler(
+                    servicer.ClickWithOptions,
+                    request_deserializer=playwright__pb2.Request.selectorOptions.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'Focus': grpc.unary_unary_rpc_method_handler(
+                    servicer.Focus,
+                    request_deserializer=playwright__pb2.Request.selector.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
     }
@@ -750,6 +784,38 @@ class Playwright(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/AddStyleTag',
             playwright__pb2.Request.addStyleTag.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ClickWithOptions(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/ClickWithOptions',
+            playwright__pb2.Request.selectorOptions.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Focus(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/Focus',
+            playwright__pb2.Request.selector.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
