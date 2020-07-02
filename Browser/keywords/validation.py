@@ -3,7 +3,7 @@ from enum import Enum
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
-from ..generated import playwright_pb2
+from ..generated.playwright_pb2 import Request
 
 
 class Validation:
@@ -34,9 +34,7 @@ class Validation:
 
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetTextContent(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
+            response = stub.GetTextContent(Request().selector(selector=selector))
             logger.info(response.log)
             if response.body == "":
                 message = "No element matching selector `{}` on page".format(selector)
@@ -60,9 +58,7 @@ class Validation:
         """ Verifies that checkbox ``selector`` is in state ``expected`` """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
-                playwright_pb2.getDomPropertyRequest(
-                    selector=selector, property="checked"
-                )
+                Request().getDomProperty(selector=selector, property="checked")
             )
             logger.info(response.log)
             if response.body != expected.value:

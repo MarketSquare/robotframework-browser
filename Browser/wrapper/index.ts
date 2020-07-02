@@ -1,18 +1,7 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 import { sendUnaryData, ServerUnaryCall, Server, ServerCredentials } from 'grpc';
-import {
-    openBrowserRequest,
-    Empty,
-    Response,
-    goToRequest,
-    inputTextRequest,
-    selectorRequest,
-    screenshotRequest,
-    getDomPropertyRequest,
-    pressRequest,
-} from './generated/playwright_pb';
-
+import { Response, Request } from './generated/playwright_pb';
 // This is necessary for improved typescript inference
 /*
  * If obj is not trueish call callback with new Error containing message
@@ -37,6 +26,7 @@ async function createBrowserState(browserType: string): Promise<BrowserState> {
         throw new Error('unsupported browser');
     }
     const context = await browser.newContext();
+    context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const page = await context.newPage();
     return new BrowserState(browser, context, page);
 }
@@ -60,14 +50,8 @@ function emptyWithLog(text: string): Response.Empty {
 
 class PlaywrightServer implements IPlaywrightServer {
     private browserState?: BrowserState;
-    // current open browsers main context and open page
 
-    private async openUrl(url: string, callback: sendUnaryData<Response.Empty>) {
-        exists(this.browserState, callback, 'Tried to open URl but had no browser open');
-        await this.browserState.page.goto(url);
-    }
-
-    async closeBrowser(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to close browser but none was open');
         await this.browserState.browser.close();
         this.browserState = undefined;
@@ -77,32 +61,36 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async openBrowser(
-        call: ServerUnaryCall<openBrowserRequest>,
+        call: ServerUnaryCall<Request.openBrowser>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         const browserType = call.request.getBrowser();
         const url = call.request.getUrl();
         console.log('Open browser: ' + browserType);
-        // TODO: accept a flag for headlessness
         this.browserState = await createBrowserState(browserType);
-        const response = new Response.Empty();
         if (url) {
-            await this.openUrl(url, callback);
+            await this.browserState.page.goto(url);
             callback(null, emptyWithLog(`Succesfully opened browser ${browserType} to ${url}.`));
         } else {
             callback(null, emptyWithLog(`Succesfully opened browser ${browserType}.`));
         }
     }
 
-    async goTo(call: ServerUnaryCall<goToRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async goTo(call: ServerUnaryCall<Request.goTo>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to open URl but had no browser open');
         const url = call.request.getUrl();
         console.log('Go to URL: ' + url);
-        await this.openUrl(url, callback);
-        const response = emptyWithLog('Succesfully opened URL');
-        callback(null, response);
+
+        try {
+            await this.browserState.page.goto(url);
+            const response = emptyWithLog('Succesfully opened URL');
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
-    async getTitle(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getTitle(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         exists(this.browserState, callback, 'Tried to get title, no open browser');
         console.log('Getting title');
         const title = await this.browserState.page.title();
@@ -111,7 +99,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async getUrl(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getUrl(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         exists(this.browserState, callback, 'Tried to get page URL, no open browser');
         console.log('Getting URL');
         const url = this.browserState.page.url();
@@ -121,7 +109,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async getTextContent(
-        call: ServerUnaryCall<selectorRequest>,
+        call: ServerUnaryCall<Request.selector>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to find text on page, no open browser');
@@ -134,7 +122,7 @@ class PlaywrightServer implements IPlaywrightServer {
 
     // TODO: work some of getDomProperty and getBoolProperty's duplicate code into a root function
     async getDomProperty(
-        call: ServerUnaryCall<getDomPropertyRequest>,
+        call: ServerUnaryCall<Request.getDomProperty>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to get DOM property, no open browser');
@@ -154,7 +142,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async getBoolProperty(
-        call: ServerUnaryCall<getDomPropertyRequest>,
+        call: ServerUnaryCall<Request.getDomProperty>,
         callback: sendUnaryData<Response.Bool>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to get DOM property, no open browser');
@@ -173,7 +161,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async inputText(call: ServerUnaryCall<inputTextRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async inputText(call: ServerUnaryCall<Request.inputText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const inputText = call.request.getInput();
         const selector = call.request.getSelector();
@@ -188,7 +176,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async press(call: ServerUnaryCall<pressRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async press(call: ServerUnaryCall<Request.press>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const selector = call.request.getSelector();
         const keyList = call.request.getKeyList();
@@ -199,7 +187,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async click(call: ServerUnaryCall<selectorRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async click(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to click button, no open browser');
 
         const selector = call.request.getSelector();
@@ -209,7 +197,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async checkCheckbox(
-        call: ServerUnaryCall<selectorRequest>,
+        call: ServerUnaryCall<Request.selector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to check checkbox, no open browser');
@@ -219,7 +207,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
     async uncheckCheckbox(
-        call: ServerUnaryCall<selectorRequest>,
+        call: ServerUnaryCall<Request.selector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to uncheck checkbox, no open browser');
@@ -229,13 +217,24 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async health(call: ServerUnaryCall<Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async setTimeout(call: ServerUnaryCall<Request.timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to set timeout, no open browser');
+        const timeout = call.request.getTimeout();
+        this.browserState.context.setDefaultTimeout(timeout);
+        const response = emptyWithLog('Set timeout to: ' + timeout);
+        callback(null, response);
+    }
+
+    async health(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         const response = new Response.String();
         response.setBody('OK');
         callback(null, response);
     }
 
-    async screenshot(call: ServerUnaryCall<screenshotRequest>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async screenshot(
+        call: ServerUnaryCall<Request.screenshot>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
         exists(this.browserState, callback, 'Tried to take screenshot, no open browser');
         // Add the file extension here because the image type is defined by playwrights defaults
         const path = call.request.getPath() + '.png';

@@ -3,7 +3,7 @@ from typing import Any
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
-from ..generated import playwright_pb2
+from ..generated.playwright_pb2 import Request
 from ..assertion_engine import verify_assertion, AssertionOperator
 
 
@@ -27,7 +27,7 @@ class Getters:
         """
         value = ""
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetUrl(playwright_pb2.Empty())
+            response = stub.GetUrl(Request().Empty())
             logger.info(response.log)
             value = response.body
         verify_assertion(value, assertion_operator, assertion_expected, "URL ")
@@ -45,7 +45,7 @@ class Getters:
         """
         value = None
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetTitle(playwright_pb2.Empty())
+            response = stub.GetTitle(Request().Empty())
             logger.info(response.log)
             value = response.body
         verify_assertion(value, assertion_operator, assertion_expected, "Title ")
@@ -65,9 +65,7 @@ class Getters:
         value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                playwright_pb2.getDomPropertyRequest(
-                    selector=selector, property="innerText"
-                )
+                Request().getDomProperty(selector=selector, property="innerText")
             )
             logger.info(response.log)
             value = response.body
@@ -90,9 +88,7 @@ class Getters:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                playwright_pb2.getDomPropertyRequest(
-                    selector=selector, property=attribute
-                )
+                Request().getDomProperty(selector=selector, property=attribute)
             )
             logger.info(response.log)
             value = response.body
