@@ -1,6 +1,6 @@
 *** Settings ***
 Library           Browser    timeout=1ms
-Resource          Keywords.resource
+Resource          keywords.resource
 Test Setup        Open Browser
 Test Teardown     Close Browser
 Resource          keywords.resource

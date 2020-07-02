@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          Keywords.resource
+Resource          keywords.resource
 Suite Teardown    Close Browser
 
 *** Test Cases ***
