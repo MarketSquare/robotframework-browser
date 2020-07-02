@@ -50,7 +50,7 @@ class Input:
         See `Fill Text` for direct filling of the full text at once.
         """
         with self.playwright.grpc_channel() as stub:
-            delay_ms = timestr_to_secs(delay) * 1000
+            delay_ms = float(timestr_to_secs(delay)) * 1000
             response = stub.TypeText(
                 playwright_pb2.typeTextRequest(
                     selector=selector,
