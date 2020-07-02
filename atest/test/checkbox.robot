@@ -1,6 +1,6 @@
 *** Settings ***
-Library           Browser
-Test Setup        Open Browser    http://localhost:7272/checkbox_and_radio.html
+Resource          Keywords.resource
+Test Setup        Open Browser    ${LOGIN URL}/checkbox_and_radio.html
 Test Teardown     Close Browser
 
 *** Test Cases ***

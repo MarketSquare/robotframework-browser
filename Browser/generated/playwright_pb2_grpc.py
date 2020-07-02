@@ -33,6 +33,16 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Request.goTo.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
+        self.GoBack = channel.unary_unary(
+                '/Playwright/GoBack',
+                request_serializer=playwright__pb2.Request.goTo.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.GoForward = channel.unary_unary(
+                '/Playwright/GoForward',
+                request_serializer=playwright__pb2.Request.goTo.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
         self.GetTitle = channel.unary_unary(
                 '/Playwright/GetTitle',
                 request_serializer=playwright__pb2.Request.Empty.SerializeToString,
@@ -133,6 +143,20 @@ class PlaywrightServicer(object):
 
     def GoTo(self, request, context):
         """Opens the url in currently open Playwright page 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GoBack(self, request, context):
+        """Navigate to the next page in history 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GoForward(self, request, context):
+        """Navigate to the previous page in history. 
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -263,6 +287,16 @@ def add_PlaywrightServicer_to_server(servicer, server):
             ),
             'GoTo': grpc.unary_unary_rpc_method_handler(
                     servicer.GoTo,
+                    request_deserializer=playwright__pb2.Request.goTo.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'GoBack': grpc.unary_unary_rpc_method_handler(
+                    servicer.GoBack,
+                    request_deserializer=playwright__pb2.Request.goTo.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'GoForward': grpc.unary_unary_rpc_method_handler(
+                    servicer.GoForward,
                     request_deserializer=playwright__pb2.Request.goTo.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
@@ -410,6 +444,38 @@ class Playwright(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/GoTo',
+            playwright__pb2.Request.goTo.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GoBack(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GoBack',
+            playwright__pb2.Request.goTo.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GoForward(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/GoForward',
             playwright__pb2.Request.goTo.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,

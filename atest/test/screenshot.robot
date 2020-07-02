@@ -1,7 +1,7 @@
 *** Settings ***
-Library           Browser
+Resource          Keywords.resource
 Library           OperatingSystem
-Test Setup        Open Browser    http://localhost:7272
+Test Setup        Open Browser    ${LOGIN URL}
 Test Teardown     Close Browser
 
 *** Variables ***

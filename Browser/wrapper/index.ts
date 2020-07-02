@@ -91,6 +91,22 @@ class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async goBack(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to go back in history but no browser was open');
+        await this.browserState.page.goBack();
+        console.log('Go Back');
+        const response = emptyWithLog('Did Go Back');
+        callback(null, response);
+    }
+
+    async goForward(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to go forward in history but no browser was open');
+        await this.browserState.page.goForward();
+        console.log('Go BForward');
+        const response = emptyWithLog('Did Go Forward');
+        callback(null, response);
+    }
+
     async getTitle(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         exists(this.browserState, callback, 'Tried to get title, no open browser');
         console.log('Getting title');
@@ -210,6 +226,7 @@ class PlaywrightServer implements IPlaywrightServer {
         const response = emptyWithLog('Text field cleared.');
         callback(null, response);
     }
+
     async press(call: ServerUnaryCall<Request.press>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const selector = call.request.getSelector();

@@ -28,7 +28,7 @@ class Getters:
         value = ""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
-            logger.info(response.log)
+            logger.debug(response.log)
             value = response.body
         verify_assertion(value, assertion_operator, assertion_expected, "URL ")
         return value
@@ -46,7 +46,7 @@ class Getters:
         value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
-            logger.info(response.log)
+            logger.debug(response.log)
             value = response.body
         verify_assertion(value, assertion_operator, assertion_expected, "Title ")
         return value
@@ -67,7 +67,7 @@ class Getters:
             response = stub.GetDomProperty(
                 Request().getDomProperty(selector=selector, property="innerText")
             )
-            logger.info(response.log)
+            logger.debug(response.log)
             value = response.body
         verify_assertion(
             value, assertion_operator, assertion_expected, f"Text {selector}"
@@ -90,7 +90,7 @@ class Getters:
             response = stub.GetDomProperty(
                 Request().getDomProperty(selector=selector, property=attribute)
             )
-            logger.info(response.log)
+            logger.debug(response.log)
             value = response.body
         verify_assertion(
             value, assertion_operator, assertion_expected, f"Attribute {selector}"

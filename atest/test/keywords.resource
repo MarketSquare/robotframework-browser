@@ -28,13 +28,18 @@ Go To Login Page
     Go To    ${LOGIN URL}
     Login Page Should Be Open
 
+Login User
+    Input Username    demo
+    Input Pwd    mode
+    Submit Credentials
+
 Input Username
     [Arguments]    ${username}
-    Input Text    css=input#username_field    ${username}
+    Fill Text    input#username_field    ${username}
 
-Input Password
+Input Pwd
     [Arguments]    ${password}
-    Input Text    css=input#password_field    ${password}
+    Fill Secret    input#password_field    ${password}
 
 Submit Credentials
     Click    css=input#login_button

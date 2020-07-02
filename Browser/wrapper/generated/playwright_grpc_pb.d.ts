@@ -12,6 +12,8 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     openBrowser: IPlaywrightService_IOpenBrowser;
     closeBrowser: IPlaywrightService_ICloseBrowser;
     goTo: IPlaywrightService_IGoTo;
+    goBack: IPlaywrightService_IGoBack;
+    goForward: IPlaywrightService_IGoForward;
     getTitle: IPlaywrightService_IGetTitle;
     inputText: IPlaywrightService_IInputText;
     typeText: IPlaywrightService_ITypeText;
@@ -58,6 +60,24 @@ interface IPlaywrightService_ICloseBrowser extends grpc.MethodDefinition<playwri
 }
 interface IPlaywrightService_IGoTo extends grpc.MethodDefinition<playwright_pb.Request.goTo, playwright_pb.Response.Empty> {
     path: string; // "/.Playwright/GoTo"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.Request.goTo>;
+    requestDeserialize: grpc.deserialize<playwright_pb.Request.goTo>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_IGoBack extends grpc.MethodDefinition<playwright_pb.Request.goTo, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/GoBack"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.Request.goTo>;
+    requestDeserialize: grpc.deserialize<playwright_pb.Request.goTo>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
+interface IPlaywrightService_IGoForward extends grpc.MethodDefinition<playwright_pb.Request.goTo, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/GoForward"
     requestStream: boolean; // false
     responseStream: boolean; // false
     requestSerialize: grpc.serialize<playwright_pb.Request.goTo>;
@@ -208,6 +228,8 @@ export interface IPlaywrightServer {
     openBrowser: grpc.handleUnaryCall<playwright_pb.Request.openBrowser, playwright_pb.Response.Empty>;
     closeBrowser: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.Empty>;
     goTo: grpc.handleUnaryCall<playwright_pb.Request.goTo, playwright_pb.Response.Empty>;
+    goBack: grpc.handleUnaryCall<playwright_pb.Request.goTo, playwright_pb.Response.Empty>;
+    goForward: grpc.handleUnaryCall<playwright_pb.Request.goTo, playwright_pb.Response.Empty>;
     getTitle: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.String>;
     inputText: grpc.handleUnaryCall<playwright_pb.Request.inputText, playwright_pb.Response.Empty>;
     typeText: grpc.handleUnaryCall<playwright_pb.Request.typeText, playwright_pb.Response.Empty>;
@@ -238,6 +260,12 @@ export interface IPlaywrightClient {
     goTo(request: playwright_pb.Request.goTo, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     goTo(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     goTo(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goBack(request: playwright_pb.Request.goTo, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goBack(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goBack(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goForward(request: playwright_pb.Request.goTo, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goForward(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    goForward(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     getTitle(request: playwright_pb.Request.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getTitle(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     getTitle(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
@@ -299,6 +327,12 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public goTo(request: playwright_pb.Request.goTo, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public goTo(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public goTo(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goBack(request: playwright_pb.Request.goTo, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goBack(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goBack(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goForward(request: playwright_pb.Request.goTo, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goForward(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public goForward(request: playwright_pb.Request.goTo, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public getTitle(request: playwright_pb.Request.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getTitle(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public getTitle(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
