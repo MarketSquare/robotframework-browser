@@ -118,6 +118,11 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Request.timeout.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
+        self.AddStyleTag = channel.unary_unary(
+                '/Playwright/AddStyleTag',
+                request_serializer=playwright__pb2.Request.addStyleTag.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
 
 
 class PlaywrightServicer(object):
@@ -267,6 +272,13 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def AddStyleTag(self, request, context):
+        """Adds a <style> to head of side. 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PlaywrightServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -373,6 +385,11 @@ def add_PlaywrightServicer_to_server(servicer, server):
             'SetTimeout': grpc.unary_unary_rpc_method_handler(
                     servicer.SetTimeout,
                     request_deserializer=playwright__pb2.Request.timeout.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'AddStyleTag': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddStyleTag,
+                    request_deserializer=playwright__pb2.Request.addStyleTag.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
     }
@@ -717,6 +734,22 @@ class Playwright(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/SetTimeout',
             playwright__pb2.Request.timeout.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def AddStyleTag(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/AddStyleTag',
+            playwright__pb2.Request.addStyleTag.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

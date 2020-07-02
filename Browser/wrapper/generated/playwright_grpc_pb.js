@@ -15,6 +15,17 @@ function deserialize_Request_Empty(buffer_arg) {
   return playwright_pb.Request.Empty.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_Request_addStyleTag(arg) {
+  if (!(arg instanceof playwright_pb.Request.addStyleTag)) {
+    throw new Error('Expected argument of type Request.addStyleTag');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Request_addStyleTag(buffer_arg) {
+  return playwright_pb.Request.addStyleTag.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_Request_clearText(arg) {
   if (!(arg instanceof playwright_pb.Request.clearText)) {
     throw new Error('Expected argument of type Request.clearText');
@@ -417,6 +428,18 @@ setTimeout: {
     responseType: playwright_pb.Response.Empty,
     requestSerialize: serialize_Request_timeout,
     requestDeserialize: deserialize_Request_timeout,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Adds a <style> to head of side. 
+addStyleTag: {
+    path: '/Playwright/AddStyleTag',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.addStyleTag,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_addStyleTag,
+    requestDeserialize: deserialize_Request_addStyleTag,
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },

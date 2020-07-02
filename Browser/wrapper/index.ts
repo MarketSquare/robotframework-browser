@@ -295,6 +295,15 @@ class PlaywrightServer implements IPlaywrightServer {
         const response = emptyWithLog('Succesfully took screenshot');
         callback(null, response);
     }
+
+    async addStyleTag(call: ServerUnaryCall<Request.addStyleTag>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to add style tag, no open browser');
+        const content = call.request.getContent();
+        await this.browserState.page.addStyleTag({ content: content });
+
+        const response = emptyWithLog('added Style Tag: ' + content);
+        callback(null, response);
+    }
 }
 
 const server = new Server();

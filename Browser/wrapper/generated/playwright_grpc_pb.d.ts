@@ -29,6 +29,7 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     uncheckCheckbox: IPlaywrightService_IUncheckCheckbox;
     health: IPlaywrightService_IHealth;
     setTimeout: IPlaywrightService_ISetTimeout;
+    addStyleTag: IPlaywrightService_IAddStyleTag;
 }
 
 interface IPlaywrightService_IScreenshot extends grpc.MethodDefinition<playwright_pb.Request.screenshot, playwright_pb.Response.Empty> {
@@ -220,6 +221,15 @@ interface IPlaywrightService_ISetTimeout extends grpc.MethodDefinition<playwrigh
     responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
     responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
 }
+interface IPlaywrightService_IAddStyleTag extends grpc.MethodDefinition<playwright_pb.Request.addStyleTag, playwright_pb.Response.Empty> {
+    path: string; // "/.Playwright/AddStyleTag"
+    requestStream: boolean; // false
+    responseStream: boolean; // false
+    requestSerialize: grpc.serialize<playwright_pb.Request.addStyleTag>;
+    requestDeserialize: grpc.deserialize<playwright_pb.Request.addStyleTag>;
+    responseSerialize: grpc.serialize<playwright_pb.Response.Empty>;
+    responseDeserialize: grpc.deserialize<playwright_pb.Response.Empty>;
+}
 
 export const PlaywrightService: IPlaywrightService;
 
@@ -245,6 +255,7 @@ export interface IPlaywrightServer {
     uncheckCheckbox: grpc.handleUnaryCall<playwright_pb.Request.selector, playwright_pb.Response.Empty>;
     health: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.String>;
     setTimeout: grpc.handleUnaryCall<playwright_pb.Request.timeout, playwright_pb.Response.Empty>;
+    addStyleTag: grpc.handleUnaryCall<playwright_pb.Request.addStyleTag, playwright_pb.Response.Empty>;
 }
 
 export interface IPlaywrightClient {
@@ -311,6 +322,9 @@ export interface IPlaywrightClient {
     setTimeout(request: playwright_pb.Request.timeout, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     setTimeout(request: playwright_pb.Request.timeout, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     setTimeout(request: playwright_pb.Request.timeout, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    addStyleTag(request: playwright_pb.Request.addStyleTag, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    addStyleTag(request: playwright_pb.Request.addStyleTag, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    addStyleTag(request: playwright_pb.Request.addStyleTag, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
 }
 
 export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
@@ -378,4 +392,7 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public setTimeout(request: playwright_pb.Request.timeout, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public setTimeout(request: playwright_pb.Request.timeout, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public setTimeout(request: playwright_pb.Request.timeout, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public addStyleTag(request: playwright_pb.Request.addStyleTag, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public addStyleTag(request: playwright_pb.Request.addStyleTag, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public addStyleTag(request: playwright_pb.Request.addStyleTag, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
 }
