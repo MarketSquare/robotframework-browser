@@ -2,7 +2,6 @@ __version__ = "0.3.0"
 
 import re
 import os
-from typing import Optional
 
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
@@ -99,18 +98,16 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
 
-    def __init__(self, timeout=10.0):
+    def __init__(self, timeout="10s"):
         self.ROBOT_LIBRARY_LISTENER = self
         self.browser_control = Control(self)
-        self.timeout = timeout
         libraries = [
             Validation(self),
             self.browser_control,
             Input(self),
             Getters(self),
         ]
-        # Convert from seconds to millis
-        self.playwright = Playwright()
+        self.playwright = Playwright(timeout)
         DynamicCore.__init__(self, libraries)
 
     @property
@@ -173,9 +170,3 @@ class Browser(DynamicCore):
             BuiltIn().get_variable_value("${OUTPUTDIR}"),
             test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT",
         ).replace("\\", "\\\\")
-
-    def parse_timeout(self, timeout: Optional[float]):
-        if not timeout:
-            return self.timeout * 1000
-        else:
-            return float(timeout) * 1000

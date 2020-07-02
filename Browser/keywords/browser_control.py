@@ -1,6 +1,7 @@
 from typing import Optional
 
 from robot.api import logger  # type: ignore
+from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..generated.playwright_pb2 import Request
@@ -67,9 +68,11 @@ class Control:
 
     @keyword
     def set_timeout(self, timeout: str):
-        """ Sets the timeout that is used by most input and getter keywords
+        """ Sets the timeout that is used by most input and getter keywords.
 
+            Technically this is the timeout of current playwright context.
         """
+        parsed_timeout = float(timestr_to_secs(timeout)) * 1000
         with self.playwright.grpc_channel() as stub:
-            response = stub.SetTimeout(Request().timeout(timeout=timeout))
+            response = stub.SetTimeout(Request().timeout(timeout=parsed_timeout))
             logger.info(response.log)

@@ -33,7 +33,7 @@ message Request {
     string selector = 1;
   }
   message timeout {
-    int64 timeout = 1;
+    float timeout = 1;
   }
 }
 

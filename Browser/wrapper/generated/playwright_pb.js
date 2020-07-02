@@ -1640,7 +1640,7 @@ proto.Request.timeout.prototype.toObject = function(opt_includeInstance) {
  */
 proto.Request.timeout.toObject = function(includeInstance, msg) {
   var f, obj = {
-    timeout: jspb.Message.getFieldWithDefault(msg, 1, 0)
+    timeout: jspb.Message.getFloatingPointFieldWithDefault(msg, 1, 0.0)
   };
 
   if (includeInstance) {
@@ -1678,7 +1678,7 @@ proto.Request.timeout.deserializeBinaryFromReader = function(msg, reader) {
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt64());
+      var value = /** @type {number} */ (reader.readFloat());
       msg.setTimeout(value);
       break;
     default:
@@ -1711,8 +1711,8 @@ proto.Request.timeout.prototype.serializeBinary = function() {
 proto.Request.timeout.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getTimeout();
-  if (f !== 0) {
-    writer.writeInt64(
+  if (f !== 0.0) {
+    writer.writeFloat(
       1,
       f
     );
@@ -1721,11 +1721,11 @@ proto.Request.timeout.serializeBinaryToWriter = function(message, writer) {
 
 
 /**
- * optional int64 timeout = 1;
+ * optional float timeout = 1;
  * @return {number}
  */
 proto.Request.timeout.prototype.getTimeout = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 1, 0.0));
 };
 
 
@@ -1734,7 +1734,7 @@ proto.Request.timeout.prototype.getTimeout = function() {
  * @return {!proto.Request.timeout} returns this
  */
 proto.Request.timeout.prototype.setTimeout = function(value) {
-  return jspb.Message.setProto3IntField(this, 1, value);
+  return jspb.Message.setProto3FloatField(this, 1, value);
 };
 
 

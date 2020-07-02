@@ -26,6 +26,7 @@ async function createBrowserState(browserType: string): Promise<BrowserState> {
         throw new Error('unsupported browser');
     }
     const context = await browser.newContext();
+    context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const page = await context.newPage();
     return new BrowserState(browser, context, page);
 }
@@ -82,12 +83,11 @@ class PlaywrightServer implements IPlaywrightServer {
 
         try {
             await this.browserState.page.goto(url);
+            const response = emptyWithLog('Succesfully opened URL');
+            callback(null, response);
         } catch (e) {
             callback(e, null);
         }
-
-        const response = emptyWithLog('Succesfully opened URL');
-        callback(null, response);
     }
 
     async getTitle(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {

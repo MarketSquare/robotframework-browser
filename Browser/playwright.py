@@ -7,6 +7,7 @@ import time
 
 import grpc  # type: ignore
 from robot.api import logger  # type: ignore
+from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
 from Browser.generated.playwright_pb2 import Request
@@ -15,6 +16,9 @@ import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 
 class Playwright:
     """A wrapper for communicating with nodejs Playwirght process."""
+
+    def __init__(self, timeout: str):
+        self.timeout = timeout
 
     @property
     def outputdir(self):
@@ -33,6 +37,7 @@ class Playwright:
         port = str(self.find_free_port())
         env = dict(os.environ)
         env["PORT"] = port
+        env["TIMEOUT"] = str(float(timestr_to_secs(self.timeout)) * 1000)
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
         return Popen(
