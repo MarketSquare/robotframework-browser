@@ -2,7 +2,7 @@
 Sourced with small modifications from https://robotframework.org/#examples
 
 *** Settings ***
-Library		Browser
+Library           Browser
 
 *** Variables ***
 ${SERVER}         localhost:7272
@@ -16,13 +16,13 @@ ${ERROR URL}      http://${SERVER}/error.html
 
 *** Keywords ***
 Open Browser To Login Page
-    Open Browser	${LOGIN URL}	${BROWSER}
+    Open Browser    ${LOGIN URL}    ${BROWSER}
     # Maximize Browser Window
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 
 Login Page Should Be Open
-    Get Title	matches	 (?i)login
+    Get Title    matches    (?i)login
 
 Go To Login Page
     Go To    ${LOGIN URL}
@@ -37,9 +37,8 @@ Input Password
     Input Text    css=input#password_field    ${password}
 
 Submit Credentials
-    Click	css=input#login_button
+    Click    css=input#login_button
 
 Welcome Page Should Be Open
-    Get Url  ==  ${WELCOME URL}
-    Get Title	==  Welcome Page
-
+    Get Url    ==    ${WELCOME URL}
+    Get Title    ==    Welcome Page
