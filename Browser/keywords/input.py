@@ -169,8 +169,8 @@ class Input:
         position_y: Optional[int] = None,
         *modifiers: str,
     ):
-        """ Clicks element identified by ``selector``. 
-        
+        """ Clicks element identified by ``selector``.
+
         ``button``: ``<"left"|"right"|"middle">`` Defaults to ``left`` if invalid.
 
         ``clickCount``: <int> defaults to 1.
