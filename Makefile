@@ -63,6 +63,7 @@ build: protobuf
 
 protobuf:
 	python -m grpc_tools.protoc -Iprotos --python_out=Browser/generated --grpc_python_out=Browser/generated protos/*.proto
+	touch Browser/generated/__init__.py
 	sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Browser.generated import playwright_pb2 as playwright__pb2/g' Browser/generated/playwright_pb2_grpc.py
 	$(rm_cmd) $(backup_files)
 
