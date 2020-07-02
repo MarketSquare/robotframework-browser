@@ -4,7 +4,7 @@ from robot.api import logger  # type: ignore
 from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
-from typing import Optional
+from typing import Optional, Dict
 
 from ..generated.playwright_pb2 import Request
 
@@ -197,7 +197,7 @@ class Input:
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options = dict()
+            options: Dict[object] = {}
             if button.lower() in ["left", "middle", "right"]:
                 options["button"] = button.lower()
             if click_count:
