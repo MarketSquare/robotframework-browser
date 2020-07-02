@@ -201,13 +201,13 @@ class Input:
             if button.lower() in ["left", "middle", "right"]:
                 options["button"] = button.lower()
             if click_count:
-                options["clickCount"] = int(click_count)
+                options["clickCount"] = click_count
             if delay:
                 options["delay"] = int(timestr_to_secs(delay) * 1000)
             if position_x and position_y:
                 options["position"] = dict()
-                options["position"]["x"] = int(position_x)
-                options["position"]["y"] = int(position_y)
+                options["position"]["x"] = position_x
+                options["position"]["y"] = position_y
             if modifiers:
                 options["modifiers"] = modifiers
             options_json = json.dumps(options)
