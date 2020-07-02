@@ -50,6 +50,20 @@ class Control:
             logger.info(response.log)
 
     @keyword
+    def go_forward(self):
+        """Navigate to the next page in history."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GoForward(Request.Empty())
+            logger.info(response.log)
+
+    @keyword
+    def go_back(self):
+        """Navigate to the previous page in history."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GoBack(Request.Empty())
+            logger.info(response.log)
+
+    @keyword
     def go_to(self, url: str):
         """Navigates the current browser tab to the provided ``url``."""
         with self.playwright.grpc_channel() as stub:

@@ -75,6 +75,10 @@ service  Playwright {
   rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */ 
   rpc GoTo(Request.goTo) returns (Response.Empty) {}
+  /* Navigate to the next page in history */ 
+  rpc GoBack(Request.goTo) returns (Response.Empty) {}
+  /* Navigate to the previous page in history. */ 
+  rpc GoForward(Request.goTo) returns (Response.Empty) {}
   /* Gets title of currently open Playwright page */
   rpc GetTitle(Request.Empty) returns (Response.String) {}
   /* Wraps playwrights page.fill to input text into input specified with selector */ 

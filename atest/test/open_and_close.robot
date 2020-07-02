@@ -1,5 +1,5 @@
 *** Settings ***
-Library           Browser
+Resource          Keywords.resource
 
 *** Test Cases ***
 Open and Close a Chromium Browser
@@ -11,6 +11,6 @@ Open and Close a Firefox Browser
     Close Browser
 
 Open Browser to URL
-    Open Browser    http://localhost:7272
-    Get URL    ==    http://localhost:7272/
+    Open Browser    ${LOGIN URL}
+    Get URL    ==    ${LOGIN URL}
     Close Browser

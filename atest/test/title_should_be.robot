@@ -1,11 +1,11 @@
 *** Settings ***
-Library           Browser
+Resource          Keywords.resource
 Test Setup        Open Browser
 Test Teardown     Close Browser
 
 *** Test Cases ***
 test server title
-    Go To    http://localhost:7272/
+    Go To    ${LOGIN URL}/
     Get Title    ==    Login Page
 
 about:blank title

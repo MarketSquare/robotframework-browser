@@ -216,6 +216,30 @@ goTo: {
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
+  // Navigate to the next page in history 
+goBack: {
+    path: '/Playwright/GoBack',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.goTo,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_goTo,
+    requestDeserialize: deserialize_Request_goTo,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Navigate to the previous page in history. 
+goForward: {
+    path: '/Playwright/GoForward',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.goTo,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_goTo,
+    requestDeserialize: deserialize_Request_goTo,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
   // Gets title of currently open Playwright page 
 getTitle: {
     path: '/Playwright/GetTitle',
