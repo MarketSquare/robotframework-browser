@@ -197,7 +197,7 @@ class Input:
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options: Dict[object] = {}
+            options: Dict[str, object] = {}
             if button.lower() in ["left", "middle", "right"]:
                 options["button"] = button.lower()
             if click_count:
