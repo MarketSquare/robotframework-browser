@@ -18,8 +18,8 @@ endif
 	if [ ! -d .venv ]; then \
 		python3 -m venv .venv ; \
 	fi
-	.venv/bin/pip install -r requirements.txt
-	.venv/bin/pip install -r dev-requirements.txt
+	pip install -r requirements.txt
+	pip install -r dev-requirements.txt
 
 node-deps:
 	yarn install
@@ -27,7 +27,7 @@ node-deps:
 dev-env: .venv node-deps
 
 keyword-docs:
-	.venv/bin/python -m robot.libdoc Browser docs/Browser.html
+	python -m robot.libdoc Browser docs/Browser.html
 
 utest:
 	pytest utest
@@ -85,7 +85,7 @@ build: protobuf
 package: build keyword-docs
 	rm -rf dist/
 	cp package.json Browser/wrapper
-	.venv/bin/python setup.py sdist bdist_wheel
+	python setup.py sdist bdist_wheel
 
 release: package
 	python3 -m twine upload --repository pypi dist/*
