@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          Keywords.resource
+Resource          keywords.resource
 Library           OperatingSystem
 Test Setup        Open Browser    ${LOGIN URL}
 Test Teardown     Close Browser

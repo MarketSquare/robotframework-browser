@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          Keywords.resource
+Resource          keywords.resource
 
 *** Test Cases ***
 Open and Close a Chromium Browser
