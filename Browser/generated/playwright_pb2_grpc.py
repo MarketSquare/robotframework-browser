@@ -43,6 +43,21 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Request.inputText.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 )
+        self.TypeText = channel.unary_unary(
+                '/Playwright/TypeText',
+                request_serializer=playwright__pb2.Request.typeText.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.FillText = channel.unary_unary(
+                '/Playwright/FillText',
+                request_serializer=playwright__pb2.Request.fillText.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
+        self.ClearText = channel.unary_unary(
+                '/Playwright/ClearText',
+                request_serializer=playwright__pb2.Request.clearText.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                )
         self.GetDomProperty = channel.unary_unary(
                 '/Playwright/GetDomProperty',
                 request_serializer=playwright__pb2.Request.getDomProperty.SerializeToString,
@@ -132,6 +147,27 @@ class PlaywrightServicer(object):
 
     def InputText(self, request, context):
         """Wraps playwrights page.fill to input text into input specified with selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def TypeText(self, request, context):
+        """Wraps playwrights page.type to type text into input specified with selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def FillText(self, request, context):
+        """Wraps playwrights page.fill to fill text of input specified with selector 
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ClearText(self, request, context):
+        """Wraps playwrights page.fill with empty text to clear input specified with selector 
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -238,6 +274,21 @@ def add_PlaywrightServicer_to_server(servicer, server):
             'InputText': grpc.unary_unary_rpc_method_handler(
                     servicer.InputText,
                     request_deserializer=playwright__pb2.Request.inputText.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'TypeText': grpc.unary_unary_rpc_method_handler(
+                    servicer.TypeText,
+                    request_deserializer=playwright__pb2.Request.typeText.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'FillText': grpc.unary_unary_rpc_method_handler(
+                    servicer.FillText,
+                    request_deserializer=playwright__pb2.Request.fillText.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'ClearText': grpc.unary_unary_rpc_method_handler(
+                    servicer.ClearText,
+                    request_deserializer=playwright__pb2.Request.clearText.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
             'GetDomProperty': grpc.unary_unary_rpc_method_handler(
@@ -392,6 +443,54 @@ class Playwright(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/Playwright/InputText',
             playwright__pb2.Request.inputText.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def TypeText(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/TypeText',
+            playwright__pb2.Request.typeText.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def FillText(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/FillText',
+            playwright__pb2.Request.fillText.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ClearText(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/Playwright/ClearText',
+            playwright__pb2.Request.clearText.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -2,6 +2,7 @@ import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grp
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 import { sendUnaryData, ServerUnaryCall, Server, ServerCredentials } from 'grpc';
 import { Response, Request } from './generated/playwright_pb';
+
 // This is necessary for improved typescript inference
 /*
  * If obj is not trueish call callback with new Error containing message
@@ -13,15 +14,14 @@ function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): 
 }
 
 // Can't have an async constructor, this is a workaround
-async function createBrowserState(browserType: string): Promise<BrowserState> {
-    const headless = true;
+async function createBrowserState(browserType: string, headless: boolean): Promise<BrowserState> {
     let browser;
     if (browserType === 'firefox') {
         browser = await firefox.launch({ headless: headless });
     } else if (browserType === 'chromium') {
         browser = await chromium.launch({ headless: headless });
     } else if (browserType === 'webkit') {
-        browser = await webkit.launch();
+        browser = await webkit.launch({ headless: headless });
     } else {
         throw new Error('unsupported browser');
     }
@@ -66,8 +66,9 @@ class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         const browserType = call.request.getBrowser();
         const url = call.request.getUrl();
+        const headless = call.request.getHeadless();
         console.log('Open browser: ' + browserType);
-        this.browserState = await createBrowserState(browserType);
+        this.browserState = await createBrowserState(browserType, headless);
         if (url) {
             await this.browserState.page.goto(url);
             callback(null, emptyWithLog(`Succesfully opened browser ${browserType} to ${url}.`));
@@ -176,6 +177,39 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
+    async typeText(call: ServerUnaryCall<Request.typeText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to type text, no open browser');
+        const selector = call.request.getSelector();
+        const text = call.request.getText();
+        const delay = call.request.getDelay();
+        const clear = call.request.getClear();
+        if (clear) {
+            await this.browserState.page.fill(selector, '');
+        }
+        await this.browserState.page.type(selector, text, { delay: delay });
+
+        const response = emptyWithLog('Type text: ' + text);
+        callback(null, response);
+    }
+
+    async fillText(call: ServerUnaryCall<Request.fillText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to fill text, no open browser');
+        const selector = call.request.getSelector();
+        const text = call.request.getText();
+        await this.browserState.page.fill(selector, text);
+
+        const response = emptyWithLog('Fill text: ' + text);
+        callback(null, response);
+    }
+
+    async clearText(call: ServerUnaryCall<Request.clearText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        exists(this.browserState, callback, 'Tried to clear text field, no open browser');
+        const selector = call.request.getSelector();
+        await this.browserState.page.fill(selector, '');
+
+        const response = emptyWithLog('Text field cleared.');
+        callback(null, response);
+    }
     async press(call: ServerUnaryCall<Request.press>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const selector = call.request.getSelector();

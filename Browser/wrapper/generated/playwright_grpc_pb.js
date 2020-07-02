@@ -15,6 +15,28 @@ function deserialize_Request_Empty(buffer_arg) {
   return playwright_pb.Request.Empty.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_Request_clearText(arg) {
+  if (!(arg instanceof playwright_pb.Request.clearText)) {
+    throw new Error('Expected argument of type Request.clearText');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Request_clearText(buffer_arg) {
+  return playwright_pb.Request.clearText.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_Request_fillText(arg) {
+  if (!(arg instanceof playwright_pb.Request.fillText)) {
+    throw new Error('Expected argument of type Request.fillText');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Request_fillText(buffer_arg) {
+  return playwright_pb.Request.fillText.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_Request_getDomProperty(arg) {
   if (!(arg instanceof playwright_pb.Request.getDomProperty)) {
     throw new Error('Expected argument of type Request.getDomProperty');
@@ -101,6 +123,17 @@ function serialize_Request_timeout(arg) {
 
 function deserialize_Request_timeout(buffer_arg) {
   return playwright_pb.Request.timeout.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_Request_typeText(arg) {
+  if (!(arg instanceof playwright_pb.Request.typeText)) {
+    throw new Error('Expected argument of type Request.typeText');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_Request_typeText(buffer_arg) {
+  return playwright_pb.Request.typeText.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_Response_Bool(arg) {
@@ -204,6 +237,42 @@ inputText: {
     responseType: playwright_pb.Response.Empty,
     requestSerialize: serialize_Request_inputText,
     requestDeserialize: deserialize_Request_inputText,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Wraps playwrights page.type to type text into input specified with selector 
+typeText: {
+    path: '/Playwright/TypeText',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.typeText,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_typeText,
+    requestDeserialize: deserialize_Request_typeText,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Wraps playwrights page.fill to fill text of input specified with selector 
+fillText: {
+    path: '/Playwright/FillText',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.fillText,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_fillText,
+    requestDeserialize: deserialize_Request_fillText,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
+  // Wraps playwrights page.fill with empty text to clear input specified with selector 
+clearText: {
+    path: '/Playwright/ClearText',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.clearText,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_clearText,
+    requestDeserialize: deserialize_Request_clearText,
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },

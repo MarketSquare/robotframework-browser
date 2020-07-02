@@ -68,6 +68,9 @@ export namespace Request {
         getBrowser(): string;
         setBrowser(value: string): openBrowser;
 
+        getHeadless(): boolean;
+        setHeadless(value: boolean): openBrowser;
+
 
         serializeBinary(): Uint8Array;
         toObject(includeInstance?: boolean): openBrowser.AsObject;
@@ -83,6 +86,7 @@ export namespace Request {
         export type AsObject = {
             url: string,
             browser: string,
+            headless: boolean,
         }
     }
 
@@ -157,6 +161,85 @@ export namespace Request {
     export namespace getDomProperty {
         export type AsObject = {
             property: string,
+            selector: string,
+        }
+    }
+
+    export class typeText extends jspb.Message { 
+        getSelector(): string;
+        setSelector(value: string): typeText;
+
+        getText(): string;
+        setText(value: string): typeText;
+
+        getDelay(): number;
+        setDelay(value: number): typeText;
+
+        getClear(): boolean;
+        setClear(value: boolean): typeText;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): typeText.AsObject;
+        static toObject(includeInstance: boolean, msg: typeText): typeText.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: typeText, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): typeText;
+        static deserializeBinaryFromReader(message: typeText, reader: jspb.BinaryReader): typeText;
+    }
+
+    export namespace typeText {
+        export type AsObject = {
+            selector: string,
+            text: string,
+            delay: number,
+            clear: boolean,
+        }
+    }
+
+    export class fillText extends jspb.Message { 
+        getSelector(): string;
+        setSelector(value: string): fillText;
+
+        getText(): string;
+        setText(value: string): fillText;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): fillText.AsObject;
+        static toObject(includeInstance: boolean, msg: fillText): fillText.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: fillText, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): fillText;
+        static deserializeBinaryFromReader(message: fillText, reader: jspb.BinaryReader): fillText;
+    }
+
+    export namespace fillText {
+        export type AsObject = {
+            selector: string,
+            text: string,
+        }
+    }
+
+    export class clearText extends jspb.Message { 
+        getSelector(): string;
+        setSelector(value: string): clearText;
+
+
+        serializeBinary(): Uint8Array;
+        toObject(includeInstance?: boolean): clearText.AsObject;
+        static toObject(includeInstance: boolean, msg: clearText): clearText.AsObject;
+        static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+        static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+        static serializeBinaryToWriter(message: clearText, writer: jspb.BinaryWriter): void;
+        static deserializeBinary(bytes: Uint8Array): clearText;
+        static deserializeBinaryFromReader(message: clearText, reader: jspb.BinaryReader): clearText;
+    }
+
+    export namespace clearText {
+        export type AsObject = {
             selector: string,
         }
     }
