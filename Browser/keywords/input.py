@@ -1,5 +1,5 @@
 from robot.api import logger  # type: ignore
-from robot.utils.robottime import timestr_to_secs
+from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
@@ -50,7 +50,7 @@ class Input:
         See `Fill Text` for direct filling of the full text at once.
         """
         with self.playwright.grpc_channel() as stub:
-            delay_ms = float(timestr_to_secs(delay)) * 1000
+            delay_ms = timestr_to_secs(delay) * 1000
             response = stub.TypeText(
                 playwright_pb2.typeTextRequest(
                     selector=selector,
