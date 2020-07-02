@@ -114,11 +114,15 @@ class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to find text on page, no open browser');
-        const selector = call.request.getSelector();
-        const content = await this.browserState.page.textContent(selector);
-        const response = new Response.String();
-        response.setBody(content?.toString() || '');
-        callback(null, response);
+        try {
+            const selector = call.request.getSelector();
+            const content = await this.browserState.page.textContent(selector);
+            const response = new Response.String();
+            response.setBody(content?.toString() || '');
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
 
     // TODO: work some of getDomProperty and getBoolProperty's duplicate code into a root function
@@ -127,19 +131,23 @@ class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to get DOM property, no open browser');
-        const selector = call.request.getSelector();
-        const property = call.request.getProperty();
+        try {
+            const selector = call.request.getSelector();
+            const property = call.request.getProperty();
 
-        const element = await this.browserState.page.$(selector);
-        exists(element, callback, "Couldn't find element: " + selector);
+            const element = await this.browserState.page.$(selector);
+            exists(element, callback, "Couldn't find element: " + selector);
 
-        const result = await element.getProperty(property);
-        const content = await result.jsonValue();
-        console.log(`Retrieved dom property for element ${selector} containing ${content}`);
+            const result = await element.getProperty(property);
+            const content = await result.jsonValue();
+            console.log(`Retrieved dom property for element ${selector} containing ${content}`);
 
-        const response = new Response.String();
-        response.setBody(content);
-        callback(null, response);
+            const response = new Response.String();
+            response.setBody(content);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
 
     async getBoolProperty(
@@ -147,87 +155,113 @@ class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Bool>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to get DOM property, no open browser');
-        const selector = call.request.getSelector();
-        const property = call.request.getProperty();
+        try {
+            const selector = call.request.getSelector();
+            const property = call.request.getProperty();
 
-        const element = await this.browserState.page.$(selector);
-        exists(element, callback, "Couldn't find element: " + selector);
+            const element = await this.browserState.page.$(selector);
+            exists(element, callback, "Couldn't find element: " + selector);
 
-        const result = await element.getProperty(property);
-        const content = await result.jsonValue();
-        console.log(`Retrieved dom property for element ${selector} containing ${content}`);
+            const result = await element.getProperty(property);
+            const content = await result.jsonValue();
+            console.log(`Retrieved dom property for element ${selector} containing ${content}`);
 
-        const response = new Response.Bool();
-        response.setBody(content || false);
-        callback(null, response);
+            const response = new Response.Bool();
+            response.setBody(content || false);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
 
     async inputText(call: ServerUnaryCall<Request.inputText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
-        const inputText = call.request.getInput();
-        const selector = call.request.getSelector();
-        const type = call.request.getType();
-        if (type) {
-            await this.browserState.page.type(selector, inputText);
-        } else {
-            await this.browserState.page.fill(selector, inputText);
+        try {
+            const inputText = call.request.getInput();
+            const selector = call.request.getSelector();
+            const type = call.request.getType();
+            if (type) {
+                await this.browserState.page.type(selector, inputText);
+            } else {
+                await this.browserState.page.fill(selector, inputText);
+            }
+            const response = emptyWithLog('Input text: ' + inputText);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
         }
-
-        const response = emptyWithLog('Input text: ' + inputText);
-        callback(null, response);
     }
 
     async typeText(call: ServerUnaryCall<Request.typeText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to type text, no open browser');
-        const selector = call.request.getSelector();
-        const text = call.request.getText();
-        const delay = call.request.getDelay();
-        const clear = call.request.getClear();
-        if (clear) {
-            await this.browserState.page.fill(selector, '');
-        }
-        await this.browserState.page.type(selector, text, { delay: delay });
+        try {
+            const selector = call.request.getSelector();
+            const text = call.request.getText();
+            const delay = call.request.getDelay();
+            const clear = call.request.getClear();
+            if (clear) {
+                await this.browserState.page.fill(selector, '');
+            }
+            await this.browserState.page.type(selector, text, { delay: delay });
 
-        const response = emptyWithLog('Type text: ' + text);
-        callback(null, response);
+            const response = emptyWithLog('Type text: ' + text);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
 
     async fillText(call: ServerUnaryCall<Request.fillText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to fill text, no open browser');
-        const selector = call.request.getSelector();
-        const text = call.request.getText();
-        await this.browserState.page.fill(selector, text);
+        try {
+            const selector = call.request.getSelector();
+            const text = call.request.getText();
+            await this.browserState.page.fill(selector, text);
 
-        const response = emptyWithLog('Fill text: ' + text);
-        callback(null, response);
+            const response = emptyWithLog('Fill text: ' + text);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
 
     async clearText(call: ServerUnaryCall<Request.clearText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to clear text field, no open browser');
-        const selector = call.request.getSelector();
-        await this.browserState.page.fill(selector, '');
+        try {
+            const selector = call.request.getSelector();
+            await this.browserState.page.fill(selector, '');
 
-        const response = emptyWithLog('Text field cleared.');
-        callback(null, response);
+            const response = emptyWithLog('Text field cleared.');
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
     async press(call: ServerUnaryCall<Request.press>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
-        const selector = call.request.getSelector();
-        const keyList = call.request.getKeyList();
-        for (const i of keyList) {
-            await this.browserState.page.press(selector, i);
+        try {
+            const selector = call.request.getSelector();
+            const keyList = call.request.getKeyList();
+            for (const i of keyList) {
+                await this.browserState.page.press(selector, i);
+            }
+            const response = emptyWithLog('Pressed keys: ' + keyList);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
         }
-        const response = emptyWithLog('Pressed keys: ' + keyList);
-        callback(null, response);
     }
 
     async click(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to click button, no open browser');
-
-        const selector = call.request.getSelector();
-        await this.browserState.page.click(selector);
-        const response = emptyWithLog('Clicked button: ' + selector);
-        callback(null, response);
+        try {
+            const selector = call.request.getSelector();
+            await this.browserState.page.click(selector);
+            const response = emptyWithLog('Clicked button: ' + selector);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
 
     async checkCheckbox(
@@ -235,28 +269,40 @@ class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to check checkbox, no open browser');
-        const selector = call.request.getSelector();
-        await this.browserState.page.check(selector);
-        const response = emptyWithLog('Checked checkbox: ' + selector);
-        callback(null, response);
+        try {
+            const selector = call.request.getSelector();
+            await this.browserState.page.check(selector);
+            const response = emptyWithLog('Checked checkbox: ' + selector);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
     async uncheckCheckbox(
         call: ServerUnaryCall<Request.selector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to uncheck checkbox, no open browser');
-        const selector = call.request.getSelector();
-        await this.browserState.page.uncheck(selector);
-        const response = emptyWithLog('Unhecked checkbox: ' + selector);
-        callback(null, response);
+        try {
+            const selector = call.request.getSelector();
+            await this.browserState.page.uncheck(selector);
+            const response = emptyWithLog('Unhecked checkbox: ' + selector);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
 
     async setTimeout(call: ServerUnaryCall<Request.timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to set timeout, no open browser');
-        const timeout = call.request.getTimeout();
-        this.browserState.context.setDefaultTimeout(timeout);
-        const response = emptyWithLog('Set timeout to: ' + timeout);
-        callback(null, response);
+        try {
+            const timeout = call.request.getTimeout();
+            this.browserState.context.setDefaultTimeout(timeout);
+            const response = emptyWithLog('Set timeout to: ' + timeout);
+            callback(null, response);
+        } catch (error) {
+            callback(error, null);
+        }
     }
 
     async health(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
