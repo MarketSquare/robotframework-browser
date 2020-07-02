@@ -2,11 +2,11 @@ from enum import Enum
 from typing import Any, Dict, Tuple, Callable
 import re
 
-AssertionOperator = Enum(  # type: ignore
-    value="AssertionOperator",
-    names={
-        "noassertion": None,
-        "NO_ASSERTION": None,
+AssertionOperator = Enum(
+    "AssertionOperator",
+    {
+        "noassertion": "NO_ASSERTION",
+        "NO_ASSERTION": "NO_ASSERTION",
         "equal": "==",
         "==": "==",
         "shouldbe": "==",
@@ -32,6 +32,7 @@ AssertionOperator = Enum(  # type: ignore
 
 
 handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
+    AssertionOperator["NO_ASSERTION"]: (lambda a, b: True, "no assertion"),
     AssertionOperator["=="]: (lambda a, b: a == b, "should be"),
     AssertionOperator["!="]: (lambda a, b: a != b, "should not be"),
     AssertionOperator["<"]: (lambda a, b: a < b, "should be less than"),

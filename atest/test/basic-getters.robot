@@ -1,13 +1,19 @@
 *** Settings ***
-Library  Browser
-
-Test Setup	Open Browser	http://localhost:7272
-Test Teardown	Close Browser
+Library           Browser
+Test Setup        Open Browser    http://localhost:7272
+Test Teardown     Close Browser
 
 *** Test Cases ***
-Get Text Simple
-    Get Text  h1   ==  Login Page
+Get and Assert Text Simple
+    Get Text    h1    ==    Login Page
+
+Get Text
+    ${h1}=    Get Text    h1
+    Should Be Equal    ${h1}    Login Page
+
+Get and Assert Attribute
+    Get Attribute    h1    innerText    ==    Login Page
 
 Get Attribute
-    Get Attribute  h1  innerText  ==  Login Page
-
+    ${text}=    Get Attribute    h1    innerText
+    Should Be Equal    ${text}    Login Page

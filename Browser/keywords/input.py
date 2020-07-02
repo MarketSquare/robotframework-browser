@@ -1,8 +1,9 @@
 from robot.api import logger  # type: ignore
+from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
-from ..generated import playwright_pb2
+from ..generated.playwright_pb2 import Request
 
 
 class Input:
@@ -15,7 +16,7 @@ class Input:
 
     @keyword
     def input_text(self, selector: str, text: str, type=False):
-        """ Inputs the given ``text`` into the text field identified by ``selector``
+        """ DEPRECATED Inputs the given ``text`` into the text field identified by ``selector``
 
             By default text is inputted via filling (instantly), only triggering the
             input event. By toggling the ``type`` boolean text will be typed into the
@@ -24,15 +25,92 @@ class Input:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.InputText(
-                playwright_pb2.inputTextRequest(
-                    input=text, selector=selector, type=type
+                Request().inputText(input=text, selector=selector, type=type)
+            )
+            logger.info(response.log)
+
+    @keyword
+    def type_text(
+        self, selector: str, text: str, delay: str = "0 ms", clear: bool = True
+    ):
+        """ Types the given ``text`` into the text field identified by ``selector``.
+
+        Sends a ``keydown``, ``keypress/input``, and ``keyup`` event for each
+        character in the text.
+
+        ``delay``: delay between the single key strokes. It may be either a
+        number or a Robot Framework time string. Time strings are fully
+        explained in an appendix of Robot Framework User Guide.
+        Example: ``50 ms``
+
+        See `Fill Text` for direct filling of the full text at once.
+        """
+        with self.playwright.grpc_channel() as stub:
+            delay_ms = timestr_to_secs(delay) * 1000
+            response = stub.TypeText(
+                Request().typeText(
+                    selector=selector, text=text, delay=int(delay_ms), clear=clear
                 )
             )
             logger.info(response.log)
 
     @keyword
+    def fill_text(self, selector: str, text: str):
+        """ Clears and Fills the given ``text`` into the text field identified by ``selector``.
+
+        This method waits for an element matching selector, waits for
+        actionability checks, focuses the element, fills it and triggers an
+        input event after filling. If the element matching selector is not
+        an <input>, <textarea> or [contenteditable] element, this method
+        throws an error. Note that you can pass an empty string to clear
+        the input field.
+
+        See `Type Text` for keyboard like typing of single characters.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.FillText(Request().fillText(selector=selector, text=text))
+            logger.info(response.log)
+
+    @keyword
+    def clear_text(self, selector: str):
+        """ Clears the text field identified by ``selector``.
+
+        See `Type Text` for keyboard like typing of single characters.
+        See `Fill Text` for direct filling of the full text at once.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ClearText(Request().clearText(selector=selector))
+            logger.info(response.log)
+
+    @keyword
+    def type_secret(
+        self, selector: str, secret: str, delay: str = "0 ms", clear: bool = True
+    ):
+        """ Types the given ``secret`` into the text field identified by ``selector`` without logging.
+
+        See `Type Text` for details.
+        """
+        try:
+            previous_level = BuiltIn().set_log_level("NONE")
+            self.type_text(selector, secret, delay, clear)
+        finally:
+            BuiltIn().set_log_level(previous_level)
+
+    @keyword
+    def fill_secret(self, selector: str, secret: str):
+        """ Fills the given ``secret`` into the text field identified by ``selector`` without logging.
+
+        See `Fill Text` for details.
+        """
+        try:
+            previous_level = BuiltIn().set_log_level("NONE")
+            self.fill_text(selector, secret)
+        finally:
+            BuiltIn().set_log_level(previous_level)
+
+    @keyword
     def input_password(self, selector: str, password: str):
-        """ Types the given ``password`` into the field identified by ``selector``
+        """ DEPRECATED Types the given ``password`` into the field identified by ``selector``
             Disables logging to avoid leaking sensitive information.
         Difference compared to `Input Text` is that this keyword does not
         log the given password on the INFO level. Notice that if you use
@@ -49,9 +127,7 @@ class Input:
             try:
                 # Should prevent logging in case of failure keywords
                 previous_level = BuiltIn().set_log_level("NONE")
-                stub.InputText(
-                    playwright_pb2.inputTextRequest(input=password, selector=selector)
-                )
+                stub.InputText(Request().inputText(input=password, selector=selector))
             finally:
                 BuiltIn().set_log_level(previous_level)
 
@@ -69,16 +145,14 @@ class Input:
             [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
         """  # noqa
         with self.playwright.grpc_channel() as stub:
-            response = stub.Press(
-                playwright_pb2.pressRequest(selector=selector, key=keys)
-            )
+            response = stub.Press(Request().press(selector=selector, key=keys))
             logger.info(response.log)
 
     @keyword
     def click(self, selector: str):
         """ Clicks element identified by ``selector``. """
         with self.playwright.grpc_channel() as stub:
-            response = stub.Click(playwright_pb2.selectorRequest(selector=selector))
+            response = stub.Click(Request().selector(selector=selector))
             logger.info(response.log)
 
     @keyword
@@ -87,9 +161,7 @@ class Input:
             If already checked does nothing
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.CheckCheckbox(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
+            response = stub.CheckCheckbox(Request().selector(selector=selector))
             logger.info(response.log)
 
     @keyword
@@ -98,7 +170,5 @@ class Input:
             If not checked does nothing
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.UncheckCheckbox(
-                playwright_pb2.selectorRequest(selector=selector)
-            )
+            response = stub.UncheckCheckbox(Request().selector(selector=selector))
             logger.info(response.log)

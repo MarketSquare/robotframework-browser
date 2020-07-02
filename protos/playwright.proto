@@ -1,39 +1,59 @@
 syntax = "proto3";
 
-message Empty {}
 
-message screenshotRequest {
-  string path = 1;
+message Request {
+  message Empty {}
+  message screenshot {
+    string path = 1;
+  }
+  message openBrowser {
+    string url = 1;
+    string browser = 2;
+    bool headless = 3;
+  }
+  message goTo {
+    string url= 1;
+  }
+
+  message inputText {
+    string input = 1;
+    string selector = 2;
+    bool type = 3;
+  }
+  message getDomProperty {
+    string property = 1;
+    string selector = 2;
+  }
+
+  message typeText {
+    string selector = 1;
+    string text = 2;
+    int32 delay = 3;
+    bool clear = 4;
+  }
+
+  message fillText {
+    string selector = 1;
+    string text = 2;
+  }
+
+  message clearText {
+    string selector = 1;
+  }
+
+  message press {
+    string selector = 1;
+    repeated string key = 2;
+  }
+
+  message selector {
+    string selector = 1;
+  }
+  message timeout {
+    float timeout = 1;
+  }
 }
 
-message openBrowserRequest {
-  string url = 1;
-  string browser = 2;
-}
-
-message goToRequest {
-  string url = 1;
-}
-
-message inputTextRequest {
-  string input = 1;
-  string selector = 2;
-  bool type = 3;
-}
-
-message pressRequest {
-  string selector = 1;
-  repeated string key = 2;
-}
-
-message getDomPropertyRequest {
-  string property = 1;
-  string selector = 2;
-}
-
-message selectorRequest {
-  string selector = 1;
-}
 
 message Response {
   message Empty {
@@ -50,31 +70,39 @@ message Response {
 }
 
 service  Playwright {
-  rpc Screenshot(screenshotRequest) returns (Response.Empty) {}
-  rpc OpenBrowser(openBrowserRequest) returns (Response.Empty) {}
-  rpc CloseBrowser(Empty) returns (Response.Empty) {}
+  rpc Screenshot(Request.screenshot) returns (Response.Empty) {}
+  rpc OpenBrowser(Request.openBrowser) returns (Response.Empty) {}
+  rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */ 
-  rpc GoTo(goToRequest) returns (Response.Empty) {}
+  rpc GoTo(Request.goTo) returns (Response.Empty) {}
   /* Gets title of currently open Playwright page */
-  rpc GetTitle(Empty) returns (Response.String) {}
+  rpc GetTitle(Request.Empty) returns (Response.String) {}
   /* Wraps playwrights page.fill to input text into input specified with selector */ 
-  rpc InputText(inputTextRequest) returns (Response.Empty) {}
+  rpc InputText(Request.inputText) returns (Response.Empty) {}
+   /* Wraps playwrights page.type to type text into input specified with selector */ 
+  rpc TypeText(Request.typeText) returns (Response.Empty) {}
+  /* Wraps playwrights page.fill to fill text of input specified with selector */ 
+  rpc FillText(Request.fillText) returns (Response.Empty) {}
+  /* Wraps playwrights page.fill with empty text to clear input specified with selector */ 
+  rpc ClearText(Request.clearText) returns (Response.Empty) {}
   /* Gets the DOM property 'property' of selector specified element */
-  rpc GetDomProperty(getDomPropertyRequest) returns (Response.String) {}
+  rpc GetDomProperty(Request.getDomProperty) returns (Response.String) {}
   /* Gets the boolean DOM property 'property' of selector specified element */
-  rpc GetBoolProperty(getDomPropertyRequest) returns (Response.Bool) {}
+  rpc GetBoolProperty(Request.getDomProperty) returns (Response.Bool) {}
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
-  rpc GetTextContent(selectorRequest) returns (Response.String) {}
+  rpc GetTextContent(Request.selector) returns (Response.String) {}
   /* *Returns current playwright page url*/
-  rpc GetUrl(Empty) returns (Response.String) {}
+  rpc GetUrl(Request.Empty) returns (Response.String) {}
   /* Clicks element specified by selector */ 
-  rpc Click(selectorRequest) returns (Response.Empty) {}
+  rpc Click(Request.selector) returns (Response.Empty) {}
   /* Inputs a list of keypresses to element specified by selector */
-  rpc Press(pressRequest) returns (Response.Empty) {}
+  rpc Press(Request.press) returns (Response.Empty) {}
   /* Checks checkbox specified by selector */
-  rpc CheckCheckbox(selectorRequest) returns (Response.Empty) {}
+  rpc CheckCheckbox(Request.selector) returns (Response.Empty) {}
   /* Unchecks checkbox specified by selector */
-  rpc UncheckCheckbox(selectorRequest) returns (Response.Empty) {}
+  rpc UncheckCheckbox(Request.selector) returns (Response.Empty) {}
   /* Health check endpoint for the service */
-  rpc Health(Empty) returns (Response.String) {}
+  rpc Health(Request.Empty) returns (Response.String) {}
+  /* Set's  playwright timeout */
+  rpc SetTimeout(Request.timeout) returns (Response.Empty) {}
 }

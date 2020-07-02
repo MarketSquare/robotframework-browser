@@ -53,7 +53,10 @@ lint-python:
 lint-node:
 	yarn run lint
 
-lint: lint-node lint-python
+lint-robot:
+	python -m robot.tidy --inplace atest/test/*
+
+lint: lint-node lint-python lint-robot
 
 build: protobuf
 	yarn build
