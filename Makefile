@@ -47,7 +47,7 @@ docker-test:
 
 lint-python:
 	mypy .
-	black Browser/ --exclude Browser/generated
+	black Browser/ 
 	flake8
 
 lint-node:
