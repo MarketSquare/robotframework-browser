@@ -82,18 +82,14 @@ class PlaywrightServer implements IPlaywrightServer {
         const url = call.request.getUrl();
         console.log('Go to URL: ' + url);
 
-        try {
-            await this.browserState.page.goto(url);
-            const response = emptyWithLog('Succesfully opened URL');
-            callback(null, response);
-        } catch (e) {
-            callback(e, null);
-        }
+        await this.browserState.page.goto(url).catch((e) => callback(e, null));
+        const response = emptyWithLog('Succesfully opened URL');
+        callback(null, response);
     }
 
     async goBack(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to go back in history but no browser was open');
-        await this.browserState.page.goBack();
+        await this.browserState.page.goBack().catch((e) => callback(e, null));
         console.log('Go Back');
         const response = emptyWithLog('Did Go Back');
         callback(null, response);
@@ -101,7 +97,7 @@ class PlaywrightServer implements IPlaywrightServer {
 
     async goForward(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to go forward in history but no browser was open');
-        await this.browserState.page.goForward();
+        await this.browserState.page.goForward().catch((e) => callback(e, null));
         console.log('Go BForward');
         const response = emptyWithLog('Did Go Forward');
         callback(null, response);
@@ -110,7 +106,10 @@ class PlaywrightServer implements IPlaywrightServer {
     async getTitle(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         exists(this.browserState, callback, 'Tried to get title, no open browser');
         console.log('Getting title');
-        const title = await this.browserState.page.title();
+        const title = await this.browserState.page.title().catch((e) => {
+            callback(e, null);
+            throw e;
+        });
         const response = new Response.String();
         response.setBody(title);
         callback(null, response);
@@ -131,7 +130,10 @@ class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to find text on page, no open browser');
         const selector = call.request.getSelector();
-        const content = await this.browserState.page.textContent(selector);
+        const content = await this.browserState.page.textContent(selector).catch((e) => {
+            callback(e, null);
+            throw e;
+        });
         const response = new Response.String();
         response.setBody(content?.toString() || '');
         callback(null, response);
@@ -146,10 +148,16 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector();
         const property = call.request.getProperty();
 
-        const element = await this.browserState.page.$(selector);
+        const element = await this.browserState.page.$(selector).catch((e) => {
+            callback(e, null);
+            throw e;
+        });
         exists(element, callback, "Couldn't find element: " + selector);
 
-        const result = await element.getProperty(property);
+        const result = await element.getProperty(property).catch((e) => {
+            callback(e, null);
+            throw e;
+        });
         const content = await result.jsonValue();
         console.log(`Retrieved dom property for element ${selector} containing ${content}`);
 
@@ -166,10 +174,16 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector();
         const property = call.request.getProperty();
 
-        const element = await this.browserState.page.$(selector);
+        const element = await this.browserState.page.$(selector).catch((e) => {
+            callback(e, null);
+            throw e;
+        });
         exists(element, callback, "Couldn't find element: " + selector);
 
-        const result = await element.getProperty(property);
+        const result = await element.getProperty(property).catch((e) => {
+            callback(e, null);
+            throw e;
+        });
         const content = await result.jsonValue();
         console.log(`Retrieved dom property for element ${selector} containing ${content}`);
 
@@ -184,9 +198,9 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector();
         const type = call.request.getType();
         if (type) {
-            await this.browserState.page.type(selector, inputText);
+            await this.browserState.page.type(selector, inputText).catch((e) => callback(e, null));
         } else {
-            await this.browserState.page.fill(selector, inputText);
+            await this.browserState.page.fill(selector, inputText).catch((e) => callback(e, null));
         }
 
         const response = emptyWithLog('Input text: ' + inputText);
@@ -200,9 +214,9 @@ class PlaywrightServer implements IPlaywrightServer {
         const delay = call.request.getDelay();
         const clear = call.request.getClear();
         if (clear) {
-            await this.browserState.page.fill(selector, '');
+            await this.browserState.page.fill(selector, '').catch((e) => callback(e, null));
         }
-        await this.browserState.page.type(selector, text, { delay: delay });
+        await this.browserState.page.type(selector, text, { delay: delay }).catch((e) => callback(e, null));
 
         const response = emptyWithLog('Type text: ' + text);
         callback(null, response);
@@ -212,7 +226,7 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, 'Tried to fill text, no open browser');
         const selector = call.request.getSelector();
         const text = call.request.getText();
-        await this.browserState.page.fill(selector, text);
+        await this.browserState.page.fill(selector, text).catch((e) => callback(e, null));
 
         const response = emptyWithLog('Fill text: ' + text);
         callback(null, response);
@@ -221,7 +235,7 @@ class PlaywrightServer implements IPlaywrightServer {
     async clearText(call: ServerUnaryCall<Request.clearText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to clear text field, no open browser');
         const selector = call.request.getSelector();
-        await this.browserState.page.fill(selector, '');
+        await this.browserState.page.fill(selector, '').catch((e) => callback(e, null));
 
         const response = emptyWithLog('Text field cleared.');
         callback(null, response);
@@ -232,7 +246,7 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector();
         const keyList = call.request.getKeyList();
         for (const i of keyList) {
-            await this.browserState.page.press(selector, i);
+            await this.browserState.page.press(selector, i).catch((e) => callback(e, null));
         }
         const response = emptyWithLog('Pressed keys: ' + keyList);
         callback(null, response);
@@ -242,7 +256,7 @@ class PlaywrightServer implements IPlaywrightServer {
         exists(this.browserState, callback, 'Tried to click button, no open browser');
 
         const selector = call.request.getSelector();
-        await this.browserState.page.click(selector);
+        await this.browserState.page.click(selector).catch((e) => callback(e, null));
         const response = emptyWithLog('Clicked button: ' + selector);
         callback(null, response);
     }
@@ -253,7 +267,7 @@ class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to check checkbox, no open browser');
         const selector = call.request.getSelector();
-        await this.browserState.page.check(selector);
+        await this.browserState.page.check(selector).catch((e) => callback(e, null));
         const response = emptyWithLog('Checked checkbox: ' + selector);
         callback(null, response);
     }
@@ -263,7 +277,7 @@ class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to uncheck checkbox, no open browser');
         const selector = call.request.getSelector();
-        await this.browserState.page.uncheck(selector);
+        await this.browserState.page.uncheck(selector).catch((e) => callback(e, null));
         const response = emptyWithLog('Unhecked checkbox: ' + selector);
         callback(null, response);
     }
@@ -290,7 +304,7 @@ class PlaywrightServer implements IPlaywrightServer {
         // Add the file extension here because the image type is defined by playwrights defaults
         const path = call.request.getPath() + '.png';
         console.log(`Taking a screenshot of current page to ${path}`);
-        await this.browserState.page.screenshot({ path: path });
+        await this.browserState.page.screenshot({ path: path }).catch((e) => callback(e, null));
 
         const response = emptyWithLog('Succesfully took screenshot');
         callback(null, response);
