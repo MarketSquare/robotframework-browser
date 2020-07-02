@@ -61,6 +61,7 @@ jobs:
         path: atest/output
     - uses: actions/upload-artifact@v1
       with:
+        name: built
         path: dist/
   test-install:
     needs: build
@@ -69,7 +70,11 @@ jobs:
       matrix:
         python-version: [3.8]
         node-version: [12.x]
-    steps:
+    steps:      
+      - name: Download package for install testing
+        uses: actions/download-artifact@v1
+        with: 
+          name: built
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
@@ -80,7 +85,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Robot Framework Browser
         run: |
-          pip install dist/*.whl
+          pip install built/dist/*.whl
           rfbrowser init
       - name: Run Robot Framework tests
         run: |
