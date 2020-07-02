@@ -34,7 +34,7 @@ utest:
 
 atest:
 	rm -rf atest/output
-	robot --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
+	ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
 
 test-failed: build
 	PYTHONPATH=. robot --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test 
