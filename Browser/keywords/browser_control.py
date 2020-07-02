@@ -98,5 +98,5 @@ class Control:
         """ 
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.AddStyleTag(Request().addStyleTag(timeout=parsed_timeout))
+            response = stub.AddStyleTag(Request().addStyleTag(content=content))
             logger.info(response.log)
