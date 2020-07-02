@@ -92,7 +92,7 @@ jobs:
           rfbrowser init
       - name: Run Robot Framework tests
         run: |
-          make atest
+          make atest-global-pythonpath
         env:
           NODE_PATH: /usr/lib/node_modules
       - uses: actions/upload-artifact@v1
