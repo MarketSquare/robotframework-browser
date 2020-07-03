@@ -215,7 +215,7 @@ class Input:
             logger.info(response.log)
 
     @keyword
-    def select_option_by(self, attribute: SelectAttribute, selector: str, *values):
+    def select_options_by(self, attribute: SelectAttribute, selector: str, *values):
         """Toggles options from selection list ``selector``
             Matches based on the chosen attribute with list of ``values``.
             Possible attributes to match options by:
