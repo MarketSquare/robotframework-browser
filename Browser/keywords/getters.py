@@ -5,6 +5,7 @@ from robotlibcore import keyword  # type: ignore
 
 from ..generated.playwright_pb2 import Request
 from ..assertion_engine import verify_assertion, AssertionOperator
+from .input import SelectAttribute
 
 
 class Getters:
@@ -111,3 +112,56 @@ class Getters:
         return self.get_attribute(
             selector, "value", assertion_operator, assertion_expected
         )
+
+    @keyword
+    def get_selected_options(
+            self, selector: str,
+            option_attribute: SelectAttribute = SelectAttribute.label,
+            assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+            *assertion_expected):
+
+        """ Verifies list ``selector`` has ``expected`` options selected.
+            If no ``expected`` selections are given will verify none are selected.
+        """
+        selected = None
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetSelectContent(
+                Request().selector(selector=selector))
+            logger.info(response)
+
+            expected = list(assertion_expected)
+
+            if option_attribute is SelectAttribute.value:
+                selected = [sel.value for sel in response.entry if sel.selected]
+            elif option_attribute is SelectAttribute.label:
+                selected = [sel.label for sel in response.entry if sel.selected]
+            elif option_attribute is SelectAttribute.index:
+                selected = [index for index, sel in enumerate(response.entry) if sel.selected]
+                expected = [int(exp) for exp in expected]
+
+            selected.sort()
+            expected.sort()
+
+            if assertion_operator == AssertionOperator["*="]:
+                if len(expected) != 1:
+                    raise AttributeError(f"Operator '{assertion_operator.name}' expects '1'"
+                                         f" expected value but got '{len(expected)}'.")
+                expected = expected[0]
+            elif assertion_operator in [AssertionOperator["<"],
+                                        AssertionOperator[">"],
+                                        AssertionOperator["<="],
+                                        AssertionOperator[">="]]:
+                if len(expected) != 1:
+                    raise AttributeError(f"Operator '{assertion_operator.name}' expects '1'"
+                                         f" expected value but got '{len(expected)}'.")
+                expected = int(expected[0])
+                selected = len(selected)
+            elif assertion_operator in [AssertionOperator["matches"],
+                                        AssertionOperator["^="],
+                                        AssertionOperator["$="]]:
+                raise AttributeError(f"Operator '{assertion_operator.name}' is not allowed "
+                                     f"in this Keyword.")
+
+            verify_assertion(selected, assertion_operator, expected, f"Selected Options: ")
+
+        return selected

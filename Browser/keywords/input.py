@@ -24,10 +24,10 @@ class KeyboardModifier(Enum):
 
 
 class SelectAttribute(Enum):
-    Value = auto()
-    Label = auto()
-    Text = Label
-    Index = auto()
+    value = auto()
+    label = auto()
+    text = label
+    index = auto()
 
 
 class Input:
@@ -219,15 +219,18 @@ class Input:
         """Toggles options from selection list ``selector``
             Matches based on the chosen attribute with list of ``values``.
             Possible attributes to match options by:
-            ``attribute``: ``<"Value"|"Label"|"Text"|"Index">``
+            ``attribute``: ``<"value"|"label"|"text"|"index">``
         """
         matchers = ""
-        if attribute is SelectAttribute.Value:
-            matchers = json.dumps(values)
-        elif attribute is SelectAttribute.Label:
+        if not values or len(values) == 1 and not values[0]:
+            values = ("5b67de39-5e23-42cc-aadb-1dc053c41a48",)
+
+        if attribute is SelectAttribute.value:
+            matchers = json.dumps([{"value": s} for s in values])
+        elif attribute is SelectAttribute.label:
             matchers = json.dumps([{"label": s} for s in values])
-        elif attribute is SelectAttribute.Index:
-            matchers = json.dumps(values)
+        elif attribute is SelectAttribute.index:
+            matchers = json.dumps([{"index": int(s)} for s in values])
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
                 Request().selectOption(selector=selector, matcherJson=matchers)

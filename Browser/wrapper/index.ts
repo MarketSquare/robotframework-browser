@@ -178,7 +178,7 @@ class PlaywrightServer implements IPlaywrightServer {
             throw e;
         });
 
-        if (result.length == 0) {
+        if (result.length == 0 && !matcher.includes('5b67de39-5e23-42cc-aadb-1dc053c41a48')) {
             console.log("Couldn't select any options");
             const error = new Error(`No options matched ${matcher}`);
             callback(error, null);
