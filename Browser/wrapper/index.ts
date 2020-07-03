@@ -377,6 +377,22 @@ class PlaywrightServer implements IPlaywrightServer {
         const response = emptyWithLog('added Style: ' + content);
         callback(null, response);
     }
+
+    async waitForElemntsState(
+        call: ServerUnaryCall<Request.selectorOptions>,
+        callback: sendUnaryData<Response.Empty>
+    ): Promise<void> {
+        exists(this.browserState, callback, 'Tried to wait for an element, no open browser');
+        console.log('Waiting for element state');
+        const selector = call.request.getSelector();
+        const options = JSON.parse(call.request.getOptions());
+        await this.browserState.page.waitForSelector(selector, options).catch((e) => {
+            callback(e, null);
+            throw e;
+        });
+        const response = emptyWithLog('Wait for Element with selector: ' + selector);
+        callback(null, response);
+    }
 }
 
 const server = new Server();
