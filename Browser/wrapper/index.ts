@@ -261,8 +261,10 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-
-    async clickWithOptions(call: ServerUnaryCall<Request.selectorOptions>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async clickWithOptions(
+        call: ServerUnaryCall<Request.selectorOptions>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
         exists(this.browserState, callback, 'Tried to click element, no open browser');
 
         const selector = call.request.getSelector();
@@ -330,7 +332,10 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async addStyleTag(call: ServerUnaryCall<Request.addStyleTag>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async addStyleTag(
+        call: ServerUnaryCall<Request.addStyleTag>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
         exists(this.browserState, callback, 'Tried to add style tag, no open browser');
         const content = call.request.getContent();
         await this.browserState.page.addStyleTag({ content: content });
