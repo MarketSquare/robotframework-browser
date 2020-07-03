@@ -1,6 +1,6 @@
 <html>
     <head>
-	<title>(root)/forms/prefilled_email_form.html</title>
+	<title>prefilled_email_form.html</title>
     </head>
     <body>
 	<form name="email_form" action="submit.html" method="POST">
@@ -29,7 +29,13 @@
 			<input type="checkbox" name="can_send_sms" /> Can send SMS?
 		    </td>
 		</tr>
-
+		<tr>
+		    <td>Which sex are you:</td>
+		    <td>
+			<input type="radio" name="sex" value="female" checked /> Female<br/>
+			<input type="radio" name="sex" value="male" /> Male
+		    </td>
+		</tr>
 		<tr>
 		    <td>Where did you hear of us:</td>
 		    <td>
@@ -55,6 +61,16 @@
 			    <option value="email" selected>Email</option>
 			    <option value="phone" selected>Telephone</option>
 			    <option value="directmail">Direct mail</option>
+			</select>
+		    </td>
+		</tr>
+		<tr>
+		    <td>Select your interests:</td>
+		    <td>
+			<select name="interests" multiple="true">
+			    <option value="males">Males</option>
+			    <option value="females">Females</option>
+			    <option value="others">Others</option>
 			</select>
 		    </td>
 		</tr>

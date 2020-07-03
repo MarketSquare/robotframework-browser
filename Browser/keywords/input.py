@@ -191,7 +191,7 @@ class Input:
 
     @keyword
     def check_checkbox(self, selector: str):
-        """ Checks the checkbox identified by ``selector``.
+        """ Checks the checkbox or selects radio identified by ``selector``.
             If already checked does nothing
         """
         with self.playwright.grpc_channel() as stub:
@@ -205,4 +205,27 @@ class Input:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(Request().selector(selector=selector))
+            logger.info(response.log)
+
+    @keyword
+    def select_from_list_by_value(self, selector: str, *values):
+        """Toggles options from selection list ``selector`` by ``values``.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SelectOption(
+                Request().selectOption(
+                    selector=selector, matcherJson=json.dumps(values)
+                )
+            )
+            logger.info(response.log)
+
+    @keyword
+    def select_from_list_by_label(self, selector: str, *labels):
+        """Toggles options from selection list ``selector`` by ``labels``.
+        """
+        matchers = json.dumps([{"label": s} for s in labels])
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SelectOption(
+                Request().selectOption(selector=selector, matcherJson=matchers)
+            )
             logger.info(response.log)
