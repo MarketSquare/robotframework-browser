@@ -14,18 +14,6 @@ class Validation:
     def playwright(self):
         return self.library.playwright
 
-    """
-    Replaced by Get Url  ==  assertion
-    @keyword
-    def location_should_be(self, url: str):
-        Verifies that the current URL is exactly ``url``.
-        with self.playwright.grpc_channel() as stub:
-            page_url = stub.GetUrl(playwright_pb2.Empty()).body
-            if url != page_url:
-                message = "URL should be `{}`  but was `{}`".format(url, page_url)
-                raise AssertionError(message)
-    """
-
     @keyword  # Optional[str] didn't seem to work for text param here
     def page_should_have(self, selector: str, text=""):
         """Verifies that current page contains an element matching ``selector``.
@@ -40,8 +28,9 @@ class Validation:
                 message = "No element matching selector `{}` on page".format(selector)
                 raise AssertionError(message)
             if text and text not in response.body:
-                message = "Element `{}` should have contained {} but it contained {}".format(
-                    selector, text, response.body
+                message = (
+                    f"Element `{selector}` should have "
+                    + f"contained {text} but it contained {response.body}"
                 )
 
     @keyword
