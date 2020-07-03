@@ -23,6 +23,13 @@ class KeyboardModifier(Enum):
     Shift = auto()
 
 
+class SelectAttribute(Enum):
+    Value = auto()
+    Label = auto()
+    Text = Label
+    Index = auto()
+
+
 class Input:
     def __init__(self, library):
         self.library = library
@@ -208,22 +215,19 @@ class Input:
             logger.info(response.log)
 
     @keyword
-    def select_from_list_by_value(self, selector: str, *values):
-        """Toggles options from selection list ``selector`` by ``values``.
+    def select_option_by(self, attribute: SelectAttribute, selector: str, *values):
+        """Toggles options from selection list ``selector``
+            Matches based on the chosen attribute with list of ``values``.
+            Possible attributes to match options by:
+            ``attribute``: ``<"Value"|"Label"|"Text"|"Index">``
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.SelectOption(
-                Request().selectOption(
-                    selector=selector, matcherJson=json.dumps(values)
-                )
-            )
-            logger.info(response.log)
-
-    @keyword
-    def select_from_list_by_label(self, selector: str, *labels):
-        """Toggles options from selection list ``selector`` by ``labels``.
-        """
-        matchers = json.dumps([{"label": s} for s in labels])
+        matchers = ""
+        if attribute is SelectAttribute.Value:
+            matchers = json.dumps(values)
+        elif attribute is SelectAttribute.Label:
+            matchers = json.dumps([{"label": s} for s in values])
+        elif attribute is SelectAttribute.Index:
+            matchers = json.dumps(values)
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
                 Request().selectOption(selector=selector, matcherJson=matchers)

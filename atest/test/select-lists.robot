@@ -5,14 +5,14 @@ Test Teardown     Close Browser
 Test Timeout      10s
 
 *** Keywords ***
-Select By Label And Verify Selection
+Select Labels And Verify Selection
     [Arguments]    ${list_id}    ${selection}    @{exp_selection}
-    Select From List By Label    ${list_id}    ${selection}
+    Select Option By    Label    ${list_id}    ${selection}
     List Selection Should Be    ${list_id}    @{exp_selection}
 
-Select By Value And Verify Selection
+Select Values And Verify Selection
     [Arguments]    ${list_id}    ${selection}    @{exp_selection}
-    Select From List By Value    ${list_id}    ${selection}
+    Select Option By    Value    ${list_id}    ${selection}
     List Selection Should Be    ${list_id}    @{exp_selection}
 
 *** Test Cases ***
@@ -34,23 +34,22 @@ List Selection Should Be
     ...    List Selection Should Be    select[name=possible_channels]    Email    Telephone    Direct mail
 
 Small Select From List
-    Select From List By Label    select[name=preferred_channel]    Direct mail
+    Select Option By    Label    select[name=preferred_channel]    Direct mail
 
 Select From List
     List Selection Should Be    select[name=preferred_channel]    Telephone
-    Select From List By Label    select[name=preferred_channel]    Email
+    Select Option By    Label    select[name=preferred_channel]    Email
     List Selection Should Be    select[name=preferred_channel]    Email
-    Select By Label And Verify Selection    select[name=preferred_channel]    Email    Email
-    Select By Value And Verify Selection    select[name=preferred_channel]    directmail    directmail
-    Select By Label And Verify Selection    select[name=preferred_channel]    Telephone  Telephone
+    Select Labels And Verify Selection    select[name=preferred_channel]    Email    Email
+    Select Values And Verify Selection    select[name=preferred_channel]    directmail    directmail
+    Select Labels And Verify Selection    select[name=preferred_channel]    Telephone    Telephone
 
 Multiselect From List
     List Selection Should Be    select[name=possible_channels]    Email    Telephone
-    Select From List By Label    select[name=possible_channels]    Email    Telephone
-    
+    Select Option By    Label    select[name=possible_channels]    Email    Telephone
     # FIXME: There's some weird behaviour with trying to unselect fields with page.select.
-    # More details at 
-    Run Keyword And Expect Error  *
-    ...  List Selection Should Be    select[name=possible_channels]
-    Select From List By Label    select[name=possible_channels]    Email    Telephone    Direct mail
+    # More details at
+    Run Keyword And Expect Error    *
+    ...    List Selection Should Be    select[name=possible_channels]
+    Select Option By    Label    select[name=possible_channels]    Email    Telephone    Direct mail
     List Selection Should Be    select[name=possible_channels]    Email    Telephone    Direct mail
