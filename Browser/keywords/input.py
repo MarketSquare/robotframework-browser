@@ -1,4 +1,5 @@
 import json
+from enum import Enum, auto
 
 from robot.api import logger  # type: ignore
 from robot.utils.robottime import timestr_to_secs  # type: ignore
@@ -7,6 +8,19 @@ from robotlibcore import keyword  # type: ignore
 from typing import Optional, Dict
 
 from ..generated.playwright_pb2 import Request
+
+
+class MouseButton(Enum):
+    left = auto()
+    middle = auto()
+    right = auto()
+
+
+class KeyboardModifier(Enum):
+    Alt = auto()
+    Control = auto()
+    Meta = auto()
+    Shift = auto()
 
 
 class Input:
@@ -124,12 +138,12 @@ class Input:
     def click_with_options(
         self,
         selector: str,
-        button: str,
-        click_count: Optional[int] = None,
+        button: MouseButton = MouseButton.left,
+        click_count: int = 1,
         delay: Optional[str] = None,
         position_x: Optional[int] = None,
         position_y: Optional[int] = None,
-        *modifiers: str,
+        *modifiers: KeyboardModifier,
     ):
         """ Clicks element identified by ``selector``.
 
@@ -150,18 +164,14 @@ class Input:
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options: Dict[str, object] = {}
-            if button.lower() in ["left", "middle", "right"]:
-                options["button"] = button.lower()
-            if click_count:
-                options["clickCount"] = click_count
+            options = {"button": button.name, "clickCount": click_count}
             if delay:
                 options["delay"] = int(timestr_to_secs(delay) * 1000)
             if position_x and position_y:
                 positions: Dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions
             if modifiers:
-                options["modifiers"] = modifiers
+                options["modifiers"] = [m.name for m in modifiers]
             options_json = json.dumps(options)
             logger.debug(f"Click Options are: {options_json}")
             response = stub.Click(

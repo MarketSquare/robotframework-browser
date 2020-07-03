@@ -1,5 +1,4 @@
 *** Settings ***
-Resource           keywords.resource
 Resource          keywords.resource
 
 *** Test Cases ***
