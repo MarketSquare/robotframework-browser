@@ -2,6 +2,7 @@
 Resource          ./keywords.resource
 Test Setup        Open Browser    ${FORM_URL}
 Test Teardown     Close Browser
+Test Timeout      10s
 
 *** Keywords ***
 Select By Label And Verify Selection
@@ -16,7 +17,7 @@ Select By Value And Verify Selection
 
 *** Test Cases ***
 Page Should Contain List
-    Page Should Have  css=select[name=interests]
+    Page Should Have    css=select[name=interests]
 
 List Selection Should Be
     [Documentation]

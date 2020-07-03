@@ -224,6 +224,6 @@ class Input:
         matchers = ['{label:"' + s + '"}' for s in labels]
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
-                Request().selectoOption(selector=selector, matcher=matchers)
+                Request().selectOption(selector=selector, matcher=matchers)
             )
             logger.info(response.log)

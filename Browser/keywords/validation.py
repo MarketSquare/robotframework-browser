@@ -84,12 +84,10 @@ class Validation:
 
             message = ""
             if unexpected_false:
-                message += "Select {} options {} should have been selected.".format(
-                    selector, unexpected_false
-                )
+                message += f"""Select {selector} options {unexpected_false} \
+                    should have been selected."""
             if unexpected_true:
-                message += "Select {} options {} should not have been selected.".format(
-                    selector, unexpected_true
-                )
+                message += f""""Select {selector} options {unexpected_true} \
+                    should not have been selected."""
             if message:
                 raise AssertionError(message)

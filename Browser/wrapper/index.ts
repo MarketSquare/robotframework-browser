@@ -148,14 +148,15 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector();
         const page = this.browserState.page;
 
-        const content = await page.$$eval(selector + ' option', (elem) => {
-            console.log(elem); 
-            return elem;
-        });
+        type value = [string, string, boolean];
+        const content: value[] = await page.$$eval(selector + ' option', (elements) =>
+            (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
+        );
+        console.log(content);
 
         const response = new Response.Select();
-        (content as HTMLOptionElement[]).forEach((option) => {
-            const [label, value, selected] = [option.label, option.value, option.selected];
+        content.forEach((option) => {
+            const [label, value, selected] = [option[0], option[1], option[2]];
             const entry = new SelectEntry();
             entry.setLabel(label);
             entry.setValue(value);
@@ -174,7 +175,7 @@ class PlaywrightServer implements IPlaywrightServer {
         const matcher = call.request.getMatcherList();
         console.log(`Selecting from element ${selector} options ${matcher}`);
         const result = await this.browserState.page.selectOption(selector, matcher).catch((e) => {
-            callback(e, null)
+            callback(e, null);
             throw e;
         });
         if (result.length == 0) {
@@ -203,7 +204,7 @@ class PlaywrightServer implements IPlaywrightServer {
         });
         const content = await result.jsonValue();
         console.log(`Retrieved dom property for element ${selector} containing ${content}`);
-        return content
+        return content;
     }
 
     async getDomProperty(
