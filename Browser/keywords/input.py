@@ -1,7 +1,10 @@
+import json
+
 from robot.api import logger  # type: ignore
 from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
+from typing import Optional, Dict
 
 from ..generated.playwright_pb2 import Request
 
@@ -90,8 +93,8 @@ class Input:
 
         See `Type Text` for details.
         """
+        previous_level = BuiltIn().set_log_level("NONE")
         try:
-            previous_level = BuiltIn().set_log_level("NONE")
             self.type_text(selector, secret, delay, clear)
         finally:
             BuiltIn().set_log_level(previous_level)
@@ -102,8 +105,8 @@ class Input:
 
         See `Fill Text` for details.
         """
+        previous_level = BuiltIn().set_log_level("NONE")
         try:
-            previous_level = BuiltIn().set_log_level("NONE")
             self.fill_text(selector, secret)
         finally:
             BuiltIn().set_log_level(previous_level)
@@ -153,6 +156,65 @@ class Input:
         """ Clicks element identified by ``selector``. """
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().selector(selector=selector))
+            logger.info(response.log)
+
+    @keyword
+    def click_with_options(
+        self,
+        selector: str,
+        button: str,
+        click_count: Optional[int] = None,
+        delay: Optional[str] = None,
+        position_x: Optional[int] = None,
+        position_y: Optional[int] = None,
+        *modifiers: str,
+    ):
+        """ Clicks element identified by ``selector``.
+
+        ``button``: ``<"left"|"right"|"middle">`` Defaults to ``left`` if invalid.
+
+        ``clickCount``: <int> defaults to 1.
+
+        ``delay``: <robot time> Time to wait between mousedown and mouseup.
+        Defaults to 0.
+
+        ``position_x`` & ``position_y``: <int> A point to click relative to the
+        top-left corner of element padding box.
+        If not specified, clicks to some visible point of the element.
+
+        ``*modifiers``: ``<list<"Alt"|"Control"|"Meta"|"Shift">>``
+        Modifier keys to press. Ensures that only these modifiers are pressed
+        during the click, and then restores current modifiers back.
+        If not specified, currently pressed modifiers are used.
+        """
+        with self.playwright.grpc_channel() as stub:
+            options: Dict[str, object] = {}
+            if button.lower() in ["left", "middle", "right"]:
+                options["button"] = button.lower()
+            if click_count:
+                options["clickCount"] = click_count
+            if delay:
+                options["delay"] = int(timestr_to_secs(delay) * 1000)
+            if position_x and position_y:
+                positions: Dict[str, object] = {"x": position_x, "y": position_y}
+                options["position"] = positions
+            if modifiers:
+                options["modifiers"] = modifiers
+            options_json = json.dumps(options)
+            logger.debug(f"Click Options are: {options_json}")
+            response = stub.Click(
+                Request().selectorOptions(selector=selector, options=options_json)
+            )
+            logger.info(response.log)
+
+    @keyword
+    def focus(self, selector: str):
+        """ This method fetches an element with selector and focuses it.
+
+        If there's no element matching selector, the method waits until a
+        matching element appears in the DOM. """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.Focus(Request().selector(selector=selector))
             logger.info(response.log)
 
     @keyword
