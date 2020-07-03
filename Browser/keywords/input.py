@@ -23,6 +23,13 @@ class KeyboardModifier(Enum):
     Shift = auto()
 
 
+class SelectAttribute(Enum):
+    Value = auto()
+    Label = auto()
+    Text = Label
+    Index = auto()
+
+
 class Input:
     def __init__(self, library):
         self.library = library
@@ -191,7 +198,7 @@ class Input:
 
     @keyword
     def check_checkbox(self, selector: str):
-        """ Checks the checkbox identified by ``selector``.
+        """ Checks the checkbox or selects radio identified by ``selector``.
             If already checked does nothing
         """
         with self.playwright.grpc_channel() as stub:
@@ -205,4 +212,24 @@ class Input:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(Request().selector(selector=selector))
+            logger.info(response.log)
+
+    @keyword
+    def select_option_by(self, attribute: SelectAttribute, selector: str, *values):
+        """Toggles options from selection list ``selector``
+            Matches based on the chosen attribute with list of ``values``.
+            Possible attributes to match options by:
+            ``attribute``: ``<"Value"|"Label"|"Text"|"Index">``
+        """
+        matchers = ""
+        if attribute is SelectAttribute.Value:
+            matchers = json.dumps(values)
+        elif attribute is SelectAttribute.Label:
+            matchers = json.dumps([{"label": s} for s in values])
+        elif attribute is SelectAttribute.Index:
+            matchers = json.dumps(values)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SelectOption(
+                Request().selectOption(selector=selector, matcherJson=matchers)
+            )
             logger.info(response.log)

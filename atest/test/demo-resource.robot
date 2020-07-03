@@ -1,48 +1,45 @@
+*** Comments ***
+Sourced with small modifications from https://robotframework.org/#examples
+
 *** Settings ***
 Library           Browser
 
 *** Variables ***
 ${SERVER}         localhost:7272
-${BROWSER}        chromium
+${BROWSER}        chrome
 ${DELAY}          0
-${HEADED}         False
 ${VALID USER}     demo
 ${VALID PASSWORD}    mode
 ${LOGIN URL}      http://${SERVER}/
 ${WELCOME URL}    http://${SERVER}/welcome.html
 ${ERROR URL}      http://${SERVER}/error.html
-${FORM_URL}       http://${SERVER}/prefilled_email_form.html
 
 *** Keywords ***
 Open Browser To Login Page
-    Open Browser    ${LOGIN URL}    ${BROWSER}
+    Open Browser    ${BROWSER}
+    Go To    ${LOGIN URL}
     # Maximize Browser Window
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 
 Login Page Should Be Open
-    Get Title    matches    (?i)login
+    Title Should Be    Login Page
 
 Go To Login Page
     Go To    ${LOGIN URL}
     Login Page Should Be Open
 
-Login User
-    Input Username    demo
-    Input Pwd    mode
-    Submit Credentials
-
 Input Username
     [Arguments]    ${username}
-    Fill Text    input#username_field    ${username}
+    Input Text    css=input#username_field    ${username}
 
-Input Pwd
+Input Password
     [Arguments]    ${password}
-    Fill Secret    input#password_field    ${password}
+    Input Text    css=input#password_field    ${password}
 
 Submit Credentials
-    Click    css=input#login_button
+    Click Button    css=input#login_button
 
 Welcome Page Should Be Open
-    Get Url    ==    ${WELCOME URL}
-    Get Title    ==    Welcome Page
+    Location Should Be    ${WELCOME URL}
+    Title Should Be    Welcome Page

@@ -66,8 +66,18 @@ message Request {
     string selector = 1;
     string options = 2;
   }
+
+  message selectOption {
+    string selector = 1;
+    string matcherJson = 2;
+  }
 }
 
+message SelectEntry {
+  string value = 2;
+  string label = 3;
+  bool selected = 4;
+}
 
 message Response {
   message Empty {
@@ -80,6 +90,9 @@ message Response {
   message Bool {
     string log = 1;
     bool body = 2;
+  }
+  message Select {
+    repeated SelectEntry entry = 1;
   }
 }
 
@@ -115,6 +128,10 @@ service  Playwright {
   rpc Click(Request.selector) returns (Response.Empty) {}
   /* Inputs a list of keypresses to element specified by selector */
   rpc Press(Request.press) returns (Response.Empty) {}
+  /* Gets the Select element specified by selector and returns the contents */
+  rpc GetSelectContent(Request.selector) returns (Response.Select) {}
+  /* Selects option matching matcher in Select element matching selector */
+  rpc SelectOption(Request.selectOption) returns (Response.Empty) {}
   /* Checks checkbox specified by selector */
   rpc CheckCheckbox(Request.selector) returns (Response.Empty) {}
   /* Unchecks checkbox specified by selector */

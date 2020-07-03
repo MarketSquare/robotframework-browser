@@ -1,7 +1,7 @@
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 import { sendUnaryData, ServerUnaryCall, Server, ServerCredentials } from 'grpc';
-import { Response, Request } from './generated/playwright_pb';
+import { Response, Request, SelectEntry } from './generated/playwright_pb';
 
 // This is necessary for improved typescript inference
 /*
@@ -140,10 +140,54 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     // TODO: work some of getDomProperty and getBoolProperty's duplicate code into a root function
-    async getDomProperty(
-        call: ServerUnaryCall<Request.getDomProperty>,
-        callback: sendUnaryData<Response.String>,
+    async getSelectContent(
+        call: ServerUnaryCall<Request.selector>,
+        callback: sendUnaryData<Response.Select>,
     ): Promise<void> {
+        exists(this.browserState, callback, 'Tried to get Select element contents, no open browser');
+        const selector = call.request.getSelector();
+        const page = this.browserState.page;
+
+        type Value = [string, string, boolean];
+        const content: Value[] = await page.$$eval(selector + ' option', (elements) =>
+            (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
+        );
+
+        const response = new Response.Select();
+        content.forEach((option) => {
+            const [label, value, selected] = [option[0], option[1], option[2]];
+            const entry = new SelectEntry();
+            entry.setLabel(label);
+            entry.setValue(value);
+            entry.setSelected(selected);
+            response.addEntry(entry);
+        });
+        callback(null, response);
+    }
+
+    async selectOption(
+        call: ServerUnaryCall<Request.selectOption>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        exists(this.browserState, callback, 'Tried to select ``select`` element option, no open browser');
+        const selector = call.request.getSelector();
+        const matcher = call.request.getMatcherjson();
+        console.log(`Selecting from element ${selector} options ${matcher}`);
+        const result = await this.browserState.page.selectOption(selector, JSON.parse(matcher)).catch((e) => {
+            callback(e, null);
+            throw e;
+        });
+
+        if (result.length == 0) {
+            console.log("Couldn't select any options");
+            const error = new Error(`No options matched ${matcher}`);
+            callback(error, null);
+        }
+        const response = emptyWithLog(`Selected options ${result} in element ${selector}`);
+        callback(null, response);
+    }
+
+    async _getDomProperty<T>(call: ServerUnaryCall<Request.getDomProperty>, callback: sendUnaryData<T>) {
         exists(this.browserState, callback, 'Tried to get DOM property, no open browser');
         const selector = call.request.getSelector();
         const property = call.request.getProperty();
@@ -160,7 +204,14 @@ class PlaywrightServer implements IPlaywrightServer {
         });
         const content = await result.jsonValue();
         console.log(`Retrieved dom property for element ${selector} containing ${content}`);
+        return content;
+    }
 
+    async getDomProperty(
+        call: ServerUnaryCall<Request.getDomProperty>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        const content = await this._getDomProperty(call, callback).catch((e) => callback(e, null));
         const response = new Response.String();
         response.setBody(content);
         callback(null, response);
@@ -170,23 +221,7 @@ class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.getDomProperty>,
         callback: sendUnaryData<Response.Bool>,
     ): Promise<void> {
-        exists(this.browserState, callback, 'Tried to get DOM property, no open browser');
-        const selector = call.request.getSelector();
-        const property = call.request.getProperty();
-
-        const element = await this.browserState.page.$(selector).catch((e) => {
-            callback(e, null);
-            throw e;
-        });
-        exists(element, callback, "Couldn't find element: " + selector);
-
-        const result = await element.getProperty(property).catch((e) => {
-            callback(e, null);
-            throw e;
-        });
-        const content = await result.jsonValue();
-        console.log(`Retrieved dom property for element ${selector} containing ${content}`);
-
+        const content = await this._getDomProperty(call, callback).catch((e) => callback(e, null));
         const response = new Response.Bool();
         response.setBody(content || false);
         callback(null, response);
