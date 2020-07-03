@@ -17,6 +17,7 @@ from __future__ import print_function
 
 from os import chdir
 from os.path import abspath, dirname, join
+
 try:
     from SocketServer import ThreadingMixIn
     from BaseHTTPServer import HTTPServer
@@ -26,7 +27,7 @@ except ImportError:
     from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 
-ROOT = join(dirname(abspath(__file__)), 'html')
+ROOT = join(dirname(abspath(__file__)), "html")
 PORT = 7272
 
 
@@ -34,21 +35,21 @@ class DemoServer(ThreadingMixIn, HTTPServer):
     allow_reuse_address = True
 
     def __init__(self, port=PORT):
-        HTTPServer.__init__(self, ('localhost', int(port)),
-                            SimpleHTTPRequestHandler)
+        HTTPServer.__init__(self, ("localhost", int(port)), SimpleHTTPRequestHandler)
 
     def serve(self, directory=ROOT):
         chdir(directory)
-        print('Demo server starting on port %d.' % self.server_address[1])
+        print("Demo server starting on port %d." % self.server_address[1])
         try:
             server.serve_forever()
         except KeyboardInterrupt:
             server.server_close()
-        print('Demo server stopped.')
+        print("Demo server stopped.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     try:
         server = DemoServer(*sys.argv[1:])
     except (TypeError, ValueError):

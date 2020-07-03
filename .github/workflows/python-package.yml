@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -29,7 +28,6 @@ jobs:
         yarn --frozen-lockfile
         npm install --global playwright
         yarn install
-        yarn build
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -45,14 +43,61 @@ jobs:
     - name: Check with flake8
       run: |
         flake8
+    - name: Build Protos and check with tsc
+      run: |
+        make build
     - name: Run pytests
       run: |
-        pytest
+       make utest 
     - name: Run Robot Framework tests
       run: |
-        ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --outputdir atest/output --pythonpath . atest/test
+        make atest
+    - name: Create Distributable Package
+      run: |
+        make package
     - uses: actions/upload-artifact@v1
-      if: success() || failure()
       with:
         name: Test results
         path: atest/output
+    - uses: actions/upload-artifact@v1
+      with:
+        name: artifacts
+        path: dist/
+  test-install:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+        node-version: [12.x]
+    steps:      
+      - uses: actions/checkout@v2
+      - name: Download package for install testing
+        uses: actions/download-artifact@v1
+        with: 
+          name: artifacts 
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Robot Framework Browser
+        env:
+          VERSION: 0.5.0
+        run: |
+          pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
+          rfbrowser init
+      - name: Run Robot Framework tests
+        run: |
+          make atest-global-pythonpath
+        env:
+          NODE_PATH: /usr/lib/node_modules
+      - uses: actions/upload-artifact@v1
+        if: success() || failure()
+        with:
+          name: Install results
+          path: atest/output
+

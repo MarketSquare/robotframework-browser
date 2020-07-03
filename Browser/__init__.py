@@ -1,23 +1,14 @@
-__version__ = "0.1.1"
+__version__ = "0.5.0"
 
+import re
 import os
-from subprocess import Popen, STDOUT
-import contextlib
-from functools import cached_property
-import time
-from typing import Optional
-
-import grpc  # type: ignore
 
 from robot.api import logger  # type: ignore
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from Browser.generated.playwright_pb2 import Empty
-import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
-
-from .keywords import Validation, Control, Input
-from .util import find_free_port
+from .keywords import Control, Getters, Input, Validation
+from .playwright import Playwright
 
 
 class Browser(DynamicCore):
@@ -77,87 +68,54 @@ class Browser(DynamicCore):
     | = Strategy = |     = Match based on =     |         = Example =            |
     | css          | CSS selector.              | ``css=div#example``            |
     | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
-    | text         | Browser text engine.    | ``text=Login``                 |
+    | text         | Browser text engine.       | ``text=Login``                 |
+
+    = Assertions =
+
+    Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
+    can optionally assert.
+    Currently supported assertion operators are:
+
+    |      = Operator =               |              = Descrition =                   |
+    | ``==`` or ``should be``         | equal                                         |
+    | ``!=`` or ``should not be``     | not equal                                     |
+    | ``>``                           | greater than                                  |
+    | ``>=``                          | greater than or equal                         |
+    | ``<``                           | less than                                     |
+    | ``<=``                          | less than or equal                            |
+    | ``*=`` or ``contains``          | for checking that a value contains an element |
+    | ``matches``                     | for matching against a regular expression.    |
+    | ``^=`` or ``should start with`` | starts with                                   |
+    | ``$=`` or ``should end with``   | ends with                                     |
+
+    Assertion value can be any valid robot value, and the keywords will provide an error
+    message if the assertion fails.
     """
 
     ROBOT_LIBRARY_VERSION = __version__
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    port: Optional[str] = None
-    _SUPPORTED_BROWSERS = ["chrome", "firefox", "webkit"]
+    SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
 
-    def _GET_SCREENSHOT_PATH(self):
-        BuiltIn().get_variable_value("${OUTPUTDIR}")
-
-    def __init__(self):
+    def __init__(self, timeout="10s"):
         self.ROBOT_LIBRARY_LISTENER = self
+        self.browser_control = Control(self)
         libraries = [
-            Validation(self._insecure_stub),
-            Control(
-                self._insecure_stub, self._SUPPORTED_BROWSERS, self._GET_SCREENSHOT_PATH
-            ),
-            Input(self._insecure_stub),
+            Validation(self),
+            self.browser_control,
+            Input(self),
+            Getters(self),
         ]
+        self.playwright = Playwright(timeout)
         DynamicCore.__init__(self, libraries)
 
-    @cached_property
-    def _playwright_process(self) -> Popen:
-        cwd_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
-        path_to_script = os.path.join(cwd_dir, "index.js")
-        logfile = open(
-            os.path.join(
-                BuiltIn().get_variable_value("${OUTPUTDIR}"), "playwright-log.txt"
-            ),
-            "w",
-        )
-        self.port = str(find_free_port())
-        env = dict(os.environ)
-        env["PORT"] = self.port
-        logger.info(f"Starting Browser process {path_to_script} using port {self.port}")
-        popen = Popen(
-            ["node", path_to_script],
-            shell=False,
-            cwd=cwd_dir,
-            env=env,
-            stdout=logfile,
-            stderr=STDOUT,
-        )
-        for i in range(30):
-            with grpc.insecure_channel(f"localhost:{self.port}") as channel:
-                try:
-                    stub = playwright_pb2_grpc.PlaywrightStub(channel)
-                    response = stub.Health(Empty())
-                    logger.info(
-                        f"Connected to the playwright process at port {self.port}: {response}"
-                    )
-                    return popen
-                except grpc.RpcError as err:
-                    logger.info(err)
-                    time.sleep(0.1)
-        raise RuntimeError(
-            f"Could not connect to the playwright process at port {self.port}"
-        )
+    @property
+    def outputdir(self):
+        return BuiltIn().get_variable_value("${OUTPUTDIR}")
 
     def _close(self):
-        logger.debug("Closing Playwright process")
-        self._playwright_process.kill()
-        logger.debug("Playwright process killed")
-
-    """ Yields a PlayWrightstub on a newly initialized channel and
-        closes channel after control returns
-    """
-
-    @contextlib.contextmanager
-    def _insecure_stub(self):
-        returncode = self._playwright_process.poll()
-        if returncode is not None:
-            raise ConnectionError(
-                "Playwright process has been terminated with code {}".format(returncode)
-            )
-        channel = grpc.insecure_channel(f"localhost:{self.port}")
-        yield playwright_pb2_grpc.PlaywrightStub(channel)
-        channel.close()
+        self.playwright.close()
 
     def run_keyword(self, name, args, kwargs):
         try:
@@ -166,19 +124,49 @@ class Browser(DynamicCore):
             self.test_error()
             raise e
 
-    """ Sends screenshot message through the stub and then raises an AssertionError with message
-        Only works during testing since this uses robot's outputdir for output
-    """
+    def start_keyword(self, name, attrs):
+        """Take screenshot of tests that have failed due to timeout.
+
+        This can be done with BuiltIn keyword `Run Keyword If Timeout
+        Occurred`, but the problem there is that you have to remember to
+        put it into your Suite/Test Teardown. Since taking screenshot is
+        the most obvious thing to do on failure, let's do it automatically.
+
+        This cannot be implemented as a `end_test` listener method, since at
+        that time, the teardown has already been executed and browser may have
+        been closed already. This implementation will take the screenshot
+        before the teardown begins to execute.
+        """
+        if attrs["type"] == "Teardown":
+            timeout_pattern = "Test timeout .* exceeded."
+            test = EXECUTION_CONTEXTS.current.test
+            if (
+                test is not None
+                and test.status == "FAIL"
+                and re.match(timeout_pattern, test.message)
+            ):
+                self.browser_control.take_page_screenshot(
+                    self.failure_screenshot_path(test.name)
+                )
 
     def test_error(self):
-        on_failure = "take page screenshot"
+        """Sends screenshot command to Playwright.
+
+        Only works during testing since this uses robot's outputdir for output.
+        """
+        on_failure_keyword = "take page screenshot"
         try:
-            path = os.path.join(
-                BuiltIn().get_variable_value("${OUTPUTDIR}"),
-                BuiltIn().get_variable_value("${TEST NAME}").replace(" ", "_")
-                + "_FAILURE_SCREENSHOT",
-            ).replace("\\", "\\\\")
-            logger.info(f"Running {on_failure} {path}")
-            BuiltIn().run_keyword(on_failure, path)
+            test_name = BuiltIn().get_variable_value("${TEST NAME}")
+            path = self.failure_screenshot_path(test_name)
+            logger.info(f"Running `{on_failure_keyword}` with arguments `{path}`")
+            BuiltIn().run_keyword(on_failure_keyword, path)
         except Exception as err:
-            logger.error(f"Keyword '{on_failure}' could not be run on failure: {err}")
+            logger.error(
+                f"Keyword '{on_failure_keyword}' could not be run on failure: {err}"
+            )
+
+    def failure_screenshot_path(self, test_name):
+        return os.path.join(
+            BuiltIn().get_variable_value("${OUTPUTDIR}"),
+            test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT",
+        ).replace("\\", "\\\\")

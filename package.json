@@ -1,30 +1,37 @@
 {
   "name": "robotframework-playwright",
-  "version": "0.1.1",
+  "version": "0.5.0",
   "main": "index.ts",
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^3.4.0",
+    "@typescript-eslint/parser": "^3.4.0",
+    "eslint": "^7.3.1",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-prettier": "^3.1.4",
     "grpc-tools": "^1.9.0",
     "grpc_tools_node_protoc_ts": "^4.0.0",
     "husky": "^4.2.5",
     "lint-staged": "^10.2.7",
+    "prettier": "^2.0.5",
     "ts-node": "^8.10.2",
     "tslint": "^6.1.2",
     "typescript": "^3.9.3"
   },
   "dependencies": {
     "google-protobuf": "3.9.2",
-    "grpc": "^1.24.2",
+    "grpc": "^1.24.3",
     "playwright": "^1.1.0"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "echo 'precommit 🔱' && make lint-python &&  mypy .",
-      "pre-push": "echo 'prepush 🚀' && make utest && make atest"
+      "pre-commit": "echo 'precommit 🔱' && make lint-python &&  make lint-node",
+      "pre-push": "echo 'prepush 🚀' && make build && make utest && make atest"
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint 'Browser/**/*.ts' --quiet --fix"
   }
 }

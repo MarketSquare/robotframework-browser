@@ -18,8 +18,8 @@ endif
 	if [ ! -d .venv ]; then \
 		python3 -m venv .venv ; \
 	fi
-	.venv/bin/pip install -r requirements.txt
-	.venv/bin/pip install -r dev-requirements.txt
+	pip install -r requirements.txt
+	pip install -r dev-requirements.txt
 
 node-deps:
 	yarn install
@@ -27,27 +27,46 @@ node-deps:
 dev-env: .venv node-deps
 
 keyword-docs:
-	.venv/bin/python -m robot.libdoc Browser docs/Browser.html
+	python -m robot.libdoc Browser docs/Browser.html
 
 utest:
 	pytest utest
 
-atest:
-	robot --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
+clean:
+	rm -rf atest/output
+atest: clean
+	ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
+
+atest-global-pythonpath: clean
+	ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --loglevel DEBUG --outputdir atest/output atest/test
 
 test-failed: build
 	PYTHONPATH=. robot --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test 
 
+docker:
+	docker build --tag rfbrowser .
+docker-test:
+	rm -rf atest/output
+	docker run -it --rm --ipc=host --security-opt seccomp=chrome.json -v /ABSOLUTEPATH/atest/:/atest rfbrowser robot -d /atest/output /atest
+
 lint-python:
 	mypy .
-	black Browser/ --exclude Browser/generated
+	black Browser/ 
 	flake8
 
-build: protobuf
-	yarn build
+lint-node:
+	yarn run lint
+
+lint-robot:
+	python -m robot.tidy --inplace atest/test/*
+
+lint: lint-node lint-python lint-robot
 
 protobuf:
+	mkdir -p Browser/generated/
+	mkdir -p Browser/wrapper/generated/
 	python -m grpc_tools.protoc -Iprotos --python_out=Browser/generated --grpc_python_out=Browser/generated protos/*.proto
+	touch Browser/generated/__init__.py
 	sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Browser.generated import playwright_pb2 as playwright__pb2/g' Browser/generated/playwright_pb2_grpc.py
 	$(rm_cmd) $(backup_files)
 
@@ -64,9 +83,13 @@ protobuf:
 		-I ./protos \
 		protos/*.proto
 
+build: protobuf
+	yarn build
 
-release:
+package: build keyword-docs
 	rm -rf dist/
 	cp package.json Browser/wrapper
-	.venv/bin/python setup.py sdist bdist_wheel
+	python setup.py sdist bdist_wheel
+
+release: package
 	python3 -m twine upload --repository pypi dist/*
