@@ -148,11 +148,10 @@ class PlaywrightServer implements IPlaywrightServer {
         const selector = call.request.getSelector();
         const page = this.browserState.page;
 
-        type value = [string, string, boolean];
-        const content: value[] = await page.$$eval(selector + ' option', (elements) =>
+        type Value = [string, string, boolean];
+        const content: Value[] = await page.$$eval(selector + ' option', (elements) =>
             (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
         );
-        console.log(content);
 
         const response = new Response.Select();
         content.forEach((option) => {
@@ -172,12 +171,13 @@ class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to select ``select`` element option, no open browser');
         const selector = call.request.getSelector();
-        const matcher = call.request.getMatcherList();
+        const matcher = call.request.getMatcherjson();
         console.log(`Selecting from element ${selector} options ${matcher}`);
-        const result = await this.browserState.page.selectOption(selector, matcher).catch((e) => {
+        const result = await this.browserState.page.selectOption(selector, JSON.parse(matcher)).catch((e) => {
             callback(e, null);
             throw e;
         });
+
         if (result.length == 0) {
             console.log("Couldn't select any options");
             const error = new Error(`No options matched ${matcher}`);

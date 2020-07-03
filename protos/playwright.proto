@@ -67,18 +67,17 @@ message Request {
     string options = 2;
   }
 
-  message selectOption{
+  message selectOption {
     string selector = 1;
-    repeated string matcher = 2;
+    string matcherJson = 2;
   }
 }
+
 message SelectEntry {
-  string log = 1;
   string value = 2;
   string label = 3;
   bool selected = 4;
 }
-
 
 message Response {
   message Empty {

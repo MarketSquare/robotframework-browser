@@ -213,7 +213,9 @@ class Input:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
-                Request().selectOption(selector=selector, matcher=values)
+                Request().selectOption(
+                    selector=selector, matcherJson=json.dumps(values)
+                )
             )
             logger.info(response.log)
 
@@ -221,9 +223,9 @@ class Input:
     def select_from_list_by_label(self, selector: str, *labels):
         """Toggles options from selection list ``selector`` by ``labels``.
         """
-        matchers = ['{label:"' + s + '"}' for s in labels]
+        matchers = json.dumps([{"label": s} for s in labels])
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
-                Request().selectOption(selector=selector, matcher=matchers)
+                Request().selectOption(selector=selector, matcherJson=matchers)
             )
             logger.info(response.log)
