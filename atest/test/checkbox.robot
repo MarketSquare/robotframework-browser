@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          keywords.resource
-Test Setup        Open Browser    ${LOGIN URL}/checkbox_and_radio.html
+Test Setup        Open Browser    ${FORM_URL}
 Test Teardown     Close Browser
 
 *** Test Cases ***
