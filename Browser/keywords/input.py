@@ -1,9 +1,26 @@
+import json
+from enum import Enum, auto
+
 from robot.api import logger  # type: ignore
 from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
+from typing import Optional, Dict
 
 from ..generated.playwright_pb2 import Request
+
+
+class MouseButton(Enum):
+    left = auto()
+    middle = auto()
+    right = auto()
+
+
+class KeyboardModifier(Enum):
+    Alt = auto()
+    Control = auto()
+    Meta = auto()
+    Shift = auto()
 
 
 class Input:
@@ -13,21 +30,6 @@ class Input:
     @property
     def playwright(self):
         return self.library.playwright
-
-    @keyword
-    def input_text(self, selector: str, text: str, type=False):
-        """ DEPRECATED Inputs the given ``text`` into the text field identified by ``selector``
-
-            By default text is inputted via filling (instantly), only triggering the
-            input event. By toggling the ``type`` boolean text will be typed into the
-            field instead. Typing triggers keydown, keypress/input and keyup events
-            for every character of input.
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.InputText(
-                Request().inputText(input=text, selector=selector, type=type)
-            )
-            logger.info(response.log)
 
     @keyword
     def type_text(
@@ -90,8 +92,8 @@ class Input:
 
         See `Type Text` for details.
         """
+        previous_level = BuiltIn().set_log_level("NONE")
         try:
-            previous_level = BuiltIn().set_log_level("NONE")
             self.type_text(selector, secret, delay, clear)
         finally:
             BuiltIn().set_log_level(previous_level)
@@ -102,34 +104,11 @@ class Input:
 
         See `Fill Text` for details.
         """
+        previous_level = BuiltIn().set_log_level("NONE")
         try:
-            previous_level = BuiltIn().set_log_level("NONE")
             self.fill_text(selector, secret)
         finally:
             BuiltIn().set_log_level(previous_level)
-
-    @keyword
-    def input_password(self, selector: str, password: str):
-        """ DEPRECATED Types the given ``password`` into the field identified by ``selector``
-            Disables logging to avoid leaking sensitive information.
-        Difference compared to `Input Text` is that this keyword does not
-        log the given password on the INFO level. Notice that if you use
-        the keyword like
-        | Input Password | password_field | password |
-        the password is shown as a normal keyword argument. A way to avoid
-        that is using variables like
-        | Input Password | password_field | ${PASSWORD} |
-        Please notice that Robot Framework logs all arguments using
-        the TRACE level and tests must not be executed using level below
-        DEBUG if the password should not be logged in any format.
-        """
-        with self.playwright.grpc_channel() as stub:
-            try:
-                # Should prevent logging in case of failure keywords
-                previous_level = BuiltIn().set_log_level("NONE")
-                stub.InputText(Request().inputText(input=password, selector=selector))
-            finally:
-                BuiltIn().set_log_level(previous_level)
 
     @keyword
     def press_keys(self, selector: str, *keys: str):
@@ -153,6 +132,61 @@ class Input:
         """ Clicks element identified by ``selector``. """
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().selector(selector=selector))
+            logger.info(response.log)
+
+    @keyword
+    def click_with_options(
+        self,
+        selector: str,
+        button: MouseButton = MouseButton.left,
+        click_count: int = 1,
+        delay: Optional[str] = None,
+        position_x: Optional[int] = None,
+        position_y: Optional[int] = None,
+        *modifiers: KeyboardModifier,
+    ):
+        """ Clicks element identified by ``selector``.
+
+        ``button``: ``<"left"|"right"|"middle">`` Defaults to ``left`` if invalid.
+
+        ``clickCount``: <int> defaults to 1.
+
+        ``delay``: <robot time> Time to wait between mousedown and mouseup.
+        Defaults to 0.
+
+        ``position_x`` & ``position_y``: <int> A point to click relative to the
+        top-left corner of element padding box.
+        If not specified, clicks to some visible point of the element.
+
+        ``*modifiers``: ``<list<"Alt"|"Control"|"Meta"|"Shift">>``
+        Modifier keys to press. Ensures that only these modifiers are pressed
+        during the click, and then restores current modifiers back.
+        If not specified, currently pressed modifiers are used.
+        """
+        with self.playwright.grpc_channel() as stub:
+            options = {"button": button.name, "clickCount": click_count}
+            if delay:
+                options["delay"] = int(timestr_to_secs(delay) * 1000)
+            if position_x and position_y:
+                positions: Dict[str, object] = {"x": position_x, "y": position_y}
+                options["position"] = positions
+            if modifiers:
+                options["modifiers"] = [m.name for m in modifiers]
+            options_json = json.dumps(options)
+            logger.debug(f"Click Options are: {options_json}")
+            response = stub.Click(
+                Request().selectorOptions(selector=selector, options=options_json)
+            )
+            logger.info(response.log)
+
+    @keyword
+    def focus(self, selector: str):
+        """ This method fetches an element with selector and focuses it.
+
+        If there's no element matching selector, the method waits until a
+        matching element appears in the DOM. """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.Focus(Request().selector(selector=selector))
             logger.info(response.log)
 
     @keyword

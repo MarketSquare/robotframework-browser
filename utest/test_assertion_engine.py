@@ -53,10 +53,16 @@ def test_match():
 
 def test_start_with():
     _validate_operator(AssertionOperator["^="], "Hello Robots", "Hello", "Robots")
-    _validate_operator(AssertionOperator["shouldstartwith"], "Hello Robots", "Hello", "Robots")
-    _validate_operator(AssertionOperator["^="], "Hel[4,5]?[1-9]+ Robots", "Hel[4,5]?[1-", ".*")
+    _validate_operator(
+        AssertionOperator["shouldstartwith"], "Hello Robots", "Hello", "Robots"
+    )
+    _validate_operator(
+        AssertionOperator["^="], "Hel[4,5]?[1-9]+ Robots", "Hel[4,5]?[1-", ".*"
+    )
 
 
 def test_ends_with():
     _validate_operator(AssertionOperator["$="], "Hello Robots", "Robots", "Hello")
-    _validate_operator(AssertionOperator["$="], "Hel[4,5]?[1-9]+ Robots", "[1-9]+ Robots", ".*")
+    _validate_operator(
+        AssertionOperator["$="], "Hel[4,5]?[1-9]+ Robots", "[1-9]+ Robots", ".*"
+    )

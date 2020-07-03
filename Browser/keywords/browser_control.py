@@ -92,3 +92,13 @@ class Control:
         with self.playwright.grpc_channel() as stub:
             response = stub.SetTimeout(Request().timeout(timeout=parsed_timeout))
             logger.info(response.log)
+
+    @keyword
+    def add_style_tag(self, content: str):
+        """Adds a <style type="text/css"> tag with the content.
+
+        ``content``: Raw CSS content to be injected into frame.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.AddStyleTag(Request().addStyleTag(content=content))
+            logger.info(response.log)

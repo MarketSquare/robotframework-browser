@@ -3,14 +3,17 @@ syntax = "proto3";
 
 message Request {
   message Empty {}
+
   message screenshot {
     string path = 1;
   }
+
   message openBrowser {
     string url = 1;
     string browser = 2;
     bool headless = 3;
   }
+
   message goTo {
     string url= 1;
   }
@@ -20,6 +23,7 @@ message Request {
     string selector = 2;
     bool type = 3;
   }
+
   message getDomProperty {
     string property = 1;
     string selector = 2;
@@ -49,8 +53,18 @@ message Request {
   message selector {
     string selector = 1;
   }
+
   message timeout {
     float timeout = 1;
+  }
+
+  message addStyleTag {
+    string content = 1;
+  }
+
+  message selectorOptions {
+    string selector = 1;
+    string options = 2;
   }
 }
 
@@ -109,4 +123,10 @@ service  Playwright {
   rpc Health(Request.Empty) returns (Response.String) {}
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.timeout) returns (Response.Empty) {}
+  /* Adds a <style> to head of side. */
+  rpc AddStyleTag(Request.addStyleTag) returns (Response.Empty) {}
+  /* Clicks element specified by selector and options */ 
+  rpc ClickWithOptions(Request.selectorOptions) returns (Response.Empty) {}
+  /* Focuses element specified by selector */ 
+  rpc Focus(Request.selector) returns (Response.Empty) {}
 }

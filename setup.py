@@ -12,7 +12,7 @@ install_requires = open("requirements.txt").readlines()
 
 setup_kwargs = {
     "name": "robotframework-browser",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
