@@ -35,7 +35,7 @@ utest:
 clean:
 	rm -rf atest/output
 atest: clean
-	ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
+	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --pythonpath . --loglevel DEBUG --outputdir atest/output atest/test
 
 atest-global-pythonpath: clean
 	ROBOT_SYSLOG_FILE=atest/output/syslog.txt robot --loglevel DEBUG --outputdir atest/output atest/test
