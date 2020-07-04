@@ -31,8 +31,7 @@ class Getters:
             response = stub.GetUrl(Request().Empty())
             logger.debug(response.log)
             value = response.body
-        verify_assertion(value, assertion_operator, assertion_expected, "URL ")
-        return value
+        return verify_assertion(value, assertion_operator, assertion_expected, "URL ")
 
     @keyword
     def get_title(
@@ -49,8 +48,7 @@ class Getters:
             response = stub.GetTitle(Request().Empty())
             logger.debug(response.log)
             value = response.body
-        verify_assertion(value, assertion_operator, assertion_expected, "Title ")
-        return value
+        return verify_assertion(value, assertion_operator, assertion_expected, "Title ")
 
     @keyword
     def get_text(
@@ -70,10 +68,9 @@ class Getters:
             )
             logger.debug(response.log)
             value = response.body
-        verify_assertion(
+        return verify_assertion(
             value, assertion_operator, assertion_expected, f"Text {selector}"
         )
-        return value
 
     @keyword
     def get_attribute(
@@ -93,10 +90,9 @@ class Getters:
             )
             logger.debug(response.log)
             value = response.body
-        verify_assertion(
+        return verify_assertion(
             value, assertion_operator, assertion_expected, f"Attribute {selector}"
         )
-        return value
 
     @keyword
     def get_textfield_value(
@@ -201,7 +197,7 @@ class Getters:
                     f"in this Keyword."
                 )
 
-            verify_assertion(
+            return verify_assertion(
                 value, assertion_operator, expected_value, "Selected Options:"
             )
 
@@ -249,13 +245,8 @@ class Getters:
                 )
 
             if isinstance(state, str):
-                if state.lower() == "unchecked":
-                    state = False
-                else:
-                    state = True
+                state = state.lower() != "unchecked"
 
-            verify_assertion(
-                value, assertion_operator, state, f"Checkbox {selector} is"
-            )
-
-        return value
+        return verify_assertion(
+            value, assertion_operator, state, f"Checkbox {selector} is"
+        )
