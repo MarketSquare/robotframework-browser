@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Tuple, Callable
+from typing import Any, Dict, Tuple, Callable, TypeVar, cast
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 import re
 
@@ -29,6 +29,7 @@ AssertionOperator = Enum(
         "$=": "$=",
         "matches": "$",
         "evaluate": "evaluate",
+        "then": "then",
     },
 )
 
@@ -57,11 +58,16 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
     ),
 }
 
+T = TypeVar('T')
 
-def verify_assertion(value: Any, operator: AssertionOperator, expected, message=""):
+
+def verify_assertion(value: T, operator: AssertionOperator, expected: Any, message="") -> T:
+    if operator is AssertionOperator["then"]:
+        return cast(T, BuiltIn().evaluate(expected, namespace={"value": value}))
     handler = handlers.get(operator)
     if handler is None:
         raise RuntimeError(f"{message} `{operator}` is not a valid assertion operator")
     validator, text = handler
     if not validator(value, expected):
         raise AssertionError(f"{message} `{value}` {text} `{expected}`")
+    return value
