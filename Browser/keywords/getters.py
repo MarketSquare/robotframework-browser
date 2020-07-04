@@ -206,3 +206,56 @@ class Getters:
             )
 
         return selected
+
+    @keyword
+    def get_checkbox_state(
+        self,
+        selector: str,
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        state: bool = False,
+    ):
+        """ Returns the specified the checkbox state as boolean value.
+
+        - ``checked`` => ``True``
+        - ``unchecked`` => ``False``
+
+        Optionally asserts that these match the specified assertion.
+
+        ``assertion_operator`` see `Assertions`.
+
+        - ``==`` and ``!=`` are allowed on boolean values
+        - other operators are not accepted.
+
+        ``state``: boolean value of expected state.
+        Strings are parsed as booleans.
+        All strings are ``${True}`` except of the following ``unchecked, FALSE, NO, OFF, 0``.
+        (case-insensitive) The string ``checked`` can be used as True value.
+        """
+
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetBoolProperty(
+                Request().getDomProperty(selector=selector, property="checked")
+            )
+            logger.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
+            value: bool = response.body
+
+            if assertion_operator not in [
+                AssertionOperator["=="],
+                AssertionOperator["!="],
+            ]:
+                raise ValueError(
+                    f"Operators '==' and '!=' are allowsed,"
+                    f" not '{assertion_operator.name}'."
+                )
+
+            if isinstance(state, str):
+                if state.lower() == "unchecked":
+                    state = False
+                else:
+                    state = True
+
+            verify_assertion(
+                value, assertion_operator, state, f"Checkbox {selector} is"
+            )
+
+        return value
