@@ -52,14 +52,14 @@ def test_match():
     )
 
 
-def test_evaluate():
+def test_validate():
     def ns(): pass
     ns.variables = lambda: 0
     ns.variables.current = lambda: 0
     ns.variables.current.store = lambda: 0
     EXECUTION_CONTEXTS.start_suite("suite", ns, lambda: 0)
     _validate_operator(
-        AssertionOperator("evaluate"), 1, "0 < value < 2", "value == 'hello'"
+        AssertionOperator("validate"), 1, "0 < value < 2", "value == 'hello'"
     )
 
 

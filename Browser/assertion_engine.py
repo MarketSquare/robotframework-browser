@@ -28,7 +28,7 @@ AssertionOperator = Enum(
         "ends": "$=",
         "$=": "$=",
         "matches": "$",
-        "evaluate": "evaluate",
+        "validate": "validate",
         "then": "then",
     },
 )
@@ -52,9 +52,9 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
         lambda a, b: re.search(f"{re.escape(b)}$", a),
         "should end with",
     ),
-    AssertionOperator["evaluate"]: (
+    AssertionOperator["validate"]: (
         lambda a, b: BuiltIn().evaluate(b, namespace={"value": a}),
-        "should evaluate to true with",
+        "should validate to true with",
     ),
 }
 

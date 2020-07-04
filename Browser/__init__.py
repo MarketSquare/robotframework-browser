@@ -87,7 +87,7 @@ class Browser(DynamicCore):
     | ``matches``                     | for matching against a regular expression.           |
     | ``^=`` or ``should start with`` | starts with                                          |
     | ``$=`` or ``should end with``   | ends with                                            |
-    | ``evaluate``                    | use BuiltIn Evaluate. Access to actual with ``value``|
+    | ``validate``                    | use BuiltIn Evaluate. Access to actual with ``value``|
 
     Assertion value can be any valid robot value, and the keywords will provide an error
     message if the assertion fails.
