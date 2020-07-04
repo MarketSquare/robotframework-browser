@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any, Dict, Tuple, Callable
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 import re
 
 AssertionOperator = Enum(
@@ -27,6 +28,7 @@ AssertionOperator = Enum(
         "ends": "$=",
         "$=": "$=",
         "matches": "$",
+        "evaluate": "evaluate",
     },
 )
 
@@ -48,6 +50,10 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
     AssertionOperator["$="]: (
         lambda a, b: re.search(f"{re.escape(b)}$", a),
         "should end with",
+    ),
+    AssertionOperator["evaluate"]: (
+        lambda a, b: BuiltIn().evaluate(b, namespace={"value": a}),
+        "should evaluate to true with",
     ),
 }
 

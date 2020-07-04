@@ -51,6 +51,19 @@ def test_match():
     )
 
 
+def test_evaluate():
+    from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
+
+    def ns(): pass
+    ns.variables = lambda: 0
+    ns.variables.current = lambda: 0
+    ns.variables.current.store = lambda: 0
+    EXECUTION_CONTEXTS.start_suite("suite", ns, lambda: 0)
+    _validate_operator(
+        AssertionOperator("evaluate"), 1, "0 < value < 2", "value == 'hello'"
+    )
+
+
 def test_start_with():
     _validate_operator(AssertionOperator["^="], "Hello Robots", "Hello", "Robots")
     _validate_operator(
