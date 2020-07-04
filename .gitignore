@@ -4,6 +4,7 @@ Browser/generated
 Browser/wrapper/generated
 
 .idea
+.pabotsuitenames
 .mypy_cache
 __pycache__
 robotframework_browser.egg-info/

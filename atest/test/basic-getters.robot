@@ -17,3 +17,10 @@ Get and Assert Attribute
 Get Attribute
     ${text}=    Get Attribute    h1    innerText
     Should Be Equal    ${text}    Login Page
+
+Assert Validate
+    Get Text   h1  validate  value.startswith('Login')
+
+Closure
+   ${text}=    Get Attribute    h1    innerText  then  value.replace('g', 'k')
+   Should be equal     ${text}    Lokin Pake

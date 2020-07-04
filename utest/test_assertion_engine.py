@@ -1,5 +1,6 @@
 import pytest
 from Browser.assertion_engine import verify_assertion, AssertionOperator
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
 def test_equals():
@@ -49,6 +50,29 @@ def test_match():
         "(?m)Actual\nmultiline$",
         "/(\\d)+/",
     )
+
+
+def test_validate():
+    def ns(): pass
+    ns.variables = lambda: 0
+    ns.variables.current = lambda: 0
+    ns.variables.current.store = lambda: 0
+    EXECUTION_CONTEXTS.start_suite("suite", ns, lambda: 0)
+    _validate_operator(
+        AssertionOperator("validate"), 1, "0 < value < 2", "value == 'hello'"
+    )
+
+
+def test_then():
+    def ns(): pass
+    ns.variables = lambda: 0
+    ns.variables.current = lambda: 0
+    ns.variables.current.store = lambda: 0
+    EXECUTION_CONTEXTS.start_suite("suite", ns, lambda: 0)
+    thenOp = AssertionOperator["then"]
+    assert verify_assertion(8, thenOp, "value + 3") == 11
+    assert verify_assertion(2, thenOp, "value + 3") == 5
+    assert verify_assertion("René", thenOp, "'Hello ' + value + '!'") == "Hello René!"
 
 
 def test_start_with():

@@ -7,7 +7,7 @@ from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .keywords import Control, Getters, Input, Validation
+from .keywords import Control, Getters, Input, Validation, Waiter
 from .playwright import Playwright
 
 
@@ -18,7 +18,7 @@ class Browser(DynamicCore):
     library. For information about installation, support, and more, please
     visit the
     [https://github.com/MarketSquare/robotframework-playwright|project pages].
-    For more information about Robot Framework, see http://robotframework.org.
+    For more information about Robot Framework, see [https://robotframework.org|robotframework.org].
 
     Browser library uses
     [https://github.com/microsoft/playwright|Playwright Node module]
@@ -76,20 +76,34 @@ class Browser(DynamicCore):
     can optionally assert.
     Currently supported assertion operators are:
 
-    |      = Operator =               |              = Descrition =                   |
-    | ``==`` or ``should be``         | equal                                         |
-    | ``!=`` or ``should not be``     | not equal                                     |
-    | ``>``                           | greater than                                  |
-    | ``>=``                          | greater than or equal                         |
-    | ``<``                           | less than                                     |
-    | ``<=``                          | less than or equal                            |
-    | ``*=`` or ``contains``          | for checking that a value contains an element |
-    | ``matches``                     | for matching against a regular expression.    |
-    | ``^=`` or ``should start with`` | starts with                                   |
-    | ``$=`` or ``should end with``   | ends with                                     |
+    |      = Operator =               |              = Descrition =                          |
+    | ``==`` or ``should be``         | equal                                                |
+    | ``!=`` or ``should not be``     | not equal                                            |
+    | ``>``                           | greater than                                         |
+    | ``>=``                          | greater than or equal                                |
+    | ``<``                           | less than                                            |
+    | ``<=``                          | less than or equal                                   |
+    | ``*=`` or ``contains``          | for checking that a value contains an element        |
+    | ``matches``                     | for matching against a regular expression.           |
+    | ``^=`` or ``should start with`` | starts with                                          |
+    | ``$=`` or ``should end with``   | ends with                                            |
+    | ``validate``                    | use BuiltIn Evaluate. Access to actual with ``value``|
 
     Assertion value can be any valid robot value, and the keywords will provide an error
     message if the assertion fails.
+
+    = ``then`` closure =
+
+    Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
+    can optionally also use ``then`` closure to modify the returned value with
+    BuiltIn Evaluate. Actual value can be accessed with ``value``.
+
+    For example ``Get Title  then  'TITLE: '+value``.
+    See
+    [https://robotframework.org/robotframework/latest/libraries/BuiltIn.html#Evaluating%20expressions|
+    Builtin Evaluating expressions]
+    for more info on the syntax.
+
     """
 
     ROBOT_LIBRARY_VERSION = __version__
@@ -106,6 +120,7 @@ class Browser(DynamicCore):
             self.browser_control,
             Input(self),
             Getters(self),
+            Waiter(self),
         ]
         self.playwright = Playwright(timeout)
         DynamicCore.__init__(self, libraries)

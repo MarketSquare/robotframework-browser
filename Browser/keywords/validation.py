@@ -1,5 +1,3 @@
-from enum import Enum
-
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
@@ -37,21 +35,3 @@ class Validation:
     def page_should_contain(self, text: str):
         """Verifies that current page contains ``text``. """
         self.page_should_have("text=" + text)
-
-    class CheckboxState(Enum):
-        checked = True
-        unchecked = False
-
-    @keyword
-    def checkbox_should_be(self, selector: str, expected: CheckboxState):
-        """ Verifies that checkbox or radio button ``selector`` is in state ``expected`` """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetBoolProperty(
-                Request().getDomProperty(selector=selector, property="checked")
-            )
-            logger.info(response.log)
-            if response.body != expected.value:
-                message = "Checkbox `{}` should be `{}` but was `{}`".format(
-                    selector, expected, response.body
-                )
-                raise AssertionError(message)
