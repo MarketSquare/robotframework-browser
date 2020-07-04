@@ -380,7 +380,7 @@ class PlaywrightServer implements IPlaywrightServer {
 
     async waitForElemntsState(
         call: ServerUnaryCall<Request.selectorOptions>,
-        callback: sendUnaryData<Response.Empty>
+        callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to wait for an element, no open browser');
         console.log('Waiting for element state');
