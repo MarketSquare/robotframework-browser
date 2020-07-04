@@ -1,5 +1,6 @@
 import pytest
 from Browser.assertion_engine import verify_assertion, AssertionOperator
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
 def test_equals():
@@ -52,8 +53,6 @@ def test_match():
 
 
 def test_evaluate():
-    from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
-
     def ns(): pass
     ns.variables = lambda: 0
     ns.variables.current = lambda: 0
@@ -62,6 +61,18 @@ def test_evaluate():
     _validate_operator(
         AssertionOperator("evaluate"), 1, "0 < value < 2", "value == 'hello'"
     )
+
+
+def test_then():
+    def ns(): pass
+    ns.variables = lambda: 0
+    ns.variables.current = lambda: 0
+    ns.variables.current.store = lambda: 0
+    EXECUTION_CONTEXTS.start_suite("suite", ns, lambda: 0)
+    thenOp = AssertionOperator["then"]
+    assert verify_assertion(8, thenOp, "value + 3") == 11
+    assert verify_assertion(2, thenOp, "value + 3") == 5
+    assert verify_assertion("René", thenOp, "'Hello ' + value + '!'") == "Hello René!"
 
 
 def test_start_with():

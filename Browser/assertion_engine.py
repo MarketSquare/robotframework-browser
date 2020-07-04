@@ -58,10 +58,12 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
     ),
 }
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-def verify_assertion(value: T, operator: AssertionOperator, expected: Any, message="") -> T:
+def verify_assertion(
+    value: T, operator: AssertionOperator, expected: Any, message=""
+) -> T:
     if operator is AssertionOperator["then"]:
         return cast(T, BuiltIn().evaluate(expected, namespace={"value": value}))
     handler = handlers.get(operator)
