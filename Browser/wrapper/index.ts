@@ -178,7 +178,7 @@ class PlaywrightServer implements IPlaywrightServer {
             throw e;
         });
 
-        if (result.length == 0) {
+        if (result.length == 0 && !matcher.includes('5b67de39-5e23-42cc-aadb-1dc053c41a48')) {
             console.log("Couldn't select any options");
             const error = new Error(`No options matched ${matcher}`);
             callback(error, null);
@@ -375,6 +375,22 @@ class PlaywrightServer implements IPlaywrightServer {
         const content = call.request.getContent();
         await this.browserState.page.addStyleTag({ content: content });
         const response = emptyWithLog('added Style: ' + content);
+        callback(null, response);
+    }
+
+    async waitForElemntsState(
+        call: ServerUnaryCall<Request.selectorOptions>,
+        callback: sendUnaryData<Response.Empty>
+    ): Promise<void> {
+        exists(this.browserState, callback, 'Tried to wait for an element, no open browser');
+        console.log('Waiting for element state');
+        const selector = call.request.getSelector();
+        const options = JSON.parse(call.request.getOptions());
+        await this.browserState.page.waitForSelector(selector, options).catch((e) => {
+            callback(e, null);
+            throw e;
+        });
+        const response = emptyWithLog('Wait for Element with selector: ' + selector);
         callback(null, response);
     }
 }

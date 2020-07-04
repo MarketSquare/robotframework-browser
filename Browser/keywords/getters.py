@@ -5,6 +5,7 @@ from robotlibcore import keyword  # type: ignore
 
 from ..generated.playwright_pb2 import Request
 from ..assertion_engine import verify_assertion, AssertionOperator
+from .input import SelectAttribute
 
 
 class Getters:
@@ -111,3 +112,150 @@ class Getters:
         return self.get_attribute(
             selector, "value", assertion_operator, assertion_expected
         )
+
+    @keyword
+    def get_selected_options(
+        self,
+        selector: str,
+        option_attribute: SelectAttribute = SelectAttribute.label,
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        *assertion_expected,
+    ):
+
+        """ Returns the specified Attribute of selected Options of the Select List.
+
+        Optionally asserts that these match the specified assertion.
+
+        ``option_attribute``: which attribute shall be returned/verified.
+        Allowed values are ``<"value"|"label"|"text"|"index">``
+
+        ``assertion_operator`` see `Assertions`.
+
+        - ``==`` and ``!=`` can work with multiple values
+        - ``contains``/``*=`` only accepts one single expected value
+        - ``>``, ``>=``, ``<=`` and ``<`` do compare amount of selected options and accept numbers.
+        - ``^=``, ``matches``, ``$=`` are invalid operators in this context and are not allowed.
+
+        Example:
+
+        | `Select Options By`    | label                 | //select[2] | Email | Mobile | | |
+        | ${selected_list}     | `Get Selected Options`  | //select[2] | | | | # getter |
+        | `Get Selected Options` | //select[2] | label | == | Mobile | Mail | #assertion content |
+        | `Get Selected Options` | //select[2] | label | <= | 2      |       | #assertion amount |
+        | `Select Options By`    | label                 | select#names | 2 | 4 | 5  |
+        | `Get Selected Options` | select#names | index | == | 2      | 4     | #assertion index  |
+        | `Get Selected Options` | select#names | label | *= | Mikko  |     | #assertion contains |
+
+        """
+        selected = list()
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetSelectContent(Request().selector(selector=selector))
+            logger.info(response)
+
+            expected = list(assertion_expected)
+
+            if option_attribute is SelectAttribute.value:
+                selected = [sel.value for sel in response.entry if sel.selected]
+            elif option_attribute is SelectAttribute.label:
+                selected = [sel.label for sel in response.entry if sel.selected]
+            elif option_attribute is SelectAttribute.index:
+                selected = [
+                    index for index, sel in enumerate(response.entry) if sel.selected
+                ]
+                expected = [int(exp) for exp in expected]
+
+            selected.sort()
+            expected.sort()
+
+            expected_value: object = expected
+            value: object = selected
+
+            if assertion_operator == AssertionOperator["*="]:
+                if len(expected) != 1:
+                    raise AttributeError(
+                        f"Operator '{assertion_operator.name}' expects '1'"
+                        f" expected value but got '{len(expected)}'."
+                    )
+                expected_value = expected[0]
+                value = selected
+            elif assertion_operator in [
+                AssertionOperator["<"],
+                AssertionOperator[">"],
+                AssertionOperator["<="],
+                AssertionOperator[">="],
+            ]:
+                if len(expected) != 1:
+                    raise AttributeError(
+                        f"Operator '{assertion_operator.name}' expects '1'"
+                        f" expected value but got '{len(expected)}'."
+                    )
+                expected_value = int(expected[0])
+                value = len(selected)
+            elif assertion_operator in [
+                AssertionOperator["matches"],
+                AssertionOperator["^="],
+                AssertionOperator["$="],
+            ]:
+                raise AttributeError(
+                    f"Operator '{assertion_operator.name}' is not allowed "
+                    f"in this Keyword."
+                )
+
+            verify_assertion(
+                value, assertion_operator, expected_value, "Selected Options:"
+            )
+
+        return selected
+
+    @keyword
+    def get_checkbox_state(
+        self,
+        selector: str,
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        state: bool = False,
+    ):
+        """ Returns the specified the checkbox state as boolean value.
+
+        - ``checked`` => ``True``
+        - ``unchecked`` => ``False``
+
+        Optionally asserts that these match the specified assertion.
+
+        ``assertion_operator`` see `Assertions`.
+
+        - ``==`` and ``!=`` are allowed on boolean values
+        - other operators are not accepted.
+
+        ``state``: boolean value of expected state.
+        Strings are parsed as booleans.
+        All strings are ``${True}`` except of the following ``unchecked, FALSE, NO, OFF, 0``.
+        (case-insensitive) The string ``checked`` can be used as True value.
+        """
+
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetBoolProperty(
+                Request().getDomProperty(selector=selector, property="checked")
+            )
+            logger.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
+            value: bool = response.body
+
+            if assertion_operator not in [
+                AssertionOperator["=="],
+                AssertionOperator["!="],
+            ]:
+                raise ValueError(
+                    f"Operators '==' and '!=' are allowsed,"
+                    f" not '{assertion_operator.name}'."
+                )
+
+            if isinstance(state, str):
+                if state.lower() == "unchecked":
+                    state = False
+                else:
+                    state = True
+
+            verify_assertion(
+                value, assertion_operator, state, f"Checkbox {selector} is"
+            )
+
+        return value
