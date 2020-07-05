@@ -197,6 +197,15 @@ class Input:
             logger.info(response.log)
 
     @keyword
+    def execute_javascript_on_page(self, script: str) -> str:
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ExecuteJavascriptOnPage(
+                Request().jsExecution(script=script)
+            )
+            logger.info(response.log)
+            return response.result
+
+    @keyword
     def check_checkbox(self, selector: str):
         """ Checks the checkbox or selects radio identified by ``selector``.
             If already checked does nothing

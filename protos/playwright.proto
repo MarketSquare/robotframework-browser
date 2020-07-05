@@ -71,6 +71,10 @@ message Request {
     string selector = 1;
     string matcherJson = 2;
   }
+
+  message jsExecution {
+    string script = 1;
+  }
 }
 
 message SelectEntry {
@@ -93,6 +97,11 @@ message Response {
   }
   message Select {
     repeated SelectEntry entry = 1;
+  }
+
+  message jsResult {
+    string log = 1;
+    string result = 2;
   }
 }
 
@@ -148,4 +157,6 @@ service  Playwright {
   rpc Focus(Request.selector) returns (Response.Empty) {}
   /* Waits for element be in a specific state*/ 
   rpc WaitForElementsState(Request.selectorOptions) returns (Response.Empty) {}
+  /* Executes javascript on the active page */
+  rpc ExecuteJavascriptOnPage(Request.jsExecution) returns (Response.jsResult) {}
 }

@@ -393,6 +393,17 @@ class PlaywrightServer implements IPlaywrightServer {
         const response = emptyWithLog('Wait for Element with selector: ' + selector);
         callback(null, response);
     }
+
+    async executeJavascriptOnPage(
+        call: ServerUnaryCall<Request.jsExecution>,
+        callback: sendUnaryData<Response.jsResult>
+    ): Promise<void> {
+        console.log("JEE JS");
+        const response = new Response.jsResult();
+        response.setLog("DUMMY");
+        response.setResult("Hello dummy");
+        callback(null, response);
+    }
 }
 
 const server = new Server();
