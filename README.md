@@ -67,8 +67,6 @@ To rerun failed tests you can use `make test-failed` The tests are also executed
 
 Docker container builds a clean install package. This can be used to check that a builded package works correctly in a clean environment without development dependencies.
 
-Note atest test app start in `__init__.robot` requires a small change as the path is `/atest/demoapp/server.py` and not `atest/demoapp/server.py` in this case.
-
 1. Build the container `make docker`
 2. Run tests mounted from host machine `make docker-test`.
 3. See results in `atest/output`
