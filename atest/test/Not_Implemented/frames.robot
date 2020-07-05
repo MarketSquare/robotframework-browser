@@ -3,6 +3,7 @@ Documentation     Tests frames
 Test Setup        Open Browser    localhost:7272/frames/frameset.html
 Test Teardown     Close Browser
 Resource          keywords.resource
+Force Tags        Not-Implemented
 
 *** Variables ***
 ${IFRAMES}        localhost:7272/frames/iframes.html

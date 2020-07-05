@@ -1,11 +1,12 @@
 *** Settings ***
 Library           Browser
+Library           OperatingSystem
 
 *** Variables ***
 ${SERVER}         localhost:7272
 ${BROWSER}        chromium
 ${DELAY}          0
-${HEADED}         False
+${HEADLESS}         TRUE
 ${VALID USER}     demo
 ${VALID PASSWORD}    mode
 ${LOGIN URL}      http://${SERVER}/
