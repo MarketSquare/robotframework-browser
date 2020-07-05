@@ -14,7 +14,11 @@ function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): 
 }
 
 // Can't have an async constructor, this is a workaround
-async function createBrowserState(browserType: string, headless: boolean): Promise<BrowserState> {
+async function createBrowserState(
+    browserType: string,
+    headless: boolean,
+    hideRfBrowser: boolean,
+): Promise<BrowserState> {
     let browser;
     if (browserType === 'firefox') {
         browser = await firefox.launch({ headless: headless });
@@ -26,6 +30,11 @@ async function createBrowserState(browserType: string, headless: boolean): Promi
         throw new Error('unsupported browser');
     }
     const context = await browser.newContext();
+    if (!hideRfBrowser) {
+        /* tslint:disable: no-explicit-any */
+        context.exposeFunction('__RFBROWSER__', (state: any) => console.log(state));
+        /* tslint:enable: no-explicit-any */
+    }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const page = await context.newPage();
     return new BrowserState(browser, context, page);
@@ -68,7 +77,7 @@ class PlaywrightServer implements IPlaywrightServer {
         const url = call.request.getUrl();
         const headless = call.request.getHeadless();
         console.log('Open browser: ' + browserType);
-        this.browserState = await createBrowserState(browserType, headless);
+        this.browserState = await createBrowserState(browserType, headless, false);
         if (url) {
             await this.browserState.page.goto(url);
             callback(null, emptyWithLog(`Succesfully opened browser ${browserType} to ${url}.`));
