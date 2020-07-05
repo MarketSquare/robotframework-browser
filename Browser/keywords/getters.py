@@ -1,4 +1,5 @@
 from typing import Any
+from copy import copy
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -160,11 +161,11 @@ class Getters:
                 ]
                 expected = [int(exp) for exp in expected]
 
-            selected.sort()
             expected.sort()
-
             expected_value: object = expected
-            value: object = selected
+            sorted_selected = copy(selected)
+            sorted_selected.sort()
+            value: object = sorted_selected
 
             if assertion_operator == AssertionOperator["*="]:
                 if len(expected) != 1:
@@ -173,35 +174,24 @@ class Getters:
                         f" expected value but got '{len(expected)}'."
                     )
                 expected_value = expected[0]
-                value = selected
-            elif assertion_operator in [
-                AssertionOperator["<"],
-                AssertionOperator[">"],
-                AssertionOperator["<="],
-                AssertionOperator[">="],
-            ]:
-                if len(expected) != 1:
-                    raise AttributeError(
-                        f"Operator '{assertion_operator.name}' expects '1'"
-                        f" expected value but got '{len(expected)}'."
-                    )
-                expected_value = int(expected[0])
-                value = len(selected)
-            elif assertion_operator in [
-                AssertionOperator["matches"],
-                AssertionOperator["^="],
-                AssertionOperator["$="],
+            elif assertion_operator not in [
+                AssertionOperator["=="],
+                AssertionOperator["!="],
+                AssertionOperator["noassertion"],
             ]:
                 raise AttributeError(
                     f"Operator '{assertion_operator.name}' is not allowed "
                     f"in this Keyword."
                 )
-
-            return verify_assertion(
+            verify_assertion(
                 value, assertion_operator, expected_value, "Selected Options:"
             )
-
-        return selected
+            if len(selected) == 0:
+                return None
+            elif len(selected) == 1:
+                return selected[0]
+            else:
+                return list(selected)
 
     @keyword
     def get_checkbox_state(

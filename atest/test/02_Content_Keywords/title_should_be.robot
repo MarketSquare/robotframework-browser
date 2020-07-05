@@ -1,7 +1,5 @@
 *** Settings ***
-Resource          keywords.resource
-Test Setup        Open Browser
-Test Teardown     Close Browser
+Resource          imports.resource
 
 *** Test Cases ***
 test server title
@@ -9,4 +7,5 @@ test server title
     Get Title    ==    Login Page
 
 about:blank title
+    Go To    about:blank
     Get Title    ==    ${EMPTY}

@@ -1,8 +1,6 @@
 *** Settings ***
-Resource          keywords.resource
-Library           OperatingSystem
-Test Setup        Open Browser    ${LOGIN URL}
-Test Teardown     Close Browser
+Resource          imports.resource
+Suite Setup       Go To    ${LOGIN URL}
 
 *** Variables ***
 ${failure_screnshot}    ${OUTPUT_DIR}${/}Test_screenshotting_failing_test_FAILURE_SCREENSHOT.png
