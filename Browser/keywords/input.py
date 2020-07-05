@@ -5,7 +5,7 @@ from robot.api import logger  # type: ignore
 from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 from ..generated.playwright_pb2 import Request
 
@@ -197,13 +197,13 @@ class Input:
             logger.info(response.log)
 
     @keyword
-    def execute_javascript_on_page(self, script: str) -> str:
+    def execute_javascript_on_page(self, script: str) -> Any:
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascriptOnPage(
                 Request().jsExecution(script=script)
             )
             logger.info(response.log)
-            return response.result
+            return json.loads(response.result)
 
     @keyword
     def check_checkbox(self, selector: str):
