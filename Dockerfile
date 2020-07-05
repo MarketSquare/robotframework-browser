@@ -72,6 +72,8 @@ RUN groupadd -r pwuser && useradd -r -g pwuser -G audio,video pwuser \
 # (Optional) Install XVFB if there's a need to run browsers in headful mode
 RUN apt-get update && apt-get install -y xvfb
 COPY --from=BrowserBuilder /app/dist /app/dist
+# Install pabot to support atest
+RUN pip install robotframework-pabot
 RUN pip install dist/robotframework_browser-*-py3-none-any.whl
 RUN rfbrowser init
 # Run everything after as non-privileged user.
