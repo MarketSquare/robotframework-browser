@@ -131,7 +131,7 @@ class Getters:
         - ``==`` and ``!=`` can work with multiple values
         - ``contains``/``*=`` only accepts one single expected value
 
-        Other operators are not allowed. 
+        Other operators are not allowed.
 
         Example:
 
