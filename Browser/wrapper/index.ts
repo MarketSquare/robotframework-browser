@@ -402,7 +402,7 @@ class PlaywrightServer implements IPlaywrightServer {
         const result = await this.browserState.page.evaluate(call.request.getScript());
         const response = new Response.jsResult();
         response.setLog('DUMMY');
-        response.setResult(`result? ${result}`);
+        response.setResult(`${result}`);
         callback(null, response);
     }
 }
