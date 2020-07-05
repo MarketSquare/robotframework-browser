@@ -378,7 +378,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async waitForElemntsState(
+    async waitForElementsState(
         call: ServerUnaryCall<Request.selectorOptions>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {

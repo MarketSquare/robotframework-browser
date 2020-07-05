@@ -147,5 +147,5 @@ service  Playwright {
   /* Focuses element specified by selector */ 
   rpc Focus(Request.selector) returns (Response.Empty) {}
   /* Waits for element be in a specific state*/ 
-  rpc WaitForElemntsState(Request.selectorOptions) returns (Response.Empty) {}
+  rpc WaitForElementsState(Request.selectorOptions) returns (Response.Empty) {}
 }

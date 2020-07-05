@@ -56,7 +56,7 @@ class Waiter:
                 timeout_ms: int = int(timestr_to_secs(timeout) * 1000)
                 options["timeout"] = timeout_ms
             options_json = json.dumps(options)
-            response = stub.WaitForElemntsState(
+            response = stub.WaitForElementsState(
                 Request().selectorOptions(selector=selector, options=options_json)
             )
             logger.info(response.log)
