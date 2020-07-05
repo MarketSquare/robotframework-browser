@@ -59,8 +59,9 @@ The only difference is that the virtualenv needs to be activated by running
 
 ## Testing
 There are both unit tests written with pytest and acceptance test written with
-Robot Framework. These can be run manually with `make utest` and `make atest`. To rerun failed tests you can use `make test-failed` 
-The tests are also executed in a prepush hook.
+Robot Framework. These can be run manually with `make utest` and `make atest`. 
+To run continuously pytests in a watch mode `make utest-watch`.
+To rerun failed tests you can use `make test-failed` The tests are also executed in a prepush hook.
 
 ## Running tests in docker container
 
