@@ -31,9 +31,9 @@ async function createBrowserState(
     }
     const context = await browser.newContext();
     if (!hideRfBrowser) {
-        /* tslint:disable: no-explicit-any */
-        context.exposeFunction('__RFBROWSER__', (state: any) => console.log(state));
-        /* tslint:enable: no-explicit-any */
+        context.addInitScript(
+            'window.__RFBROWSER__ = (state) => { window.__RFBROWSER_STATE__ = state; return state; };',
+        );
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const page = await context.newPage();
@@ -80,9 +80,9 @@ class PlaywrightServer implements IPlaywrightServer {
         this.browserState = await createBrowserState(browserType, headless, false);
         if (url) {
             await this.browserState.page.goto(url);
-            callback(null, emptyWithLog(`Succesfully opened browser ${browserType} to ${url}.`));
+            callback(null, emptyWithLog(`Successfully opened browser ${browserType} to ${url}.`));
         } else {
-            callback(null, emptyWithLog(`Succesfully opened browser ${browserType}.`));
+            callback(null, emptyWithLog(`Successfully opened browser ${browserType}.`));
         }
     }
 
@@ -411,6 +411,17 @@ class PlaywrightServer implements IPlaywrightServer {
         const result = await this.browserState.page.evaluate(call.request.getScript());
         const response = new Response.jsResult();
         response.setLog('DUMMY');
+        response.setResult(JSON.stringify(result));
+        callback(null, response);
+    }
+
+    async getPageState(
+        call: ServerUnaryCall<Request.Empty>,
+        callback: sendUnaryData<Response.jsResult>,
+    ): Promise<void> {
+        exists(this.browserState, callback, 'Tried to get page state, no open browser');
+        const result = await this.browserState.page.evaluate('window.__RFBROWSER_STATE__');
+        const response = new Response.jsResult();
         response.setResult(JSON.stringify(result));
         callback(null, response);
     }

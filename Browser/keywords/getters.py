@@ -1,3 +1,4 @@
+import json
 from typing import Any
 from copy import copy
 
@@ -33,6 +34,18 @@ class Getters:
             logger.debug(response.log)
             value = response.body
         return verify_assertion(value, assertion_operator, assertion_expected, "URL ")
+
+    @keyword
+    def get_page_state(
+        self,
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_expected: Any = None,
+    ) -> object:
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetPageState(Request().Empty())
+            logger.debug(response.log)
+            value = json.loads(response.result)
+        return verify_assertion(value, assertion_operator, assertion_expected, "State ")
 
     @keyword
     def get_title(

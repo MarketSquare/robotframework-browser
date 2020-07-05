@@ -159,4 +159,6 @@ service  Playwright {
   rpc WaitForElementsState(Request.selectorOptions) returns (Response.Empty) {}
   /* Executes javascript on the active page */
   rpc ExecuteJavascriptOnPage(Request.jsExecution) returns (Response.jsResult) {}
+  /* Get Page State JSON */
+  rpc GetPageState(Request.Empty) returns (Response.jsResult) {}
 }
