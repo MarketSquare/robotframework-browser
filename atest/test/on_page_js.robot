@@ -6,4 +6,5 @@ Test Teardown     Close Browser
 
 *** Test Cases ***
 Testing hello from page
-  Execute Javascript on Page   "hello "+window.location.href;
+  ${result}=  Execute Javascript on Page   "hello from page "+location.href
+  should be equal  ${result}  result? hello from page http://localhost:7272/

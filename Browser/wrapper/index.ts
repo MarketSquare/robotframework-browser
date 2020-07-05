@@ -396,12 +396,13 @@ class PlaywrightServer implements IPlaywrightServer {
 
     async executeJavascriptOnPage(
         call: ServerUnaryCall<Request.jsExecution>,
-        callback: sendUnaryData<Response.jsResult>
+        callback: sendUnaryData<Response.jsResult>,
     ): Promise<void> {
-        console.log("JEE JS");
+        exists(this.browserState, callback, 'Tried to execute js, no open browser');
+        const result = await this.browserState.page.evaluate(call.request.getScript());
         const response = new Response.jsResult();
-        response.setLog("DUMMY");
-        response.setResult("Hello dummy");
+        response.setLog('DUMMY');
+        response.setResult(`result? ${result}`);
         callback(null, response);
     }
 }
