@@ -53,7 +53,7 @@ docker:
 	docker build --tag rfbrowser .
 docker-test:
 	rm -rf atest/output
-	docker run -it --rm --ipc=host --security-opt seccomp=chrome.json -v /ABSOLUTEPATH/atest/:/atest rfbrowser robot -d /atest/output /atest
+	docker run -it --rm --ipc=host --security-opt seccomp=chrome.json -v $(shell pwd)/atest/:/atest rfbrowser robot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test
 
 lint-python:
 	mypy .
