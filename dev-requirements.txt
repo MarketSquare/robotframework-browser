@@ -1,7 +1,8 @@
-pytest >= 4.6
+pytest >= 5.4.3
+pytest-watch >= 4.2.0
 black >= 19.10b0
-mypy >= 0.770
-flake8 >= 3.8.2
+mypy >= 0.782
+flake8 >= 3.8.3
 robotframework >= 3.2.1
-wheel>=0.34.0
+wheel>=0.34.2
 robotframework-pabot >= 1.8.1
