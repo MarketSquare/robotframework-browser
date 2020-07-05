@@ -18,8 +18,11 @@ endif
 	if [ ! -d .venv ]; then \
 		python3 -m venv .venv ; \
 	fi
-	pip install -r requirements.txt
-	pip install -r dev-requirements.txt
+	( \
+	source .venv/bin/activate; \
+	pip install -r requirements.txt; \
+	pip install -r dev-requirements.txt; \
+	)
 
 node-deps:
 	yarn install
@@ -28,6 +31,9 @@ dev-env: .venv node-deps
 
 keyword-docs:
 	python -m robot.libdoc Browser docs/Browser.html
+
+utest-watch:
+	ptw --ignore ./node_modules --ignore ./.venv
 
 utest:
 	pytest utest
