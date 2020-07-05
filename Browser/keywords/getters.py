@@ -130,16 +130,15 @@ class Getters:
 
         - ``==`` and ``!=`` can work with multiple values
         - ``contains``/``*=`` only accepts one single expected value
-        - ``>``, ``>=``, ``<=`` and ``<`` do compare amount of selected options and accept numbers.
-        - ``^=``, ``matches``, ``$=`` are invalid operators in this context and are not allowed.
+
+        Other operators are not allowed.
 
         Example:
 
         | `Select Options By`    | label                 | //select[2] | Email | Mobile | | |
         | ${selected_list}     | `Get Selected Options`  | //select[2] | | | | # getter |
         | `Get Selected Options` | //select[2] | label | == | Mobile | Mail | #assertion content |
-        | `Get Selected Options` | //select[2] | label | <= | 2      |       | #assertion amount |
-        | `Select Options By`    | label                 | select#names | 2 | 4 | 5  |
+        | `Select Options By`    | label                 | select#names | 2 | 4 | |
         | `Get Selected Options` | select#names | index | == | 2      | 4     | #assertion index  |
         | `Get Selected Options` | select#names | label | *= | Mikko  |     | #assertion contains |
 
