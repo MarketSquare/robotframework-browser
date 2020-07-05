@@ -141,6 +141,7 @@ class Getters:
         | `Select Options By`    | label                 | select#names | 2 | 4 | |
         | `Get Selected Options` | select#names | index | == | 2      | 4     | #assertion index  |
         | `Get Selected Options` | select#names | label | *= | Mikko  |     | #assertion contains |
+        | `Get Selected Options` | select#names | label | validate | len(value) == 3  | | #assertion length |
 
         """
         selected = list()
@@ -166,7 +167,10 @@ class Getters:
             sorted_selected.sort()
             value: object = sorted_selected
 
-            if assertion_operator == AssertionOperator["*="]:
+            if assertion_operator in [
+                AssertionOperator["*="],
+                AssertionOperator["validate"],
+            ]:
                 if len(expected) != 1:
                     raise AttributeError(
                         f"Operator '{assertion_operator.name}' expects '1'"

@@ -53,7 +53,9 @@ def test_match():
 
 
 def test_validate():
-    def ns(): pass
+    def ns():
+        pass
+
     ns.variables = lambda: 0
     ns.variables.current = lambda: 0
     ns.variables.current.store = lambda: 0
@@ -64,7 +66,9 @@ def test_validate():
 
 
 def test_then():
-    def ns(): pass
+    def ns():
+        pass
+
     ns.variables = lambda: 0
     ns.variables.current = lambda: 0
     ns.variables.current.store = lambda: 0

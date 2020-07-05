@@ -24,6 +24,7 @@ Get Selected Options
     Should Be Equal    ${selection}    Telephone
     Get Selected Options    select[name=preferred_channel]    value    ==    phone
     Get Selected Options    select[name=possible_channels]    text    ==    Email    Telephone
+    Get Selected Options    select[name=possible_channels]    text    validate    len(value) == 2
     Get Selected Options    select[name=possible_channels]    label    ==    Telephone    Email
     ${selection}=    Get Selected Options    select[name=possible_channels]    value    ==    phone    email
     Should Be Equal    ${selection}[0]    email

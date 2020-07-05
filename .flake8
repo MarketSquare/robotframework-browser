@@ -7,4 +7,4 @@ exclude =
    build,
    dist,
    tmp
-max-line-length = 100
+ignore = E501, W503
