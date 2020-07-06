@@ -1,9 +1,10 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-module.exports = {
+const frontConfig = {
+    target: 'web',
     mode: 'development',
-    entry: './dynamic-test-app/index.tsx',
+    entry: './dynamic-test-app/src/index.tsx',
     devtool: 'inline-source-map',
     performance: { hints: false } ,
     module: {
@@ -18,7 +19,7 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             title: 'Output Management',
-            template: './dynamic-test-app/index.html',
+            template: './dynamic-test-app/static/index.html',
         }),
     ],
     resolve: {
@@ -26,6 +27,34 @@ module.exports = {
     },
     output: {
         filename: 'index.js',
-        path: path.resolve(__dirname, 'atest/demoapp/html/dist/')
+        path: path.resolve(__dirname, './dynamic-test-app/dist')
     },
 };
+
+const backConfig = {
+    target: 'node',
+    mode: 'development',
+    entry: './dynamic-test-app/src/server.ts',
+    devtool: 'inline-source-map',
+    performance: { hints: false } ,
+    node: {
+        __filename: true,
+        __dirname: true
+    },
+
+    module: {
+        rules: [
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
+        ],
+    },
+    output: {
+        filename: 'server.js',
+        path: path.resolve(__dirname, 'dynamic-test-app/dist')
+    },
+}
+
+module.exports = [frontConfig, backConfig]

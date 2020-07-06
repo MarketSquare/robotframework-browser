@@ -5,8 +5,8 @@ import { Response, Request, SelectEntry } from './generated/playwright_pb';
 
 declare global {
     interface Window {
-        __RFBROWSER__: <T>(a: T) => T;
-        __RFBROWSER_STATE__: any;
+        __SET_RFBROWSER__: <T>(a: T) => T;
+        __RFBROWSER__: any;
     }
 }
 
@@ -38,9 +38,12 @@ async function createBrowserState(
     }
     const context = await browser.newContext();
     if (!hideRfBrowser) {
-        context.addInitScript(
-            'window.__RFBROWSER__ = (state) => { window.__RFBROWSER_STATE__ = state; return state; };',
-        );
+        context.addInitScript(function () {
+            window.__SET_RFBROWSER__ = function (state: any) {
+                window.__RFBROWSER__ = state;
+                return state;
+            };
+        });
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const page = await context.newPage();
@@ -435,7 +438,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.jsResult>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to get page state, no open browser');
-        const result = await this.browserState.page.evaluate(() => window.__RFBROWSER_STATE__);
+        const result = await this.browserState.page.evaluate(() => window.__RFBROWSER__);
         console.log(result);
         const response = new Response.jsResult();
         response.setResult(JSON.stringify(result));
