@@ -88,6 +88,8 @@ protobuf:
 
 build: protobuf
 	yarn build
+watch-webpack:
+	yarn run webpack --watch
 
 package: build keyword-docs
 	rm -rf dist/
