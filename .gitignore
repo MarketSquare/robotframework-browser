@@ -3,6 +3,9 @@ Browser/wrapper/package.json
 Browser/generated
 Browser/wrapper/generated
 
+dynamic-test-app/*.js
+*.map
+
 .idea
 .pabotsuitenames
 .mypy_cache
