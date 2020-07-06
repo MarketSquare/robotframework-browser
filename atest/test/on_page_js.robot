@@ -14,4 +14,4 @@ Results from page
     should be equal    ${result3}    ${4.173033648}
 
 Page state
-    Get page state  validate  value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
+    Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123

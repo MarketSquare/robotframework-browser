@@ -225,14 +225,17 @@ class Input:
 
     @keyword
     def select_options_by(self, attribute: SelectAttribute, selector: str, *values):
-        """Toggles options from selection list ``selector``
+        """ Selects options from selection ``selector``
             Matches based on the chosen attribute with list of ``values``.
             Possible attributes to match options by:
             ``attribute``: ``<"value"|"label"|"text"|"index">``
+
+            If no values to select are passed will deselect options in element.
         """
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
-            values = ("5b67de39-5e23-42cc-aadb-1dc053c41a48",)
+            self.deselect_options(selector)
+            return
 
         if attribute is SelectAttribute.value:
             matchers = json.dumps([{"value": s} for s in values])
@@ -244,4 +247,11 @@ class Input:
             response = stub.SelectOption(
                 Request().selectOption(selector=selector, matcherJson=matchers)
             )
+            logger.info(response.log)
+
+    @keyword
+    def deselect_options(self, selector: str):
+        """ Deselects all options from selection ``selector``"""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.DeselectOption(Request().selector(selector=selector))
             logger.info(response.log)

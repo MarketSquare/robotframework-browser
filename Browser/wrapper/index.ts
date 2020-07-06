@@ -178,22 +178,30 @@ class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.selectOption>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        exists(this.browserState, callback, 'Tried to select ``select`` element option, no open browser');
+        exists(this.browserState, callback, 'Tried to select ``select`` element options, no open browser');
         const selector = call.request.getSelector();
-        const matcher = call.request.getMatcherjson();
+        const matcher = JSON.parse(call.request.getMatcherjson());
         console.log(`Selecting from element ${selector} options ${matcher}`);
-        const result = await this.browserState.page.selectOption(selector, JSON.parse(matcher)).catch((e) => {
+        const result = await this.browserState.page.selectOption(selector, matcher).catch((e) => {
             callback(e, null);
             throw e;
         });
 
-        if (result.length == 0 && !matcher.includes('5b67de39-5e23-42cc-aadb-1dc053c41a48')) {
+        if (result.length == 0) {
             console.log("Couldn't select any options");
             const error = new Error(`No options matched ${matcher}`);
             callback(error, null);
         }
         const response = emptyWithLog(`Selected options ${result} in element ${selector}`);
         callback(null, response);
+    }
+
+    async deselectOption(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>) {
+        exists(this.browserState, callback, 'Tried to deselect ``select`` element options, no open browser');
+        const selector = call.request.getSelector();
+        await this.browserState.page.selectOption(selector, []).catch((e) => callback(e, null));
+
+        callback(null, emptyWithLog(`Deselected options in element ${selector}`));
     }
 
     async _getDomProperty<T>(call: ServerUnaryCall<Request.getDomProperty>, callback: sendUnaryData<T>) {

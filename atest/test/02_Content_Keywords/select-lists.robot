@@ -47,5 +47,9 @@ Select Options By index
 Select Options By text
     Select Option And Verify Selection    text    select[name=interests]    Males    Females
 
-Deselect Options
+Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
+
+Deselect Options Explicitly
+    Deselect Options    select[name=possible_channels]
+    Get Selected Options    select[name=possible_channels]    text    ==
