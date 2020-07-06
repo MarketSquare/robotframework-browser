@@ -1,13 +1,17 @@
 *** Settings ***
 Resource          imports.resource
 
+*** Variables ***
+${WELCOME URL}    ${ROOT URL}/welcome.html
+${ERROR URL}      ${ROOT URL}/error.html
+
 *** Test Cases ***
 No Open Browser Throws
     Run KeyWord and Expect Error    *details = "Tried to open URl but had no browser open"*    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
     [Setup]    Open Browser    ${LOGIN URL}
-    Login User
+    Go To    ${WELCOME URL}
     Get Url    ==    ${WELCOME URL}
     Go To    ${ERROR URL}
     Go Back

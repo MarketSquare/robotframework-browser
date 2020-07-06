@@ -9,10 +9,9 @@ ${DELAY}          0
 ${HEADLESS}         TRUE
 ${VALID USER}     demo
 ${VALID PASSWORD}    mode
-${LOGIN URL}      http://${SERVER}/
-${WELCOME URL}    http://${SERVER}/welcome.html
-${ERROR URL}      http://${SERVER}/error.html
-${FORM_URL}       http://${SERVER}/prefilled_email_form.html
+${ROOT URL}      http://${SERVER}
+${LOGIN URL}      ${ROOT URL}/dist/
+${FORM URL}       ${ROOT URL}/prefilled_email_form.html
 
 *** Keywords ***
 Open Browser To Login Page
