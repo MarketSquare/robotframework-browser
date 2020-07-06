@@ -12,13 +12,12 @@ from .playwright import Playwright
 
 
 class Browser(DynamicCore):
-    """Browser library is a web testing library for Robot Framework.
+    """Browser library is a browser automation library for Robot Framework.
 
-    This documents explains how to use keywords provided by the Browser
-    library. For information about installation, support, and more, please
-    visit the
+    This is hte keyword documentation for Browser library. For information
+    about installation, support, and more please visit the
     [https://github.com/MarketSquare/robotframework-playwright|project pages].
-    For more information about Robot Framework, see [https://robotframework.org|robotframework.org].
+    For more information about Robot Framework itself, see [https://robotframework.org|robotframework.org].
 
     Browser library uses
     [https://github.com/microsoft/playwright|Playwright Node module]
@@ -30,15 +29,15 @@ class Browser(DynamicCore):
 
     %TOC%
 
-    = Locating elements =
+    = Finding elements =
 
-    All keywords in Browser library that need to interact with an element
+    All keywords in hte library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
     how to find the element.
 
-    == Locator syntax ==
+    == Selector syntax ==
 
-    Browser library supports same selector strategies as the underlying
+    Browser library supports the same selector strategies as the underlying
     Playwright node module: xpath, css, id and text. The strategy can either
     be explicitly specified with a prefix or the strategy can be implicit.
 
@@ -76,23 +75,23 @@ class Browser(DynamicCore):
     can optionally assert.
     Currently supported assertion operators are:
 
-    |      = Operator =               |              = Descrition =                          |
-    | ``==`` or ``should be``         | equal                                                |
-    | ``!=`` or ``should not be``     | not equal                                            |
-    | ``>``                           | greater than                                         |
-    | ``>=``                          | greater than or equal                                |
-    | ``<``                           | less than                                            |
-    | ``<=``                          | less than or equal                                   |
-    | ``*=`` or ``contains``          | for checking that a value contains an element        |
-    | ``matches``                     | for matching against a regular expression.           |
-    | ``^=`` or ``should start with`` | starts with                                          |
-    | ``$=`` or ``should end with``   | ends with                                            |
-    | ``validate``                    | use BuiltIn Evaluate. Access to actual with ``value``|
+    |      = Operator =               |              = Description =                          |
+    | ``==`` or ``should be``         | equal                                                 |
+    | ``!=`` or ``should not be``     | not equal                                             |
+    | ``>``                           | greater than                                          |
+    | ``>=``                          | greater than or equal                                 |
+    | ``<``                           | less than                                             |
+    | ``<=``                          | less than or equal                                    |
+    | ``*=`` or ``contains``          | for checking that a value contains an element         |
+    | ``matches``                     | for matching against a regular expression.            |
+    | ``^=`` or ``should start with`` | starts with                                           |
+    | ``$=`` or ``should end with``   | ends with                                             |
+    | ``validate``                    | use BuiltIn Evaluate. Access to actual with ``value`` |
 
     Assertion value can be any valid robot value, and the keywords will provide an error
     message if the assertion fails.
 
-    = ``then`` closure =
+    = The 'then' closure =
 
     Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
     can optionally also use ``then`` closure to modify the returned value with
@@ -141,6 +140,8 @@ class Browser(DynamicCore):
 
     def start_keyword(self, name, attrs):
         """Take screenshot of tests that have failed due to timeout.
+
+        This method is part of the Listener API implemented by the library.
 
         This can be done with BuiltIn keyword `Run Keyword If Timeout
         Occurred`, but the problem there is that you have to remember to

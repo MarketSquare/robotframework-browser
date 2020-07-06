@@ -24,9 +24,9 @@ class Getters:
         assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
         assertion_expected: Any = None,
     ) -> str:
-        """ Returns current URL.
+        """Returns the current URL.
 
-            Optionally asserts that it matches the specified assertion.
+        Optionally asserts that it matches the specified assertion.
         """
         value = ""
         with self.playwright.grpc_channel() as stub:
@@ -53,9 +53,9 @@ class Getters:
         assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
         assertion_expected: Any = None,
     ):
-        """ Returns current page Title.
+        """Returns the title of the current page.
 
-            Optionally asserts that it matches the specified assertion.
+        Optionally asserts that it matches the specified assertion.
         """
         value = None
         with self.playwright.grpc_channel() as stub:
@@ -71,9 +71,10 @@ class Getters:
         assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
         assertion_expected: Any = None,
     ):
-        """ Returns element's text attribute.
+        """Returns text attribute of the element found by ``selector``.
 
-            Optionally asserts that it matches the specified assertion.
+        Optionally asserts that the elemtn's text matches the specified
+        assertion.
         """
         value = None
         with self.playwright.grpc_channel() as stub:
@@ -94,9 +95,10 @@ class Getters:
         assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
         assertion_expected: Any = None,
     ):
-        """ Returns specified attribute.
+        """Returns ``attribute`` of the element found by ``selector``.
 
-            Optionally asserts that it matches the specified assertion.
+        Optionally asserts that the attribuyte value matches the specified
+        assertion.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
@@ -115,9 +117,9 @@ class Getters:
         assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
         assertion_expected: Any = None,
     ):
-        """ Returns textfieds value.
+        """Returns value of the textfield found by ``selector``.
 
-            Optionally asserts that it matches the specified assertion.
+        Optionally asserts that the value matches the specified assertion.
         """
         return self.get_attribute(
             selector, "value", assertion_operator, assertion_expected
@@ -131,8 +133,7 @@ class Getters:
         assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
         *assertion_expected,
     ):
-
-        """ Returns the specified Attribute of selected Options of the Select List.
+        """Returns the specified attribute of selected options of the ``select`` element.
 
         Optionally asserts that these match the specified assertion.
 
@@ -216,12 +217,12 @@ class Getters:
         assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
         state: bool = False,
     ):
-        """ Returns the specified the checkbox state as boolean value.
+        """Returns the state of the checkbox found by ``selector``.
 
         - ``checked`` => ``True``
         - ``unchecked`` => ``False``
 
-        Optionally asserts that these match the specified assertion.
+        Optionally asserts that the state matches the specified assertion.
 
         ``assertion_operator`` see `Assertions`.
 

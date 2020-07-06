@@ -15,9 +15,8 @@ class Validation:
     @keyword  # Optional[str] didn't seem to work for text param here
     def page_should_have(self, selector: str, text=""):
         """Verifies that current page contains an element matching ``selector``.
-            Optionally verifies that the element contains ``text``
-            Page_should_contain keyword is syntactic sugar for page_should_have
 
+        Optionally verifies that the element contains ``text``.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTextContent(Request().selector(selector=selector))

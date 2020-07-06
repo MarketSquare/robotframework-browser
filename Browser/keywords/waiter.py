@@ -31,7 +31,7 @@ class Waiter:
         state: ElementState = ElementState.visible,
         timeout: Optional[str] = None,
     ):
-        """ Wait for the element with the specified selector to satisfy state option.
+        """Waits for the element found by ``selector`` to satisfy state option.
 
         State options could be either appear/disappear from dom, or become visible/hidden.
         If at the moment of calling the keyword, the selector already satisfies the condition,

@@ -18,10 +18,12 @@ class Control:
     @keyword
     def open_browser(self, url=None, browser="Chromium", headless: bool = True):
         """Opens a new browser instance.
-        The optional ``url`` argument specifies what to open.
+
+        If ``url`` is provided, navigates there.
+
         The optional ``browser`` argument specifies which browser to use. The
         supported browsers are listed in the table below. The browser names
-        are case-insensitive and some browsers have multiple supported names.
+        are case-insensitive.
         |   = Browser =   |        = Name(s) =        |
         | Firefox         | firefox                   |
         | Chromium        | chromium                  |
@@ -51,29 +53,30 @@ class Control:
 
     @keyword
     def go_forward(self):
-        """Navigate to the next page in history."""
+        """Navigates to the next page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoForward(Request.Empty())
             logger.info(response.log)
 
     @keyword
     def go_back(self):
-        """Navigate to the previous page in history."""
+        """Navigates to the previous page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoBack(Request.Empty())
             logger.info(response.log)
 
     @keyword
     def go_to(self, url: str):
-        """Navigates the current browser tab to the provided ``url``."""
+        """Navigates to the given ``url``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(Request().goTo(url=url))
             logger.info(response.log)
 
     @keyword
     def take_page_screenshot(self, path: Optional[str] = None):
-        """ Take screenshot of current browser state and saves it to path.
-            By default saves to robot output dir.
+        """Takes screenshot of the current window and saves it to ``path``.
+
+        The default path is the Robot Framework output directory.
         """
         if path is None:
             path = self.library.get_screenshot_path
@@ -84,9 +87,9 @@ class Control:
 
     @keyword
     def set_timeout(self, timeout: str):
-        """ Sets the timeout that is used by most input and getter keywords.
+        """Sets the timeout used by most input and getter keywords.
 
-            Technically this is the timeout of current playwright context.
+        Technically this is the timeout of current playwright context.
         """
         parsed_timeout = float(timestr_to_secs(timeout)) * 1000
         with self.playwright.grpc_channel() as stub:

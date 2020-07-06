@@ -42,7 +42,7 @@ class Input:
     def type_text(
         self, selector: str, text: str, delay: str = "0 ms", clear: bool = True
     ):
-        """ Types the given ``text`` into the text field identified by ``selector``.
+        """Types the given ``text`` into the text field found by ``selector``.
 
         Sends a ``keydown``, ``keypress/input``, and ``keyup`` event for each
         character in the text.
@@ -65,16 +65,17 @@ class Input:
 
     @keyword
     def fill_text(self, selector: str, text: str):
-        """ Clears and Fills the given ``text`` into the text field identified by ``selector``.
+        """Clears and fills the given ``text`` into the text field found by ``selector``.
 
-        This method waits for an element matching selector, waits for
-        actionability checks, focuses the element, fills it and triggers an
-        input event after filling. If the element matching selector is not
-        an <input>, <textarea> or [contenteditable] element, this method
-        throws an error. Note that you can pass an empty string to clear
-        the input field.
+        This method waits for an element matching the ``selector`` to appear,
+        waits for actionability checks, focuses the element, fills it and
+        triggers an input event after filling.
 
-        See `Type Text` for keyboard like typing of single characters.
+        If the element matching selector is not an <input>, <textarea> or
+        [contenteditable] element, this method throws an error. Note that
+        you can pass an empty string as ``text`` to clear the input field.
+
+        See `Type Text` for emulating typing text character by character.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(Request().fillText(selector=selector, text=text))
@@ -82,9 +83,9 @@ class Input:
 
     @keyword
     def clear_text(self, selector: str):
-        """ Clears the text field identified by ``selector``.
+        """Clears the text field found by ``selector``.
 
-        See `Type Text` for keyboard like typing of single characters.
+        See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
         """
         with self.playwright.grpc_channel() as stub:
@@ -95,7 +96,10 @@ class Input:
     def type_secret(
         self, selector: str, secret: str, delay: str = "0 ms", clear: bool = True
     ):
-        """ Types the given ``secret`` into the text field identified by ``selector`` without logging.
+        """Types the given ``secret`` into the text field found by ``selector``.
+
+        The difference to `Type Text` is that this keyword does not log the
+        text to be written into the text field.
 
         See `Type Text` for details.
         """
@@ -107,7 +111,10 @@ class Input:
 
     @keyword
     def fill_secret(self, selector: str, secret: str):
-        """ Fills the given ``secret`` into the text field identified by ``selector`` without logging.
+        """Fills the given ``secret`` into the text field found by ``selector``.
+
+        The difference to `Fill Text` is that this keyword does not log the
+        text to be written into the text field.
 
         See `Fill Text` for details.
         """
@@ -119,16 +126,17 @@ class Input:
 
     @keyword
     def press_keys(self, selector: str, *keys: str):
-        """ Inputs given ``key``s into element specifid by selector.
+        """Types the given key combination into element found by ``selector``.
 
-            Supports values like "a, b" which will be automatically inputted.
-            Also supports identifiers for keys like ``ArrowLeft`` or ``Backspace``.
-            Using + to chain combine modifiers with a single keypress
-            ``Control+Shift+T`` is supported.
+        Supports values like "a, b" which will be automatically typed.
+        .
+        Also supports identifiers for keys like ``ArrowLeft`` or ``Backspace``.
+        Using + to chain combine modifiers with a single keypress
+        ``Control+Shift+T`` is supported.
 
-            See playwright's documentation for a more comprehensive list of
-            supported input keys.
-            [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
+        See playwright's documentation for a more comprehensive list of
+        supported input keys.
+        [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
         """  # noqa
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(Request().press(selector=selector, key=keys))
@@ -136,7 +144,7 @@ class Input:
 
     @keyword
     def click(self, selector: str):
-        """ Clicks element identified by ``selector``. """
+        """Clicks the element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().selector(selector=selector))
             logger.info(response.log)
@@ -152,7 +160,7 @@ class Input:
         position_y: Optional[int] = None,
         *modifiers: KeyboardModifier,
     ):
-        """ Clicks element identified by ``selector``.
+        """Simulates mouse click on the element found by ``selector``.
 
         ``button``: ``<"left"|"right"|"middle">`` Defaults to ``left`` if invalid.
 
@@ -188,10 +196,11 @@ class Input:
 
     @keyword
     def focus(self, selector: str):
-        """ This method fetches an element with selector and focuses it.
+        """Moves focus on to the element found by ``selector``.
 
         If there's no element matching selector, the method waits until a
-        matching element appears in the DOM. """
+        matching element appears in the DOM.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(Request().selector(selector=selector))
             logger.info(response.log)
@@ -207,8 +216,9 @@ class Input:
 
     @keyword
     def check_checkbox(self, selector: str):
-        """ Checks the checkbox or selects radio identified by ``selector``.
-            If already checked does nothing
+        """Checks the checkbox or selects radio button found by ``selector``.
+
+        Does nothing if the element is already checked/selected.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(Request().selector(selector=selector))
@@ -216,8 +226,9 @@ class Input:
 
     @keyword
     def uncheck_checkbox(self, selector: str):
-        """ Unchecks the checkbox identified by ``selector``.
-            If not checked does nothing
+        """Unchecks the checkbox found by ``selector``.
+
+        Does nothing if the element is not checked/selected.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(Request().selector(selector=selector))
@@ -225,12 +236,13 @@ class Input:
 
     @keyword
     def select_options_by(self, attribute: SelectAttribute, selector: str, *values):
-        """ Selects options from selection ``selector``
-            Matches based on the chosen attribute with list of ``values``.
-            Possible attributes to match options by:
-            ``attribute``: ``<"value"|"label"|"text"|"index">``
+        """Selects options from select element found by ``selector``.
 
-            If no values to select are passed will deselect options in element.
+        Matches based on the chosen attribute with list of ``values``.
+        Possible attributes to match options by:
+        ``attribute``: ``<"value"|"label"|"text"|"index">``
+
+        If no values to select are passed will deselect options in element.
         """
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
@@ -251,7 +263,7 @@ class Input:
 
     @keyword
     def deselect_options(self, selector: str):
-        """ Deselects all options from selection ``selector``"""
+        """Deselects all options from select element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(Request().selector(selector=selector))
             logger.info(response.log)
