@@ -3,6 +3,13 @@ import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwr
 import { sendUnaryData, ServerUnaryCall, Server, ServerCredentials } from 'grpc';
 import { Response, Request, SelectEntry } from './generated/playwright_pb';
 
+declare global {
+    interface Window {
+        __RFBROWSER__: <T>(a: T) => T;
+        __RFBROWSER_STATE__: any;
+    }
+}
+
 // This is necessary for improved typescript inference
 /*
  * If obj is not trueish call callback with new Error containing message
@@ -428,7 +435,8 @@ class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.jsResult>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to get page state, no open browser');
-        const result = await this.browserState.page.evaluate('window.__RFBROWSER_STATE__');
+        const result = await this.browserState.page.evaluate(() => window.__RFBROWSER_STATE__);
+        console.log(result);
         const response = new Response.jsResult();
         response.setResult(JSON.stringify(result));
         callback(null, response);

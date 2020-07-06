@@ -22,11 +22,13 @@ export default function Site() {
     }
 
     function PreSubmit() {
+        document.title = "Login Page"
         return <>
         <h1>Login Page</h1>
         <p>Please input your user name and password and click the login button.</p>
         <form name="login_form" onSubmit={handleSubmit} >
             <table>
+                <tbody>
                 <tr>
                     <td><label htmlFor="username_field">User Name:</label></td>
                     <td><input id="username_field" size={30} type="text" onChange={usernameChange} /></td>
@@ -36,9 +38,10 @@ export default function Site() {
                     <td><input id="password_field" size={30} type="password" onChange={passwordChange} /></td>
                 </tr>
                 <tr>
-                    <td>&nbsp;</td>
+                    <td></td>
                     <td><input id="login_button" type="submit" value="LOGIN" /></td>
                 </tr>
+                </tbody>
             </table>
         </form>
     </>

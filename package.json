@@ -39,8 +39,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "demoapp": "tsc && webpack",
+    "build": "tsc && webpack",
     "lint": "eslint 'Browser/**/*.ts' --quiet --fix"
   }
 }

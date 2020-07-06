@@ -63,6 +63,10 @@ jobs:
       with:
         name: artifacts
         path: dist/
+    - uses: actions/upload-artifact@v1
+      with:
+        name: demoapp
+        path: atest/demoapp/html/dist
   test-install:
     needs: build
     runs-on: ubuntu-latest
@@ -76,6 +80,11 @@ jobs:
         uses: actions/download-artifact@v1
         with: 
           name: artifacts 
+      - name: Download package for install testing
+        uses: actions/download-artifact@v1
+        with: 
+          name: demoapp
+          path: atest/demoapp/html/dist
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
