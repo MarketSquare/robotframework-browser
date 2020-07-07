@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const frontConfig = {
     target: 'web',
     mode: 'development',
-    entry: './dynamic-test-app/src/index.tsx',
+    entry: './atest/dynamic-test-app/src/index.tsx',
     devtool: 'inline-source-map',
     performance: { hints: false } ,
     module: {
@@ -19,7 +19,7 @@ const frontConfig = {
     plugins: [
         new HtmlWebpackPlugin({
             title: 'Output Management',
-            template: './dynamic-test-app/static/index.html',
+            template: './atest/dynamic-test-app/static/index.html',
         }),
     ],
     resolve: {
@@ -27,14 +27,14 @@ const frontConfig = {
     },
     output: {
         filename: 'index.js',
-        path: path.resolve(__dirname, './dynamic-test-app/dist')
+        path: path.resolve(__dirname, './atest/dynamic-test-app/dist')
     },
 };
 
 const backConfig = {
     target: 'node',
     mode: 'development',
-    entry: './dynamic-test-app/src/server.ts',
+    entry: './atest/dynamic-test-app/src/server.ts',
     devtool: 'inline-source-map',
     performance: { hints: false } ,
     node: {
@@ -53,7 +53,7 @@ const backConfig = {
     },
     output: {
         filename: 'server.js',
-        path: path.resolve(__dirname, 'dynamic-test-app/dist')
+        path: path.resolve(__dirname, 'atest/dynamic-test-app/dist')
     },
 }
 
