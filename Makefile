@@ -68,7 +68,7 @@ lint: lint-node lint-python lint-robot
 protobuf:
 	mkdir -p Browser/generated/
 	mkdir -p Browser/wrapper/generated/
-	python -m grpc_tools.protoc -Iprotos --python_out=Browser/generated --grpc_python_out=Browser/generated protos/*.proto
+	python -m grpc_tools.protoc -I protobuf --python_out=Browser/generated --grpc_python_out=Browser/generated protobuf/*.proto
 	touch Browser/generated/__init__.py
 	sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Browser.generated import playwright_pb2 as playwright__pb2/g' Browser/generated/playwright_pb2_grpc.py
 	$(rm_cmd) $(backup_files)
@@ -77,14 +77,14 @@ protobuf:
 		--js_out=import_style=commonjs,binary:$(PROTO_DEST) \
 		--grpc_out=$(PROTO_DEST) \
 		--plugin=protoc-gen-grpc=$(PROTOC_GEN_PLUGIN) \
-		-I ./protos \
-		protos/*.proto
+		-I ./protobuf \
+		protobuf/*.proto
 
 	yarn run grpc_tools_node_protoc \
 		--plugin=protoc-gen-ts=$(PROTOC_TS_PLUGIN) \
 		--ts_out=$(PROTO_DEST) \
-		-I ./protos \
-		protos/*.proto
+		-I ./protobuf \
+		protobuf/*.proto
 
 build: protobuf
 	yarn build
