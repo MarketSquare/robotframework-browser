@@ -66,6 +66,11 @@ message Request {
     string options = 2;
   }
 
+  message ElementSelectorWithDuration {
+    string selector = 1;
+    int32 duration = 2;
+  }
+
   message SelectElementSelector {
     string selector = 1;
     string matcherJson = 2;
@@ -150,8 +155,10 @@ service  Playwright {
   rpc Health(Request.Empty) returns (Response.String) {}
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty) {}
-  /* Adds a <style> to head of side. */
+  /* Adds a <style> to head of site. */
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty) {}
+  /* Highlights elements matching selector for duration */
+  rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty) {}
   /* Clicks element specified by selector and options */
   rpc ClickWithOptions(Request.ElementSelectorWithOptions) returns (Response.Empty) {}
   /* Focuses element specified by selector */
