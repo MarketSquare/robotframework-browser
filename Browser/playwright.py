@@ -50,7 +50,7 @@ class Playwright:
         )
 
     def wait_until_server_up(self):
-        for i in range(30):
+        for i in range(50):
             with grpc.insecure_channel(f"localhost:{self.port}") as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
