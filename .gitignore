@@ -3,8 +3,9 @@ Browser/wrapper/package.json
 Browser/generated
 Browser/wrapper/generated
 
-dynamic-test-app/*.js
-*.map
+atest/dynamic-test-app/dist/*.js
+atest/dynamic-test-app/src/*.js
+*.js.map
 
 .idea
 .pabotsuitenames
