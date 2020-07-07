@@ -96,6 +96,29 @@ class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async switchActivePage(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>) {
+        exists(this.browserState, callback, "Tried to switch active page but browser wasn't open");
+        const index = call.request.getIndex();
+        const pages = this.browserState.context.pages();
+        if (pages[index]) {
+            console.log(`Changing active page to ${index}`);
+            try {
+                this.browserState.page = pages[index];
+            } catch (e) {
+                callback(e, null);
+            }
+        } else {
+            // TODO: remove before merging or put behind --debug flag, debug prints
+            console.log(`Existing contexts: ${this.browserState.browser.contexts().length}`);
+            console.log(`Existing pages: ${pages.length}`);
+            const mapped = pages.map((p) => p.url());
+            const pageList = `Pages in current context: ${mapped.join(',')}`;
+            const message = `No page for index ${index}. \n ` + pageList;
+            const e = new Error(message);
+            callback(e, null);
+        }
+    }
+
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to open URl but had no browser open');
         const url = call.request.getUrl();

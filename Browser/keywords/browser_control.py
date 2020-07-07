@@ -115,3 +115,10 @@ class Control:
                 )
             )
             logger.info(response.log)
+
+    @keyword
+    def switch_active_page(self, index: int):
+        """Switches the active browser page to another open page by ``index``"""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SwitchActivePage(Request().Index(index=index))
+            logger.info(response.log)

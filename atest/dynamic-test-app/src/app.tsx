@@ -10,6 +10,10 @@ function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     }, 500)
 }
 
+function popup(event: React.MouseEvent<HTMLButtonElement>) {
+    window.open("../static/popup.html", 'width=400,height=200,scrollbars=yes')
+}
+
 export default function Site() {
     const username = useRef("");
     const password  = useRef("");
@@ -54,8 +58,9 @@ export default function Site() {
                     </tbody>
                 </table>
             </form>
-            <button id="goes_hidden" onClick={event => goesInvisible(event)} >Visible</button>
-    </>
+            <button id="goes_hidden" onClick={goesInvisible} >Visible</button>
+            <button id="pops_up" onClick={popup} >Pops up a window</button>
+        </>
     }
 
     function PostSubmit() {

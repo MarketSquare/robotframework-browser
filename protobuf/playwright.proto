@@ -56,6 +56,9 @@ message Request {
   message Timeout {
     float timeout = 1;
   }
+  message Index {
+    int32 index = 1;
+  }
 
   message StyleTag {
     string content = 1;
@@ -169,4 +172,5 @@ service  Playwright {
   rpc ExecuteJavascriptOnPage(Request.JavascriptCode) returns (Response.JavascriptExecutionResult) {}
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
+  rpc SwitchActivePage(Request.Index) returns (Response.Empty) {}
 }
