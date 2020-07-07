@@ -57,6 +57,8 @@ class Waiter:
                 options["timeout"] = timeout_ms
             options_json = json.dumps(options)
             response = stub.WaitForElementsState(
-                Request().ElementSelector(selector=selector, options=options_json)
+                Request().ElementSelectorWithOptions(
+                    selector=selector, options=options_json
+                )
             )
             logger.info(response.log)
