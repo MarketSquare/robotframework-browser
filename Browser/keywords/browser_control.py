@@ -103,3 +103,15 @@ class Control:
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))
             logger.info(response.log)
+
+    @keyword
+    def highlight_element(self, selector: str, duration: Optional[str] = "5s"):
+        """Adds a red highlight to elements matched by ``selector`` for ``duration``"""
+        with self.playwright.grpc_channel() as stub:
+            duration_ms: int = int(timestr_to_secs(duration) * 1000)
+            response = stub.HighlightElements(
+                Request().ElementSelectorWithDuration(
+                    selector=selector, duration=duration_ms
+                )
+            )
+            logger.info(response.log)

@@ -408,6 +408,38 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
+    async highlightElements(
+        call: ServerUnaryCall<Request.ElementSelectorWithDuration>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        exists(this.browserState, callback, 'Tried to highlight elements, no open browser');
+        const selector = call.request.getSelector();
+        const duration = call.request.getDuration();
+        await this.browserState.page
+            .$$eval(
+                selector,
+                (elements, duration) => {
+                    elements.forEach((e) => {
+                        const d = document.createElement('div');
+                        d.appendChild(document.createTextNode(''));
+                        d.style.position = 'fixed';
+                        const rect = e.getBoundingClientRect();
+                        d.style.top = '' + rect.top + 'px';
+                        d.style.left = '' + rect.left + 'px';
+                        d.style.width = '' + rect.width + 'px';
+                        d.style.height = '' + rect.height + 'px';
+                        d.style.border = '1px solid red';
+                        document.body.appendChild(d);
+                        setTimeout(() => {
+                            d.remove();
+                        }, duration);
+                    });
+                },
+                duration,
+            )
+            .catch((e) => callback(e, null));
+    }
+
     async waitForElementsState(
         call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
         callback: sendUnaryData<Response.Empty>,
