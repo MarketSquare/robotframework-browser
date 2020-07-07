@@ -38,13 +38,13 @@ utest:
 clean:
 	rm -rf atest/output
 atest: clean
-	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --pythonpath . --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
+	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --verbose --pythonpath . --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
 
 atest-global-pythonpath: clean
-	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
+	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
 
 test-failed: build
-	PYTHONPATH=. python -m pabot.pabot --pabotlib --exclude Not-Implemented --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test
+	PYTHONPATH=. python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test
 
 docker:
 	docker build --tag rfbrowser .
