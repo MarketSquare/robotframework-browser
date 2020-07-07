@@ -41,6 +41,17 @@ class Getters:
         assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
         assertion_expected: Any = None,
     ) -> object:
+        """Returns page model state object.
+
+        This must be given on the page to window.__RFBROWSER__
+
+        For example:
+        `
+        let mystate = {'login': true, 'name': 'George', 'age': 123};
+        window.__RFBROWSER__ && window.__RFBROWSER__(mystate);
+        `
+        :return: state
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageState(Request().Empty())
             logger.debug(response.log)
