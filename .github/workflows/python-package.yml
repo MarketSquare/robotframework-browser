@@ -66,7 +66,7 @@ jobs:
     - uses: actions/upload-artifact@v1
       with:
         name: demoapp
-        path: atest/demoapp/html/dist
+        path: dynamic-test-app/dist
   test-install:
     needs: build
     runs-on: ubuntu-latest
@@ -84,7 +84,7 @@ jobs:
         uses: actions/download-artifact@v1
         with: 
           name: demoapp
-          path: atest/demoapp/html/dist
+          path: dynamic-test-app/dist
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
