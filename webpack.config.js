@@ -1,12 +1,16 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-const frontConfig = {
-    target: 'web',
+const sharedAll = {
     mode: 'development',
-    entry: './atest/dynamic-test-app/src/index.tsx',
     devtool: 'inline-source-map',
     performance: { hints: false } ,
+    stats: 'minimal'
+}
+
+const testappFrontend = {
+    entry: './atest/dynamic-test-app/src/index.tsx',
+    target: 'web',
     module: {
         rules: [
             {
@@ -29,14 +33,11 @@ const frontConfig = {
         filename: 'index.js',
         path: path.resolve(__dirname, './atest/dynamic-test-app/dist')
     },
+    ...sharedAll
 };
 
-const backConfig = {
+const sharedNode = {
     target: 'node',
-    mode: 'development',
-    entry: './atest/dynamic-test-app/src/server.ts',
-    devtool: 'inline-source-map',
-    performance: { hints: false } ,
     node: {
         __filename: true,
         __dirname: true
@@ -51,10 +52,26 @@ const backConfig = {
             },
         ],
     },
+}
+
+const testappBackend = {
+    entry: './atest/dynamic-test-app/src/server.ts',
     output: {
         filename: 'server.js',
         path: path.resolve(__dirname, 'atest/dynamic-test-app/dist')
     },
+    ...sharedNode,
+    ...sharedAll,
 }
 
-module.exports = [frontConfig, backConfig]
+const playwrightWrapper = {
+    entry: './Browser/wrapper/index.ts',
+    output: {
+        filename: 'index.js',
+        path: path.resolve(__dirname, 'Browser/wrapper')
+    },
+    ...sharedNode,
+    ...sharedAll,
+}
+
+module.exports = [testappFrontend, testappBackend, playwrightWrapper]
