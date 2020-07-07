@@ -57,7 +57,7 @@ class Input:
         with self.playwright.grpc_channel() as stub:
             delay_ms = timestr_to_secs(delay) * 1000
             response = stub.TypeText(
-                Request().typeText(
+                Request().TypeText(
                     selector=selector, text=text, delay=int(delay_ms), clear=clear
                 )
             )
@@ -78,7 +78,7 @@ class Input:
         See `Type Text` for emulating typing text character by character.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.FillText(Request().fillText(selector=selector, text=text))
+            response = stub.FillText(Request().FillText(selector=selector, text=text))
             logger.info(response.log)
 
     @keyword
@@ -89,7 +89,7 @@ class Input:
         See `Fill Text` for direct filling of the full text at once.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ClearText(Request().clearText(selector=selector))
+            response = stub.ClearText(Request().ClearText(selector=selector))
             logger.info(response.log)
 
     @keyword
@@ -139,14 +139,14 @@ class Input:
         [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
         """  # noqa
         with self.playwright.grpc_channel() as stub:
-            response = stub.Press(Request().press(selector=selector, key=keys))
+            response = stub.Press(Request().PressKeys(selector=selector, key=keys))
             logger.info(response.log)
 
     @keyword
     def click(self, selector: str):
         """Clicks the element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
-            response = stub.Click(Request().selector(selector=selector))
+            response = stub.Click(Request().ElementSelector(selector=selector))
             logger.info(response.log)
 
     @keyword
@@ -190,7 +190,9 @@ class Input:
             options_json = json.dumps(options)
             logger.debug(f"Click Options are: {options_json}")
             response = stub.Click(
-                Request().selectorOptions(selector=selector, options=options_json)
+                Request().ElementSelectorOptions(
+                    selector=selector, options=options_json
+                )
             )
             logger.info(response.log)
 
@@ -202,14 +204,14 @@ class Input:
         matching element appears in the DOM.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.Focus(Request().selector(selector=selector))
+            response = stub.Focus(Request().ElementSelector(selector=selector))
             logger.info(response.log)
 
     @keyword
     def execute_javascript_on_page(self, script: str) -> Any:
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascriptOnPage(
-                Request().jsExecution(script=script)
+                Request().JavascriptCode(script=script)
             )
             logger.info(response.log)
             return json.loads(response.result)
@@ -221,7 +223,7 @@ class Input:
         Does nothing if the element is already checked/selected.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.CheckCheckbox(Request().selector(selector=selector))
+            response = stub.CheckCheckbox(Request().ElementSelector(selector=selector))
             logger.info(response.log)
 
     @keyword
@@ -231,7 +233,9 @@ class Input:
         Does nothing if the element is not checked/selected.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.UncheckCheckbox(Request().selector(selector=selector))
+            response = stub.UncheckCheckbox(
+                Request().ElementSelector(selector=selector)
+            )
             logger.info(response.log)
 
     @keyword
@@ -257,7 +261,7 @@ class Input:
             matchers = json.dumps([{"index": int(s)} for s in values])
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
-                Request().selectOption(selector=selector, matcherJson=matchers)
+                Request().SelectElementSelector(selector=selector, matcherJson=matchers)
             )
             logger.info(response.log)
 
@@ -265,5 +269,5 @@ class Input:
     def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
-            response = stub.DeselectOption(Request().selector(selector=selector))
+            response = stub.DeselectOption(Request().ElementSelector(selector=selector))
             logger.info(response.log)

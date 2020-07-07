@@ -80,7 +80,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async openBrowser(
-        call: ServerUnaryCall<Request.openBrowser>,
+        call: ServerUnaryCall<Request.NewBrowser>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         const browserType = call.request.getBrowser();
@@ -96,7 +96,7 @@ class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    async goTo(call: ServerUnaryCall<Request.goTo>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to open URl but had no browser open');
         const url = call.request.getUrl();
         console.log('Go to URL: ' + url);
@@ -144,7 +144,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async getTextContent(
-        call: ServerUnaryCall<Request.selector>,
+        call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to find text on page, no open browser');
@@ -160,7 +160,7 @@ class PlaywrightServer implements IPlaywrightServer {
 
     // TODO: work some of getDomProperty and getBoolProperty's duplicate code into a root function
     async getSelectContent(
-        call: ServerUnaryCall<Request.selector>,
+        call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Select>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to get Select element contents, no open browser');
@@ -185,7 +185,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async selectOption(
-        call: ServerUnaryCall<Request.selectOption>,
+        call: ServerUnaryCall<Request.SelectElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to select ``select`` element options, no open browser');
@@ -206,7 +206,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async deselectOption(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>) {
+    async deselectOption(call: ServerUnaryCall<Request.ElementSelector>, callback: sendUnaryData<Response.Empty>) {
         exists(this.browserState, callback, 'Tried to deselect ``select`` element options, no open browser');
         const selector = call.request.getSelector();
         await this.browserState.page.selectOption(selector, []).catch((e) => callback(e, null));
@@ -214,7 +214,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, emptyWithLog(`Deselected options in element ${selector}`));
     }
 
-    async _getDomProperty<T>(call: ServerUnaryCall<Request.getDomProperty>, callback: sendUnaryData<T>) {
+    async _getDomProperty<T>(call: ServerUnaryCall<Request.ElementProperty>, callback: sendUnaryData<T>) {
         exists(this.browserState, callback, 'Tried to get DOM property, no open browser');
         const selector = call.request.getSelector();
         const property = call.request.getProperty();
@@ -235,7 +235,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async getDomProperty(
-        call: ServerUnaryCall<Request.getDomProperty>,
+        call: ServerUnaryCall<Request.ElementProperty>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         const content = await this._getDomProperty(call, callback).catch((e) => callback(e, null));
@@ -245,7 +245,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async getBoolProperty(
-        call: ServerUnaryCall<Request.getDomProperty>,
+        call: ServerUnaryCall<Request.ElementProperty>,
         callback: sendUnaryData<Response.Bool>,
     ): Promise<void> {
         const content = await this._getDomProperty(call, callback).catch((e) => callback(e, null));
@@ -254,7 +254,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async inputText(call: ServerUnaryCall<Request.inputText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async inputText(call: ServerUnaryCall<Request.TextInput>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const inputText = call.request.getInput();
         const selector = call.request.getSelector();
@@ -269,7 +269,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async typeText(call: ServerUnaryCall<Request.typeText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async typeText(call: ServerUnaryCall<Request.TypeText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to type text, no open browser');
         const selector = call.request.getSelector();
         const text = call.request.getText();
@@ -284,7 +284,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async fillText(call: ServerUnaryCall<Request.fillText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async fillText(call: ServerUnaryCall<Request.FillText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to fill text, no open browser');
         const selector = call.request.getSelector();
         const text = call.request.getText();
@@ -294,7 +294,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async clearText(call: ServerUnaryCall<Request.clearText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async clearText(call: ServerUnaryCall<Request.ClearText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to clear text field, no open browser');
         const selector = call.request.getSelector();
         await this.browserState.page.fill(selector, '').catch((e) => callback(e, null));
@@ -303,7 +303,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async press(call: ServerUnaryCall<Request.press>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async press(call: ServerUnaryCall<Request.PressKeys>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to input text, no open browser');
         const selector = call.request.getSelector();
         const keyList = call.request.getKeyList();
@@ -314,7 +314,10 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async click(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async click(
+        call: ServerUnaryCall<Request.ElementSelector>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
         exists(this.browserState, callback, 'Tried to click element, no open browser');
 
         const selector = call.request.getSelector();
@@ -324,7 +327,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async clickWithOptions(
-        call: ServerUnaryCall<Request.selectorOptions>,
+        call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to click element, no open browser');
@@ -336,7 +339,10 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async focus(call: ServerUnaryCall<Request.selector>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async focus(
+        call: ServerUnaryCall<Request.ElementSelector>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
         exists(this.browserState, callback, 'Tried to focus element, no open browser');
 
         const selector = call.request.getSelector();
@@ -346,7 +352,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async checkCheckbox(
-        call: ServerUnaryCall<Request.selector>,
+        call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to check checkbox, no open browser');
@@ -356,7 +362,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
     async uncheckCheckbox(
-        call: ServerUnaryCall<Request.selector>,
+        call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to uncheck checkbox, no open browser');
@@ -366,7 +372,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async setTimeout(call: ServerUnaryCall<Request.timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async setTimeout(call: ServerUnaryCall<Request.Timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to set timeout, no open browser');
         const timeout = call.request.getTimeout();
         this.browserState.context.setDefaultTimeout(timeout);
@@ -380,8 +386,8 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async screenshot(
-        call: ServerUnaryCall<Request.screenshot>,
+    async takeScreenshot(
+        call: ServerUnaryCall<Request.ScreenshotPath>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to take screenshot, no open browser');
@@ -394,10 +400,7 @@ class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async addStyleTag(
-        call: ServerUnaryCall<Request.addStyleTag>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
+    async addStyleTag(call: ServerUnaryCall<Request.StyleTag>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         exists(this.browserState, callback, 'Tried to add style tag, no open browser');
         const content = call.request.getContent();
         await this.browserState.page.addStyleTag({ content: content });
@@ -406,7 +409,7 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async waitForElementsState(
-        call: ServerUnaryCall<Request.selectorOptions>,
+        call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to wait for an element, no open browser');
@@ -422,12 +425,12 @@ class PlaywrightServer implements IPlaywrightServer {
     }
 
     async executeJavascriptOnPage(
-        call: ServerUnaryCall<Request.jsExecution>,
-        callback: sendUnaryData<Response.jsResult>,
+        call: ServerUnaryCall<Request.JavascriptCode>,
+        callback: sendUnaryData<Response.JavascriptExecutionResult>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to execute js, no open browser');
         const result = await this.browserState.page.evaluate(call.request.getScript());
-        const response = new Response.jsResult();
+        const response = new Response.JavascriptExecutionResult();
         response.setLog('DUMMY');
         response.setResult(JSON.stringify(result));
         callback(null, response);
@@ -435,12 +438,12 @@ class PlaywrightServer implements IPlaywrightServer {
 
     async getPageState(
         call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.jsResult>,
+        callback: sendUnaryData<Response.JavascriptExecutionResult>,
     ): Promise<void> {
         exists(this.browserState, callback, 'Tried to get page state, no open browser');
         const result = await this.browserState.page.evaluate(() => window.__RFBROWSER__);
         console.log(result);
-        const response = new Response.jsResult();
+        const response = new Response.JavascriptExecutionResult();
         response.setResult(JSON.stringify(result));
         callback(null, response);
     }

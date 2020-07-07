@@ -38,9 +38,7 @@ class Control:
             )
         with self.playwright.grpc_channel() as stub:
             response = stub.OpenBrowser(
-                Request().openBrowser(
-                    url=url or "", browser=browser_, headless=headless
-                )
+                Request().NewBrowser(url=url or "", browser=browser_, headless=headless)
             )
             logger.info(response.log)
 
@@ -69,7 +67,7 @@ class Control:
     def go_to(self, url: str):
         """Navigates to the given ``url``."""
         with self.playwright.grpc_channel() as stub:
-            response = stub.GoTo(Request().goTo(url=url))
+            response = stub.GoTo(Request().Url(url=url))
             logger.info(response.log)
 
     @keyword
@@ -82,7 +80,7 @@ class Control:
             path = self.library.get_screenshot_path
         logger.info(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
-            response = stub.Screenshot(Request().screenshot(path=path))
+            response = stub.TakeScreenshot(Request().ScreenshotPath(path=path))
             logger.info(response.log)
 
     @keyword
@@ -93,7 +91,7 @@ class Control:
         """
         parsed_timeout = float(timestr_to_secs(timeout)) * 1000
         with self.playwright.grpc_channel() as stub:
-            response = stub.SetTimeout(Request().timeout(timeout=parsed_timeout))
+            response = stub.SetTimeout(Request().Timeout(timeout=parsed_timeout))
             logger.info(response.log)
 
     @keyword
@@ -103,5 +101,5 @@ class Control:
         ``content``: Raw CSS content to be injected into frame.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.AddStyleTag(Request().addStyleTag(content=content))
+            response = stub.AddStyleTag(Request().StyleTag(content=content))
             logger.info(response.log)

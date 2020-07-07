@@ -79,7 +79,7 @@ class Getters:
         value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                Request().getDomProperty(selector=selector, property="innerText")
+                Request().ElementProperty(selector=selector, property="innerText")
             )
             logger.debug(response.log)
             value = response.body
@@ -102,7 +102,7 @@ class Getters:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                Request().getDomProperty(selector=selector, property=attribute)
+                Request().ElementProperty(selector=selector, property=attribute)
             )
             logger.debug(response.log)
             value = response.body
@@ -160,7 +160,9 @@ class Getters:
         """
         selected = list()
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetSelectContent(Request().selector(selector=selector))
+            response = stub.GetSelectContent(
+                Request().ElementSelector(selector=selector)
+            )
             logger.info(response)
 
             expected = list(assertion_expected)
@@ -237,7 +239,7 @@ class Getters:
 
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
-                Request().getDomProperty(selector=selector, property="checked")
+                Request().ElementProperty(selector=selector, property="checked")
             )
             logger.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
             value: bool = response.body

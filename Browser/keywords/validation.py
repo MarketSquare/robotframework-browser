@@ -19,7 +19,7 @@ class Validation:
         Optionally verifies that the element contains ``text``.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetTextContent(Request().selector(selector=selector))
+            response = stub.GetTextContent(Request().ElementSelector(selector=selector))
             logger.info(response.log)
             if response.body == "":
                 message = "No element matching selector `{}` on page".format(selector)
