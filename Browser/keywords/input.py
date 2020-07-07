@@ -210,9 +210,6 @@ class Input:
     @keyword
     def execute_javascript_on_page(self, script: str) -> Any:
         """Executes given javascript on the page.
-
-        :param script:
-        :return: script return value
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascriptOnPage(
