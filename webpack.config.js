@@ -5,12 +5,10 @@ const sharedAll = {
     mode: 'development',
     devtool: 'inline-source-map',
     performance: { hints: false } ,
-    stats: 'minimal'
-}
-
-const testappFrontend = {
-    entry: './atest/dynamic-test-app/src/index.tsx',
-    target: 'web',
+    stats: 'minimal',
+    resolve: {
+        extensions: [ '.tsx', '.ts', '.js' ],
+    },
     module: {
         rules: [
             {
@@ -20,15 +18,18 @@ const testappFrontend = {
             },
         ],
     },
+}
+
+const testappFrontend = {
+    entry: './atest/dynamic-test-app/src/index.tsx',
+    target: 'web',
+
     plugins: [
         new HtmlWebpackPlugin({
             title: 'Output Management',
             template: './atest/dynamic-test-app/static/index.html',
         }),
     ],
-    resolve: {
-        extensions: [ '.tsx', '.ts', '.js' ],
-    },
     output: {
         filename: 'index.js',
         path: path.resolve(__dirname, './atest/dynamic-test-app/dist')
@@ -41,16 +42,6 @@ const sharedNode = {
     node: {
         __filename: true,
         __dirname: true
-    },
-
-    module: {
-        rules: [
-            {
-                test: /\.tsx?$/,
-                use: 'ts-loader',
-                exclude: /node_modules/,
-            },
-        ],
     },
 }
 
@@ -69,6 +60,9 @@ const playwrightWrapper = {
     output: {
         filename: 'index.js',
         path: path.resolve(__dirname, 'Browser/wrapper')
+    },
+    externals: {
+        grpc: 'commonjs grpc',
     },
     ...sharedNode,
     ...sharedAll,
