@@ -96,26 +96,35 @@ class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async _switchPage(pages: Array<Page>, index: number, callback: sendUnaryData<Response.Empty>) {
+        exists(this.browserState, callback, "Tried to switch active page but browser wasn't open");
+        console.log(`Changing active page to ${index}`);
+        try {
+            this.browserState.page = pages[index];
+        } catch (e) {
+            callback(e, null);
+        }
+    }
     async switchActivePage(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>) {
         exists(this.browserState, callback, "Tried to switch active page but browser wasn't open");
         const index = call.request.getIndex();
         const pages = this.browserState.context.pages();
         if (pages[index]) {
-            console.log(`Changing active page to ${index}`);
-            try {
-                this.browserState.page = pages[index];
-            } catch (e) {
-                callback(e, null);
-            }
+            this._switchPage(pages, index, callback);
         } else {
-            // TODO: remove before merging or put behind --debug flag, debug prints
-            console.log(`Existing contexts: ${this.browserState.browser.contexts().length}`);
-            console.log(`Existing pages: ${pages.length}`);
-            const mapped = pages.map((p) => p.url());
-            const pageList = `Pages in current context: ${mapped.join(',')}`;
-            const message = `No page for index ${index}. \n ` + pageList;
-            const e = new Error(message);
-            callback(e, null);
+            try {
+                await this.browserState.context.waitForEvent('page');
+                this._switchPage(pages, index, callback);
+            } catch (e) {
+                // TODO: remove before merging or put behind --debug flag, debug prints
+                console.log(`Existing contexts: ${this.browserState.browser.contexts().length}`);
+                console.log(`Existing pages: ${pages.length}`);
+                const mapped = pages.map((p) => p.url());
+                const pageList = `Pages in current context: ${mapped.join(',')}`;
+                const message = `No page for index ${index}. \n ` + pageList;
+                const error = new Error(message);
+                callback(error, null);
+            }
         }
     }
 
