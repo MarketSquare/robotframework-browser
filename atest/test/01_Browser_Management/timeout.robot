@@ -3,7 +3,6 @@ Library           Browser    timeout=1ms
 Resource          ../variables.resource
 Suite Setup       Open Browser    url=${None}    browser=${BROWSER}    headless=${HEADLESS}
 Suite Teardown    Close Browser
-#Force Tags       Not-Implemented
 
 *** Test Cases ***
 Test GoTo With Short Default Timeout
