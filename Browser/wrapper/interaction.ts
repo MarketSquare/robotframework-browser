@@ -3,7 +3,7 @@ import { Page } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
 import { invokePlaywright } from './playwirght-util';
-import { emptyWithLog, jsResponse } from './response-util';
+import { emptyWithLog } from './response-util';
 
 export async function selectOption(
     call: ServerUnaryCall<Request.SelectElementSelector>,
@@ -145,29 +145,4 @@ export async function uncheckCheckbox(
     const selector = call.request.getSelector();
     await invokePlaywright(page, callback, 'uncheck', selector);
     callback(null, emptyWithLog('Unchecked checkbox: ' + selector));
-}
-
-export async function waitForElementState(
-    call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
-    callback: sendUnaryData<Response.Empty>,
-    page?: Page,
-) {
-    const selector = call.request.getSelector();
-    const options = JSON.parse(call.request.getOptions());
-    await invokePlaywright(page, callback, 'waitForSelector', selector, options);
-    callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
-}
-
-export async function executeJavascriptOnPage(
-    call: ServerUnaryCall<Request.JavascriptCode>,
-    callback: sendUnaryData<Response.JavascriptExecutionResult>,
-    page?: Page,
-) {
-    const result = await invokePlaywright(page, callback, 'evaluate', call.request.getScript());
-    callback(null, jsResponse(result));
-}
-
-export async function getPageState(callback: sendUnaryData<Response.JavascriptExecutionResult>, page?: Page) {
-    const result = await invokePlaywright(page, callback, 'evaluate', () => window.__RFBROWSER__);
-    callback(null, jsResponse(result));
 }

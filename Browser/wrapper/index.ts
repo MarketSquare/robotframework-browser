@@ -2,6 +2,7 @@ import { sendUnaryData, ServerUnaryCall, Server, ServerCredentials } from 'grpc'
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 
 import * as browserControl from './browser-control';
+import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
@@ -116,10 +117,6 @@ class PlaywrightServer implements IPlaywrightServer {
         browserControl.setTimeout(call, callback, this.browserState?.context);
     }
 
-    async addStyleTag(call: ServerUnaryCall<Request.StyleTag>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserControl.addStyleTag(call, callback, this.browserState?.page);
-    }
-
     async getTitle(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         getters.getTitle(callback, this.browserState?.page);
     }
@@ -222,6 +219,31 @@ class PlaywrightServer implements IPlaywrightServer {
         interaction.uncheckCheckbox(call, callback, this.browserState?.page);
     }
 
+    async addStyleTag(call: ServerUnaryCall<Request.StyleTag>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        evaluation.addStyleTag(call, callback, this.browserState?.page);
+    }
+
+    async waitForElementsState(
+        call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        evaluation.waitForElementState(call, callback, this.browserState?.page);
+    }
+
+    async executeJavascriptOnPage(
+        call: ServerUnaryCall<Request.JavascriptCode>,
+        callback: sendUnaryData<Response.JavascriptExecutionResult>,
+    ): Promise<void> {
+        evaluation.executeJavascriptOnPage(call, callback, this.browserState?.page);
+    }
+
+    async getPageState(
+        call: ServerUnaryCall<Request.Empty>,
+        callback: sendUnaryData<Response.JavascriptExecutionResult>,
+    ): Promise<void> {
+        evaluation.getPageState(callback, this.browserState?.page);
+    }
+
     async health(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         const response = new Response.String();
         response.setBody('OK');
@@ -232,53 +254,7 @@ class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementSelectorWithDuration>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        exists(this.browserState, callback, 'Tried to highlight elements, no open browser');
-        const selector = call.request.getSelector();
-        const duration = call.request.getDuration();
-        await this.browserState.page
-            .$$eval(
-                selector,
-                (elements, duration) => {
-                    elements.forEach((e) => {
-                        const d = document.createElement('div');
-                        d.appendChild(document.createTextNode(''));
-                        d.style.position = 'fixed';
-                        const rect = e.getBoundingClientRect();
-                        d.style.top = '' + rect.top + 'px';
-                        d.style.left = '' + rect.left + 'px';
-                        d.style.width = '' + rect.width + 'px';
-                        d.style.height = '' + rect.height + 'px';
-                        d.style.border = '1px solid red';
-                        document.body.appendChild(d);
-                        setTimeout(() => {
-                            d.remove();
-                        }, duration);
-                    });
-                },
-                duration,
-            )
-            .catch((e) => callback(e, null));
-    }
-
-    async waitForElementsState(
-        call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        interaction.waitForElementState(call, callback, this.browserState?.page);
-    }
-
-    async executeJavascriptOnPage(
-        call: ServerUnaryCall<Request.JavascriptCode>,
-        callback: sendUnaryData<Response.JavascriptExecutionResult>,
-    ): Promise<void> {
-        interaction.executeJavascriptOnPage(call, callback, this.browserState?.page);
-    }
-
-    async getPageState(
-        call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.JavascriptExecutionResult>,
-    ): Promise<void> {
-        interaction.getPageState(callback, this.browserState?.page);
+        evaluation.highlightElements(call, callback, this.browserState?.page);
     }
 }
 
