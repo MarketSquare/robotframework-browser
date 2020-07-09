@@ -5,6 +5,13 @@ import { Response, Request } from './generated/playwright_pb';
 import { invokePlaywright } from './playwirght-util';
 import { emptyWithLog, jsResponse } from './response-util';
 
+declare global {
+    interface Window {
+        __SET_RFBROWSER__: <T>(a: T) => T;
+        __RFBROWSER__: any;
+    }
+}
+
 export async function executeJavascriptOnPage(
     call: ServerUnaryCall<Request.JavascriptCode>,
     callback: sendUnaryData<Response.JavascriptExecutionResult>,
