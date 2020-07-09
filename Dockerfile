@@ -12,7 +12,6 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install -r requirements.txt
 
 FROM BrowserBase AS BrowserBuilder
-WORKDIR /app
 RUN \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list && \
     wget -qO- https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
@@ -20,19 +19,13 @@ RUN \
     apt-get install -yqq yarn && \
     pip install pipenv && \
     rm -rf /var/lib/apt/lists/*
-COPY dev-requirements.txt /app/dev-requirements.txt
-RUN pip install -r dev-requirements.txt
-COPY package.json /app/package.json
-COPY yarn.lock /app/yarn.lock
-RUN yarn install
+WORKDIR /app
 COPY . /app
-RUN \
-    make build && \
-    rm -rf dist/ && \
-	cp package.json Browser/wrapper && \
-	python setup.py sdist bdist_wheel
+RUN pip install -r dev-requirements.txt
+RUN yarn install
+RUN make package
 
-FROM BrowserBase
+FROM BrowserBase AS CleanInstallTester
 WORKDIR /app
 # Install WebKit dependencies
 RUN apt-get update && apt-get install -y libwoff1 \
