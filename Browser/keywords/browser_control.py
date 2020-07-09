@@ -118,7 +118,17 @@ class Control:
 
     @keyword
     def switch_active_page(self, index: int):
-        """Switches the active browser page to another open page by ``index``"""
+        """Switches the active browser page to another open page by ``index``.
+
+            Newly opened pages are at the beginning of the list.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchActivePage(Request().Index(index=index))
+            logger.info(response.log)
+
+    @keyword
+    def focus_next_page(self):
+        """Toggles automatically changing active page to latest opened page """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.FocusNextPage(Request().Empty())
             logger.info(response.log)

@@ -62,10 +62,24 @@ async function switchPage(
     console.log(`Changing active page to ${index}`);
     try {
         browserState.page = pages[index];
+        callback(null, emptyWithLog('Succesfully changed active page'));
     } catch (e) {
         callback(e, null);
     }
 }
+
+export async function focusNextPage(
+    call: ServerUnaryCall<Request.Empty>,
+    callback: sendUnaryData<Response.Empty>,
+    browserState?: BrowserState,
+) {
+    exists(browserState, callback, 'Tried to focus next opened page');
+    browserState.context.waitForEvent('page').then((page) => {
+        browserState.page = page;
+    });
+    callback(null, emptyWithLog("Set eventhandler for 'page' events"));
+}
+
 export async function switchActivePage(
     call: ServerUnaryCall<Request.Index>,
     callback: sendUnaryData<Response.Empty>,

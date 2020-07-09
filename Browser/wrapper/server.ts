@@ -83,6 +83,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         browserControl.switchActivePage(call, callback, this.browserState);
     }
 
+    async focusNextPage(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        browserControl.focusNextPage(call, callback, this.browserState);
+    }
+
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         browserControl.goTo(call, callback, this.browserState?.page);
     }
