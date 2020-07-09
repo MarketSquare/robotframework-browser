@@ -12,6 +12,12 @@ export function stringResponse(body: string) {
     return response;
 }
 
+export function intResponse(body: number) {
+    const response = new Response.Int();
+    response.setBody(body);
+    return response;
+}
+
 export function boolResponse(value: boolean) {
     const response = new Response.Bool();
     response.setBody(value);

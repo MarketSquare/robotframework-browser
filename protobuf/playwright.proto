@@ -102,6 +102,12 @@ message Response {
     string log = 1;
     bool body = 2;
   }
+
+  message Int {
+    string log = 1;
+    int32 body = 2;
+  }
+
   message Select {
     repeated SelectEntry entry = 1;
   }
@@ -124,6 +130,8 @@ service  Playwright {
   rpc GoForward(Request.Url) returns (Response.Empty) {}
   /* Gets title of currently open Playwright page */
   rpc GetTitle(Request.Empty) returns (Response.String) {}
+  /* Returns the count of elements found with selector */
+  rpc GetElementCount(Request.ElementSelector) returns (Response.Int) {}
   /* Wraps playwrights page.fill to input text into input specified with selector */
   rpc InputText(Request.TextInput) returns (Response.Empty) {}
    /* Wraps playwrights page.type to type text into input specified with selector */

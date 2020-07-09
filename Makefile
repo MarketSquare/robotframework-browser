@@ -37,7 +37,11 @@ utest:
 
 clean:
 	rm -rf atest/output
+
 atest: clean
+	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --verbose --pythonpath . --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
+
+atest-global-pythonpath: clean
 	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
 
 test-failed: build

@@ -125,6 +125,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         getters.getTextContent(call, callback, this.browserState?.page);
     }
 
+    async getElementCount(
+        call: ServerUnaryCall<Request.ElementSelector>,
+        callback: sendUnaryData<Response.Int>,
+    ): Promise<void> {
+        getters.getElementCount(call, callback, this.browserState?.page);
+    }
+
     async getSelectContent(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Select>,

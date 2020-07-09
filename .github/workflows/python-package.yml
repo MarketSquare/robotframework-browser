@@ -46,10 +46,10 @@ jobs:
         make build
     - name: Run pytests
       run: |
-       make utest 
+       make utest
     - name: Run Robot Framework tests
       run: |
-        PYTHONPATH=. make atest
+        make atest
     - name: Create Distributable Package
       run: |
         make package
@@ -73,15 +73,15 @@ jobs:
       matrix:
         python-version: [3.8]
         node-version: [12.x]
-    steps:      
+    steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
         uses: actions/download-artifact@v1
-        with: 
-          name: artifacts 
+        with:
+          name: artifacts
       - name: Download package for install testing
         uses: actions/download-artifact@v1
-        with: 
+        with:
           name: demoapp
           path: atest/dynamic-test-app/dist
       - name: Use Node.js
@@ -101,7 +101,7 @@ jobs:
           rfbrowser init
       - name: Run Robot Framework tests
         run: |
-          make atest
+          make atest-global-pythonpath
         env:
           NODE_PATH: /usr/lib/node_modules
       - uses: actions/upload-artifact@v1
