@@ -3,7 +3,7 @@ import { Browser, BrowserContext, Page } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
 import { invokePlaywright, exists } from './playwirght-util';
-import { emptyWithLog } from './response-util';
+import { emptyWithLog, stringResponse } from './response-util';
 
 export async function closeBrowser(callback: sendUnaryData<Response.Empty>, browser?: Browser) {
     exists(browser, callback, 'Tried to close browser but none was open');
@@ -32,13 +32,13 @@ export async function goForward(callback: sendUnaryData<Response.Empty>, page?: 
 
 export async function takeScreenshot(
     call: ServerUnaryCall<Request.ScreenshotPath>,
-    callback: sendUnaryData<Response.Empty>,
+    callback: sendUnaryData<Response.String>,
     page?: Page,
 ) {
     // Add the file extension here because the image type is defined by playwrights defaults
     const path = call.request.getPath() + '.png';
     await invokePlaywright(page, callback, 'screenshot', { path: path });
-    callback(null, emptyWithLog('Succesfully took screenshot'));
+    callback(null, stringResponse(path));
 }
 
 export function setTimeout(

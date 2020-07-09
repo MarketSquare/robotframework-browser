@@ -116,7 +116,7 @@ message Response {
 }
 
 service  Playwright {
-  rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.Empty) {}
+  rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
   rpc OpenBrowser(Request.NewBrowser) returns (Response.Empty) {}
   rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */

@@ -90,7 +90,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async takeScreenshot(
         call: ServerUnaryCall<Request.ScreenshotPath>,
-        callback: sendUnaryData<Response.Empty>,
+        callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         browserControl.takeScreenshot(call, callback, this.browserState?.page);
     }
