@@ -25,9 +25,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install nodejs dependencies
       run: |
-        yarn --frozen-lockfile
-        npm install --global playwright
-        yarn install
+        yarn --frozen-lockfile install
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -51,11 +49,12 @@ jobs:
        make utest 
     - name: Run Robot Framework tests
       run: |
-        make atest
+        PYTHONPATH=. make atest
     - name: Create Distributable Package
       run: |
         make package
     - uses: actions/upload-artifact@v1
+      if: ${{ always() }}
       with:
         name: Test results
         path: atest/output
@@ -100,15 +99,14 @@ jobs:
           pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
           pip install -U robotframework-pabot
           rfbrowser init
-          cd /opt/hostedtoolcache/Python/3.8.3/x64/lib/python3.8/site-packages/Browser/wrapper/ && npm install express
       - name: Run Robot Framework tests
         run: |
-          make atest-global-pythonpath
+          make atest
         env:
           NODE_PATH: /usr/lib/node_modules
       - uses: actions/upload-artifact@v1
-        if: success() || failure()
+        if: ${{ always() }}
         with:
-          name: Install results
+          name: Clean install results
           path: atest/output
 

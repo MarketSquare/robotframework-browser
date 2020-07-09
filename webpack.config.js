@@ -63,6 +63,7 @@ const playwrightWrapper = {
     },
     externals: {
         grpc: 'commonjs grpc',
+        playwright: 'commonjs playwright'
     },
     ...sharedNode,
     ...sharedAll,
