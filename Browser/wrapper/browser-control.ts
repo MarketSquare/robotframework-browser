@@ -77,7 +77,7 @@ export async function focusNextPage(
     browserState.context.waitForEvent('page').then((page) => {
         browserState.page = page;
     });
-    callback(null, emptyWithLog("Set eventhandler for 'page' events"));
+    callback(null, emptyWithLog("Set eventhandler for next 'page' event"));
 }
 
 export async function switchActivePage(
