@@ -11,7 +11,7 @@ Select Option And Verify Selection
 
 *** Test Cases ***
 Page Should Contain List
-    Page Should Have    select[name=interests]
+    Get Element Count    select[name=interests]    ==    1
 
 Get Selected Options
     [Documentation]
