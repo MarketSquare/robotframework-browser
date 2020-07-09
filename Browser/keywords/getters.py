@@ -83,8 +83,7 @@ class Getters:
     ):
         """Returns text attribute of the element found by ``selector``.
 
-        Optionally asserts that the elemtn's text matches the specified
-        assertion.
+        Optionally asserts that the text matches the specified assertion.
         """
         value = None
         with self.playwright.grpc_channel() as stub:
@@ -246,7 +245,6 @@ class Getters:
         All strings are ``${True}`` except of the following ``unchecked, FALSE, NO, OFF, 0``.
         (case-insensitive) The string ``checked`` can be used as True value.
         """
-
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
                 Request().ElementProperty(selector=selector, property="checked")
@@ -259,7 +257,7 @@ class Getters:
                 AssertionOperator["!="],
             ]:
                 raise ValueError(
-                    f"Operators '==' and '!=' are allowsed,"
+                    f"Operators '==' and '!=' are allowed,"
                     f" not '{assertion_operator.name}'."
                 )
 
@@ -268,4 +266,35 @@ class Getters:
 
         return verify_assertion(
             value, assertion_operator, state, f"Checkbox {selector} is"
+        )
+
+    @keyword
+    def get_element_count(
+        self,
+        selector: str,
+        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        expected_count: str = "-1",
+    ):
+        """Returns the count of elements found with ``selector``.
+
+        Optionally asserts that the count matches the specified assertion.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetElementCount(
+                Request().ElementSelector(selector=selector)
+            )
+            count = response.body
+
+        try:
+            int(expected_count)
+        except ValueError:
+            raise AssertionError(
+                f"Invalid value for argument `expected_count`: `${expected_count}`"
+            )
+
+        return verify_assertion(
+            str(count),
+            assertion_operator,
+            expected_count,
+            f"Element count for selector `{selector}` is",
         )

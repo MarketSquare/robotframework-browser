@@ -1,9 +1,9 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
-import { Page } from 'playwright';
+import { Page, ElementHandle } from 'playwright';
 
 import { Response, Request, SelectEntry } from './generated/playwright_pb';
 import { invokePlaywright } from './playwirght-util';
-import { stringResponse, boolResponse } from './response-util';
+import { stringResponse, boolResponse, intResponse } from './response-util';
 
 export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
     const title = await invokePlaywright(page, callback, 'title');
@@ -23,6 +23,16 @@ export async function getTextContent(
     const selector = call.request.getSelector();
     const content = invokePlaywright(page, callback, 'textContent', selector);
     callback(null, stringResponse(content?.toString() || ''));
+}
+
+export async function getElementCount(
+    call: ServerUnaryCall<Request.ElementSelector>,
+    callback: sendUnaryData<Response.Int>,
+    page?: Page,
+) {
+    const selector = call.request.getSelector();
+    const response: Array<ElementHandle> = await invokePlaywright(page, callback, '$$', selector);
+    callback(null, intResponse(response.length));
 }
 
 export async function getSelectContent(
