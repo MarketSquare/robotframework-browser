@@ -1,4 +1,4 @@
-Browser/wrapper/index.js
+Browser/wrapper/*.js
 Browser/wrapper/package.json
 Browser/generated
 Browser/wrapper/generated
@@ -24,5 +24,6 @@ playwright-log.txt
 node_modules/
 dist
 build
+pip-wheel-metadata
 tmp
 .vscode

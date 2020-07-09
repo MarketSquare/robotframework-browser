@@ -38,6 +38,7 @@ class Playwright:
         env = dict(os.environ)
         env["PORT"] = port
         env["TIMEOUT"] = str(float(timestr_to_secs(self.timeout)) * 1000)
+        env["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
         return Popen(
