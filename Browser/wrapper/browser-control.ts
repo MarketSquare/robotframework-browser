@@ -51,13 +51,3 @@ export function setTimeout(
     context.setDefaultTimeout(timeout);
     callback(null, emptyWithLog(`Set timeout to: ${timeout}`));
 }
-
-export async function addStyleTag(
-    call: ServerUnaryCall<Request.StyleTag>,
-    callback: sendUnaryData<Response.Empty>,
-    page?: Page,
-) {
-    const content = call.request.getContent();
-    await invokePlaywright(page, callback, 'addStyleTag', { content: content });
-    callback(null, emptyWithLog('added Style: ' + content));
-}
