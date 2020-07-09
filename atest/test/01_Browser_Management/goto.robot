@@ -7,7 +7,7 @@ ${ERROR URL}      ${ROOT URL}/error.html
 
 *** Test Cases ***
 No Open Browser Throws
-    Run KeyWord and Expect Error    *details = "Tried to open URl but had no browser open"*    GoTo    "about:blank"
+    Run KeyWord and Expect Error    *details = "Tried to do playwirght action 'goto', but no open browser."*    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
     [Setup]    Open Browser    ${LOGIN URL}
