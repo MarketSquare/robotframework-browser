@@ -45,7 +45,7 @@ dependencies, respectively.
 
 Make sure to run `source .venv/bin/activate` to activate the correct virtualenv.
 
-Run `make build` or `yarn build` to build the Typescript code. Also run `make build` 
+Run `make build` or `yarn build` to build the Typescript code. Also run `make build`
 after changes to the protocol (protos/playwright.proto) to re-generate protobuffer code.
 
 ### Development in Windows
@@ -59,7 +59,7 @@ The only difference is that the virtualenv needs to be activated by running
 
 ## Testing
 There are both unit tests written with pytest and acceptance test written with
-Robot Framework. These can be run manually with `make utest` and `make atest`. 
+Robot Framework. These can be run manually with `make utest` and `make atest`.
 To run continuously pytests in a watch mode `make utest-watch`.
 To rerun failed tests you can use `make test-failed` The tests are also executed in a prepush hook.
 
@@ -75,8 +75,9 @@ Docker container builds a clean install package. This can be used to check that 
 1. Ensure generated code and types are up to date with `make build`
 2. Ensure tests and linting pass on CI
 3. Check that you have permissions to release on Github and PyPi
-4. Use `make release` to create and release artifacts and upload to PyPi
-5. Create Github release
+4. Run `make version VERSION=<new_version>` to update the version information to both Python and Node components.
+5. Use `make release` to create and release artifacts and upload to PyPi
+6. Create Github release
 
 ## Code style
 Python code style is enforced with flake8 and black. These are executed in a

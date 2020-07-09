@@ -4,9 +4,9 @@ Resource          ../variables.resource
 Suite Setup       Open Browser    url=${None}    browser=${BROWSER}    headless=${HEADLESS}
 Suite Teardown    Close Browser
 
-
 *** Variables ***
-${Error Message}  Timeout 1ms exceeded during
+${Error Message}    Timeout 1ms exceeded during
+
 *** Test Cases ***
 Test GoTo With Short Default Timeout
     Run Keyword And Expect Error    *${Error Message}*    Go To    ${LOGIN_URL}
