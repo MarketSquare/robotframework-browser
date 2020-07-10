@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokePlaywright } from './playwirght-util';
+import { invokeOnPage } from './playwirght-util';
 import { emptyWithLog, jsResponse } from './response-util';
 
 declare global {
@@ -17,12 +17,12 @@ export async function executeJavascriptOnPage(
     callback: sendUnaryData<Response.JavascriptExecutionResult>,
     page?: Page,
 ) {
-    const result = await invokePlaywright(page, callback, 'evaluate', call.request.getScript());
+    const result = await invokeOnPage(page, callback, 'evaluate', call.request.getScript());
     callback(null, jsResponse(result));
 }
 
 export async function getPageState(callback: sendUnaryData<Response.JavascriptExecutionResult>, page?: Page) {
-    const result = await invokePlaywright(page, callback, 'evaluate', () => window.__RFBROWSER__);
+    const result = await invokeOnPage(page, callback, 'evaluate', () => window.__RFBROWSER__);
     callback(null, jsResponse(result));
 }
 
@@ -33,7 +33,7 @@ export async function waitForElementState(
 ) {
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    await invokePlaywright(page, callback, 'waitForSelector', selector, options);
+    await invokeOnPage(page, callback, 'waitForSelector', selector, options);
     callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
 }
 
@@ -43,7 +43,7 @@ export async function addStyleTag(
     page?: Page,
 ) {
     const content = call.request.getContent();
-    await invokePlaywright(page, callback, 'addStyleTag', { content: content });
+    await invokeOnPage(page, callback, 'addStyleTag', { content: content });
     callback(null, emptyWithLog('added Style: ' + content));
 }
 
@@ -71,5 +71,5 @@ export async function highlightElements(
             }, duration);
         });
     };
-    await invokePlaywright(page, callback, '$$eval', selector, highlighter, duration);
+    await invokeOnPage(page, callback, '$$eval', selector, highlighter, duration);
 }

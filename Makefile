@@ -97,5 +97,11 @@ package: build keyword-docs
 	cp package.json Browser/wrapper
 	python setup.py sdist bdist_wheel
 
+version:
+	sed -i.bak -e 's/VERSION = .*/VERSION = "$(VERSION)"/' Browser/version.py
+	sed -i.bak -e 's/"version": ".*"/"version": "$(VERSION)"/' package.json
+	sed -i.bak -e 's/VERSION: .*/VERSION: $(VERSION)/' .github/workflows/python-package.yml
+	${rm_cmd} Browser/version.py.bak package.json.bak .github/workflows/python-package.yml.bak
+
 release: package
 	python3 -m twine upload --repository pypi dist/*

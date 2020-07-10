@@ -81,7 +81,10 @@ class Control:
         logger.info(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(Request().ScreenshotPath(path=path))
-            logger.info(response.log)
+            logger.info(
+                f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",
+                html=True,
+            )
 
     @keyword
     def set_timeout(self, timeout: str):

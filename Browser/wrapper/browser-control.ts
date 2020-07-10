@@ -2,9 +2,9 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Browser, BrowserContext, Page } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokePlaywright, exists } from './playwirght-util';
-import { emptyWithLog } from './response-util';
 import { BrowserState } from './server';
+import { invokeOnPage, exists } from './playwirght-util';
+import { emptyWithLog, stringResponse } from './response-util';
 
 export async function closeBrowser(callback: sendUnaryData<Response.Empty>, browser?: Browser) {
     exists(browser, callback, 'Tried to close browser but none was open');
@@ -17,29 +17,29 @@ export async function goTo(
     page?: Page,
 ): Promise<void> {
     const url = call.request.getUrl();
-    await invokePlaywright(page, callback, 'goto', url);
+    await invokeOnPage(page, callback, 'goto', url);
     callback(null, emptyWithLog(`Succesfully opened URL ${url}`));
 }
 
 export async function goBack(callback: sendUnaryData<Response.Empty>, page?: Page): Promise<void> {
-    await invokePlaywright(page, callback, 'goBack');
+    await invokeOnPage(page, callback, 'goBack');
     callback(null, emptyWithLog('Did Go Back'));
 }
 
 export async function goForward(callback: sendUnaryData<Response.Empty>, page?: Page): Promise<void> {
-    await invokePlaywright(page, callback, 'goForward');
+    await invokeOnPage(page, callback, 'goForward');
     callback(null, emptyWithLog('Did Go Forward'));
 }
 
 export async function takeScreenshot(
     call: ServerUnaryCall<Request.ScreenshotPath>,
-    callback: sendUnaryData<Response.Empty>,
+    callback: sendUnaryData<Response.String>,
     page?: Page,
 ) {
     // Add the file extension here because the image type is defined by playwrights defaults
     const path = call.request.getPath() + '.png';
-    await invokePlaywright(page, callback, 'screenshot', { path: path });
-    callback(null, emptyWithLog('Succesfully took screenshot'));
+    await invokeOnPage(page, callback, 'screenshot', { path: path });
+    callback(null, stringResponse(path));
 }
 
 export function setTimeout(
@@ -86,7 +86,7 @@ export async function switchActivePage(
             browserState.page = page;
             callback(null, emptyWithLog('Succesfully changed active page'));
         } catch (e) {
-            // TODO: remove before merging or put behind --debug flag, debug prints
+            // TODO: put behind --debug flag, debug prints
             const mapped = pages.map((p) => p.url());
             const pageList = `Pages in current context: ${mapped.join(',')}`;
             const message = `No page for index ${index}. \n ` + pageList;

@@ -1,5 +1,3 @@
-__version__ = "0.6.0"
-
 import re
 import os
 
@@ -9,6 +7,9 @@ from robotlibcore import DynamicCore  # type: ignore
 
 from .keywords import Control, Getters, Input, Waiter
 from .playwright import Playwright
+from .version import VERSION
+
+__version__ = VERSION
 
 
 class Browser(DynamicCore):
