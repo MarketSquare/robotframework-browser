@@ -83,13 +83,5 @@ function splitFrameAndElementSelector(selector: string) {
 async function findFrame<T>(page: Page, frameSelector: string, callback: sendUnaryData<T>) {
     const frameHandle = await page.$(frameSelector);
     exists(frameHandle, callback, `Could not find frame with selector ${frameSelector}`);
-    const url = await frameHandle.getAttribute('src');
-    if (url) {
-        return page.frame({ url: new RegExp(url) });
-    }
-    const name = await frameHandle.getAttribute('name');
-    if (name) {
-        return page.frame({ name: name });
-    }
-    callback(new Error(`Could not find frame with selector ${frameSelector}`), null);
+    return await frameHandle.contentFrame();
 }
