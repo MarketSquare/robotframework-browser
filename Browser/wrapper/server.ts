@@ -39,7 +39,7 @@ async function createBrowserState(
     return new BrowserState(browser, context, page);
 }
 
-class BrowserState {
+export class BrowserState {
     constructor(browser: Browser, context: BrowserContext, page: Page) {
         this.browser = browser;
         this.context = context;
@@ -74,6 +74,20 @@ export class PlaywrightServer implements IPlaywrightServer {
         } else {
             callback(null, emptyWithLog(`Successfully opened browser ${browserType}.`));
         }
+    }
+
+    async switchActivePage(
+        call: ServerUnaryCall<Request.Index>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        browserControl.switchActivePage(call, callback, this.browserState);
+    }
+
+    async autoActivatePages(
+        call: ServerUnaryCall<Request.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        browserControl.autoActivatePages(call, callback, this.browserState);
     }
 
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
