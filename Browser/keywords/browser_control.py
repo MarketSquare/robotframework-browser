@@ -127,8 +127,8 @@ class Control:
             logger.info(response.log)
 
     @keyword
-    def focus_next_page(self):
+    def auto_activate_pages(self):
         """Toggles automatically changing active page to latest opened page """
         with self.playwright.grpc_channel() as stub:
-            response = stub.FocusNextPage(Request().Empty())
+            response = stub.AutoActivatePages(Request().Empty())
             logger.info(response.log)

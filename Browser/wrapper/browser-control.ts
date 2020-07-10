@@ -53,7 +53,7 @@ export function setTimeout(
     callback(null, emptyWithLog(`Set timeout to: ${timeout}`));
 }
 
-export async function focusNextPage(
+export async function autoActivatePages(
     call: ServerUnaryCall<Request.Empty>,
     callback: sendUnaryData<Response.Empty>,
     browserState?: BrowserState,

@@ -44,5 +44,5 @@ Get Element Count
     Should Be Equal    ${count}    0
 
 Get Element Count and Assert
-    Get Element Count    h1    ==     1
-    Get Element Count    label    >   1
+    Get Element Count    h1    ==    1
+    Get Element Count    label    >    1
