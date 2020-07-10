@@ -56,6 +56,9 @@ message Request {
   message Timeout {
     float timeout = 1;
   }
+  message Index {
+    int32 index = 1;
+  }
 
   message StyleTag {
     string content = 1;
@@ -99,6 +102,12 @@ message Response {
     string log = 1;
     bool body = 2;
   }
+
+  message Int {
+    string log = 1;
+    int32 body = 2;
+  }
+
   message Select {
     repeated SelectEntry entry = 1;
   }
@@ -110,7 +119,7 @@ message Response {
 }
 
 service  Playwright {
-  rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.Empty) {}
+  rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
   rpc OpenBrowser(Request.NewBrowser) returns (Response.Empty) {}
   rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */
@@ -121,6 +130,8 @@ service  Playwright {
   rpc GoForward(Request.Url) returns (Response.Empty) {}
   /* Gets title of currently open Playwright page */
   rpc GetTitle(Request.Empty) returns (Response.String) {}
+  /* Returns the count of elements found with selector */
+  rpc GetElementCount(Request.ElementSelector) returns (Response.Int) {}
   /* Wraps playwrights page.fill to input text into input specified with selector */
   rpc InputText(Request.TextInput) returns (Response.Empty) {}
    /* Wraps playwrights page.type to type text into input specified with selector */
@@ -169,4 +180,6 @@ service  Playwright {
   rpc ExecuteJavascriptOnPage(Request.JavascriptCode) returns (Response.JavascriptExecutionResult) {}
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
+  rpc SwitchActivePage(Request.Index) returns (Response.Empty) {}
+  rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
 }

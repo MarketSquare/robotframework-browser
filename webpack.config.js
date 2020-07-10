@@ -1,12 +1,14 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-const frontConfig = {
-    target: 'web',
+const sharedAll = {
     mode: 'development',
-    entry: './atest/dynamic-test-app/src/index.tsx',
     devtool: 'inline-source-map',
     performance: { hints: false } ,
+    stats: 'minimal',
+    resolve: {
+        extensions: [ '.tsx', '.ts', '.js' ],
+    },
     module: {
         rules: [
             {
@@ -16,45 +18,55 @@ const frontConfig = {
             },
         ],
     },
+}
+
+const testappFrontend = {
+    entry: './atest/dynamic-test-app/src/index.tsx',
+    target: 'web',
+
     plugins: [
         new HtmlWebpackPlugin({
             title: 'Output Management',
             template: './atest/dynamic-test-app/static/index.html',
         }),
     ],
-    resolve: {
-        extensions: [ '.tsx', '.ts', '.js' ],
-    },
     output: {
         filename: 'index.js',
         path: path.resolve(__dirname, './atest/dynamic-test-app/dist')
     },
+    ...sharedAll
 };
 
-const backConfig = {
+const sharedNode = {
     target: 'node',
-    mode: 'development',
-    entry: './atest/dynamic-test-app/src/server.ts',
-    devtool: 'inline-source-map',
-    performance: { hints: false } ,
     node: {
         __filename: true,
         __dirname: true
     },
+}
 
-    module: {
-        rules: [
-            {
-                test: /\.tsx?$/,
-                use: 'ts-loader',
-                exclude: /node_modules/,
-            },
-        ],
-    },
+const testappBackend = {
+    entry: './atest/dynamic-test-app/src/server.ts',
     output: {
         filename: 'server.js',
         path: path.resolve(__dirname, 'atest/dynamic-test-app/dist')
     },
+    ...sharedNode,
+    ...sharedAll,
 }
 
-module.exports = [frontConfig, backConfig]
+const playwrightWrapper = {
+    entry: './Browser/wrapper/index.ts',
+    output: {
+        filename: 'index.js',
+        path: path.resolve(__dirname, 'Browser/wrapper')
+    },
+    externals: {
+        grpc: 'commonjs grpc',
+        playwright: 'commonjs playwright'
+    },
+    ...sharedNode,
+    ...sharedAll,
+}
+
+module.exports = [testappFrontend, testappBackend, playwrightWrapper]

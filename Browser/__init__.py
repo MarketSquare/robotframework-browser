@@ -1,5 +1,3 @@
-__version__ = "0.6.0"
-
 import re
 import os
 
@@ -7,8 +5,11 @@ from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .keywords import Control, Getters, Input, Validation, Waiter
+from .keywords import Control, Getters, Input, Waiter
 from .playwright import Playwright
+from .version import VERSION
+
+__version__ = VERSION
 
 
 class Browser(DynamicCore):
@@ -115,7 +116,6 @@ class Browser(DynamicCore):
         self.ROBOT_LIBRARY_LISTENER = self
         self.browser_control = Control(self)
         libraries = [
-            Validation(self),
             self.browser_control,
             Input(self),
             Getters(self),

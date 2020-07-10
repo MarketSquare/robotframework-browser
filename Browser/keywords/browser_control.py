@@ -81,7 +81,10 @@ class Control:
         logger.info(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(Request().ScreenshotPath(path=path))
-            logger.info(response.log)
+            logger.info(
+                f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",
+                html=True,
+            )
 
     @keyword
     def set_timeout(self, timeout: str):
@@ -114,4 +117,21 @@ class Control:
                     selector=selector, duration=duration_ms
                 )
             )
+            logger.info(response.log)
+
+    @keyword
+    def switch_active_page(self, index: int):
+        """Switches the active browser page to another open page by ``index``.
+
+            Newly opened pages get appended to the end of the list
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SwitchActivePage(Request().Index(index=index))
+            logger.info(response.log)
+
+    @keyword
+    def auto_activate_pages(self):
+        """Toggles automatically changing active page to latest opened page """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.AutoActivatePages(Request().Empty())
             logger.info(response.log)

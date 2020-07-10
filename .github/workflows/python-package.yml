@@ -25,9 +25,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install nodejs dependencies
       run: |
-        yarn --frozen-lockfile
-        npm install --global playwright
-        yarn install
+        yarn --frozen-lockfile install
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -48,7 +46,7 @@ jobs:
         make build
     - name: Run pytests
       run: |
-       make utest 
+       make utest
     - name: Run Robot Framework tests
       run: |
         make atest
@@ -56,6 +54,7 @@ jobs:
       run: |
         make package
     - uses: actions/upload-artifact@v1
+      if: ${{ always() }}
       with:
         name: Test results
         path: atest/output
@@ -74,15 +73,15 @@ jobs:
       matrix:
         python-version: [3.8]
         node-version: [12.x]
-    steps:      
+    steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
         uses: actions/download-artifact@v1
-        with: 
-          name: artifacts 
+        with:
+          name: artifacts
       - name: Download package for install testing
         uses: actions/download-artifact@v1
-        with: 
+        with:
           name: demoapp
           path: atest/dynamic-test-app/dist
       - name: Use Node.js
@@ -106,8 +105,8 @@ jobs:
         env:
           NODE_PATH: /usr/lib/node_modules
       - uses: actions/upload-artifact@v1
-        if: success() || failure()
+        if: ${{ always() }}
         with:
-          name: Install results
+          name: Clean install results
           path: atest/output
 

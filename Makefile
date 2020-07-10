@@ -37,6 +37,7 @@ utest:
 
 clean:
 	rm -rf atest/output
+
 atest: clean
 	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --verbose --pythonpath . --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
 
@@ -44,7 +45,7 @@ atest-global-pythonpath: clean
 	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
 
 test-failed: build
-	PYTHONPATH=. python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test
+	python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test
 
 docker:
 	docker build --tag rfbrowser .
@@ -95,6 +96,12 @@ package: build keyword-docs
 	rm -rf dist/
 	cp package.json Browser/wrapper
 	python setup.py sdist bdist_wheel
+
+version:
+	sed -i.bak -e 's/VERSION = .*/VERSION = "$(VERSION)"/' Browser/version.py
+	sed -i.bak -e 's/"version": ".*"/"version": "$(VERSION)"/' package.json
+	sed -i.bak -e 's/VERSION: .*/VERSION: $(VERSION)/' .github/workflows/python-package.yml
+	${rm_cmd} Browser/version.py.bak package.json.bak .github/workflows/python-package.yml.bak
 
 release: package
 	python3 -m twine upload --repository pypi dist/*

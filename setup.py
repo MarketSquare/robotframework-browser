@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages  # type: ignore
+import sys
+
+sys.path.append('Browser')
+
+from Browser import VERSION  # noqa
+
 
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
@@ -12,7 +18,7 @@ install_requires = open("requirements.txt").readlines()
 
 setup_kwargs = {
     "name": "robotframework-browser",
-    "version": "0.6.0",
+    "version": VERSION,
     "description": "",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
