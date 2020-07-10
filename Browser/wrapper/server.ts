@@ -1,4 +1,4 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
+import { sendUnaryData, ServerUnaryCall, handleUnaryCall } from 'grpc';
 
 import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { Response, Request } from './generated/playwright_pb';
@@ -7,11 +7,15 @@ import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
 import * as browserState from './browserstate';
+import { BrowserState} from './browserstate'
 
 import { emptyWithLog } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
-    browserState?: browserState.BrowserState;
+    browserState: browserState.BrowserState;
+    constructor() {
+        this.browserState = new BrowserState
+    }
 
     async openBrowser(
         call: ServerUnaryCall<Request.NewBrowser>,
@@ -22,7 +26,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         browserState.closeBrowser(callback, this.browserState?.browser);
-        this.browserState = undefined;
+        this.browserState = new BrowserState;
         callback(null, emptyWithLog('Closed browser'));
     }
 
@@ -38,6 +42,28 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         browserState.autoActivatePages(call, callback, this.browserState);
+    }
+
+    async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        browserState.switchContext(call, callback);
+    }
+
+    async newPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        browserState.newPage(call, callback, this.browserState);
+    }
+
+    async newContext(
+        call: ServerUnaryCall<Request.NewContext>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        browserState.newContext(call, callback, this.browserState);
+    }
+
+    async newBrowser(
+        call: ServerUnaryCall<Request.NewBrowser>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        browserState.newBrowser(call, callback);
     }
 
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {

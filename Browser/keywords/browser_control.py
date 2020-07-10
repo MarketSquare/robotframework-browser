@@ -7,6 +7,7 @@ from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..generated.playwright_pb2 import Request
+from ..util.py import actual_kwargs
 
 
 class SupportedBrowsers(Enum):
@@ -143,6 +144,7 @@ class Control:
             response = stub.AutoActivatePages(Request().Empty())
             logger.info(response.log)
 
+    @actual_kwargs
     @keyword
     def new_browser(
         self,
@@ -156,12 +158,13 @@ class Control:
         **kwargs,
     ):
         with self.playwright.grpc_channel() as stub:
-            options = json.dumps(locals().copy())
+            options = json.dumps(new_browser.actual_kwargs) # type: ignore [name-defined]
             response = stub.NewBrowser(
                 Request().NewBrowser(browser=browser_type.name, rawOptions=options)
             )
             logger.info(response.log)
 
+    @actual_kwargs
     @keyword
     def new_context(
         self,
@@ -180,7 +183,7 @@ class Control:
         **kwargs,
     ):
         with self.playwright.grpc_channel() as stub:
-            options = json.dumps(locals().copy())
+            options = json.dumps(new_context.actual_kwargs) # type: ignore [name-defined]
             response = stub.NewContext(Request().NewContext(rawOptions=options))
 
     @keyword

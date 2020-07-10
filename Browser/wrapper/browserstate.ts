@@ -6,22 +6,47 @@ import { invokeOnPage, exists } from './playwirght-util';
 import { emptyWithLog, stringResponse } from './response-util';
 import { PlaywrightServer } from './server';
 
-// Can't have an async constructor, this is a workaround
+/* 
+ * Returns a browserState with set browser, context and page
+ */
+
 export async function createBrowserState(
-    browserType: string,
-    headless: boolean,
-    hideRfBrowser: boolean,
+    browserType?: string,
+    hideRfBrowser?: boolean,
+    headless?: boolean,
 ): Promise<BrowserState> {
+    const browser = await createBrowser(browserType, headless)
+    const context = await createBrowserContext(browser, hideRfBrowser)
+    const page = await createBrowserPage(context)
+
+    return new BrowserState(browser, context, page);
+}
+
+async function createBrowser(
+    browserType?: string, 
+    headless?: boolean, 
+    options?: object): 
+Promise<Browser> {
+    browserType = browserType ||  'chromium';
+    headless = headless || true
     let browser;
     if (browserType === 'firefox') {
-        browser = await firefox.launch({ headless: headless });
+        browser = await firefox.launch({ headless: headless, ...options});
     } else if (browserType === 'chromium') {
-        browser = await chromium.launch({ headless: headless });
+        browser = await chromium.launch({ headless: headless, ...options });
     } else if (browserType === 'webkit') {
-        browser = await webkit.launch({ headless: headless });
+        browser = await webkit.launch({ headless: headless, ...options });
     } else {
         throw new Error('unsupported browser');
     }
+    return browser
+}
+
+async function createBrowserContext(
+    browser: Browser, 
+    hideRfBrowser?: boolean
+): Promise<BrowserContext> {
+    hideRfBrowser = hideRfBrowser || false
     const context = await browser.newContext();
     if (!hideRfBrowser) {
         context.addInitScript(function () {
@@ -32,19 +57,24 @@ export async function createBrowserState(
         });
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
+    return context
+
+}
+
+async function createBrowserPage(context: BrowserContext) {
     const page = await context.newPage();
-    return new BrowserState(browser, context, page);
+    return page
 }
 
 export class BrowserState {
-    constructor(browser: Browser, context: BrowserContext, page: Page) {
+    constructor(browser?: Browser, context?: BrowserContext, page?: Page) {
         this.browser = browser;
         this.context = context;
         this.page = page;
     }
-    browser: Browser;
-    context: BrowserContext;
-    page: Page;
+    browser?: Browser;
+    context?: BrowserContext;
+    page?: Page;
 }
 
 export async function openBrowser(
@@ -64,12 +94,66 @@ export async function closeBrowser(callback: sendUnaryData<Response.Empty>, brow
     await browser.close();
 }
 
+async function initializeBrowser(browserState: BrowserState) {
+    if (!browserState.browser) {
+        const browser = await createBrowser()
+        const initializedState = new BrowserState(browser)
+        Object.assign(browserState, initializedState)
+        return
+    }
+}
+
+async function initializeContext(browserState: BrowserState): Promise<void> {
+    if (!browserState?.context) {
+        const browser = await createBrowser()
+        const context = await createBrowserContext(browser)
+        const initializedState = new BrowserState(browser, context)
+        Object.assign(browserState, initializedState)
+        return
+    }
+}
+
+export async function newPage(
+    call: ServerUnaryCall<Request.Url>,
+    callback: sendUnaryData<Response.Empty>,
+    browserState: BrowserState,
+): Promise<void> {
+
+    initializeContext(browserState)
+
+    const page = await browserState.context?.newPage()
+    browserState.page = page
+    const url = call.request.getUrl();
+    await invokeOnPage(page, callback, 'goto', url);
+    const error = new Error('Functionality not implemented yet');
+    callback(error, null);
+}
+
+export async function newContext(
+    call: ServerUnaryCall<Request.NewContext>,
+    callback: sendUnaryData<Response.Empty>,
+    browserState: BrowserState,
+): Promise<void> {
+    initializeBrowser(browserState)
+    const error = new Error('Functionality not implemented yet');
+    callback(error, null);
+}
+
+export async function newBrowser(
+    call: ServerUnaryCall<Request.NewBrowser>,
+    callback: sendUnaryData<Response.Empty>,
+    browserState?: BrowserState,
+): Promise<void> {
+    const error = new Error('Functionality not implemented yet');
+    callback(error, null);
+}
+
 export async function autoActivatePages(
     call: ServerUnaryCall<Request.Empty>,
     callback: sendUnaryData<Response.Empty>,
     browserState?: BrowserState,
 ) {
-    exists(browserState, callback, 'Tried to focus next opened page');
+    exists(browserState?.context, callback, 'Tried to focus next opened page');
 
     browserState.context.on('page', (page) => {
         browserState.page = page;
@@ -83,7 +167,7 @@ export async function switchActivePage(
     callback: sendUnaryData<Response.Empty>,
     browserState?: BrowserState,
 ) {
-    exists(browserState, callback, "Tried to switch active page but browser wasn't open");
+    exists(browserState?.context, callback, "Tried to switch active page but browser wasn't open");
     console.log('Changing current active page');
     const index = call.request.getIndex();
     const pages = browserState.context.pages();
@@ -105,4 +189,12 @@ export async function switchActivePage(
             callback(error, null);
         }
     }
+}
+
+export async function switchContext(
+    call: ServerUnaryCall<Request.Index>,
+    callback: sendUnaryData<Response.Empty>,
+): Promise<void> {
+    const error = new Error('Functionality not implemented yet');
+    callback(error, null);
 }
