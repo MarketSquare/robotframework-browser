@@ -1,7 +1,7 @@
 *** Settings ***
 Library           Browser    timeout=1ms
-Resource          ../variables.resource
-Suite Setup       Open Browser    url=${None}    browser=${BROWSER}    headless=${HEADLESS}
+Resource          ./imports.resource
+Suite Setup       Open Browser To Login Page
 Suite Teardown    Close Browser
 
 *** Variables ***

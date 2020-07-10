@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       Go To    ${LOGIN URL}
+Suite Setup       New Page  ${LOGIN URL}
 
 *** Test Cases ***
 Invalids will raise error directly from Robot Framework

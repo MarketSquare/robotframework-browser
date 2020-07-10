@@ -17,10 +17,6 @@ message Request {
     string rawOptions = 1;
   }
 
-  message NewPage {
-    string url = 1;
-  }
-
   message Url {
     string url= 1;
   }
@@ -194,7 +190,7 @@ service  Playwright {
   rpc SwitchActivePage(Request.Index) returns (Response.Empty) {}
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
   rpc SwitchContext(Request.Index) returns (Response.Empty) {}
-  rpc NewPage(Request.NewPage) returns (Response.Empty) {}
+  rpc NewPage(Request.Url) returns (Response.Empty) {}
   rpc NewContext(Request.NewContext) returns (Response.Empty) {}
   rpc NewBrowser(Request.NewBrowser) returns (Response.Empty) {}
 }

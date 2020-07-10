@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       Go To    ${FORM_URL}
+Suite Setup       New Page  ${FORM_URL}
 
 *** Test Cases ***
 Press Keys - Generate Characters

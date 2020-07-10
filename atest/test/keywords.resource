@@ -5,8 +5,8 @@ Resource          variables.resource
 
 *** Keywords ***
 Open Browser To Login Page
-    Open Browser    ${LOGIN URL}    ${BROWSER}
-    # Maximize Browser Window
+    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Page  ${LOGIN URL}    
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 

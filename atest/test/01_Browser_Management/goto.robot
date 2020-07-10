@@ -10,7 +10,7 @@ No Open Browser Throws
     Run KeyWord and Expect Error    *details = "Tried to do playwirght action 'goto', but no open browser."*    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
-    [Setup]    Open Browser    ${LOGIN URL}
+    [Setup]    New Page  ${LOGIN URL}
     Go To    ${WELCOME URL}
     Get Url    ==    ${WELCOME URL}
     Go To    ${ERROR URL}
