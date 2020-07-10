@@ -1,10 +1,18 @@
-from typing import Optional
+import json
+from enum import Enum, auto
+from typing import Dict, List, Optional
 
 from robot.api import logger  # type: ignore
 from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..generated.playwright_pb2 import Request
+
+
+class SupportedBrowsers(Enum):
+    chromium = auto()
+    firefox = auto()
+    webkit = (auto(),)
 
 
 class Control:
@@ -16,7 +24,9 @@ class Control:
         return self.library.playwright
 
     @keyword
-    def open_browser(self, url=None, browser="Chromium", headless: bool = True):
+    def open_browser(
+        self, url=None, browser=SupportedBrowsers.chromium, headless: bool = True
+    ):
         """Opens a new browser instance.
 
         If ``url`` is provided, navigates there.
@@ -30,15 +40,12 @@ class Control:
         | WebKit          | webkit                    |
 
         """
-        browser_ = browser.lower().strip()
-        if browser_ not in self.library.SUPPORTED_BROWSERS:
-            raise ValueError(
-                f"{browser} is not supported, "
-                f'it should be one of: {", ".join(self.library.SUPPORTED_BROWSERS)}'
-            )
+
         with self.playwright.grpc_channel() as stub:
             response = stub.OpenBrowser(
-                Request().NewBrowser(url=url or "", browser=browser_, headless=headless)
+                Request().NewBrowser(
+                    url=url or "", browser=browser.name, headless=headless
+                )
             )
             logger.info(response.log)
 
@@ -134,4 +141,50 @@ class Control:
         """Toggles automatically changing active page to latest opened page """
         with self.playwright.grpc_channel() as stub:
             response = stub.AutoActivatePages(Request().Empty())
+            logger.info(response.log)
+
+    @keyword
+    def new_browser(
+        self,
+        browser_type=SupportedBrowsers.chromium,
+        args: Optional[List[str]] = None,
+        headless: Optional[bool] = None,
+        devtools: Optional[bool] = None,
+        proxy: Optional[Dict] = None,
+        downloadsPath: Optional[str] = None,
+        slowMo: Optional[int] = None,
+        **kwargs,
+    ):
+        with self.playwright.grpc_channel() as stub:
+            options = json.dumps(locals().copy())
+            response = stub.NewBrowser(
+                Request().NewBrowser(browser=browser_type.name, rawOptions=options)
+            )
+            logger.info(response.log)
+
+    @keyword
+    def new_context(
+        self,
+        viewport: Optional[Dict[str, int]] = None,
+        bypassCSP: Optional[bool] = None,
+        userAgent: Optional[str] = None,
+        locale: Optional[str] = None,
+        timezoneId: Optional[str] = None,
+        geolocation: Optional[Dict] = None,
+        extraHTTPHeaders: Optional[Dict[str, str]] = None,
+        offline: Optional[bool] = None,
+        httpCredentials: Optional[Dict] = None,
+        isMobile: Optional[bool] = None,
+        hasTouch: Optional[bool] = None,
+        acceptDownloads: Optional[bool] = None,
+        **kwargs,
+    ):
+        with self.playwright.grpc_channel() as stub:
+            options = json.dumps(locals().copy())
+            response = stub.NewContext(Request().NewContext(rawOptions=options))
+
+    @keyword
+    def new_page(self, url: Optional[str] = ""):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.NewPage(Request().NewPage(url=url))
             logger.info(response.log)

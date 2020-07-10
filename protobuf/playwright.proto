@@ -8,9 +8,16 @@ message Request {
   }
 
   message NewBrowser {
+    string browser = 1;
+    string rawOptions = 2;
+  }
+
+  message NewContext {
+    string rawOptions = 1;
+  }
+
+  message NewPage {
     string url = 1;
-    string browser = 2;
-    bool headless = 3;
   }
 
   message Url {
@@ -82,6 +89,10 @@ message Request {
   message JavascriptCode {
     string script = 1;
   }
+
+  message RawJson {
+    string script = 1;
+  }
 }
 
 message SelectEntry {
@@ -120,7 +131,6 @@ message Response {
 
 service  Playwright {
   rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
-  rpc OpenBrowser(Request.NewBrowser) returns (Response.Empty) {}
   rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty) {}
@@ -182,4 +192,8 @@ service  Playwright {
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
   rpc SwitchActivePage(Request.Index) returns (Response.Empty) {}
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
+  rpc SwitchContext(Request.Index) returns (Response.Empty) {}
+  rpc NewPage(Request.NewPage) returns (Response.Empty) {}
+  rpc NewContext(Request.NewContext) returns (Response.Empty) {}
+  rpc NewBrowser(Request.NewBrowser) returns (Response.Empty) {}
 }
