@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokeOnPage } from './playwirght-util';
+import { invokeOnPage, invokeOnPageWithSelector } from './playwirght-util';
 import { emptyWithLog, jsResponse } from './response-util';
 
 declare global {
@@ -33,7 +33,7 @@ export async function waitForElementState(
 ) {
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    await invokeOnPage(page, callback, 'waitForSelector', selector, options);
+    await invokeOnPageWithSelector(page, callback, 'waitForSelector', selector, options);
     callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
 }
 
@@ -71,5 +71,5 @@ export async function highlightElements(
             }, duration);
         });
     };
-    await invokeOnPage(page, callback, '$$eval', selector, highlighter, duration);
+    await invokeOnPageWithSelector(page, callback, '$$eval', selector, highlighter, duration);
 }
