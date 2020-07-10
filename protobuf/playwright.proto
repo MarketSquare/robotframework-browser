@@ -9,7 +9,8 @@ message Request {
 
   message NewBrowser {
     string browser = 1;
-    string rawOptions = 2;
+    bool headless = 2;
+    string rawOptions = 3;
   }
 
   message NewContext {
