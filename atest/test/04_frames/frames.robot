@@ -12,4 +12,3 @@ Pierce iFrame implicit CSS, xpath and text
 Pierce iFrame nested selectors
     Click    body >> [src="left.html"] >>> body >> //input[@name="searchbutton"]
     Get Text    xpath=//body >> css=#right >>> xpath=/html >> css=body > p    ==    You're looking at search results.
-
