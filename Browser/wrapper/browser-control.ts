@@ -53,31 +53,18 @@ export function setTimeout(
     callback(null, emptyWithLog(`Set timeout to: ${timeout}`));
 }
 
-async function switchPage(
-    browserState: BrowserState,
-    pages: Array<Page>,
-    index: number,
-    callback: sendUnaryData<Response.Empty>,
-) {
-    console.log(`Changing active page to ${index}`);
-    try {
-        browserState.page = pages[index];
-        callback(null, emptyWithLog('Succesfully changed active page'));
-    } catch (e) {
-        callback(e, null);
-    }
-}
-
 export async function focusNextPage(
     call: ServerUnaryCall<Request.Empty>,
     callback: sendUnaryData<Response.Empty>,
     browserState?: BrowserState,
 ) {
     exists(browserState, callback, 'Tried to focus next opened page');
-    browserState.context.waitForEvent('page').then((page) => {
+
+    browserState.context.on('page', (page) => {
         browserState.page = page;
+        console.log('Changed active page');
     });
-    callback(null, emptyWithLog("Set eventhandler for next 'page' event"));
+    callback(null, emptyWithLog('Will focus future ``pages`` in this context'));
 }
 
 export async function switchActivePage(
@@ -86,18 +73,20 @@ export async function switchActivePage(
     browserState?: BrowserState,
 ) {
     exists(browserState, callback, "Tried to switch active page but browser wasn't open");
+    console.log('Changing current active page');
     const index = call.request.getIndex();
     const pages = browserState.context.pages();
     if (pages[index]) {
-        switchPage(browserState, pages, index, callback);
+        browserState.page = pages[index];
+        callback(null, emptyWithLog('Succesfully changed active page'));
     } else {
         try {
-            await browserState.context.waitForEvent('page');
-            switchPage(browserState, pages, index, callback);
+            const page = await browserState.context.waitForEvent('page');
+            // const page = await browserState.page.waitForEvent('popup')
+            browserState.page = page;
+            callback(null, emptyWithLog('Succesfully changed active page'));
         } catch (e) {
             // TODO: remove before merging or put behind --debug flag, debug prints
-            console.log(`Existing contexts: ${browserState.browser.contexts().length}`);
-            console.log(`Existing pages: ${pages.length}`);
             const mapped = pages.map((p) => p.url());
             const pageList = `Pages in current context: ${mapped.join(',')}`;
             const message = `No page for index ${index}. \n ` + pageList;

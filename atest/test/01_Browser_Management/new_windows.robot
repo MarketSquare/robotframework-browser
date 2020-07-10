@@ -6,11 +6,13 @@ Test Setup        Open Browser    ${LOGIN URL}
 Focus Next Page on popup
     Focus Next Page
     Click    button#pops_up
-    Get Text  h1  ==  Popped Up!
+    # Workaround, this need is caused by eventhandlers laziness
+    Sleep  1s
+    Wait For Elements State  "Popped Up!"
 
 Switch Active Page after popup
     Click    button#pops_up
-    Switch Active Page    0
-    Get Text  h1  ==  Popped Up!
-    Switch Active Page  1
-    Get Text  button#pops_up
+    Switch Active Page    1
+    Wait For Elements State  "Popped Up!"
+    Switch Active Page  0
+    Wait For Elements State  button#pops_up
