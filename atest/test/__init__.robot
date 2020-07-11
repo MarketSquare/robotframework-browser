@@ -1,6 +1,7 @@
 *** Settings ***
-Test Timeout      30 seconds
+Test Timeout      ${DEFAULT TEST TIMEOUT}
 Library           pabot.SharedLibrary    Process
 Library           pabot.PabotLib
-Suite Setup       Run Setup Only Once    Start Process    node    ${CURDIR}/../dynamic-test-app/dist/server.js
+Resource          variables.resource
+Suite Setup       Run Setup Only Once    Start Process    node    ${CURDIR}/../dynamic-test-app/dist/server.js    ${DEFAULT TEST TIMEOUT}
 Suite Teardown    Run Teardown Only Once    Terminate All Processes

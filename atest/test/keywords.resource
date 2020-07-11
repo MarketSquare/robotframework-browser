@@ -1,7 +1,10 @@
 *** Settings ***
-Library           Browser
+Library           Browser    ${PLAYWRIGHT TIMEOUT}
 Library           OperatingSystem
 Resource          variables.resource
+
+*** Variables ***
+${PLAYWRIGHT TIMEOUT}      1 second
 
 *** Keywords ***
 Open Browser To Login Page
