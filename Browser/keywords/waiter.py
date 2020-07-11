@@ -17,10 +17,6 @@ class ElementState(Enum):
 
 
 class Waiter(LibraryComponent):
-    @property
-    def playwright(self):
-        return self.library.playwright
-
     @keyword
     def wait_for_elements_state(
         self,

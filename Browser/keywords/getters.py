@@ -11,10 +11,6 @@ from .input import SelectAttribute
 
 
 class Getters(LibraryComponent):
-    @property
-    def playwright(self):
-        return self.library.playwright
-
     @keyword
     def get_url(
         self,
