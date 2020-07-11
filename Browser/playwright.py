@@ -79,8 +79,22 @@ class Playwright:
                 "Playwright process has been terminated with code {}".format(returncode)
             )
         channel = grpc.insecure_channel(f"localhost:{self.port}")
-        yield playwright_pb2_grpc.PlaywrightStub(channel)
-        channel.close()
+        try:
+            yield playwright_pb2_grpc.PlaywrightStub(channel)
+        except Exception as e:
+            raise AssertionError(self.get_reason(e))
+        finally:
+            channel.close()
+
+    def get_reason(self, err):
+        try:
+            metadata = err.trailing_metadata()
+            for element in metadata:
+                if element.key == "reason":
+                    return element.value
+        except AttributeError:
+            pass
+        return err.details
 
     def close(self):
         logger.debug("Closing Playwright process")
