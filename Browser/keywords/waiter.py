@@ -1,10 +1,10 @@
 import json
 from enum import Enum, auto
 
-from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 from typing import Optional, Dict
 
+from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils.time_conversion import timestr_to_millisecs
 
@@ -16,10 +16,7 @@ class ElementState(Enum):
     hidden = auto()
 
 
-class Waiter:
-    def __init__(self, library):
-        self.library = library
-
+class Waiter(LibraryComponent):
     @property
     def playwright(self):
         return self.library.playwright
@@ -61,4 +58,4 @@ class Waiter:
                     selector=selector, options=options_json
                 )
             )
-            logger.info(response.log)
+            self.info(response.log)
