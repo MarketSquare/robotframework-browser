@@ -2,18 +2,15 @@ import json
 from typing import Any
 from copy import copy
 
-from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
+from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..assertion_engine import verify_assertion, AssertionOperator
 from .input import SelectAttribute
 
 
-class Getters:
-    def __init__(self, library):
-        self.library = library
-
+class Getters(LibraryComponent):
     @property
     def playwright(self):
         return self.library.playwright
@@ -31,7 +28,7 @@ class Getters:
         value = ""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
-            logger.debug(response.log)
+            self.debug(response.log)
             value = response.body
         return verify_assertion(value, assertion_operator, assertion_expected, "URL ")
 
@@ -53,7 +50,7 @@ class Getters:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageState(Request().Empty())
-            logger.debug(response.log)
+            self.debug(response.log)
             value = json.loads(response.result)
         return verify_assertion(value, assertion_operator, assertion_expected, "State ")
 
@@ -70,7 +67,7 @@ class Getters:
         value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
-            logger.debug(response.log)
+            self.debug(response.log)
             value = response.body
         return verify_assertion(value, assertion_operator, assertion_expected, "Title ")
 
@@ -90,7 +87,7 @@ class Getters:
             response = stub.GetDomProperty(
                 Request().ElementProperty(selector=selector, property="innerText")
             )
-            logger.debug(response.log)
+            self.debug(response.log)
             value = response.body
         return verify_assertion(
             value, assertion_operator, assertion_expected, f"Text {selector}"
@@ -113,7 +110,7 @@ class Getters:
             response = stub.GetDomProperty(
                 Request().ElementProperty(selector=selector, property=attribute)
             )
-            logger.debug(response.log)
+            self.debug(response.log)
             value = response.body
         return verify_assertion(
             value, assertion_operator, assertion_expected, f"Attribute {selector}"
@@ -172,7 +169,7 @@ class Getters:
             response = stub.GetSelectContent(
                 Request().ElementSelector(selector=selector)
             )
-            logger.info(response)
+            self.info(response)
 
             expected = list(assertion_expected)
 
@@ -249,7 +246,7 @@ class Getters:
             response = stub.GetBoolProperty(
                 Request().ElementProperty(selector=selector, property="checked")
             )
-            logger.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
+            self.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
             value: bool = response.body
 
             if assertion_operator not in [
