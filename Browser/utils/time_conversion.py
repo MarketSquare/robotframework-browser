@@ -1,5 +1,5 @@
-from robot.utils import timestr_to_secs
+from robot.utils import timestr_to_secs  # type: ignore
 
 
-def timestr_to_millisecs(time_str: str) -> float:
+def timestr_to_millisecs(time_str: str) -> int:
     return timestr_to_secs(time_str) * 1000

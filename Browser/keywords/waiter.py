@@ -2,11 +2,11 @@ import json
 from enum import Enum, auto
 
 from robot.api import logger  # type: ignore
-from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robotlibcore import keyword  # type: ignore
 from typing import Optional, Dict
 
 from ..generated.playwright_pb2 import Request
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class ElementState(Enum):
@@ -53,7 +53,7 @@ class Waiter:
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
             if timeout:
-                timeout_ms: int = int(timestr_to_secs(timeout) * 1000)
+                timeout_ms = timestr_to_millisecs(timeout)
                 options["timeout"] = timeout_ms
             options_json = json.dumps(options)
             response = stub.WaitForElementsState(
