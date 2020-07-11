@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -108,10 +108,10 @@ class Control:
             logger.info(response.log)
 
     @keyword
-    def highlight_element(self, selector: str, duration: Optional[str] = "5s"):
+    def highlight_element(self, selector: str, duration: Union[str, int] = "5s"):
         """Adds a red highlight to elements matched by ``selector`` for ``duration``"""
         with self.playwright.grpc_channel() as stub:
-            duration_ms: int = timestr_to_millisecs(duration)
+            duration_ms = timestr_to_millisecs(duration)
             response = stub.HighlightElements(
                 Request().ElementSelectorWithDuration(
                     selector=selector, duration=duration_ms
