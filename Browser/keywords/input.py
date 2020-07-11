@@ -2,12 +2,12 @@ import json
 from enum import Enum, auto
 
 from robot.api import logger  # type: ignore
-from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 from typing import Optional, Dict, Any
 
 from ..generated.playwright_pb2 import Request
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class MouseButton(Enum):
@@ -55,7 +55,7 @@ class Input:
         See `Fill Text` for direct filling of the full text at once.
         """
         with self.playwright.grpc_channel() as stub:
-            delay_ms = timestr_to_secs(delay) * 1000
+            delay_ms = timestr_to_millisecs(delay)
             response = stub.TypeText(
                 Request().TypeText(
                     selector=selector, text=text, delay=int(delay_ms), clear=clear
@@ -181,7 +181,7 @@ class Input:
         with self.playwright.grpc_channel() as stub:
             options = {"button": button.name, "clickCount": click_count}
             if delay:
-                options["delay"] = int(timestr_to_secs(delay) * 1000)
+                options["delay"] = timestr_to_millisecs(delay)
             if position_x and position_y:
                 positions: Dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions

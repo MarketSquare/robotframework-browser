@@ -1,10 +1,10 @@
 from typing import Optional
 
 from robot.api import logger  # type: ignore
-from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..generated.playwright_pb2 import Request
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Control:
@@ -92,7 +92,7 @@ class Control:
 
         Technically this is the timeout of current playwright context.
         """
-        parsed_timeout = float(timestr_to_secs(timeout)) * 1000
+        parsed_timeout = timestr_to_millisecs(timeout)
         with self.playwright.grpc_channel() as stub:
             response = stub.SetTimeout(Request().Timeout(timeout=parsed_timeout))
             logger.info(response.log)
@@ -111,7 +111,7 @@ class Control:
     def highlight_element(self, selector: str, duration: Optional[str] = "5s"):
         """Adds a red highlight to elements matched by ``selector`` for ``duration``"""
         with self.playwright.grpc_channel() as stub:
-            duration_ms: int = int(timestr_to_secs(duration) * 1000)
+            duration_ms: int = timestr_to_millisecs(duration)
             response = stub.HighlightElements(
                 Request().ElementSelectorWithDuration(
                     selector=selector, duration=duration_ms
