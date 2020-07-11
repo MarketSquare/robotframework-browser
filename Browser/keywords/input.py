@@ -31,13 +31,6 @@ class SelectAttribute(Enum):
 
 
 class Input(LibraryComponent):
-    def __init__(self, library):
-        self.library = library
-
-    @property
-    def playwright(self):
-        return self.library.playwright
-
     @keyword
     def type_text(
         self, selector: str, text: str, delay: str = "0 ms", clear: bool = True

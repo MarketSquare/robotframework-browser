@@ -8,10 +8,6 @@ from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Control(LibraryComponent):
-    @property
-    def playwright(self):
-        return self.library.playwright
-
     @keyword
     def open_browser(self, url=None, browser="Chromium", headless: bool = True):
         """Opens a new browser instance.
