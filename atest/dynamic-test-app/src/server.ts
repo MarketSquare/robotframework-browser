@@ -25,4 +25,4 @@ app.get('*', (req, res) => {
     res.send(listing);
 });
 
-app.listen(port, () => console.log('Succesfully started server'));
+app.listen(port, () => console.log('Succesfully started server on http://localhost:7272'));
