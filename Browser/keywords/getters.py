@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Optional
 from copy import copy
 
 from robotlibcore import keyword  # type: ignore
@@ -14,7 +14,7 @@ class Getters(LibraryComponent):
     @keyword
     def get_url(
         self,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> str:
         """Returns the current URL.
@@ -31,7 +31,7 @@ class Getters(LibraryComponent):
     @keyword
     def get_page_state(
         self,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> object:
         """Returns page model state object.
@@ -53,7 +53,7 @@ class Getters(LibraryComponent):
     @keyword
     def get_title(
         self,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Returns the title of the current page.
@@ -71,7 +71,7 @@ class Getters(LibraryComponent):
     def get_text(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Returns text attribute of the element found by ``selector``.
@@ -94,7 +94,7 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         attribute: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Returns ``attribute`` of the element found by ``selector``.
@@ -116,7 +116,7 @@ class Getters(LibraryComponent):
     def get_textfield_value(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Returns value of the textfield found by ``selector``.
@@ -132,7 +132,7 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         option_attribute: SelectAttribute = SelectAttribute.label,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
     ):
         """Returns the specified attribute of selected options of the ``select`` element.
@@ -195,10 +195,9 @@ class Getters(LibraryComponent):
                         f" expected value but got '{len(expected)}'."
                     )
                 expected_value = expected[0]
-            elif assertion_operator not in [
+            elif assertion_operator is not None and assertion_operator not in [
                 AssertionOperator["=="],
                 AssertionOperator["!="],
-                AssertionOperator["noassertion"],
             ]:
                 raise AttributeError(
                     f"Operator '{assertion_operator.name}' is not allowed "
@@ -218,7 +217,7 @@ class Getters(LibraryComponent):
     def get_checkbox_state(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         state: bool = False,
     ):
         """Returns the state of the checkbox found by ``selector``.
@@ -245,7 +244,7 @@ class Getters(LibraryComponent):
             self.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
             value: bool = response.body
 
-            if assertion_operator not in [
+            if assertion_operator is not None and assertion_operator not in [
                 AssertionOperator["=="],
                 AssertionOperator["!="],
             ]:
@@ -265,7 +264,7 @@ class Getters(LibraryComponent):
     def get_element_count(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         expected_count: str = "-1",
     ):
         """Returns the count of elements found with ``selector``.
