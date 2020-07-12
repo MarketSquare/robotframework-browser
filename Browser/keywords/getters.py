@@ -36,13 +36,13 @@ class Getters(LibraryComponent):
     ) -> object:
         """Returns page model state object.
 
-        This must be given on the page to ``window.__RFBROWSER__``
+        This must be given on the page to ``window.__SET_RFBROWSER_STATE__``
 
         For example:
 
         ``let mystate = {'login': true, 'name': 'George', 'age': 123};``
 
-        ``window.__RFBROWSER__ && window.__RFBROWSER__(mystate);``
+        ``window.__SET_RFBROWSER_STATE__ && window.__SET_RFBROWSER_STATE__(mystate);``
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageState(Request().Empty())

@@ -43,7 +43,6 @@ class Browser(DynamicCore):
     be explicitly specified with a prefix or the strategy can be implicit.
 
     === Implicit selector strategy ===
-    == !!! THIS ISN'T IMPLEMENTED YET !!! ==
 
     The default selector strategy is `css`. If selector does not contain
     one of the know selector strategies, `css`, `xpath`, `id` or `text` it is

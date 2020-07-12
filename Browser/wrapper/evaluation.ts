@@ -7,7 +7,7 @@ import { emptyWithLog, jsResponse } from './response-util';
 
 declare global {
     interface Window {
-        __SET_RFBROWSER__: <T>(a: T) => T;
+        __SET_RFBROWSER_STATE__: <T>(a: T) => T;
         __RFBROWSER__: any;
     }
 }
