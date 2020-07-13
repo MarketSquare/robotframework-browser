@@ -16,7 +16,7 @@ function pageExists<T>(page: Page | undefined, callback: sendUnaryData<T>, messa
 }
 
 export async function invokeOnPage(page: Page | undefined, callback: any, methodName: string, ...args: any[]) {
-    pageExists(page, callback, `Tried to do playwirght action '${methodName}', but no open browser.`);
+    pageExists(page, callback, `Tried to do playwright action '${methodName}', but no open page.`);
     const fn: any = (page as { [key: string]: any })[methodName].bind(page);
     try {
         return await fn(...args);

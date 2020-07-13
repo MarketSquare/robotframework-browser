@@ -1,5 +1,6 @@
 *** Settings ***
 Resource          imports.resource
+Test Teardown     Close Browser
 
 *** Keywords ***
 Open Browser and assert Login Page
@@ -7,28 +8,45 @@ Open Browser and assert Login Page
     New Browser    browser=${local_browser}    headless=${HEADLESS}
     New Page    url=${LOGIN URL}
     Get Text    h1    ==    Login Page
-    [Teardown]    Close Browser
 
 *** Test Cases ***
 Open Firefox
-    Run Keyword if    str($BROWSER).lower() != "Firefox"
-    ...    Open Browser and assert Login Page    firefox
-    ...    ELSE
-    ...    Pass Execution    Firefox was already opened
+    Open Browser and assert Login Page    firefox
 
 Open Chrome
-    Run Keyword if    str($BROWSER).lower() != "chromium"
-    ...    Open Browser and assert Login Page    chromium
-    ...    ELSE
-    ...    Pass Execution    Chrome was already opened
+    Open Browser and assert Login Page    chromium
 
-Create New Context
+New Browser does not open a page
+    New Browser
+    Run Keyword And Expect Error    *"Tried to do playwright action 'goto', but no open page."*    Go To    ${LOGIN URL}
+
+New Browser does not create a context
+    # Use Switch context to test that no context exists here
+    Pass Execution    Not Implemented yet
+    Switch Context
+
+New Context does not open a page
     New Context
+    Run Keyword And Expect Error    *"Tried to do playwright action 'goto', but no open page."*    Go To    ${LOGIN URL}
 
-New Page implicitly opens browser
+Switch Browser
+    Pass Execution    Not Implemented yet
+    New Browser    chromium
+    New Browser    firefox
+    Switch Browser
+
+Switch Context
+    Pass Execution    Not Implemented yet
+    New Context
+    New Context
+    Switch Context
+
+New Page can create context and browser
     New Page    ${LOGIN URL}
+    Get Text    h1    ==    Login Page
 
 Focus Next Page on popup
+    Open Browser and assert Login Page    chromium
     Auto Activate Pages
     Click    button#pops_up
     # FIXME: Workaround, this need is caused by eventhandlers laziness
@@ -36,6 +54,7 @@ Focus Next Page on popup
     Wait For Elements State    "Popped Up!"
 
 Switch Active Page after popup
+    Open Browser and assert Login Page    chromium
     Click    button#pops_up
     Switch Active Page    1
     Wait For Elements State    "Popped Up!"

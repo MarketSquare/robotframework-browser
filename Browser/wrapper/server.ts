@@ -16,15 +16,8 @@ export class PlaywrightServer implements IPlaywrightServer {
         this.browserState = new BrowserState();
     }
 
-    async openBrowser(
-        call: ServerUnaryCall<Request.NewBrowser>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        browserState.openBrowser(call, callback, this);
-    }
-
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserState.closeBrowser(callback, this.browserState?.browser);
+        browserState.closeBrowser(callback, this.browserState);
         this.browserState = new BrowserState();
         callback(null, emptyWithLog('Closed browser'));
     }
@@ -62,7 +55,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.NewBrowser>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        browserState.newBrowser(call, callback);
+        browserState.newBrowser(call, callback, this.browserState);
     }
 
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {

@@ -15,7 +15,7 @@ class SupportedBrowsers(Enum):
 
 
 class State:
-    """Keywords to manage Playwright side Browser's, Context's and Page's.
+    """Keywords to manage Playwright side Browsers, Contexts and Pages.
     """
 
     def __init__(self, library):
@@ -59,6 +59,33 @@ class State:
             logger.info(response.log)
 
     @keyword
+    def new_browser(
+        self, browser_type=SupportedBrowsers.chromium, **kwargs,
+    ):
+        with self.playwright.grpc_channel() as stub:
+            options = json.dumps(kwargs)
+            response = stub.NewBrowser(
+                Request().NewBrowser(browser=browser_type.name, rawOptions=options)
+            )
+            logger.info(response.log)
+
+    @keyword
+    def new_context(
+        self, **kwargs,
+    ):
+        with self.playwright.grpc_channel() as stub:
+            options = json.dumps(kwargs)
+            logger.info(options)
+            response = stub.NewContext(Request().NewContext(rawOptions=options))
+            logger.info(response.log)
+
+    @keyword
+    def new_page(self, url: Optional[str] = None):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.NewPage(Request().Url(url=url))
+            logger.info(response.log)
+
+    @keyword
     def switch_active_page(self, index: int):
         """Switches the active browser page to another open page by ``index``.
 
@@ -76,51 +103,9 @@ class State:
             logger.info(response.log)
 
     @keyword
-    def new_browser(
-        self,
-        browser_type=SupportedBrowsers.chromium,
-        **kwargs,
-        # TODO: Remove commented code before merging
-        # args: Optional[List[str]] = None,
-        # headless: Optional[bool] = None,
-        # devtools: Optional[bool] = None,
-        # proxy: Optional[Dict] = None,
-        # downloadsPath: Optional[str] = None,
-        # slowMo: Optional[int] = None,
-    ):
-        with self.playwright.grpc_channel() as stub:
-            options = json.dumps(kwargs)
-            response = stub.NewBrowser(
-                Request().NewBrowser(browser=browser_type.name, rawOptions=options)
-            )
-            logger.info(response.log)
+    def switch_browser(self, index: int):
+        raise NotImplementedError("Functionality not implemented yet")
 
     @keyword
-    def new_context(
-        self,
-        **kwargs,
-        # TODO: Remove commented code before merging
-        # viewport: Optional[Dict[str, int]] = None,
-        # bypassCSP: Optional[bool] = None,
-        # userAgent: Optional[str] = None,
-        # locale: Optional[str] = None,
-        # timezoneId: Optional[str] = None,
-        # geolocation: Optional[Dict] = None,
-        # extraHTTPHeaders: Optional[Dict[str, str]] = None,
-        # offline: Optional[bool] = None,
-        # httpCredentials: Optional[Dict] = None,
-        # isMobile: Optional[bool] = None,
-        # hasTouch: Optional[bool] = None,
-        # acceptDownloads: Optional[bool] = None,
-    ):
-        with self.playwright.grpc_channel() as stub:
-            options = json.dumps(kwargs)
-            logger.info(options)
-            response = stub.NewContext(Request().NewContext(rawOptions=options))
-            logger.info(response.log)
-
-    @keyword
-    def new_page(self, url: Optional[str] = None):
-        with self.playwright.grpc_channel() as stub:
-            response = stub.NewPage(Request().NewPage(url=url))
-            logger.info(response.log)
+    def switch_context(self, index: int):
+        raise NotImplementedError("Functionality not implemented yet")

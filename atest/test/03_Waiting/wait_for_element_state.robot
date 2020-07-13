@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        New Page  ${LOGIN URL}
+Test Setup        New Page    ${LOGIN URL}
 
 *** Test Cases ***
 Wait For Elements State to hide

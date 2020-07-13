@@ -1,7 +1,7 @@
 *** Settings ***
 Library           Browser
 Resource          keywords.resource
-Test Setup        New Page  ${LOGIN URL}
+Test Setup        New Page    ${LOGIN URL}
 Test Teardown     Close Browser
 
 *** Test Cases ***
