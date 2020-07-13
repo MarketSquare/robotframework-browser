@@ -69,6 +69,22 @@ class Browser(DynamicCore):
     | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
     | text         | Browser text engine.       | ``text=Login``                 |
 
+    == Finding elements inside frames ==
+
+    By default, selector chains do not cross frame boundaries. It means that a
+    simple CSS selector is not able to select and element located inside an iframe
+    or a frameset. For this usecase, there is a special selector ``>>>`` which can
+    be used to combine a selector for the frame and a selector for an element
+    inside a frame.
+
+    Given this simple pseudo html snippet:
+    ``<iframe name="iframe" src="src.html"><button id="btn">Click Me</button></iframe>``,
+    here's a keyword call that clicks the button inside the frame.
+
+    | Click  | iframe[name="iframe"] >>> #btn  |
+
+    The selectors on the left and right side of ``>>>`` can be any valid selectors.
+
     = Assertions =
 
     Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
