@@ -7,7 +7,6 @@ from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..generated.playwright_pb2 import Request
-from ..util.py import actual_kwargs
 
 
 class SupportedBrowsers(Enum):
@@ -144,46 +143,47 @@ class Control:
             response = stub.AutoActivatePages(Request().Empty())
             logger.info(response.log)
 
-    @actual_kwargs
     @keyword
     def new_browser(
         self,
         browser_type=SupportedBrowsers.chromium,
-        args: Optional[List[str]] = None,
-        headless: Optional[bool] = None,
-        devtools: Optional[bool] = None,
-        proxy: Optional[Dict] = None,
-        downloadsPath: Optional[str] = None,
-        slowMo: Optional[int] = None,
         **kwargs,
+        # TODO: Remove commented code before merging
+        # args: Optional[List[str]] = None,
+        # headless: Optional[bool] = None,
+        # devtools: Optional[bool] = None,
+        # proxy: Optional[Dict] = None,
+        # downloadsPath: Optional[str] = None,
+        # slowMo: Optional[int] = None,
     ):
         with self.playwright.grpc_channel() as stub:
-            options = json.dumps(new_browser.actual_kwargs) # type: ignore [name-defined]
+            options = json.dumps(kwargs)
             response = stub.NewBrowser(
                 Request().NewBrowser(browser=browser_type.name, rawOptions=options)
             )
             logger.info(response.log)
 
-    @actual_kwargs
     @keyword
     def new_context(
         self,
-        viewport: Optional[Dict[str, int]] = None,
-        bypassCSP: Optional[bool] = None,
-        userAgent: Optional[str] = None,
-        locale: Optional[str] = None,
-        timezoneId: Optional[str] = None,
-        geolocation: Optional[Dict] = None,
-        extraHTTPHeaders: Optional[Dict[str, str]] = None,
-        offline: Optional[bool] = None,
-        httpCredentials: Optional[Dict] = None,
-        isMobile: Optional[bool] = None,
-        hasTouch: Optional[bool] = None,
-        acceptDownloads: Optional[bool] = None,
         **kwargs,
+        # TODO: Remove commented code before merging
+        # viewport: Optional[Dict[str, int]] = None,
+        # bypassCSP: Optional[bool] = None,
+        # userAgent: Optional[str] = None,
+        # locale: Optional[str] = None,
+        # timezoneId: Optional[str] = None,
+        # geolocation: Optional[Dict] = None,
+        # extraHTTPHeaders: Optional[Dict[str, str]] = None,
+        # offline: Optional[bool] = None,
+        # httpCredentials: Optional[Dict] = None,
+        # isMobile: Optional[bool] = None,
+        # hasTouch: Optional[bool] = None,
+        # acceptDownloads: Optional[bool] = None,
     ):
         with self.playwright.grpc_channel() as stub:
-            options = json.dumps(new_context.actual_kwargs) # type: ignore [name-defined]
+            options = json.dumps(kwargs)
+            logger.info(options)
             response = stub.NewContext(Request().NewContext(rawOptions=options))
 
     @keyword
