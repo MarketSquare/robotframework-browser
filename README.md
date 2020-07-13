@@ -28,6 +28,17 @@ See [keyword documentation](https://marketsquare.github.io/robotframework-browse
 
 # Development
 
+## Source code organization
+
+These are the directories containing source code and tests:
+
+ - `Browser`, contains the Python source code for the actual Robot Framework test library.
+ - `node/playwright-wrapper`, contains a wrapper for Playwirght that implements the grpc protocol, implemented in Typescript.
+ - `node/dynamic-test-app`, contains a test application used in the acceptance tests, implemented in Typescript + React.
+ - `protobuf`, contains the Protocol Buffer definitions used by the communication between the library and Playwirght wrapper.
+ - `utest`, unit tests for the Python code.
+ - `atest`, acceptance tests written with Robot Framework.
+
 ## Development environment
 
 Install Python, nodejs and yarn. Make sure you have `make` available.
