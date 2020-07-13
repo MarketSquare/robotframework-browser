@@ -6,9 +6,8 @@ import * as browserControl from './browser-control';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
-import * as browserState from './browserstate';
-import { BrowserState } from './browserstate';
-
+import * as browserState from './browser-state';
+import { BrowserState } from './browser-state';
 import { emptyWithLog } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
