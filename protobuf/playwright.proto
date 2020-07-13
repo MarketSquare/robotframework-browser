@@ -187,9 +187,12 @@ service  Playwright {
   rpc ExecuteJavascriptOnPage(Request.JavascriptCode) returns (Response.JavascriptExecutionResult) {}
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
-  rpc SwitchActivePage(Request.Index) returns (Response.Empty) {}
+
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
+  rpc SwitchPage(Request.Index) returns (Response.Empty) {}
   rpc SwitchContext(Request.Index) returns (Response.Empty) {}
+  rpc SwitchBrowser(Request.Index) returns (Response.Empty) {}
+
   rpc NewPage(Request.Url) returns (Response.Empty) {}
   rpc NewContext(Request.NewContext) returns (Response.Empty) {}
   rpc NewBrowser(Request.NewBrowser) returns (Response.Empty) {}

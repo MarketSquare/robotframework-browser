@@ -103,13 +103,13 @@ class BrowserState(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def switch_active_page(self, index: int):
+    def switch_page(self, index: int):
         """Switches the active browser page to another open page by ``index``.
 
             Newly opened pages get appended to the end of the list
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.SwitchActivePage(Request().Index(index=index))
+            response = stub.SwitchPage(Request().Index(index=index))
             self.info(response.log)
 
     @keyword
@@ -117,4 +117,15 @@ class BrowserState(LibraryComponent):
         """Toggles automatically changing active page to latest opened page """
         with self.playwright.grpc_channel() as stub:
             response = stub.AutoActivatePages(Request().Empty())
+            self.info(response.log)
+
+    @keyword
+    def switch_browser(self, index: int):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SwitchBrowser(Request().Index(index=index))
+            self.info(response.log)
+    @keyword
+    def switch_context(self, index: int):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SwitchContext(Request().Index(index=index))
             self.info(response.log)

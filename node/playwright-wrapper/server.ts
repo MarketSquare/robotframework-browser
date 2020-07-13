@@ -11,9 +11,12 @@ import { BrowserState } from './browser-state';
 import { emptyWithLog } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
-    browserState: browserState.BrowserState;
+    browserState: BrowserState;
+    openBrowsers: BrowserState[]
+
     constructor() {
         this.browserState = new BrowserState();
+        this.openBrowsers = [this.browserState];
     }
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
@@ -21,14 +24,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         this.browserState = new BrowserState();
         callback(null, emptyWithLog('Closed browser'));
     }
-
-    async switchActivePage(
-        call: ServerUnaryCall<Request.Index>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        browserState.switchActivePage(call, callback, this.browserState);
-    }
-
+    
     async autoActivatePages(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.Empty>,
@@ -36,8 +32,20 @@ export class PlaywrightServer implements IPlaywrightServer {
         browserState.autoActivatePages(call, callback, this.browserState);
     }
 
+    async switchPage(
+        call: ServerUnaryCall<Request.Index>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        browserState.switchPage(call, callback, this.browserState);
+    }
+
     async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserState.switchContext(call, callback);
+        browserState.switchContext(call, callback, this.browserState);
+    }
+
+    async switchBrowser(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        const setBrowser = (browser: BrowserState) => {this.browserState = browser}
+        await browserState.switchBrowser(call, callback, this.openBrowsers, setBrowser)
     }
 
     async newPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
