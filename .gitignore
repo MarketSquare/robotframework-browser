@@ -1,5 +1,5 @@
 Browser/wrapper/*.js
-Browser/wrapper/package.json
+Browser/wrapper
 Browser/generated
 node/playwright-wrapper/generated
 
