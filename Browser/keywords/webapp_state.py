@@ -10,7 +10,7 @@ from ..generated.playwright_pb2 import Request
 
 class WebAppState(LibraryComponent):
     @keyword
-    def localStorage_get(
+    def local_storage_get(
         self,
         key: str,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -32,7 +32,7 @@ class WebAppState(LibraryComponent):
         )
 
     @keyword
-    def localStorage_set(self, key: str, value: str):
+    def local_storage_set(self, key: str, value: str):
         """
         Save data to localStorage
         """
@@ -45,7 +45,7 @@ class WebAppState(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def localStorage_remove(self, key: str):
+    def local_storage_remove(self, key: str):
         """
         Remove saved data with key from localStorage
         """
@@ -58,7 +58,7 @@ class WebAppState(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def localStorage_clear(self):
+    def local_storage_clear(self):
         """
         Remove all saved data from localStorage
         """
@@ -69,7 +69,7 @@ class WebAppState(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def sessionStorage_get(
+    def session_storage_get(
         self,
         key: str,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -93,7 +93,7 @@ class WebAppState(LibraryComponent):
         )
 
     @keyword
-    def sessionStorage_set(self, key: str, value: str):
+    def session_storage_set(self, key: str, value: str):
         """
         Save data to sessionStorage
         """
@@ -106,7 +106,7 @@ class WebAppState(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def sessionStorage_remove(self, key: str):
+    def session_storage_remove(self, key: str):
         """
         Remove saved data with key from sessionStorage
         """
@@ -119,7 +119,7 @@ class WebAppState(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def sessionStorage_clear(self):
+    def session_storage_clear(self):
         """
         Remove all saved data from sessionStorage
         """
