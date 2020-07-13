@@ -1,27 +1,20 @@
 import json
-from typing import Any
+from typing import Any, Optional
 from copy import copy
 
-from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
+from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..assertion_engine import verify_assertion, AssertionOperator
 from .input import SelectAttribute
 
 
-class Getters:
-    def __init__(self, library):
-        self.library = library
-
-    @property
-    def playwright(self):
-        return self.library.playwright
-
+class Getters(LibraryComponent):
     @keyword
     def get_url(
         self,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> str:
         """Returns the current URL.
@@ -31,36 +24,36 @@ class Getters:
         value = ""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
-            logger.debug(response.log)
+            self.debug(response.log)
             value = response.body
         return verify_assertion(value, assertion_operator, assertion_expected, "URL ")
 
     @keyword
     def get_page_state(
         self,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> object:
         """Returns page model state object.
 
-        This must be given on the page to ``window.__RFBROWSER__``
+        This must be given on the page to ``window.__SET_RFBROWSER_STATE__``
 
         For example:
 
         ``let mystate = {'login': true, 'name': 'George', 'age': 123};``
 
-        ``window.__RFBROWSER__ && window.__RFBROWSER__(mystate);``
+        ``window.__SET_RFBROWSER_STATE__ && window.__SET_RFBROWSER_STATE__(mystate);``
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageState(Request().Empty())
-            logger.debug(response.log)
+            self.debug(response.log)
             value = json.loads(response.result)
         return verify_assertion(value, assertion_operator, assertion_expected, "State ")
 
     @keyword
     def get_title(
         self,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Returns the title of the current page.
@@ -70,7 +63,7 @@ class Getters:
         value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
-            logger.debug(response.log)
+            self.debug(response.log)
             value = response.body
         return verify_assertion(value, assertion_operator, assertion_expected, "Title ")
 
@@ -78,7 +71,7 @@ class Getters:
     def get_text(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Returns text attribute of the element found by ``selector``.
@@ -90,7 +83,7 @@ class Getters:
             response = stub.GetDomProperty(
                 Request().ElementProperty(selector=selector, property="innerText")
             )
-            logger.debug(response.log)
+            self.debug(response.log)
             value = response.body
         return verify_assertion(
             value, assertion_operator, assertion_expected, f"Text {selector}"
@@ -101,7 +94,7 @@ class Getters:
         self,
         selector: str,
         attribute: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Returns ``attribute`` of the element found by ``selector``.
@@ -113,7 +106,7 @@ class Getters:
             response = stub.GetDomProperty(
                 Request().ElementProperty(selector=selector, property=attribute)
             )
-            logger.debug(response.log)
+            self.debug(response.log)
             value = response.body
         return verify_assertion(
             value, assertion_operator, assertion_expected, f"Attribute {selector}"
@@ -123,7 +116,7 @@ class Getters:
     def get_textfield_value(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Returns value of the textfield found by ``selector``.
@@ -139,7 +132,7 @@ class Getters:
         self,
         selector: str,
         option_attribute: SelectAttribute = SelectAttribute.label,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
     ):
         """Returns the specified attribute of selected options of the ``select`` element.
@@ -172,7 +165,7 @@ class Getters:
             response = stub.GetSelectContent(
                 Request().ElementSelector(selector=selector)
             )
-            logger.info(response)
+            self.info(response)
 
             expected = list(assertion_expected)
 
@@ -202,10 +195,9 @@ class Getters:
                         f" expected value but got '{len(expected)}'."
                     )
                 expected_value = expected[0]
-            elif assertion_operator not in [
+            elif assertion_operator is not None and assertion_operator not in [
                 AssertionOperator["=="],
                 AssertionOperator["!="],
-                AssertionOperator["noassertion"],
             ]:
                 raise AttributeError(
                     f"Operator '{assertion_operator.name}' is not allowed "
@@ -225,7 +217,7 @@ class Getters:
     def get_checkbox_state(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         state: bool = False,
     ):
         """Returns the state of the checkbox found by ``selector``.
@@ -249,10 +241,10 @@ class Getters:
             response = stub.GetBoolProperty(
                 Request().ElementProperty(selector=selector, property="checked")
             )
-            logger.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
+            self.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
             value: bool = response.body
 
-            if assertion_operator not in [
+            if assertion_operator is not None and assertion_operator not in [
                 AssertionOperator["=="],
                 AssertionOperator["!="],
             ]:
@@ -272,7 +264,7 @@ class Getters:
     def get_element_count(
         self,
         selector: str,
-        assertion_operator: AssertionOperator = AssertionOperator.NO_ASSERTION,
+        assertion_operator: Optional[AssertionOperator] = None,
         expected_count: str = "-1",
     ):
         """Returns the count of elements found with ``selector``.

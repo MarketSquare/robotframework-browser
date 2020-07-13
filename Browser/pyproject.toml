@@ -1,5 +1,4 @@
 [tool.black]
-line-length = 88
 target-version = ['py38']
 exclude = '''
 /(
@@ -11,6 +10,6 @@ exclude = '''
   | buck-out
   | build
   | dist
-  | Browser/generated 
+  | generated
 )/
 '''

@@ -1,13 +1,11 @@
 from enum import Enum
-from typing import Any, Dict, Tuple, Callable, TypeVar, cast
+from typing import Any, Dict, Tuple, Callable, TypeVar, cast, Optional
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 import re
 
 AssertionOperator = Enum(
     "AssertionOperator",
     {
-        "noassertion": "NO_ASSERTION",
-        "NO_ASSERTION": "NO_ASSERTION",
         "equal": "==",
         "==": "==",
         "shouldbe": "==",
@@ -35,7 +33,6 @@ AssertionOperator = Enum(
 
 
 handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
-    AssertionOperator["NO_ASSERTION"]: (lambda a, b: True, "no assertion"),
     AssertionOperator["=="]: (lambda a, b: a == b, "should be"),
     AssertionOperator["!="]: (lambda a, b: a != b, "should not be"),
     AssertionOperator["<"]: (lambda a, b: a < b, "should be less than"),
@@ -62,8 +59,10 @@ T = TypeVar("T")
 
 
 def verify_assertion(
-    value: T, operator: AssertionOperator, expected: Any, message=""
-) -> T:
+    value: T, operator: Optional[AssertionOperator], expected: Any, message=""
+) -> Any:
+    if operator is None:
+        return value
     if operator is AssertionOperator["then"]:
         return cast(T, BuiltIn().evaluate(expected, namespace={"value": value}))
     handler = handlers.get(operator)

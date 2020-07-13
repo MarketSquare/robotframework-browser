@@ -5,7 +5,7 @@ from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .keywords import Control, Getters, Input, Waiter
+from .keywords import BrowserState, Control, Getters, Input, Waiter, WebAppState
 from .playwright import Playwright
 from .version import VERSION
 
@@ -43,7 +43,6 @@ class Browser(DynamicCore):
     be explicitly specified with a prefix or the strategy can be implicit.
 
     === Implicit selector strategy ===
-    == !!! THIS ISN'T IMPLEMENTED YET !!! ==
 
     The default selector strategy is `css`. If selector does not contain
     one of the know selector strategies, `css`, `xpath`, `id` or `text` it is
@@ -69,6 +68,22 @@ class Browser(DynamicCore):
     | css          | CSS selector.              | ``css=div#example``            |
     | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
     | text         | Browser text engine.       | ``text=Login``                 |
+
+    == Finding elements inside frames ==
+
+    By default, selector chains do not cross frame boundaries. It means that a
+    simple CSS selector is not able to select and element located inside an iframe
+    or a frameset. For this usecase, there is a special selector ``>>>`` which can
+    be used to combine a selector for the frame and a selector for an element
+    inside a frame.
+
+    Given this simple pseudo html snippet:
+    ``<iframe name="iframe" src="src.html"><button id="btn">Click Me</button></iframe>``,
+    here's a keyword call that clicks the button inside the frame.
+
+    | Click  | iframe[name="iframe"] >>> #btn  |
+
+    The selectors on the left and right side of ``>>>`` can be any valid selectors.
 
     = Assertions =
 
@@ -117,9 +132,11 @@ class Browser(DynamicCore):
         self.browser_control = Control(self)
         libraries = [
             self.browser_control,
+            BrowserState(self),
             Input(self),
             Getters(self),
             Waiter(self),
+            WebAppState(self),
         ]
         self.playwright = Playwright(timeout)
         DynamicCore.__init__(self, libraries)
@@ -131,11 +148,11 @@ class Browser(DynamicCore):
     def _close(self):
         self.playwright.close()
 
-    def run_keyword(self, name, args, kwargs):
+    def run_keyword(self, name, args, kwargs=None):
         try:
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except AssertionError as e:
-            self.test_error()
+            self.keyword_error()
             raise e
 
     def start_keyword(self, name, attrs):
@@ -161,25 +178,21 @@ class Browser(DynamicCore):
                 and test.status == "FAIL"
                 and re.match(timeout_pattern, test.message)
             ):
-                self.browser_control.take_page_screenshot(
-                    self.failure_screenshot_path(test.name)
-                )
+                self.screenshot_on_failure(test.name)
 
-    def test_error(self):
+    def keyword_error(self):
         """Sends screenshot command to Playwright.
 
         Only works during testing since this uses robot's outputdir for output.
         """
-        on_failure_keyword = "take page screenshot"
+        self.screenshot_on_failure(BuiltIn().get_variable_value("${TEST NAME}"))
+
+    def screenshot_on_failure(self, test_name):
         try:
-            test_name = BuiltIn().get_variable_value("${TEST NAME}")
             path = self.failure_screenshot_path(test_name)
-            logger.info(f"Running `{on_failure_keyword}` with arguments `{path}`")
-            BuiltIn().run_keyword(on_failure_keyword, path)
+            self.browser_control.take_page_screenshot(path)
         except Exception as err:
-            logger.error(
-                f"Keyword '{on_failure_keyword}' could not be run on failure: {err}"
-            )
+            logger.error(f"Failure in taking page screenshot after failure:\n{err}")
 
     def failure_screenshot_path(self, test_name):
         return os.path.join(

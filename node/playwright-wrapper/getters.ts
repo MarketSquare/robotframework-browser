@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page, ElementHandle } from 'playwright';
 
 import { Response, Request, SelectEntry } from './generated/playwright_pb';
-import { invokeOnPage, invokeOnPageWithSelector } from './playwirght-util';
+import { invokeOnPage, invokeOnPageWithSelector, waitUntilElementExists } from './playwirght-util';
 import { stringResponse, boolResponse, intResponse } from './response-util';
 
 export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
@@ -41,6 +41,7 @@ export async function getSelectContent(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
+    await waitUntilElementExists(page, callback, selector);
 
     type Value = [string, string, boolean];
     const content: Value[] = await invokeOnPageWithSelector(
@@ -83,6 +84,7 @@ export async function getBoolProperty(
 
 async function getProperty<T>(call: ServerUnaryCall<Request.ElementProperty>, callback: sendUnaryData<T>, page?: Page) {
     const selector = call.request.getSelector();
+    await waitUntilElementExists(page, callback, selector);
     const element = await invokeOnPageWithSelector(page, callback, '$', selector);
     try {
         const propertyName = call.request.getProperty();

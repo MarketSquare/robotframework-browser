@@ -1,13 +1,13 @@
 import json
 from enum import Enum, auto
 
-from robot.api import logger  # type: ignore
-from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 from typing import Optional, Dict, Any
 
+from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class MouseButton(Enum):
@@ -30,14 +30,7 @@ class SelectAttribute(Enum):
     index = auto()
 
 
-class Input:
-    def __init__(self, library):
-        self.library = library
-
-    @property
-    def playwright(self):
-        return self.library.playwright
-
+class Input(LibraryComponent):
     @keyword
     def type_text(
         self, selector: str, text: str, delay: str = "0 ms", clear: bool = True
@@ -55,13 +48,13 @@ class Input:
         See `Fill Text` for direct filling of the full text at once.
         """
         with self.playwright.grpc_channel() as stub:
-            delay_ms = timestr_to_secs(delay) * 1000
+            delay_ms = timestr_to_millisecs(delay)
             response = stub.TypeText(
                 Request().TypeText(
                     selector=selector, text=text, delay=int(delay_ms), clear=clear
                 )
             )
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def fill_text(self, selector: str, text: str):
@@ -79,7 +72,7 @@ class Input:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(Request().FillText(selector=selector, text=text))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def clear_text(self, selector: str):
@@ -90,7 +83,7 @@ class Input:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(Request().ClearText(selector=selector))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def type_secret(
@@ -140,14 +133,14 @@ class Input:
         """  # noqa
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(Request().PressKeys(selector=selector, key=keys))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def click(self, selector: str):
         """Clicks the element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().ElementSelector(selector=selector))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def click_with_options(
@@ -181,20 +174,20 @@ class Input:
         with self.playwright.grpc_channel() as stub:
             options = {"button": button.name, "clickCount": click_count}
             if delay:
-                options["delay"] = int(timestr_to_secs(delay) * 1000)
+                options["delay"] = timestr_to_millisecs(delay)
             if position_x and position_y:
                 positions: Dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
             options_json = json.dumps(options)
-            logger.debug(f"Click Options are: {options_json}")
+            self.debug(f"Click Options are: {options_json}")
             response = stub.Click(
                 Request().ElementSelectorOptions(
                     selector=selector, options=options_json
                 )
             )
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def focus(self, selector: str):
@@ -205,7 +198,7 @@ class Input:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(Request().ElementSelector(selector=selector))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def execute_javascript_on_page(self, script: str) -> Any:
@@ -215,7 +208,7 @@ class Input:
             response = stub.ExecuteJavascriptOnPage(
                 Request().JavascriptCode(script=script)
             )
-            logger.info(response.log)
+            self.info(response.log)
             return json.loads(response.result)
 
     @keyword
@@ -226,7 +219,7 @@ class Input:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(Request().ElementSelector(selector=selector))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def uncheck_checkbox(self, selector: str):
@@ -238,7 +231,7 @@ class Input:
             response = stub.UncheckCheckbox(
                 Request().ElementSelector(selector=selector)
             )
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def select_options_by(self, attribute: SelectAttribute, selector: str, *values):
@@ -265,11 +258,11 @@ class Input:
             response = stub.SelectOption(
                 Request().SelectElementSelector(selector=selector, matcherJson=matchers)
             )
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(Request().ElementSelector(selector=selector))
-            logger.info(response.log)
+            self.info(response.log)
