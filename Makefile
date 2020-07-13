@@ -48,10 +48,10 @@ test-failed: build
 	python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test
 
 docker:
-	docker build --tag rfbrowser .
+	docker build --tag rfbrowser --file atest/docker/Dockerfile .
 docker-test:
 	rm -rf atest/output
-	docker run -it --rm --ipc=host --security-opt seccomp=chrome.json -v $(shell pwd)/atest/:/atest rfbrowser robot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test
+	docker run -it --rm --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest rfbrowser robot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test
 
 lint-python:
 	mypy .
