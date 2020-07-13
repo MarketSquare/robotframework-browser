@@ -14,12 +14,12 @@ endif
 
 .PHONY: utest atest build protobuf
 
-.venv: requirements.txt dev-requirements.txt
+.venv: Browser/requirements.txt Browser/dev-requirements.txt
 	if [ ! -d .venv ]; then \
 		python3 -m venv .venv ; \
 	fi
-	.venv/bin/pip install -r requirements.txt;
-	.venv/bin/pip install -r dev-requirements.txt;
+	.venv/bin/pip install -r Browser/requirements.txt;
+	.venv/bin/pip install -r Browser/dev-requirements.txt;
 
 node-deps:
 	yarn install
@@ -54,9 +54,10 @@ docker-test:
 	docker run -it --rm --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest rfbrowser robot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test
 
 lint-python:
-	mypy .
-	black Browser/
-	flake8
+	mypy --config-file Browser/mypy.ini Browser/ utest/
+	black --config Browser/pyproject.toml Browser/
+	black --config Browser/pyproject.toml utest/
+	flake8 --config Browser/.flake8 Browser/ utest/
 
 lint-node:
 	yarn run lint
