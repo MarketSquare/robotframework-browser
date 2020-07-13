@@ -1,13 +1,13 @@
 ifeq ($(OS),Windows_NT)
 	rm_cmd = del
 	backup_files = .\Browser\generated\playwright_pb2_grpc.py.bak
-	PROTO_DEST = .\Browser\wrapper\generated
+	PROTO_DEST = .\node\playwright-wrapper\generated
 	PROTOC_GEN_PLUGIN = .\node_modules\.bin\grpc_tools_node_protoc_plugin.cmd
 	PROTOC_TS_PLUGIN = .\node_modules\.bin\protoc-gen-ts.cmd
 else
 	rm_cmd = rm
 	backup_files = Browser/generated/playwright_pb2_grpc.py.bak
-	PROTO_DEST = ./Browser/wrapper/generated
+	PROTO_DEST = ./node/playwright-wrapper/generated
 	PROTOC_GEN_PLUGIN = ./node_modules/.bin/grpc_tools_node_protoc_plugin
 	PROTOC_TS_PLUGIN = ./node_modules/.bin/protoc-gen-ts
 endif
@@ -69,7 +69,8 @@ lint: lint-node lint-python lint-robot
 
 protobuf:
 	mkdir -p Browser/generated/
-	mkdir -p Browser/wrapper/generated/
+	mkdir -p Browser/wrapper/
+	mkdir -p node/playwright-wrapper/generated/
 	python -m grpc_tools.protoc -I protobuf --python_out=Browser/generated --grpc_python_out=Browser/generated protobuf/*.proto
 	touch Browser/generated/__init__.py
 	sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Browser.generated import playwright_pb2 as playwright__pb2/g' Browser/generated/playwright_pb2_grpc.py

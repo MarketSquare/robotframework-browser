@@ -56,7 +56,7 @@ const testappBackend = {
 }
 
 const playwrightWrapper = {
-    entry: './Browser/wrapper/index.ts',
+    entry: './node/playwright-wrapper/index.ts',
     output: {
         filename: 'index.js',
         path: path.resolve(__dirname, 'Browser/wrapper')

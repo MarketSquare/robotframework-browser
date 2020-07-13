@@ -1,7 +1,7 @@
 Browser/wrapper/*.js
 Browser/wrapper/package.json
 Browser/generated
-Browser/wrapper/generated
+node/playwright-wrapper/generated
 
 atest/dynamic-test-app/dist/*.js
 atest/dynamic-test-app/src/*.js
