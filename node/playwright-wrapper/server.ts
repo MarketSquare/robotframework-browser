@@ -1,5 +1,4 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
-import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
+import { sendUnaryData, ServerUnaryCall, handleUnaryCall } from 'grpc';
 
 import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { Response, Request } from './generated/playwright_pb';
@@ -7,87 +6,56 @@ import * as browserControl from './browser-control';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
+import * as browserState from './browser-state';
+import { BrowserState } from './browser-state';
 import { emptyWithLog } from './response-util';
 
-// Can't have an async constructor, this is a workaround
-async function createBrowserState(
-    browserType: string,
-    headless: boolean,
-    hideRfBrowser: boolean,
-): Promise<BrowserState> {
-    let browser;
-    if (browserType === 'firefox') {
-        browser = await firefox.launch({ headless: headless });
-    } else if (browserType === 'chromium') {
-        browser = await chromium.launch({ headless: headless });
-    } else if (browserType === 'webkit') {
-        browser = await webkit.launch({ headless: headless });
-    } else {
-        throw new Error('unsupported browser');
-    }
-    const context = await browser.newContext();
-    if (!hideRfBrowser) {
-        context.addInitScript(function () {
-            window.__SET_RFBROWSER_STATE__ = function (state: any) {
-                window.__RFBROWSER__ = state;
-                return state;
-            };
-        });
-    }
-    context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
-    const page = await context.newPage();
-    return new BrowserState(browser, context, page);
-}
-
-export class BrowserState {
-    constructor(browser: Browser, context: BrowserContext, page: Page) {
-        this.browser = browser;
-        this.context = context;
-        this.page = page;
-    }
-    browser: Browser;
-    context: BrowserContext;
-    page: Page;
-}
-
 export class PlaywrightServer implements IPlaywrightServer {
-    private browserState?: BrowserState;
+    browserState: browserState.BrowserState;
+    constructor() {
+        this.browserState = new BrowserState();
+    }
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserControl.closeBrowser(callback, this.browserState?.browser);
-        this.browserState = undefined;
+        browserState.closeBrowser(callback, this.browserState);
+        this.browserState = new BrowserState();
         callback(null, emptyWithLog('Closed browser'));
-    }
-
-    async openBrowser(
-        call: ServerUnaryCall<Request.NewBrowser>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        const browserType = call.request.getBrowser();
-        const url = call.request.getUrl();
-        const headless = call.request.getHeadless();
-        console.log('Open browser: ' + browserType);
-        this.browserState = await createBrowserState(browserType, headless, false);
-        if (url) {
-            await this.browserState.page.goto(url).catch((e) => callback(null, e));
-            callback(null, emptyWithLog(`Successfully opened browser ${browserType} to ${url}.`));
-        } else {
-            callback(null, emptyWithLog(`Successfully opened browser ${browserType}.`));
-        }
     }
 
     async switchActivePage(
         call: ServerUnaryCall<Request.Index>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        browserControl.switchActivePage(call, callback, this.browserState);
+        browserState.switchActivePage(call, callback, this.browserState);
     }
 
     async autoActivatePages(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        browserControl.autoActivatePages(call, callback, this.browserState);
+        browserState.autoActivatePages(call, callback, this.browserState);
+    }
+
+    async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        browserState.switchContext(call, callback);
+    }
+
+    async newPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        browserState.newPage(call, callback, this.browserState);
+    }
+
+    async newContext(
+        call: ServerUnaryCall<Request.NewContext>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        browserState.newContext(call, callback, this.browserState);
+    }
+
+    async newBrowser(
+        call: ServerUnaryCall<Request.NewBrowser>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        browserState.newBrowser(call, callback, this.browserState);
     }
 
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {

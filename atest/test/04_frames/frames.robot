@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       Open Browser    ${FRAMES URL}    browser=${BROWSER}    headless=${HEADLESS}
+Suite Setup       Open Browser To Frame Page
 Suite Teardown    Close Browser
 
 *** Test Cases ***

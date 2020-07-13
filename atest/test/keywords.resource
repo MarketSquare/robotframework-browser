@@ -7,9 +7,14 @@ Resource          variables.resource
 ${PLAYWRIGHT TIMEOUT}      1 second
 
 *** Keywords ***
+Open Browser To Frame Page
+    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Page  ${FRAMES URL}    
+
+
 Open Browser To Login Page
-    Open Browser    ${LOGIN URL}    ${BROWSER}
-    # Maximize Browser Window
+    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Page  ${LOGIN URL}    
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 

@@ -8,39 +8,15 @@ from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Control(LibraryComponent):
-    @keyword
-    def open_browser(self, url=None, browser="Chromium", headless: bool = True):
-        """Opens a new browser instance.
+    """Keywords to do things on the current browser page and modify the page
+    """
 
-        If ``url`` is provided, navigates there.
+    def __init__(self, library):
+        self.library = library
 
-        The optional ``browser`` argument specifies which browser to use. The
-        supported browsers are listed in the table below. The browser names
-        are case-insensitive.
-        |   = Browser =   |        = Name(s) =        |
-        | Firefox         | firefox                   |
-        | Chromium        | chromium                  |
-        | WebKit          | webkit                    |
-
-        """
-        browser_ = browser.lower().strip()
-        if browser_ not in self.library.SUPPORTED_BROWSERS:
-            raise ValueError(
-                f"{browser} is not supported, "
-                f'it should be one of: {", ".join(self.library.SUPPORTED_BROWSERS)}'
-            )
-        with self.playwright.grpc_channel() as stub:
-            response = stub.OpenBrowser(
-                Request().NewBrowser(url=url or "", browser=browser_, headless=headless)
-            )
-            self.info(response.log)
-
-    @keyword
-    def close_browser(self):
-        """Closes the current browser."""
-        with self.playwright.grpc_channel() as stub:
-            response = stub.CloseBrowser(Request.Empty())
-            self.info(response.log)
+    @property
+    def playwright(self):
+        return self.library.playwright
 
     @keyword
     def go_forward(self):

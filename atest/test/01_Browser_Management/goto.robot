@@ -7,10 +7,10 @@ ${ERROR URL}      ${ROOT URL}/error.html
 
 *** Test Cases ***
 No Open Browser Throws
-    Run Keyword and Expect Error    *details = "Tried to do playwirght action 'goto', but no open browser."*    GoTo    "about:blank"
+    Run KeyWord and Expect Error    *details = "Tried to do playwright action 'goto', but no open page."*    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
-    [Setup]    Open Browser    ${LOGIN URL}
+    [Setup]    New Page    ${LOGIN URL}
     Go To    ${WELCOME URL}
     Get Url    ==    ${WELCOME URL}
     Go To    ${ERROR URL}
