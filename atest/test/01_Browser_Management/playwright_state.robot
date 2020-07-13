@@ -23,7 +23,7 @@ New Browser does not open a page
 New Browser does not create a context
     # Use Switch context to test that no context exists here
     Pass Execution    Not Implemented yet
-    [Teardown]
+    [Teardown]    Pass Execution    Not Implemented yet
     Switch Context
 
 New Context does not open a page
@@ -32,14 +32,14 @@ New Context does not open a page
 
 Switch Browser
     Pass Execution    Not Implemented yet
-    [Teardown]
+    [Teardown]    Pass Execution    Not Implemented yet
     New Browser    chromium
     New Browser    firefox
     Switch Browser
 
 Switch Context
     Pass Execution    Not Implemented yet
-    [Teardown]
+    [Teardown]    Pass Execution    Not Implemented yet
     New Context
     New Context
     Switch Context

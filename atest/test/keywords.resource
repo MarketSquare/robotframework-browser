@@ -7,6 +7,11 @@ Resource          variables.resource
 ${PLAYWRIGHT TIMEOUT}      1 second
 
 *** Keywords ***
+Open Browser To Frame Page
+    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Page  ${FRAMES URL}    
+
+
 Open Browser To Login Page
     New Browser  ${BROWSER}  headless=${HEADLESS}
     New Page  ${LOGIN URL}    
