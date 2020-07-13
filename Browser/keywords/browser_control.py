@@ -1,6 +1,6 @@
 import json
 from enum import Enum, auto
-from typing import Dict, List, Optional
+from typing import Optional
 
 from robot.api import logger  # type: ignore
 from robot.utils.robottime import timestr_to_secs  # type: ignore
@@ -185,9 +185,10 @@ class Control:
             options = json.dumps(kwargs)
             logger.info(options)
             response = stub.NewContext(Request().NewContext(rawOptions=options))
+            logger.info(response.log)
 
     @keyword
-    def new_page(self, url: Optional[str] = ""):
+    def new_page(self, url: Optional[str] = None):
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(Request().NewPage(url=url))
             logger.info(response.log)

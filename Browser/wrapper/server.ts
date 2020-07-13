@@ -7,14 +7,14 @@ import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
 import * as browserState from './browserstate';
-import { BrowserState} from './browserstate'
+import { BrowserState } from './browserstate';
 
 import { emptyWithLog } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     browserState: browserState.BrowserState;
     constructor() {
-        this.browserState = new BrowserState
+        this.browserState = new BrowserState();
     }
 
     async openBrowser(
@@ -26,7 +26,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         browserState.closeBrowser(callback, this.browserState?.browser);
-        this.browserState = new BrowserState;
+        this.browserState = new BrowserState();
         callback(null, emptyWithLog('Closed browser'));
     }
 
