@@ -135,7 +135,7 @@ class Browser(DynamicCore):
         try:
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except AssertionError as e:
-            self.test_error()
+            self.keyword_error()
             raise e
 
     def start_keyword(self, name, attrs):
@@ -161,25 +161,21 @@ class Browser(DynamicCore):
                 and test.status == "FAIL"
                 and re.match(timeout_pattern, test.message)
             ):
-                self.browser_control.take_page_screenshot(
-                    self.failure_screenshot_path(test.name)
-                )
+                self.screenshot_on_failure(test.name)
 
-    def test_error(self):
+    def keyword_error(self):
         """Sends screenshot command to Playwright.
 
         Only works during testing since this uses robot's outputdir for output.
         """
-        on_failure_keyword = "take page screenshot"
+        self.screenshot_on_failure(BuiltIn().get_variable_value("${TEST NAME}"))
+
+    def screenshot_on_failure(self, test_name):
         try:
-            test_name = BuiltIn().get_variable_value("${TEST NAME}")
             path = self.failure_screenshot_path(test_name)
-            logger.info(f"Running `{on_failure_keyword}` with arguments `{path}`")
-            BuiltIn().run_keyword(on_failure_keyword, path)
+            self.browser_control.take_page_screenshot(path)
         except Exception as err:
-            logger.error(
-                f"Keyword '{on_failure_keyword}' could not be run on failure: {err}"
-            )
+            logger.error(f"Failure in taking page screenshot after failure:\n{err}")
 
     def failure_screenshot_path(self, test_name):
         return os.path.join(
