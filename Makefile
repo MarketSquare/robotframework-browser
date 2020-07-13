@@ -69,7 +69,6 @@ lint: lint-node lint-python lint-robot
 
 protobuf:
 	mkdir -p Browser/generated/
-	mkdir -p Browser/wrapper/
 	mkdir -p node/playwright-wrapper/generated/
 	python -m grpc_tools.protoc -I protobuf --python_out=Browser/generated --grpc_python_out=Browser/generated protobuf/*.proto
 	touch Browser/generated/__init__.py

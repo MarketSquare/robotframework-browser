@@ -42,7 +42,7 @@
     }
   },
   "scripts": {
-    "build": "webpack",
+    "build": "webpack --config node/webpack.config.js",
     "lint": "eslint 'node/**/*.ts' --quiet --fix"
   }
 }
