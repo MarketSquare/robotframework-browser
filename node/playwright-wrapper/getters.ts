@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page, ElementHandle } from 'playwright';
 
 import { Response, Request, SelectEntry } from './generated/playwright_pb';
-import { invokeOnPage } from './playwirght-util';
+import { invokeOnPage, invokeOnPageWithSelector, waitUntilElementExists } from './playwirght-util';
 import { stringResponse, boolResponse, intResponse } from './response-util';
 
 export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
@@ -21,7 +21,7 @@ export async function getTextContent(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
-    const content = invokeOnPage(page, callback, 'textContent', selector);
+    const content = invokeOnPageWithSelector(page, callback, 'textContent', selector);
     callback(null, stringResponse(content?.toString() || ''));
 }
 
@@ -31,7 +31,7 @@ export async function getElementCount(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
-    const response: Array<ElementHandle> = await invokeOnPage(page, callback, '$$', selector);
+    const response: Array<ElementHandle> = await invokeOnPageWithSelector(page, callback, '$$', selector);
     callback(null, intResponse(response.length));
 }
 
@@ -41,10 +41,15 @@ export async function getSelectContent(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
+    await waitUntilElementExists(page, callback, selector);
 
     type Value = [string, string, boolean];
-    const content: Value[] = await invokeOnPage(page, callback, '$$eval', selector + ' option', (elements: any) =>
-        (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
+    const content: Value[] = await invokeOnPageWithSelector(
+        page,
+        callback,
+        '$$eval',
+        selector + ' option',
+        (elements: any) => (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
     );
 
     const response = new Response.Select();
@@ -79,7 +84,8 @@ export async function getBoolProperty(
 
 async function getProperty<T>(call: ServerUnaryCall<Request.ElementProperty>, callback: sendUnaryData<T>, page?: Page) {
     const selector = call.request.getSelector();
-    const element = await invokeOnPage(page, callback, '$', selector);
+    await waitUntilElementExists(page, callback, selector);
+    const element = await invokeOnPageWithSelector(page, callback, '$', selector);
     try {
         const propertyName = call.request.getProperty();
         const property = await element.getProperty(propertyName);

@@ -1,12 +1,12 @@
 import json
 from enum import Enum, auto
 
-from robot.api import logger  # type: ignore
-from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robotlibcore import keyword  # type: ignore
 from typing import Optional, Dict
 
+from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class ElementState(Enum):
@@ -16,14 +16,7 @@ class ElementState(Enum):
     hidden = auto()
 
 
-class Waiter:
-    def __init__(self, library):
-        self.library = library
-
-    @property
-    def playwright(self):
-        return self.library.playwright
-
+class Waiter(LibraryComponent):
     @keyword
     def wait_for_elements_state(
         self,
@@ -53,7 +46,7 @@ class Waiter:
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
             if timeout:
-                timeout_ms: int = int(timestr_to_secs(timeout) * 1000)
+                timeout_ms = timestr_to_millisecs(timeout)
                 options["timeout"] = timeout_ms
             options_json = json.dumps(options)
             response = stub.WaitForElementsState(
@@ -61,4 +54,4 @@ class Waiter:
                     selector=selector, options=options_json
                 )
             )
-            logger.info(response.log)
+            self.info(response.log)

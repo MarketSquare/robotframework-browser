@@ -2,9 +2,9 @@ import json
 from enum import Enum, auto
 from typing import Optional
 
-from robot.api import logger  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
+from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 
 
@@ -14,7 +14,7 @@ class SupportedBrowsers(Enum):
     webkit = auto()
 
 
-class State:
+class BrowserState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages.
     """
 
@@ -49,14 +49,14 @@ class State:
                     url=url or "", browser=browser.name, headless=headless
                 )
             )
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def close_browser(self):
         """Closes the current browser."""
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseBrowser(Request.Empty())
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def new_browser(
@@ -72,7 +72,7 @@ class State:
             response = stub.NewBrowser(
                 Request().NewBrowser(browser=browser_type.name, rawOptions=options)
             )
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def new_context(
@@ -87,9 +87,9 @@ class State:
         """
         with self.playwright.grpc_channel() as stub:
             options = json.dumps(kwargs)
-            logger.info(options)
+            self.info(options)
             response = stub.NewContext(Request().NewContext(rawOptions=options))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def new_page(self, url: Optional[str] = None):
@@ -100,7 +100,7 @@ class State:
 
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(Request().Url(url=url))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def switch_active_page(self, index: int):
@@ -110,11 +110,11 @@ class State:
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchActivePage(Request().Index(index=index))
-            logger.info(response.log)
+            self.info(response.log)
 
     @keyword
     def auto_activate_pages(self):
         """Toggles automatically changing active page to latest opened page """
         with self.playwright.grpc_channel() as stub:
             response = stub.AutoActivatePages(Request().Empty())
-            logger.info(response.log)
+            self.info(response.log)

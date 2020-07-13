@@ -7,11 +7,11 @@ import time
 
 import grpc  # type: ignore
 from robot.api import logger  # type: ignore
-from robot.utils.robottime import timestr_to_secs  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
 from Browser.generated.playwright_pb2 import Request
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
+from Browser.utils.time_conversion import timestr_to_millisecs
 
 
 class Playwright:
@@ -37,7 +37,7 @@ class Playwright:
         port = str(self.find_free_port())
         env = dict(os.environ)
         env["PORT"] = port
-        env["TIMEOUT"] = str(float(timestr_to_secs(self.timeout)) * 1000)
+        env["TIMEOUT"] = str(timestr_to_millisecs(self.timeout))
         env["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
@@ -79,8 +79,22 @@ class Playwright:
                 "Playwright process has been terminated with code {}".format(returncode)
             )
         channel = grpc.insecure_channel(f"localhost:{self.port}")
-        yield playwright_pb2_grpc.PlaywrightStub(channel)
-        channel.close()
+        try:
+            yield playwright_pb2_grpc.PlaywrightStub(channel)
+        except Exception as e:
+            raise AssertionError(self.get_reason(e))
+        finally:
+            channel.close()
+
+    def get_reason(self, err):
+        try:
+            metadata = err.trailing_metadata()
+            for element in metadata:
+                if element.key == "reason":
+                    return element.value
+        except AttributeError:
+            pass
+        return err.details
 
     def close(self):
         logger.debug("Closing Playwright process")

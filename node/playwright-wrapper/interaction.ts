@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokeOnPage } from './playwirght-util';
+import { invokeOnPage, invokeOnPageWithSelector } from './playwirght-util';
 import { emptyWithLog } from './response-util';
 
 export async function selectOption(
@@ -12,7 +12,7 @@ export async function selectOption(
 ) {
     const selector = call.request.getSelector();
     const matcher = JSON.parse(call.request.getMatcherjson());
-    const result = await invokeOnPage(page, callback, 'selectOption', selector, matcher);
+    const result = await invokeOnPageWithSelector(page, callback, 'selectOption', selector, matcher);
 
     if (result.length == 0) {
         console.log("Couldn't select any options");
@@ -29,7 +29,7 @@ export async function deSelectOption(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
-    await invokeOnPage(page, callback, 'selectOption', selector, []);
+    await invokeOnPageWithSelector(page, callback, 'selectOption', selector, []);
     callback(null, emptyWithLog(`Deselected options in element ${selector}`));
 }
 
@@ -42,7 +42,7 @@ export async function inputText(
     const selector = call.request.getSelector();
     const type = call.request.getType();
     const methodName = type ? 'type' : 'fill';
-    await invokeOnPage(page, callback, methodName, selector, inputText);
+    await invokeOnPageWithSelector(page, callback, methodName, selector, inputText);
     callback(null, emptyWithLog('Input text: ' + inputText));
 }
 
@@ -56,9 +56,9 @@ export async function typeText(
     const delay = call.request.getDelay();
     const clear = call.request.getClear();
     if (clear) {
-        await invokeOnPage(page, callback, 'fill', selector, '');
+        await invokeOnPageWithSelector(page, callback, 'fill', selector, '');
     }
-    await invokeOnPage(page, callback, 'type', selector, text, { delay: delay });
+    await invokeOnPageWithSelector(page, callback, 'type', selector, text, { delay: delay });
     callback(null, emptyWithLog('Typed text: ' + text));
 }
 
@@ -69,7 +69,7 @@ export async function fillText(
 ) {
     const selector = call.request.getSelector();
     const text = call.request.getText();
-    await invokeOnPage(page, callback, 'fill', selector, text);
+    await invokeOnPageWithSelector(page, callback, 'fill', selector, text);
     callback(null, emptyWithLog('Fill text: ' + text));
 }
 
@@ -79,7 +79,7 @@ export async function clearText(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
-    await invokeOnPage(page, callback, 'fill', selector, '');
+    await invokeOnPageWithSelector(page, callback, 'fill', selector, '');
     callback(null, emptyWithLog('Text field cleared.'));
 }
 
@@ -91,7 +91,7 @@ export async function press(
     const selector = call.request.getSelector();
     const keyList = call.request.getKeyList();
     for (const i of keyList) {
-        await invokeOnPage(page, callback, 'press', selector, i);
+        await invokeOnPageWithSelector(page, callback, 'press', selector, i);
     }
     callback(null, emptyWithLog('Pressed keys: ' + keyList));
 }
@@ -102,7 +102,7 @@ export async function click(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
-    await invokeOnPage(page, callback, 'click', selector);
+    await invokeOnPageWithSelector(page, callback, 'click', selector);
     callback(null, emptyWithLog('Clicked element: ' + selector));
 }
 
@@ -113,7 +113,7 @@ export async function clickWithOptions(
 ) {
     const selector = call.request.getSelector();
     const options = call.request.getOptions();
-    await invokeOnPage(page, callback, 'click', selector, JSON.parse(options));
+    await invokeOnPageWithSelector(page, callback, 'click', selector, JSON.parse(options));
     callback(null, emptyWithLog('Clicked element: ' + selector + ' \nWith options: ' + options));
 }
 
@@ -123,7 +123,7 @@ export async function focus(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
-    await invokeOnPage(page, callback, 'focus', selector);
+    await invokeOnPageWithSelector(page, callback, 'focus', selector);
     callback(null, emptyWithLog('Focused element: ' + selector));
 }
 
@@ -133,7 +133,7 @@ export async function checkCheckbox(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
-    await invokeOnPage(page, callback, 'check', selector);
+    await invokeOnPageWithSelector(page, callback, 'check', selector);
     callback(null, emptyWithLog('Checked checkbox: ' + selector));
 }
 
@@ -143,6 +143,6 @@ export async function uncheckCheckbox(
     page?: Page,
 ) {
     const selector = call.request.getSelector();
-    await invokeOnPage(page, callback, 'uncheck', selector);
+    await invokeOnPageWithSelector(page, callback, 'uncheck', selector);
     callback(null, emptyWithLog('Unchecked checkbox: ' + selector));
 }

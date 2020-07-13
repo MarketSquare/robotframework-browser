@@ -90,7 +90,7 @@ JS / TS code style is enforced with eslint. Lints are run in precommit hooks, bu
 There are 3 different interfaces that the library is targeting to use in browser automation and testing:
 
 1. User interface: Interactions with DOM elements.
-2. Javascript: Internals of a webapp.
+2. Internals of a webapp: State, Cookies, Storage, Methods.
 3. Requests & Responses: Interface between a browser and servers .
 
 Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.typescriptlang.org/) and [Playwright](https://playwright.dev/)

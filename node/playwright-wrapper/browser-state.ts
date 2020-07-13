@@ -30,7 +30,7 @@ async function createBrowserContext(browser: Browser, hideRfBrowser?: boolean): 
     const context = await browser.newContext();
     if (!hideRfBrowser) {
         context.addInitScript(function () {
-            window.__SET_RFBROWSER__ = function (state: any) {
+            window.__SET_RFBROWSER_STATE__ = function (state: any) {
                 window.__RFBROWSER__ = state;
                 return state;
             };
