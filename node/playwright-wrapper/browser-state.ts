@@ -9,7 +9,7 @@ async function newBrowser(
     browserType?: string,
     headless?: boolean,
     options?: Record<string, unknown>,
-): Promise<Browser> {
+): Promise<[string, Browser]> {
     browserType = browserType || 'chromium';
     headless = headless || true;
     let browser;
@@ -22,7 +22,7 @@ async function newBrowser(
     } else {
         throw new Error('unsupported browser');
     }
-    return browser;
+    return [browserType, browser];
 }
 
 async function newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Promise<BrowserContext> {
@@ -40,23 +40,13 @@ async function newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Pro
     return context;
 }
 
-export class BrowserState {
-    constructor(browser?: Browser, context?: BrowserContext, page?: Page) {
-        this.browser = browser;
-        this.context = context;
-        this.page = page;
-    }
-    browser?: Browser;
-    context?: BrowserContext;
-    page?: Page;
-}
-
 async function initializeBrowser(browserState: BrowserState): Promise<Browser> {
     if (browserState.browser) {
         return browserState.browser;
     } else {
-        const browser = await newBrowser();
+        const [name, browser] = await newBrowser();
         browserState.browser = browser;
+        browserState.name = name;
         return browser;
     }
 }
@@ -73,6 +63,19 @@ async function initializeContext(browserState: BrowserState): Promise<BrowserCon
         browserState.context = context;
         return context;
     }
+}
+
+export class BrowserState {
+    constructor(browser?: Browser, context?: BrowserContext, page?: Page, name?: string) {
+        this.browser = browser;
+        this.context = context;
+        this.page = page;
+        this.name = name;
+    }
+    browser?: Browser;
+    context?: BrowserContext;
+    page?: Page;
+    name?: string;
 }
 
 export async function closeBrowser(callback: sendUnaryData<Response.Empty>, browserState: BrowserState) {
@@ -115,15 +118,21 @@ export async function createContext(
 export async function createBrowser(
     call: ServerUnaryCall<Request.Browser>,
     callback: sendUnaryData<Response.Empty>,
-    browserState: BrowserState,
+    browsers: BrowserState[],
+    setBrowser: (newBrowser: BrowserState) => void,
 ): Promise<void> {
     const browserType = call.request.getBrowser();
     const headless = call.request.getHeadless();
 
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        browserState.browser = await newBrowser(browserType, headless, options);
-        callback(null, emptyWithLog(`Succesfully opened browser ${browserType}`));
+        const [name, browser] = await newBrowser(browserType, headless, options);
+        const browserState = new BrowserState();
+        browserState.name = name;
+        browserState.browser = browser;
+        browsers.push(browserState);
+        setBrowser(browserState);
+        callback(null, emptyWithLog(`Succesfully created browser ${browserType} with options ${options}`));
     } catch (error) {
         callback(error, null);
         return;
@@ -209,10 +218,11 @@ export async function switchBrowser(
     const index = call.request.getIndex();
     if (browsers[index]) {
         setBrowser(browsers[index]);
-        callback(null, emptyWithLog('Succesfully changed active page'));
+        callback(null, emptyWithLog('Succesfully changed active browser'));
     } else {
         // TODO: put behind --debug flag, debug prints
-        const message = `No browser for index ${index}. \n ` + browsers;
+        const mapped = browsers.map((browserState) => browserState.name);
+        const message = `No browser for index ${index}. Open browsers: ` + mapped;
         const error = new Error(message);
         callback(error, null);
         return;

@@ -114,19 +114,23 @@ class BrowserState(LibraryComponent):
 
     @keyword
     def auto_activate_pages(self):
-        """Toggles automatically changing active page to latest opened page """
+        """Toggles automatically changing active page to latest opened page."""
         with self.playwright.grpc_channel() as stub:
             response = stub.AutoActivatePages(Request().Empty())
             self.info(response.log)
 
     @keyword
     def switch_browser(self, index: int):
+        """Switches the currently active Browser to another open Browser.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=index))
             self.info(response.log)
 
     @keyword
     def switch_context(self, index: int):
+        """ Switches the active BrowserContext to another open context.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchContext(Request().Index(index=index))
             self.info(response.log)

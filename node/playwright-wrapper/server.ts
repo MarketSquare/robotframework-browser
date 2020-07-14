@@ -18,6 +18,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         this.browserState = new BrowserState();
         this.openBrowsers = [this.browserState];
     }
+    private setActiveBrowser = (browser: BrowserState) => {
+        this.browserState = browser;
+    };
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         browserState.closeBrowser(callback, this.browserState);
@@ -41,10 +44,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async switchBrowser(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        const setBrowser = (browser: BrowserState) => {
-            this.browserState = browser;
-        };
-        await browserState.switchBrowser(call, callback, this.openBrowsers, setBrowser);
+        await browserState.switchBrowser(call, callback, this.openBrowsers, this.setActiveBrowser);
     }
 
     async createPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
@@ -62,7 +62,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.Browser>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        browserState.createBrowser(call, callback, this.browserState);
+        browserState.createBrowser(call, callback, this.openBrowsers, this.setActiveBrowser);
     }
 
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
