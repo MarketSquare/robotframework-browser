@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
 from setuptools import setup, find_packages  # type: ignore
 import sys
 
-sys.path.append('Browser')
+sys.path.append("Browser")
 
 from Browser import VERSION  # noqa
 
@@ -14,7 +15,7 @@ packages = find_packages(exclude=["utest", "atest"])
 
 package_data = {"": ["*"], "Browser": ["wrapper/*", "wrapper/generated/*"]}
 
-install_requires = open("requirements.txt").readlines()
+install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
 
 setup_kwargs = {
     "name": "robotframework-browser",
