@@ -18,13 +18,6 @@ class BrowserState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages.
     """
 
-    def __init__(self, library):
-        self.library = library
-
-    @property
-    def playwright(self):
-        return self.library.playwright
-
     @keyword
     def open_browser(
         self,

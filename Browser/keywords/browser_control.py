@@ -11,13 +11,6 @@ class Control(LibraryComponent):
     """Keywords to do things on the current browser page and modify the page
     """
 
-    def __init__(self, library):
-        self.library = library
-
-    @property
-    def playwright(self):
-        return self.library.playwright
-
     @keyword
     def go_forward(self):
         """Navigates to the next page in history."""
