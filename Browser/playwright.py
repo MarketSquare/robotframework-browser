@@ -33,7 +33,7 @@ class Playwright:
     def start_playwright(self):
         workdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
         playwright_script = os.path.join(workdir, "index.js")
-        logfile = open(os.path.join(self.outputdir, "playwright-log.txt"), "w",)
+        logfile = open(os.path.join(self.outputdir, "playwright-log.txt"), "w")
         port = str(self.find_free_port())
         env = dict(os.environ)
         env["PORT"] = port
