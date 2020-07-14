@@ -1,7 +1,6 @@
 *** Settings ***
-Library           Browser
-Resource          keywords.resource
-Test Setup        Create Page    ${LOGIN URL}
+Resource          imports.resource
+Test Setup        Create Page    ${LOGIN_URL}
 Test Teardown     Close Browser
 
 *** Test Cases ***
@@ -17,31 +16,31 @@ Page state
     Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
 
 Localstorage
-    Localstorage set    mykey    myvalue
-    Localstorage get    mykey    ==    myvalue
+    Local Storage Set    mykey    myvalue
+    Local Storage Get    mykey    ==    myvalue
     ${val}=    Execute Javascript on Page    window.localStorage.getItem("mykey")
     should be equal    ${val}    myvalue
-    Localstorage remove    mykey
-    Localstorage get    mykey    ==    ${None}
+    Local Storage Remove    mykey
+    Local Storage Get    mykey    ==    ${None}
 
 Sessionstorage
-    Sessionstorage set    mykey2    myvalue2
-    Sessionstorage get    mykey2    ==    myvalue2
-    Sessionstorage remove    mykey2
-    Sessionstorage get    mykey2    ==    ${None}
+    Session Storage Set    mykey2    myvalue2
+    Session Storage Get    mykey2    ==    myvalue2
+    Session Storage Remove    mykey2
+    Session Storage Get    mykey2    ==    ${None}
 
 Localstorage clear
-    Localstorage set    key1    value1
-    Localstorage set    key2    value2
-    Localstorage clear
-    Localstorage get    key1    ==    ${None}
-    Localstorage get    key2    ==    ${None}
+    Local Storage Set    key1    value1
+    Local Storage Set    key2    value2
+    Local Storage Clear
+    Local Storage Get    key1    ==    ${None}
+    Local Storage Get    key2    ==    ${None}
 
 Sessionstorage clear
-    Sessionstorage set    key1    value1
-    Sessionstorage set    key2    value2
+    Session Storage Set    key1    value1
+    Session Storage Set    key2    value2
     ${val1}=    Execute Javascript on Page    window.sessionStorage.getItem("key1")
     should be equal    ${val1}    value1
-    Sessionstorage clear
-    Sessionstorage get    key1    ==    ${None}
-    Sessionstorage get    key2    ==    ${None}
+    Session Storage Clear
+    Session Storage Get    key1    ==    ${None}
+    Session Storage Get    key2    ==    ${None}

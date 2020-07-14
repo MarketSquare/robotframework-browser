@@ -1,10 +1,7 @@
 *** Settings ***
-Library           Browser    timeout=${PLAYWRIGHT TIMEOUT}    enable_playwright_debug=${True}
-Library           OperatingSystem
 Resource          variables.resource
-
-*** Variables ***
-${PLAYWRIGHT TIMEOUT}      1 second
+Library           Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}
+Library           OperatingSystem
 
 *** Keywords ***
 Open Browser To No Page
@@ -12,7 +9,7 @@ Open Browser To No Page
 
 Open Browser To Frame Page
     Create Browser  ${BROWSER}  headless=${HEADLESS}
-    Create Page  ${FRAMES URL}
+    Create Page  ${FRAMES_URL}
 
 Open Browser To Form Page
     Create Browser  ${BROWSER}  headless=${HEADLESS}
@@ -20,7 +17,7 @@ Open Browser To Form Page
 
 Open Browser To Login Page
     Create Browser  ${BROWSER}  headless=${HEADLESS}
-    Create Page  ${LOGIN URL}    
+    Create Page  ${LOGIN_URL}    
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 
@@ -28,7 +25,7 @@ Login Page Should Be Open
     Get Title    matches    (?i)login
 
 Go To Login Page
-    Go To    ${LOGIN URL}
+    Go To    ${LOGIN_URL}
     Login Page Should Be Open
 
 Login User
@@ -48,5 +45,5 @@ Submit Credentials
     Click    css=input#login_button
 
 Welcome Page Should Be Open
-    Get Url    ==    ${WELCOME URL}
+    Get Url    ==    ${WELCOME_URL}
     Get Title    ==    Welcome Page

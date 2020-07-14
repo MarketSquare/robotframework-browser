@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        Create Page    ${FORM URL}
+Test Setup        Create Page    ${FORM_URL}
 Test Timeout      10s
 
 *** Test Cases ***
@@ -32,7 +32,7 @@ Get Selected Options
 Get Selected Options With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Selected Options    notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Option By label
     Select Option And Verify Selection    label    select[name=preferred_channel]    Direct mail
@@ -49,7 +49,7 @@ Select Options By text
 Select Options By With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Select Options By    label    notamatch    Label
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
@@ -61,7 +61,7 @@ Deselect Options Explicitly
 Deselect Options With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Deselect Options    notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 *** Keywords ***
 Select Option And Verify Selection

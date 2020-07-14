@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        Create Page    ${LOGIN URL}
+Test Setup        Create Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Click Button
@@ -10,4 +10,4 @@ Click Button
 Click Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `css=notamatch` within timeout.    Click    css=notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}

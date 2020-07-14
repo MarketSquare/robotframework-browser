@@ -92,7 +92,7 @@ class Control(LibraryComponent):
     def switch_active_page(self, index: int):
         """Switches the active browser page to another open page by ``index``.
 
-            Newly opened pages get appended to the end of the list
+        Newly opened pages get appended to the end of the list
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchActivePage(Request().Index(index=index))
