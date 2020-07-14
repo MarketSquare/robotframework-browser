@@ -17,8 +17,9 @@ from Browser.utils.time_conversion import timestr_to_millisecs
 class Playwright:
     """A wrapper for communicating with nodejs Playwirght process."""
 
-    def __init__(self, timeout: str):
+    def __init__(self, timeout: str, enable_playwright_debug: bool):
         self.timeout = timeout
+        self.enable_playwright_debug = enable_playwright_debug
 
     @property
     def outputdir(self):
@@ -33,12 +34,13 @@ class Playwright:
     def start_playwright(self):
         workdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
         playwright_script = os.path.join(workdir, "index.js")
-        logfile = open(os.path.join(self.outputdir, "playwright-log.txt"), "w",)
+        logfile = open(os.path.join(self.outputdir, "playwright-log.txt"), "w")
         port = str(self.find_free_port())
         env = dict(os.environ)
         env["PORT"] = port
         env["TIMEOUT"] = str(timestr_to_millisecs(self.timeout))
-        env["DEBUG"] = "pw:api"
+        if self.enable_playwright_debug:
+            env["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
         return Popen(
@@ -94,7 +96,11 @@ class Playwright:
                     return element.value
         except AttributeError:
             pass
-        return err.details
+        try:
+            return err.details()
+        except AttributeError:
+            pass
+        return str(err)
 
     def close(self):
         logger.debug("Closing Playwright process")

@@ -1,13 +1,22 @@
 *** Settings ***
 Resource          imports.resource
+Suite Setup       No Operation
+Test Setup        No Operation
 Test Teardown     Close Browser
 
 *** Keywords ***
 Open Browser and assert Login Page
     [Arguments]    ${local_browser}
-    New Browser    browser=${local_browser}    headless=${HEADLESS}
-    New Page    url=${LOGIN URL}
+    Open Browser To Login Page
     Get Text    h1    ==    Login Page
+
+Create Page Form
+    Create Page    ${FORM URL}
+    Get Title    ==    prefilled_email_form.html
+
+Create Page Login
+    Create Page    ${LOGIN URL}
+    Get Title    matches    (?i)login
 
 *** Test Cases ***
 Open Firefox
@@ -16,36 +25,44 @@ Open Firefox
 Open Chrome
     Open Browser and assert Login Page    chromium
 
-New Browser does not open a page
-    New Browser
-    Run Keyword And Expect Error    *"Tried to do playwright action 'goto', but no open page."*    Go To    ${LOGIN URL}
+Create Browser does not open a page
+    Create Browser
+    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN URL}
 
-New Browser does not create a context
+Create Browser does not create a context
+    Create Browser
     # Use Switch context to test that no context exists here
-    Pass Execution    Not Implemented yet
-    [Teardown]    Pass Execution    Not Implemented yet
-    Switch Context
+    Run Keyword And Expect Error    *No context for index 0.*    Switch Context    0
 
-New Context does not open a page
-    New Context
-    Run Keyword And Expect Error    *"Tried to do playwright action 'goto', but no open page."*    Go To    ${LOGIN URL}
+Create Context does not open a page
+    Create Context
+    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN URL}
+
+Open Browser opens everything
+    Open Browser    url=${FORM URL}
+    Get Title    ==    prefilled_email_form.html
 
 Switch Browser
-    Pass Execution    Not Implemented yet
-    [Teardown]    Pass Execution    Not Implemented yet
-    New Browser    chromium
-    New Browser    firefox
-    Switch Browser
+    Create Browser    chromium
+    Pass Execution    Switch Browser doesn't work yet
+    Create Page Login
+    Create Browser    firefox
+    Create Page Form
+    Switch Browser    0
+    Get Title    matches    (?i)login
 
 Switch Context
-    Pass Execution    Not Implemented yet
-    [Teardown]    Pass Execution    Not Implemented yet
-    New Context
-    New Context
-    Switch Context
+    Create Context
+    Create Page    ${LOGIN URL}
+    Get Title    matches    (?i)login
+    Create Context
+    Create Page    ${FORM URL}
+    Get Title    ==    prefilled_email_form.html
+    Switch Context    0
+    Get Title    matches    (?i)login
 
-New Page can create context and browser
-    New Page    ${LOGIN URL}
+Create Page can create context and browser
+    Create Page    ${LOGIN URL}
     Get Text    h1    ==    Login Page
 
 Focus Next Page on popup
@@ -56,10 +73,10 @@ Focus Next Page on popup
     Sleep    1s
     Wait For Elements State    "Popped Up!"
 
-Switch Active Page after popup
+Switch Page after popup
     Open Browser and assert Login Page    chromium
     Click    button#pops_up
-    Switch Active Page    1
+    Switch Page    1
     Wait For Elements State    "Popped Up!"
-    Switch Active Page    0
+    Switch Page    0
     Wait For Elements State    button#pops_up

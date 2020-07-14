@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       Go To    ${LOGIN URL}
+Test Setup        Create Page    ${LOGIN URL}
 
 *** Variables ***
 ${UserNameLabel}=    label[for="username_field"]

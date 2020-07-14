@@ -1,5 +1,5 @@
 *** Settings ***
-Library           Browser    ${PLAYWRIGHT TIMEOUT}
+Library           Browser    timeout=${PLAYWRIGHT TIMEOUT}    enable_playwright_debug=${True}
 Library           OperatingSystem
 Resource          variables.resource
 
@@ -7,14 +7,20 @@ Resource          variables.resource
 ${PLAYWRIGHT TIMEOUT}      1 second
 
 *** Keywords ***
-Open Browser To Frame Page
-    New Browser  ${BROWSER}  headless=${HEADLESS}
-    New Page  ${FRAMES URL}    
+Open Browser To No Page
+    Create Browser  ${BROWSER}  headless=${HEADLESS}
 
+Open Browser To Frame Page
+    Create Browser  ${BROWSER}  headless=${HEADLESS}
+    Create Page  ${FRAMES URL}
+
+Open Browser To Form Page
+    Create Browser  ${BROWSER}  headless=${HEADLESS}
+    Create Page  ${FORM_URL}
 
 Open Browser To Login Page
-    New Browser  ${BROWSER}  headless=${HEADLESS}
-    New Page  ${LOGIN URL}    
+    Create Browser  ${BROWSER}  headless=${HEADLESS}
+    Create Page  ${LOGIN URL}    
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 

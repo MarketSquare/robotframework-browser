@@ -127,7 +127,16 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
 
-    def __init__(self, timeout="10s"):
+    def __init__(self, timeout="10s", enable_playwright_debug=False):
+        """Browser library can be taken into use with optional arguments:
+
+        - ``timeout``:
+          Timeout for keywords that operate on elements. The keywords will wait
+          for this time for the element to appear into the page.
+        - ``enable_playwright_debug``:
+          Enable low level debug information from the playwright tool. Mainly
+          Useful for the library developers and for debugging purposes.
+        """
         self.ROBOT_LIBRARY_LISTENER = self
         self.browser_control = Control(self)
         libraries = [
@@ -138,7 +147,7 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self.playwright = Playwright(timeout)
+        self.playwright = Playwright(timeout, enable_playwright_debug)
         DynamicCore.__init__(self, libraries)
 
     @property
@@ -192,7 +201,7 @@ class Browser(DynamicCore):
             path = self.failure_screenshot_path(test_name)
             self.browser_control.take_page_screenshot(path)
         except Exception as err:
-            logger.error(f"Failure in taking page screenshot after failure:\n{err}")
+            logger.warn(f"Was unable to take page screenshot after failure:\n{err}")
 
     def failure_screenshot_path(self, test_name):
         return os.path.join(

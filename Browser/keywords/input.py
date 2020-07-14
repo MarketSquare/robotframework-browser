@@ -1,7 +1,6 @@
 import json
 from enum import Enum, auto
 
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 from typing import Optional, Dict, Any
 
@@ -47,14 +46,7 @@ class Input(LibraryComponent):
 
         See `Fill Text` for direct filling of the full text at once.
         """
-        with self.playwright.grpc_channel() as stub:
-            delay_ms = timestr_to_millisecs(delay)
-            response = stub.TypeText(
-                Request().TypeText(
-                    selector=selector, text=text, delay=int(delay_ms), clear=clear
-                )
-            )
-            self.info(response.log)
+        self._type_text(selector, text, delay, clear)
 
     @keyword
     def fill_text(self, selector: str, text: str):
@@ -70,9 +62,7 @@ class Input(LibraryComponent):
 
         See `Type Text` for emulating typing text character by character.
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.FillText(Request().FillText(selector=selector, text=text))
-            self.info(response.log)
+        self._fill_text(selector, text)
 
     @keyword
     def clear_text(self, selector: str):
@@ -96,11 +86,7 @@ class Input(LibraryComponent):
 
         See `Type Text` for details.
         """
-        previous_level = BuiltIn().set_log_level("NONE")
-        try:
-            self.type_text(selector, secret, delay, clear)
-        finally:
-            BuiltIn().set_log_level(previous_level)
+        self._type_text(selector, secret, delay, clear, log_response=False)
 
     @keyword
     def fill_secret(self, selector: str, secret: str):
@@ -111,11 +97,7 @@ class Input(LibraryComponent):
 
         See `Fill Text` for details.
         """
-        previous_level = BuiltIn().set_log_level("NONE")
-        try:
-            self.fill_text(selector, secret)
-        finally:
-            BuiltIn().set_log_level(previous_level)
+        self._fill_text(selector, secret, log_response=False)
 
     @keyword
     def press_keys(self, selector: str, *keys: str):
@@ -266,3 +248,27 @@ class Input(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(Request().ElementSelector(selector=selector))
             self.info(response.log)
+
+    def _fill_text(self, selector: str, text: str, log_response: bool = True):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.FillText(Request().FillText(selector=selector, text=text))
+            if log_response:
+                self.info(response.log)
+
+    def _type_text(
+        self,
+        selector: str,
+        text: str,
+        delay: str = "0 ms",
+        clear: bool = True,
+        log_response: bool = True,
+    ):
+        with self.playwright.grpc_channel() as stub:
+            delay_ms = timestr_to_millisecs(delay)
+            response = stub.TypeText(
+                Request().TypeText(
+                    selector=selector, text=text, delay=int(delay_ms), clear=clear
+                )
+            )
+            if log_response:
+                self.info(response.log)

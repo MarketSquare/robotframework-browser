@@ -37,10 +37,10 @@ jobs:
         pip install -r Browser/dev-requirements.txt
     - name: Check types with mypy
       run: |
-        mypy .
+        mypy --config-file Browser/mypy.ini Browser
     - name: Check with flake8
       run: |
-        flake8
+        flake8 --config Browser/.flake8 Browser
     - name: Build Protos and check with tsc
       run: |
         make build
@@ -65,7 +65,7 @@ jobs:
     - uses: actions/upload-artifact@v1
       with:
         name: demoapp
-        path: atest/dynamic-test-app/dist
+        path: node/dynamic-test-app/dist
   test-install:
     needs: build
     runs-on: ubuntu-latest
@@ -83,7 +83,7 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: demoapp
-          path: atest/dynamic-test-app/dist
+          path: node/dynamic-test-app/dist
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
@@ -94,7 +94,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Robot Framework Browser
         env:
-          VERSION: 0.6.0
+          VERSION: 0.7.0
         run: |
           pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
           pip install -U robotframework-pabot

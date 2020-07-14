@@ -1,4 +1,4 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       Run Keywords    New Browser    browser=${BROWSER}    headless=${HEADLESS}    AND    New Page
+Suite Setup       Open Browser To No Page
 Suite Teardown    Close Browser

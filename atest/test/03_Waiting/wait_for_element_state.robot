@@ -1,6 +1,7 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        New Page    ${LOGIN URL}
+Suite Setup       Open Browser To No Page
+Test Setup        Create Page    ${LOGIN URL}
 
 *** Test Cases ***
 Wait For Elements State to hide

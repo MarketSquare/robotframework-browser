@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       New Page    ${FORM_URL}
+Test Setup        Create Page    ${FORM URL}
 Test Timeout      10s
 
 *** Test Cases ***

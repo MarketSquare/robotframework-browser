@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       Go To    ${LOGIN URL}
+Test Setup        Create Page    ${LOGIN URL}
 
 *** Test Cases ***
 Type Text with Clearing
@@ -38,6 +38,10 @@ Fill Text With Nonmatching Selector
 
 Fill Secret
     Fill Secret    css=input#password_field    password
+    Get TextField Value    css=input#password_field    ==    password
+
+Type Secret
+    Type Secret    css=input#password_field    password
     Get TextField Value    css=input#password_field    ==    password
 
 Fill Secret With Nonmatching Selector
