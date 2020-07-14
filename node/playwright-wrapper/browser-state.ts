@@ -162,10 +162,12 @@ async function _switchPage(index: number, browserState: BrowserState) {
         return;
     } else {
         try {
-            const page = await context.waitForEvent('page');
+            console.log('Started waiting for a page to pop up');
+            const page = await context.waitForEvent('page', { timeout: 10000 });
             browserState.page = page;
             return;
         } catch (pwError) {
+            console.log('Wait was not fulfilled');
             console.log(pwError);
             const mapped = pages?.map((p) => p.url()).join(',');
             const message = `No page for index ${index}. Open pages: ${mapped}`;

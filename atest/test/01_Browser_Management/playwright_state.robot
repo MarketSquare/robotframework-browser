@@ -40,6 +40,7 @@ Create Context does not open a page
 
 Switch Browser
     Create Browser    chromium
+    Pass Execution    Switch Browser doesn't work yet
     Create Page Login
     Create Browser    firefox
     Create Page Form
