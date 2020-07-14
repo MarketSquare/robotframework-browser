@@ -27,7 +27,7 @@ Open Chrome
 
 Create Browser does not open a page
     Create Browser
-    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.   Go To    ${LOGIN URL}
+    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN URL}
 
 Create Browser does not create a context
     Create Browser
@@ -39,7 +39,7 @@ Create Context does not open a page
     Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN URL}
 
 Open Browser opens everything
-    Open Browser  url=${FORM URL}
+    Open Browser    url=${FORM URL}
     Get Title    ==    prefilled_email_form.html
 
 Switch Browser
