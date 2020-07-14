@@ -38,6 +38,10 @@ Create Context does not open a page
     Create Context
     Run Keyword And Expect Error    *"Tried to do playwright action 'goto', but no open page."*    Go To    ${LOGIN URL}
 
+Open Browser opens everything
+    Open Browser  url=${FORM URL}
+    Get Title    ==    prefilled_email_form.html
+
 Switch Browser
     Create Browser    chromium
     Pass Execution    Switch Browser doesn't work yet

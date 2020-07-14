@@ -31,6 +31,9 @@ class BrowserState(LibraryComponent):
     ):
         """Opens a new browser instance.
 
+        Creates a new browser, context and page with specified settings.
+            Only supports some of the settings Create _ Keywords do
+
         If ``url`` is provided, navigates there.
 
         The optional ``browser`` argument specifies which browser to use. The
@@ -43,13 +46,9 @@ class BrowserState(LibraryComponent):
 
         """
 
-        with self.playwright.grpc_channel() as stub:
-            response = stub.OpenBrowser(
-                Request().NewBrowser(
-                    url=url or "", browser=browser.name, headless=headless
-                )
-            )
-            self.info(response.log)
+        self.create_browser(browser, headless=headless)
+        self.create_context()
+        self.create_page(url)
 
     @keyword
     def close_browser(self):
