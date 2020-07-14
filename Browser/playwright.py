@@ -94,7 +94,11 @@ class Playwright:
                     return element.value
         except AttributeError:
             pass
-        return err.details
+        try:
+            return err.details
+        except AttributeError:
+            pass
+        return str(err)
 
     def close(self):
         logger.debug("Closing Playwright process")
