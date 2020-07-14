@@ -42,6 +42,14 @@ Open Browser opens everything
     Open Browser    url=${FORM URL}
     Get Title    ==    prefilled_email_form.html
 
+Open Browser with invalid browser fails on RF side
+    Run Keyword and Expect Error  *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*  Open Browser   url=${FORM_URL}  browser=netscape
+    [Teardown]  no operation
+
+Create Browser with invalid browser fails on RF side
+    Run Keyword and Expect Error  *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*  Create Browser   netscape
+    [Teardown]  no operation
+
 Switch Browser
     Create Browser    chromium
     Pass Execution    Switch Browser doesn't work yet
