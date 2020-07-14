@@ -3,11 +3,13 @@ ${SERVER}         localhost:7272
 ${BROWSER}        chromium
 ${DELAY}          0
 ${HEADLESS}       TRUE
-${VALID USER}     demo
-${VALID PASSWORD}    mode
-${ROOT URL}       http://${SERVER}
-${LOGIN URL}      ${ROOT URL}/dist/
-${FORM URL}       ${ROOT URL}/prefilled_email_form.html
-${FRAMES URL}     ${ROOT URL}/frames/iframes.html
-${DEFAULT TEST TIMEOUT}    30 seconds
-${PLAYWRIGHT TIMEOUT}      1 second
+${VALID_USER}     demo
+${VALID_PASSWORD}    mode
+${ROOT_URL}       http://${SERVER}
+${LOGIN_URL}      ${ROOT_URL}/dist/
+${FORM_URL}       ${ROOT_URL}/prefilled_email_form.html
+${FRAMES_URL}     ${ROOT_URL}/frames/iframes.html
+${WELCOME_URL}    ${ROOT_URL}/welcome.html
+${ERROR_URL}      ${ROOT_URL}/error.html
+${DEFAULT_TEST_TIMEOUT}    30 seconds
+${PLAYWRIGHT_TIMEOUT}      1 second

@@ -11,11 +11,11 @@ Open Browser and assert Login Page
     Get Text    h1    ==    Login Page
 
 Create Page Form
-    Create Page    ${FORM URL}
+    Create Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
 
 Create Page Login
-    Create Page    ${LOGIN URL}
+    Create Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
 
 *** Test Cases ***
@@ -27,7 +27,7 @@ Open Chrome
 
 Create Browser does not open a page
     Create Browser
-    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN URL}
+    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN_URL}
 
 Create Browser does not create a context
     Create Browser
@@ -36,10 +36,10 @@ Create Browser does not create a context
 
 Create Context does not open a page
     Create Context
-    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN URL}
+    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN_URL}
 
 Open Browser opens everything
-    Open Browser    url=${FORM URL}
+    Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
 
 Open Browser with invalid browser fails on RF side
@@ -61,16 +61,16 @@ Switch Browser
 
 Switch Context
     Create Context
-    Create Page    ${LOGIN URL}
+    Create Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
     Create Context
-    Create Page    ${FORM URL}
+    Create Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     Switch Context    0
     Get Title    matches    (?i)login
 
 Create Page can create context and browser
-    Create Page    ${LOGIN URL}
+    Create Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
 
 Focus Next Page on popup

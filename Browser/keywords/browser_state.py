@@ -57,9 +57,11 @@ class BrowserState(LibraryComponent):
     def create_browser(
         self, browser: SupportedBrowsers = SupportedBrowsers.chromium, **kwargs,
     ):
-        """Create a new playwright Browser with specified options. A Browser is the Playwright object that controls a single Browser process.
+        """Create a new playwright Browser with specified options.
 
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsertypelaunchoptions |Playwright browserType.launch] for a full list of supported options.
+        A Browser is the Playwright object that controls a single Browser process.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsertypelaunchoptions |Playwright browserType.launch]
+        for a full list of supported options.
         """
 
         with self.playwright.grpc_channel() as stub:
@@ -73,12 +75,13 @@ class BrowserState(LibraryComponent):
     def create_context(
         self, **kwargs,
     ):
-        """Create a new BrowserContext with specified options. A BrowserContext is the Playwright object that controls a single browser profile.
-            Within a context caches and cookies are shared.
+        """Create a new BrowserContext with specified options.
 
-            See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext] for a list of supported options.
-
-            If there's no open Browser will open one. Does not create pages.
+        A BrowserContext is the Playwright object that controls a single browser profile.
+        Within a context caches and cookies are shared.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext]
+        for a list of supported options.
+        If there's no open Browser will open one. Does not create pages.
         """
         with self.playwright.grpc_channel() as stub:
             options = json.dumps(kwargs)

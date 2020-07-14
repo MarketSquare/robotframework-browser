@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        Create Page    ${LOGIN URL}
+Test Setup        Create Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Type Text with Clearing
@@ -12,7 +12,7 @@ Type Text with Clearing
 Type Text With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Type Text    notamatch    text
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Clear Text
     Fill Text    input#username_field    Wrong Text
@@ -25,7 +25,7 @@ Clear Text
 Clear Text With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Clear Text    notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill with css selector
     Fill Text    css=input#username_field    username
@@ -34,7 +34,7 @@ Fill with css selector
 Fill Text With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Text    notamatch    text
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill Secret
     Fill Secret    css=input#password_field    password
@@ -47,7 +47,7 @@ Type Secret
 Fill Secret With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Secret    notamatch    secret
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Type Text with Delay
     Type Text    input#username_field    username    delay=10 ms
