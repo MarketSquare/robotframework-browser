@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       Go To    ${LOGIN URL}
+Test Setup        Create Page    ${LOGIN URL}
 
 *** Test Cases ***
 Type Text with Clearing

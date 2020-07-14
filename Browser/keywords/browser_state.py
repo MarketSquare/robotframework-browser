@@ -59,7 +59,7 @@ class BrowserState(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def new_browser(
+    def create_browser(
         self, browser_type=SupportedBrowsers.chromium, **kwargs,
     ):
         """Create a new playwright Browser with specified options. A Browser is the Playwright object that controls a single Browser process.
@@ -69,13 +69,13 @@ class BrowserState(LibraryComponent):
 
         with self.playwright.grpc_channel() as stub:
             options = json.dumps(kwargs)
-            response = stub.NewBrowser(
-                Request().NewBrowser(browser=browser_type.name, rawOptions=options)
+            response = stub.CreateBrowser(
+                Request().Browser(browser=browser_type.name, rawOptions=options)
             )
             self.info(response.log)
 
     @keyword
-    def new_context(
+    def create_context(
         self, **kwargs,
     ):
         """Create a new BrowserContext with specified options. A BrowserContext is the Playwright object that controls a single browser profile.
@@ -88,33 +88,51 @@ class BrowserState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             options = json.dumps(kwargs)
             self.info(options)
-            response = stub.NewContext(Request().NewContext(rawOptions=options))
+            response = stub.CreateContext(Request().Context(rawOptions=options))
             self.info(response.log)
 
     @keyword
-    def new_page(self, url: Optional[str] = None):
+    def create_page(self, url: Optional[str] = None):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
 
             If ``url`` parameter is specified will open the new page to the specified URL.
         """
 
         with self.playwright.grpc_channel() as stub:
-            response = stub.NewPage(Request().Url(url=url))
+            response = stub.CreatePage(Request().Url(url=url))
             self.info(response.log)
 
     @keyword
-    def switch_active_page(self, index: int):
+    def switch_page(self, index: int):
         """Switches the active browser page to another open page by ``index``.
 
             Newly opened pages get appended to the end of the list
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.SwitchActivePage(Request().Index(index=index))
+            response = stub.SwitchPage(Request().Index(index=index))
             self.info(response.log)
 
     @keyword
     def auto_activate_pages(self):
-        """Toggles automatically changing active page to latest opened page """
+        """Toggles automatically changing active page to latest opened page."""
         with self.playwright.grpc_channel() as stub:
             response = stub.AutoActivatePages(Request().Empty())
+            self.info(response.log)
+
+    @keyword
+    def switch_browser(self, index: int):
+        """ UNSTABLE AND NOT USE-READY
+
+            Switches the currently active Browser to another open Browser.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SwitchBrowser(Request().Index(index=index))
+            self.info(response.log)
+
+    @keyword
+    def switch_context(self, index: int):
+        """ Switches the active BrowserContext to another open context.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SwitchContext(Request().Index(index=index))
             self.info(response.log)
