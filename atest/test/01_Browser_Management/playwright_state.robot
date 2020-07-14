@@ -10,6 +10,14 @@ Open Browser and assert Login Page
     Open Browser To Login Page
     Get Text    h1    ==    Login Page
 
+Create Page Form
+    Create Page    ${FORM URL}
+    Get Title    ==    prefilled_email_form.html
+
+Create Page Login
+    Create Page    ${LOGIN URL}
+    Get Title    matches    (?i)login
+
 *** Test Cases ***
 Open Firefox
     Open Browser and assert Login Page    firefox
@@ -32,15 +40,21 @@ Create Context does not open a page
 
 Switch Browser
     Create Browser    chromium
+    Create Page Login
     Create Browser    firefox
-    Switch Browser    1
-    # TODO:
+    Create Page Form
+    Switch Browser    0
+    Get Title    matches    (?i)login
 
 Switch Context
     Create Context
+    Create Page    ${LOGIN URL}
+    Get Title    matches    (?i)login
     Create Context
-    Switch Context    1
-    # TODO: asser that context has been switched by looking at something specific to context
+    Create Page    ${FORM URL}
+    Get Title    ==    prefilled_email_form.html
+    Switch Context    0
+    Get Title    matches    (?i)login
 
 Create Page can create context and browser
     Create Page    ${LOGIN URL}

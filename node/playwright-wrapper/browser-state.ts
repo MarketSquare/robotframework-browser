@@ -3,9 +3,9 @@ import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwr
 
 import { Response, Request } from './generated/playwright_pb';
 import { invokeOnPage, exists } from './playwirght-util';
-import { emptyWithLog, stringResponse } from './response-util';
+import { emptyWithLog } from './response-util';
 
-async function newBrowser(
+async function _newBrowser(
     browserType?: string,
     headless?: boolean,
     options?: Record<string, unknown>,
@@ -25,8 +25,7 @@ async function newBrowser(
     return [browserType, browser];
 }
 
-async function newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Promise<BrowserContext> {
-    hideRfBrowser = hideRfBrowser || false;
+async function _newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Promise<BrowserContext> {
     const context = await browser.newContext();
     if (!hideRfBrowser) {
         context.addInitScript(function () {
@@ -44,7 +43,7 @@ async function initializeBrowser(browserState: BrowserState): Promise<Browser> {
     if (browserState.browser) {
         return browserState.browser;
     } else {
-        const [name, browser] = await newBrowser();
+        const [name, browser] = await _newBrowser();
         browserState.browser = browser;
         browserState.name = name;
         return browser;
@@ -59,7 +58,7 @@ async function initializeContext(browserState: BrowserState): Promise<BrowserCon
             await initializeBrowser(browserState);
         }
         const browser = browserState.browser;
-        const context = await newBrowserContext(browser!);
+        const context = await _newBrowserContext(browser!);
         browserState.context = context;
         return context;
     }
@@ -107,7 +106,7 @@ export async function createContext(
     const browser = await initializeBrowser(browserState);
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        browserState.context = await newBrowserContext(browser);
+        browserState.context = await _newBrowserContext(browser);
         callback(null, emptyWithLog(`Succesfully created context with options ${options}`));
     } catch (error) {
         callback(error, null);
@@ -126,16 +125,16 @@ export async function createBrowser(
 
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        const [name, browser] = await newBrowser(browserType, headless, options);
+        const [name, browser] = await _newBrowser(browserType, headless, options);
         const browserState = new BrowserState();
         browserState.name = name;
         browserState.browser = browser;
-        browsers.push(browserState);
+        if (browsers[0].browser) browsers.push(browserState);
+        else browsers[0] = browserState;
         setBrowser(browserState);
         callback(null, emptyWithLog(`Succesfully created browser ${browserType} with options ${options}`));
     } catch (error) {
         callback(error, null);
-        return;
     }
 }
 
@@ -153,33 +152,55 @@ export async function autoActivatePages(
     callback(null, emptyWithLog('Will focus future ``pages`` in this context'));
 }
 
+async function _switchPage(index: number, browserState: BrowserState) {
+    const context = browserState.context;
+    if (!context) throw new Error('Tried to switch page, no open context');
+    const pages = context.pages();
+
+    if (pages[index]) {
+        browserState.page = pages[index];
+        return;
+    } else {
+        try {
+            const page = await context.waitForEvent('page');
+            browserState.page = page;
+            return;
+        } catch (pwError) {
+            console.log(pwError);
+            const mapped = pages?.map((p) => p.url()).join(',');
+            const message = `No page for index ${index}. Open pages: ${mapped}`;
+            const error = new Error(message);
+            throw error;
+        }
+    }
+}
+
+async function _switchContext(index: number, browserState: BrowserState) {
+    const contexts = browserState.browser?.contexts();
+    if (contexts && contexts[index]) {
+        browserState.context = contexts[index];
+        return;
+    } else {
+        const mapped = contexts
+            ?.map((c) => c.pages())
+            .reduce((acc, val) => acc.concat(val), [])
+            .map((p) => p.url());
+
+        const message = `No context for index ${index}. Open contexts: ${mapped}`;
+        const error = new Error(message);
+        throw error;
+    }
+}
+
 export async function switchPage(
     call: ServerUnaryCall<Request.Index>,
     callback: sendUnaryData<Response.Empty>,
     browserState: BrowserState,
 ) {
-    exists(browserState.context, callback, "Tried to switch active page but wasn't open");
     console.log('Changing current active page');
     const index = call.request.getIndex();
-    const pages = browserState.context.pages();
-    if (pages[index]) {
-        browserState.page = pages[index];
-        callback(null, emptyWithLog('Succesfully changed active page'));
-    } else {
-        try {
-            const page = await browserState.context.waitForEvent('page');
-            // const page = await browserState.page.waitForEvent('popup')
-            browserState.page = page;
-            callback(null, emptyWithLog('Succesfully changed active page'));
-        } catch (e) {
-            // TODO: put behind --debug flag, debug prints
-            const mapped = pages.map((p) => p.url());
-            const pageList = `Pages in current context: ${mapped.join(',')}`;
-            const message = `No page for index ${index}. \n ` + pageList;
-            const error = new Error(message);
-            callback(error, null);
-        }
-    }
+    await _switchPage(index, browserState);
+    callback(null, emptyWithLog('Succesfully changed active page'));
 }
 
 export async function switchContext(
@@ -189,24 +210,10 @@ export async function switchContext(
 ): Promise<void> {
     exists(browserState.browser, callback, "Tried to switch active context but browser wasn't open");
     const index = call.request.getIndex();
-    const contexts = browserState.browser.contexts();
 
-    if (contexts[index]) {
-        browserState.context = contexts[index];
-        callback(null, emptyWithLog('Succesfully changed active context'));
-    } else {
-        const mapped = contexts
-            .map((c) => c.pages())
-            .reduce((acc, val) => acc.concat(val), [])
-            .map((p) => p.url());
-
-        const message = `No context for index ${index}. \n ` + mapped;
-        const error = new Error(message);
-        callback(error, null);
-        return;
-    }
-    const error = new Error('Functionality not implemented yet');
-    callback(error, null);
+    await _switchContext(index, browserState).catch((error) => callback(error, null));
+    await _switchPage(0, browserState).catch(console.log);
+    callback(null, emptyWithLog('Succesfully changed active context'));
 }
 
 export async function switchBrowser(
@@ -216,15 +223,22 @@ export async function switchBrowser(
     setBrowser: (newBrowser: BrowserState) => void,
 ): Promise<void> {
     const index = call.request.getIndex();
-    if (browsers[index]) {
-        setBrowser(browsers[index]);
-        callback(null, emptyWithLog('Succesfully changed active browser'));
+    const newState = browsers[index];
+    if (newState) {
+        setBrowser(newState);
     } else {
-        // TODO: put behind --debug flag, debug prints
         const mapped = browsers.map((browserState) => browserState.name);
         const message = `No browser for index ${index}. Open browsers: ` + mapped;
         const error = new Error(message);
         callback(error, null);
-        return;
     }
+    try {
+        // Try to switch to page and context in target browser
+        await _switchContext(0, newState);
+        await _switchPage(0, newState);
+    } catch (pwError) {
+        console.log(pwError);
+    }
+
+    callback(null, emptyWithLog('Succesfully changed active browser'));
 }

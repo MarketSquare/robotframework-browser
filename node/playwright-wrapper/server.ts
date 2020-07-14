@@ -44,7 +44,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async switchBrowser(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        await browserState.switchBrowser(call, callback, this.openBrowsers, this.setActiveBrowser);
+        browserState.switchBrowser(call, callback, this.openBrowsers, this.setActiveBrowser);
     }
 
     async createPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
