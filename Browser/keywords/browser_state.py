@@ -27,7 +27,10 @@ class BrowserState(LibraryComponent):
 
     @keyword
     def open_browser(
-        self, url=None, browser=SupportedBrowsers.chromium, headless: bool = True
+        self,
+        url=None,
+        browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        headless: bool = True,
     ):
         """Opens a new browser instance.
 
@@ -59,7 +62,7 @@ class BrowserState(LibraryComponent):
 
     @keyword
     def create_browser(
-        self, browser_type=SupportedBrowsers.chromium, **kwargs,
+        self, browser: SupportedBrowsers = SupportedBrowsers.chromium, **kwargs,
     ):
         """Create a new playwright Browser with specified options. A Browser is the Playwright object that controls a single Browser process.
 
@@ -69,7 +72,7 @@ class BrowserState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             options = json.dumps(kwargs)
             response = stub.CreateBrowser(
-                Request().Browser(browser=browser_type.name, rawOptions=options)
+                Request().Browser(browser=browser.name, rawOptions=options)
             )
             self.info(response.log)
 
