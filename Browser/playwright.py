@@ -97,7 +97,7 @@ class Playwright:
         except AttributeError:
             pass
         try:
-            return err.details
+            return err.details()
         except AttributeError:
             pass
         return str(err)

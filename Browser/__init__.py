@@ -201,7 +201,7 @@ class Browser(DynamicCore):
             path = self.failure_screenshot_path(test_name)
             self.browser_control.take_page_screenshot(path)
         except Exception as err:
-            logger.error(f"Failure in taking page screenshot after failure:\n{err}")
+            logger.warn(f"Was unable to take page screenshot after failure:\n{err}")
 
     def failure_screenshot_path(self, test_name):
         return os.path.join(
