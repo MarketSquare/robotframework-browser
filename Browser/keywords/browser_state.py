@@ -121,7 +121,9 @@ class BrowserState(LibraryComponent):
 
     @keyword
     def switch_browser(self, index: int):
-        """Switches the currently active Browser to another open Browser.
+        """ UNSTABLE AND NOT USE-READY
+
+            Switches the currently active Browser to another open Browser.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=index))
