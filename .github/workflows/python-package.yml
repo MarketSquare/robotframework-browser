@@ -37,10 +37,10 @@ jobs:
         pip install -r Browser/dev-requirements.txt
     - name: Check types with mypy
       run: |
-        mypy .
+        mypy --config-file Browser/mypy.ini Browser
     - name: Check with flake8
       run: |
-        flake8
+        flake8 --config Browser/.flake8 Browser
     - name: Build Protos and check with tsc
       run: |
         make build
