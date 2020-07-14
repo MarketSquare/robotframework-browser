@@ -5,7 +5,7 @@ import { Response, Request } from './generated/playwright_pb';
 import { invokeOnPage, exists } from './playwirght-util';
 import { emptyWithLog, stringResponse } from './response-util';
 
-async function createBrowser(
+async function newBrowser(
     browserType?: string,
     headless?: boolean,
     options?: Record<string, unknown>,
@@ -25,7 +25,7 @@ async function createBrowser(
     return browser;
 }
 
-async function createBrowserContext(browser: Browser, hideRfBrowser?: boolean): Promise<BrowserContext> {
+async function newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Promise<BrowserContext> {
     hideRfBrowser = hideRfBrowser || false;
     const context = await browser.newContext();
     if (!hideRfBrowser) {
@@ -55,7 +55,7 @@ async function initializeBrowser(browserState: BrowserState): Promise<Browser> {
     if (browserState.browser) {
         return browserState.browser;
     } else {
-        const browser = await createBrowser();
+        const browser = await newBrowser();
         browserState.browser = browser;
         return browser;
     }
@@ -69,7 +69,7 @@ async function initializeContext(browserState: BrowserState): Promise<BrowserCon
             await initializeBrowser(browserState);
         }
         const browser = browserState.browser;
-        const context = await createBrowserContext(browser!);
+        const context = await newBrowserContext(browser!);
         browserState.context = context;
         return context;
     }
@@ -82,7 +82,7 @@ export async function closeBrowser(callback: sendUnaryData<Response.Empty>, brow
     browserState.page = undefined;
 }
 
-export async function newPage(
+export async function createPage(
     call: ServerUnaryCall<Request.Url>,
     callback: sendUnaryData<Response.Empty>,
     browserState: BrowserState,
@@ -96,15 +96,15 @@ export async function newPage(
     callback(null, emptyWithLog('Succesfully initialized new page object and opened url'));
 }
 
-export async function newContext(
-    call: ServerUnaryCall<Request.NewContext>,
+export async function createContext(
+    call: ServerUnaryCall<Request.Context>,
     callback: sendUnaryData<Response.Empty>,
     browserState: BrowserState,
 ): Promise<void> {
     const browser = await initializeBrowser(browserState);
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        browserState.context = await createBrowserContext(browser);
+        browserState.context = await newBrowserContext(browser);
         callback(null, emptyWithLog(`Succesfully created context with options ${options}`));
     } catch (error) {
         callback(error, null);
@@ -112,8 +112,8 @@ export async function newContext(
     }
 }
 
-export async function newBrowser(
-    call: ServerUnaryCall<Request.NewBrowser>,
+export async function createBrowser(
+    call: ServerUnaryCall<Request.Browser>,
     callback: sendUnaryData<Response.Empty>,
     browserState: BrowserState,
 ): Promise<void> {
@@ -122,7 +122,7 @@ export async function newBrowser(
 
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        browserState.browser = await createBrowser(browserType, headless, options);
+        browserState.browser = await newBrowser(browserType, headless, options);
         callback(null, emptyWithLog(`Succesfully opened browser ${browserType}`));
     } catch (error) {
         callback(error, null);
@@ -186,12 +186,15 @@ export async function switchContext(
         browserState.context = contexts[index];
         callback(null, emptyWithLog('Succesfully changed active context'));
     } else {
-        const mapped = contexts.map((c) => c.pages()).reduce((acc, val) => acc.concat(val), []).map(p => p.url());
+        const mapped = contexts
+            .map((c) => c.pages())
+            .reduce((acc, val) => acc.concat(val), [])
+            .map((p) => p.url());
 
         const message = `No context for index ${index}. \n ` + mapped;
         const error = new Error(message);
         callback(error, null);
-        return 
+        return;
     }
     const error = new Error('Functionality not implemented yet');
     callback(error, null);
@@ -201,17 +204,17 @@ export async function switchBrowser(
     call: ServerUnaryCall<Request.Index>,
     callback: sendUnaryData<Response.Empty>,
     browsers: BrowserState[],
-    setBrowser: (newBrowser: BrowserState) => void
+    setBrowser: (newBrowser: BrowserState) => void,
 ): Promise<void> {
     const index = call.request.getIndex();
     if (browsers[index]) {
-        setBrowser(browsers[index])
+        setBrowser(browsers[index]);
         callback(null, emptyWithLog('Succesfully changed active page'));
     } else {
         // TODO: put behind --debug flag, debug prints
         const message = `No browser for index ${index}. \n ` + browsers;
         const error = new Error(message);
         callback(error, null);
-        return 
+        return;
     }
 }

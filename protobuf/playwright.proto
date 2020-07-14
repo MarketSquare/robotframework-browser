@@ -7,13 +7,13 @@ message Request {
     string path = 1;
   }
 
-  message NewBrowser {
+  message Browser {
     string browser = 1;
     bool headless = 2;
     string rawOptions = 3;
   }
 
-  message NewContext {
+  message Context {
     string rawOptions = 1;
   }
 
@@ -193,7 +193,7 @@ service  Playwright {
   rpc SwitchContext(Request.Index) returns (Response.Empty) {}
   rpc SwitchBrowser(Request.Index) returns (Response.Empty) {}
 
-  rpc NewPage(Request.Url) returns (Response.Empty) {}
-  rpc NewContext(Request.NewContext) returns (Response.Empty) {}
-  rpc NewBrowser(Request.NewBrowser) returns (Response.Empty) {}
+  rpc CreatePage(Request.Url) returns (Response.Empty) {}
+  rpc CreateContext(Request.Context) returns (Response.Empty) {}
+  rpc CreateBrowser(Request.Browser) returns (Response.Empty) {}
 }

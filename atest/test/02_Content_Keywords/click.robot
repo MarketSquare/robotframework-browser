@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        New Page    ${LOGIN URL}
+Test Setup        Create Page    ${LOGIN URL}
 
 *** Test Cases ***
 Click Button
