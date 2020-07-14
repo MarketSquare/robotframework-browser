@@ -35,11 +35,11 @@ class BrowserState(LibraryComponent):
 
         The optional ``browser`` argument specifies which browser to use. The
         supported browsers are listed in the table below. The browser names
-        are case-insensitive.
-        |   = Browser =   |        = Name(s) =        |
-        | Firefox         | firefox                   |
-        | Chromium        | chromium                  |
-        | WebKit          | webkit                    |
+        are case-sensitive.
+        |   = Value =     |        = Name(s) =                                   |
+        | firefox         | [https://www.mozilla.org/en-US/firefox/new|Firefox]  |
+        | chromium        | [https://www.chromium.org/Home|Chromium]             |
+        | webkit          | [https://webkit.org/|webkit]                         |
 
         """
 

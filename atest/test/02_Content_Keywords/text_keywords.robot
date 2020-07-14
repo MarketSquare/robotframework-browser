@@ -40,6 +40,10 @@ Fill Secret
     Fill Secret    css=input#password_field    password
     Get TextField Value    css=input#password_field    ==    password
 
+Type Secret
+    Type Secret    css=input#password_field    password
+    Get TextField Value    css=input#password_field    ==    password
+
 Fill Secret With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Secret    notamatch    secret

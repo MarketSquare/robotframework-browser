@@ -1,5 +1,5 @@
 *** Settings ***
-Library           Browser    ${PLAYWRIGHT TIMEOUT}
+Library           Browser    timeout=${PLAYWRIGHT TIMEOUT}    enable_playwright_debug=${True}
 Library           OperatingSystem
 Resource          variables.resource
 
