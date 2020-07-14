@@ -22,7 +22,7 @@ See [keyword documentation](https://marketsquare.github.io/robotframework-browse
 
 # Installation instructions
 
-Only Python 3.8 or never is supported.
+Only Python 3.8 or later is supported.
 
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
