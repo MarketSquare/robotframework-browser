@@ -52,7 +52,6 @@ Create Browser with invalid browser fails on RF side
 
 Switch Browser
     Create Browser    chromium
-    Pass Execution    Switch Browser doesn't work yet
     Create Page Login
     Create Browser    firefox
     Create Page Form

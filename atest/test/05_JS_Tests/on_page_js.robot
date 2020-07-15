@@ -1,7 +1,8 @@
 *** Settings ***
 Resource          imports.resource
+Suite Setup       Create Browser
 Test Setup        Create Page    ${LOGIN_URL}
-Test Teardown     Close Browser
+Suite Teardown    Close Browser
 
 *** Test Cases ***
 Results from page
