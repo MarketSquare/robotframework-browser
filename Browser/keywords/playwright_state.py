@@ -14,7 +14,7 @@ class SupportedBrowsers(Enum):
     webkit = auto()
 
 
-class BrowserState(LibraryComponent):
+class PlaywrightState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages.
     """
 
