@@ -190,12 +190,12 @@ service  Playwright {
   /* Playwright State handling keywords */ 
 
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
-  rpc SwitchPage(Request.Index) returns (Response.Empty) {}
-  rpc SwitchContext(Request.Index) returns (Response.Empty) {}
-  rpc SwitchBrowser(Request.Index) returns (Response.Empty) {}
-  rpc CreatePage(Request.Url) returns (Response.Empty) {}
-  rpc CreateContext(Request.Context) returns (Response.Empty) {}
-  rpc CreateBrowser(Request.Browser) returns (Response.Empty) {}
+  rpc SwitchPage(Request.Index) returns (Response.Int) {}
+  rpc SwitchContext(Request.Index) returns (Response.Int) {}
+  rpc SwitchBrowser(Request.Index) returns (Response.Int) {}
+  rpc CreatePage(Request.Url) returns (Response.Int) {}
+  rpc CreateContext(Request.Context) returns (Response.Int) {}
+  rpc CreateBrowser(Request.Browser) returns (Response.Int) {}
   rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty) {}
 }

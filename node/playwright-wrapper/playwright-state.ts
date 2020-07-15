@@ -3,7 +3,7 @@ import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwr
 
 import { Response, Request } from './generated/playwright_pb';
 import { invokeOnPage, exists } from './playwirght-util';
-import { emptyWithLog } from './response-util';
+import { emptyWithLog, intResponse } from './response-util';
 
 async function _newBrowser(
     browserType?: string,
@@ -25,7 +25,7 @@ async function _newBrowser(
     return [browserType, browser];
 }
 
-async function _newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Promise<BrowserContext> {
+async function _newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Promise<IndexedContext> {
     const context = await browser.newContext();
     if (!hideRfBrowser) {
         context.addInitScript(function () {
@@ -36,31 +36,36 @@ async function _newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Pr
         });
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
-    return context;
+    const index = browser.contexts().length - 1;
+    return { index: index, c: context };
 }
 
-async function initializeBrowser(browserState: BrowserState): Promise<[BrowserState, Browser]> {
+async function _newPage(context: BrowserContext): Promise<IndexedPage> {
+    const index = context.pages().length;
+    const newPage = await context.newPage();
+    const page = { index: index, p: newPage };
+    return page;
+}
+
+async function initializeBrowser(browserState: BrowserState): Promise<Browser> {
     if (browserState.browser) {
-        return [browserState, browserState.browser];
+        return browserState.browser;
     } else {
         const [name, browser] = await _newBrowser();
         browserState.browser = browser;
         browserState.name = name;
-        return [browserState, browser];
+        return browser;
     }
 }
 
 async function initializeContext(browserState: BrowserState): Promise<BrowserContext> {
-    if (browserState.context) {
-        return browserState.context;
+    if (browserState.context?.c) {
+        return browserState.context.c;
     } else {
-        if (!browserState?.browser) {
-            await initializeBrowser(browserState);
-        }
-        const browser = browserState.browser;
+        const browser = await initializeBrowser(browserState);
         const context = await _newBrowserContext(browser!);
         browserState.context = context;
-        return context;
+        return context.c;
     }
 }
 
@@ -71,7 +76,6 @@ export class PlaywrightState {
     }
     browsers: (BrowserState | 'CLOSED')[];
     activeBrowser: number;
-
     public getActiveBrowser = <T>(callback: sendUnaryData<T>): BrowserState => {
         const currentBrowser = this.browsers[this.activeBrowser];
         if (currentBrowser === 'CLOSED') {
@@ -86,18 +90,32 @@ export class PlaywrightState {
             return currentBrowser;
         }
     };
+    public getActivePage = <T>(callback: sendUnaryData<T>): Page | undefined => {
+        const currentBrowser = this.getActiveBrowser(callback);
+        return currentBrowser.page?.p;
+    };
 }
+
+type IndexedContext = {
+    c: BrowserContext;
+    index: number;
+};
+
+type IndexedPage = {
+    p: Page;
+    index: number;
+};
 
 export class BrowserState {
     constructor(browser?: Browser, context?: BrowserContext, page?: Page, name?: string) {
         this.browser = browser;
-        this.context = context;
-        this.page = page;
+        this.context = context ? { c: context, index: 0 } : undefined;
+        this.page = page ? { p: page, index: 0 } : undefined;
         this.name = name;
     }
     browser?: Browser;
-    context?: BrowserContext;
-    page?: Page;
+    context?: IndexedContext;
+    page?: IndexedPage;
     name?: string;
 
     public async close() {
@@ -137,31 +155,37 @@ export async function closeAllBrowsers(callback: sendUnaryData<Response.Empty>, 
 
 export async function createPage(
     call: ServerUnaryCall<Request.Url>,
-    callback: sendUnaryData<Response.Empty>,
+    callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const browserState = openBrowsers.getActiveBrowser(callback);
     await initializeBrowser(browserState);
     const context = await initializeContext(browserState);
 
-    const page = await context?.newPage();
+    const pageIndex = context.pages().length;
+    const page = await _newPage(context);
     browserState.page = page;
     const url = call.request.getUrl() || 'about:blank';
-    await invokeOnPage(page, callback, 'goto', url, { timeout: 10000 });
-    callback(null, emptyWithLog('Succesfully initialized new page object and opened url'));
+    await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
+    const response = intResponse(pageIndex);
+    response.setLog('Succesfully initialized new page object and opened url');
+    callback(null, response);
 }
 
 export async function createContext(
     call: ServerUnaryCall<Request.Context>,
-    callback: sendUnaryData<Response.Empty>,
+    callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const browserState = openBrowsers.getActiveBrowser(callback);
-    const [_, browser] = await initializeBrowser(browserState);
+    const browser = await initializeBrowser(browserState);
     try {
         const options = JSON.parse(call.request.getRawoptions());
+        const contextIndex = browser.contexts().length;
         browserState.context = await _newBrowserContext(browser);
-        callback(null, emptyWithLog(`Succesfully created context with options ${options}`));
+        const response = intResponse(contextIndex);
+        response.setLog(`Succesfully created context with options ${options}`);
+        callback(null, response);
     } catch (error) {
         callback(error, null);
         return;
@@ -170,7 +194,7 @@ export async function createContext(
 
 export async function createBrowser(
     call: ServerUnaryCall<Request.Browser>,
-    callback: sendUnaryData<Response.Empty>,
+    callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const browserType = call.request.getBrowser();
@@ -185,7 +209,9 @@ export async function createBrowser(
 
         const newIndex = openBrowsers.browsers.push(browserState);
         openBrowsers.activeBrowser = newIndex - 1;
-        callback(null, emptyWithLog(`Succesfully created browser ${browserType} with options ${options}`));
+        const response = intResponse(newIndex);
+        response.setLog('Succesfully created browser with options ${options}');
+        callback(null, response);
     } catch (error) {
         callback(error, null);
     }
@@ -196,28 +222,33 @@ export async function autoActivatePages(
     callback: sendUnaryData<Response.Empty>,
     browserState?: BrowserState,
 ) {
-    exists(browserState?.context, callback, 'Tried to focus next opened page, no context was open in current Browser');
+    exists(
+        browserState?.context?.c,
+        callback,
+        'Tried to focus next opened page, no context was open in current Browser',
+    );
 
-    browserState.context.on('page', (page) => {
-        browserState.page = page;
+    browserState.context.c.on('page', (page) => {
+        const pageIndex = browserState?.context?.c?.pages().length;
+        browserState.page = { index: pageIndex || 0, p: page };
         console.log('Changed active page');
     });
     callback(null, emptyWithLog('Will focus future ``pages`` in this context'));
 }
 
 async function _switchPage(index: number, browserState: BrowserState) {
-    const context = browserState?.context;
+    const context = browserState?.context?.c;
     if (!context) throw new Error('Tried to switch page, no open context');
     const pages = context.pages();
 
     if (pages[index]) {
-        browserState.page = pages[index];
+        browserState.page = { index: index, p: pages[index] };
         return;
     } else {
         try {
             console.log('Started waiting for a page to pop up');
             const page = await context.waitForEvent('page');
-            browserState.page = page;
+            browserState.page = { index: index, p: page };
             return;
         } catch (pwError) {
             console.log('Wait was not fulfilled');
@@ -233,7 +264,7 @@ async function _switchPage(index: number, browserState: BrowserState) {
 async function _switchContext(index: number, browserState: BrowserState) {
     const contexts = browserState.browser?.contexts();
     if (contexts && contexts[index]) {
-        browserState.context = contexts[index];
+        browserState.context = { index: index, c: contexts[index] };
         return;
     } else {
         const mapped = contexts
@@ -249,42 +280,49 @@ async function _switchContext(index: number, browserState: BrowserState) {
 
 export async function switchPage(
     call: ServerUnaryCall<Request.Index>,
-    callback: sendUnaryData<Response.Empty>,
+    callback: sendUnaryData<Response.Int>,
     browserState?: BrowserState,
 ) {
     exists(browserState, callback, "Tried to switch Page but browser wasn't open");
     console.log('Changing current active page');
     const index = call.request.getIndex();
+    const previous = browserState.page?.index || 0;
     await _switchPage(index, browserState).catch((error) => callback(error, null));
-    callback(null, emptyWithLog('Succesfully changed active page'));
+    const response = intResponse(previous);
+    response.setLog('Succesfully changed active page');
+    callback(null, response);
 }
 
 export async function switchContext(
     call: ServerUnaryCall<Request.Index>,
-    callback: sendUnaryData<Response.Empty>,
+    callback: sendUnaryData<Response.Int>,
     browserState?: BrowserState,
 ): Promise<void> {
     exists(browserState?.browser, callback, "Tried to switch Context but browser wasn't open");
     const index = call.request.getIndex();
+    const previous = browserState.context?.index || 0;
 
     await _switchContext(index, browserState).catch((error) => callback(error, null));
-    await _switchPage(0, browserState).catch(console.log);
-    callback(null, emptyWithLog('Succesfully changed active context'));
+    await _switchPage(browserState.page?.index || 0, browserState).catch(console.log);
+    const response = intResponse(previous);
+    response.setLog('Succesfully changed active context');
+    callback(null, response);
 }
 
 export async function switchBrowser(
     call: ServerUnaryCall<Request.Index>,
-    callback: sendUnaryData<Response.Empty>,
+    callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const index = call.request.getIndex();
+    const previous = openBrowsers.activeBrowser;
     const switchedBrowser = openBrowsers.getActiveBrowser(callback);
     if (switchedBrowser) {
         openBrowsers.activeBrowser = index;
         try {
             // Try to switch to page and context in target browser
-            await _switchContext(0, switchedBrowser);
-            await _switchPage(0, switchedBrowser);
+            await _switchContext(switchedBrowser.context?.index || 0, switchedBrowser);
+            await _switchPage(switchedBrowser.page?.index || 0, switchedBrowser);
         } catch (pwError) {
             console.log(pwError);
         }
@@ -297,5 +335,7 @@ export async function switchBrowser(
         const error = new Error(message);
         callback(error, null);
     }
-    callback(null, emptyWithLog('Succesfully changed active browser'));
+    const response = intResponse(previous);
+    response.setLog('Succesfully changed active browser');
+    callback(null, response);
 }

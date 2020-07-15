@@ -51,21 +51,21 @@ Create Browser with invalid browser fails on RF side
     [Teardown]    no operation
 
 Switch Browser
-    Create Browser    chromium
+    ${first_browser}    Create Browser    chromium
     Create Page Login
-    Create Browser    firefox
+    ${second_browser}    Create Browser    firefox
     Create Page Form
-    Switch Browser    0
+    Switch Browser    ${first_browser}
     Get Title    matches    (?i)login
 
 Switch Context
-    Create Context
+    ${first_context}    Create Context
     Create Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    Create Context
+    ${second_context}    Create Context
     Create Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    Switch Context    0
+    Switch Context    ${first_context}
     Get Title    matches    (?i)login
 
 Create Page can create context and browser
