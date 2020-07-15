@@ -64,6 +64,15 @@ async function initializeContext(browserState: BrowserState): Promise<BrowserCon
     }
 }
 
+export class PlaywrightState {
+    constructor() {
+        this.activeBrowser = 0;
+        this.browsers = [];
+    }
+    browsers: (BrowserState | undefined)[];
+    activeBrowser: number;
+}
+
 export class BrowserState {
     constructor(browser?: Browser, context?: BrowserContext, page?: Page, name?: string) {
         this.browser = browser;
@@ -77,18 +86,25 @@ export class BrowserState {
     name?: string;
 }
 
-export async function closeBrowser(callback: sendUnaryData<Response.Empty>, browserState: BrowserState) {
-    exists(browserState?.browser, callback, 'Tried to close browser but none was open');
-    await browserState.browser.close();
-    browserState.context = undefined;
-    browserState.page = undefined;
+export async function closeBrowser(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
+    const index = openBrowsers.activeBrowser;
+    const currentBrowser = openBrowsers.browsers[index];
+    exists(currentBrowser, callback, 'Tried to close current browser but it was closed');
+
+    // TODO: Set next browser in list as active here
+    await currentBrowser.browser?.close();
+    currentBrowser.browser = undefined;
+    currentBrowser.context = undefined;
+    currentBrowser.page = undefined;
+    callback(null, emptyWithLog('Closed browser'));
 }
 
 export async function createPage(
     call: ServerUnaryCall<Request.Url>,
     callback: sendUnaryData<Response.Empty>,
-    browserState: BrowserState,
+    browserState?: BrowserState,
 ): Promise<void> {
+    exists(browserState, callback, "Tried to create Page in browser but it wasn't open");
     const context = await initializeContext(browserState);
 
     const page = await context?.newPage();
@@ -101,8 +117,9 @@ export async function createPage(
 export async function createContext(
     call: ServerUnaryCall<Request.Context>,
     callback: sendUnaryData<Response.Empty>,
-    browserState: BrowserState,
+    browserState?: BrowserState,
 ): Promise<void> {
+    exists(browserState, callback, "Tried to create context in browser but it wasn't open");
     const browser = await initializeBrowser(browserState);
     try {
         const options = JSON.parse(call.request.getRawoptions());
@@ -117,8 +134,7 @@ export async function createContext(
 export async function createBrowser(
     call: ServerUnaryCall<Request.Browser>,
     callback: sendUnaryData<Response.Empty>,
-    browsers: BrowserState[],
-    setBrowser: (newBrowser: BrowserState) => void,
+    openBrowsers: PlaywrightState,
 ): Promise<void> {
     const browserType = call.request.getBrowser();
     const headless = call.request.getHeadless();
@@ -129,9 +145,9 @@ export async function createBrowser(
         const browserState = new BrowserState();
         browserState.name = name;
         browserState.browser = browser;
-        if (browsers[0].browser) browsers.push(browserState);
-        else browsers[0] = browserState;
-        setBrowser(browserState);
+
+        const newIndex = openBrowsers.browsers.push(browserState);
+        openBrowsers.activeBrowser = newIndex - 1;
         callback(null, emptyWithLog(`Succesfully created browser ${browserType} with options ${options}`));
     } catch (error) {
         callback(error, null);
@@ -141,9 +157,9 @@ export async function createBrowser(
 export async function autoActivatePages(
     call: ServerUnaryCall<Request.Empty>,
     callback: sendUnaryData<Response.Empty>,
-    browserState: BrowserState,
+    browserState?: BrowserState,
 ) {
-    exists(browserState?.context, callback, 'Tried to focus next opened page');
+    exists(browserState?.context, callback, 'Tried to focus next opened page, no context was open in current Browser');
 
     browserState.context.on('page', (page) => {
         browserState.page = page;
@@ -153,7 +169,7 @@ export async function autoActivatePages(
 }
 
 async function _switchPage(index: number, browserState: BrowserState) {
-    const context = browserState.context;
+    const context = browserState?.context;
     if (!context) throw new Error('Tried to switch page, no open context');
     const pages = context.pages();
 
@@ -163,7 +179,7 @@ async function _switchPage(index: number, browserState: BrowserState) {
     } else {
         try {
             console.log('Started waiting for a page to pop up');
-            const page = await context.waitForEvent('page', { timeout: 10000 });
+            const page = await context.waitForEvent('page');
             browserState.page = page;
             return;
         } catch (pwError) {
@@ -197,20 +213,21 @@ async function _switchContext(index: number, browserState: BrowserState) {
 export async function switchPage(
     call: ServerUnaryCall<Request.Index>,
     callback: sendUnaryData<Response.Empty>,
-    browserState: BrowserState,
+    browserState?: BrowserState,
 ) {
+    exists(browserState, callback, "Tried to switch Page but browser wasn't open");
     console.log('Changing current active page');
     const index = call.request.getIndex();
-    await _switchPage(index, browserState);
+    await _switchPage(index, browserState).catch((error) => callback(error, null));
     callback(null, emptyWithLog('Succesfully changed active page'));
 }
 
 export async function switchContext(
     call: ServerUnaryCall<Request.Index>,
     callback: sendUnaryData<Response.Empty>,
-    browserState: BrowserState,
+    browserState?: BrowserState,
 ): Promise<void> {
-    exists(browserState.browser, callback, "Tried to switch active context but browser wasn't open");
+    exists(browserState?.browser, callback, "Tried to switch Context but browser wasn't open");
     const index = call.request.getIndex();
 
     await _switchContext(index, browserState).catch((error) => callback(error, null));
@@ -221,26 +238,24 @@ export async function switchContext(
 export async function switchBrowser(
     call: ServerUnaryCall<Request.Index>,
     callback: sendUnaryData<Response.Empty>,
-    browsers: BrowserState[],
-    setBrowser: (newBrowser: BrowserState) => void,
+    openBrowsers: PlaywrightState,
 ): Promise<void> {
     const index = call.request.getIndex();
-    const newState = browsers[index];
-    if (newState) {
-        setBrowser(newState);
+    const switchedBrowser = openBrowsers.browsers[index];
+    if (switchedBrowser) {
+        openBrowsers.activeBrowser = index;
+        try {
+            // Try to switch to page and context in target browser
+            await _switchContext(0, switchedBrowser);
+            await _switchPage(0, switchedBrowser);
+        } catch (pwError) {
+            console.log(pwError);
+        }
     } else {
-        const mapped = browsers.map((browserState) => browserState.name);
+        const mapped = openBrowsers.browsers.map((browserState) => browserState?.name);
         const message = `No browser for index ${index}. Open browsers: ` + mapped;
         const error = new Error(message);
         callback(error, null);
     }
-    try {
-        // Try to switch to page and context in target browser
-        await _switchContext(0, newState);
-        await _switchPage(0, newState);
-    } catch (pwError) {
-        console.log(pwError);
-    }
-
     callback(null, emptyWithLog('Succesfully changed active browser'));
 }

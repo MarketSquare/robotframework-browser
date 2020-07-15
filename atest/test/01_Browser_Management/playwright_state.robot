@@ -36,19 +36,19 @@ Create Browser does not create a context
 
 Create Context does not open a page
     Create Context
-    Run Keyword And Expect Error    *No page for index 0.*   Switch Page  0
+    Run Keyword And Expect Error    *No page for index 0.*    Switch Page    0
 
 Open Browser opens everything
     Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
 
 Open Browser with invalid browser fails on RF side
-    Run Keyword and Expect Error  *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*  Open Browser   url=${FORM_URL}  browser=netscape
-    [Teardown]  no operation
+    Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Open Browser    url=${FORM_URL}    browser=netscape
+    [Teardown]    no operation
 
 Create Browser with invalid browser fails on RF side
-    Run Keyword and Expect Error  *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*  Create Browser   netscape
-    [Teardown]  no operation
+    Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Create Browser    netscape
+    [Teardown]    no operation
 
 Switch Browser
     Create Browser    chromium
