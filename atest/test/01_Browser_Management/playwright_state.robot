@@ -36,7 +36,7 @@ Create Browser does not create a context
 
 Create Context does not open a page
     Create Context
-    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN_URL}
+    Run Keyword And Expect Error    *No page for index 0.*   Switch Page  0
 
 Open Browser opens everything
     Open Browser    url=${FORM_URL}
