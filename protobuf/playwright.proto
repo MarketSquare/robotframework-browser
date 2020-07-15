@@ -128,7 +128,6 @@ message Response {
 
 service  Playwright {
   rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
-  rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty) {}
   /* Navigate to the next page in history */
@@ -188,12 +187,15 @@ service  Playwright {
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
 
+  /* Playwright State handling keywords */ 
+
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
   rpc SwitchPage(Request.Index) returns (Response.Empty) {}
   rpc SwitchContext(Request.Index) returns (Response.Empty) {}
   rpc SwitchBrowser(Request.Index) returns (Response.Empty) {}
-
   rpc CreatePage(Request.Url) returns (Response.Empty) {}
   rpc CreateContext(Request.Context) returns (Response.Empty) {}
   rpc CreateBrowser(Request.Browser) returns (Response.Empty) {}
+  rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
+  rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty) {}
 }

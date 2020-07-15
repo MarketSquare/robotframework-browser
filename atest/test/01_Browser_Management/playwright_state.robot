@@ -2,7 +2,7 @@
 Resource          imports.resource
 Suite Setup       No Operation
 Test Setup        No Operation
-Test Teardown     Close Browser
+Test Teardown     Close All Browsers
 
 *** Keywords ***
 Open Browser and assert Login Page

@@ -103,6 +103,11 @@ class Playwright:
         return str(err)
 
     def close(self):
+        logger.debug("Closing all open browsers, contexts and pages in Playwright")
+        with self.grpc_channel() as stub:
+            response = stub.CloseAllBrowsers(Request().Empty())
+            logger.info(response.log)
+
         logger.debug("Closing Playwright process")
         self._playwright_process.kill()
         logger.debug("Playwright process killed")

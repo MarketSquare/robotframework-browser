@@ -39,8 +39,7 @@ async function _newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Pr
     return context;
 }
 
-async function initializeBrowser(browserState: BrowserState | 'CLOSED'): Promise<[BrowserState, Browser]> {
-    if (browserState === 'CLOSED') throw new Error('Browser has been closed.');
+async function initializeBrowser(browserState: BrowserState): Promise<[BrowserState, Browser]> {
     if (browserState.browser) {
         return [browserState, browserState.browser];
     } else {
@@ -73,13 +72,19 @@ export class PlaywrightState {
     browsers: (BrowserState | 'CLOSED')[];
     activeBrowser: number;
 
-    public getActiveBrowser = <T>(callback: sendUnaryData<T>): BrowserState | undefined => {
+    public getActiveBrowser = <T>(callback: sendUnaryData<T>): BrowserState => {
         const currentBrowser = this.browsers[this.activeBrowser];
         if (currentBrowser === 'CLOSED') {
-            callback(new Error('Browser has been closed.'), null);
-            return;
+            const error = new Error('Browser has been closed.');
+            callback(error, null);
+            throw error;
+        } else if (currentBrowser === undefined) {
+            const newBrowser = new BrowserState();
+            this.browsers[this.activeBrowser] = newBrowser;
+            return newBrowser;
+        } else {
+            return currentBrowser;
         }
-        return currentBrowser;
     };
 }
 
@@ -94,29 +99,40 @@ export class BrowserState {
     context?: BrowserContext;
     page?: Page;
     name?: string;
-}
 
-function currentBrowserOrThrow(openBrowsers: PlaywrightState, callback: sendUnaryData<Response.Empty>) {
-    const index = openBrowsers.activeBrowser;
-    const currentBrowser = openBrowsers.browsers[index];
-    if (currentBrowser == 'CLOSED') {
-        const error = new Error('Tried to close current browser but it was closed');
-        callback(error, null);
-        throw error;
-    } else {
-        return currentBrowser;
+    public async close() {
+        await this.browser?.close();
+        this.browser = undefined;
+        this.context = undefined;
+        this.page = undefined;
     }
 }
 
 export async function closeBrowser(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
-    const currentBrowser = currentBrowserOrThrow(openBrowsers, callback);
+    // FIXME: this can actually initialize a new browser and then close it ...
+    const index = openBrowsers.activeBrowser;
+    const currentBrowser = openBrowsers.browsers[index];
+    if (currentBrowser === 'CLOSED') {
+        callback(new Error(`Tried to close Browser ${index}, was already closed.`), null);
+        return;
+    }
 
     // TODO: Set next browser in list as active here
-    await currentBrowser.browser?.close();
-    currentBrowser.browser = undefined;
-    currentBrowser.context = undefined;
-    currentBrowser.page = undefined;
+    currentBrowser.close();
     callback(null, emptyWithLog('Closed browser'));
+}
+
+export async function closeAllBrowsers(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
+    const browsers = openBrowsers.browsers;
+    for (let i = 0; i < browsers.length; i++) {
+        const b = browsers[i];
+        if (b !== 'CLOSED') {
+            await b.close();
+        }
+        openBrowsers.browsers[i] = 'CLOSED';
+    }
+    openBrowsers.activeBrowser = 0;
+    callback(null, emptyWithLog('Closed all browsers'));
 }
 
 export async function createPage(
@@ -124,11 +140,12 @@ export async function createPage(
     callback: sendUnaryData<Response.Empty>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
-    const currentBrowser = currentBrowserOrThrow(openBrowsers, callback);
-    const context = await initializeContext(currentBrowser);
+    const browserState = openBrowsers.getActiveBrowser(callback);
+    await initializeBrowser(browserState);
+    const context = await initializeContext(browserState);
 
     const page = await context?.newPage();
-    currentBrowser.page = page;
+    browserState.page = page;
     const url = call.request.getUrl() || 'about:blank';
     await invokeOnPage(page, callback, 'goto', url, { timeout: 10000 });
     callback(null, emptyWithLog('Succesfully initialized new page object and opened url'));
@@ -139,10 +156,11 @@ export async function createContext(
     callback: sendUnaryData<Response.Empty>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
-    const [currentBrowser, browser] = await initializeBrowser(openBrowsers.browsers[openBrowsers.activeBrowser]);
+    const browserState = openBrowsers.getActiveBrowser(callback);
+    const [_, browser] = await initializeBrowser(browserState);
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        currentBrowser.context = await _newBrowserContext(browser);
+        browserState.context = await _newBrowserContext(browser);
         callback(null, emptyWithLog(`Succesfully created context with options ${options}`));
     } catch (error) {
         callback(error, null);
@@ -260,7 +278,7 @@ export async function switchBrowser(
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const index = call.request.getIndex();
-    const switchedBrowser = currentBrowserOrThrow(openBrowsers, callback);
+    const switchedBrowser = openBrowsers.getActiveBrowser(callback);
     if (switchedBrowser) {
         openBrowsers.activeBrowser = index;
         try {

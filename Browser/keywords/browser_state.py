@@ -54,6 +54,12 @@ class BrowserState(LibraryComponent):
             self.info(response.log)
 
     @keyword
+    def close_all_browsers(self):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseAllBrowsers(Request().Empty())
+            self.info(response.log)
+
+    @keyword
     def create_browser(
         self, browser: SupportedBrowsers = SupportedBrowsers.chromium, **kwargs,
     ):

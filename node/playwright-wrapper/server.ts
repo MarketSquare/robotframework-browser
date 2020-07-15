@@ -6,8 +6,8 @@ import * as browserControl from './browser-control';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
-import * as browserState from './playwright-state';
-import { BrowserState, PlaywrightState } from './playwright-state';
+import * as playwrightState from './playwright-state';
+import { PlaywrightState } from './playwright-state';
 
 export class PlaywrightServer implements IPlaywrightServer {
     openBrowsers: PlaywrightState;
@@ -18,44 +18,50 @@ export class PlaywrightServer implements IPlaywrightServer {
     private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.openBrowsers.getActiveBrowser(callback);
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserState.closeBrowser(callback, this.openBrowsers);
+        playwrightState.closeBrowser(callback, this.openBrowsers);
+    }
+    async closeAllBrowsers(
+        call: ServerUnaryCall<Request.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        playwrightState.closeAllBrowsers(callback, this.openBrowsers);
     }
 
     async autoActivatePages(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        browserState.autoActivatePages(call, callback, this.getActiveBrowser(callback));
+        playwrightState.autoActivatePages(call, callback, this.getActiveBrowser(callback));
     }
 
     async switchPage(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserState.switchPage(call, callback, this.openBrowsers.getActiveBrowser(callback));
+        playwrightState.switchPage(call, callback, this.openBrowsers.getActiveBrowser(callback));
     }
 
     async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserState.switchContext(call, callback, this.openBrowsers.getActiveBrowser(callback));
+        playwrightState.switchContext(call, callback, this.openBrowsers.getActiveBrowser(callback));
     }
 
     async switchBrowser(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserState.switchBrowser(call, callback, this.openBrowsers);
+        playwrightState.switchBrowser(call, callback, this.openBrowsers);
     }
 
     async createPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        browserState.createPage(call, callback, this.openBrowsers);
+        playwrightState.createPage(call, callback, this.openBrowsers);
     }
 
     async createContext(
         call: ServerUnaryCall<Request.Context>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        browserState.createContext(call, callback, this.openBrowsers);
+        playwrightState.createContext(call, callback, this.openBrowsers);
     }
 
     async createBrowser(
         call: ServerUnaryCall<Request.Browser>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        browserState.createBrowser(call, callback, this.openBrowsers);
+        playwrightState.createBrowser(call, callback, this.openBrowsers);
     }
 
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
