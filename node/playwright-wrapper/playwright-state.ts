@@ -43,8 +43,7 @@ async function _newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Pr
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
     const index = context.pages().length;
     const newPage = await context.newPage();
-    const page = { index: index, p: newPage };
-    return page;
+    return { index: index, p: newPage };
 }
 
 async function initializeBrowser(browserState: BrowserState): Promise<Browser> {
@@ -90,6 +89,22 @@ export class PlaywrightState {
             return currentBrowser;
         }
     };
+    public getOrCreateActiveBrowser = (): BrowserState => {
+        const currentBrowser = this.browsers[this.activeBrowser];
+        if (currentBrowser == 'CLOSED' || !currentBrowser) {
+            const newBrowser = new BrowserState();
+            this.browsers[this.activeBrowser] = newBrowser;
+            return newBrowser;
+        } else {
+            return currentBrowser;
+        }
+    };
+
+    public getAndUpdateActive<T>(index: number, callback: sendUnaryData<T>): BrowserState {
+        this.activeBrowser = index;
+        return this.getActiveBrowser(callback);
+    }
+
     public getActivePage = <T>(callback: sendUnaryData<T>): Page | undefined => {
         const currentBrowser = this.getActiveBrowser(callback);
         return currentBrowser.page?.p;
@@ -127,7 +142,6 @@ export class BrowserState {
 }
 
 export async function closeBrowser(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
-    // FIXME: this can actually initialize a new browser and then close it ...
     const index = openBrowsers.activeBrowser;
     const currentBrowser = openBrowsers.browsers[index];
     if (currentBrowser === 'CLOSED') {
@@ -136,7 +150,8 @@ export async function closeBrowser(callback: sendUnaryData<Response.Empty>, open
     }
 
     // TODO: Set next browser in list as active here
-    currentBrowser.close();
+    await currentBrowser.close();
+    openBrowsers.browsers[index] = 'CLOSED';
     callback(null, emptyWithLog('Closed browser'));
 }
 
@@ -158,16 +173,15 @@ export async function createPage(
     callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
-    const browserState = openBrowsers.getActiveBrowser(callback);
+    const browserState = openBrowsers.getOrCreateActiveBrowser();
     await initializeBrowser(browserState);
     const context = await initializeContext(browserState);
 
-    const pageIndex = context.pages().length;
     const page = await _newPage(context);
     browserState.page = page;
     const url = call.request.getUrl() || 'about:blank';
     await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
-    const response = intResponse(pageIndex);
+    const response = intResponse(page.index);
     response.setLog('Succesfully initialized new page object and opened url');
     callback(null, response);
 }
@@ -177,13 +191,13 @@ export async function createContext(
     callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
-    const browserState = openBrowsers.getActiveBrowser(callback);
+    const browserState = openBrowsers.getOrCreateActiveBrowser();
     const browser = await initializeBrowser(browserState);
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        const contextIndex = browser.contexts().length;
-        browserState.context = await _newBrowserContext(browser);
-        const response = intResponse(contextIndex);
+        const context = await _newBrowserContext(browser);
+        browserState.context = context;
+        const response = intResponse(context.index);
         response.setLog(`Succesfully created context with options ${options}`);
         callback(null, response);
     } catch (error) {
@@ -316,9 +330,8 @@ export async function switchBrowser(
 ): Promise<void> {
     const index = call.request.getIndex();
     const previous = openBrowsers.activeBrowser;
-    const switchedBrowser = openBrowsers.getActiveBrowser(callback);
+    const switchedBrowser = openBrowsers.getAndUpdateActive(index, callback);
     if (switchedBrowser) {
-        openBrowsers.activeBrowser = index;
         try {
             // Try to switch to page and context in target browser
             await _switchContext(switchedBrowser.context?.index || 0, switchedBrowser);

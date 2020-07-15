@@ -55,7 +55,8 @@ Switch Browser
     Create Page Login
     ${second_browser}    Create Browser    firefox
     Create Page Form
-    Switch Browser    ${first_browser}
+    ${after_switch}    Switch Browser    ${first_browser}
+    Should Be Equal As Numbers    ${first_browser}    ${after_switch}
     Get Title    matches    (?i)login
 
 Switch Context
