@@ -1,8 +1,8 @@
 from .browser_control import Control
-from .browser_state import BrowserState
+from .playwright_state import PlaywrightState
 from .getters import Getters
 from .input import Input
 from .waiter import Waiter
 from .webapp_state import WebAppState
 
-__all__ = ["BrowserState", "Control", "Getters", "Input", "Waiter", "WebAppState"]
+__all__ = ["Control", "Getters", "Input", "PlaywrightState", "Waiter", "WebAppState"]
