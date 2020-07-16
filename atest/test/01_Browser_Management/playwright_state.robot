@@ -50,6 +50,29 @@ Create Browser with invalid browser fails on RF side
     Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Create Browser    netscape
     [Teardown]    no operation
 
+Create Chain Works
+    Create Browser
+    Create Context
+    Create Page  ${LOGIN_URL}
+    Get Title    matches    (?i)login
+    Switch Page  0
+    Get Title    matches    (?i)login
+
+Close Page
+    Create Page Login
+    Create Page Form
+    Close Page
+    Get Title    matches    (?i)login
+
+Close Context
+    Create Context
+    Create Page Login
+    Create Context
+    Create Page Form
+    Close Context
+    Get Title    matches    (?i)login
+
+
 Switch Browser
     ${first_browser}    Create Browser    chromium
     Create Page Login
@@ -58,7 +81,7 @@ Switch Browser
     Create Page Form
     ${second_url}    Get Url
     ${before_switch}    Switch Browser    ${first_browser}
-    Should Be Equal As Numbers    ${second_browser}  ${before_switch}
+    Should Be Equal As Numbers    ${second_browser}    ${before_switch}
     ${third_url}    Get Url
     Get Title    matches    (?i)login
 

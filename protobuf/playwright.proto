@@ -14,7 +14,8 @@ message Request {
   }
 
   message Context {
-    string rawOptions = 1;
+    bool hideRfBrowser = 1;
+    string rawOptions = 2;
   }
 
   message Url {
@@ -198,4 +199,6 @@ service  Playwright {
   rpc CreateBrowser(Request.Browser) returns (Response.Int) {}
   rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty) {}
+  rpc CloseContext(Request.Empty) returns (Response.Empty) {}
+  rpc ClosePage(Request.Empty) returns (Response.Empty) {}
 }

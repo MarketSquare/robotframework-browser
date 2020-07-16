@@ -48,7 +48,8 @@ class PlaywrightState(LibraryComponent):
 
     @keyword
     def close_browser(self):
-        """Closes the current browser."""
+        """Closes the current browser. Activated browser is set to first active browser.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseBrowser(Request.Empty())
             self.info(response.log)
@@ -58,6 +59,20 @@ class PlaywrightState(LibraryComponent):
         """Closes all open browsers."""
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseAllBrowsers(Request().Empty())
+            self.info(response.log)
+
+    @keyword
+    def close_context(self):
+        """Closes the current Context. Activated context is set to first active context."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseContext(Request().Empty())
+            self.info(response.log)
+
+    @keyword
+    def close_page(self):
+        """Closes the current Page. Activated page is set to first active page."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ClosePage(Request().Empty())
             self.info(response.log)
 
     @keyword
@@ -84,7 +99,7 @@ class PlaywrightState(LibraryComponent):
 
     @keyword
     def create_context(
-        self, **kwargs,
+        self, hideRfBrowser=False, **kwargs,
     ):
         """Create a new BrowserContext with specified options.
 
@@ -99,7 +114,9 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             options = json.dumps(kwargs)
             self.info(options)
-            response = stub.CreateContext(Request().Context(rawOptions=options))
+            response = stub.CreateContext(
+                Request().Context(hideRfBrowser=hideRfBrowser, rawOptions=options)
+            )
             self.info(response.log)
             return response.body
 
@@ -139,9 +156,7 @@ class PlaywrightState(LibraryComponent):
 
     @keyword
     def switch_browser(self, index: int):
-        """ UNSTABLE AND NOT USE-READY
-
-            Switches the currently active Browser to another open Browser.
+        """Switches the currently active Browser to another open Browser.
 
             Returns a stable identifier for the previous browser.
         """
