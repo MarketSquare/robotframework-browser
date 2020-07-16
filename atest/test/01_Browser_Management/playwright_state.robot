@@ -15,7 +15,7 @@ Create Page Form
     Get Title    ==    prefilled_email_form.html
 
 Create Page Login
-    Create Page    ${LOGIN_URL}
+    ${page_index}    Create Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
 
 *** Test Cases ***
@@ -53,10 +53,13 @@ Create Browser with invalid browser fails on RF side
 Switch Browser
     ${first_browser}    Create Browser    chromium
     Create Page Login
+    ${first_url}    Get Url
     ${second_browser}    Create Browser    firefox
     Create Page Form
+    ${second_url}    Get Url
     ${after_switch}    Switch Browser    ${first_browser}
     Should Be Equal As Numbers    ${first_browser}    ${after_switch}
+    ${third_url}    Get Url
     Get Title    matches    (?i)login
 
 Switch Context

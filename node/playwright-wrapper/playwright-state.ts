@@ -28,7 +28,7 @@ async function _newBrowser(
 async function _newBrowserContext(browser: Browser, hideRfBrowser?: boolean): Promise<IndexedContext> {
     const context = await browser.newContext();
     if (!hideRfBrowser) {
-        context.addInitScript(function () {
+        await context.addInitScript(function () {
             window.__SET_RFBROWSER_STATE__ = function (state: any) {
                 window.__RFBROWSER__ = state;
                 return state;
@@ -221,8 +221,8 @@ export async function createBrowser(
         browserState.name = name;
         browserState.browser = browser;
 
-        const newIndex = openBrowsers.browsers.push(browserState);
-        openBrowsers.activeBrowser = newIndex - 1;
+        const newIndex = openBrowsers.browsers.push(browserState) - 1;
+        openBrowsers.activeBrowser = newIndex;
         const response = intResponse(newIndex);
         response.setLog('Succesfully created browser with options ${options}');
         callback(null, response);
