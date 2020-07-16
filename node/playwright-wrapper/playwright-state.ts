@@ -165,10 +165,20 @@ export async function closeBrowser(callback: sendUnaryData<Response.Empty>, open
         callback(new Error(`Tried to close Browser ${index}, was already closed.`), null);
         return;
     }
-
-    // TODO: Set next browser in list as active here
     await currentBrowser.close();
     openBrowsers.browsers[index] = 'CLOSED';
+
+    const newIndex = openBrowsers.browsers.findIndex((element) => element !== 'CLOSED');
+    openBrowsers.activeBrowser = newIndex;
+    const activeBrowser = openBrowsers.browsers[newIndex];
+    if (activeBrowser && activeBrowser !== 'CLOSED') {
+        await _switchContext(0, activeBrowser).catch((_) =>
+            console.log("Couldn't change active Context after closing browser"),
+        );
+        await _switchPage(0, activeBrowser).catch((_) =>
+            console.log("Couldn't change active Page after closing browser"),
+        );
+    }
     callback(null, emptyWithLog('Closed browser'));
 }
 
@@ -200,7 +210,7 @@ export async function closeContext(
 export async function closePage(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState): Promise<void> {
     const activeBrowser = openBrowsers.getActiveBrowser(callback);
     await openBrowsers.getActivePage()?.close();
-    _switchPage(0, activeBrowser).catch((_) => console.log("Couldn't change active Page after closing Page"));
+    await _switchPage(0, activeBrowser).catch((_) => console.log("Couldn't change active Page after closing Page"));
     callback(null, emptyWithLog('Succesfully closed Page'));
 }
 

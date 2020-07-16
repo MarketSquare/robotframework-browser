@@ -53,18 +53,20 @@ Create Browser with invalid browser fails on RF side
 Create Chain Works
     Create Browser
     Create Context
-    Create Page  ${LOGIN_URL}
+    Create Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    Switch Page  0
+    Switch Page    0
     Get Title    matches    (?i)login
 
-Close Page
+Close Browser switches active page
+    Create Browser
     Create Page Login
+    Create Browser
     Create Page Form
-    Close Page
+    Close Browser
     Get Title    matches    (?i)login
 
-Close Context
+Close Context switches active page
     Create Context
     Create Page Login
     Create Context
@@ -72,6 +74,11 @@ Close Context
     Close Context
     Get Title    matches    (?i)login
 
+Close Page switches active page
+    Create Page Login
+    Create Page Form
+    Close Page
+    Get Title    matches    (?i)login
 
 Switch Browser
     ${first_browser}    Create Browser    chromium
