@@ -290,3 +290,22 @@ class Getters(LibraryComponent):
             expected_count,
             f"Element count for selector `{selector}` is",
         )
+
+    @keyword
+    def get_browsers(self):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetBrowsers(Request().Empty())
+            return response.body
+
+    @keyword
+    def get_contexts(self):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetContexts(Request().Empty())
+            return response.body
+
+    @keyword
+    def get_pages(self):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetPages(Request().Empty())
+            self.info(response.body)
+            return response.body

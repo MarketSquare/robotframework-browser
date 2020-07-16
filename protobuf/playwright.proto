@@ -91,12 +91,31 @@ message Request {
   message RawJson {
     string script = 1;
   }
+  message PlaywrightObject {
+    string info = 1;
+  }
 }
 
-message SelectEntry {
-  string value = 2;
-  string label = 3;
-  bool selected = 4;
+message Types {
+  message SelectEntry {
+    string value = 2;
+    string label = 3;
+    bool selected = 4;
+  }
+
+  message Browser {
+    string browserType = 1;
+    int32 id = 2;
+  }
+
+  message Context {
+
+  }
+
+  message Page {
+    string title = 1;
+    int32 index = 2;
+  }
 }
 
 message Response {
@@ -118,12 +137,23 @@ message Response {
   }
 
   message Select {
-    repeated SelectEntry entry = 1;
+    repeated Types.SelectEntry entry = 1;
   }
 
   message JavascriptExecutionResult {
     string log = 1;
     string result = 2;
+  }
+
+  message Browsers {
+    repeated Types.Browser browser = 1;
+  }
+  message Contexts {
+    repeated Types.Context context = 1;
+  }
+
+  message Pages {
+    repeated Types.Page page = 1;
   }
 }
 
@@ -201,4 +231,7 @@ service  Playwright {
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty) {}
   rpc CloseContext(Request.Empty) returns (Response.Empty) {}
   rpc ClosePage(Request.Empty) returns (Response.Empty) {}
+  rpc GetBrowsers(Request.Empty) returns (Response.Browsers) {}
+  rpc GetContexts(Request.Empty) returns (Response.Contexts) {}
+  rpc GetPages(Request.Empty) returns (Response.Pages) {}
 }

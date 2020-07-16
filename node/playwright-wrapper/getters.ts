@@ -1,7 +1,7 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page, ElementHandle } from 'playwright';
 
-import { Response, Request, SelectEntry } from './generated/playwright_pb';
+import { Response, Request, Types } from './generated/playwright_pb';
 import { invokeOnPage, invokeOnPageWithSelector, waitUntilElementExists } from './playwirght-util';
 import { stringResponse, boolResponse, intResponse } from './response-util';
 
@@ -55,7 +55,7 @@ export async function getSelectContent(
     const response = new Response.Select();
     content.forEach((option) => {
         const [label, value, selected] = [option[0], option[1], option[2]];
-        const entry = new SelectEntry();
+        const entry = new Types.SelectEntry();
         entry.setLabel(label);
         entry.setValue(value);
         entry.setSelected(selected);

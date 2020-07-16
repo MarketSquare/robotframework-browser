@@ -15,7 +15,7 @@ Create Page Form
     Get Title    ==    prefilled_email_form.html
 
 Create Page Login
-    ${page_index}    Create Page    ${LOGIN_URL}
+    Create Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
 
 *** Test Cases ***

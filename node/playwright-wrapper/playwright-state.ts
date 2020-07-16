@@ -1,7 +1,7 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 
-import { Response, Request } from './generated/playwright_pb';
+import { Response, Request, Types } from './generated/playwright_pb';
 import { invokeOnPage, exists } from './playwirght-util';
 import { emptyWithLog, intResponse } from './response-util';
 
@@ -384,5 +384,38 @@ export async function switchBrowser(
     }
     const response = intResponse(previous);
     response.setLog('Succesfully changed active browser');
+    callback(null, response);
+}
+
+export async function getBrowsers(
+    callback: sendUnaryData<Response.Browsers>,
+    openBrowsers: PlaywrightState,
+): Promise<void> {
+    callback(new Error('Not implemented yet'), null);
+    //openBrowsers.browsers.map(b => )
+}
+
+export async function getContexts(
+    callback: sendUnaryData<Response.Contexts>,
+    openBrowsers: PlaywrightState,
+): Promise<void> {
+    callback(new Error('Not implemented yet'), null);
+}
+
+export async function getPages(callback: sendUnaryData<Response.Pages>, openBrowsers: PlaywrightState): Promise<void> {
+    const response = new Response.Pages();
+    const pages = openBrowsers.getActiveBrowser(callback).context?.c.pages();
+    if (!pages) {
+        callback(new Error('No open pages in active browser.'), null);
+        return;
+    }
+    for (const index in pages) {
+        const page = pages[index];
+        const protoPage = new Types.Page();
+        protoPage.setTitle(await page.title());
+        protoPage.setIndex(parseInt(index));
+        response.addPage(protoPage);
+    }
+
     callback(null, response);
 }
