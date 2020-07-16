@@ -57,8 +57,8 @@ Switch Browser
     ${second_browser}    Create Browser    firefox
     Create Page Form
     ${second_url}    Get Url
-    ${after_switch}    Switch Browser    ${first_browser}
-    Should Be Equal As Numbers    ${first_browser}    ${after_switch}
+    ${before_switch}    Switch Browser    ${first_browser}
+    Should Be Equal As Numbers    ${second_browser}  ${before_switch}
     ${third_url}    Get Url
     Get Title    matches    (?i)login
 
