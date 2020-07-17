@@ -406,6 +406,9 @@ export async function getBrowserCatalog(
                 type: browser.name,
                 id: index,
                 contexts: contexts,
+                activePage: browser.page?.index,
+                activeContext: browser.context?.index,
+                activeBrowser: openBrowsers.activeBrowser === index,
             };
         } else {
             return {
