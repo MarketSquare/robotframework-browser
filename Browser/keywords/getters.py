@@ -299,13 +299,13 @@ class Getters(LibraryComponent):
 
             On the root level the data contains a list of open Browsers.
 
-            `` Browser: { type: 'browser', 'id': int, contexts: List[Context]}``
+            `` Browser: { type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
             `` Context: {type: 'context', 'id': int, pages: List[Page]} ``
             `` Page: {type: 'page', 'id': int, title: str, url: str} ``
 
             Sample: ``
             [{
-                "type": "browser",
+                "type": "firefox",
                 "id": 0,
                 "contexts": [{
                     "type": "context",

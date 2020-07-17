@@ -1,7 +1,7 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
 
-import { Response, Request, Types } from './generated/playwright_pb';
+import { Response, Request } from './generated/playwright_pb';
 import { invokeOnPage, exists } from './playwirght-util';
 import { emptyWithLog, intResponse } from './response-util';
 
@@ -403,13 +403,13 @@ export async function getBrowserCatalog(
                 };
             });
             return {
-                type: 'browser',
+                type: browser.name,
                 id: index,
                 contexts: contexts,
             };
         } else {
             return {
-                type: 'browser',
+                type: 'CLOSED',
                 id: index,
                 state: 'CLOSED',
             };
