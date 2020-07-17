@@ -387,7 +387,7 @@ export async function switchBrowser(
     callback(null, response);
 }
 
-export async function getBrowsers(
+export async function getBrowserCatalog(
     callback: sendUnaryData<Response.String>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
@@ -397,42 +397,40 @@ export async function getBrowsers(
         if (browser !== 'CLOSED') {
             const contexts = browser.browser.contexts().map((context, i) => {
                 return {
-                    context: {
-                        index: i,
-                        pages: context.pages(),
-                    },
+                    type: 'context',
+                    id: i,
+                    pages: context.pages(),
                 };
             });
             return {
-                browser: {
-                    index: index,
-                    contexts: contexts,
-                },
+                type: 'browser',
+                id: index,
+                contexts: contexts,
             };
         } else {
             return {
-                browser: {
-                    index: index,
-                    state: 'CLOSED',
-                },
+                type: 'browser',
+                id: index,
+                state: 'CLOSED',
             };
         }
     });
 
     // This for looping is done instead of a .map on the pages() lists to avoid needing to handle deeply nested page.title() promises.
     for (const b of mappedBrowsers) {
-        const contextList = b.browser.contexts;
+        const contextList = b.contexts;
         if (contextList) {
             for (const c of contextList) {
-                for (const i in c.context.pages) {
-                    const page = c.context.pages[i];
+                for (const i in c.pages) {
+                    const page = c.pages[i];
                     const t = await page.title();
-                    c.context.pages[i] = {
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-expect-error
+                    const url = page.url();
+                    c.pages[i] = {
+                        type: 'page',
                         title: t,
-                        index: i,
-                    };
+                        url: url,
+                        id: i,
+                    } as any;
                 }
             }
         }

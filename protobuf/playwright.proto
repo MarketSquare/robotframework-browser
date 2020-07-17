@@ -207,5 +207,5 @@ service  Playwright {
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty) {}
   rpc CloseContext(Request.Empty) returns (Response.Empty) {}
   rpc ClosePage(Request.Empty) returns (Response.Empty) {}
-  rpc GetBrowsers(Request.Empty) returns (Response.String) {}
+  rpc GetBrowserCatalog(Request.Empty) returns (Response.String) {}
 }
