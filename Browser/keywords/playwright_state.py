@@ -1,17 +1,24 @@
 import json
-from enum import Enum, auto
-from typing import Optional
+from enum import Enum
+from typing import Dict, List, Optional, TypedDict
 
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
+from ..utils.meta_python import locals_to_params
 from ..generated.playwright_pb2 import Request
 
 
 class SupportedBrowsers(Enum):
-    chromium = auto()
-    firefox = auto()
-    webkit = auto()
+    chromium = "chromium"
+    firefox = "firefox"
+    webkit = "webkit"
+
+
+# Can't define with Enum class syntax because of the dash
+ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
+
+ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
 
 
 class PlaywrightState(LibraryComponent):
@@ -23,7 +30,7 @@ class PlaywrightState(LibraryComponent):
         self,
         url=None,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
-        headless: bool = True,
+        headless: Optional[bool] = True,
     ):
         """Opens a new browser instance.
 
@@ -77,7 +84,21 @@ class PlaywrightState(LibraryComponent):
 
     @keyword
     def create_browser(
-        self, browser: SupportedBrowsers = SupportedBrowsers.chromium, **kwargs,
+        self,
+        browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        executablePath: Optional[str] = None,
+        args: Optional[List[str]] = None,
+        ignoreDefaultArgs: Optional[List[str]] = None,
+        handleSIGINT: Optional[bool] = None,
+        handleSIGTERM: Optional[bool] = None,
+        handleSIGHUP: Optional[bool] = None,
+        timeout: Optional[int] = None,
+        env: Optional[Dict] = None,
+        headless: Optional[bool] = None,
+        devtools: Optional[bool] = None,
+        proxy: Optional[Dict] = None,
+        downloadsPath: Optional[str] = None,
+        slowMo: Optional[int] = None,
     ):
         """Create a new playwright Browser with specified options.
 
@@ -87,23 +108,45 @@ class PlaywrightState(LibraryComponent):
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsertypelaunchoptions |Playwright browserType.launch]
         for a full list of supported options.
         """
+        params = locals_to_params(locals())
+        options = json.dumps(params, default=str)
+        self.info(options)
 
         with self.playwright.grpc_channel() as stub:
-            options = json.dumps(kwargs)
-            self.info(options)
+
             response = stub.CreateBrowser(
-                Request().Browser(browser=browser.name, rawOptions=options)
+                Request().Browser(browser=browser.value, rawOptions=options)
             )
             self.info(response.log)
             return response.body
 
     @keyword
     def create_context(
-        self, hideRfBrowser=False, **kwargs,
+        self,
+        hideRfBrowser=False,
+        viewport: Optional[ViewportDimensions] = None,
+        ignoreHTTPSErrors: Optional[bool] = None,
+        javaScriptEnabled: Optional[bool] = None,
+        bypassCSP: Optional[bool] = None,
+        userAgent: Optional[str] = None,
+        locale: Optional[str] = None,
+        timezoneId: Optional[str] = None,
+        geolocation: Optional[Dict] = None,
+        permissions: Optional[List[str]] = None,
+        extraHTTPHeaders: Optional[Dict[str, str]] = None,
+        offline: Optional[bool] = None,
+        httpCredentials: Optional[Dict] = None,
+        deviceScaleFactor: Optional[int] = None,
+        isMobile: Optional[bool] = None,
+        hasTouch: Optional[bool] = None,
+        colorScheme: Optional[ColorScheme] = None,
+        acceptDownloads: Optional[bool] = None,
     ):
         """Create a new BrowserContext with specified options.
 
         Returns a stable identifier for the created context.
+
+        Value of ``viewport`` should be an object or a string representation of an object like {'height': 720, 'width': 1280}
 
         A BrowserContext is the Playwright object that controls a single browser profile.
         Within a context caches and cookies are shared.
@@ -111,9 +154,10 @@ class PlaywrightState(LibraryComponent):
         for a list of supported options.
         If there's no open Browser will open one. Does not create pages.
         """
+        params = locals_to_params(locals())
+        options = json.dumps(params, default=str)
+        self.info(options)
         with self.playwright.grpc_channel() as stub:
-            options = json.dumps(kwargs)
-            self.info(options)
             response = stub.CreateContext(
                 Request().Context(hideRfBrowser=hideRfBrowser, rawOptions=options)
             )

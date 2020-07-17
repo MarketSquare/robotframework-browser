@@ -409,7 +409,7 @@ export async function getBrowserCatalog(
             };
         } else {
             return {
-                type: 'CLOSED',
+                type: 'browser',
                 id: index,
                 state: 'CLOSED',
             };
