@@ -11,7 +11,7 @@ from .input import SelectAttribute
 
 
 class Getters(LibraryComponent):
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
     def get_url(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -29,7 +29,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "URL "
             )
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
     def get_page_state(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -53,7 +53,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "State "
             )
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_title(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -71,7 +71,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "Title "
             )
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_text(
         self,
         selector: str,
@@ -92,7 +92,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, f"Text {selector}"
             )
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_attribute(
         self,
         selector: str,
@@ -115,7 +115,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, f"Attribute {selector}"
             )
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_textfield_value(
         self,
         selector: str,
@@ -130,7 +130,7 @@ class Getters(LibraryComponent):
             selector, "value", assertion_operator, assertion_expected
         )
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_selected_options(
         self,
         selector: str,
@@ -216,7 +216,7 @@ class Getters(LibraryComponent):
             else:
                 return list(selected)
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_checkbox_state(
         self,
         selector: str,
@@ -264,7 +264,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, expected_bool, f"Checkbox {selector} is"
             )
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_element_count(
         self,
         selector: str,
@@ -309,7 +309,7 @@ class Getters(LibraryComponent):
                 f"Element count for selector `{selector}` is",
             )
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
     def get_browser_catalog(self):
         """ Returns all Browsers, open Contexts in them and open Pages in these contexts.
 
@@ -353,7 +353,7 @@ class Getters(LibraryComponent):
             self.info(json.dumps(parsed))
             return parsed
 
-    @keyword
+    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
     def get_viewport_size(self):
         """Gets the current viewport dimensions """
         with self.playwright.grpc_channel() as stub:

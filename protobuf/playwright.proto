@@ -208,9 +208,9 @@ service  Playwright {
   rpc SwitchPage(Request.Index) returns (Response.Int) {}
   rpc SwitchContext(Request.Index) returns (Response.Int) {}
   rpc SwitchBrowser(Request.Index) returns (Response.Int) {}
-  rpc CreatePage(Request.Url) returns (Response.Int) {}
-  rpc CreateContext(Request.Context) returns (Response.Int) {}
-  rpc CreateBrowser(Request.Browser) returns (Response.Int) {}
+  rpc NewPage(Request.Url) returns (Response.Int) {}
+  rpc NewContext(Request.Context) returns (Response.Int) {}
+  rpc NewBrowser(Request.Browser) returns (Response.Int) {}
   rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty) {}
   rpc CloseContext(Request.Empty) returns (Response.Empty) {}

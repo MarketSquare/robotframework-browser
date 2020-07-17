@@ -10,12 +10,12 @@ Open Browser and assert Login Page
     Open Browser To Login Page
     Get Text    h1    ==    Login Page
 
-Create Page Form
-    Create Page    ${FORM_URL}
+New Page Form
+    New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
 
-Create Page Login
-    Create Page    ${LOGIN_URL}
+New Page Login
+    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
 
 *** Test Cases ***
@@ -25,17 +25,17 @@ Open Firefox
 Open Chrome
     Open Browser and assert Login Page    chromium
 
-Create Browser does not open a page
-    Create Browser
+New Browser does not open a page
+    New Browser
     Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN_URL}
 
-Create Browser does not create a context
-    Create Browser
+New Browser does not create a context
+    New Browser
     # Use Switch context to test that no context exists here
     Run Keyword And Expect Error    *No context for index 0.*    Switch Context    0
 
-Create Context does not open a page
-    Create Context
+New Context does not open a page
+    New Context
     Run Keyword And Expect Error    *No page for index 0.*    Switch Page    0
 
 Open Browser opens everything
@@ -46,46 +46,46 @@ Open Browser with invalid browser fails on RF side
     Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Open Browser    url=${FORM_URL}    browser=netscape
     [Teardown]    no operation
 
-Create Browser with invalid browser fails on RF side
-    Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Create Browser    netscape
+New Browser with invalid browser fails on RF side
+    Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    New Browser    netscape
     [Teardown]    no operation
 
 Create Chain Works
-    Create Browser
-    Create Context
-    Create Page    ${LOGIN_URL}
+    New Browser
+    New Context
+    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
     Switch Page    0
     Get Title    matches    (?i)login
 
 Close Browser switches active page
-    Create Browser
-    Create Page Login
-    Create Browser
-    Create Page Form
+    New Browser
+    New Page Login
+    New Browser
+    New Page Form
     Close Browser
     Get Title    matches    (?i)login
 
 Close Context switches active page
-    Create Context
-    Create Page Login
-    Create Context
-    Create Page Form
+    New Context
+    New Page Login
+    New Context
+    New Page Form
     Close Context
     Get Title    matches    (?i)login
 
 Close Page switches active page
-    Create Page Login
-    Create Page Form
+    New Page Login
+    New Page Form
     Close Page
     Get Title    matches    (?i)login
 
 Switch Browser
-    ${first_browser}    Create Browser    chromium
-    Create Page Login
+    ${first_browser}    New Browser    chromium
+    New Page Login
     ${first_url}    Get Url
-    ${second_browser}    Create Browser    firefox
-    Create Page Form
+    ${second_browser}    New Browser    firefox
+    New Page Form
     ${second_url}    Get Url
     ${before_switch}    Switch Browser    ${first_browser}
     Should Be Equal As Numbers    ${second_browser}    ${before_switch}
@@ -93,17 +93,17 @@ Switch Browser
     Get Title    matches    (?i)login
 
 Switch Context
-    ${first_context}    Create Context
-    Create Page    ${LOGIN_URL}
+    ${first_context}    New Context
+    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    ${second_context}    Create Context
-    Create Page    ${FORM_URL}
+    ${second_context}    New Context
+    New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     Switch Context    ${first_context}
     Get Title    matches    (?i)login
 
-Create Page can create context and browser
-    Create Page    ${LOGIN_URL}
+New Page can New Context and browser
+    New Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
 
 Focus Next Page on popup
@@ -123,7 +123,7 @@ Switch Page after popup
     Wait For Elements State    button#pops_up
 
 Set Viewport Size
-    Create Page
+    New Page
     ${size}    Get Viewport Size
     ${desired_first}    Evaluate    {"height": 720, "width": 1280}
     Should Be Equal    ${size}    ${desired_first}

@@ -9,21 +9,21 @@ class Control(LibraryComponent):
     """Keywords to do things on the current browser page and modify the page
     """
 
-    @keyword
+    @keyword(tags=["BrowserControl"])
     def go_forward(self):
         """Navigates to the next page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoForward(Request.Empty())
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["BrowserControl"])
     def go_back(self):
         """Navigates to the previous page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoBack(Request.Empty())
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["BrowserControl"])
     def go_to(self, url: str):
         """Navigates to the given ``url``."""
         with self.playwright.grpc_channel() as stub:
@@ -46,7 +46,7 @@ class Control(LibraryComponent):
                 html=True,
             )
 
-    @keyword
+    @keyword(tags=["BrowserControl"])
     def set_timeout(self, timeout: str):
         """Sets the timeout used by most input and getter keywords.
 
@@ -57,7 +57,7 @@ class Control(LibraryComponent):
             response = stub.SetTimeout(Request().Timeout(timeout=parsed_timeout))
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["PageContent"])
     def add_style_tag(self, content: str):
         """Adds a <style type="text/css"> tag with the content.
 
@@ -67,7 +67,7 @@ class Control(LibraryComponent):
             response = stub.AddStyleTag(Request().StyleTag(content=content))
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["PageContent"])
     def highlight_element(self, selector: str, duration: str = "5s"):
         """Adds a red highlight to elements matched by ``selector`` for ``duration``"""
         with self.playwright.grpc_channel() as stub:
@@ -79,7 +79,7 @@ class Control(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["BrowserControl"])
     def set_viewport_size(self, width: int, height: int):
         """Sets current Pages viewport size to specified dimensions.
 

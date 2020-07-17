@@ -214,7 +214,7 @@ export async function closePage(callback: sendUnaryData<Response.Empty>, openBro
     callback(null, emptyWithLog('Succesfully closed Page'));
 }
 
-export async function createPage(
+export async function newPage(
     call: ServerUnaryCall<Request.Url>,
     callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,
@@ -231,7 +231,7 @@ export async function createPage(
     callback(null, response);
 }
 
-export async function createContext(
+export async function newContext(
     call: ServerUnaryCall<Request.Context>,
     callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,
@@ -252,7 +252,7 @@ export async function createContext(
     }
 }
 
-export async function createBrowser(
+export async function newBrowser(
     call: ServerUnaryCall<Request.Browser>,
     callback: sendUnaryData<Response.Int>,
     openBrowsers: PlaywrightState,

@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        Create Page    ${LOGIN_URL}
+Test Setup        New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${FailureScreenshot}=    ${OUTPUT_DIR}${/}Test_screenshotting_failing_test_FAILURE_SCREENSHOT.png

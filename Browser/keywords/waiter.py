@@ -17,7 +17,7 @@ class ElementState(Enum):
 
 
 class Waiter(LibraryComponent):
-    @keyword
+    @keyword(tags=["Wait", "PageContent"])
     def wait_for_elements_state(
         self,
         selector: str,
