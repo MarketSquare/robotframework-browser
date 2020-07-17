@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from copy import copy
 
 from robotlibcore import keyword  # type: ignore
@@ -21,12 +21,13 @@ class Getters(LibraryComponent):
 
         Optionally asserts that it matches the specified assertion.
         """
-        value = ""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
             self.debug(response.log)
             value = response.body
-        return verify_assertion(value, assertion_operator, assertion_expected, "URL ")
+            return verify_assertion(
+                value, assertion_operator, assertion_expected, "URL "
+            )
 
     @keyword
     def get_page_state(
@@ -48,7 +49,9 @@ class Getters(LibraryComponent):
             response = stub.GetPageState(Request().Empty())
             self.debug(response.log)
             value = json.loads(response.result)
-        return verify_assertion(value, assertion_operator, assertion_expected, "State ")
+            return verify_assertion(
+                value, assertion_operator, assertion_expected, "State "
+            )
 
     @keyword
     def get_title(
@@ -60,12 +63,13 @@ class Getters(LibraryComponent):
 
         Optionally asserts that it matches the specified assertion.
         """
-        value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
             self.debug(response.log)
             value = response.body
-        return verify_assertion(value, assertion_operator, assertion_expected, "Title ")
+            return verify_assertion(
+                value, assertion_operator, assertion_expected, "Title "
+            )
 
     @keyword
     def get_text(
@@ -78,16 +82,15 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the text matches the specified assertion.
         """
-        value = None
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
                 Request().ElementProperty(selector=selector, property="innerText")
             )
             self.debug(response.log)
             value = response.body
-        return verify_assertion(
-            value, assertion_operator, assertion_expected, f"Text {selector}"
-        )
+            return verify_assertion(
+                value, assertion_operator, assertion_expected, f"Text {selector}"
+            )
 
     @keyword
     def get_attribute(
@@ -108,9 +111,9 @@ class Getters(LibraryComponent):
             )
             self.debug(response.log)
             value = response.body
-        return verify_assertion(
-            value, assertion_operator, assertion_expected, f"Attribute {selector}"
-        )
+            return verify_assertion(
+                value, assertion_operator, assertion_expected, f"Attribute {selector}"
+            )
 
     @keyword
     def get_textfield_value(
@@ -218,7 +221,7 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        state: bool = False,
+        expected_state: str = "Unchecked",
     ):
         """Returns the state of the checkbox found by ``selector``.
 
@@ -232,10 +235,11 @@ class Getters(LibraryComponent):
         - ``==`` and ``!=`` are allowed on boolean values
         - other operators are not accepted.
 
-        ``state``: boolean value of expected state.
-        Strings are parsed as booleans.
-        All strings are ``${True}`` except of the following ``unchecked, FALSE, NO, OFF, 0``.
-        (case-insensitive) The string ``checked`` can be used as True value.
+        ``expected_state``: boolean value of expected state.
+        Strings are interpreted as booleans.
+        All strings are ``${True}`` except of the
+        following `FALSE, NO, OFF, 0, UNCHECKED, NONE, ${EMPTY}``.
+        (case-insensitive).
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
@@ -244,28 +248,28 @@ class Getters(LibraryComponent):
             self.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
             value: bool = response.body
 
-            if assertion_operator is not None and assertion_operator not in [
-                AssertionOperator["=="],
-                AssertionOperator["!="],
-            ]:
-                raise ValueError(
-                    f"Operators '==' and '!=' are allowed,"
-                    f" not '{assertion_operator.name}'."
-                )
+            if assertion_operator is not None:
+                if assertion_operator not in [
+                    AssertionOperator["=="],
+                    AssertionOperator["!="],
+                ]:
+                    raise ValueError(
+                        f"Operators '==' and '!=' are allowed,"
+                        f" not '{assertion_operator.name}'."
+                    )
 
-            if isinstance(state, str):
-                state = state.lower() != "unchecked"
+            expected_bool: bool = self.is_truthy(expected_state)
 
-        return verify_assertion(
-            value, assertion_operator, state, f"Checkbox {selector} is"
-        )
+            return verify_assertion(
+                value, assertion_operator, expected_bool, f"Checkbox {selector} is"
+            )
 
     @keyword
     def get_element_count(
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        expected_count: str = "-1",
+        expected_value: Union[int, str] = 0,
     ):
         """Returns the count of elements found with ``selector``.
 
@@ -276,20 +280,34 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector)
             )
             count = response.body
+            if assertion_operator is not None:
+                if assertion_operator in [
+                    AssertionOperator["=="],
+                    AssertionOperator["!="],
+                    AssertionOperator[">="],
+                    AssertionOperator[">"],
+                    AssertionOperator["<="],
+                    AssertionOperator["<"],
+                ]:
+                    expected_value = int(expected_value)
 
-        try:
-            int(expected_count)
-        except ValueError:
-            raise AssertionError(
-                f"Invalid value for argument `expected_count`: `${expected_count}`"
+                elif assertion_operator in [
+                    AssertionOperator["validate"],
+                    AssertionOperator["then"],
+                ]:
+                    expected_value = str(expected_value)
+
+                else:
+                    raise ValueError(
+                        f"Operator '{assertion_operator.name}' is not allowed."
+                    )
+
+            return verify_assertion(
+                int(count),
+                assertion_operator,
+                expected_value,
+                f"Element count for selector `{selector}` is",
             )
-
-        return verify_assertion(
-            str(count),
-            assertion_operator,
-            expected_count,
-            f"Element count for selector `{selector}` is",
-        )
 
     @keyword
     def get_browser_catalog(self):

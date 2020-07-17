@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
@@ -33,12 +31,12 @@ class Control(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def take_page_screenshot(self, path: Optional[str] = None):
+    def take_page_screenshot(self, path: str = ""):
         """Takes screenshot of the current window and saves it to ``path``.
 
         The default path is the Robot Framework output directory.
         """
-        if path is None:
+        if not path:
             path = self.library.get_screenshot_path
         self.info(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
@@ -70,7 +68,7 @@ class Control(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def highlight_element(self, selector: str, duration: Union[str, int] = "5s"):
+    def highlight_element(self, selector: str, duration: str = "5s"):
         """Adds a red highlight to elements matched by ``selector`` for ``duration``"""
         with self.playwright.grpc_channel() as stub:
             duration_ms = timestr_to_millisecs(duration)
@@ -82,7 +80,7 @@ class Control(LibraryComponent):
             self.info(response.log)
 
     @keyword
-    def set_viewport_size(self, height: int, width: int):
+    def set_viewport_size(self, width: int, height: int):
         """Sets current Pages viewport size to specified dimensions.
 
             For longer lasting dimensions use Create Context's ViewportDimensions parameter

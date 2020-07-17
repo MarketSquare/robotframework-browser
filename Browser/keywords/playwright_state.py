@@ -31,7 +31,7 @@ class PlaywrightState(LibraryComponent):
         self,
         url=None,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
-        headless: Optional[bool] = True,
+        headless: bool = True,
     ):
         """Opens a new browser instance.
 
@@ -87,19 +87,19 @@ class PlaywrightState(LibraryComponent):
     def create_browser(
         self,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        headless: bool = True,
         executablePath: Optional[str] = None,
         args: Optional[List[str]] = None,
         ignoreDefaultArgs: Optional[List[str]] = None,
-        handleSIGINT: Optional[bool] = None,
-        handleSIGTERM: Optional[bool] = None,
-        handleSIGHUP: Optional[bool] = None,
-        timeout: Optional[str] = "30 seconds",
-        env: Optional[Dict] = None,
-        headless: Optional[bool] = None,
-        devtools: Optional[bool] = None,
         proxy: Optional[Dict] = None,
         downloadsPath: Optional[str] = None,
-        slowMo: Optional[str] = "0 seconds",
+        handleSIGINT: bool = True,
+        handleSIGTERM: bool = True,
+        handleSIGHUP: bool = True,
+        timeout: str = "30 seconds",
+        env: Optional[Dict] = None,
+        devtools: bool = False,
+        slowMo: str = "0 seconds",
     ):
         """Create a new playwright Browser with specified options.
 
@@ -128,30 +128,31 @@ class PlaywrightState(LibraryComponent):
     @keyword
     def create_context(
         self,
-        hideRfBrowser=False,
+        hideRfBrowser: bool = False,
+        acceptDownloads: bool = False,
+        ignoreHTTPSErrors: bool = False,
+        bypassCSP: bool = False,
         viewport: Optional[ViewportDimensions] = None,
-        ignoreHTTPSErrors: Optional[bool] = None,
-        javaScriptEnabled: Optional[bool] = None,
-        bypassCSP: Optional[bool] = None,
         userAgent: Optional[str] = None,
-        locale: Optional[str] = None,
+        deviceScaleFactor: float = 1.0,
+        isMobile: bool = False,
+        hasTouch: bool = False,
+        javaScriptEnabled: bool = True,
         timezoneId: Optional[str] = None,
         geolocation: Optional[Dict] = None,
+        locale: Optional[str] = None,
         permissions: Optional[List[str]] = None,
         extraHTTPHeaders: Optional[Dict[str, str]] = None,
-        offline: Optional[bool] = None,
+        offline: bool = False,
         httpCredentials: Optional[Dict] = None,
-        deviceScaleFactor: Optional[float] = None,
-        isMobile: Optional[bool] = None,
-        hasTouch: Optional[bool] = None,
         colorScheme: Optional[ColorScheme] = None,
-        acceptDownloads: Optional[bool] = None,
     ):
         """Create a new BrowserContext with specified options.
 
         Returns a stable identifier for the created context.
 
-        Value of ``viewport`` should be an object or a string representation of an object like {'height': 720, 'width': 1280}
+        Value of ``viewport`` should be an object or a string
+        representation of an object like {'height': 720, 'width': 1280}
 
         A BrowserContext is the Playwright object that controls a single browser profile.
         Within a context caches and cookies are shared.

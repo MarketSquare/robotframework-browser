@@ -28,6 +28,7 @@ AssertionOperator = Enum(
         "matches": "$",
         "validate": "validate",
         "then": "then",
+        "evaluate": "then",
     },
 )
 

@@ -24,12 +24,12 @@ class WebAppState(LibraryComponent):
                 Request().JavascriptCode(script=f'window.localStorage.getItem("{key}")')
             )
             self.info(response.log)
-        return verify_assertion(
-            json.loads(response.result),
-            assertion_operator,
-            assertion_expected,
-            "localStorage ",
-        )
+            return verify_assertion(
+                json.loads(response.result),
+                assertion_operator,
+                assertion_expected,
+                "localStorage ",
+            )
 
     @keyword
     def local_storage_set(self, key: str, value: str):
@@ -85,12 +85,12 @@ class WebAppState(LibraryComponent):
                 )
             )
             self.info(response.log)
-        return verify_assertion(
-            json.loads(response.result),
-            assertion_operator,
-            assertion_expected,
-            "sessionStorage ",
-        )
+            return verify_assertion(
+                json.loads(response.result),
+                assertion_operator,
+                assertion_expected,
+                "sessionStorage ",
+            )
 
     @keyword
     def session_storage_set(self, key: str, value: str):

@@ -2,7 +2,7 @@ import json
 from enum import Enum, auto
 
 from robotlibcore import keyword  # type: ignore
-from typing import Optional, Dict
+from typing import Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -22,7 +22,7 @@ class Waiter(LibraryComponent):
         self,
         selector: str,
         state: ElementState = ElementState.visible,
-        timeout: Optional[str] = None,
+        timeout: str = "",
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
