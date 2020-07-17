@@ -94,7 +94,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Robot Framework Browser
         env:
-          VERSION: 0.7.1
+          VERSION: 0.8.0
         run: |
           pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
           pip install -U robotframework-pabot
