@@ -14,20 +14,16 @@ class SupportedBrowsers(Enum):
     webkit = auto()
 
 
-class BrowserState(LibraryComponent):
+class PlaywrightState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages.
     """
 
-    def __init__(self, library):
-        self.library = library
-
-    @property
-    def playwright(self):
-        return self.library.playwright
-
     @keyword
     def open_browser(
-        self, url=None, browser=SupportedBrowsers.chromium, headless: bool = True
+        self,
+        url=None,
+        browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        headless: bool = True,
     ):
         """Opens a new browser instance.
 
@@ -52,64 +48,104 @@ class BrowserState(LibraryComponent):
 
     @keyword
     def close_browser(self):
-        """Closes the current browser."""
+        """Closes the current browser. Activated browser is set to first active browser.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseBrowser(Request.Empty())
             self.info(response.log)
 
     @keyword
-    def create_browser(
-        self, browser_type=SupportedBrowsers.chromium, **kwargs,
-    ):
-        """Create a new playwright Browser with specified options. A Browser is the Playwright object that controls a single Browser process.
+    def close_all_browsers(self):
+        """Closes all open browsers."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseAllBrowsers(Request().Empty())
+            self.info(response.log)
 
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsertypelaunchoptions |Playwright browserType.launch] for a full list of supported options.
+    @keyword
+    def close_context(self):
+        """Closes the current Context. Activated context is set to first active context."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseContext(Request().Empty())
+            self.info(response.log)
+
+    @keyword
+    def close_page(self):
+        """Closes the current Page. Activated page is set to first active page."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ClosePage(Request().Empty())
+            self.info(response.log)
+
+    @keyword
+    def create_browser(
+        self, browser: SupportedBrowsers = SupportedBrowsers.chromium, **kwargs,
+    ):
+        """Create a new playwright Browser with specified options.
+
+        Returns a stable identifier for the created browser.
+
+        A Browser is the Playwright object that controls a single Browser process.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsertypelaunchoptions |Playwright browserType.launch]
+        for a full list of supported options.
         """
 
         with self.playwright.grpc_channel() as stub:
             options = json.dumps(kwargs)
+            self.info(options)
             response = stub.CreateBrowser(
-                Request().Browser(browser=browser_type.name, rawOptions=options)
+                Request().Browser(browser=browser.name, rawOptions=options)
             )
             self.info(response.log)
+            return response.body
 
     @keyword
     def create_context(
-        self, **kwargs,
+        self, hideRfBrowser=False, **kwargs,
     ):
-        """Create a new BrowserContext with specified options. A BrowserContext is the Playwright object that controls a single browser profile.
-            Within a context caches and cookies are shared.
+        """Create a new BrowserContext with specified options.
 
-            See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext] for a list of supported options.
+        Returns a stable identifier for the created context.
 
-            If there's no open Browser will open one. Does not create pages.
+        A BrowserContext is the Playwright object that controls a single browser profile.
+        Within a context caches and cookies are shared.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext]
+        for a list of supported options.
+        If there's no open Browser will open one. Does not create pages.
         """
         with self.playwright.grpc_channel() as stub:
             options = json.dumps(kwargs)
             self.info(options)
-            response = stub.CreateContext(Request().Context(rawOptions=options))
+            response = stub.CreateContext(
+                Request().Context(hideRfBrowser=hideRfBrowser, rawOptions=options)
+            )
             self.info(response.log)
+            return response.body
 
     @keyword
     def create_page(self, url: Optional[str] = None):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
 
+            Returns a stable identifier for the created page.
             If ``url`` parameter is specified will open the new page to the specified URL.
+
         """
 
         with self.playwright.grpc_channel() as stub:
             response = stub.CreatePage(Request().Url(url=url))
             self.info(response.log)
+            return response.body
 
     @keyword
     def switch_page(self, index: int):
         """Switches the active browser page to another open page by ``index``.
+
+            Returns a stable identifier for the previous page.
 
             Newly opened pages get appended to the end of the list
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchPage(Request().Index(index=index))
             self.info(response.log)
+            return response.body
 
     @keyword
     def auto_activate_pages(self):
@@ -120,18 +156,22 @@ class BrowserState(LibraryComponent):
 
     @keyword
     def switch_browser(self, index: int):
-        """ UNSTABLE AND NOT USE-READY
+        """Switches the currently active Browser to another open Browser.
 
-            Switches the currently active Browser to another open Browser.
+            Returns a stable identifier for the previous browser.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=index))
             self.info(response.log)
+            return response.body
 
     @keyword
     def switch_context(self, index: int):
         """ Switches the active BrowserContext to another open context.
+
+            Returns a stable identifier for the previous context.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchContext(Request().Index(index=index))
             self.info(response.log)
+            return response.body

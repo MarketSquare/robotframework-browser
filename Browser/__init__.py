@@ -5,7 +5,7 @@ from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .keywords import BrowserState, Control, Getters, Input, Waiter, WebAppState
+from .keywords import Control, Getters, Input, PlaywrightState, Waiter, WebAppState
 from .playwright import Playwright
 from .version import VERSION
 
@@ -141,9 +141,9 @@ class Browser(DynamicCore):
         self.browser_control = Control(self)
         libraries = [
             self.browser_control,
-            BrowserState(self),
             Input(self),
             Getters(self),
+            PlaywrightState(self),
             Waiter(self),
             WebAppState(self),
         ]
@@ -201,7 +201,7 @@ class Browser(DynamicCore):
             path = self.failure_screenshot_path(test_name)
             self.browser_control.take_page_screenshot(path)
         except Exception as err:
-            logger.warn(f"Was unable to take page screenshot after failure:\n{err}")
+            logger.info(f"Was unable to take page screenshot after failure:\n{err}")
 
     def failure_screenshot_path(self, test_name):
         return os.path.join(

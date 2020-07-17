@@ -11,13 +11,6 @@ class Control(LibraryComponent):
     """Keywords to do things on the current browser page and modify the page
     """
 
-    def __init__(self, library):
-        self.library = library
-
-    @property
-    def playwright(self):
-        return self.library.playwright
-
     @keyword
     def go_forward(self):
         """Navigates to the next page in history."""
@@ -86,21 +79,4 @@ class Control(LibraryComponent):
                     selector=selector, duration=duration_ms
                 )
             )
-            self.info(response.log)
-
-    @keyword
-    def switch_active_page(self, index: int):
-        """Switches the active browser page to another open page by ``index``.
-
-            Newly opened pages get appended to the end of the list
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.SwitchActivePage(Request().Index(index=index))
-            self.info(response.log)
-
-    @keyword
-    def auto_activate_pages(self):
-        """Toggles automatically changing active page to latest opened page """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.AutoActivatePages(Request().Empty())
             self.info(response.log)

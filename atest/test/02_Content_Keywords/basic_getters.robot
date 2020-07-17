@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        Create Page    ${LOGIN URL}
+Test Setup        Create Page    ${LOGIN_URL}
 
 *** Variables ***
 ${UserNameLabel}=    label[for="username_field"]
@@ -23,14 +23,14 @@ Get Text Assert Validate
 Get Text With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Text    notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute and Assert
     Get Attribute    h1    innerText    ==    Login Page
 
 Get Attribute innerText
-    ${innerText}=    Get Attribute    ${UserNameLabel}    innerText
-    Should Be Equal    ${innerText}    User Name:
+    ${inner_text}=    Get Attribute    ${UserNameLabel}    innerText
+    Should Be Equal    ${inner_text}    User Name:
 
 Get Attribute size
     ${size}=    Get Attribute    ${InputUsername}    type
@@ -43,7 +43,7 @@ Get Attribute and Then .. (Closure)
 Get Attribute With Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Attribute    notamatch    attributeName
-    [Teardown]    Set Timeout    ${PLAYWRIGHT TIMEOUT}
+    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Element Count
     ${count}=    Get Element Count    h1

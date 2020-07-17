@@ -290,3 +290,47 @@ class Getters(LibraryComponent):
             expected_count,
             f"Element count for selector `{selector}` is",
         )
+
+    @keyword
+    def get_browser_catalog(self):
+        """ Returns all Browsers, open Contexts in them and open Pages in these contexts.
+
+            The data is parsed into a python list containing data representing the open Objects.
+
+            On the root level the data contains a list of open Browsers.
+
+            `` Browser: { type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
+            `` Context: {type: 'context', 'id': int, pages: List[Page]} ``
+            `` Page: {type: 'page', 'id': int, title: str, url: str} ``
+
+            Sample: ``
+            [{
+                "type": "firefox",
+                "id": 0,
+                "contexts": [{
+                    "type": "context",
+                    "id": 0,
+                    "pages": [{
+                        "type": "page",
+                        "title": "prefilled_email_form.html",
+                        "url": "http://localhost:7272/prefilled_email_form.html",
+                        "id": "0"
+                    }]
+                }, {
+                    "type": "context",
+                    "id": 1,
+                    "pages": [{
+                        "type": "page",
+                        "title": "Login Page",
+                        "url": "http://localhost:7272/dist/",
+                        "id": "0"
+                    }]
+                }]
+            }]
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetBrowserCatalog(Request().Empty())
+            parsed = json.loads(response.body)
+            self.info(json.dumps(parsed))
+            return parsed

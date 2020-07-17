@@ -3,7 +3,7 @@ Resource          imports.resource
 
 *** Test Cases ***
 test server title
-    Create Page    ${LOGIN URL}/
+    Create Page    ${LOGIN_URL}/
     Get Title    ==    Login Page
 
 about:blank title

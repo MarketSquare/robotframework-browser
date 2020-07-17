@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        Create Page    ${LOGIN URL}
+Test Setup        Create Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Invalids will raise error directly from Robot Framework

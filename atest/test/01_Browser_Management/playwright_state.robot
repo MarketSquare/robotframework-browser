@@ -2,7 +2,7 @@
 Resource          imports.resource
 Suite Setup       No Operation
 Test Setup        No Operation
-Test Teardown     Close Browser
+Test Teardown     Close All Browsers
 
 *** Keywords ***
 Open Browser and assert Login Page
@@ -11,11 +11,11 @@ Open Browser and assert Login Page
     Get Text    h1    ==    Login Page
 
 Create Page Form
-    Create Page    ${FORM URL}
+    Create Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
 
 Create Page Login
-    Create Page    ${LOGIN URL}
+    Create Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
 
 *** Test Cases ***
@@ -27,7 +27,7 @@ Open Chrome
 
 Create Browser does not open a page
     Create Browser
-    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN URL}
+    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN_URL}
 
 Create Browser does not create a context
     Create Browser
@@ -36,33 +36,74 @@ Create Browser does not create a context
 
 Create Context does not open a page
     Create Context
-    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN URL}
+    Run Keyword And Expect Error    *No page for index 0.*    Switch Page    0
 
 Open Browser opens everything
-    Open Browser    url=${FORM URL}
+    Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
 
-Switch Browser
-    Create Browser    chromium
-    Pass Execution    Switch Browser doesn't work yet
+Open Browser with invalid browser fails on RF side
+    Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Open Browser    url=${FORM_URL}    browser=netscape
+    [Teardown]    no operation
+
+Create Browser with invalid browser fails on RF side
+    Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Create Browser    netscape
+    [Teardown]    no operation
+
+Create Chain Works
+    Create Browser
+    Create Context
+    Create Page    ${LOGIN_URL}
+    Get Title    matches    (?i)login
+    Switch Page    0
+    Get Title    matches    (?i)login
+
+Close Browser switches active page
+    Create Browser
     Create Page Login
-    Create Browser    firefox
+    Create Browser
     Create Page Form
-    Switch Browser    0
+    Close Browser
+    Get Title    matches    (?i)login
+
+Close Context switches active page
+    Create Context
+    Create Page Login
+    Create Context
+    Create Page Form
+    Close Context
+    Get Title    matches    (?i)login
+
+Close Page switches active page
+    Create Page Login
+    Create Page Form
+    Close Page
+    Get Title    matches    (?i)login
+
+Switch Browser
+    ${first_browser}    Create Browser    chromium
+    Create Page Login
+    ${first_url}    Get Url
+    ${second_browser}    Create Browser    firefox
+    Create Page Form
+    ${second_url}    Get Url
+    ${before_switch}    Switch Browser    ${first_browser}
+    Should Be Equal As Numbers    ${second_browser}    ${before_switch}
+    ${third_url}    Get Url
     Get Title    matches    (?i)login
 
 Switch Context
-    Create Context
-    Create Page    ${LOGIN URL}
+    ${first_context}    Create Context
+    Create Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    Create Context
-    Create Page    ${FORM URL}
+    ${second_context}    Create Context
+    Create Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    Switch Context    0
+    Switch Context    ${first_context}
     Get Title    matches    (?i)login
 
 Create Page can create context and browser
-    Create Page    ${LOGIN URL}
+    Create Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
 
 Focus Next Page on popup

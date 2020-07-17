@@ -44,7 +44,7 @@ atest: clean
 atest-global-pythonpath: clean
 	ROBOT_SYSLOG_FILE=atest/output/syslog.txt python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --outputdir atest/output atest/test
 
-test-failed: build
+test-failed:
 	python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test
 
 docker:

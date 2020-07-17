@@ -1,25 +1,21 @@
 *** Settings ***
 Resource          imports.resource
 
-*** Variables ***
-${WELCOME URL}    ${ROOT URL}/welcome.html
-${ERROR URL}      ${ROOT URL}/error.html
-
 *** Test Cases ***
 No Open Browser Throws
     Run KeyWord and Expect Error    Tried to do playwright action 'goto', but no open page.    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
-    [Setup]    Create Page    ${LOGIN URL}
-    Go To    ${WELCOME URL}
-    Get Url    ==    ${WELCOME URL}
-    Go To    ${ERROR URL}
+    [Setup]    Create Page    ${LOGIN_URL}
+    Go To    ${WELCOME_URL}
+    Get Url    ==    ${WELCOME_URL}
+    Go To    ${ERROR_URL}
     Go Back
-    Get Url    ==    ${WELCOME URL}
+    Get Url    ==    ${WELCOME_URL}
     Go Back
-    Get Url    ==    ${LOGIN URL}
+    Get Url    ==    ${LOGIN_URL}
     Go Forward
-    Get Url    ==    ${WELCOME URL}
+    Get Url    ==    ${WELCOME_URL}
     Go Forward
-    Get Url    ==    ${ERROR URL}
+    Get Url    ==    ${ERROR_URL}
     [Teardown]    Close Browser

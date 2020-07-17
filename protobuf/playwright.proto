@@ -14,7 +14,8 @@ message Request {
   }
 
   message Context {
-    string rawOptions = 1;
+    bool hideRfBrowser = 1;
+    string rawOptions = 2;
   }
 
   message Url {
@@ -87,15 +88,21 @@ message Request {
     string script = 1;
   }
 
-  message RawJson {
-    string script = 1;
+  message PlaywrightObject {
+    string info = 1;
   }
 }
 
-message SelectEntry {
-  string value = 2;
-  string label = 3;
-  bool selected = 4;
+message Types {
+  message SelectEntry {
+    string value = 2;
+    string label = 3;
+    bool selected = 4;
+  }
+  message RawJson {
+    string log = 1;
+    string body = 2;
+  }
 }
 
 message Response {
@@ -117,7 +124,7 @@ message Response {
   }
 
   message Select {
-    repeated SelectEntry entry = 1;
+    repeated Types.SelectEntry entry = 1;
   }
 
   message JavascriptExecutionResult {
@@ -128,7 +135,6 @@ message Response {
 
 service  Playwright {
   rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
-  rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty) {}
   /* Navigate to the next page in history */
@@ -188,12 +194,18 @@ service  Playwright {
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
 
-  rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
-  rpc SwitchPage(Request.Index) returns (Response.Empty) {}
-  rpc SwitchContext(Request.Index) returns (Response.Empty) {}
-  rpc SwitchBrowser(Request.Index) returns (Response.Empty) {}
+  /* Playwright State handling keywords */ 
 
-  rpc CreatePage(Request.Url) returns (Response.Empty) {}
-  rpc CreateContext(Request.Context) returns (Response.Empty) {}
-  rpc CreateBrowser(Request.Browser) returns (Response.Empty) {}
+  rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
+  rpc SwitchPage(Request.Index) returns (Response.Int) {}
+  rpc SwitchContext(Request.Index) returns (Response.Int) {}
+  rpc SwitchBrowser(Request.Index) returns (Response.Int) {}
+  rpc CreatePage(Request.Url) returns (Response.Int) {}
+  rpc CreateContext(Request.Context) returns (Response.Int) {}
+  rpc CreateBrowser(Request.Browser) returns (Response.Int) {}
+  rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
+  rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty) {}
+  rpc CloseContext(Request.Empty) returns (Response.Empty) {}
+  rpc ClosePage(Request.Empty) returns (Response.Empty) {}
+  rpc GetBrowserCatalog(Request.Empty) returns (Response.String) {}
 }
