@@ -36,14 +36,8 @@ export class PlaywrightServer implements IPlaywrightServer {
         playwrightState.closePage(callback, this.openBrowsers);
     }
 
-    async getBrowsers(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Browsers>): Promise<void> {
+    async getBrowsers(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         playwrightState.getBrowsers(callback, this.openBrowsers);
-    }
-    async getContexts(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Contexts>): Promise<void> {
-        playwrightState.getContexts(callback, this.openBrowsers);
-    }
-    async getPages(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Pages>): Promise<void> {
-        playwrightState.getPages(callback, this.openBrowsers);
     }
 
     async autoActivatePages(

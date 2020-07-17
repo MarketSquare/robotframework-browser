@@ -388,34 +388,57 @@ export async function switchBrowser(
 }
 
 export async function getBrowsers(
-    callback: sendUnaryData<Response.Browsers>,
+    callback: sendUnaryData<Response.String>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
-    callback(new Error('Not implemented yet'), null);
-    //openBrowsers.browsers.map(b => )
-}
+    const response = new Response.String();
 
-export async function getContexts(
-    callback: sendUnaryData<Response.Contexts>,
-    openBrowsers: PlaywrightState,
-): Promise<void> {
-    callback(new Error('Not implemented yet'), null);
-}
+    const mappedBrowsers = openBrowsers.browsers.map((browser, index) => {
+        if (browser !== 'CLOSED') {
+            const contexts = browser.browser.contexts().map((context, i) => {
+                return {
+                    context: {
+                        index: i,
+                        pages: context.pages(),
+                    },
+                };
+            });
+            return {
+                browser: {
+                    index: index,
+                    contexts: contexts,
+                },
+            };
+        } else {
+            return {
+                browser: {
+                    index: index,
+                    state: 'CLOSED',
+                },
+            };
+        }
+    });
 
-export async function getPages(callback: sendUnaryData<Response.Pages>, openBrowsers: PlaywrightState): Promise<void> {
-    const response = new Response.Pages();
-    const pages = openBrowsers.getActiveBrowser(callback).context?.c.pages();
-    if (!pages) {
-        callback(new Error('No open pages in active browser.'), null);
-        return;
+    // This for looping is done instead of a .map on the pages() lists to avoid needing to handle deeply nested page.title() promises.
+    for (const b of mappedBrowsers) {
+        const contextList = b.browser.contexts;
+        if (contextList) {
+            for (const c of contextList) {
+                for (const i in c.context.pages) {
+                    const page = c.context.pages[i];
+                    const t = await page.title();
+                    c.context.pages[i] = {
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-expect-error
+                        title: t,
+                        index: i,
+                    };
+                }
+            }
+        }
     }
-    for (const index in pages) {
-        const page = pages[index];
-        const protoPage = new Types.Page();
-        protoPage.setTitle(await page.title());
-        protoPage.setIndex(parseInt(index));
-        response.addPage(protoPage);
-    }
+
+    response.setBody(JSON.stringify(mappedBrowsers));
 
     callback(null, response);
 }
