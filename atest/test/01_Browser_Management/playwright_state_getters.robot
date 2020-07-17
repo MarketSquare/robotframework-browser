@@ -22,3 +22,10 @@ Get Closed Browsers
     ${browsers}    Get Browser Catalog
     ${closed_browser}    Evaluate    {'type': 'browser', 'id': 0, 'state': 'CLOSED'}
     Should Contain    ${browsers}    ${closed_browser}
+
+Get Viewport Size
+    Create Context    viewport={"height": 600, "width": 800}
+    Create Page
+    ${size}    Get Viewport Size
+    ${second}    Evaluate    {"height": 600, "width": 800}
+    Should Be Equal    ${size}    ${second}

@@ -121,3 +121,13 @@ Switch Page after popup
     Wait For Elements State    "Popped Up!"
     Switch Page    0
     Wait For Elements State    button#pops_up
+
+Set Viewport Size
+    Create Page
+    ${size}    Get Viewport Size
+    ${desired_first}    Evaluate    {"height": 720, "width": 1280}
+    Should Be Equal    ${size}    ${desired_first}
+    Set Viewport Size    height=600    width=800
+    ${desired_second}    Evaluate    {"height": 600, "width": 800}
+    ${second_size}    Get Viewport Size
+    Should Be Equal    ${desired_second}    ${second_size}
