@@ -6,6 +6,7 @@ from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..utils.meta_python import locals_to_params
+from ..utils.time_conversion import timestr_to_millisecs
 from ..generated.playwright_pb2 import Request
 
 
@@ -92,13 +93,13 @@ class PlaywrightState(LibraryComponent):
         handleSIGINT: Optional[bool] = None,
         handleSIGTERM: Optional[bool] = None,
         handleSIGHUP: Optional[bool] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[str] = "30 seconds",
         env: Optional[Dict] = None,
         headless: Optional[bool] = None,
         devtools: Optional[bool] = None,
         proxy: Optional[Dict] = None,
         downloadsPath: Optional[str] = None,
-        slowMo: Optional[int] = None,
+        slowMo: Optional[str] = "0 seconds",
     ):
         """Create a new playwright Browser with specified options.
 
@@ -109,6 +110,10 @@ class PlaywrightState(LibraryComponent):
         for a full list of supported options.
         """
         params = locals_to_params(locals())
+        if timeout:
+            params["timeout"] = timestr_to_millisecs(timeout)
+        if slowMo:
+            params["slowMo"] = timestr_to_millisecs(slowMo)
         options = json.dumps(params, default=str)
         self.info(options)
 
@@ -136,7 +141,7 @@ class PlaywrightState(LibraryComponent):
         extraHTTPHeaders: Optional[Dict[str, str]] = None,
         offline: Optional[bool] = None,
         httpCredentials: Optional[Dict] = None,
-        deviceScaleFactor: Optional[int] = None,
+        deviceScaleFactor: Optional[float] = None,
         isMobile: Optional[bool] = None,
         hasTouch: Optional[bool] = None,
         colorScheme: Optional[ColorScheme] = None,
