@@ -80,3 +80,15 @@ class Control(LibraryComponent):
                 )
             )
             self.info(response.log)
+
+    @keyword
+    def set_viewport_size(self, height: int, width: int):
+        """Sets current Pages viewport size to specified dimensions.
+
+            For longer lasting dimensions use Create Context's ViewportDimensions parameter
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetViewportSize(
+                Request().Viewport(height=height, width=width)
+            )
+            self.info(response.log)

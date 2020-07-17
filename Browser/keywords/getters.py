@@ -334,3 +334,11 @@ class Getters(LibraryComponent):
             parsed = json.loads(response.body)
             self.info(json.dumps(parsed))
             return parsed
+
+    @keyword
+    def get_viewport_size(self):
+        """Gets the current viewport dimensions """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetViewportSize(Request().Empty())
+            parsed = json.loads(response.body)
+            return parsed

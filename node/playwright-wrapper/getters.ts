@@ -96,3 +96,12 @@ async function getProperty<T>(call: ServerUnaryCall<Request.ElementProperty>, ca
         callback(e, null);
     }
 }
+
+export async function getViewportSize<T>(
+    call: ServerUnaryCall<Request.Empty>,
+    callback: sendUnaryData<Response.String>,
+    page?: Page,
+): Promise<void> {
+    const result = await invokeOnPage(page, callback, 'viewportSize');
+    callback(null, stringResponse(JSON.stringify(result)));
+}

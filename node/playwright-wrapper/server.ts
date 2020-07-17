@@ -140,6 +140,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         getters.getBoolProperty(call, callback, this.getActivePage());
     }
 
+    async getViewportSize(
+        call: ServerUnaryCall<Request.Empty>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        getters.getViewportSize(call, callback, this.getActivePage());
+    }
+
     async selectOption(
         call: ServerUnaryCall<Request.SelectElementSelector>,
         callback: sendUnaryData<Response.Empty>,
@@ -242,5 +249,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         evaluation.highlightElements(call, callback, this.getActivePage());
+    }
+
+    async setViewportSize(
+        call: ServerUnaryCall<Request.Viewport>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        browserControl.setViewportSize(call, callback, this.getActivePage());
     }
 }

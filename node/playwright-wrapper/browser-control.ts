@@ -46,3 +46,13 @@ export function setTimeout(
     context.setDefaultTimeout(timeout);
     callback(null, emptyWithLog(`Set timeout to: ${timeout}`));
 }
+
+export async function setViewportSize(
+    call: ServerUnaryCall<Request.Viewport>,
+    callback: sendUnaryData<Response.Empty>,
+    page?: Page,
+) {
+    const size = { height: call.request.getHeight(), width: call.request.getWidth() };
+    await invokeOnPage(page, callback, 'setViewportSize', size);
+    callback(null, emptyWithLog(`Set viewport size to: ${size}`));
+}
