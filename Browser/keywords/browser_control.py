@@ -83,8 +83,15 @@ class Control(LibraryComponent):
     def set_viewport_size(self, width: int, height: int):
         """Sets current Pages viewport size to specified dimensions.
 
-            For longer lasting dimensions use Create Context's ViewportDimensions parameter
-        """
+        In the case of multiple pages in a single browser,
+        each page can have its own viewport size. However,
+        `New Context` allows to set viewport size (and more) for all
+        later opened pages in the context at once.
+
+        `Set Viewport Size` will resize the page.
+        A lot of websites don't expect phones to change size,
+        so you should set the viewport size before navigating to
+        the page with `New Context` before opening the page itself."""
         with self.playwright.grpc_channel() as stub:
             response = stub.SetViewportSize(
                 Request().Viewport(height=height, width=width)

@@ -202,7 +202,7 @@ service  Playwright {
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty) {}
 
-  /* Playwright State handling keywords */ 
+  /* Playwright State handling keywords */
 
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
   rpc SwitchPage(Request.Index) returns (Response.Int) {}

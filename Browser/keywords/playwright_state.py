@@ -149,15 +149,71 @@ class PlaywrightState(LibraryComponent):
     ):
         """Create a new BrowserContext with specified options.
 
-        Returns a stable identifier for the created context.
+        Returns a stable identifier for the created context
+        that can be used in `Switch Context`.
 
-        Value of ``viewport`` should be an object or a string
-        representation of an object like {'height': 720, 'width': 1280}
+        ``acceptDownloads`` <bool> Whether to automatically downloadall the attachments.
+        Defaults to false where all the downloads are canceled.
+
+        ``ignoreHTTPSErrors`` <bool> Whether to ignore HTTPS errors during navigation.
+        Defaults to false.
+
+        ``bypassCSP`` <bool> Toggles bypassing page's Content-Security-Policy.
+
+        ``viewport`` <dict> Sets a consistent viewport for each page.
+        Defaults to an ``{'width': 1280, 'height': 720}`` viewport.
+        Value of ``viewport`` can be a dict or a string
+        representation of a dictionary.
+
+        ``userAgent`` <str> Specific user agent to use in this context.
+
+        ``deviceScaleFactor`` <float> Specify device scale factor
+        (can be thought of as dpr). Defaults to 1.
+
+        ``isMobile`` <bool> Whether the meta viewport tag is taken into account
+        and touch events are enabled. Defaults to false. Not supported in Firefox.
+
+        ``hasTouch`` <bool> Specifies if viewport supports touch events. Defaults to false.
+
+        ``javaScriptEnabled`` <bool> Whether or not to enable JavaScript in the context.
+        Defaults to true.
+
+        ``timezoneId`` <str> Changes the timezone of the context.
+        See [https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt?originalUrl=https:%2F%2Fcs.chromium.org%2F|ICU’s metaZones.txt]
+        for a list of supported timezone IDs.
+
+        ``geolocation`` <dict> ``{'latitude': 59.95, 'longitude': 30.31667}``
+        - ``latitude`` <number> Latitude between -90 and 90. *required*
+        - ``longitude`` <number> Longitude between -180 and 180. *required*
+        - ``accuracy`` Optional <number> Non-negative accuracy value. Defaults to 0.
+
+        ``locale`` <str> Specify user locale, for example ``en-GB``, ``de-DE``, etc.
+        Locale will affect ``navigator.language`` value, ``Accept-Language`` request header value
+        as well as number and date formatting rules.
+
+        ``permissions`` <list[str]> A list of permissions to grant to all pages in this context.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options|grantPermissions] for more details.
+
+        ``extraHTTPHeaders`` <dict[str, str]> A dictionary containing additional HTTP headers
+        to be sent with every request. All header values must be strings.
+
+        ``offline`` <bool> Whether to emulate network being offline. Defaults to ``False``.
+
+        ``httpCredentials`` <Object> Credentials for HTTP authentication.
+        - example: ``{'username': 'admin', 'password': '123456'}``
+        - ``username`` <str>
+        - ``password`` <str>
+
+        ``colorScheme`` <"dark"|"light"|"no-preference"> Emulates 'prefers-colors-scheme'
+        media feature, supported values are 'light', 'dark', 'no-preference'.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
+        for more details. Defaults to ``light``.
 
         A BrowserContext is the Playwright object that controls a single browser profile.
         Within a context caches and cookies are shared.
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext]
         for a list of supported options.
+
         If there's no open Browser will open one. Does not create pages.
         """
         params = locals_to_params(locals())
