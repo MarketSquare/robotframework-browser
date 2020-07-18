@@ -88,7 +88,7 @@ class Control(LibraryComponent):
         `New Context` allows to set viewport size (and more) for all
         later opened pages in the context at once.
 
-        `Set Viewport Size` will resize the page. 
+        `Set Viewport Size` will resize the page.
         A lot of websites don't expect phones to change size,
         so you should set the viewport size before navigating to
         the page with `New Context` before opening the page itself."""

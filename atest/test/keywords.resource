@@ -17,7 +17,7 @@ Open Browser To Form Page
 
 Open Browser To Login Page
     New Browser  ${BROWSER}  headless=${HEADLESS}
-    New Page  ${LOGIN_URL}    
+    New Page  ${LOGIN_URL}
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 

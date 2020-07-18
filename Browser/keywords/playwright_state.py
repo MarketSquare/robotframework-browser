@@ -160,14 +160,14 @@ class PlaywrightState(LibraryComponent):
 
         ``bypassCSP`` <bool> Toggles bypassing page's Content-Security-Policy.
 
-        ``viewport`` <dict> Sets a consistent viewport for each page. 
+        ``viewport`` <dict> Sets a consistent viewport for each page.
         Defaults to an ``{'width': 1280, 'height': 720}`` viewport.
         Value of ``viewport`` can be a dict or a string
         representation of a dictionary.
 
         ``userAgent`` <str> Specific user agent to use in this context.
 
-        ``deviceScaleFactor`` <float> Specify device scale factor 
+        ``deviceScaleFactor`` <float> Specify device scale factor
         (can be thought of as dpr). Defaults to 1.
 
         ``isMobile`` <bool> Whether the meta viewport tag is taken into account
@@ -175,10 +175,10 @@ class PlaywrightState(LibraryComponent):
 
         ``hasTouch`` <bool> Specifies if viewport supports touch events. Defaults to false.
 
-        ``javaScriptEnabled`` <bool> Whether or not to enable JavaScript in the context. 
+        ``javaScriptEnabled`` <bool> Whether or not to enable JavaScript in the context.
         Defaults to true.
 
-        ``timezoneId`` <str> Changes the timezone of the context. 
+        ``timezoneId`` <str> Changes the timezone of the context.
         See [https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt?originalUrl=https:%2F%2Fcs.chromium.org%2F|ICU’s metaZones.txt]
         for a list of supported timezone IDs.
 
@@ -193,7 +193,7 @@ class PlaywrightState(LibraryComponent):
 
         ``permissions`` <list[str]> A list of permissions to grant to all pages in this context.
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options|grantPermissions] for more details.
-        
+
         ``extraHTTPHeaders`` <dict[str, str]> A dictionary containing additional HTTP headers
         to be sent with every request. All header values must be strings.
 
@@ -205,7 +205,7 @@ class PlaywrightState(LibraryComponent):
         - ``password`` <str>
 
         ``colorScheme`` <"dark"|"light"|"no-preference"> Emulates 'prefers-colors-scheme'
-        media feature, supported values are 'light', 'dark', 'no-preference'. 
+        media feature, supported values are 'light', 'dark', 'no-preference'.
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
         for more details. Defaults to ``light``.
 
