@@ -7,25 +7,25 @@ Test Teardown     Close All Browsers
 *** Test Cases ***
 Get Multiple Browsers
     [Tags]    Not-Implemented
-    Create Browser
-    Create Page    ${FORM_URL}
-    Create Context
-    Create Page    ${LOGIN_URL}
-    Create Browser
-    Create Page    http://example.com
+    New Browser
+    New Page    ${FORM_URL}
+    New Context
+    New Page    ${LOGIN_URL}
+    New Browser
+    New Page    http://example.com
     ${browsers}    Get Browser Catalog
     Fail
 
 Get Closed Browsers
-    Create Browser
+    New Browser
     Close Browser
     ${browsers}    Get Browser Catalog
     ${closed_browser}    Evaluate    {'type': 'browser', 'id': 0, 'state': 'CLOSED'}
     Should Contain    ${browsers}    ${closed_browser}
 
 Get Viewport Size
-    Create Context    viewport={"height": 600, "width": 800}
-    Create Page
+    New Context    viewport={"height": 600, "width": 800}
+    New Page
     ${size}    Get Viewport Size
     ${second}    Evaluate    {"height": 600, "width": 800}
     Should Be Equal    ${size}    ${second}

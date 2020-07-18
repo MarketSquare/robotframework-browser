@@ -62,16 +62,16 @@ export class PlaywrightServer implements IPlaywrightServer {
         playwrightState.switchBrowser(call, callback, this.openBrowsers);
     }
 
-    async createPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.createPage(call, callback, this.openBrowsers);
+    async newPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Int>): Promise<void> {
+        playwrightState.newPage(call, callback, this.openBrowsers);
     }
 
-    async createContext(call: ServerUnaryCall<Request.Context>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.createContext(call, callback, this.openBrowsers);
+    async newContext(call: ServerUnaryCall<Request.Context>, callback: sendUnaryData<Response.Int>): Promise<void> {
+        playwrightState.newContext(call, callback, this.openBrowsers);
     }
 
-    async createBrowser(call: ServerUnaryCall<Request.Browser>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.createBrowser(call, callback, this.openBrowsers);
+    async newBrowser(call: ServerUnaryCall<Request.Browser>, callback: sendUnaryData<Response.Int>): Promise<void> {
+        playwrightState.newBrowser(call, callback, this.openBrowsers);
     }
 
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {

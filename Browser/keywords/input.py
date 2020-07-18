@@ -30,7 +30,7 @@ class SelectAttribute(Enum):
 
 
 class Input(LibraryComponent):
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def type_text(
         self, selector: str, text: str, delay: str = "0 ms", clear: bool = True
     ):
@@ -48,7 +48,7 @@ class Input(LibraryComponent):
         """
         self._type_text(selector, text, delay, clear)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def fill_text(self, selector: str, text: str):
         """Clears and fills the given ``text`` into the text field found by ``selector``.
 
@@ -64,7 +64,7 @@ class Input(LibraryComponent):
         """
         self._fill_text(selector, text)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def clear_text(self, selector: str):
         """Clears the text field found by ``selector``.
 
@@ -75,7 +75,7 @@ class Input(LibraryComponent):
             response = stub.ClearText(Request().ClearText(selector=selector))
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def type_secret(
         self, selector: str, secret: str, delay: str = "0 ms", clear: bool = True
     ):
@@ -88,7 +88,7 @@ class Input(LibraryComponent):
         """
         self._type_text(selector, secret, delay, clear, log_response=False)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def fill_secret(self, selector: str, secret: str):
         """Fills the given ``secret`` into the text field found by ``selector``.
 
@@ -99,7 +99,7 @@ class Input(LibraryComponent):
         """
         self._fill_text(selector, secret, log_response=False)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def press_keys(self, selector: str, *keys: str):
         """Types the given key combination into element found by ``selector``.
 
@@ -117,14 +117,14 @@ class Input(LibraryComponent):
             response = stub.Press(Request().PressKeys(selector=selector, key=keys))
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def click(self, selector: str):
         """Clicks the element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().ElementSelector(selector=selector))
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def click_with_options(
         self,
         selector: str,
@@ -171,7 +171,7 @@ class Input(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def focus(self, selector: str):
         """Moves focus on to the element found by ``selector``.
 
@@ -182,7 +182,9 @@ class Input(LibraryComponent):
             response = stub.Focus(Request().ElementSelector(selector=selector))
             self.info(response.log)
 
-    @keyword
+    @keyword(
+        name="Execute JavaScript On Page", tags=["Setter", "PageContent", "WebAppState"]
+    )
     def execute_javascript_on_page(self, script: str) -> Any:
         """Executes given javascript on the page.
         """
@@ -193,7 +195,7 @@ class Input(LibraryComponent):
             self.info(response.log)
             return json.loads(response.result)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def check_checkbox(self, selector: str):
         """Checks the checkbox or selects radio button found by ``selector``.
 
@@ -203,7 +205,7 @@ class Input(LibraryComponent):
             response = stub.CheckCheckbox(Request().ElementSelector(selector=selector))
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def uncheck_checkbox(self, selector: str):
         """Unchecks the checkbox found by ``selector``.
 
@@ -215,7 +217,7 @@ class Input(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def select_options_by(self, attribute: SelectAttribute, selector: str, *values):
         """Selects options from select element found by ``selector``.
 
@@ -242,7 +244,7 @@ class Input(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:

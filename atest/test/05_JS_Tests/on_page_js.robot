@@ -1,7 +1,7 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       Create Browser
-Test Setup        Create Page    ${LOGIN_URL}
+Suite Setup       New Browser
+Test Setup        New Page    ${LOGIN_URL}
 Suite Teardown    Close Browser
 
 *** Test Cases ***
@@ -17,31 +17,31 @@ Page state
     Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
 
 Localstorage
-    Local Storage Set    mykey    myvalue
-    Local Storage Get    mykey    ==    myvalue
+    Set To LocalStorage    mykey    myvalue
+    Get From LocalStorage    mykey    ==    myvalue
     ${val}=    Execute Javascript on Page    window.localStorage.getItem("mykey")
     should be equal    ${val}    myvalue
-    Local Storage Remove    mykey
-    Local Storage Get    mykey    ==    ${None}
+    Remove From LocalStorage    mykey
+    Get From LocalStorage    mykey    ==    ${None}
 
 Sessionstorage
-    Session Storage Set    mykey2    myvalue2
-    Session Storage Get    mykey2    ==    myvalue2
-    Session Storage Remove    mykey2
-    Session Storage Get    mykey2    ==    ${None}
+    Set To SessionStorage    mykey2    myvalue2
+    Get From SessionStorage    mykey2    ==    myvalue2
+    Remove From SessionStorage    mykey2
+    Get From SessionStorage    mykey2    ==    ${None}
 
 Localstorage clear
-    Local Storage Set    key1    value1
-    Local Storage Set    key2    value2
-    Local Storage Clear
-    Local Storage Get    key1    ==    ${None}
-    Local Storage Get    key2    ==    ${None}
+    Set To LocalStorage    key1    value1
+    Set To LocalStorage    key2    value2
+    Clear LocalStorage
+    Get From LocalStorage    key1    ==    ${None}
+    Get From LocalStorage    key2    ==    ${None}
 
 Sessionstorage clear
-    Session Storage Set    key1    value1
-    Session Storage Set    key2    value2
+    Set To SessionStorage    key1    value1
+    Set To SessionStorage    key2    value2
     ${val1}=    Execute Javascript on Page    window.sessionStorage.getItem("key1")
     should be equal    ${val1}    value1
-    Session Storage Clear
-    Session Storage Get    key1    ==    ${None}
-    Session Storage Get    key2    ==    ${None}
+    Clear SessionStorage
+    Get From SessionStorage    key1    ==    ${None}
+    Get From SessionStorage    key2    ==    ${None}

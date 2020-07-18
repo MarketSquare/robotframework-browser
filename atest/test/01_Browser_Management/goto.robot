@@ -6,7 +6,7 @@ No Open Browser Throws
     Run KeyWord and Expect Error    Tried to do playwright action 'goto', but no open page.    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
-    [Setup]    Create Page    ${LOGIN_URL}
+    [Setup]    New Page    ${LOGIN_URL}
     Go To    ${WELCOME_URL}
     Get Url    ==    ${WELCOME_URL}
     Go To    ${ERROR_URL}

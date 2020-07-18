@@ -5,19 +5,19 @@ Library           OperatingSystem
 
 *** Keywords ***
 Open Browser To No Page
-    Create Browser  ${BROWSER}  headless=${HEADLESS}
+    New Browser  ${BROWSER}  headless=${HEADLESS}
 
 Open Browser To Frame Page
-    Create Browser  ${BROWSER}  headless=${HEADLESS}
-    Create Page  ${FRAMES_URL}
+    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Page  ${FRAMES_URL}
 
 Open Browser To Form Page
-    Create Browser  ${BROWSER}  headless=${HEADLESS}
-    Create Page  ${FORM_URL}
+    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Page  ${FORM_URL}
 
 Open Browser To Login Page
-    Create Browser  ${BROWSER}  headless=${HEADLESS}
-    Create Page  ${LOGIN_URL}    
+    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Page  ${LOGIN_URL}    
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 
