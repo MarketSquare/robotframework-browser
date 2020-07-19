@@ -65,10 +65,20 @@ class Waiter(LibraryComponent):
     def promise_to(
         self, keyword: str, selector: str, state: ElementState, timeout: str
     ):
+        """
+        *EXPERIMENTAL* *WORK IN PROGRESS*
+        Wrap a Browser library keyword and make it a promise.
+        Returns that promise and executes the keyword on background.
+        """
         return self._executor.submit(
             self.wait_for_elements_state, selector, state, timeout
         )
 
     @keyword(tags=["Wait"])
     def wait_for(self, *promises: Future):
+        """
+        *EXPERIMENTAL* *WORK IN PROGRESS*
+        Waits for promises to finish and returns results from them.
+        If one fails, then this keyword will fail.
+        """
         return [promise.result() for promise in promises]
