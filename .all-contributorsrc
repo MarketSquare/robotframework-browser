@@ -113,6 +113,15 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "Aspargillus",
+      "name": "Frank Schimmel",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/4592889?v=4",
+      "profile": "https://github.com/aspargillus",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
