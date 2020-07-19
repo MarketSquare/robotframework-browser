@@ -9,7 +9,7 @@ from ..generated.playwright_pb2 import Request
 
 
 class WebAppState(LibraryComponent):
-    @keyword(name="Get From localStorage", tags=["WebAppState", "Assertion", "Getter"])
+    @keyword(name="localStorage get", tags=["WebAppState", "Assertion", "Getter"])
     def local_storage_get(
         self,
         key: str,
@@ -31,7 +31,7 @@ class WebAppState(LibraryComponent):
                 "localStorage ",
             )
 
-    @keyword(name="Set To localStorage", tags=["WebAppState"])
+    @keyword(name="localStorage set", tags=["WebAppState"])
     def local_storage_set(self, key: str, value: str):
         """
         Save data to localStorage
@@ -44,7 +44,7 @@ class WebAppState(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword(name="Remove From localStorage", tags=["WebAppState"])
+    @keyword(name="localStorage remove", tags=["WebAppState"])
     def local_storage_remove(self, key: str):
         """
         Remove saved data with key from localStorage
@@ -57,7 +57,7 @@ class WebAppState(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword(name="Clear localStorage", tags=["WebAppState"])
+    @keyword(name="localStorage clear", tags=["WebAppState"])
     def local_storage_clear(self):
         """
         Remove all saved data from localStorage
@@ -68,9 +68,7 @@ class WebAppState(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword(
-        name="Get From sessionStorage", tags=["WebAppState", "Assertion", "Getter"]
-    )
+    @keyword(name="sessionStorage get", tags=["WebAppState", "Assertion", "Getter"])
     def session_storage_get(
         self,
         key: str,
@@ -94,7 +92,7 @@ class WebAppState(LibraryComponent):
                 "sessionStorage ",
             )
 
-    @keyword(name="Set To sessionStorage", tags=["WebAppState"])
+    @keyword(name="sessionStorage set", tags=["WebAppState"])
     def session_storage_set(self, key: str, value: str):
         """
         Save data to sessionStorage
@@ -107,7 +105,7 @@ class WebAppState(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword(name="Remove From sessionStorage", tags=["WebAppState"])
+    @keyword(name="sessionStorage remove", tags=["WebAppState"])
     def session_storage_remove(self, key: str):
         """
         Remove saved data with key from sessionStorage
@@ -120,7 +118,7 @@ class WebAppState(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword(name="Clear sessionStorage", tags=["WebAppState"])
+    @keyword(name="sessionStorage clear", tags=["WebAppState"])
     def session_storage_clear(self):
         """
         Remove all saved data from sessionStorage
