@@ -1,4 +1,5 @@
 import json
+from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum, auto
 
 from robotlibcore import keyword  # type: ignore
@@ -17,6 +18,10 @@ class ElementState(Enum):
 
 
 class Waiter(LibraryComponent):
+    def __init__(self, library):
+        LibraryComponent.__init__(self, library)
+        self._executor = ThreadPoolExecutor(max_workers=256)
+
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_elements_state(
         self,
@@ -57,9 +62,13 @@ class Waiter(LibraryComponent):
             self.info(response.log)
 
     @keyword(tags=["Wait"])
-    def promise_to(self, keyword:str, *args):
-        pass
+    def promise_to(
+        self, keyword: str, selector: str, state: ElementState, timeout: str
+    ):
+        return self._executor.submit(
+            self.wait_for_elements_state, selector, state, timeout
+        )
 
     @keyword(tags=["Wait"])
-    def wait_for(self, *promises):
-        pass
+    def wait_for(self, *promises: Future):
+        return [promise.result() for promise in promises]

@@ -102,7 +102,7 @@ class Getters(LibraryComponent):
     ):
         """Returns ``attribute`` of the element found by ``selector``.
 
-        Optionally asserts that the attribuyte value matches the specified
+        Optionally asserts that the attribute value matches the specified
         assertion.
         """
         with self.playwright.grpc_channel() as stub:
