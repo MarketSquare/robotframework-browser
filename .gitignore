@@ -14,6 +14,8 @@ __pycache__
 robotframework_browser.egg-info/
 .venv
 
+node/.linted
+
 # Robot Framework outputs
 log.html
 output.xml

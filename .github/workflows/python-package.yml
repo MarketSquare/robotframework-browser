@@ -49,7 +49,7 @@ jobs:
        make utest
     - name: Run Robot Framework tests
       run: |
-        make atest
+        make atest/output
     - name: Create Distributable Package
       run: |
         make package
