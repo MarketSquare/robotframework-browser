@@ -95,6 +95,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "maaretp",
+      "name": "Maaret Pyhäjärvi",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/5338157?v=4",
+      "profile": "http://visible-quality.blogspot.com",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
