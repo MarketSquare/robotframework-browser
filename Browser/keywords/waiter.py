@@ -55,3 +55,11 @@ class Waiter(LibraryComponent):
                 )
             )
             self.info(response.log)
+
+    @keyword(tags=["Wait"])
+    def promise_to(self, keyword:str, *args):
+        pass
+
+    @keyword(tags=["Wait"])
+    def wait_for(self, *promises):
+        pass
