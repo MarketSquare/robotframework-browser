@@ -22,7 +22,7 @@ Localstorage
     ${val}=    Execute Javascript on Page    window.localStorage.getItem("mykey")
     should be equal    ${val}    myvalue
     localStorage remove    mykey
-    localStorage get   mykey    ==    ${None}
+    localStorage get    mykey    ==    ${None}
 
 Sessionstorage
     sessionStorage set    mykey2    myvalue2

@@ -8,16 +8,12 @@ from typing import (
     cast,
     Optional,
     List,
-    Union,
-    Sequence,
 )
 import re
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
-from .generated.playwright_pb2 import Response
 from .utils.robot_booleans import is_truthy
-from .keywords.input import SelectAttribute
 
 AssertionOperator = Enum(
     "AssertionOperator",
@@ -81,6 +77,12 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
 }
 
 T = TypeVar("T")
+
+
+def verify(value: T, operator: Optional[AssertionOperator], expected: Any, message=""):
+    raise RuntimeError(
+        f"Assertion for values of type `{type(value)}` is not supported."
+    )
 
 
 def verify_assertion(
@@ -150,38 +152,27 @@ def wrap_return(selected: List):
 
 
 def list_verify_assertion(
-    value: Response.Select,
-    expected: Sequence[Any],
-    option_attribute: SelectAttribute = SelectAttribute.label,
-    operator: Optional[AssertionOperator] = None,
+    value: List[Any],
+    operator: Optional[AssertionOperator],
+    expected: List[Any],
     message="",
 ):
-    if operator is None:
-        return wrap_return(list(value.entry))
+    if not operator:
+        return wrap_return(value)
 
-    list_expected = list(expected)
-    selected: Union[List[int], List[str]]
-    if option_attribute is SelectAttribute.value:
-        selected = [sel.value for sel in value.entry if sel.selected]
-    elif option_attribute is SelectAttribute.label:
-        selected = [sel.label for sel in value.entry if sel.selected]
-    elif option_attribute is SelectAttribute.index:
-        selected = [index for index, sel in enumerate(value.entry) if sel.selected]
-        list_expected = [int(exp) for exp in list_expected]
-
-    list_expected.sort()
-    selected.sort()
+    expected.sort()
+    value.sort()
 
     if operator in [
         AssertionOperator["*="],
         AssertionOperator["validate"],
     ]:
-        if len(list_expected) != 1:
+        if len(expected) != 1:
             raise AttributeError(
-                f"Operator '{operator.name}' expects '1'"
-                f" expected value but got '{len(list_expected)}'."
+                f"Operator '{operator.name}' expects 1"
+                f" expected value but got {len(expected)}; {expected}."
             )
-        list_expected = list_expected[0]
+        expected = expected[0]
     elif operator not in [
         AssertionOperator["=="],
         AssertionOperator["!="],
@@ -189,7 +180,8 @@ def list_verify_assertion(
         raise AttributeError(
             f"Operator '{operator.name}' is not allowed " f"in this Keyword."
         )
-    if len(list_expected) == 0:
-        list_expected = None  # type: ignore
 
-    return verify_assertion(wrap_return(selected), operator, list_expected, message)
+    if len(expected) == 0:
+        return verify_assertion(wrap_return(value), operator, None, message)
+    else:
+        return verify_assertion(wrap_return(value), operator, expected, message)

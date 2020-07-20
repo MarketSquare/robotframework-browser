@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, List
 
 from robotlibcore import keyword  # type: ignore
 
@@ -173,13 +173,20 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector)
             )
             self.info(response)
+            expected = list(assertion_expected)
+            selected: Union[List[int], List[str]]
+            if option_attribute is SelectAttribute.value:
+                selected = [sel.value for sel in response.entry if sel.selected]
+            elif option_attribute is SelectAttribute.label:
+                selected = [sel.label for sel in response.entry if sel.selected]
+            elif option_attribute is SelectAttribute.index:
+                selected = [
+                    index for index, sel in enumerate(response.entry) if sel.selected
+                ]
+                expected = [int(exp) for exp in expected]
 
             return list_verify_assertion(
-                response,
-                assertion_expected,
-                option_attribute,
-                assertion_operator,
-                "Selected Options:",
+                selected, assertion_operator, expected, "Selected Options:",
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
