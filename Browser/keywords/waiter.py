@@ -84,6 +84,7 @@ class Waiter(LibraryComponent):
         """
         *EXPERIMENTAL* *WORK IN PROGRESS*
         Waits for promises to finish and returns results from them.
+        Results are an array also when only waiting for one promise.
         If one fails, then this keyword will fail.
         """
         return [promise.result() for promise in promises]
