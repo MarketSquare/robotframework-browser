@@ -15,16 +15,6 @@ export async function getUrl(callback: sendUnaryData<Response.String>, page?: Pa
     callback(null, stringResponse(url));
 }
 
-export async function getTextContent(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.String>,
-    page?: Page,
-) {
-    const selector = call.request.getSelector();
-    const content = invokeOnPageWithSelector(page, callback, 'textContent', selector);
-    callback(null, stringResponse(content?.toString() || ''));
-}
-
 export async function getElementCount(
     call: ServerUnaryCall<Request.ElementSelector>,
     callback: sendUnaryData<Response.Int>,

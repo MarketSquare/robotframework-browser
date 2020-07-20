@@ -105,13 +105,6 @@ export class PlaywrightServer implements IPlaywrightServer {
         getters.getUrl(callback, this.getActivePage());
     }
 
-    async getTextContent(
-        call: ServerUnaryCall<Request.ElementSelector>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        getters.getTextContent(call, callback, this.getActivePage());
-    }
-
     async getElementCount(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Int>,

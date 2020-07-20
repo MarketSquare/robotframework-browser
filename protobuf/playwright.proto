@@ -163,8 +163,6 @@ service  Playwright {
   /* Gets the boolean DOM property 'property' of selector specified element */
   rpc GetBoolProperty(Request.ElementProperty) returns (Response.Bool) {}
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
-  rpc GetTextContent(Request.ElementSelector) returns (Response.String) {}
-  /* Return's current Playwright page's viewport dimensions as JSON */
   rpc GetViewportSize(Request.Empty) returns (Response.String) {}
   /* *Returns current playwright page url*/
   rpc GetUrl(Request.Empty) returns (Response.String) {}
