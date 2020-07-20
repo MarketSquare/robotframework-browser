@@ -53,7 +53,7 @@ NumericalOperators = [
     AssertionOperator["<"],
 ]
 
-ListOperators = [
+SequenceOperators = [
     AssertionOperator["*="],
     AssertionOperator["validate"],
     AssertionOperator["=="],
@@ -157,10 +157,32 @@ def list_verify_assertion(
     expected.sort()
     value.sort()
 
-    if operator not in ListOperators:
+    if operator not in SequenceOperators:
         raise AttributeError(
             f"Operator '{operator.name}' is not allowed in this Keyword."
-            f"Allowed operators are: '{ListOperators}'"
+            f"Allowed operators are: '{SequenceOperators}'"
         )
 
     return verify_assertion(map_list(value), operator, map_list(expected), message)
+
+
+def int_dict_verify_assertion(
+    value: Dict[str, int],
+    operator: Optional[AssertionOperator],
+    expected: Optional[Dict[str, int]],
+    message="",
+):
+    if not operator:
+        return value
+    elif expected and operator in NumericalOperators:
+        for k, v in value.items():
+            exp = expected[k]
+            verify_assertion(v, operator, exp, message)
+        return True
+    elif operator in SequenceOperators:
+        return verify_assertion(value, operator, expected, message)
+    else:
+        raise AttributeError(
+            f"Operator '{operator.name}' is not allowed in this Keyword."
+            f"Allowed operators are: {NumericalOperators} and {SequenceOperators}"
+        )

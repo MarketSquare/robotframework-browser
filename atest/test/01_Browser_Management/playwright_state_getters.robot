@@ -26,6 +26,6 @@ Get Closed Browsers
 Get Viewport Size
     New Context    viewport={"height": 600, "width": 800}
     New Page
-    ${size}    Get Viewport Size
-    ${second}    Evaluate    {"height": 600, "width": 800}
-    Should Be Equal    ${size}    ${second}
+    ${size}    Evaluate    {"height": 600, "width": 800}
+    Get Viewport Size    ==    {"height": 600, "width": 800}
+    Get Viewport Size    ==    ${size}

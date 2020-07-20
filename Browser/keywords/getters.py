@@ -1,5 +1,5 @@
 import json
-from typing import Any, Optional, Union, List
+from typing import Any, Dict, Optional, Union, List
 
 from robotlibcore import keyword  # type: ignore
 
@@ -9,6 +9,7 @@ from ..assertion_engine import (
     bool_verify_assertion,
     verify_assertion,
     list_verify_assertion,
+    int_dict_verify_assertion,
     int_str_verify_assertion,
     AssertionOperator,
 )
@@ -293,9 +294,15 @@ class Getters(LibraryComponent):
             return parsed
 
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
-    def get_viewport_size(self):
+    def get_viewport_size(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Dict[str, int]] = None,
+    ):
         """Gets the current viewport dimensions """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
             parsed = json.loads(response.body)
-            return parsed
+            return int_dict_verify_assertion(
+                parsed, assertion_operator, assertion_expected, "Viewport size is"
+            )
