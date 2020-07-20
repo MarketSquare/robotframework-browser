@@ -165,7 +165,7 @@ class Input(LibraryComponent):
             options_json = json.dumps(options)
             self.debug(f"Click Options are: {options_json}")
             response = stub.Click(
-                Request().ElementSelectorOptions(
+                Request().ElementSelectorWithOptions(
                     selector=selector, options=options_json
                 )
             )
