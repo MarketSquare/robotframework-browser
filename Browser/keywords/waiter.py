@@ -3,7 +3,6 @@ from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum, auto
 
 from robot.running import EXECUTION_CONTEXTS  # type: ignore
-from robot.running.testlibraries import _DynamicLibrary  # type: ignore
 from robotlibcore import keyword  # type: ignore
 from typing import Dict
 
@@ -70,8 +69,8 @@ class Waiter(LibraryComponent):
         Wrap a Browser library keyword and make it a promise.
         Returns that promise and executes the keyword on background.
         """
-        browser_lib: _DynamicLibrary = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
-            "Browser"
+        browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
+            self.library
         )
         handler = browser_lib.handlers[keyword]
         positional, named = handler.resolve_arguments(
