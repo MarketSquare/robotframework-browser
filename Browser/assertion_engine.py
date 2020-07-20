@@ -1,7 +1,19 @@
 from enum import Enum
-from typing import Any, Dict, Tuple, Callable, TypeVar, cast, Optional
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from typing import (
+    Any,
+    Dict,
+    Tuple,
+    Callable,
+    TypeVar,
+    cast,
+    Optional,
+    List,
+)
 import re
+
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+
+from .utils.robot_booleans import is_truthy
 
 AssertionOperator = Enum(
     "AssertionOperator",
@@ -32,6 +44,21 @@ AssertionOperator = Enum(
     },
 )
 
+NumericalOperators = [
+    AssertionOperator["=="],
+    AssertionOperator["!="],
+    AssertionOperator[">="],
+    AssertionOperator[">"],
+    AssertionOperator["<="],
+    AssertionOperator["<"],
+]
+
+SequenceOperators = [
+    AssertionOperator["*="],
+    AssertionOperator["validate"],
+    AssertionOperator["=="],
+    AssertionOperator["!="],
+]
 
 handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
     AssertionOperator["=="]: (lambda a, b: a == b, "should be"),
@@ -56,6 +83,7 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
     ),
 }
 
+
 T = TypeVar("T")
 
 
@@ -73,3 +101,88 @@ def verify_assertion(
     if not validator(value, expected):
         raise AssertionError(f"{message} `{value}` {text} `{expected}`")
     return value
+
+
+def int_str_verify_assertion(
+    value: T, operator: Optional[AssertionOperator], expected: Any, message=""
+):
+    if operator is None:
+        return value
+    elif operator in NumericalOperators:
+        expected = int(expected)
+
+    elif operator in [
+        AssertionOperator["validate"],
+        AssertionOperator["then"],
+    ]:
+        expected = str(expected)
+    else:
+        raise ValueError(f"Operator '{operator.name}' is not allowed.")
+    return verify_assertion(value, operator, expected, message)
+
+
+def bool_verify_assertion(
+    value: T, operator: Optional[AssertionOperator], expected: Any, message=""
+):
+    if operator is None:
+        return value
+    elif operator not in [
+        AssertionOperator["=="],
+        AssertionOperator["!="],
+    ]:
+        raise ValueError(f"Operators '==' and '!=' are allowed, not '{operator.name}'.")
+
+    expected_bool = is_truthy(expected)
+    return verify_assertion(value, operator, expected_bool, message)
+
+
+def map_list(selected: List):
+    if not selected or len(selected) == 0:
+        return None
+    elif len(selected) == 1:
+        return selected[0]
+    else:
+        return selected
+
+
+def list_verify_assertion(
+    value: List[Any],
+    operator: Optional[AssertionOperator],
+    expected: List[Any],
+    message="",
+):
+    if not operator:
+        return map_list(value)
+
+    expected.sort()
+    value.sort()
+
+    if operator not in SequenceOperators:
+        raise AttributeError(
+            f"Operator '{operator.name}' is not allowed in this Keyword."
+            f"Allowed operators are: '{SequenceOperators}'"
+        )
+
+    return verify_assertion(map_list(value), operator, map_list(expected), message)
+
+
+def int_dict_verify_assertion(
+    value: Dict[str, int],
+    operator: Optional[AssertionOperator],
+    expected: Optional[Dict[str, int]],
+    message="",
+):
+    if not operator:
+        return value
+    elif expected and operator in NumericalOperators:
+        for k, v in value.items():
+            exp = expected[k]
+            verify_assertion(v, operator, exp, message)
+        return True
+    elif operator in SequenceOperators:
+        return verify_assertion(value, operator, expected, message)
+    else:
+        raise AttributeError(
+            f"Operator '{operator.name}' is not allowed in this Keyword."
+            f"Allowed operators are: {NumericalOperators} and {SequenceOperators}"
+        )

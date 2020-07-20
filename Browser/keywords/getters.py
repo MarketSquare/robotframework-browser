@@ -1,12 +1,18 @@
 import json
-from typing import Any, Optional, Union
-from copy import copy
+from typing import Any, Dict, Optional, Union, List
 
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..assertion_engine import verify_assertion, AssertionOperator
+from ..assertion_engine import (
+    bool_verify_assertion,
+    verify_assertion,
+    list_verify_assertion,
+    int_dict_verify_assertion,
+    int_str_verify_assertion,
+    AssertionOperator,
+)
 from .input import SelectAttribute
 
 
@@ -163,15 +169,13 @@ class Getters(LibraryComponent):
         | `Get Selected Options` | select#names | label | validate | len(value) == 3  | | #assertion length |
 
         """
-        selected = list()
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
                 Request().ElementSelector(selector=selector)
             )
             self.info(response)
-
             expected = list(assertion_expected)
-
+            selected: Union[List[int], List[str]]
             if option_attribute is SelectAttribute.value:
                 selected = [sel.value for sel in response.entry if sel.selected]
             elif option_attribute is SelectAttribute.label:
@@ -182,39 +186,9 @@ class Getters(LibraryComponent):
                 ]
                 expected = [int(exp) for exp in expected]
 
-            expected.sort()
-            expected_value: object = expected
-            sorted_selected = copy(selected)
-            sorted_selected.sort()
-            value: object = sorted_selected
-
-            if assertion_operator in [
-                AssertionOperator["*="],
-                AssertionOperator["validate"],
-            ]:
-                if len(expected) != 1:
-                    raise AttributeError(
-                        f"Operator '{assertion_operator.name}' expects '1'"
-                        f" expected value but got '{len(expected)}'."
-                    )
-                expected_value = expected[0]
-            elif assertion_operator is not None and assertion_operator not in [
-                AssertionOperator["=="],
-                AssertionOperator["!="],
-            ]:
-                raise AttributeError(
-                    f"Operator '{assertion_operator.name}' is not allowed "
-                    f"in this Keyword."
-                )
-            verify_assertion(
-                value, assertion_operator, expected_value, "Selected Options:"
+            return list_verify_assertion(
+                selected, assertion_operator, expected, "Selected Options:",
             )
-            if len(selected) == 0:
-                return None
-            elif len(selected) == 1:
-                return selected[0]
-            else:
-                return list(selected)
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_checkbox_state(
@@ -248,20 +222,8 @@ class Getters(LibraryComponent):
             self.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
             value: bool = response.body
 
-            if assertion_operator is not None:
-                if assertion_operator not in [
-                    AssertionOperator["=="],
-                    AssertionOperator["!="],
-                ]:
-                    raise ValueError(
-                        f"Operators '==' and '!=' are allowed,"
-                        f" not '{assertion_operator.name}'."
-                    )
-
-            expected_bool: bool = self.is_truthy(expected_state)
-
-            return verify_assertion(
-                value, assertion_operator, expected_bool, f"Checkbox {selector} is"
+            return bool_verify_assertion(
+                value, assertion_operator, expected_state, f"Checkbox {selector} is"
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
@@ -280,29 +242,7 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector)
             )
             count = response.body
-            if assertion_operator is not None:
-                if assertion_operator in [
-                    AssertionOperator["=="],
-                    AssertionOperator["!="],
-                    AssertionOperator[">="],
-                    AssertionOperator[">"],
-                    AssertionOperator["<="],
-                    AssertionOperator["<"],
-                ]:
-                    expected_value = int(expected_value)
-
-                elif assertion_operator in [
-                    AssertionOperator["validate"],
-                    AssertionOperator["then"],
-                ]:
-                    expected_value = str(expected_value)
-
-                else:
-                    raise ValueError(
-                        f"Operator '{assertion_operator.name}' is not allowed."
-                    )
-
-            return verify_assertion(
+            return int_str_verify_assertion(
                 int(count),
                 assertion_operator,
                 expected_value,
@@ -354,9 +294,15 @@ class Getters(LibraryComponent):
             return parsed
 
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
-    def get_viewport_size(self):
+    def get_viewport_size(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Dict[str, int]] = None,
+    ):
         """Gets the current viewport dimensions """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
             parsed = json.loads(response.body)
-            return parsed
+            return int_dict_verify_assertion(
+                parsed, assertion_operator, assertion_expected, "Viewport size is"
+            )
