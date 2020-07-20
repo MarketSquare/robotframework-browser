@@ -53,6 +53,13 @@ NumericalOperators = [
     AssertionOperator["<"],
 ]
 
+ListOperators = [
+    AssertionOperator["*="],
+    AssertionOperator["validate"],
+    AssertionOperator["=="],
+    AssertionOperator["!="],
+]
+
 handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
     AssertionOperator["=="]: (lambda a, b: a == b, "should be"),
     AssertionOperator["!="]: (lambda a, b: a != b, "should not be"),
@@ -76,23 +83,13 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
     ),
 }
 
+
 T = TypeVar("T")
-
-
-def verify(value: T, operator: Optional[AssertionOperator], expected: Any, message=""):
-    raise RuntimeError(
-        f"Assertion for values of type `{type(value)}` is not supported."
-    )
 
 
 def verify_assertion(
     value: T, operator: Optional[AssertionOperator], expected: Any, message=""
 ) -> Any:
-    if isinstance(value, list) and len(value) == 1:
-        value = value[0]
-    if isinstance(expected, list) and len(expected) == 1:
-        expected = expected[0]
-
     if operator is None:
         return value
     if operator is AssertionOperator["then"]:
@@ -111,44 +108,41 @@ def int_str_verify_assertion(
 ):
     if operator is None:
         return value
+    elif operator in NumericalOperators:
+        expected = int(expected)
+
+    elif operator in [
+        AssertionOperator["validate"],
+        AssertionOperator["then"],
+    ]:
+        expected = str(expected)
     else:
-        if operator in NumericalOperators:
-            expected = int(expected)
-
-        elif operator in [
-            AssertionOperator["validate"],
-            AssertionOperator["then"],
-        ]:
-            expected = str(expected)
-
-        else:
-            raise ValueError(f"Operator '{operator.name}' is not allowed.")
-        return verify_assertion(value, operator, expected, message)
+        raise ValueError(f"Operator '{operator.name}' is not allowed.")
+    return verify_assertion(value, operator, expected, message)
 
 
 def bool_verify_assertion(
     value: T, operator: Optional[AssertionOperator], expected: Any, message=""
 ):
-    if operator is not None:
-        if operator not in [
-            AssertionOperator["=="],
-            AssertionOperator["!="],
-        ]:
-            raise ValueError(
-                f"Operators '==' and '!=' are allowed," f" not '{operator.name}'."
-            )
+    if operator is None:
+        return value
+    elif operator not in [
+        AssertionOperator["=="],
+        AssertionOperator["!="],
+    ]:
+        raise ValueError(f"Operators '==' and '!=' are allowed, not '{operator.name}'.")
 
-        expected_bool: bool = is_truthy(expected)
-        return verify_assertion(value, operator, expected_bool, message)
+    expected_bool = is_truthy(expected)
+    return verify_assertion(value, operator, expected_bool, message)
 
 
-def wrap_return(selected: List):
+def map_list(selected: List):
     if not selected or len(selected) == 0:
         return None
     elif len(selected) == 1:
         return selected[0]
     else:
-        return list(selected)
+        return selected
 
 
 def list_verify_assertion(
@@ -158,30 +152,15 @@ def list_verify_assertion(
     message="",
 ):
     if not operator:
-        return wrap_return(value)
+        return map_list(value)
 
     expected.sort()
     value.sort()
 
-    if operator in [
-        AssertionOperator["*="],
-        AssertionOperator["validate"],
-    ]:
-        if len(expected) != 1:
-            raise AttributeError(
-                f"Operator '{operator.name}' expects 1"
-                f" expected value but got {len(expected)}; {expected}."
-            )
-        expected = expected[0]
-    elif operator not in [
-        AssertionOperator["=="],
-        AssertionOperator["!="],
-    ]:
+    if operator not in ListOperators:
         raise AttributeError(
-            f"Operator '{operator.name}' is not allowed " f"in this Keyword."
+            f"Operator '{operator.name}' is not allowed in this Keyword."
+            f"Allowed operators are: '{ListOperators}'"
         )
 
-    if len(expected) == 0:
-        return verify_assertion(wrap_return(value), operator, None, message)
-    else:
-        return verify_assertion(wrap_return(value), operator, expected, message)
+    return verify_assertion(map_list(value), operator, map_list(expected), message)
