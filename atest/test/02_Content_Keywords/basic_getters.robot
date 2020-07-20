@@ -59,6 +59,6 @@ Get Element Count and Assert
     Get Element Count    label    validate    value == 2
     Get Element Count    label    >    1
     Get Element Count    not-existing    ==
-    ${promise}=  Promise to  Get Element Count  label
-    @{vals}=  Wait for  ${promise}
-    should be equal  ${vals[0]}  ${2}
+    ${promise}=    Promise to    Get Element Count    label
+    @{vals}=    Wait for    ${promise}
+    should be equal    ${vals[0]}    ${2}

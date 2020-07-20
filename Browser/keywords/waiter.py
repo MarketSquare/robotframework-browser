@@ -64,20 +64,20 @@ class Waiter(LibraryComponent):
             self.info(response.log)
 
     @keyword(tags=["Wait"])
-    def promise_to(
-        self, keyword: str, *args
-    ):
+    def promise_to(self, keyword: str, *args):
         """
         *EXPERIMENTAL* *WORK IN PROGRESS*
         Wrap a Browser library keyword and make it a promise.
         Returns that promise and executes the keyword on background.
         """
-        browser_lib:_DynamicLibrary = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library("Browser")
-        handler = browser_lib.handlers[keyword]
-        positional, named = handler.resolve_arguments(args, EXECUTION_CONTEXTS.current.variables)
-        return self._executor.submit(
-            handler.current_handler(), *positional, *named
+        browser_lib: _DynamicLibrary = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
+            "Browser"
         )
+        handler = browser_lib.handlers[keyword]
+        positional, named = handler.resolve_arguments(
+            args, EXECUTION_CONTEXTS.current.variables
+        )
+        return self._executor.submit(handler.current_handler(), *positional, *named)
 
     @keyword(tags=["Wait"])
     def wait_for(self, *promises: Future):
