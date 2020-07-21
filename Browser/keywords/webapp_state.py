@@ -68,7 +68,9 @@ class WebAppState(LibraryComponent):
             )
             self.info(response.log)
 
-    @keyword(name="sessionStorage get Item", tags=["WebAppState", "Assertion", "Getter"])
+    @keyword(
+        name="sessionStorage get Item", tags=["WebAppState", "Assertion", "Getter"]
+    )
     def session_storage_get_item(
         self,
         key: str,
