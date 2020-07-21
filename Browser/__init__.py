@@ -167,6 +167,12 @@ class Browser(DynamicCore):
         self.playwright = Playwright(timeout, enable_playwright_debug)
         DynamicCore.__init__(self, libraries)
 
+    def info(self, msg: str, html=False):
+        logger.info(msg, html)
+
+    def debug(self, msg: str, html=False):
+        logger.debug(msg, html)
+
     @property
     def outputdir(self):
         return BuiltIn().get_variable_value("${OUTPUTDIR}")
