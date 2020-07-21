@@ -1,8 +1,5 @@
-from Browser import Browser
-
-
 class LibraryComponent:
-    def __init__(self, library: Browser):
+    def __init__(self, library):
         """Base class exposing attributes from the common context.
 
         :param library: The library itself as a context object.
