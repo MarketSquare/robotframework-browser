@@ -19,3 +19,8 @@ Using Invalid Element Reference Fails
     ...    Click    element=1234-4321
     Run Keyword And Expect Error    No element handle found with id `1234-4321`.
     ...    Click    element=1234-4321 >> .css
+
+Get Element From Frame
+    [Setup]    New Page    ${FRAMES_URL}
+    ${ref}=    Get Element    body >> [src="left.html"] >>> body
+    Get Attribute    element=${ref} >> //input[@name="searchbutton"]    value    ==    Search

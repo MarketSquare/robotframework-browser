@@ -24,7 +24,7 @@ export async function getElement(
     state: PlaywrightState,
 ) {
     await waitUntilElementExists(state, callback, call.request.getSelector());
-    const handle = await invokeOnPage(state.getActivePage(), callback, '$', call.request.getSelector());
+    const handle = await invokePlaywirghtMethod(state, callback, '$', call.request.getSelector());
     const id = uuidv4();
     state.addElement(id, handle);
     callback(null, stringResponse(id));
