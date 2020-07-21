@@ -47,7 +47,7 @@ class Waiter(LibraryComponent):
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
-        ``timeout``: (optional) uses default timout if not set.
+        ``timeout``: (optional) uses default timeout if not set.
         """
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
@@ -61,6 +61,34 @@ class Waiter(LibraryComponent):
                 )
             )
             self.info(response.log)
+
+    @keyword(tags=["Wait", "PageContent"])
+    def wait_for_function(
+        self, function: str, args: str = "", polling: str = "raf", timeout: str = "",
+    ):
+        """Executes JavaScript function in browser and waits for function to return
+        (JavaScript) truthy value. Returns the value if the wait completes.
+
+        ``args`` Are values to pass to the JavaScript function.
+
+        Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
+        Any other value for polling will be parsed as a robot framework time for interval between polls.
+
+        ``timeout``: (optional) uses default timeout if not set.
+        """
+        with self.playwright.grpc_channel() as stub:
+            if polling != "raf":
+                polling_interval = timestr_to_millisecs(polling)
+            response = stub.WaitForFunction(
+                Request().WaitForFunctionOptions(
+                    function=function,
+                    args=args,
+                    polling=polling_interval,
+                    timeout=timeout,
+                )
+            )
+            self.info(response.log)
+            return response
 
     @keyword(tags=["Wait"])
     def promise_to(self, keyword: str, *args):

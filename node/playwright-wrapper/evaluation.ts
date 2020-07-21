@@ -55,6 +55,23 @@ export async function waitForElementState(
     callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
 }
 
+export async function waitForFunction(
+    call: ServerUnaryCall<Request.WaitForFunctionOptions>,
+    callback: sendUnaryData<Response.String>,
+    page?: Page,
+): Promise<void> {
+    const script = call.request.getScript();
+    const args = call.request.getArgs();
+    const polling = call.request.getPolling();
+    const timeout = call.request.getTimeout();
+    const result = await invokeOnPage(page, callback, 'waitForFunction', script, args, {
+        polling: polling,
+        timeout: timeout,
+    });
+    callback(null, stringResponse(JSON.stringify(result)));
+    return;
+}
+
 export async function addStyleTag(
     call: ServerUnaryCall<Request.StyleTag>,
     callback: sendUnaryData<Response.Empty>,

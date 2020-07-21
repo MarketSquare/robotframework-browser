@@ -88,6 +88,13 @@ message Request {
     string script = 1;
   }
 
+  message WaitForFunctionOptions {
+    string script = 1;
+    string args = 2;
+    int32 polling = 3;
+    int32 timeout = 4;
+  }
+
   message PlaywrightObject {
     string info = 1;
   }
@@ -197,6 +204,7 @@ service  Playwright {
   /* Waits for element be in a specific state*/
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty) {}
   /* Executes javascript on the active page */
+  rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.String) {}
   rpc ExecuteJavascriptOnPage(Request.JavascriptCode) returns (Response.JavascriptExecutionResult) {}
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
