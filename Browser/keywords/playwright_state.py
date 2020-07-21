@@ -29,7 +29,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def open_browser(
         self,
-        url=None,
+        url: Optional[str] = None,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
     ):
