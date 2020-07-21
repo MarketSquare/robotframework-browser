@@ -163,8 +163,6 @@ service  Playwright {
   /* Gets the boolean DOM property 'property' of selector specified element */
   rpc GetBoolProperty(Request.ElementProperty) returns (Response.Bool) {}
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
-  rpc GetTextContent(Request.ElementSelector) returns (Response.String) {}
-  /* Return's current Playwright page's viewport dimensions as JSON */
   rpc GetViewportSize(Request.Empty) returns (Response.String) {}
   /* *Returns current playwright page url*/
   rpc GetUrl(Request.Empty) returns (Response.String) {}
@@ -184,6 +182,8 @@ service  Playwright {
   rpc UncheckCheckbox(Request.ElementSelector) returns (Response.Empty) {}
   /* Health check endpoint for the service */
   rpc Health(Request.Empty) returns (Response.String) {}
+  /* Returns a reference to a Playwirght element handle.*/
+  rpc GetElement(Request.ElementSelector) returns (Response.String) {}
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty) {}
   /* Adds a <style> to head of site. */
@@ -201,6 +201,8 @@ service  Playwright {
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty) {}
+  /* Gets an elements computed style */ 
+  rpc GetStyle(Request.ElementSelector) returns (Response.String) {}
 
   /* Playwright State handling keywords */
 

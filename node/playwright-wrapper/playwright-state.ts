@@ -1,8 +1,8 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
-import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
+import { chromium, firefox, webkit, Browser, BrowserContext, Page, ElementHandle } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokeOnPage, exists } from './playwirght-util';
+import { invokeOnPage, exists } from './playwirght-invoke';
 import { emptyWithLog, intResponse } from './response-util';
 
 async function _newBrowser(
@@ -54,9 +54,11 @@ export class PlaywrightState {
     constructor() {
         this.activeBrowser = 0;
         this.browsers = [];
+        this.elementHandles = new Map();
     }
     browsers: (BrowserState | 'CLOSED')[];
     activeBrowser: number;
+    elementHandles: Map<string, ElementHandle>;
     public getActiveBrowser = <T>(callback: sendUnaryData<T>): BrowserState => {
         const currentBrowser = this.browsers[this.activeBrowser];
         if (currentBrowser === 'CLOSED') {
@@ -100,6 +102,17 @@ export class PlaywrightState {
         if (currentBrowser === 'CLOSED') return undefined;
         return currentBrowser?.page?.p;
     };
+
+    public addElement(id: string, handle: ElementHandle) {
+        this.elementHandles.set(id, handle);
+    }
+
+    public getElement(id: string): ElementHandle | undefined {
+        if (this.elementHandles.has(id)) {
+            return this.elementHandles.get(id);
+        }
+        throw new Error(`No element handle found with id \`${id}\`.`);
+    }
 }
 
 type IndexedContext = {
@@ -145,7 +158,7 @@ export class BrowserState {
     }
     set context(newContext: IndexedContext | undefined) {
         this._context = newContext;
-        if (!newContext) console.log('Undefined active page');
+        if (!newContext) console.log('Set active context to undefined');
         else console.log('Changed active context');
     }
     get page() {
@@ -153,7 +166,7 @@ export class BrowserState {
     }
     set page(newPage: IndexedPage | undefined) {
         this._page = newPage;
-        if (!newPage) console.log('Undefined active page');
+        if (!newPage) console.log('Set active page to undefined');
         else console.log('Changed active page');
     }
 }

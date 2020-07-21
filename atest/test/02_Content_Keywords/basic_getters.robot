@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Suite Setup       New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${UserNameLabel}=    label[for="username_field"]
@@ -59,3 +59,10 @@ Get Element Count and Assert
     Get Element Count    label    validate    value == 2
     Get Element Count    label    >    1
     Get Element Count    not-existing    ==
+    ${promise}=    Promise to    Get Element Count    label
+    ${count}=    Wait for    ${promise}
+    should be equal    ${count}    ${2}
+
+Get Style and Assert
+    Get Style    h1    ALL    *=    align-content
+    Get Style    h1    align-content    ==    normal

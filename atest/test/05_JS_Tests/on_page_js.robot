@@ -17,31 +17,31 @@ Page state
     Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
 
 Localstorage
-    Set To LocalStorage    mykey    myvalue
-    Get From LocalStorage    mykey    ==    myvalue
+    localStorage set    mykey    myvalue
+    localStorage get    mykey    ==    myvalue
     ${val}=    Execute Javascript on Page    window.localStorage.getItem("mykey")
     should be equal    ${val}    myvalue
-    Remove From LocalStorage    mykey
-    Get From LocalStorage    mykey    ==    ${None}
+    localStorage remove    mykey
+    localStorage get    mykey    ==    ${None}
 
 Sessionstorage
-    Set To SessionStorage    mykey2    myvalue2
-    Get From SessionStorage    mykey2    ==    myvalue2
-    Remove From SessionStorage    mykey2
-    Get From SessionStorage    mykey2    ==    ${None}
+    sessionStorage set    mykey2    myvalue2
+    sessionStorage get    mykey2    ==    myvalue2
+    sessionStorage remove    mykey2
+    sessionStorage get    mykey2    ==    ${None}
 
 Localstorage clear
-    Set To LocalStorage    key1    value1
-    Set To LocalStorage    key2    value2
-    Clear LocalStorage
-    Get From LocalStorage    key1    ==    ${None}
-    Get From LocalStorage    key2    ==    ${None}
+    localStorage set    key1    value1
+    localStorage set    key2    value2
+    localStorage clear
+    localStorage get    key1    ==    ${None}
+    localStorage get    key2    ==    ${None}
 
 Sessionstorage clear
-    Set To SessionStorage    key1    value1
-    Set To SessionStorage    key2    value2
+    sessionStorage set    key1    value1
+    sessionStorage set    key2    value2
     ${val1}=    Execute Javascript on Page    window.sessionStorage.getItem("key1")
     should be equal    ${val1}    value1
-    Clear SessionStorage
-    Get From SessionStorage    key1    ==    ${None}
-    Get From SessionStorage    key2    ==    ${None}
+    sessionStorage clear
+    sessionStorage get    key1    ==    ${None}
+    sessionStorage get    key2    ==    ${None}

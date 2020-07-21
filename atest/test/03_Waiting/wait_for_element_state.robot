@@ -13,3 +13,14 @@ Wait For Elements State fails on too short timeout
     Get Attribute    button#goes_hidden    style
     Click    button#goes_hidden
     Run Keyword and Expect Error    Could not find element with selector `button#goes_hidden` within timeout.    Wait For Elements State    button#goes_hidden    hidden    400ms
+
+Wait For Elements State to hide with Promise
+    ${promise}=    Promise to    Wait For Elements State    button#goes_hidden    hidden    3s
+    Wait For Elements State    button#goes_hidden    visible    300ms
+    Click    button#goes_hidden
+    Wait for    ${promise}
+    Run Keyword and Expect Error    Could not find element with selector `button#goes_hidden` within timeout.    Wait For Elements State    button#goes_hidden    visible    40ms
+
+Wait For Elements State to hide fails with Promise
+    ${promise}=    Promise to    Wait For Elements State    button#goes_hidden    hidden    300ms
+    Run Keyword and Expect Error    Could not find element with selector `button#goes_hidden` within timeout.    Wait for    ${promise}

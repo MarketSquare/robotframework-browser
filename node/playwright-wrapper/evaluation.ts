@@ -1,15 +1,33 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page } from 'playwright';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokeOnPage, invokeOnPageWithSelector } from './playwirght-util';
-import { emptyWithLog, jsResponse } from './response-util';
+import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists } from './playwirght-invoke';
+import { emptyWithLog, jsResponse, stringResponse } from './response-util';
+import { PlaywrightState } from './playwright-state';
 
 declare global {
     interface Window {
         __SET_RFBROWSER_STATE__: <T>(a: T) => T;
         __RFBROWSER__: any;
     }
+}
+
+/** Resolve an elementHandle, create global UUID for it, and store the reference
+ * in global state. Enables using special selector syntax `element=<uuid>` in
+ * RF keywords.
+ */
+export async function getElement(
+    call: ServerUnaryCall<Request.ElementSelector>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+) {
+    await waitUntilElementExists(state, callback, call.request.getSelector());
+    const handle = await invokePlaywirghtMethod(state, callback, '$', call.request.getSelector());
+    const id = uuidv4();
+    state.addElement(id, handle);
+    callback(null, stringResponse(id));
 }
 
 export async function executeJavascriptOnPage(
@@ -29,11 +47,11 @@ export async function getPageState(callback: sendUnaryData<Response.JavascriptEx
 export async function waitForElementState(
     call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
     callback: sendUnaryData<Response.Empty>,
-    page?: Page,
+    state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    await invokeOnPageWithSelector(page, callback, 'waitForSelector', selector, options);
+    await invokePlaywirghtMethod(state, callback, 'waitForSelector', selector, options);
     callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
 }
 
@@ -50,7 +68,7 @@ export async function addStyleTag(
 export async function highlightElements(
     call: ServerUnaryCall<Request.ElementSelectorWithDuration>,
     callback: sendUnaryData<Response.JavascriptExecutionResult>,
-    page?: Page,
+    state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
     const duration = call.request.getDuration();
@@ -71,5 +89,5 @@ export async function highlightElements(
             }, duration);
         });
     };
-    await invokeOnPageWithSelector(page, callback, '$$eval', selector, highlighter, duration);
+    await invokePlaywirghtMethod(state, callback, '$$eval', selector, highlighter, duration);
 }
