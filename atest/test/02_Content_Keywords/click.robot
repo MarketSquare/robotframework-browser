@@ -11,3 +11,6 @@ Click Nonmatching Selector
     [Setup]    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `css=notamatch` within timeout.    Click    css=notamatch
     [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+
+Click With Invalid Selector
+    Run Keyword And Expect Error    STARTS: Invalid selector    Click    input[type="submit"]X

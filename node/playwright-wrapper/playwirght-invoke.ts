@@ -79,6 +79,8 @@ async function determineFunctionAndSelector<T>(state: PlaywrightState, selector:
         } catch (e) {
             callback(e, null);
         }
+        // This is purely to appease Typescript compiler, code is never executed since the
+        // `callback` breaks the execution.
         return {
             elementSelector: '',
             context: null,
@@ -144,6 +146,9 @@ function getErrorDetails(e: Error, selector: string, methodName: string) {
     const errorMetadata = new Metadata();
     if (e instanceof errors.TimeoutError) {
         errorMetadata.add('reason', `Could not find element with selector \`${selector}\` within timeout.`);
+    }
+    if (e.message.match(/DOMException: .* is not a valid selector/)) {
+        errorMetadata.add('reason', `Invalid selector \`${selector}\`.`);
     }
     return {
         code: status.INVALID_ARGUMENT,
