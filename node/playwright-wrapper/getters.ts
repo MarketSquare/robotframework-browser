@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page, ElementHandle } from 'playwright';
 
 import { Response, Request, Types } from './generated/playwright_pb';
-import { invokeOnPage, waitUntilElementExists, invokePlaywirghtMethod } from './playwirght-util';
+import { invokeOnPage, waitUntilElementExists, invokePlaywirghtMethod } from './playwirght-invoke';
 import { stringResponse, boolResponse, intResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 

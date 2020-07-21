@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { BrowserContext, Page } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokeOnPage, exists } from './playwirght-util';
+import { invokeOnPage, exists } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
 
 export async function goTo(

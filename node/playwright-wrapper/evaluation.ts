@@ -3,7 +3,7 @@ import { Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists } from './playwirght-util';
+import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 

@@ -1,7 +1,7 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
 
 import { Response, Request } from './generated/playwright_pb';
-import { invokePlaywirghtMethod } from './playwirght-util';
+import { invokePlaywirghtMethod } from './playwirght-invoke';
 import { emptyWithLog } from './response-util';
 import { PlaywrightState } from './playwright-state';
 
