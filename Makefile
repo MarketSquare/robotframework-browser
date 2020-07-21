@@ -100,7 +100,7 @@ node/dynamic-test-app/dist: node/dynamic-test-app/src node/dynamic-test-app/stat
 	yarn build
 webpack-typescript: node/dynamic-test-app/dist Browser/wrapper/index.js
 
-build: protobuf node_modules webpack-typescript
+build: protobuf node_modules/.installed webpack-typescript
 
 watch-webpack: build
 	yarn run webpack --watch
