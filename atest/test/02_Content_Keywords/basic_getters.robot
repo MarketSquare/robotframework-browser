@@ -62,3 +62,7 @@ Get Element Count and Assert
     ${promise}=    Promise to    Get Element Count    label
     ${count}=    Wait for    ${promise}
     should be equal    ${count}    ${2}
+
+Get Style and Assert
+    Get Style    h1    ALL    *=    align-content
+    Get Style    h1    align-content    ==    normal

@@ -110,7 +110,6 @@ export async function getStyle(
         }
         return JSON.stringify(mapped);
     });
-    console.log(result);
     const response = stringResponse(result);
     callback(null, response);
 }

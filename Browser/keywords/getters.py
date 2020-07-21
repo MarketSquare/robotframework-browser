@@ -325,22 +325,31 @@ class Getters(LibraryComponent):
     def get_style(
         self,
         selector: str,
-        key: Optional[str] = None,
+        key: str = "ALL",
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
         """Gets the computed style properties of the element selected by ``selector``
 
-
-            Optionally only returns / matches the property named ``key``.
+            With any other value than "ALL" will try to get CSS property with key ``key``
 
             Optionally matches with any sequence assertion operator.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(Request().ElementSelector(selector=selector))
             parsed = json.loads(response.body)
-            # TODO: use key to filter and assert here
-            self.info(parsed)
-            return dict_verify_assertion(
-                parsed, assertion_operator, assertion_expected, "Computed style is"
-            )
+
+            if key == "ALL":
+                return dict_verify_assertion(
+                    parsed, assertion_operator, assertion_expected, "Computed style is"
+                )
+            else:
+                item = parsed.get(key, "NOT_FOUND")
+                self.info(f"Value of key: {key}")
+                self.info(f"Value of selected property: {item}")
+                return verify_assertion(
+                    item,
+                    assertion_operator,
+                    assertion_expected,
+                    f"Style value for {key} is ",
+                )
