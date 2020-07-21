@@ -77,14 +77,17 @@ class Waiter(LibraryComponent):
         ``timeout``: (optional) uses default timeout if not set.
         """
         with self.playwright.grpc_channel() as stub:
+            options: Dict[str, int] = {}
             if polling != "raf":
-                polling_interval = timestr_to_millisecs(polling)
+                options["polling"] = timestr_to_millisecs(polling)
+            if timeout:
+                options["timeout"] = timestr_to_millisecs(timeout)
+            options_json = json.dumps(options)
             response = stub.WaitForFunction(
                 Request().WaitForFunctionOptions(
-                    function=function,
+                    script=function,
                     args=args,
-                    polling=polling_interval,
-                    timeout=timeout,
+                    options=options_json,
                 )
             )
             self.info(response.log)

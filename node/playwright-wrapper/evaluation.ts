@@ -62,13 +62,9 @@ export async function waitForFunction(
 ): Promise<void> {
     const script = call.request.getScript();
     const args = call.request.getArgs();
-    const polling = call.request.getPolling();
-    const timeout = call.request.getTimeout();
-    const result = await invokeOnPage(page, callback, 'waitForFunction', script, args, {
-        polling: polling,
-        timeout: timeout,
-    });
-    callback(null, stringResponse(JSON.stringify(result)));
+    const options = JSON.parse(call.request.getOptions());
+    const result = await invokeOnPage(page, callback, 'waitForFunction', script, args, options);
+    callback(null, stringResponse(result.jsonValue()));
     return;
 }
 
