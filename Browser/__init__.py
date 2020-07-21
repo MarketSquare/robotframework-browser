@@ -85,6 +85,17 @@ class Browser(DynamicCore):
 
     The selectors on the left and right side of ``>>>`` can be any valid selectors.
 
+    == Element reference syntax ==
+
+    It is possible to get a reference to an element by using `Get Element` keyword. This
+    reference can be used as a *first* part of a selector by using a special selector
+    syntax `element=` like this:
+
+    | ${ref}=  |  Get Element  |  .some_class  |
+    | Click    |  element=${ref} >>  .some_child |
+
+    The `.some_child` selector in the example is relative to the element referenced by ${ref}.
+
     = Assertions =
 
     Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``

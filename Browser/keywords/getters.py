@@ -313,6 +313,8 @@ class Getters(LibraryComponent):
 
         The reference can be used in subsequent selectors using a special selector syntax
         element=<ref>.
+
+        See `library introduction` for more details on the selector syntax.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(Request().ElementSelector(selector=selector))
