@@ -1,8 +1,6 @@
 import json
-from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum, auto
 
-from robot.running import EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import keyword  # type: ignore
 from typing import Dict
 
@@ -19,10 +17,6 @@ class ElementState(Enum):
 
 
 class Waiter(LibraryComponent):
-    def __init__(self, library):
-        LibraryComponent.__init__(self, library)
-        self._executor = ThreadPoolExecutor(max_workers=256)
-
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_elements_state(
         self,
@@ -61,31 +55,3 @@ class Waiter(LibraryComponent):
                 )
             )
             self.info(response.log)
-
-    @keyword(tags=["Wait"])
-    def promise_to(self, keyword: str, *args):
-        """
-        *EXPERIMENTAL* *WORK IN PROGRESS*
-        Wrap a Browser library keyword and make it a promise.
-        Returns that promise and executes the keyword on background.
-        """
-        browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
-            self.library
-        )
-        handler = browser_lib.handlers[keyword]
-        positional, named = handler.resolve_arguments(
-            args, EXECUTION_CONTEXTS.current.variables
-        )
-        return self._executor.submit(handler.current_handler(), *positional, *named)
-
-    @keyword(tags=["Wait"])
-    def wait_for(self, *promises: Future):
-        """
-        *EXPERIMENTAL* *WORK IN PROGRESS*
-        Waits for promises to finish and returns results from them.
-        Returns one result if one promise waited. Otherwise returns an array of results.
-        If one fails, then this keyword will fail.
-        """
-        if len(promises) == 1:
-            return promises[0].result()
-        return [promise.result() for promise in promises]
