@@ -142,7 +142,7 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
 
-    def __init__(self, timeout="10s", enable_playwright_debug=False):
+    def __init__(self, timeout="10s", enable_playwright_debug: bool = False):
         """Browser library can be taken into use with optional arguments:
 
         - ``timeout``:
