@@ -9,6 +9,7 @@ from ..assertion_engine import (
     bool_verify_assertion,
     verify_assertion,
     list_verify_assertion,
+    dict_verify_assertion,
     int_dict_verify_assertion,
     int_str_verify_assertion,
     AssertionOperator,
@@ -319,3 +320,27 @@ class Getters(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(Request().ElementSelector(selector=selector))
             return response.body
+
+    @keyword(tags=["Getter", "Assertion"])
+    def get_style(
+        self,
+        selector: str,
+        key: Optional[str] = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ):
+        """Gets the computed style properties of the element selected by ``selector``
+
+
+            Optionally only returns / matches the property named ``key``.
+
+            Optionally matches with any sequence assertion operator.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetStyle(Request().ElementSelector(selector=selector))
+            parsed = json.loads(response.body)
+            # TODO: use key to filter and assert here
+            self.info(parsed)
+            return dict_verify_assertion(
+                parsed, assertion_operator, assertion_expected, "Computed style is"
+            )

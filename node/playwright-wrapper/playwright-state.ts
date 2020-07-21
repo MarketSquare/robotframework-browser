@@ -158,7 +158,7 @@ export class BrowserState {
     }
     set context(newContext: IndexedContext | undefined) {
         this._context = newContext;
-        if (!newContext) console.log('Undefined active page');
+        if (!newContext) console.log('Set active context to undefined');
         else console.log('Changed active context');
     }
     get page() {
@@ -166,7 +166,7 @@ export class BrowserState {
     }
     set page(newPage: IndexedPage | undefined) {
         this._page = newPage;
-        if (!newPage) console.log('Undefined active page');
+        if (!newPage) console.log('Set active page to undefined');
         else console.log('Changed active page');
     }
 }

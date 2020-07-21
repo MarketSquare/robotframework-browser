@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page, ElementHandle } from 'playwright';
 
 import { Response, Request, Types } from './generated/playwright_pb';
-import { invokeOnPage, waitUntilElementExists, invokePlaywirghtMethod } from './playwirght-invoke';
+import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists } from './playwirght-invoke';
 import { stringResponse, boolResponse, intResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 
@@ -92,7 +92,30 @@ async function getProperty<T>(
     }
 }
 
-export async function getViewportSize<T>(
+export async function getStyle(
+    call: ServerUnaryCall<Request.ElementSelector>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+): Promise<void> {
+    const selector = call.request.getSelector();
+
+    console.log('Getting css of element on page');
+    const result = await invokePlaywirghtMethod(state, callback, '$eval', selector, function (element: Element) {
+        const rawStyle = window.getComputedStyle(element);
+        const mapped: Record<string, string> = {};
+        // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
+        for (let i = 0; i < rawStyle.length; i++) {
+            const name = rawStyle[i];
+            mapped[name] = rawStyle.getPropertyValue(name);
+        }
+        return JSON.stringify(mapped);
+    });
+    console.log(result);
+    const response = stringResponse(result);
+    callback(null, response);
+}
+
+export async function getViewportSize(
     call: ServerUnaryCall<Request.Empty>,
     callback: sendUnaryData<Response.String>,
     page?: Page,

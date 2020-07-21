@@ -166,6 +166,23 @@ def list_verify_assertion(
     return verify_assertion(map_list(value), operator, map_list(expected), message)
 
 
+def dict_verify_assertion(
+    value: Dict,
+    operator: Optional[AssertionOperator],
+    expected: Optional[Dict],
+    message="",
+):
+    if not operator:
+        return value
+    if operator in SequenceOperators:
+        return verify_assertion(value, operator, expected, message)
+    else:
+        raise AttributeError(
+            f"Operator '{operator.name}' is not allowed in this Keyword."
+            f"Allowed operators are: {SequenceOperators}"
+        )
+
+
 def int_dict_verify_assertion(
     value: Dict[str, int],
     operator: Optional[AssertionOperator],

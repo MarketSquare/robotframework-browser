@@ -133,6 +133,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         getters.getBoolProperty(call, callback, this.state);
     }
 
+    async getStyle(
+        call: ServerUnaryCall<Request.ElementSelector>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        getters.getStyle(call, callback, this.state);
+    }
+
     async getViewportSize(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.String>,
