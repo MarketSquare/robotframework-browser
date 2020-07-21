@@ -124,9 +124,7 @@ def int_str_verify_assertion(
 def bool_verify_assertion(
     value: T, operator: Optional[AssertionOperator], expected: Any, message=""
 ):
-    if operator is None:
-        return value
-    elif operator not in [
+    if operator and operator not in [
         AssertionOperator["=="],
         AssertionOperator["!="],
     ]:
@@ -146,22 +144,15 @@ def map_list(selected: List):
 
 
 def list_verify_assertion(
-    value: List[Any],
-    operator: Optional[AssertionOperator],
-    expected: List[Any],
-    message="",
+    value: List, operator: Optional[AssertionOperator], expected: List, message="",
 ):
-    if not operator:
-        return map_list(value)
-
-    expected.sort()
-    value.sort()
-
-    if operator not in SequenceOperators:
+    if operator and operator not in SequenceOperators:
         raise AttributeError(
             f"Operator '{operator.name}' is not allowed in this Keyword."
             f"Allowed operators are: '{SequenceOperators}'"
         )
+    expected.sort()
+    value.sort()
 
     return verify_assertion(map_list(value), operator, map_list(expected), message)
 
@@ -172,15 +163,13 @@ def dict_verify_assertion(
     expected: Optional[Dict],
     message="",
 ):
-    if not operator:
-        return value
-    if operator in SequenceOperators:
-        return verify_assertion(value, operator, expected, message)
-    else:
+    if operator and operator not in SequenceOperators:
         raise AttributeError(
             f"Operator '{operator.name}' is not allowed in this Keyword."
             f"Allowed operators are: {SequenceOperators}"
         )
+    else:
+        return verify_assertion(value, operator, expected, message)
 
 
 def int_dict_verify_assertion(
