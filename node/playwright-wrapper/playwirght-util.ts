@@ -1,8 +1,25 @@
 import { sendUnaryData, status, Metadata } from 'grpc';
-import { Page, errors } from 'playwright';
+import { Page, errors, ElementHandle } from 'playwright';
 
-export async function waitUntilElementExists<T>(page: Page | undefined, callback: sendUnaryData<T>, selector: string) {
-    await invokeOnPageWithSelector(page, callback, 'waitForSelector', selector, { state: 'attached' });
+import { PlaywrightState } from './playwright-state';
+
+export async function waitUntilElementExists<T>(
+    state: PlaywrightState,
+    callback: sendUnaryData<T>,
+    selector: string,
+): Promise<ElementHandle> {
+    const { elementSelector, context } = await determineFunctionAndSelector(state, selector, callback);
+    exists(context, callback, '');
+    if ('waitForSelector' in context) {
+        try {
+            await context.waitForSelector(elementSelector, { state: 'attached' });
+        } catch (e) {
+            callback(getErrorDetails(e, selector, 'waitForSelector'), null);
+        }
+    }
+    const element = await context.$(elementSelector);
+    exists(element, callback, `Could not find element with selector \`${elementSelector}\` within timeout.`);
+    return element;
 }
 
 export async function invokeOnPage(page: Page | undefined, callback: any, methodName: string, ...args: any[]) {
@@ -17,60 +34,57 @@ export async function invokeOnPage(page: Page | undefined, callback: any, method
 }
 
 /**
- * Resolve the playwright method on page or frame and invoke it.
+ * Resolve the playwright method on page, frame or elementHandle and invoke it.
  * With a normal selector, invokes the `methodName` on the given `page`.
  * If the selector is a frame piercing selector, first find the corresponding
  * frame on the `page`, and then invoke the `methodName` on the resolved frame.
+ * If the selector is an elementHandle selector, first resolve the corresponding e
+ * elementHandle, and invoke the method on it.
  *
- * @param page Existing Playwright Page object.
+ * @param state A reference to current PlaywrightState object.
  * @param callback GRPC callback to make response.
  * @param methodName Which Playwright method to invoke.
  * @param selector Selector of the element to operate on,
  *  or a frame piercing selector in format `<frame selector> >>> <element selector>
  * @param args Additional args to the Playwirght method.
  */
-export async function invokeOnPageWithSelector<T>(
-    page: Page | undefined,
+
+export async function invokePlaywirghtMethod<T>(
+    state: PlaywrightState,
     callback: sendUnaryData<T>,
     methodName: string,
     selector: string,
     ...args: any[]
 ) {
-    exists(page, callback, `Tried to do playwright action '${methodName}', but no open browser.`);
-    const { elementSelector, fn } = await determineFunctionAndSelector(page, methodName, selector, callback);
+    const { elementSelector, context } = await determineFunctionAndSelector(state, selector, callback);
     try {
+        const fn = (context as { [key: string]: any })[methodName].bind(context);
         return await fn(elementSelector, ...args);
     } catch (e) {
-        if (e instanceof errors.TimeoutError) {
-            const errorMetadata = new Metadata();
-            errorMetadata.add('reason', `Could not find element with selector \`${selector}\` within timeout.`);
-            callback(
-                {
-                    code: status.INVALID_ARGUMENT,
-                    name: e.name,
-                    message: '',
-                    details: `Error invoking Playwright action ${methodName}:\n${e.toString()}`,
-                    metadata: errorMetadata,
-                },
-                null,
-            );
-        }
+        callback(getErrorDetails(e, selector, methodName), null);
     }
 }
 
-async function determineFunctionAndSelector<T>(
-    page: Page,
-    methodName: string,
-    selector: string,
-    callback: sendUnaryData<T>,
-) {
+async function determineFunctionAndSelector<T>(state: PlaywrightState, selector: string, callback: sendUnaryData<T>) {
+    const page = state.getActivePage();
+    exists(page, callback, `Tried to do playwright action, but no open browser.`);
     if (isFramePiercingSelector(selector)) {
         const { frameSelector, elementSelector } = splitFrameAndElementSelector(selector);
         const frame = await findFrame(page, frameSelector, callback);
-        const fn = (frame as { [key: string]: any })[methodName].bind(frame);
-        return { elementSelector, fn };
+        return { elementSelector, context: frame };
+    } else if (isElementHandleSelector(selector)) {
+        const { elementHandleId, elementSelector } = splitElementHandleAndElementSelector(selector, callback);
+        try {
+            return { elementSelector, context: state.getElement(elementHandleId) };
+        } catch (e) {
+            callback(e, null);
+        }
+        return {
+            elementSelector: '',
+            context: null,
+        };
     } else {
-        return { elementSelector: selector, fn: (page as { [key: string]: any })[methodName].bind(page) };
+        return { elementSelector: selector, context: page };
     }
 }
 
@@ -78,11 +92,35 @@ function isFramePiercingSelector(selector: string) {
     return selector.match('>>>');
 }
 
+function isElementHandleSelector(selector: string) {
+    return selector.startsWith('element=');
+}
+
 function splitFrameAndElementSelector(selector: string) {
     const parts = selector.split('>>>');
     return {
         frameSelector: parts[0].trim(),
         elementSelector: parts[1].trim(),
+    };
+}
+
+function splitElementHandleAndElementSelector<T>(selector: string, callback: sendUnaryData<T>) {
+    const splitter = /element=([\w-]+)\s*>>\s*(.*)/;
+    const parts = selector.split(splitter);
+    if (parts.length == 4) {
+        const splitted = {
+            elementHandleId: parts[1],
+            elementSelector: parts[2],
+        };
+        console.log(`Split element= selector into parts: ${JSON.stringify(splitted)}`);
+        return splitted;
+    }
+    callback(new Error(`Invalid element selector \`${selector}\`.`), null);
+    // This is purely to appease Typescript compiler, code is never executed since the
+    // `callback` breaks the execution.
+    return {
+        elementHandleId: '',
+        elementSelector: '',
     };
 }
 
@@ -100,4 +138,18 @@ export function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: st
     if (!obj) {
         callback(new Error(message), null);
     }
+}
+
+function getErrorDetails(e: Error, selector: string, methodName: string) {
+    const errorMetadata = new Metadata();
+    if (e instanceof errors.TimeoutError) {
+        errorMetadata.add('reason', `Could not find element with selector \`${selector}\` within timeout.`);
+    }
+    return {
+        code: status.INVALID_ARGUMENT,
+        name: e.name,
+        message: '',
+        details: `Error invoking Playwright action ${methodName}:\n${e.toString()}`,
+        metadata: errorMetadata,
+    };
 }

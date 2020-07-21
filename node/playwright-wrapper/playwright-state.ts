@@ -1,5 +1,5 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
-import { chromium, firefox, webkit, Browser, BrowserContext, Page } from 'playwright';
+import { chromium, firefox, webkit, Browser, BrowserContext, Page, ElementHandle } from 'playwright';
 
 import { Response, Request } from './generated/playwright_pb';
 import { invokeOnPage, exists } from './playwirght-util';
@@ -54,9 +54,11 @@ export class PlaywrightState {
     constructor() {
         this.activeBrowser = 0;
         this.browsers = [];
+        this.elementHandles = new Map();
     }
     browsers: (BrowserState | 'CLOSED')[];
     activeBrowser: number;
+    elementHandles: Map<string, ElementHandle>;
     public getActiveBrowser = <T>(callback: sendUnaryData<T>): BrowserState => {
         const currentBrowser = this.browsers[this.activeBrowser];
         if (currentBrowser === 'CLOSED') {
@@ -100,6 +102,17 @@ export class PlaywrightState {
         if (currentBrowser === 'CLOSED') return undefined;
         return currentBrowser?.page?.p;
     };
+
+    public addElement(id: string, handle: ElementHandle) {
+        this.elementHandles.set(id, handle);
+    }
+
+    public getElement(id: string): ElementHandle | undefined {
+        if (this.elementHandles.has(id)) {
+            return this.elementHandles.get(id);
+        }
+        throw new Error(`No element handle found with id \`${id}\`.`);
+    }
 }
 
 type IndexedContext = {

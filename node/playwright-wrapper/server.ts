@@ -10,37 +10,37 @@ import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
 
 export class PlaywrightServer implements IPlaywrightServer {
-    openBrowsers: PlaywrightState;
+    state: PlaywrightState;
 
     constructor() {
-        this.openBrowsers = new PlaywrightState();
+        this.state = new PlaywrightState();
     }
-    private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.openBrowsers.getActiveBrowser(callback);
-    private getActivePage = () => this.openBrowsers.getActivePage();
+    private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.state.getActiveBrowser(callback);
+    private getActivePage = () => this.state.getActivePage();
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        playwrightState.closeBrowser(callback, this.openBrowsers);
+        playwrightState.closeBrowser(callback, this.state);
     }
     async closeAllBrowsers(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        playwrightState.closeAllBrowsers(callback, this.openBrowsers);
+        playwrightState.closeAllBrowsers(callback, this.state);
     }
 
     async closeContext(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        playwrightState.closeContext(callback, this.openBrowsers);
+        playwrightState.closeContext(callback, this.state);
     }
 
     async closePage(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        playwrightState.closePage(callback, this.openBrowsers);
+        playwrightState.closePage(callback, this.state);
     }
 
     async getBrowserCatalog(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        playwrightState.getBrowserCatalog(callback, this.openBrowsers);
+        playwrightState.getBrowserCatalog(callback, this.state);
     }
 
     async autoActivatePages(
@@ -51,27 +51,27 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async switchPage(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.switchPage(call, callback, this.openBrowsers.getActiveBrowser(callback));
+        playwrightState.switchPage(call, callback, this.state.getActiveBrowser(callback));
     }
 
     async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.switchContext(call, callback, this.openBrowsers.getActiveBrowser(callback));
+        playwrightState.switchContext(call, callback, this.state.getActiveBrowser(callback));
     }
 
     async switchBrowser(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.switchBrowser(call, callback, this.openBrowsers);
+        playwrightState.switchBrowser(call, callback, this.state);
     }
 
     async newPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.newPage(call, callback, this.openBrowsers);
+        playwrightState.newPage(call, callback, this.state);
     }
 
     async newContext(call: ServerUnaryCall<Request.Context>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.newContext(call, callback, this.openBrowsers);
+        playwrightState.newContext(call, callback, this.state);
     }
 
     async newBrowser(call: ServerUnaryCall<Request.Browser>, callback: sendUnaryData<Response.Int>): Promise<void> {
-        playwrightState.newBrowser(call, callback, this.openBrowsers);
+        playwrightState.newBrowser(call, callback, this.state);
     }
 
     async goTo(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Empty>): Promise<void> {
@@ -109,28 +109,28 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Int>,
     ): Promise<void> {
-        getters.getElementCount(call, callback, this.getActivePage());
+        getters.getElementCount(call, callback, this.state);
     }
 
     async getSelectContent(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Select>,
     ): Promise<void> {
-        getters.getSelectContent(call, callback, this.getActivePage());
+        getters.getSelectContent(call, callback, this.state);
     }
 
     async getDomProperty(
         call: ServerUnaryCall<Request.ElementProperty>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        getters.getDomProperty(call, callback, this.getActivePage());
+        getters.getDomProperty(call, callback, this.state);
     }
 
     async getBoolProperty(
         call: ServerUnaryCall<Request.ElementProperty>,
         callback: sendUnaryData<Response.Bool>,
     ): Promise<void> {
-        getters.getBoolProperty(call, callback, this.getActivePage());
+        getters.getBoolProperty(call, callback, this.state);
     }
 
     async getViewportSize(
@@ -144,66 +144,73 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.SelectElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        interaction.selectOption(call, callback, this.getActivePage());
+        interaction.selectOption(call, callback, this.state);
     }
 
     async deselectOption(call: ServerUnaryCall<Request.ElementSelector>, callback: sendUnaryData<Response.Empty>) {
-        interaction.deSelectOption(call, callback, this.getActivePage());
+        interaction.deSelectOption(call, callback, this.state);
     }
 
     async inputText(call: ServerUnaryCall<Request.TextInput>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        interaction.inputText(call, callback, this.getActivePage());
+        interaction.inputText(call, callback, this.state);
     }
 
     async typeText(call: ServerUnaryCall<Request.TypeText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        interaction.typeText(call, callback, this.getActivePage());
+        interaction.typeText(call, callback, this.state);
     }
 
     async fillText(call: ServerUnaryCall<Request.FillText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        interaction.fillText(call, callback, this.getActivePage());
+        interaction.fillText(call, callback, this.state);
     }
 
     async clearText(call: ServerUnaryCall<Request.ClearText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        interaction.clearText(call, callback, this.getActivePage());
+        interaction.clearText(call, callback, this.state);
     }
 
     async press(call: ServerUnaryCall<Request.PressKeys>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        interaction.press(call, callback, this.getActivePage());
+        interaction.press(call, callback, this.state);
     }
 
     async click(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        interaction.click(call, callback, this.getActivePage());
+        interaction.click(call, callback, this.state);
     }
 
     async clickWithOptions(
         call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        interaction.clickWithOptions(call, callback, this.getActivePage());
+        interaction.clickWithOptions(call, callback, this.state);
     }
 
     async focus(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        interaction.focus(call, callback, this.getActivePage());
+        interaction.focus(call, callback, this.state);
     }
 
     async checkCheckbox(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        interaction.checkCheckbox(call, callback, this.getActivePage());
+        interaction.checkCheckbox(call, callback, this.state);
     }
 
     async uncheckCheckbox(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        interaction.uncheckCheckbox(call, callback, this.getActivePage());
+        interaction.uncheckCheckbox(call, callback, this.state);
+    }
+
+    async getElement(
+        call: ServerUnaryCall<Request.ElementSelector>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        evaluation.getElement(call, callback, this.state);
     }
 
     async addStyleTag(call: ServerUnaryCall<Request.StyleTag>, callback: sendUnaryData<Response.Empty>): Promise<void> {
@@ -214,7 +221,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        evaluation.waitForElementState(call, callback, this.getActivePage());
+        evaluation.waitForElementState(call, callback, this.state);
     }
 
     async executeJavascriptOnPage(
@@ -241,7 +248,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementSelectorWithDuration>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        evaluation.highlightElements(call, callback, this.getActivePage());
+        evaluation.highlightElements(call, callback, this.state);
     }
 
     async setViewportSize(

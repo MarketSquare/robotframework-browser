@@ -98,6 +98,8 @@ class Playwright:
             pass
         try:
             return err.details()
+        except TypeError:
+            return err.details
         except AttributeError:
             pass
         return str(err)

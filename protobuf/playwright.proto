@@ -182,6 +182,8 @@ service  Playwright {
   rpc UncheckCheckbox(Request.ElementSelector) returns (Response.Empty) {}
   /* Health check endpoint for the service */
   rpc Health(Request.Empty) returns (Response.String) {}
+  /* Returns a reference to a Playwirght element handle.*/
+  rpc GetElement(Request.ElementSelector) returns (Response.String) {}
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty) {}
   /* Adds a <style> to head of site. */

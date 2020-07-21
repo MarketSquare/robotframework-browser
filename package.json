@@ -29,11 +29,13 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "@types/uuid": "^8.0.0",
     "google-protobuf": "3.9.2",
     "grpc": "^1.24.3",
     "playwright": "^1.1.0",
     "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "react-dom": "^16.13.1",
+    "uuid": "^8.2.0"
   },
   "husky": {
     "hooks": {

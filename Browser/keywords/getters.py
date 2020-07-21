@@ -306,3 +306,14 @@ class Getters(LibraryComponent):
             return int_dict_verify_assertion(
                 parsed, assertion_operator, assertion_expected, "Viewport size is"
             )
+
+    @keyword(tags=["Getter", "BrowserControl"])
+    def get_element(self, selector: str):
+        """Returns a refence to a Playwirght element handle.
+
+        The reference can be used in subsequent selectors using a special selector syntax
+        element=<ref>.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetElement(Request().ElementSelector(selector=selector))
+            return response.body
