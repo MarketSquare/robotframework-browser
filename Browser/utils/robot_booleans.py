@@ -10,10 +10,8 @@ def is_truthy(item: Any) -> bool:
     parsed = item.upper()
     if parsed in FALSE_STRINGS:
         return False
-    elif parsed in TRUE_STRINGS:
-        return True
     else:
-        raise ValueError(f"{item} is not a valid Robot Framework boolean")
+        return True
 
 
 def is_falsy(item: Any) -> bool:
