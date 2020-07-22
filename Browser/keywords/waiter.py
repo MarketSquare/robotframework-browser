@@ -85,9 +85,7 @@ class Waiter(LibraryComponent):
             options_json = json.dumps(options)
             response = stub.WaitForFunction(
                 Request().WaitForFunctionOptions(
-                    script=function,
-                    args=args,
-                    options=options_json,
+                    script=function, args=args, options=options_json,
                 )
             )
             self.info(response.log)
