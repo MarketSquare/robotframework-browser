@@ -10,6 +10,7 @@ from robotlibcore import DynamicCore  # type: ignore
 
 from .keywords import Control, Getters, Input, PlaywrightState, Waiter, WebAppState
 from .playwright import Playwright
+from .utils import logger
 from .version import VERSION
 
 __version__ = VERSION
@@ -175,7 +176,7 @@ class Browser(DynamicCore):
 
     def _end_test(self, name, attrs):
         if len(self._unresolved_promises) > 0:
-            self.warn(f"Waiting unresolved promises at the end of test '{name}'")
+            logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
 
     def run_keyword(self, name, args, kwargs=None):
@@ -260,7 +261,7 @@ class Browser(DynamicCore):
             path = self.failure_screenshot_path(test_name)
             self.browser_control.take_page_screenshot(path)
         except Exception as err:
-            self.info(f"Was unable to take page screenshot after failure:\n{err}")
+            logger.info(f"Was unable to take page screenshot after failure:\n{err}")
 
     def failure_screenshot_path(self, test_name):
         return os.path.join(

@@ -1,6 +1,3 @@
-from robot.api import logger  # type: ignore
-
-
 class LibraryComponent:
     def __init__(self, library):
         """Base class exposing attributes from the common context.
@@ -9,15 +6,6 @@ class LibraryComponent:
         :type library: Browser.Browser
         """
         self.library = library
-
-    def info(self, msg: str, html=False):
-        logger.info(msg, html)
-
-    def debug(self, msg: str, html=False):
-        logger.debug(msg, html)
-
-    def warn(self, msg: str, html=False):
-        logger.warn(msg, html)
 
     @property
     def playwright(self):

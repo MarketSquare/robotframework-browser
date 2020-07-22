@@ -6,6 +6,7 @@ from robotlibcore import keyword  # type: ignore
 from ..assertion_engine import AssertionOperator, verify_assertion
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
+from ..utils import logger
 
 
 class WebAppState(LibraryComponent):
@@ -23,7 +24,7 @@ class WebAppState(LibraryComponent):
             response = stub.ExecuteJavascriptOnPage(
                 Request().JavascriptCode(script=f'window.localStorage.getItem("{key}")')
             )
-            self.info(response.log)
+            logger.info(response.log)
             return verify_assertion(
                 json.loads(response.result),
                 assertion_operator,
@@ -42,7 +43,7 @@ class WebAppState(LibraryComponent):
                     script=f'window.localStorage.setItem("{key}", "{value}")'
                 )
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(name="localStorage remove Item", tags=["WebAppState"])
     def local_storage_remove_item(self, key: str):
@@ -55,7 +56,7 @@ class WebAppState(LibraryComponent):
                     script=f'window.localStorage.removeItem("{key}")'
                 )
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(name="localStorage clear", tags=["WebAppState"])
     def local_storage_clear(self):
@@ -66,7 +67,7 @@ class WebAppState(LibraryComponent):
             response = stub.ExecuteJavascriptOnPage(
                 Request().JavascriptCode(script="window.localStorage.clear()")
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(
         name="sessionStorage get Item", tags=["WebAppState", "Assertion", "Getter"]
@@ -86,7 +87,7 @@ class WebAppState(LibraryComponent):
                     script=f'window.sessionStorage.getItem("{key}")'
                 )
             )
-            self.info(response.log)
+            logger.info(response.log)
             return verify_assertion(
                 json.loads(response.result),
                 assertion_operator,
@@ -105,7 +106,7 @@ class WebAppState(LibraryComponent):
                     script=f'window.sessionStorage.setItem("{key}", "{value}")'
                 )
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(name="sessionStorage remove Item", tags=["WebAppState"])
     def session_storage_remove_item(self, key: str):
@@ -118,7 +119,7 @@ class WebAppState(LibraryComponent):
                     script=f'window.sessionStorage.removeItem("{key}")'
                 )
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(name="sessionStorage clear", tags=["WebAppState"])
     def session_storage_clear(self):
@@ -129,4 +130,4 @@ class WebAppState(LibraryComponent):
             response = stub.ExecuteJavascriptOnPage(
                 Request().JavascriptCode(script="window.sessionStorage.clear()")
             )
-            self.info(response.log)
+            logger.info(response.log)

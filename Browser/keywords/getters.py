@@ -15,6 +15,7 @@ from ..assertion_engine import (
     AssertionOperator,
 )
 from .input import SelectAttribute
+from Browser.utils import logger
 
 
 class Getters(LibraryComponent):
@@ -30,7 +31,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
-            self.debug(response.log)
+            logger.debug(response.log)
             value = response.body
             return verify_assertion(
                 value, assertion_operator, assertion_expected, "URL "
@@ -54,7 +55,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageState(Request().Empty())
-            self.debug(response.log)
+            logger.debug(response.log)
             value = json.loads(response.result)
             return verify_assertion(
                 value, assertion_operator, assertion_expected, "State "
@@ -72,7 +73,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
-            self.debug(response.log)
+            logger.debug(response.log)
             value = response.body
             return verify_assertion(
                 value, assertion_operator, assertion_expected, "Title "
@@ -93,7 +94,7 @@ class Getters(LibraryComponent):
             response = stub.GetDomProperty(
                 Request().ElementProperty(selector=selector, property="innerText")
             )
-            self.debug(response.log)
+            logger.debug(response.log)
             value = response.body
             return verify_assertion(
                 value, assertion_operator, assertion_expected, f"Text {selector}"
@@ -116,7 +117,7 @@ class Getters(LibraryComponent):
             response = stub.GetDomProperty(
                 Request().ElementProperty(selector=selector, property=attribute)
             )
-            self.debug(response.log)
+            logger.debug(response.log)
             value = response.body
             return verify_assertion(
                 value, assertion_operator, assertion_expected, f"Attribute {selector}"
@@ -174,7 +175,7 @@ class Getters(LibraryComponent):
             response = stub.GetSelectContent(
                 Request().ElementSelector(selector=selector)
             )
-            self.info(response)
+            logger.info(response)
             expected = list(assertion_expected)
             selected: Union[List[int], List[str]]
             if option_attribute is SelectAttribute.value:
@@ -220,7 +221,7 @@ class Getters(LibraryComponent):
             response = stub.GetBoolProperty(
                 Request().ElementProperty(selector=selector, property="checked")
             )
-            self.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
+            logger.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
             value: bool = response.body
 
             return bool_verify_assertion(
@@ -291,7 +292,7 @@ class Getters(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBrowserCatalog(Request().Empty())
             parsed = json.loads(response.body)
-            self.info(json.dumps(parsed))
+            logger.info(json.dumps(parsed))
             return parsed
 
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
@@ -345,8 +346,8 @@ class Getters(LibraryComponent):
                 )
             else:
                 item = parsed.get(key, "NOT_FOUND")
-                self.info(f"Value of key: {key}")
-                self.info(f"Value of selected property: {item}")
+                logger.info(f"Value of key: {key}")
+                logger.info(f"Value of selected property: {item}")
                 return verify_assertion(
                     item,
                     assertion_operator,

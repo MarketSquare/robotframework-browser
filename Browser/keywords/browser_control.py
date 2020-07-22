@@ -3,6 +3,7 @@ from robotlibcore import keyword  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils.time_conversion import timestr_to_millisecs
+from ..utils import logger
 
 
 class Control(LibraryComponent):
@@ -14,21 +15,21 @@ class Control(LibraryComponent):
         """Navigates to the next page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoForward(Request.Empty())
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def go_back(self):
         """Navigates to the previous page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoBack(Request.Empty())
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def go_to(self, url: str):
         """Navigates to the given ``url``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(Request().Url(url=url))
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword
     def take_page_screenshot(self, path: str = ""):
@@ -38,10 +39,10 @@ class Control(LibraryComponent):
         """
         if not path:
             path = self.library.get_screenshot_path
-        self.info(f"Taking screenshot into ${path}")
+        logger.info(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(Request().ScreenshotPath(path=path))
-            self.info(
+            logger.info(
                 f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",
                 html=True,
             )
@@ -55,7 +56,7 @@ class Control(LibraryComponent):
         parsed_timeout = timestr_to_millisecs(timeout)
         with self.playwright.grpc_channel() as stub:
             response = stub.SetTimeout(Request().Timeout(timeout=parsed_timeout))
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["PageContent"])
     def add_style_tag(self, content: str):
@@ -65,7 +66,7 @@ class Control(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["PageContent"])
     def highlight_element(self, selector: str, duration: str = "5s"):
@@ -77,7 +78,7 @@ class Control(LibraryComponent):
                     selector=selector, duration=duration_ms
                 )
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def set_viewport_size(self, width: int, height: int):
@@ -96,4 +97,4 @@ class Control(LibraryComponent):
             response = stub.SetViewportSize(
                 Request().Viewport(height=height, width=width)
             )
-            self.info(response.log)
+            logger.info(response.log)
