@@ -5,6 +5,7 @@ from typing import Optional
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
+from ..utils import logger
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
 
@@ -24,7 +25,7 @@ class Evaluation(LibraryComponent):
         self,
         url,
         method: RequestMethod = RequestMethod.GET,
-        body: Optional[str] = "",
+        body: Optional[str] = None,
         headers: dict = {},
     ):
         """Performs an HTTP request in the current browser context
@@ -52,6 +53,7 @@ class Evaluation(LibraryComponent):
         | Should Be Equal  |  ${res.body.some_field}  |  some value  |
 
         """
+        body = body if body else ""
         with self.playwright.grpc_channel() as stub:
             response = stub.HttpRequest(
                 Request().HttpRequest(

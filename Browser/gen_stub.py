@@ -61,6 +61,7 @@ from .assertion_engine import AssertionOperator
 from .keywords.input import SelectAttribute, MouseButton, KeyboardModifier
 from .keywords.playwright_state import SupportedBrowsers, ViewportDimensions, ColorScheme
 from .keywords.waiter import ElementState
+from .keywords.evaluation import RequestMethod
 
 
 class Browser:
