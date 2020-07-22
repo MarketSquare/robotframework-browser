@@ -26,7 +26,7 @@ class Playwright:
         if EXECUTION_CONTEXTS.current:
             return BuiltIn().get_variable_value("${OUTPUTDIR}")
         else:
-            return "naked_python_output"
+            return "utest/output"
 
     @functools.cached_property
     def _playwright_process(self) -> Popen:

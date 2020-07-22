@@ -34,6 +34,7 @@ utest-watch:
 	ptw --ignore ./node_modules --ignore ./.venv
 
 utest:
+	mkdir -p utest/output
 	pytest utest
 
 clean-atest:
