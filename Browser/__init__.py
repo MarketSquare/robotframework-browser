@@ -9,7 +9,15 @@ from robot.api.deco import keyword  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .keywords import Control, Getters, Input, PlaywrightState, Waiter, WebAppState
+from .keywords import (
+    Control,
+    Getters,
+    Input,
+    PlaywrightState,
+    Waiter,
+    WebAppState,
+    Evaluation,
+)
 from .playwright import Playwright
 from .version import VERSION
 
@@ -156,6 +164,7 @@ class Browser(DynamicCore):
         self.browser_control = Control(self)
         libraries = [
             self.browser_control,
+            Evaluation(self),
             Input(self),
             Getters(self),
             PlaywrightState(self),
