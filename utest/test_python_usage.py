@@ -1,25 +1,18 @@
 import pytest
+import subprocess
+
 from Browser.assertion_engine import AssertionOperator
-import robot.api.logger  # type: ignore
 
 
-def info(msg: str, html=False):
-    print(f"Info: {msg}")
-
-
-def debug(msg: str, html=False):
-    print(f"Debug: {msg}")
-
-
-def warn(msg: str, html=False):
-    print(f"Warn: {msg}")
+@pytest.fixture()
+def application_server():
+    process = subprocess.Popen(["node", "./node/dynamic-test-app/dist/server.js", "30"])
+    yield
+    process.terminate()
 
 
 @pytest.fixture()
 def browser(monkeypatch):
-    monkeypatch.setattr(robot.api.logger, "info", info)
-    monkeypatch.setattr(robot.api.logger, "debug", debug)
-    monkeypatch.setattr(robot.api.logger, "warn", warn)
     import Browser
 
     browser = Browser.Browser()
@@ -28,7 +21,7 @@ def browser(monkeypatch):
     browser._close
 
 
-def test_open_page_get_text(browser):
+def test_open_page_get_text(application_server, browser):
     browser.new_page("localhost:7272/dist/")
     text = browser.get_text("h1", AssertionOperator["=="], "Login Page")
     assert text == "Login Page"
