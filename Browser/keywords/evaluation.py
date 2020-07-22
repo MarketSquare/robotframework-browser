@@ -6,6 +6,7 @@ from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
+from ..utils import logger
 
 
 class RequestMethod(Enum):
@@ -60,7 +61,7 @@ class Evaluation(LibraryComponent):
                     headers=json.dumps(self._get_headers(body, headers)),
                 )
             )
-            self.debug(response.log)
+            logger.debug(response.log)
             return self._format_response(json.loads(response.body))
 
     def _get_headers(self, body, headers):
@@ -78,5 +79,5 @@ class Evaluation(LibraryComponent):
                 response["body"] = json.loads(response["body"])
             except json.decoder.JSONDecodeError:
                 pass
-        self.info(response)
+        logger.info(response)
         return response
