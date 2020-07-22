@@ -1,8 +1,8 @@
-from Browser import Browser
+import Browser
 import inspect
 from typing import Any
 
-br: Any = Browser()
+br: Any = Browser.Browser()
 keywords = br.get_keyword_names()
 function_list = list()
 for keyword in keywords:

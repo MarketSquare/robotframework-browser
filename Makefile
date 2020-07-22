@@ -101,7 +101,7 @@ node/dynamic-test-app/dist: node/dynamic-test-app/src node/dynamic-test-app/stat
 webpack-typescript: node/dynamic-test-app/dist Browser/wrapper/index.js
 
 Browser/__init__.pyi:
-	python Browser/gen_stub.py
+	python -m Browser.gen_stub
 
 build: protobuf node_modules/.installed webpack-typescript Browser/__init__.pyi
 
