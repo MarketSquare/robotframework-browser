@@ -1,6 +1,7 @@
 Browser/wrapper/*.js
 Browser/wrapper
 Browser/generated
+Browser/__init__.pyi
 node/playwright-wrapper/generated
 
 node/dynamic-test-app/dist/*.js

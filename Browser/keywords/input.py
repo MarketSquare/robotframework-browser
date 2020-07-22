@@ -7,6 +7,7 @@ from typing import Optional, Dict, Any
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils.time_conversion import timestr_to_millisecs
+from ..utils import logger
 
 
 class MouseButton(Enum):
@@ -73,7 +74,7 @@ class Input(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(Request().ClearText(selector=selector))
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def type_secret(
@@ -115,14 +116,14 @@ class Input(LibraryComponent):
         """  # noqa
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(Request().PressKeys(selector=selector, key=keys))
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def click(self, selector: str):
         """Clicks the element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().ElementSelector(selector=selector))
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def click_with_options(
@@ -163,13 +164,13 @@ class Input(LibraryComponent):
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
             options_json = json.dumps(options)
-            self.debug(f"Click Options are: {options_json}")
+            logger.debug(f"Click Options are: {options_json}")
             response = stub.Click(
                 Request().ElementSelectorWithOptions(
                     selector=selector, options=options_json
                 )
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def focus(self, selector: str):
@@ -180,7 +181,7 @@ class Input(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(Request().ElementSelector(selector=selector))
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(
         name="Execute JavaScript On Page", tags=["Setter", "PageContent", "WebAppState"]
@@ -192,7 +193,7 @@ class Input(LibraryComponent):
             response = stub.ExecuteJavascriptOnPage(
                 Request().JavascriptCode(script=script)
             )
-            self.info(response.log)
+            logger.info(response.log)
             return json.loads(response.result)
 
     @keyword(tags=["Setter", "PageContent"])
@@ -203,7 +204,7 @@ class Input(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(Request().ElementSelector(selector=selector))
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def uncheck_checkbox(self, selector: str):
@@ -215,7 +216,7 @@ class Input(LibraryComponent):
             response = stub.UncheckCheckbox(
                 Request().ElementSelector(selector=selector)
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def select_options_by(self, attribute: SelectAttribute, selector: str, *values):
@@ -242,20 +243,20 @@ class Input(LibraryComponent):
             response = stub.SelectOption(
                 Request().SelectElementSelector(selector=selector, matcherJson=matchers)
             )
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(Request().ElementSelector(selector=selector))
-            self.info(response.log)
+            logger.info(response.log)
 
     def _fill_text(self, selector: str, text: str, log_response: bool = True):
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(Request().FillText(selector=selector, text=text))
             if log_response:
-                self.info(response.log)
+                logger.info(response.log)
 
     def _type_text(
         self,
@@ -273,4 +274,4 @@ class Input(LibraryComponent):
                 )
             )
             if log_response:
-                self.info(response.log)
+                logger.info(response.log)

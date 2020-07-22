@@ -4,7 +4,6 @@ import os
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Set
 
-from robot.api import logger  # type: ignore
 from robot.api.deco import keyword  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
@@ -19,6 +18,7 @@ from .keywords import (
     Evaluation,
 )
 from .playwright import Playwright
+from .utils import logger
 from .version import VERSION
 
 __version__ = VERSION
@@ -150,7 +150,7 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
 
-    def __init__(self, timeout="10s", enable_playwright_debug=False):
+    def __init__(self, timeout="10s", enable_playwright_debug: bool = False):
         """Browser library can be taken into use with optional arguments:
 
         - ``timeout``:
@@ -175,12 +175,6 @@ class Browser(DynamicCore):
         self._unresolved_promises: Set[Future] = set()
         self.playwright = Playwright(timeout, enable_playwright_debug)
         DynamicCore.__init__(self, libraries)
-
-    def info(self, msg: str, html=False):
-        logger.info(msg, html)
-
-    def debug(self, msg: str, html=False):
-        logger.debug(msg, html)
 
     @property
     def outputdir(self):

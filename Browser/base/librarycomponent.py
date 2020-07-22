@@ -7,12 +7,6 @@ class LibraryComponent:
         """
         self.library = library
 
-    def info(self, msg: str, html=False):
-        self.library.info(msg, html)
-
-    def debug(self, msg: str, html=False):
-        self.library.debug(msg, html)
-
     @property
     def playwright(self):
         return self.library.playwright

@@ -7,6 +7,7 @@ from typing import Dict
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils.time_conversion import timestr_to_millisecs
+from ..utils import logger
 
 
 class ElementState(Enum):
@@ -54,4 +55,4 @@ class Waiter(LibraryComponent):
                     selector=selector, options=options_json
                 )
             )
-            self.info(response.log)
+            logger.info(response.log)
