@@ -5,7 +5,6 @@ from typing import Optional
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
-from ..utils import logger
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
 
