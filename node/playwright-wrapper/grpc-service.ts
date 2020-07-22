@@ -15,6 +15,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     constructor() {
         this.state = new PlaywrightState();
     }
+
     private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.state.getActiveBrowser(callback);
     private getActivePage = () => this.state.getActivePage();
 
@@ -229,6 +230,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         evaluation.waitForElementState(call, callback, this.state);
+    }
+    async waitForRequest(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
+        evaluation.waitForRequest(call, callback, this.getActivePage());
+    }
+    async waitForResponse(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
+        evaluation.waitForResponse(call, callback, this.getActivePage());
     }
 
     async executeJavascriptOnPage(

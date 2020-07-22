@@ -7,6 +7,7 @@ from robotlibcore import keyword  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class RequestMethod(Enum):
@@ -19,6 +20,24 @@ class RequestMethod(Enum):
 
 
 class Evaluation(LibraryComponent):
+    def _get_headers(self, body, headers):
+        try:
+            json.loads(body)
+            return {"Content-Type": "application/json", **headers}
+        except json.decoder.JSONDecodeError:
+            return headers
+
+    def _format_response(self, response):
+        headers = json.loads(response["headers"])
+        response["headers"] = headers
+        if "content-type" in headers and "application/json" in headers["content-type"]:
+            try:
+                response["body"] = json.loads(response["body"])
+            except json.decoder.JSONDecodeError:
+                pass
+        logger.info(response)
+        return response
+
     @keyword(tags=["HTTP", "BrowserControl"])
     def http(
         self,
@@ -65,20 +84,27 @@ class Evaluation(LibraryComponent):
             logger.debug(response.log)
             return self._format_response(json.loads(response.body))
 
-    def _get_headers(self, body, headers):
-        try:
-            json.loads(body)
-            return {"Content-Type": "application/json", **headers}
-        except json.decoder.JSONDecodeError:
-            return headers
+    def _wait_for_http(self, method: str, matcher, timeout):
+        with self.playwright.grpc_channel() as stub:
+            response = stub[f"WaitFor{method}"](
+                Request().HttpCapture(
+                    urlOrPredicate=json.dumps(matcher),
+                    timeout=timestr_to_millisecs(timeout),
+                )
+            )
+            logger.debug(response.log)
+            return self._format_response(json.loads(response.body))
 
-    def _format_response(self, response):
-        headers = json.loads(response["headers"])
-        response["headers"] = headers
-        if "content-type" in headers and "application/json" in headers["content-type"]:
-            try:
-                response["body"] = json.loads(response["body"])
-            except json.decoder.JSONDecodeError:
-                pass
-        logger.info(response)
-        return response
+    @keyword(tags=["Wait", "HTTP"])
+    def wait_for_request(self, matcher: str, timeout: str = ""):
+        """ Waits for request matching matcher and returns python dict with contents.
+
+        ``matcher``: string, JavaScript regex or JavaScript function to match request by.
+
+        ``timeout``: (optional) uses default timout if not set.
+
+        """
+        return self._wait_for_http("Request", matcher, timeout)
+
+    def wait_for_response(self, matcher: str, timeout: str = ""):
+        return self._wait_for_http("Response", matcher, timeout)
