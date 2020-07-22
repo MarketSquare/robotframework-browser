@@ -7,7 +7,7 @@ import time
 
 import grpc  # type: ignore
 from robot.api import logger  # type: ignore
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 
 from Browser.generated.playwright_pb2 import Request
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
@@ -23,7 +23,10 @@ class Playwright:
 
     @property
     def outputdir(self):
-        return BuiltIn().get_variable_value("${OUTPUTDIR}")
+        if EXECUTION_CONTEXTS.current:
+            return BuiltIn().get_variable_value("${OUTPUTDIR}")
+        else:
+            return "naked_python_output"
 
     @functools.cached_property
     def _playwright_process(self) -> Popen:

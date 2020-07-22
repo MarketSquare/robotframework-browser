@@ -4,7 +4,6 @@ import os
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Set
 
-from robot.api import logger  # type: ignore
 from robot.api.deco import keyword  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
@@ -167,12 +166,6 @@ class Browser(DynamicCore):
         self.playwright = Playwright(timeout, enable_playwright_debug)
         DynamicCore.__init__(self, libraries)
 
-    def info(self, msg: str, html=False):
-        logger.info(msg, html)
-
-    def debug(self, msg: str, html=False):
-        logger.debug(msg, html)
-
     @property
     def outputdir(self):
         return BuiltIn().get_variable_value("${OUTPUTDIR}")
@@ -182,7 +175,7 @@ class Browser(DynamicCore):
 
     def _end_test(self, name, attrs):
         if len(self._unresolved_promises) > 0:
-            logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
+            self.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
 
     def run_keyword(self, name, args, kwargs=None):
@@ -267,7 +260,7 @@ class Browser(DynamicCore):
             path = self.failure_screenshot_path(test_name)
             self.browser_control.take_page_screenshot(path)
         except Exception as err:
-            logger.info(f"Was unable to take page screenshot after failure:\n{err}")
+            self.info(f"Was unable to take page screenshot after failure:\n{err}")
 
     def failure_screenshot_path(self, test_name):
         return os.path.join(
