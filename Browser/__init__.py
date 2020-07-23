@@ -239,7 +239,9 @@ class Browser(DynamicCore):
         positional, named = handler.resolve_arguments(
             args, EXECUTION_CONTEXTS.current.variables
         )
-        promise = self._executor.submit(handler.current_handler(), *positional, *named)
+        named = dict(named)
+
+        promise = self._executor.submit(handler.current_handler(), *positional, **named)
         self._unresolved_promises.add(promise)
         return promise
 
