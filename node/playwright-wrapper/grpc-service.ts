@@ -271,4 +271,11 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         browserControl.setViewportSize(call, callback, this.getActivePage());
     }
+
+    async httpRequest(
+        call: ServerUnaryCall<Request.HttpRequest>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        evaluation.httpRequest(call, callback, this.getActivePage());
+    }
 }

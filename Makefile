@@ -12,7 +12,7 @@ else
 	PROTOC_TS_PLUGIN = ./node_modules/.bin/protoc-gen-ts
 endif
 
-.PHONY: utest clean-atest protobuf
+.PHONY: utest clean-atest protobuf Browser/__init__.pyi
 
 .venv: Browser/requirements.txt Browser/dev-requirements.txt
 	if [ ! -d .venv ]; then \
@@ -100,7 +100,10 @@ node/dynamic-test-app/dist: node/dynamic-test-app/src node/dynamic-test-app/stat
 	yarn build
 webpack-typescript: node/dynamic-test-app/dist Browser/wrapper/index.js
 
-build: protobuf node_modules/.installed webpack-typescript
+Browser/__init__.pyi:
+	python -m Browser.gen_stub
+
+build: protobuf node_modules/.installed webpack-typescript Browser/__init__.pyi
 
 watch-webpack: build
 	yarn run webpack --watch

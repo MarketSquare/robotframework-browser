@@ -52,7 +52,8 @@ def test_match():
     )
 
 
-def test_validate():
+@pytest.fixture()
+def with_suite():
     def ns():
         pass
 
@@ -60,19 +61,17 @@ def test_validate():
     ns.variables.current = lambda: 0
     ns.variables.current.store = lambda: 0
     EXECUTION_CONTEXTS.start_suite("suite", ns, lambda: 0)
+    yield
+    EXECUTION_CONTEXTS.end_suite()
+
+
+def test_validate(with_suite):
     _validate_operator(
         AssertionOperator("validate"), 1, "0 < value < 2", "value == 'hello'"
     )
 
 
-def test_then():
-    def ns():
-        pass
-
-    ns.variables = lambda: 0
-    ns.variables.current = lambda: 0
-    ns.variables.current.store = lambda: 0
-    EXECUTION_CONTEXTS.start_suite("suite", ns, lambda: 0)
+def test_then(with_suite):
     thenOp = AssertionOperator["then"]
     assert verify_assertion(8, thenOp, "value + 3") == 11
     assert verify_assertion(2, thenOp, "value + 3") == 5

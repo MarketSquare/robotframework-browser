@@ -102,6 +102,13 @@ message Request {
     int32 width = 1;
     int32 height = 2;
   }
+
+  message HttpRequest {
+     string url = 1;
+     string method = 2;
+     string body = 3;
+     string headers = 4;
+   }
 }
 
 message Types {
@@ -208,11 +215,12 @@ service  Playwright {
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty) {}
-  /* Gets an elements computed style */ 
+  /* Gets an elements computed style */
   rpc GetStyle(Request.ElementSelector) returns (Response.String) {}
+  /* Makes a `fetch` request in the browser */
+  rpc HttpRequest(Request.HttpRequest) returns (Response.String) {}
 
   /* Playwright State handling keywords */
-
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
   rpc SwitchPage(Request.Index) returns (Response.Int) {}
   rpc SwitchContext(Request.Index) returns (Response.Int) {}
