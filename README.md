@@ -22,7 +22,7 @@ Supporting testing and automation with [Robot Framework](https://robotframework.
     *** Test Cases ***
     Example Test
         Open Browser      https://playwright.dev
-        Get Text    h1    ==   🎭 Playwright
+        Get Text    h1    ==    🎭 Playwright
         Close All Browsers
 
 and [Python](https://python.org).
