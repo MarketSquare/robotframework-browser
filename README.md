@@ -14,7 +14,24 @@ Robot Framework Browser library powered by [Playwright](https://playwright.dev/)
 
 Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visibility.
 
-Supporting testing and automation with [Robot Framework](https://robotframework.org) and [Python](https://python.org).
+Supporting testing and automation with [Robot Framework](https://robotframework.org)
+
+    *** Settings ***
+    Library   Browser
+    
+    *** Test Cases ***
+    Example Test
+        Open Browser      https://playwright.dev
+        Get Text    h1    ==   🎭 Playwright
+        Close All Browsers
+
+and [Python](https://python.org).
+
+    import Browser
+    browser = Browser.Browser()
+    browser.open_browser("https://playwright.dev")
+    assert browser.get_text("h1") == '🎭 Playwright'
+    browser.close_all_browsers()
 
 Official post about this [venture](https://forum.robotframework.org/t/moving-robot-framework-browser-automation-to-2020-or-2021/323).
 
