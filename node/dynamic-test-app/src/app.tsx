@@ -14,9 +14,28 @@ function popup(event: React.MouseEvent<HTMLButtonElement>) {
     window.open("../static/popup.html", 'width=400,height=200,scrollbars=yes')
 }
 
+function ProgressBar() {
+    const [width, setWidth] = useState(() => 10);
+    let enabled = useRef(false) 
+    function frame() {
+        if (enabled.current && width < 100) {
+            setWidth(width + 1);
+            console.log("width growing");
+        }
+    }
+    React.useEffect(() => {
+        const interval = setInterval(frame, 10);
+        return () => clearInterval(interval)
+    })
+    return <div id="progress" style={ { width: "100%", height: "30px", backgroundColor: "gray" }} >
+        <div id="progress_bar" onClick={ () => {enabled.current = true }} style={ {width: width + "%", height: "100%", backgroundColor: "green" } }></div>
+    </div>
+} 
+
 export default function Site() {
     const username = useRef("");
     const password = useRef("");
+
     const [submit, setSubmit] = useState(false)
 
     const handleSubmit = () => {
@@ -61,6 +80,7 @@ export default function Site() {
             </form>
             <button id="goes_hidden" onClick={goesInvisible}>Visible</button>
             <button id="pops_up" onClick={popup}>Pops up a window</button>
+            <ProgressBar />
         </>
     }
 

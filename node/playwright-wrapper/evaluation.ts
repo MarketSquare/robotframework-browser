@@ -61,11 +61,9 @@ export async function waitForFunction(
     page?: Page,
 ): Promise<void> {
     const script = call.request.getScript();
-    const evaluated = eval(script);
-    console.log(`Evaluated script ${script} into ${evaluated}`);
     const args = call.request.getArgs();
     const options = JSON.parse(call.request.getOptions());
-    const result = await invokeOnPage(page, callback, 'waitForFunction', evaluated, args || undefined, options);
+    const result = await invokeOnPage(page, callback, 'waitForFunction', script, args || undefined, options);
     callback(null, stringResponse(result.jsonValue()));
     return;
 }
