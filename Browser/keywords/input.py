@@ -2,7 +2,7 @@ import json
 from enum import Enum, auto
 
 from robotlibcore import keyword  # type: ignore
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
