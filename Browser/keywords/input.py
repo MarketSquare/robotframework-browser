@@ -183,19 +183,6 @@ class Input(LibraryComponent):
             response = stub.Focus(Request().ElementSelector(selector=selector))
             logger.info(response.log)
 
-    @keyword(
-        name="Execute JavaScript On Page", tags=["Setter", "PageContent", "WebAppState"]
-    )
-    def execute_javascript_on_page(self, script: str) -> Any:
-        """Executes given javascript on the page.
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
-                Request().JavascriptCode(script=script)
-            )
-            logger.info(response.log)
-            return json.loads(response.result)
-
     @keyword(tags=["Setter", "PageContent"])
     def check_checkbox(self, selector: str):
         """Checks the checkbox or selects radio button found by ``selector``.

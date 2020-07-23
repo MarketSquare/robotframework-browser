@@ -61,8 +61,11 @@ class Waiter(LibraryComponent):
     def wait_for_function(
         self, function: str, args: str = "", polling: str = "raf", timeout: str = "",
     ):
-        """Executes JavaScript function in browser and waits for function to return
-        (JavaScript) truthy value. Returns the value if the wait completes.
+        """Polls JavaScript expression or function in browser until it returns a
+        (JavaScript) truthy value.
+
+        ``function`` a valid javascript function or a javascript function body. For example
+        ``() => true`` and ``true`` will behave similarly.
 
         ``args`` Are values to pass to the JavaScript function.
 
@@ -84,4 +87,3 @@ class Waiter(LibraryComponent):
                 )
             )
             logger.info(response.log)
-            return response
