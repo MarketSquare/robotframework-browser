@@ -45,6 +45,6 @@
   },
   "scripts": {
     "build": "webpack --config node/webpack.config.js",
-    "lint": "eslint 'node/**/*.ts' --quiet --fix"
+    "lint": "eslint 'node/**/*.{ts,tsx}' --quiet --fix"
   }
 }

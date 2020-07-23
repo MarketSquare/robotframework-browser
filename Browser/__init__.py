@@ -1,12 +1,24 @@
 import re
 import os
 
-from robot.api import logger  # type: ignore
+from concurrent.futures import ThreadPoolExecutor, Future
+from typing import Set
+
+from robot.api.deco import keyword  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .keywords import Control, Getters, Input, PlaywrightState, Waiter, WebAppState
+from .keywords import (
+    Control,
+    Getters,
+    Input,
+    PlaywrightState,
+    Waiter,
+    WebAppState,
+    Evaluation,
+)
 from .playwright import Playwright
+from .utils import logger
 from .version import VERSION
 
 __version__ = VERSION
@@ -138,7 +150,7 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
 
-    def __init__(self, timeout="10s", enable_playwright_debug=False):
+    def __init__(self, timeout="10s", enable_playwright_debug: bool = False):
         """Browser library can be taken into use with optional arguments:
 
         - ``timeout``:
@@ -152,12 +164,15 @@ class Browser(DynamicCore):
         self.browser_control = Control(self)
         libraries = [
             self.browser_control,
+            Evaluation(self),
             Input(self),
             Getters(self),
             PlaywrightState(self),
             Waiter(self),
             WebAppState(self),
         ]
+        self._executor = ThreadPoolExecutor(max_workers=256)
+        self._unresolved_promises: Set[Future] = set()
         self.playwright = Playwright(timeout, enable_playwright_debug)
         DynamicCore.__init__(self, libraries)
 
@@ -167,6 +182,11 @@ class Browser(DynamicCore):
 
     def _close(self):
         self.playwright.close()
+
+    def _end_test(self, name, attrs):
+        if len(self._unresolved_promises) > 0:
+            logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
+            self.wait_for_all_promises()
 
     def run_keyword(self, name, args, kwargs=None):
         try:
@@ -206,6 +226,46 @@ class Browser(DynamicCore):
         Only works during testing since this uses robot's outputdir for output.
         """
         self.screenshot_on_failure(BuiltIn().get_variable_value("${TEST NAME}"))
+
+    @keyword(tags=["Wait"])
+    def promise_to(self, kw: str, *args):
+        """
+        *EXPERIMENTAL* *WORK IN PROGRESS*
+        Wrap a Browser library keyword and make it a promise.
+        Returns that promise and executes the keyword on background.
+        """
+        browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(self)
+        handler = browser_lib.handlers[kw]
+        positional, named = handler.resolve_arguments(
+            args, EXECUTION_CONTEXTS.current.variables
+        )
+        named = dict(named)
+
+        promise = self._executor.submit(handler.current_handler(), *positional, **named)
+        self._unresolved_promises.add(promise)
+        return promise
+
+    @keyword(tags=["Wait"])
+    def wait_for(self, *promises: Future):
+        """
+        *EXPERIMENTAL* *WORK IN PROGRESS*
+        Waits for promises to finish and returns results from them.
+        Returns one result if one promise waited. Otherwise returns an array of results.
+        If one fails, then this keyword will fail.
+        """
+        self._unresolved_promises -= {*promises}
+        if len(promises) == 1:
+            return promises[0].result()
+        return [promise.result() for promise in promises]
+
+    @keyword(tags=["Wait"])
+    def wait_for_all_promises(self):
+        """
+        *EXPERIMENTAL* *WORK IN PROGRESS*
+        Waits for all promises to finish.
+        If one fails, then this keyword will fail.
+        """
+        self.wait_for(*self._unresolved_promises)
 
     def screenshot_on_failure(self, test_name):
         try:

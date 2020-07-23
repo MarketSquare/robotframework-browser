@@ -7,6 +7,7 @@ from robotlibcore import keyword  # type: ignore
 from ..base import LibraryComponent
 from ..utils.meta_python import locals_to_params
 from ..utils.time_conversion import timestr_to_millisecs
+from ..utils import logger
 from ..generated.playwright_pb2 import Request
 
 
@@ -29,7 +30,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def open_browser(
         self,
-        url=None,
+        url: Optional[str] = None,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
     ):
@@ -60,28 +61,28 @@ class PlaywrightState(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseBrowser(Request.Empty())
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def close_all_browsers(self):
         """Closes all open browsers."""
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseAllBrowsers(Request().Empty())
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def close_context(self):
         """Closes the current Context. Activated context is set to first active context."""
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseContext(Request().Empty())
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def close_page(self):
         """Closes the current Page. Activated page is set to first active page."""
         with self.playwright.grpc_channel() as stub:
             response = stub.ClosePage(Request().Empty())
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def new_browser(
@@ -115,14 +116,14 @@ class PlaywrightState(LibraryComponent):
         if slowMo:
             params["slowMo"] = timestr_to_millisecs(slowMo)
         options = json.dumps(params, default=str)
-        self.info(options)
+        logger.info(options)
 
         with self.playwright.grpc_channel() as stub:
 
             response = stub.NewBrowser(
                 Request().Browser(browser=browser.value, rawOptions=options)
             )
-            self.info(response.log)
+            logger.info(response.log)
             return response.body
 
     @keyword(tags=["BrowserControl"])
@@ -218,12 +219,12 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         options = json.dumps(params, default=str)
-        self.info(options)
+        logger.info(options)
         with self.playwright.grpc_channel() as stub:
             response = stub.NewContext(
                 Request().Context(hideRfBrowser=hideRfBrowser, rawOptions=options)
             )
-            self.info(response.log)
+            logger.info(response.log)
             return response.body
 
     @keyword(tags=["BrowserControl"])
@@ -237,7 +238,7 @@ class PlaywrightState(LibraryComponent):
 
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(Request().Url(url=url))
-            self.info(response.log)
+            logger.info(response.log)
             return response.body
 
     @keyword(tags=["BrowserControl"])
@@ -250,7 +251,7 @@ class PlaywrightState(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchPage(Request().Index(index=index))
-            self.info(response.log)
+            logger.info(response.log)
             return response.body
 
     @keyword(tags=["BrowserControl"])
@@ -258,7 +259,7 @@ class PlaywrightState(LibraryComponent):
         """Toggles automatically changing active page to latest opened page."""
         with self.playwright.grpc_channel() as stub:
             response = stub.AutoActivatePages(Request().Empty())
-            self.info(response.log)
+            logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def switch_browser(self, index: int):
@@ -268,7 +269,7 @@ class PlaywrightState(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=index))
-            self.info(response.log)
+            logger.info(response.log)
             return response.body
 
     @keyword(tags=["BrowserControl"])
@@ -279,5 +280,5 @@ class PlaywrightState(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchContext(Request().Index(index=index))
-            self.info(response.log)
+            logger.info(response.log)
             return response.body

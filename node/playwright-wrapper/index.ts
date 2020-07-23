@@ -1,6 +1,6 @@
 import { Server, ServerCredentials } from 'grpc';
 import { IPlaywrightServer, PlaywrightService } from './generated/playwright_grpc_pb';
-import { PlaywrightServer } from './server';
+import { PlaywrightServer } from './grpc-service';
 
 const server = new Server();
 server.addService<IPlaywrightServer>(PlaywrightService, new PlaywrightServer());
