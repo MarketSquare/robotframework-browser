@@ -55,6 +55,19 @@ export async function waitForElementState(
     callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
 }
 
+export async function waitForFunction(
+    call: ServerUnaryCall<pb.Request.WaitForFunctionOptions>,
+    callback: sendUnaryData<pb.Response.String>,
+    page?: Page,
+): Promise<void> {
+    const script = call.request.getScript();
+    const args = call.request.getArgs();
+    const options = JSON.parse(call.request.getOptions());
+    const result = await invokeOnPage(page, callback, 'waitForFunction', script, args || undefined, options);
+    callback(null, stringResponse(result.jsonValue()));
+    return;
+}
+
 export async function addStyleTag(
     call: ServerUnaryCall<pb.Request.StyleTag>,
     callback: sendUnaryData<pb.Response.Empty>,

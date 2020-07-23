@@ -42,7 +42,7 @@ class Waiter(LibraryComponent):
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
-        ``timeout``: (optional) uses default timout if not set.
+        ``timeout``: (optional) uses default timeout if not set.
         """
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
@@ -53,6 +53,37 @@ class Waiter(LibraryComponent):
             response = stub.WaitForElementsState(
                 Request().ElementSelectorWithOptions(
                     selector=selector, options=options_json
+                )
+            )
+            logger.info(response.log)
+
+    @keyword(tags=["Wait", "PageContent"])
+    def wait_for_function(
+        self, function: str, args: str = "", polling: str = "raf", timeout: str = "",
+    ):
+        """Polls JavaScript expression or function in browser until it returns a
+        (JavaScript) truthy value.
+
+        ``function`` a valid javascript function or a javascript function body. For example
+        ``() => true`` and ``true`` will behave similarly.
+
+        ``args`` Are values to pass to the JavaScript function.
+
+        Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
+        Any other value for polling will be parsed as a robot framework time for interval between polls.
+
+        ``timeout``: (optional) uses default timeout if not set.
+        """
+        with self.playwright.grpc_channel() as stub:
+            options: Dict[str, int] = {}
+            if polling != "raf":
+                options["polling"] = timestr_to_millisecs(polling)
+            if timeout:
+                options["timeout"] = timestr_to_millisecs(timeout)
+            options_json = json.dumps(options)
+            response = stub.WaitForFunction(
+                Request().WaitForFunctionOptions(
+                    script=function, args=args, options=options_json,
                 )
             )
             logger.info(response.log)
