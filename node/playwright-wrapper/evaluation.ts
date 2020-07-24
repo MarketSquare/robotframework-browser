@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import * as pb from './generated/playwright_pb';
 import {
+    exists,
     invokeOnPage,
     invokePlaywirghtMethod,
     waitUntilElementExists,
@@ -68,10 +69,16 @@ export async function waitForFunction(
     const page = state.getActivePage();
     const script = call.request.getScript();
     const selector = call.request.getSelector();
-    const jsHandle = determineFunctionAndSelector(state, selector, callback);
     const options = JSON.parse(call.request.getOptions());
-    const result = await invokeOnPage(page, callback, 'waitForFunction', script, jsHandle || undefined, options);
-    callback(null, stringResponse(result.jsonValue()));
+    console.log(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
+    // console.log(`Calling waitForFunction with args ${script}, ${context.toString()}, ${options}`)
+    exists(page, callback, 'Tried to WaitForFunction, no page was active');
+    const result = await page.waitForFunction(script, await page.$(selector), options).catch((e) => {
+        callback(e, null);
+        throw e;
+    });
+    // const result = await invokeOnPage(page, callback, 'waitForFunction', script, context || undefined, options);
+    callback(null, stringResponse(JSON.stringify(result.jsonValue)));
 }
 
 export async function addStyleTag(

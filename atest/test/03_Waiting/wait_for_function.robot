@@ -11,7 +11,7 @@ Failed Wait For Function
     Run Keyword and Expect Error    Timeout 100ms exceeded during page.waitForFunction*    Wait For Function    false    timeout=100ms
 
 Failed Wait For Function Promise
-    ${promise}    Promise To    Wait For Function    (selector) => document.activeElement === selector    selector=\#username_field    timeout=100ms
+    ${promise}    Promise To    Wait For Function    (selector) => {console.log(selector.toString()); return document.activeElement === selector}    selector=\#username_field    timeout=100ms
     Run Keyword and Expect Error    Timeout 100ms exceeded during page.waitForFunction*    Wait For    ${promise}
     Fail
 

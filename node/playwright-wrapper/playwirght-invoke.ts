@@ -43,7 +43,7 @@ export async function invokeOnPage(page: Page | undefined, callback: any, method
  *
  * @param state A reference to current PlaywrightState object.
  * @param callback GRPC callback to make response.
- * @param methodName Which Playwright method to invoke.
+ * @param methodName Which Playwright method to invoke. The method should take selector as an argument.
  * @param selector Selector of the element to operate on,
  *  or a frame piercing selector in format `<frame selector> >>> <element selector>
  * @param args Additional args to the Playwirght method.
@@ -66,7 +66,7 @@ export async function invokePlaywirghtMethod<T>(
 }
 
 /* This is exported for use in the playwright methods that take an elementhandle as an argument
- * so our custom selector syntax can be supported in those.
+ * like waitForFunction and evaluate so our custom selector syntax can be supported in those.
  */
 export async function determineFunctionAndSelector<T>(
     state: PlaywrightState,
