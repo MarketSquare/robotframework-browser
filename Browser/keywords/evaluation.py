@@ -1,31 +1,22 @@
-from enum import Enum, auto
 import json
-from typing import Any, Optional
 
 from robotlibcore import keyword  # type: ignore
+from typing import Optional, Any, Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-
-
-class RequestMethod(Enum):
-    HEAD = auto()
-    GET = auto()
-    POST = auto()
-    PUT = auto()
-    PATCH = auto()
-    DELETE = auto()
+from ..utils.data_types import RequestMethod
 
 
 class Evaluation(LibraryComponent):
     @keyword(tags=["HTTP", "BrowserControl"])
     def http(
         self,
-        url,
+        url: str,
         method: RequestMethod = RequestMethod.GET,
         body: Optional[str] = None,
-        headers: dict = {},
+        headers: Optional[dict] = None,
     ):
         """Performs an HTTP request in the current browser context
 
@@ -52,6 +43,8 @@ class Evaluation(LibraryComponent):
         | Should Be Equal  |  ${res.body.some_field}  |  some value  |
 
         """
+        if headers is None:
+            headers = {}
         body = body if body else ""
         with self.playwright.grpc_channel() as stub:
             response = stub.HttpRequest(
@@ -65,14 +58,14 @@ class Evaluation(LibraryComponent):
             logger.debug(response.log)
             return self._format_response(json.loads(response.body))
 
-    def _get_headers(self, body, headers):
+    def _get_headers(self, body: str, headers: Dict):
         try:
             json.loads(body)
             return {"Content-Type": "application/json", **headers}
         except json.decoder.JSONDecodeError:
             return headers
 
-    def _format_response(self, response):
+    def _format_response(self, response: Dict):
         headers = json.loads(response["headers"])
         response["headers"] = headers
         if "content-type" in headers and "application/json" in headers["content-type"]:
