@@ -1,7 +1,7 @@
 import json
 
 from robotlibcore import keyword  # type: ignore
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -58,14 +58,14 @@ class Evaluation(LibraryComponent):
             logger.debug(response.log)
             return self._format_response(json.loads(response.body))
 
-    def _get_headers(self, body: str, headers: dict):
+    def _get_headers(self, body: str, headers: Dict):
         try:
             json.loads(body)
             return {"Content-Type": "application/json", **headers}
         except json.decoder.JSONDecodeError:
             return headers
 
-    def _format_response(self, response: dict):
+    def _format_response(self, response: Dict):
         headers = json.loads(response["headers"])
         response["headers"] = headers
         if "content-type" in headers and "application/json" in headers["content-type"]:
