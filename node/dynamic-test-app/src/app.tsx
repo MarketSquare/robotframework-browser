@@ -41,6 +41,15 @@ function ProgressBar() {
     );
 }
 
+async function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function delayedRequest() {
+    await sleep(200);
+    console.log(await fetch('/api/get/json'));
+}
+
 export default function Site() {
     const username = useRef('');
     const password = useRef('');
@@ -103,6 +112,9 @@ export default function Site() {
                 </button>
                 <button id="pops_up" onClick={popup}>
                     Pops up a window
+                </button>
+                <button id="delayed_request" onClick={delayedRequest}>
+                    Fires a request in 200ms
                 </button>
                 <ProgressBar />
             </>

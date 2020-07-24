@@ -6,6 +6,7 @@ import * as browserControl from './browser-control';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
+import * as network from './network';
 import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
 
@@ -15,6 +16,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     constructor() {
         this.state = new PlaywrightState();
     }
+
     private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.state.getActiveBrowser(callback);
     private getActivePage = () => this.state.getActivePage();
 
@@ -230,6 +232,12 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         evaluation.waitForElementState(call, callback, this.state);
     }
+    async waitForRequest(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
+        network.waitForRequest(call, callback, this.getActivePage());
+    }
+    async waitForResponse(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
+        network.waitForResponse(call, callback, this.getActivePage());
+    }
 
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions>,
@@ -276,6 +284,6 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.HttpRequest>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        evaluation.httpRequest(call, callback, this.getActivePage());
+        network.httpRequest(call, callback, this.getActivePage());
     }
 }

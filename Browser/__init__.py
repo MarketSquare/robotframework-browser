@@ -15,6 +15,7 @@ from .keywords import (
     Waiter,
     WebAppState,
     Evaluation,
+    Network,
 )
 from .playwright import Playwright
 from .utils import logger
@@ -192,6 +193,7 @@ class Browser(DynamicCore):
             Input(self),
             Getters(self),
             PlaywrightState(self),
+            Network(self),
             Waiter(self),
             WebAppState(self),
         ]
