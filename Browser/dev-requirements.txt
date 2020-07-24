@@ -2,6 +2,7 @@ pytest >= 5.4.3
 pytest-watch >= 4.2.0
 black >= 19.10b0
 mypy >= 0.782
+mypy-protobuf >= 1.23
 flake8 >= 3.8.3
 robotframework >= 3.2.1
 wheel>=0.34.2
