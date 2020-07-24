@@ -1,5 +1,5 @@
 import { sendUnaryData, status, Metadata } from 'grpc';
-import { Page, errors, ElementHandle } from 'playwright';
+import { Page, errors, ElementHandle, JSHandle, Frame } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 
@@ -65,9 +65,14 @@ export async function invokePlaywirghtMethod<T>(
     }
 }
 
-async function determineFunctionAndSelector<T>(state: PlaywrightState, selector: string, callback: sendUnaryData<T>) {
+/* This is exported for use in the playwright methods that take an elementhandle as an argument
+ * so our custom selector syntax can be supported in those.
+ */
+export async function determineFunctionAndSelector<T>(state: PlaywrightState, selector: string, callback: sendUnaryData<T>):
+    Promise<{elementSelector: string, context: Page | Frame| ElementHandle }>
+{
     const page = state.getActivePage();
-    exists(page, callback, `Tried to do playwright action, but no open browser.`);
+    exists(page, callback, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
         const { frameSelector, elementSelector } = splitFrameAndElementSelector(selector);
         const frame = await findFrame(page, frameSelector, callback);
@@ -81,10 +86,7 @@ async function determineFunctionAndSelector<T>(state: PlaywrightState, selector:
         }
         // This is purely to appease Typescript compiler, code is never executed since the
         // `callback` breaks the execution.
-        return {
-            elementSelector: '',
-            context: null,
-        };
+        throw "Execution never gets here";
     } else {
         return { elementSelector: selector, context: page };
     }
@@ -126,10 +128,10 @@ function splitElementHandleAndElementSelector<T>(selector: string, callback: sen
     };
 }
 
-async function findFrame<T>(page: Page, frameSelector: string, callback: sendUnaryData<T>) {
-    const frameHandle = await page.$(frameSelector);
+async function findFrame<T>(page: Page, frameSelector: string, callback: sendUnaryData<T>): Promise<Frame> {
+    const frameHandle = await (await page.$(frameSelector))?.contentFrame();
     exists(frameHandle, callback, `Could not find frame with selector ${frameSelector}`);
-    return await frameHandle.contentFrame();
+    return frameHandle;
 }
 
 // This is necessary for improved typescript inference

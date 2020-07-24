@@ -59,7 +59,7 @@ class Waiter(LibraryComponent):
 
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_function(
-        self, function: str, args: str = "", polling: str = "raf", timeout: str = "",
+        self, function: str, selector: str = "", polling: str = "raf", timeout: str = "",
     ):
         """Polls JavaScript expression or function in browser until it returns a
         (JavaScript) truthy value.
@@ -67,7 +67,8 @@ class Waiter(LibraryComponent):
         ``function`` a valid javascript function or a javascript function body. For example
         ``() => true`` and ``true`` will behave similarly.
 
-        ``args`` Are values to pass to the JavaScript function.
+        ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
+        argument the function receives.
 
         Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
         Any other value for polling will be parsed as a robot framework time for interval between polls.
@@ -83,7 +84,7 @@ class Waiter(LibraryComponent):
             options_json = json.dumps(options)
             response = stub.WaitForFunction(
                 Request().WaitForFunctionOptions(
-                    script=function, args=args, options=options_json,
+                    script=function, selector=selector, options=options_json,
                 )
             )
             logger.info(response.log)

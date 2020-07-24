@@ -107,8 +107,9 @@ export class PlaywrightState {
         this.elementHandles.set(id, handle);
     }
 
-    public getElement(id: string): ElementHandle | undefined {
+    public getElement(id: string): ElementHandle {
         if (this.elementHandles.has(id)) {
+            // @ts-expect-error typescript doesn't infer that the check above ensured the element exists
             return this.elementHandles.get(id);
         }
         throw new Error(`No element handle found with id \`${id}\`.`);

@@ -3,7 +3,7 @@ import { Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import * as pb from './generated/playwright_pb';
-import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists } from './playwirght-invoke';
+import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists, determineFunctionAndSelector } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 
@@ -58,14 +58,15 @@ export async function waitForElementState(
 export async function waitForFunction(
     call: ServerUnaryCall<pb.Request.WaitForFunctionOptions>,
     callback: sendUnaryData<pb.Response.String>,
-    page?: Page,
+    state: PlaywrightState,
 ): Promise<void> {
+    const page = state.getActivePage();
     const script = call.request.getScript();
-    const args = call.request.getArgs();
+    const selector = call.request.getSelector();
+    const jsHandle = determineFunctionAndSelector(state, selector, callback)
     const options = JSON.parse(call.request.getOptions());
-    const result = await invokeOnPage(page, callback, 'waitForFunction', script, args || undefined, options);
+    const result = await invokeOnPage(page, callback, 'waitForFunction', script, jsHandle || undefined, options);
     callback(null, stringResponse(result.jsonValue()));
-    return;
 }
 
 export async function addStyleTag(
