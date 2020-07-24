@@ -1,33 +1,16 @@
 import json
-from enum import Enum, auto
+from typing import (
+    Dict,
+    Optional,
+)
 
 from robotlibcore import keyword  # type: ignore
-from typing import Optional, Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils.time_conversion import timestr_to_millisecs
 from ..utils import logger
-
-
-class MouseButton(Enum):
-    left = auto()
-    middle = auto()
-    right = auto()
-
-
-class KeyboardModifier(Enum):
-    Alt = auto()
-    Control = auto()
-    Meta = auto()
-    Shift = auto()
-
-
-class SelectAttribute(Enum):
-    value = auto()
-    label = auto()
-    text = label
-    index = auto()
+from ..utils.data_types import MouseButton, KeyboardModifier, SelectAttribute
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Input(LibraryComponent):

@@ -1,12 +1,16 @@
 import json
-from typing import Optional, Any
+from typing import (
+    Any,
+    Optional,
+)
 
 from robotlibcore import keyword  # type: ignore
 
-from ..assertion_engine import AssertionOperator, verify_assertion
+from ..assertion_engine import verify_assertion
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
+from ..utils.data_types import AssertionOperator
 
 
 class WebAppState(LibraryComponent):

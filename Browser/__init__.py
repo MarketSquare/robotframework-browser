@@ -1,6 +1,5 @@
-import re
 import os
-
+import re
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Set
 
@@ -19,6 +18,18 @@ from .keywords import (
 )
 from .playwright import Playwright
 from .utils import logger
+from .utils.data_types import (
+    TypedDict,
+    AssertionOperator,
+    ElementState,
+    ColorScheme,
+    ViewportDimensions,
+    SupportedBrowsers,
+    SelectAttribute,
+    KeyboardModifier,
+    MouseButton,
+    RequestMethod,
+)
 from .version import VERSION
 
 __version__ = VERSION
