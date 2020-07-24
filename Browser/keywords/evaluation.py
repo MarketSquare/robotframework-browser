@@ -1,7 +1,7 @@
 import json
 
 from robotlibcore import keyword  # type: ignore
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Literal
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -80,29 +80,40 @@ class Evaluation(LibraryComponent):
             logger.debug(response.log)
             return _format_response(json.loads(response.body))
 
-    def _wait_for_http(self, method: str, matcher, timeout):
+    def _wait_for_http(self, method: Literal["Request", "Response"], matcher, timeout):
         with self.playwright.grpc_channel() as stub:
-            response = stub[f"WaitFor{method}"](
+            function = getattr(stub, f"WaitFor{method}")
+            response = function(
                 Request().HttpCapture(
-                    urlOrPredicate=json.dumps(matcher),
-                    timeout=timestr_to_millisecs(timeout),
+                    urlOrPredicate=matcher, timeout=timestr_to_millisecs(timeout),
                 )
             )
             logger.debug(response.log)
-            return _format_response(json.loads(response.body))
+            # Add format response back here
+            return response.body
 
     @keyword(tags=["Wait", "HTTP"])
-    def wait_for_request(self, matcher: str, timeout: str = ""):
-        """ Waits for request matching matcher and returns python dict with contents.
+    def wait_for_request(self, matcher: str = "", timeout: str = ""):
+        """ Waits for request matching matcher to be made.
 
-        ``matcher``: string, JavaScript regex or JavaScript function to match request by.
+        ``matcher``: Request URL string, JavaScript regex or JavaScript function to match request by.
+        By default (with empty string) matches first available request.
 
         ``timeout``: (optional) uses default timout if not set.
 
         """
         return self._wait_for_http("Request", matcher, timeout)
 
-    def wait_for_response(self, matcher: str, timeout: str = ""):
+    @keyword(tags=["Wait", "HTTP"])
+    def wait_for_response(self, matcher: str = "", timeout: str = ""):
+        """ Waits for response matching matcher and returns python dict with contents.
+
+        ``matcher``: Request URL string, JavaScript regex or JavaScript function to match request by.
+        By default (with empty string) matches first available request.
+
+        ``timeout``: (optional) uses default timout if not set.
+
+        """
         return self._wait_for_http("Response", matcher, timeout)
 
     @keyword(

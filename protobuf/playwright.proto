@@ -111,7 +111,7 @@ message Request {
    }
   message HttpCapture {
     string urlOrPredicate = 1;
-    int32 timeout = 2;
+    float timeout = 2;
   }
 }
 

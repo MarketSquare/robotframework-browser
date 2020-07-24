@@ -148,24 +148,19 @@ export async function waitForResponse(
     callback: sendUnaryData<pb.Response.String>,
     page?: Page,
 ) {
-    await waitForHttp('response', call, callback, page);
+    const urlOrPredicate = call.request.getUrlorpredicate();
+    const timeout = call.request.getTimeout();
+    const result = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, { timeout: timeout });
+    const body = await result.body();
+    callback(null, stringResponse(body));
 }
 export async function waitForRequest(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
     callback: sendUnaryData<pb.Response.String>,
     page?: Page,
 ) {
-    await waitForHttp('request', call, callback, page);
-}
-
-async function waitForHttp(
-    method: 'response' | 'request',
-    call: ServerUnaryCall<pb.Request.HttpCapture>,
-    callback: sendUnaryData<pb.Response.String>,
-    page?: Page,
-) {
-    const urlOrPredicate = eval(call.request.getUrlorpredicate());
+    const urlOrPredicate = call.request.getUrlorpredicate();
     const timeout = call.request.getTimeout();
-
-    await invokeOnPage(page, callback, method, [urlOrPredicate, { timeout: timeout }]);
+    const result = await invokeOnPage(page, callback, 'waitForRequest', urlOrPredicate, { timeout: timeout });
+    callback(null, stringResponse(result.url()));
 }
