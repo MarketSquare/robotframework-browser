@@ -59,7 +59,11 @@ class Waiter(LibraryComponent):
 
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_function(
-        self, function: str, selector: str = "", polling: str = "raf", timeout: str = "",
+        self,
+        function: str,
+        selector: str = "",
+        polling: str = "raf",
+        timeout: str = "",
     ):
         """Polls JavaScript expression or function in browser until it returns a
         (JavaScript) truthy value.

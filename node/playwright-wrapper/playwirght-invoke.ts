@@ -68,9 +68,11 @@ export async function invokePlaywirghtMethod<T>(
 /* This is exported for use in the playwright methods that take an elementhandle as an argument
  * so our custom selector syntax can be supported in those.
  */
-export async function determineFunctionAndSelector<T>(state: PlaywrightState, selector: string, callback: sendUnaryData<T>):
-    Promise<{elementSelector: string, context: Page | Frame| ElementHandle }>
-{
+export async function determineFunctionAndSelector<T>(
+    state: PlaywrightState,
+    selector: string,
+    callback: sendUnaryData<T>,
+): Promise<{ elementSelector: string; context: Page | Frame | ElementHandle }> {
     const page = state.getActivePage();
     exists(page, callback, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
@@ -86,7 +88,7 @@ export async function determineFunctionAndSelector<T>(state: PlaywrightState, se
         }
         // This is purely to appease Typescript compiler, code is never executed since the
         // `callback` breaks the execution.
-        throw "Execution never gets here";
+        throw 'Execution never gets here';
     } else {
         return { elementSelector: selector, context: page };
     }

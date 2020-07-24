@@ -3,7 +3,12 @@ import { Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import * as pb from './generated/playwright_pb';
-import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists, determineFunctionAndSelector } from './playwirght-invoke';
+import {
+    invokeOnPage,
+    invokePlaywirghtMethod,
+    waitUntilElementExists,
+    determineFunctionAndSelector,
+} from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 
@@ -63,7 +68,7 @@ export async function waitForFunction(
     const page = state.getActivePage();
     const script = call.request.getScript();
     const selector = call.request.getSelector();
-    const jsHandle = determineFunctionAndSelector(state, selector, callback)
+    const jsHandle = determineFunctionAndSelector(state, selector, callback);
     const options = JSON.parse(call.request.getOptions());
     const result = await invokeOnPage(page, callback, 'waitForFunction', script, jsHandle || undefined, options);
     callback(null, stringResponse(result.jsonValue()));
