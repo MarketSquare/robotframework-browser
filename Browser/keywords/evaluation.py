@@ -1,51 +1,45 @@
-from enum import Enum, auto
 import json
-from typing import Optional
 
 from robotlibcore import keyword  # type: ignore
+from typing import Optional, Any, Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
 from ..utils.time_conversion import timestr_to_millisecs
+from ..utils.data_types import RequestMethod
 
 
-class RequestMethod(Enum):
-    HEAD = auto()
-    GET = auto()
-    POST = auto()
-    PUT = auto()
-    PATCH = auto()
-    DELETE = auto()
+def _get_headers(body: str, headers: Dict):
+    try:
+        json.loads(body)
+        return {"Content-Type": "application/json", **headers}
+    except json.decoder.JSONDecodeError:
+        return headers
+
+
+def _format_response(response: Dict):
+    headers = json.loads(response["headers"])
+    response["headers"] = headers
+    if "content-type" in headers and "application/json" in headers["content-type"]:
+        try:
+            response["body"] = json.loads(response["body"])
+        except json.decoder.JSONDecodeError:
+            pass
+    logger.info(response)
+    return response
 
 
 class Evaluation(LibraryComponent):
-    def _get_headers(self, body, headers):
-        try:
-            json.loads(body)
-            return {"Content-Type": "application/json", **headers}
-        except json.decoder.JSONDecodeError:
-            return headers
-
-    def _format_response(self, response):
-        headers = json.loads(response["headers"])
-        response["headers"] = headers
-        if "content-type" in headers and "application/json" in headers["content-type"]:
-            try:
-                response["body"] = json.loads(response["body"])
-            except json.decoder.JSONDecodeError:
-                pass
-        logger.info(response)
-        return response
-
     @keyword(tags=["HTTP", "BrowserControl"])
     def http(
         self,
-        url,
+        url: str,
         method: RequestMethod = RequestMethod.GET,
         body: Optional[str] = None,
-        headers: dict = {},
+        headers: Optional[dict] = None,
     ):
+
         """Performs an HTTP request in the current browser context
 
         Accepts the following arguments:
@@ -71,6 +65,8 @@ class Evaluation(LibraryComponent):
         | Should Be Equal  |  ${res.body.some_field}  |  some value  |
 
         """
+        if headers is None:
+            headers = {}
         body = body if body else ""
         with self.playwright.grpc_channel() as stub:
             response = stub.HttpRequest(
@@ -78,11 +74,11 @@ class Evaluation(LibraryComponent):
                     url=url,
                     method=method.name if method else "GET",
                     body=body,
-                    headers=json.dumps(self._get_headers(body, headers)),
+                    headers=json.dumps(_get_headers(body, headers)),
                 )
             )
             logger.debug(response.log)
-            return self._format_response(json.loads(response.body))
+            return _format_response(json.loads(response.body))
 
     def _wait_for_http(self, method: str, matcher, timeout):
         with self.playwright.grpc_channel() as stub:
@@ -93,7 +89,7 @@ class Evaluation(LibraryComponent):
                 )
             )
             logger.debug(response.log)
-            return self._format_response(json.loads(response.body))
+            return _format_response(json.loads(response.body))
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_for_request(self, matcher: str, timeout: str = ""):
@@ -108,3 +104,16 @@ class Evaluation(LibraryComponent):
 
     def wait_for_response(self, matcher: str, timeout: str = ""):
         return self._wait_for_http("Response", matcher, timeout)
+
+    @keyword(
+        name="Execute JavaScript On Page", tags=["Setter", "PageContent", "WebAppState"]
+    )
+    def execute_javascript_on_page(self, script: str) -> Any:
+        """Executes given javascript on the page.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ExecuteJavascriptOnPage(
+                Request().JavascriptCode(script=script)
+            )
+            logger.info(response.log)
+            return json.loads(response.result)

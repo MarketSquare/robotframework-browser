@@ -1,26 +1,18 @@
 import json
-from enum import Enum
-from typing import Dict, List, Optional, TypedDict
+from typing import (
+    Dict,
+    List,
+    Optional,
+)
 
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
+from ..generated.playwright_pb2 import Request
+from ..utils import logger
+from ..utils.data_types import SupportedBrowsers, ViewportDimensions, ColorScheme
 from ..utils.meta_python import locals_to_params
 from ..utils.time_conversion import timestr_to_millisecs
-from ..utils import logger
-from ..generated.playwright_pb2 import Request
-
-
-class SupportedBrowsers(Enum):
-    chromium = "chromium"
-    firefox = "firefox"
-    webkit = "webkit"
-
-
-# Can't define with Enum class syntax because of the dash
-ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
-
-ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
 
 
 class PlaywrightState(LibraryComponent):

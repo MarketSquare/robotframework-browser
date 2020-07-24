@@ -72,7 +72,7 @@ lint: node/.linted lint-python lint-robot
 Browser/generated/.generated: protobuf/playwright.proto
 	mkdir -p Browser/generated/
 	touch Browser/generated/__init__.py
-	python -m grpc_tools.protoc -I protobuf --python_out=Browser/generated --grpc_python_out=Browser/generated protobuf/*.proto
+	python -m grpc_tools.protoc -I protobuf --python_out=Browser/generated --grpc_python_out=Browser/generated --mypy_out=Browser/generated protobuf/*.proto
 	sed -i.bak -e 's/import playwright_pb2 as playwright__pb2/from Browser.generated import playwright_pb2 as playwright__pb2/g' Browser/generated/playwright_pb2_grpc.py
 	$(rm_cmd) $(backup_files)
 	touch Browser/generated/.generated

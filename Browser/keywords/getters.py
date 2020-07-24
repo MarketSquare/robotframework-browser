@@ -1,10 +1,14 @@
 import json
-from typing import Any, Dict, Optional, Union, List
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Union,
+)
 
 from robotlibcore import keyword  # type: ignore
 
-from ..base import LibraryComponent
-from ..generated.playwright_pb2 import Request
 from ..assertion_engine import (
     bool_verify_assertion,
     verify_assertion,
@@ -12,10 +16,11 @@ from ..assertion_engine import (
     dict_verify_assertion,
     int_dict_verify_assertion,
     int_str_verify_assertion,
-    AssertionOperator,
 )
-from .input import SelectAttribute
-from Browser.utils import logger
+from ..base import LibraryComponent
+from ..generated.playwright_pb2 import Request
+from ..utils import logger
+from ..utils.data_types import AssertionOperator, SelectAttribute
 
 
 class Getters(LibraryComponent):

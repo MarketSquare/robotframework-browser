@@ -1,6 +1,5 @@
-import re
 import os
-
+import re
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Set
 
@@ -19,7 +18,32 @@ from .keywords import (
 )
 from .playwright import Playwright
 from .utils import logger
+from .utils.data_types import (
+    TypedDict,
+    AssertionOperator,
+    ElementState,
+    ColorScheme,
+    ViewportDimensions,
+    SupportedBrowsers,
+    SelectAttribute,
+    KeyboardModifier,
+    MouseButton,
+    RequestMethod,
+)
 from .version import VERSION
+
+__all__ = [
+    "TypedDict",
+    "AssertionOperator",
+    "ElementState",
+    "ColorScheme",
+    "ViewportDimensions",
+    "SupportedBrowsers",
+    "SelectAttribute",
+    "KeyboardModifier",
+    "MouseButton",
+    "RequestMethod",
+]
 
 __version__ = VERSION
 
@@ -239,7 +263,9 @@ class Browser(DynamicCore):
         positional, named = handler.resolve_arguments(
             args, EXECUTION_CONTEXTS.current.variables
         )
-        promise = self._executor.submit(handler.current_handler(), *positional, *named)
+        named = dict(named)
+
+        promise = self._executor.submit(handler.current_handler(), *positional, **named)
         self._unresolved_promises.add(promise)
         return promise
 

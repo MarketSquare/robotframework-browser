@@ -2,7 +2,6 @@
 Resource          imports.resource
 Test Setup        New Page    ${LOGIN_URL}
 
-
 *** Test Cases ***
 Wait For Request synchronous
     Fail
