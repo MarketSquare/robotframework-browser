@@ -89,6 +89,6 @@ class Browser:
     def __init__(self, {str(inspect.signature(br.__init__))[1:]}: ...\n
 """
 
-with open("__init__.pyi", "w") as stub_file:
+with open("Browser/__init__.pyi", "w") as stub_file:
     stub_file.write(pyi_boilerplate)
     stub_file.writelines(function_list)
