@@ -8,6 +8,9 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    branches: [ master ]
+      - cron "*/15 * * * *"
 
 jobs:
   build:
