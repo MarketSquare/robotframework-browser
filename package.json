@@ -26,15 +26,15 @@
     "tslint": "^6.1.2",
     "typescript": "^3.9.3",
     "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.12"
+    "webpack-cli": "^3.3.12",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
   },
   "dependencies": {
     "@types/uuid": "^8.0.0",
     "google-protobuf": "3.9.2",
     "grpc": "^1.24.3",
     "playwright": "^1.2.1",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
     "uuid": "^8.2.0"
   },
   "husky": {
