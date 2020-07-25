@@ -6,13 +6,13 @@ Test Setup        New Page    ${FORM_URL}
 *** Test Cases ***
 Get Element
     ${ref}=    Get Element    select[name="preferred_channel"]
-    ${option_value}=    Get Attribute    element=${ref} >> option    value
+    ${option_value}=    Get Attribute    ${ref} >> option    value
     Should Be Equal    ${option_value}    email
 
 Get Element With Nonmatching child selector
     ${ref}=    Get Element    select[name="preferred_channel"]
     Run Keyword And Expect Error    Could not find element with selector `.notamatch` within timeout.
-    ...    Get Attribute    element=${ref}>> .notamatch    value
+    ...    Get Attribute    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
     Run Keyword And Expect Error    Invalid element selector `element=1234-4321`.
@@ -23,4 +23,4 @@ Using Invalid Element Reference Fails
 Get Element From Frame
     [Setup]    New Page    ${FRAMES_URL}
     ${ref}=    Get Element    body >> [src="left.html"] >>> body
-    Get Attribute    element=${ref} >> //input[@name="searchbutton"]    value    ==    Search
+    Get Attribute    ${ref} >> //input[@name="searchbutton"]    value    ==    Search
