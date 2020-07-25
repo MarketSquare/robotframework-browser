@@ -27,7 +27,7 @@ export async function getElement(
     const handle = await invokePlaywirghtMethod(state, callback, '$', call.request.getSelector());
     const id = uuidv4();
     state.addElement(id, handle);
-    callback(null, stringResponse(id));
+    callback(null, stringResponse(`element=${id}`));
 }
 
 export async function executeJavascriptOnPage(

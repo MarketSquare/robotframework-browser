@@ -316,10 +316,9 @@ class Getters(LibraryComponent):
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_element(self, selector: str):
-        """Returns a refence to a Playwirght element handle.
+        """Returns a reference to a Playwright element handle.
 
-        The reference can be used in subsequent selectors using a special selector syntax
-        element=<ref>.
+        The reference can be used in subsequent selectors.
 
         See `library introduction` for more details on the selector syntax.
         """
