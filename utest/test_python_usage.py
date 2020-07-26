@@ -27,6 +27,11 @@ def test_open_page_get_text(application_server, browser):
     assert text == "Login Page"
 
 
+def test_readme_example(browser):
+    browser.new_page("https://playwright.dev")
+    assert browser.get_text("h1") == "🎭 Playwright"
+
+
 def test_new_browser_and_close(browser):
     browser.new_browser()
     browser.close_browser()
