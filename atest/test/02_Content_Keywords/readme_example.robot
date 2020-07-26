@@ -1,9 +1,9 @@
 *** Settings ***
-Library   Browser
+Library           Browser
 Resource          imports.resource
-Suite Teardown  Close Page
+Suite Teardown    Close Page
 
 *** Test Cases ***
 Example
-   New Page      https://playwright.dev
-   Get Text    h1    ==   🎭 Playwright
+    New Page    https://playwright.dev
+    Get Text    h1    ==    🎭 Playwright
