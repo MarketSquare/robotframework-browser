@@ -21,15 +21,14 @@ Supporting testing and automation with [Robot Framework](https://robotframework.
     
     *** Test Cases ***
     Example Test
-        Open Browser      https://playwright.dev
+        New Page    https://playwright.dev
         Get Text    h1    ==    🎭 Playwright
-        Close All Browsers
 
 and [Python](https://python.org).
 
     import Browser
     browser = Browser.Browser()
-    browser.open_browser("https://playwright.dev")
+    browser.new_page("https://playwright.dev")
     assert browser.get_text("h1") == '🎭 Playwright'
     browser.close_all_browsers()
 
