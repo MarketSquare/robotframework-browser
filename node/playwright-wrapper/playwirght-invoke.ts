@@ -9,12 +9,10 @@ export async function waitUntilElementExists<T>(
     selector: string,
 ): Promise<ElementHandle> {
     const { elementSelector, context } = await determineContextAndSelector(state, selector, callback);
-    /*if (elementSelector === undefined) {
-        // This type cast is safe because of the type checks with overloaded signatures at determineContextAndSelector
-        return context as ElementHandle
-    }  else */ if (
-        'waitForSelector' in context
-    ) {
+    if (elementSelector === undefined) {
+        // This type cast is safe because elementSelector is only undefined when an ElementHandle gets returned
+        return context as ElementHandle;
+    } else if ('waitForSelector' in context) {
         try {
             await context.waitForSelector(elementSelector, { state: 'attached' });
         } catch (e) {
@@ -71,6 +69,7 @@ export async function invokePlaywirghtMethod<T>(
         }
     } catch (e) {
         callback(getErrorDetails(e, selector, methodName), null);
+        throw e;
     }
 }
 
@@ -78,7 +77,7 @@ async function determineContextAndSelector<T>(
     state: PlaywrightState,
     selector: string,
     callback: sendUnaryData<T>,
-): Promise<{ elementSelector: string; context: ElementHandle | Frame | Page }> {
+): Promise<{ elementSelector: string | undefined; context: ElementHandle | Frame | Page }> {
     const page = state.getActivePage();
     exists(page, callback, `Tried to do playwright action, but no open browser.`);
     if (isFramePiercingSelector(selector)) {
@@ -90,8 +89,8 @@ async function determineContextAndSelector<T>(
 
         try {
             const elem = state.getElement(elementHandleId);
-            return { elementSelector: subSelector, context: elem };
-            // else return { elementSelector: undefined, context: elem }
+            if (subSelector) return { elementSelector: subSelector, context: elem };
+            else return { elementSelector: undefined, context: elem };
         } catch (e) {
             callback(e, null);
             // This is purely to appease Typescript compiler, code is never executed since the
@@ -126,22 +125,23 @@ function splitElementHandleAndElementSelector<T>(
     elementHandleId: string;
     subSelector: string;
 } {
-    const splitter = /element=([\w-]+)\s*>>\s*(.*)/;
-    //const splitter = /element=([\w-]+)\s*[>>]*\s*(.*)/
+    // const splitter = /element=([\w-]+)\s*>>\s*(.*)/;
+    const splitter = /element=([\w-]+)\s*[>>]*\s*(.*)/;
     const parts = selector.split(splitter);
-    if (parts.length == 4) {
+    if (parts.length == 4 && parts[2]) {
         const splitted = {
             elementHandleId: parts[1],
             subSelector: parts[2],
         };
         console.log(`Split element= selector into parts: ${JSON.stringify(splitted)}`);
         return splitted;
-    } /* else if (parts[1]){
+    } else if (parts[1]) {
+        console.log(`element= selector parsed without children`);
         return {
             elementHandleId: parts[1],
-            subSelector: "" 
-        }
-    } */
+            subSelector: '',
+        };
+    }
     callback(new Error(`Invalid element selector \`${selector}\`.`), null);
     // This is purely to appease Typescript compiler, code is never executed since the
     // `callback` breaks the execution. Having a throw doesn't obfuscate the return types.

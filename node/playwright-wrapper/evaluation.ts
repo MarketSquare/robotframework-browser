@@ -40,12 +40,18 @@ export async function getElements(
     state: PlaywrightState,
 ) {
     await waitUntilElementExists(state, callback, call.request.getSelector());
-    const handles = await invokePlaywirghtMethod(state, callback, '$$', call.request.getSelector());
+    const handles: ElementHandle[] = await invokePlaywirghtMethod(state, callback, '$$', call.request.getSelector());
 
-    const response = handles.map((handle: ElementHandle) => {
-        const id = uuidv4();
-        state.addElement(id, handle);
-        return `element=${id}`;
+    const response: string[] = handles.map((handle) => {
+        // Don't let
+        if (!handle === null) {
+            const id = uuidv4();
+            state.addElement(id, handle);
+            return `element=${id}`;
+        } else {
+            console.log(`Object for handle ${handle.toString()} was hidden and omitted from list`);
+            return 'HIDDEN';
+        }
     });
     callback(null, stringResponse(JSON.stringify(response)));
 }

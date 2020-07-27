@@ -16,7 +16,7 @@ Get Element With Nonmatching child selector
     ...    Get Attribute    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
-    Run Keyword And Expect Error    Invalid element selector `element=1234-4321`.
+    Run Keyword And Expect Error    No element handle found with id `1234-4321`.
     ...    Click    element=1234-4321
     Run Keyword And Expect Error    No element handle found with id `1234-4321`.
     ...    Click    element=1234-4321 >> .css
@@ -27,10 +27,10 @@ Get Element From Frame
     Get Attribute    ${ref} >> //input[@name="searchbutton"]    value    ==    Search
 
 Using Element Handle directly as selector
-    ${login_btn}=    Get Element    select[name="preferred_channel"]
-    Click    ${login_btn}    # this does not work
+    New Page    ${LOGIN_URL}
+    ${login_btn}=    Get Element    input#login_button
+    Click    ${login_btn}
     Get Text    text=Login failed. Invalid user name and/or password.
-    Fail
 
 Get Elements when only 1 match
     ${refs}=    Get Elements    select[name="preferred_channel"]
@@ -41,3 +41,9 @@ Get Elements when only 1 match
 Get And Match list of elements
     ${refs}=    Get Elements    input
     Should Be Equal As Integers    12    ${{len(${refs})}}
+
+Get And Click Elements
+    ${refs}=    Get Elements    input
+    FOR    ${ref}    IN    @{refs}
+        Run Keyword If    not '${ref}' == 'HIDDEN'    Click With Options    selector=${ref}    force=true
+    END
