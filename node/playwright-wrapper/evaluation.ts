@@ -3,7 +3,7 @@ import { Page, ElementHandle } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists } from './playwirght-invoke';
+import { invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 
@@ -24,7 +24,7 @@ export async function getElement(
     state: PlaywrightState,
 ) {
     await waitUntilElementExists(state, callback, call.request.getSelector());
-    const handle = await invokePlaywirghtMethod(state, callback, '$', call.request.getSelector());
+    const handle = await invokePlaywrightMethod(state, callback, '$', call.request.getSelector());
     const id = uuidv4();
     state.addElement(id, handle);
     callback(null, stringResponse(`element=${id}`));
@@ -40,7 +40,7 @@ export async function getElements(
     state: PlaywrightState,
 ) {
     await waitUntilElementExists(state, callback, call.request.getSelector());
-    const handles: ElementHandle[] = await invokePlaywirghtMethod(state, callback, '$$', call.request.getSelector());
+    const handles: ElementHandle[] = await invokePlaywrightMethod(state, callback, '$$', call.request.getSelector());
 
     const response: string[] = handles.map((handle) => {
         const id = uuidv4();
@@ -71,7 +71,7 @@ export async function waitForElementState(
 ) {
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    await invokePlaywirghtMethod(state, callback, 'waitForSelector', selector, options);
+    await invokePlaywrightMethod(state, callback, 'waitForSelector', selector, options);
     callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
 }
 
@@ -122,5 +122,5 @@ export async function highlightElements(
             }, duration);
         });
     };
-    await invokePlaywirghtMethod(state, callback, '$$eval', selector, highlighter, duration);
+    await invokePlaywrightMethod(state, callback, '$$eval', selector, highlighter, duration);
 }

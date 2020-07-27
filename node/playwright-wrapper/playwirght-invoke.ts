@@ -51,7 +51,7 @@ export async function invokeOnPage(page: Page | undefined, callback: any, method
  * @param args Additional args to the Playwirght method.
  */
 
-export async function invokePlaywirghtMethod<T>(
+export async function invokePlaywrightMethod<T>(
     state: PlaywrightState,
     callback: sendUnaryData<T>,
     methodName: string,

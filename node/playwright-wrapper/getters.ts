@@ -2,7 +2,7 @@ import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page, ElementHandle } from 'playwright';
 
 import { Response, Request, Types } from './generated/playwright_pb';
-import { invokeOnPage, invokePlaywirghtMethod, waitUntilElementExists } from './playwirght-invoke';
+import { invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 import { stringResponse, boolResponse, intResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 
@@ -22,7 +22,7 @@ export async function getElementCount(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    const response: Array<ElementHandle> = await invokePlaywirghtMethod(state, callback, '$$', selector);
+    const response: Array<ElementHandle> = await invokePlaywrightMethod(state, callback, '$$', selector);
     callback(null, intResponse(response.length));
 }
 
@@ -35,7 +35,7 @@ export async function getSelectContent(
     await waitUntilElementExists(state, callback, selector);
 
     type Value = [string, string, boolean];
-    const content: Value[] = await invokePlaywirghtMethod(
+    const content: Value[] = await invokePlaywrightMethod(
         state,
         callback,
         '$$eval',
@@ -100,7 +100,7 @@ export async function getStyle(
     const selector = call.request.getSelector();
 
     console.log('Getting css of element on page');
-    const result = await invokePlaywirghtMethod(state, callback, '$eval', selector, function (element: Element) {
+    const result = await invokePlaywrightMethod(state, callback, '$eval', selector, function (element: Element) {
         const rawStyle = window.getComputedStyle(element);
         const mapped: Record<string, string> = {};
         // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
