@@ -4,6 +4,7 @@ from .playwright_state import PlaywrightState
 from .getters import Getters
 from .input import Input
 from .network import Network
+from .promises import Promises
 from .waiter import Waiter
 from .webapp_state import WebAppState
 
@@ -14,6 +15,7 @@ __all__ = [
     "Input",
     "Network",
     "PlaywrightState",
+    "Promises",
     "Waiter",
     "WebAppState",
 ]
