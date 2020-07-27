@@ -107,9 +107,10 @@ export class PlaywrightState {
         this.elementHandles.set(id, handle);
     }
 
-    public getElement(id: string): ElementHandle | undefined {
-        if (this.elementHandles.has(id)) {
-            return this.elementHandles.get(id);
+    public getElement(id: string): ElementHandle {
+        const elem = this.elementHandles.get(id);
+        if (elem) {
+            return elem;
         }
         throw new Error(`No element handle found with id \`${id}\`.`);
     }

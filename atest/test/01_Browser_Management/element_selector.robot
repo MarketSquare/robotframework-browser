@@ -26,6 +26,12 @@ Get Element From Frame
     ${ref}=    Get Element    body >> [src="left.html"] >>> body
     Get Attribute    ${ref} >> //input[@name="searchbutton"]    value    ==    Search
 
+Using Element Handle directly as selector
+    ${login_btn}=    Get Element    select[name="preferred_channel"]
+    Click    ${login_btn}    # this does not work
+    Get Text    text=Login failed. Invalid user name and/or password.
+    Fail
+
 Get Elements when only 1 match
     ${refs}=    Get Elements    select[name="preferred_channel"]
     ${ref}=    Get From List    ${refs}    0
