@@ -14,7 +14,7 @@ Results from page
     should be equal    ${result3}    ${4.173033648}
 
 Highlight element on page
-    Highlight element  css=input#login_button
+    Highlight element    css=input#login_button
 
 Page state
     Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
