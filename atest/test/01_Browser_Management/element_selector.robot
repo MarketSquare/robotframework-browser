@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation     Tests for Get Element and `element=<ref>` selector syntax
 Resource          imports.resource
+Library           Collections
 Test Setup        New Page    ${FORM_URL}
 
 *** Test Cases ***
@@ -24,3 +25,13 @@ Get Element From Frame
     [Setup]    New Page    ${FRAMES_URL}
     ${ref}=    Get Element    body >> [src="left.html"] >>> body
     Get Attribute    ${ref} >> //input[@name="searchbutton"]    value    ==    Search
+
+Get Elements when only 1 match
+    ${refs}=    Get Elements    select[name="preferred_channel"]
+    ${ref}=    Get From List    ${refs}    0
+    ${option_value}=    Get Attribute    ${ref} >> option    value
+    Should Be Equal    ${option_value}    email
+
+Get And Match list of elements
+    ${refs}=    Get Elements    input
+    Should Be Equal As Integers    12    ${{len(${refs})}}

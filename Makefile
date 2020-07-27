@@ -105,7 +105,7 @@ filtered_python_sources := $(filter-out Browser/__pycache__, $(filter-out Browse
 Browser/__init__.pyi: ${filtered_python_sources}
 	python -m Browser.gen_stub
 
-build: protobuf node_modules/.installed webpack-typescript Browser/__init__.pyi
+build: node_modules/.installed protobuf webpack-typescript Browser/__init__.pyi
 
 watch-webpack: build
 	yarn run webpack --watch

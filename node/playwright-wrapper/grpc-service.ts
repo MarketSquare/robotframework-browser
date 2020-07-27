@@ -222,6 +222,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         evaluation.getElement(call, callback, this.state);
     }
 
+    async getElements(
+        call: ServerUnaryCall<Request.ElementSelector>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        evaluation.getElements(call, callback, this.state);
+    }
+
     async addStyleTag(call: ServerUnaryCall<Request.StyleTag>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         evaluation.addStyleTag(call, callback, this.getActivePage());
     }

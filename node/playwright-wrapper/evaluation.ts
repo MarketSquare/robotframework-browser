@@ -1,5 +1,5 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
-import { Page } from 'playwright';
+import { Page, ElementHandle } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -28,6 +28,26 @@ export async function getElement(
     const id = uuidv4();
     state.addElement(id, handle);
     callback(null, stringResponse(`element=${id}`));
+}
+
+/** Resolve a list of elementHandles, create global UUIDs for them, and store the
+ * references in global state. Enables using special selector syntax `element=<uuid>`
+ * in RF keywords.
+ */
+export async function getElements(
+    call: ServerUnaryCall<Request.ElementSelector>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+) {
+    await waitUntilElementExists(state, callback, call.request.getSelector());
+    const handles = await invokePlaywirghtMethod(state, callback, '$$', call.request.getSelector());
+
+    const response = handles.map((handle: ElementHandle) => {
+        const id = uuidv4();
+        state.addElement(id, handle);
+        return `element=${id}`;
+    });
+    callback(null, stringResponse(JSON.stringify(response)));
 }
 
 export async function executeJavascriptOnPage(
