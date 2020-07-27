@@ -43,15 +43,9 @@ export async function getElements(
     const handles: ElementHandle[] = await invokePlaywirghtMethod(state, callback, '$$', call.request.getSelector());
 
     const response: string[] = handles.map((handle) => {
-        // Don't let
-        if (!handle === null) {
-            const id = uuidv4();
-            state.addElement(id, handle);
-            return `element=${id}`;
-        } else {
-            console.log(`Object for handle ${handle.toString()} was hidden and omitted from list`);
-            return 'HIDDEN';
-        }
+        const id = uuidv4();
+        state.addElement(id, handle);
+        return `element=${id}`;
     });
     callback(null, stringResponse(JSON.stringify(response)));
 }

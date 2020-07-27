@@ -34,16 +34,18 @@ Using Element Handle directly as selector
 
 Get Elements when only 1 match
     ${refs}=    Get Elements    select[name="preferred_channel"]
-    ${ref}=    Get From List    ${refs}    0
-    ${option_value}=    Get Attribute    ${ref} >> option    value
+    ${elem}=    Get From List    ${refs}    0
+    ${option_value}=    Get Attribute    ${elem} >> option    value
     Should Be Equal    ${option_value}    email
 
-Get And Match list of elements
+Get Elements Include Hidden
     ${refs}=    Get Elements    input
-    Should Be Equal As Integers    12    ${{len(${refs})}}
+    Should Be Equal As Integers    12    ${{ len(${refs}) }}
 
-Get And Click Elements
-    ${refs}=    Get Elements    input
-    FOR    ${ref}    IN    @{refs}
-        Run Keyword If    not '${ref}' == 'HIDDEN'    Click With Options    selector=${ref}    force=true
+Get Element and Click
+    New Page    ${LOGIN_URL}
+    ${refs}=    Get Elements    button
+    Should Be Equal As Numbers    ${{ len(${refs}) }}    3
+    FOR    ${elem}    IN    @{refs}
+        Click    ${elem}
     END

@@ -328,11 +328,11 @@ class Getters(LibraryComponent):
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_elements(self, selector: str):
-        """Returns a reference to playwright element handle for all matched elements by ``selector``.
-        """
+        """Returns a reference to playwright element handle for all matched elements by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElements(Request().ElementSelector(selector=selector))
-            return json.loads(response.body)
+            data = json.loads(response.body)
+            return data
 
     @keyword(tags=["Getter", "Assertion"])
     def get_style(
