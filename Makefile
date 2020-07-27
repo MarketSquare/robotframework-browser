@@ -96,9 +96,9 @@ protobuf: Browser/generated/.generated node/playwright-wrapper/generated/.genera
 
 Browser/wrapper/index.js: node/playwright-wrapper
 	yarn build
-node/dynamic-test-app/dist: node/dynamic-test-app/src node/dynamic-test-app/static
+node/dynamic-test-app/dist/index.js node/dynamic-test-app/dist/server.js node/dynamic-test-app/dist/index.html: node/dynamic-test-app/src node/dynamic-test-app/static
 	yarn build
-webpack-typescript: node/dynamic-test-app/dist Browser/wrapper/index.js
+webpack-typescript: node/dynamic-test-app/dist/index.js node/dynamic-test-app/dist/server.js node/dynamic-test-app/dist/index.html Browser/wrapper/index.js
 
 raw_python_sources := $(wildcard Browser/*)
 filtered_python_sources := $(filter-out Browser/__pycache__, $(filter-out Browser/__init__.pyi, ${raw_python_sources}))
