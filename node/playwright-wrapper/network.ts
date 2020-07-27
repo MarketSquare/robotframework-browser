@@ -50,7 +50,7 @@ export async function waitForResponse(
     const urlOrPredicate = call.request.getUrlorpredicate();
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, { timeout: timeout });
-    const body = await result.body();
+    const body = await result.json();
     callback(null, stringResponse(body));
 }
 export async function waitForRequest(
