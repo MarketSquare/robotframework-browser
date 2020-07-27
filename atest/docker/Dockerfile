@@ -8,7 +8,7 @@ RUN \
     apt-get install -yqq nodejs && \
     pip install -U pip && \
     rm -rf /var/lib/apt/lists/*
-COPY requirements.txt /app/requirements.txt
+COPY Browser/requirements.txt /app/requirements.txt
 RUN pip install -r requirements.txt
 
 FROM BrowserBase AS BrowserBuilder
@@ -21,7 +21,7 @@ RUN \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . /app
-RUN pip install -r dev-requirements.txt
+RUN pip install -r Browser/dev-requirements.txt
 RUN yarn install
 RUN make package
 

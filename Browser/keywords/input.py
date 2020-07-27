@@ -1,33 +1,16 @@
 import json
-from enum import Enum, auto
+from typing import (
+    Dict,
+    Optional,
+)
 
 from robotlibcore import keyword  # type: ignore
-from typing import Optional, Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils.time_conversion import timestr_to_millisecs
 from ..utils import logger
-
-
-class MouseButton(Enum):
-    left = auto()
-    middle = auto()
-    right = auto()
-
-
-class KeyboardModifier(Enum):
-    Alt = auto()
-    Control = auto()
-    Meta = auto()
-    Shift = auto()
-
-
-class SelectAttribute(Enum):
-    value = auto()
-    label = auto()
-    text = label
-    index = auto()
+from ..utils.data_types import MouseButton, KeyboardModifier, SelectAttribute
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Input(LibraryComponent):
@@ -119,8 +102,8 @@ class Input(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
-    def click(self, selector: str):
-        """Clicks the element found by ``selector``."""
+    def click(self, selector: str, force: bool = False):
+        """Clicks the element found by ``selector``. """
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().ElementSelector(selector=selector))
             logger.info(response.log)
@@ -134,6 +117,7 @@ class Input(LibraryComponent):
         delay: Optional[str] = None,
         position_x: Optional[int] = None,
         position_y: Optional[int] = None,
+        force: bool = False,
         *modifiers: KeyboardModifier,
     ):
         """Simulates mouse click on the element found by ``selector``.
@@ -149,13 +133,15 @@ class Input(LibraryComponent):
         top-left corner of element padding box.
         If not specified, clicks to some visible point of the element.
 
+        ``force``: skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+
         ``*modifiers``: ``<list<"Alt"|"Control"|"Meta"|"Shift">>``
         Modifier keys to press. Ensures that only these modifiers are pressed
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options = {"button": button.name, "clickCount": click_count}
+            options = {"button": button.name, "clickCount": click_count, "force": force}
             if delay:
                 options["delay"] = timestr_to_millisecs(delay)
             if position_x and position_y:

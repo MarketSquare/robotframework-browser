@@ -1,5 +1,5 @@
 import { sendUnaryData, status, Metadata } from 'grpc';
-import { Page, errors, ElementHandle } from 'playwright';
+import { Page, errors, ElementHandle, Frame } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 
@@ -8,9 +8,11 @@ export async function waitUntilElementExists<T>(
     callback: sendUnaryData<T>,
     selector: string,
 ): Promise<ElementHandle> {
-    const { elementSelector, context } = await determineFunctionAndSelector(state, selector, callback);
-    exists(context, callback, '');
-    if ('waitForSelector' in context) {
+    const { elementSelector, context } = await determineContextAndSelector(state, selector, callback);
+    if (elementSelector === undefined) {
+        // This type cast is safe because elementSelector is only undefined when an ElementHandle gets returned
+        return context as ElementHandle;
+    } else if ('waitForSelector' in context) {
         try {
             await context.waitForSelector(elementSelector, { state: 'attached' });
         } catch (e) {
@@ -49,23 +51,33 @@ export async function invokeOnPage(page: Page | undefined, callback: any, method
  * @param args Additional args to the Playwirght method.
  */
 
-export async function invokePlaywirghtMethod<T>(
+export async function invokePlaywrightMethod<T>(
     state: PlaywrightState,
     callback: sendUnaryData<T>,
     methodName: string,
     selector: string,
     ...args: any[]
 ) {
-    const { elementSelector, context } = await determineFunctionAndSelector(state, selector, callback);
+    type strDict = { [key: string]: any };
+    const { elementSelector, context } = await determineContextAndSelector(state, selector, callback);
     try {
-        const fn = (context as { [key: string]: any })[methodName].bind(context);
-        return await fn(elementSelector, ...args);
+        if (elementSelector) {
+            const fn = (context as strDict)[methodName].bind(context);
+            return await fn(elementSelector, ...args);
+        } else {
+            return await (context as strDict)[methodName](...args);
+        }
     } catch (e) {
         callback(getErrorDetails(e, selector, methodName), null);
+        throw e;
     }
 }
 
-async function determineFunctionAndSelector<T>(state: PlaywrightState, selector: string, callback: sendUnaryData<T>) {
+async function determineContextAndSelector<T>(
+    state: PlaywrightState,
+    selector: string,
+    callback: sendUnaryData<T>,
+): Promise<{ elementSelector: string | undefined; context: ElementHandle | Frame | Page }> {
     const page = state.getActivePage();
     exists(page, callback, `Tried to do playwright action, but no open browser.`);
     if (isFramePiercingSelector(selector)) {
@@ -73,18 +85,18 @@ async function determineFunctionAndSelector<T>(state: PlaywrightState, selector:
         const frame = await findFrame(page, frameSelector, callback);
         return { elementSelector, context: frame };
     } else if (isElementHandleSelector(selector)) {
-        const { elementHandleId, elementSelector } = splitElementHandleAndElementSelector(selector, callback);
+        const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector, callback);
+
         try {
-            return { elementSelector, context: state.getElement(elementHandleId) };
+            const elem = state.getElement(elementHandleId);
+            if (subSelector) return { elementSelector: subSelector, context: elem };
+            else return { elementSelector: undefined, context: elem };
         } catch (e) {
             callback(e, null);
+            // This is purely to appease Typescript compiler, code is never executed since the
+            // `callback` breaks the execution. Having a throw doesn't obfuscate the return types.
+            throw 'Never executes?';
         }
-        // This is purely to appease Typescript compiler, code is never executed since the
-        // `callback` breaks the execution.
-        return {
-            elementSelector: '',
-            context: null,
-        };
     } else {
         return { elementSelector: selector, context: page };
     }
@@ -106,30 +118,40 @@ function splitFrameAndElementSelector(selector: string) {
     };
 }
 
-function splitElementHandleAndElementSelector<T>(selector: string, callback: sendUnaryData<T>) {
-    const splitter = /element=([\w-]+)\s*>>\s*(.*)/;
+function splitElementHandleAndElementSelector<T>(
+    selector: string,
+    callback: sendUnaryData<T>,
+): {
+    elementHandleId: string;
+    subSelector: string;
+} {
+    // const splitter = /element=([\w-]+)\s*>>\s*(.*)/;
+    const splitter = /element=([\w-]+)\s*[>>]*\s*(.*)/;
     const parts = selector.split(splitter);
-    if (parts.length == 4) {
+    if (parts.length == 4 && parts[2]) {
         const splitted = {
             elementHandleId: parts[1],
-            elementSelector: parts[2],
+            subSelector: parts[2],
         };
         console.log(`Split element= selector into parts: ${JSON.stringify(splitted)}`);
         return splitted;
+    } else if (parts[1]) {
+        console.log(`element= selector parsed without children`);
+        return {
+            elementHandleId: parts[1],
+            subSelector: '',
+        };
     }
     callback(new Error(`Invalid element selector \`${selector}\`.`), null);
     // This is purely to appease Typescript compiler, code is never executed since the
-    // `callback` breaks the execution.
-    return {
-        elementHandleId: '',
-        elementSelector: '',
-    };
+    // `callback` breaks the execution. Having a throw doesn't obfuscate the return types.
+    throw 'Never executes?';
 }
 
-async function findFrame<T>(page: Page, frameSelector: string, callback: sendUnaryData<T>) {
-    const frameHandle = await page.$(frameSelector);
-    exists(frameHandle, callback, `Could not find frame with selector ${frameSelector}`);
-    return await frameHandle.contentFrame();
+async function findFrame<T>(page: Page, frameSelector: string, callback: sendUnaryData<T>): Promise<Frame> {
+    const contentFrame = await (await page.$(frameSelector))?.contentFrame();
+    exists(contentFrame, callback, `Could not find frame with selector ${frameSelector}`);
+    return contentFrame;
 }
 
 // This is necessary for improved typescript inference

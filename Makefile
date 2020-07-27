@@ -12,7 +12,7 @@ else
 	PROTOC_TS_PLUGIN = ./node_modules/.bin/protoc-gen-ts
 endif
 
-.PHONY: utest clean-atest protobuf Browser/__init__.pyi
+.PHONY: utest clean-atest protobuf
 
 .venv: Browser/requirements.txt Browser/dev-requirements.txt
 	if [ ! -d .venv ]; then \
@@ -96,14 +96,16 @@ protobuf: Browser/generated/.generated node/playwright-wrapper/generated/.genera
 
 Browser/wrapper/index.js: node/playwright-wrapper
 	yarn build
-node/dynamic-test-app/dist: node/dynamic-test-app/src node/dynamic-test-app/static
+node/dynamic-test-app/dist/index.js node/dynamic-test-app/dist/server.js node/dynamic-test-app/dist/index.html: node/dynamic-test-app/src node/dynamic-test-app/static
 	yarn build
-webpack-typescript: node/dynamic-test-app/dist Browser/wrapper/index.js
+webpack-typescript: node/dynamic-test-app/dist/index.js node/dynamic-test-app/dist/server.js node/dynamic-test-app/dist/index.html Browser/wrapper/index.js
 
-Browser/__init__.pyi:
+raw_python_sources := $(wildcard Browser/*)
+filtered_python_sources := $(filter-out Browser/__pycache__, $(filter-out Browser/__init__.pyi, ${raw_python_sources}))
+Browser/__init__.pyi: ${filtered_python_sources}
 	python -m Browser.gen_stub
 
-build: protobuf node_modules/.installed webpack-typescript Browser/__init__.pyi
+build: node_modules/.installed protobuf webpack-typescript Browser/__init__.pyi
 
 watch-webpack: build
 	yarn run webpack --watch
