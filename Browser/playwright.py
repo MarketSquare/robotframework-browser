@@ -69,7 +69,7 @@ class Playwright:
                     logger.debug(err)
                     time.sleep(0.1)
         raise RuntimeError(
-            f"Could not connect to the playwright process at port {self.port}"
+            f"Could not connect to the playwright process at port {self.port}."
         )
 
     @contextlib.contextmanager

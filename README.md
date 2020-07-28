@@ -42,7 +42,6 @@ Only Python 3.8 or later is supported.
 
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
-3. Install the node dependencies needed to run Playwright from the commandline: `rfbrowser init`
 
 # Development
 
