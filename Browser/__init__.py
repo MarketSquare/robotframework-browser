@@ -27,3 +27,7 @@ __all__ = [
     "RequestMethod",
     "Browser",
 ]
+
+from .entry import init_node_dependencies
+
+init_node_dependencies()
