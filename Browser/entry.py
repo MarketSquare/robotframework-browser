@@ -6,8 +6,9 @@ def init_node_dependencies():
     installation_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "wrapper"
     )
-    if os.path.isdir(os.path.join(installation_dir, "node_modules")):
-        return
+    for dirname, dirnames, filenames in os.walk(installation_dir, topdown=False):
+        if "node_modules" in dirnames:
+            return
 
     print("installing node dependencies...")
     installation_dir = os.path.join(
