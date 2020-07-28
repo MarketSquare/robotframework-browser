@@ -68,18 +68,6 @@ class Control(LibraryComponent):
             response = stub.AddStyleTag(Request().StyleTag(content=content))
             logger.info(response.log)
 
-    @keyword(tags=["PageContent"])
-    def highlight_element(self, selector: str, duration: str = "5s"):
-        """Adds a red highlight to elements matched by ``selector`` for ``duration``"""
-        with self.playwright.grpc_channel() as stub:
-            duration_ms = timestr_to_millisecs(duration)
-            response = stub.HighlightElements(
-                Request().ElementSelectorWithDuration(
-                    selector=selector, duration=duration_ms
-                )
-            )
-            logger.info(response.log)
-
     @keyword(tags=["BrowserControl"])
     def set_viewport_size(self, width: int, height: int):
         """Sets current Pages viewport size to specified dimensions.

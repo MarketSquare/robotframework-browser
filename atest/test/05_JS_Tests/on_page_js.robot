@@ -13,8 +13,13 @@ Results from page
     ${result3}=    Execute Javascript on Page    1.3314*3.13432
     should be equal    ${result3}    ${4.173033648}
 
-Highlight element on page
-    Highlight element    css=input#login_button
+Highlight Element on page
+    Highlight Elements    css=input#login_button    duration=400ms
+    Get Element Count    .highlight-element    ==    1
+    Highlight Elements    button    duration=200ms
+    Get Element Count    .highlight-element    ==    4
+    Sleep    400ms
+    Get Element Count    .highlight-element    ==    0
 
 Page state
     Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123

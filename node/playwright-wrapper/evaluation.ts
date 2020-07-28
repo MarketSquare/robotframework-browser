@@ -100,7 +100,7 @@ export async function addStyleTag(
 
 export async function highlightElements(
     call: ServerUnaryCall<Request.ElementSelectorWithDuration>,
-    callback: sendUnaryData<Response.JavascriptExecutionResult>,
+    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
@@ -108,6 +108,7 @@ export async function highlightElements(
     const highlighter = (elements: Array<Element>, duration: number) => {
         elements.forEach((e: Element) => {
             const d = document.createElement('div');
+            d.className = 'highlight-element';
             d.appendChild(document.createTextNode(''));
             d.style.position = 'fixed';
             const rect = e.getBoundingClientRect();
@@ -123,4 +124,5 @@ export async function highlightElements(
         });
     };
     await invokePlaywrightMethod(state, callback, '$$eval', selector, highlighter, duration);
+    callback(null, emptyWithLog(`Highlighted elements for ${duration}.`));
 }
