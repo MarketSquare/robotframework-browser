@@ -55,7 +55,6 @@ class Playwright:
             stderr=STDOUT,
         )
 
-
     def wait_until_server_up(self):
         for i in range(50):
             with grpc.insecure_channel(f"localhost:{self.port}") as channel:
