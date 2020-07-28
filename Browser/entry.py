@@ -6,7 +6,10 @@ def init_node_dependencies():
     installation_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "wrapper"
     )
-    for dirname, dirnames, filenames in os.walk(installation_dir, topdown=False):
+    for dirname, dirnames, filenames in os.walk(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), topdown=False
+    ):
+        print(f"Walking directories. Current subdirs {dirnames}")
         if "node_modules" in dirnames:
             return
 
