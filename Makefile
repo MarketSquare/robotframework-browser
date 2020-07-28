@@ -25,7 +25,7 @@ node_modules/.installed: package.json yarn.lock
 	yarn install
 	touch node_modules/.installed
 
-dev-env: .venv node_modules
+dev-env: .venv node_modules/.installed
 
 keyword-docs:
 	python -m robot.libdoc Browser docs/Browser.html
