@@ -112,6 +112,7 @@ watch-webpack: build
 
 package: build keyword-docs
 	rm -rf dist/
+	rm -rf build/
 	cp package.json Browser/wrapper
 	python setup.py sdist bdist_wheel
 
