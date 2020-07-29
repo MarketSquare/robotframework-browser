@@ -8,15 +8,14 @@ import { stringResponse, emptyWithLog } from './response-util';
 interface CookieData {
     name: string;
     value: string;
-    url?: string,
-    domain?: string,
-    path?: string,
-    expires?: number,
-    httpOnly?: boolean,
-    secure?: boolean,
-    sameSite?: 'Strict' | 'Lax' | 'None'
+    url?: string;
+    domain?: string;
+    path?: string;
+    expires?: number;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: 'Strict' | 'Lax' | 'None';
 }
-
 
 export async function getCookies(callback: sendUnaryData<Response.String>, context?: BrowserContext) {
     exists(context, callback, `Tried to get all cookie's, but not context open.`);
@@ -35,7 +34,7 @@ export async function addCookie(
     context?: BrowserContext,
 ) {
     exists(context, callback, `Tried to add cookie, but not context open.`);
-    const cookie: CookieData  = JSON.parse(call.request.getBody());
+    const cookie: CookieData = JSON.parse(call.request.getBody());
     await context.addCookies([cookie]);
     callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
 }
