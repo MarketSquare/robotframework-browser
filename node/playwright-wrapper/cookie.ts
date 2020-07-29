@@ -9,9 +9,9 @@ export async function getCookies(callback: sendUnaryData<Response.String>, conte
     exists(context, callback, `Tried to get cookeis but not context open.`);
     const allCookies = await context.cookies();
     console.log(allCookies);
-    const cookieName = new Array();
+    const cookieName = [];
     for (const cookie of allCookies as Array<Cookie>) {
-        cookieName.push(cookie.name)
+        cookieName.push(cookie.name);
     }
     callback(null, stringResponse(JSON.stringify(allCookies), cookieName.toString()));
 }
