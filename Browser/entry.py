@@ -1,19 +1,20 @@
 import os
 from subprocess import Popen, PIPE, STDOUT, DEVNULL, run, CalledProcessError
-import sys
+
+
+from .utils import logger
 
 
 def ensure_node_dependencies():
     # Checks if node is in PATH, errors if it isn't
     try:
         run(["node", "-v"], stdout=DEVNULL, check=True)
-    except (CalledProcessError, FileNotFoundError) as exception:
-        print(
+    except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
+        logger.error(
             "Couldn't execute node. Please ensure you have node.js installed and in PATH."
             "See https://nodejs.org/ for documentation"
         )
-        sys.exit(exception)
-        raise
+        raise exception
 
     installation_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "wrapper"
