@@ -7,6 +7,10 @@ message Request {
     string path = 1;
   }
 
+  message Json {
+    string body = 1;
+  }
+
   message Browser {
     string browser = 1;
     bool headless = 2;
@@ -157,6 +161,7 @@ message Response {
 }
 
 service  Playwright {
+  rpc AddCookie(Request.Json) returns (Response.Empty) {}
   rpc GetCookies(Request.Empty) returns (Response.String) {}
   rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
   /* Opens the url in currently open Playwright page */

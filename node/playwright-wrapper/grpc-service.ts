@@ -52,6 +52,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         return cookie.getCookies(callback, this.getActiveContext());
     }
 
+    async addCookie(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return cookie.addCookie(call, callback, this.getActiveContext());
+    }
+
     async autoActivatePages(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.Empty>,
