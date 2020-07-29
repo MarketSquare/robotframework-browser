@@ -129,7 +129,7 @@ export async function highlightElements(
     const highlighter = (elements: Array<Element>, duration: number) => {
         elements.forEach((e: Element) => {
             const d = document.createElement('div');
-            d.className = 'highlight-element';
+            d.className = 'robotframework-browser-highlight';
             d.appendChild(document.createTextNode(''));
             d.style.position = 'fixed';
             const rect = e.getBoundingClientRect();

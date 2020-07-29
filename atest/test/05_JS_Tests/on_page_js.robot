@@ -26,11 +26,11 @@ Mutate Element On Page With ElementHandle
 
 Highlight Element on page
     Highlight Elements    css=input#login_button    duration=400ms
-    Get Element Count    .highlight-element    ==    1
+    Get Element Count    .robotframework-browser-highlight    ==    1
     Highlight Elements    button    duration=200ms
-    Get Element Count    .highlight-element    ==    4
+    Get Element Count    .robotframework-browser-highlight    ==    4
     Sleep    400ms
-    Get Element Count    .highlight-element    ==    0
+    Get Element Count    .robotframework-browser-highlight    ==    0
 
 Page state
     Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
