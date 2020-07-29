@@ -20,6 +20,8 @@ class Evaluation(LibraryComponent):
         ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
         argument the function receives. If given a selector a function is necessary, with an argument
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
+
+        [https://github.com/MarketSquare/robotframework-browser/tree/master/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(

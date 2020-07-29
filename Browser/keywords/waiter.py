@@ -72,6 +72,8 @@ class Waiter(LibraryComponent):
         Any other value for polling will be parsed as a robot framework time for interval between polls.
 
         ``timeout``: (optional) uses default timeout if not set.
+
+        [https://github.com/MarketSquare/robotframework-browser/tree/master/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
         """
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
