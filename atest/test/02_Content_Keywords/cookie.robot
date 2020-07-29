@@ -6,7 +6,7 @@ Test Setup        Open Browser To Form Page
 Cookies From Closed Context
     Close All Browsers
     Run Keyword And Expect Error
-    ...    Tried to get cookeis but not context open.
+    ...    Tried to get all cookie's, but not context open.
     ...    Get Cookies
 
 Get Cookies
