@@ -6,6 +6,7 @@ from robotlibcore import DynamicCore  # type: ignore
 
 from .keywords import (
     Control,
+    Cookie,
     Getters,
     Interaction,
     PlaywrightState,
@@ -162,6 +163,7 @@ class Browser(DynamicCore):
         self.promises = Promises(self)
         libraries = [
             self.browser_control,
+            Cookie(self),
             Evaluation(self),
             Interaction(self),
             Getters(self),

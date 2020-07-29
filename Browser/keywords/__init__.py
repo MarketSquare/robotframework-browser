@@ -1,4 +1,5 @@
 from .browser_control import Control
+from .cookie import Cookie
 from .evaluation import Evaluation
 from .playwright_state import PlaywrightState
 from .getters import Getters
