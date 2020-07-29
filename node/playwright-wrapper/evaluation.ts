@@ -3,7 +3,13 @@ import { Page, ElementHandle } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import {
+    exists,
+    invokeOnPage,
+    invokePlaywrightMethod,
+    waitUntilElementExists,
+    determineElement,
+} from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 
@@ -78,14 +84,23 @@ export async function waitForElementState(
 export async function waitForFunction(
     call: ServerUnaryCall<Request.WaitForFunctionOptions>,
     callback: sendUnaryData<Response.String>,
-    page?: Page,
+    state: PlaywrightState,
 ): Promise<void> {
-    const script = call.request.getScript();
-    const args = call.request.getArgs();
+    const page = state.getActivePage();
+    let script = call.request.getScript();
+    const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    const result = await invokeOnPage(page, callback, 'waitForFunction', script, args || undefined, options);
-    callback(null, stringResponse(result.jsonValue()));
-    return;
+    console.log(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
+
+    exists(page, callback, 'Tried to WaitForFunction, no page was active');
+    let elem;
+    if (selector) {
+        elem = await determineElement(state, selector, callback);
+        script = eval(script);
+    }
+
+    const result = await invokeOnPage(page, callback, 'waitForFunction', script, elem, options);
+    callback(null, stringResponse(JSON.stringify(result.jsonValue)));
 }
 
 export async function addStyleTag(

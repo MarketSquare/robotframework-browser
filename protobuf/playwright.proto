@@ -86,11 +86,12 @@ message Request {
 
   message JavascriptCode {
     string script = 1;
+    string selector = 2;
   }
 
   message WaitForFunctionOptions {
     string script = 1;
-    string args = 2;
+    string selector = 2;
     string options = 3;
   }
 

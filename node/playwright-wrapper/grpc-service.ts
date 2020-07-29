@@ -251,7 +251,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.WaitForFunctionOptions>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return evaluation.waitForFunction(call, callback, this.getActivePage());
+        return evaluation.waitForFunction(call, callback, this.state);
     }
 
     async executeJavascriptOnPage(
