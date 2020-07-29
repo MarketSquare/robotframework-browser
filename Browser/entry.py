@@ -10,7 +10,7 @@ def ensure_node_dependencies():
     except (CalledProcessError, FileNotFoundError) as exception:
         print(
             "Couldn't execute node. Please ensure you have node.js installed and in PATH."
-            "See https://nodejs.org/en/ for documentation"
+            "See https://nodejs.org/ for documentation"
         )
         sys.exit(exception)
         raise
