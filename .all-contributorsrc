@@ -131,6 +131,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "mikahanninen",
+      "name": "Mika Hänninen",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/1019528?v=4",
+      "profile": "https://github.com/mikahanninen",
+      "contributions": [
+        "question"
+      ]
     }
   ],
   "contributorsPerLine": 7,
