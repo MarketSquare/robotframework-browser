@@ -13,7 +13,7 @@ class Cookie(LibraryComponent):
             response = stub.GetCookies(Request().Empty())
             cookie_names = response.log
             if not cookie_names:
-                logger.info('No cookies found.')
+                logger.info("No cookies found.")
             else:
-                logger.info(f'Found cookies: {response.log}')
+                logger.info(f"Found cookies: {response.log}")
         return response.body
