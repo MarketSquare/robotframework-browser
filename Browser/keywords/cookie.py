@@ -22,7 +22,9 @@ class Cookie(LibraryComponent):
         return response.body
 
     @keyword
-    def add_cookie(self, name, value, url=None, path=None, domain=None, secure=None, expiry=None):
+    def add_cookie(
+        self, name, value, url=None, path=None, domain=None, secure=None, expiry=None
+    ):
         """Adds a cookie to your current context.
 
         ``name`` and ``value`` are required, ``path``, ``domain``, ``secure``
@@ -49,7 +51,7 @@ class Cookie(LibraryComponent):
         if not self._check_data(cookie):
             raise ValueError("Cookie should have a url or a domain/path pair.")
         cookie_json = json.dumps(cookie)
-        logger.debug(f'Adding cookie: {cookie_json}')
+        logger.debug(f"Adding cookie: {cookie_json}")
         with self.playwright.grpc_channel() as stub:
             response = stub.AddCookie(Request.Json(body=cookie_json))
             logger.info(response.log)
