@@ -65,7 +65,8 @@ class Waiter(LibraryComponent):
         ``() => true`` and ``true`` will behave similarly.
 
         ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
-        argument the function receives.
+        argument the function receives. If given a selector a function is necessary, with an argument
+        to capture the elementhandle. For example ``(element) => document.activeElement === element``
 
         Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
         Any other value for polling will be parsed as a robot framework time for interval between polls.

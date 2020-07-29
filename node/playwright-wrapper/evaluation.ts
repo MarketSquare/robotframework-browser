@@ -87,14 +87,17 @@ export async function waitForFunction(
     state: PlaywrightState,
 ): Promise<void> {
     const page = state.getActivePage();
-    const script = call.request.getScript();
+    let script = call.request.getScript();
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
     console.log(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
-    // console.log(`Calling waitForFunction with args ${script}, ${context.toString()}, ${options}`)
+
     exists(page, callback, 'Tried to WaitForFunction, no page was active');
     let elem;
-    if (selector) elem = await determineElement(state, selector, callback);
+    if (selector) {
+        elem = await determineElement(state, selector, callback);
+        script = eval(script);
+    }
 
     const result = await invokeOnPage(page, callback, 'waitForFunction', script, elem, options);
     callback(null, stringResponse(JSON.stringify(result.jsonValue)));

@@ -115,7 +115,6 @@ export async function determineElement<T>(
         return await frame.$(elementSelector);
     } else if (isElementHandleSelector(selector)) {
         const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector, callback);
-
         try {
             const elem = state.getElement(elementHandleId);
             if (subSelector) {
@@ -123,9 +122,7 @@ export async function determineElement<T>(
             } else return elem;
         } catch (e) {
             callback(e, null);
-            // This is purely to appease Typescript compiler, code is never executed since the
-            // `callback` breaks the execution. Having a throw doesn't obfuscate the return types.
-            throw 'Never executes?';
+            return null;
         }
     } else {
         return await page.$(selector);
