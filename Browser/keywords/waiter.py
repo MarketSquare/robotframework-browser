@@ -1,20 +1,13 @@
 import json
-from enum import Enum, auto
+from typing import Dict
 
 from robotlibcore import keyword  # type: ignore
-from typing import Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils.time_conversion import timestr_to_millisecs
 from ..utils import logger
-
-
-class ElementState(Enum):
-    attached = auto()
-    detached = auto()
-    visible = auto()
-    hidden = auto()
+from ..utils.data_types import ElementState
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Waiter(LibraryComponent):

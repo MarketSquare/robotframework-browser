@@ -1,48 +1,19 @@
-from enum import Enum
+import re
 from typing import (
     Any,
-    Dict,
-    Tuple,
-    Callable,
-    TypeVar,
     cast,
-    Optional,
+    Callable,
+    Dict,
     List,
+    Optional,
+    Tuple,
+    TypeVar,
 )
-import re
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
+from .utils.data_types import AssertionOperator
 from .utils.robot_booleans import is_truthy
-
-AssertionOperator = Enum(
-    "AssertionOperator",
-    {
-        "equal": "==",
-        "==": "==",
-        "shouldbe": "==",
-        "inequal": "!=",
-        "!=": "!=",
-        "shouldnotbe": "!=",
-        "lessthan": "<",
-        "<": "<",
-        "greaterthan": ">",
-        ">": ">",
-        "<=": "<=",
-        ">=": ">=",
-        "contains": "*=",
-        "*=": "*=",
-        "starts": "^=",
-        "^=": "^=",
-        "shouldstartwith": "^=",
-        "ends": "$=",
-        "$=": "$=",
-        "matches": "$",
-        "validate": "validate",
-        "then": "then",
-        "evaluate": "then",
-    },
-)
 
 NumericalOperators = [
     AssertionOperator["=="],
@@ -82,7 +53,6 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
         "should validate to true with",
     ),
 }
-
 
 T = TypeVar("T")
 

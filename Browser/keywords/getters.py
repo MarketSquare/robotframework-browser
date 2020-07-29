@@ -1,10 +1,14 @@
 import json
-from typing import Any, Dict, Optional, Union, List
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Union,
+)
 
 from robotlibcore import keyword  # type: ignore
 
-from ..base import LibraryComponent
-from ..generated.playwright_pb2 import Request
 from ..assertion_engine import (
     bool_verify_assertion,
     verify_assertion,
@@ -12,10 +16,11 @@ from ..assertion_engine import (
     dict_verify_assertion,
     int_dict_verify_assertion,
     int_str_verify_assertion,
-    AssertionOperator,
 )
-from .input import SelectAttribute
-from Browser.utils import logger
+from ..base import LibraryComponent
+from ..generated.playwright_pb2 import Request
+from ..utils import logger
+from ..utils.data_types import AssertionOperator, SelectAttribute
 
 
 class Getters(LibraryComponent):
@@ -311,16 +316,23 @@ class Getters(LibraryComponent):
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_element(self, selector: str):
-        """Returns a refence to a Playwirght element handle.
+        """Returns a reference to a Playwright element handle.
 
-        The reference can be used in subsequent selectors using a special selector syntax
-        element=<ref>.
+        The reference can be used in subsequent selectors.
 
         See `library introduction` for more details on the selector syntax.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(Request().ElementSelector(selector=selector))
             return response.body
+
+    @keyword(tags=["Getter", "BrowserControl"])
+    def get_elements(self, selector: str):
+        """Returns a reference to playwright element handle for all matched elements by ``selector``."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetElements(Request().ElementSelector(selector=selector))
+            data = json.loads(response.body)
+            return data
 
     @keyword(tags=["Getter", "Assertion"])
     def get_style(

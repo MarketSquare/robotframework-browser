@@ -110,6 +110,10 @@ message Request {
      string body = 3;
      string headers = 4;
    }
+  message HttpCapture {
+    string urlOrPredicate = 1;
+    float timeout = 2;
+  }
 }
 
 message Types {
@@ -198,6 +202,8 @@ service  Playwright {
   rpc Health(Request.Empty) returns (Response.String) {}
   /* Returns a reference to a Playwirght element handle.*/
   rpc GetElement(Request.ElementSelector) returns (Response.String) {}
+  /* Returns references to multiple Playwirght element handles.*/
+  rpc GetElements(Request.ElementSelector) returns (Response.String) {}
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty) {}
   /* Adds a <style> to head of site. */
@@ -220,6 +226,9 @@ service  Playwright {
   rpc GetStyle(Request.ElementSelector) returns (Response.String) {}
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.String) {}
+  
+  rpc WaitForRequest(Request.HttpCapture) returns (Response.String) {}
+  rpc WaitForResponse(Request.HttpCapture) returns (Response.String) {}
 
   /* Playwright State handling keywords */
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}

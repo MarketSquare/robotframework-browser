@@ -8,7 +8,7 @@ RUN \
     apt-get install -yqq nodejs && \
     pip install -U pip && \
     rm -rf /var/lib/apt/lists/*
-COPY requirements.txt /app/requirements.txt
+COPY Browser/requirements.txt /app/requirements.txt
 RUN pip install -r requirements.txt
 
 FROM BrowserBase AS BrowserBuilder
@@ -21,7 +21,7 @@ RUN \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . /app
-RUN pip install -r dev-requirements.txt
+RUN pip install -r Browser/dev-requirements.txt
 RUN yarn install
 RUN make package
 
@@ -65,12 +65,11 @@ RUN groupadd -r pwuser && useradd -r -g pwuser -G audio,video pwuser \
 # (Optional) Install XVFB if there's a need to run browsers in headful mode
 RUN apt-get update && apt-get install -y xvfb
 COPY --from=BrowserBuilder /app/dist /app/dist
-# Install pabot to support atest
-RUN pip install robotframework-pabot
-RUN pip install dist/robotframework_browser-*-py3-none-any.whl
-RUN rfbrowser init
 # Run everything after as non-privileged user.
 RUN mv /root/.cache/ /home/pwuser/.cache
 RUN chmod a+rwx -R /home/pwuser/.cache
 USER pwuser
+# Install pabot to support atest
+RUN pip install --user robotframework-pabot
+RUN pip install --user dist/robotframework_browser-*-py3-none-any.whl
 ENV NODE_PATH=/usr/lib/node_modules
