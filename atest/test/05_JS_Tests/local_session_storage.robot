@@ -8,7 +8,7 @@ Suite Teardown    Close Browser
 Localstorage
     localStorage set Item    mykey    myvalue
     localStorage get Item    mykey    ==    myvalue
-    ${val}=    Execute Javascript on Page    window.localStorage.getItem("mykey")
+    ${val}=    Execute Javascript    window.localStorage.getItem("mykey")
     should be equal    ${val}    myvalue
     localStorage remove Item    mykey
     localStorage get Item    mykey    ==    ${None}
@@ -29,7 +29,7 @@ Localstorage clear
 Sessionstorage clear
     sessionStorage set Item    key1    value1
     sessionStorage set Item    key2    value2
-    ${val1}=    Execute Javascript on Page    window.sessionStorage.getItem("key1")
+    ${val1}=    Execute Javascript    window.sessionStorage.getItem("key1")
     should be equal    ${val1}    value1
     sessionStorage clear
     sessionStorage get Item    key1    ==    ${None}

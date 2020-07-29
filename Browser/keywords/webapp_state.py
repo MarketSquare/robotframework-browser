@@ -25,7 +25,7 @@ class WebAppState(LibraryComponent):
         Get saved data from from localStorage
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
+            response = stub.ExecuteJavascript(
                 Request().JavascriptCode(script=f'window.localStorage.getItem("{key}")')
             )
             logger.info(response.log)
@@ -42,7 +42,7 @@ class WebAppState(LibraryComponent):
         Save data to localStorage
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
+            response = stub.ExecuteJavascript(
                 Request().JavascriptCode(
                     script=f'window.localStorage.setItem("{key}", "{value}")'
                 )
@@ -55,7 +55,7 @@ class WebAppState(LibraryComponent):
         Remove saved data with key from localStorage
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
+            response = stub.ExecuteJavascript(
                 Request().JavascriptCode(
                     script=f'window.localStorage.removeItem("{key}")'
                 )
@@ -68,7 +68,7 @@ class WebAppState(LibraryComponent):
         Remove all saved data from localStorage
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
+            response = stub.ExecuteJavascript(
                 Request().JavascriptCode(script="window.localStorage.clear()")
             )
             logger.info(response.log)
@@ -86,7 +86,7 @@ class WebAppState(LibraryComponent):
         Get saved data from from sessionStorage
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
+            response = stub.ExecuteJavascript(
                 Request().JavascriptCode(
                     script=f'window.sessionStorage.getItem("{key}")'
                 )
@@ -105,7 +105,7 @@ class WebAppState(LibraryComponent):
         Save data to sessionStorage
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
+            response = stub.ExecuteJavascript(
                 Request().JavascriptCode(
                     script=f'window.sessionStorage.setItem("{key}", "{value}")'
                 )
@@ -118,7 +118,7 @@ class WebAppState(LibraryComponent):
         Remove saved data with key from sessionStorage
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
+            response = stub.ExecuteJavascript(
                 Request().JavascriptCode(
                     script=f'window.sessionStorage.removeItem("{key}")'
                 )
@@ -131,7 +131,7 @@ class WebAppState(LibraryComponent):
         Remove all saved data from sessionStorage
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascriptOnPage(
+            response = stub.ExecuteJavascript(
                 Request().JavascriptCode(script="window.sessionStorage.clear()")
             )
             logger.info(response.log)

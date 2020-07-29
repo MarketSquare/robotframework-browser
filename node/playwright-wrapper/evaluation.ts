@@ -56,12 +56,20 @@ export async function getElements(
     callback(null, stringResponse(JSON.stringify(response)));
 }
 
-export async function executeJavascriptOnPage(
+export async function executeJavascript(
     call: ServerUnaryCall<Request.JavascriptCode>,
     callback: sendUnaryData<Response.JavascriptExecutionResult>,
-    page?: Page,
+    state: PlaywrightState,
 ) {
-    const result = await invokeOnPage(page, callback, 'evaluate', call.request.getScript());
+    const selector = call.request.getSelector();
+    let script = call.request.getScript();
+    let elem;
+    if (selector) {
+        elem = await determineElement(state, selector, callback);
+        script = eval(script);
+    }
+
+    const result = await invokeOnPage(state.getActivePage(), callback, 'evaluate', script, elem);
     callback(null, jsResponse(result));
 }
 
@@ -86,20 +94,18 @@ export async function waitForFunction(
     callback: sendUnaryData<Response.String>,
     state: PlaywrightState,
 ): Promise<void> {
-    const page = state.getActivePage();
     let script = call.request.getScript();
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
     console.log(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
 
-    exists(page, callback, 'Tried to WaitForFunction, no page was active');
     let elem;
     if (selector) {
         elem = await determineElement(state, selector, callback);
         script = eval(script);
     }
 
-    const result = await invokeOnPage(page, callback, 'waitForFunction', script, elem, options);
+    const result = await invokeOnPage(state.getActivePage(), callback, 'waitForFunction', script, elem, options);
     callback(null, stringResponse(JSON.stringify(result.jsonValue)));
 }
 

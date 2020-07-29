@@ -254,11 +254,11 @@ export class PlaywrightServer implements IPlaywrightServer {
         return evaluation.waitForFunction(call, callback, this.state);
     }
 
-    async executeJavascriptOnPage(
+    async executeJavascript(
         call: ServerUnaryCall<Request.JavascriptCode>,
         callback: sendUnaryData<Response.JavascriptExecutionResult>,
     ): Promise<void> {
-        return evaluation.executeJavascriptOnPage(call, callback, this.getActivePage());
+        return evaluation.executeJavascript(call, callback, this.state);
     }
 
     async getPageState(
