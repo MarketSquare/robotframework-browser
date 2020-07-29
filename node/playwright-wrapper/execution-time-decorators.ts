@@ -3,13 +3,7 @@ import * as pino from 'pino';
 const logger = pino.default(pino.destination('./execution-times.log'));
 logger.level = 'trace';
 
-let logFunction = logger.debug;
-if (process.env.DEBUG !== 'pw:api') {
-    logFunction = logger.silent;
-}
-
 // Idea and async_timer method from https://github.com/norbornen/execution-time-decorator/
-
 // eslint-disable-next-line @typescript-eslint/ban-types
 export function class_async_timer(target: Function) {
     for (const propertyName of Object.keys(target.prototype)) {
@@ -48,15 +42,14 @@ export function async_timer(
     const originalMethod = propertyDescriptor.value;
     propertyDescriptor.value = async function (...args: any[]) {
         const t0 = new Date().valueOf();
-
         try {
             const result = await originalMethod.apply(this, args);
             const finished = new Date().valueOf();
-            logFunction(toLogObject(timername, t0, finished));
+            logger.debug(toLogObject(timername, t0, finished));
             return result;
         } catch (err) {
             const finished = new Date().valueOf();
-            logFunction(toLogObject(timername, t0, finished));
+            logger.debug(toLogObject(timername, t0, finished));
             throw err;
         }
     };
