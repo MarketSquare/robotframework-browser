@@ -49,7 +49,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async getCookies(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
-        cookie.getCookies(call, callback, this.getActiveContext);
+        return cookie.getCookies(callback, this.getActiveContext());
     }
 
     async autoActivatePages(

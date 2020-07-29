@@ -11,6 +11,7 @@ from .webapp_state import WebAppState
 
 __all__ = [
     "Control",
+    "Cookie",
     "Getters",
     "Evaluation",
     "Interaction",
