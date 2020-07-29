@@ -1,15 +1,27 @@
 import os
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE, STDOUT, DEVNULL, run, CalledProcessError
+import sys
 
 
-def init_node_dependencies():
+def ensure_node_dependencies():
+    # Checks if node is in PATH, errors if it isn't
+    try:
+        run(["node", "-v"], stdout=DEVNULL, check=True)
+    except (CalledProcessError, FileNotFoundError) as exception:
+        print(
+            "Couldn't execute node. Please ensure you have node.js installed and in PATH."
+            "See https://nodejs.org/en/ for documentation"
+        )
+        sys.exit(exception)
+        raise
+
     installation_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "wrapper"
     )
     for dirname, dirnames, filenames in os.walk(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))), topdown=False
     ):
-        print(f"Walking directories. Current subdirs {dirnames}")
+        # debug print print(f"Walking directories. Current subdirs {dirnames}")
         if "node_modules" in dirnames:
             return
 

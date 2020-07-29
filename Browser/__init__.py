@@ -28,6 +28,6 @@ __all__ = [
     "Browser",
 ]
 
-from .entry import init_node_dependencies
+from .entry import ensure_node_dependencies
 
-init_node_dependencies()
+ensure_node_dependencies()
