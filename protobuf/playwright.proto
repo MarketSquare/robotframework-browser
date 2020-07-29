@@ -86,11 +86,12 @@ message Request {
 
   message JavascriptCode {
     string script = 1;
+    string selector = 2;
   }
 
   message WaitForFunctionOptions {
     string script = 1;
-    string args = 2;
+    string selector = 2;
     string options = 3;
   }
 
@@ -217,7 +218,7 @@ service  Playwright {
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty) {}
   /* Executes javascript on the active page */
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.String) {}
-  rpc ExecuteJavascriptOnPage(Request.JavascriptCode) returns (Response.JavascriptExecutionResult) {}
+  rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult) {}
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty) {}

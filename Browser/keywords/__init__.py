@@ -2,7 +2,7 @@ from .browser_control import Control
 from .evaluation import Evaluation
 from .playwright_state import PlaywrightState
 from .getters import Getters
-from .input import Input
+from .interaction import Interaction
 from .network import Network
 from .promises import Promises
 from .waiter import Waiter
@@ -12,7 +12,7 @@ __all__ = [
     "Control",
     "Getters",
     "Evaluation",
-    "Input",
+    "Interaction",
     "Network",
     "PlaywrightState",
     "Promises",

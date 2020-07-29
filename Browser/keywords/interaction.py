@@ -13,7 +13,7 @@ from ..utils.data_types import MouseButton, KeyboardModifier, SelectAttribute
 from ..utils.time_conversion import timestr_to_millisecs
 
 
-class Input(LibraryComponent):
+class Interaction(LibraryComponent):
     @keyword(tags=["Setter", "PageContent"])
     def type_text(
         self, selector: str, text: str, delay: str = "0 ms", clear: bool = True

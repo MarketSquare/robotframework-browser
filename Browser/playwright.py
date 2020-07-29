@@ -61,15 +61,15 @@ class Playwright:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
                     response = stub.Health(Request().Empty())
-                    logger.info(
+                    logger.debug(
                         f"Connected to the playwright process at port {self.port}: {response}"
                     )
                     return
                 except grpc.RpcError as err:
-                    logger.info(err)
+                    logger.debug(err)
                     time.sleep(0.1)
         raise RuntimeError(
-            f"Could not connect to the playwright process at port {self.port}"
+            f"Could not connect to the playwright process at port {self.port}."
         )
 
     @contextlib.contextmanager

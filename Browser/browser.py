@@ -7,7 +7,7 @@ from robotlibcore import DynamicCore  # type: ignore
 from .keywords import (
     Control,
     Getters,
-    Input,
+    Interaction,
     PlaywrightState,
     Promises,
     Waiter,
@@ -163,7 +163,7 @@ class Browser(DynamicCore):
         libraries = [
             self.browser_control,
             Evaluation(self),
-            Input(self),
+            Interaction(self),
             Getters(self),
             PlaywrightState(self),
             Network(self),

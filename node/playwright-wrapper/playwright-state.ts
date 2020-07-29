@@ -189,7 +189,7 @@ export async function closeBrowser(callback: sendUnaryData<Response.Empty>, open
         await _switchContext(0, activeBrowser).catch((_) =>
             console.log("Couldn't change active Context after closing browser"),
         );
-        await _switchPage(0, activeBrowser).catch((_) =>
+        await _switchPage(0, activeBrowser, false).catch((_) =>
             console.log("Couldn't change active Page after closing browser"),
         );
     }
@@ -217,14 +217,18 @@ export async function closeContext(
     await openBrowsers.getActiveContext()?.close();
 
     await _switchContext(0, activeBrowser).catch((_) => console.log("Couldn't change active Context after closing"));
-    await _switchPage(0, activeBrowser).catch((_) => console.log("Couldn't change active Page after closing Context"));
+    await _switchPage(0, activeBrowser, false).catch((_) =>
+        console.log("Couldn't change active Page after closing Context"),
+    );
     callback(null, emptyWithLog('Succesfully closed Context'));
 }
 
 export async function closePage(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState): Promise<void> {
     const activeBrowser = openBrowsers.getActiveBrowser(callback);
     await openBrowsers.getActivePage()?.close();
-    await _switchPage(0, activeBrowser).catch((_) => console.log("Couldn't change active Page after closing Page"));
+    await _switchPage(0, activeBrowser, false).catch((_) =>
+        console.log("Couldn't change active Page after closing Page"),
+    );
     callback(null, emptyWithLog('Succesfully closed Page'));
 }
 
@@ -308,7 +312,7 @@ export async function autoActivatePages(
     callback(null, emptyWithLog('Will focus future ``pages`` in this context'));
 }
 
-async function _switchPage(index: number, browserState: BrowserState) {
+async function _switchPage(index: number, browserState: BrowserState, waitForPage: boolean) {
     const context = browserState.context?.c;
     if (!context) throw new Error('Tried to switch page, no open context');
     const pages = context.pages();
@@ -316,7 +320,7 @@ async function _switchPage(index: number, browserState: BrowserState) {
     if (pages[index]) {
         browserState.page = { index: index, p: pages[index] };
         return;
-    } else {
+    } else if (waitForPage) {
         try {
             console.log('Started waiting for a page to pop up');
             const page = await context.waitForEvent('page');
@@ -330,6 +334,8 @@ async function _switchPage(index: number, browserState: BrowserState) {
             const error = new Error(message);
             throw error;
         }
+    } else {
+        throw new Error(`Couldn't switch page`);
     }
 }
 
@@ -359,7 +365,7 @@ export async function switchPage(
     console.log('Changing current active page');
     const index = call.request.getIndex();
     const previous = browserState.page?.index || 0;
-    await _switchPage(index, browserState).catch((error) => callback(error, null));
+    await _switchPage(index, browserState, true).catch((error) => callback(error, null));
     const response = intResponse(previous);
     response.setLog('Succesfully changed active page');
     callback(null, response);
@@ -374,7 +380,7 @@ export async function switchContext(
     const previous = browserState.context?.index || 0;
 
     await _switchContext(index, browserState).catch((error) => callback(error, null));
-    await _switchPage(browserState.page?.index || 0, browserState).catch(console.log);
+    await _switchPage(browserState.page?.index || 0, browserState, false).catch(console.log);
     const response = intResponse(previous);
     response.setLog('Succesfully changed active context');
     callback(null, response);
@@ -392,7 +398,7 @@ export async function switchBrowser(
     try {
         // Try to switch to page and context in target browser
         await _switchContext(switchedBrowser.context?.index || 0, switchedBrowser);
-        await _switchPage(switchedBrowser.page?.index || 0, switchedBrowser);
+        await _switchPage(switchedBrowser.page?.index || 0, switchedBrowser, false);
     } catch (pwError) {
         console.log(pwError);
     }

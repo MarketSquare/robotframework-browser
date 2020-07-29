@@ -3,7 +3,13 @@ import { Page, ElementHandle } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import {
+    exists,
+    invokeOnPage,
+    invokePlaywrightMethod,
+    waitUntilElementExists,
+    determineElement,
+} from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
 
@@ -50,12 +56,20 @@ export async function getElements(
     callback(null, stringResponse(JSON.stringify(response)));
 }
 
-export async function executeJavascriptOnPage(
+export async function executeJavascript(
     call: ServerUnaryCall<Request.JavascriptCode>,
     callback: sendUnaryData<Response.JavascriptExecutionResult>,
-    page?: Page,
+    state: PlaywrightState,
 ) {
-    const result = await invokeOnPage(page, callback, 'evaluate', call.request.getScript());
+    const selector = call.request.getSelector();
+    let script = call.request.getScript();
+    let elem;
+    if (selector) {
+        elem = await determineElement(state, selector, callback);
+        script = eval(script);
+    }
+
+    const result = await invokeOnPage(state.getActivePage(), callback, 'evaluate', script, elem);
     callback(null, jsResponse(result));
 }
 
@@ -78,14 +92,21 @@ export async function waitForElementState(
 export async function waitForFunction(
     call: ServerUnaryCall<Request.WaitForFunctionOptions>,
     callback: sendUnaryData<Response.String>,
-    page?: Page,
+    state: PlaywrightState,
 ): Promise<void> {
-    const script = call.request.getScript();
-    const args = call.request.getArgs();
+    let script = call.request.getScript();
+    const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    const result = await invokeOnPage(page, callback, 'waitForFunction', script, args || undefined, options);
-    callback(null, stringResponse(result.jsonValue()));
-    return;
+    console.log(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
+
+    let elem;
+    if (selector) {
+        elem = await determineElement(state, selector, callback);
+        script = eval(script);
+    }
+
+    const result = await invokeOnPage(state.getActivePage(), callback, 'waitForFunction', script, elem, options);
+    callback(null, stringResponse(JSON.stringify(result.jsonValue)));
 }
 
 export async function addStyleTag(
@@ -100,7 +121,7 @@ export async function addStyleTag(
 
 export async function highlightElements(
     call: ServerUnaryCall<Request.ElementSelectorWithDuration>,
-    callback: sendUnaryData<Response.JavascriptExecutionResult>,
+    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
@@ -108,6 +129,7 @@ export async function highlightElements(
     const highlighter = (elements: Array<Element>, duration: number) => {
         elements.forEach((e: Element) => {
             const d = document.createElement('div');
+            d.className = 'robotframework-browser-highlight';
             d.appendChild(document.createTextNode(''));
             d.style.position = 'fixed';
             const rect = e.getBoundingClientRect();
@@ -123,4 +145,5 @@ export async function highlightElements(
         });
     };
     await invokePlaywrightMethod(state, callback, '$$eval', selector, highlighter, duration);
+    callback(null, emptyWithLog(`Highlighted elements for ${duration}.`));
 }
