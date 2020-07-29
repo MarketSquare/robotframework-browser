@@ -122,6 +122,15 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "tuxmux28",
+      "name": "tuxmux28",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/2794048?v=4",
+      "profile": "https://github.com/tuxmux28",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
