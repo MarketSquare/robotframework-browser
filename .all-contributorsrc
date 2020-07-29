@@ -72,10 +72,9 @@
       "login": "Snooz82",
       "name": "René",
       "avatar_url": "https://avatars0.githubusercontent.com/u/41592183?v=4",
-      "profile": "https://robotframework.slack.com",
+      "profile": "https://github.com/Snooz82",
       "contributions": [
-        "ideas",
-        "test"
+        "code"
       ]
     },
     {
@@ -121,6 +120,24 @@
       "profile": "https://github.com/aspargillus",
       "contributions": [
         "userTesting"
+      ]
+    },
+    {
+      "login": "tuxmux28",
+      "name": "Christoph",
+      "avatar_url": "https://ca.slack-edge.com/T07PJQ9S7-U9G5U3F1S-68b82820b0f9-512",
+      "profile": "https://github.com/tuxmux28",
+      "contributions": [
+        "test"
+      ]
+    },
+    {
+      "login": "mikahanninen",
+      "name": "Mika Hänninen",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/1019528?v=4",
+      "profile": "https://github.com/mikahanninen",
+      "contributions": [
+        "question"
       ]
     }
   ],
