@@ -157,6 +157,7 @@ message Response {
 }
 
 service  Playwright {
+  rpc GetCookies(Request.Empty) returns (Response.String) {}
   rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty) {}

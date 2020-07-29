@@ -1,4 +1,5 @@
 from .browser_control import Control
+from .cookie import Cookie
 from .evaluation import Evaluation
 from .playwright_state import PlaywrightState
 from .getters import Getters
@@ -10,6 +11,7 @@ from .webapp_state import WebAppState
 
 __all__ = [
     "Control",
+    "Cookie",
     "Getters",
     "Evaluation",
     "Interaction",

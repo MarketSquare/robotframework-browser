@@ -4,6 +4,7 @@ import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { Response, Request } from './generated/playwright_pb';
 import { class_async_timer } from './execution-time-decorators';
 import * as browserControl from './browser-control';
+import * as cookie from './cookie';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
@@ -20,6 +21,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.state.getActiveBrowser(callback);
+    private getActiveContext = () => this.state.getActiveContext();
     private getActivePage = () => this.state.getActivePage();
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return playwrightState.closeBrowser(callback, this.state);
@@ -44,6 +46,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         return playwrightState.getBrowserCatalog(callback, this.state);
+    }
+
+    async getCookies(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return cookie.getCookies(callback, this.getActiveContext());
     }
 
     async autoActivatePages(
