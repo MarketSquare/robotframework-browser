@@ -14,6 +14,21 @@ Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visib
 
 Supporting testing and automation with [Robot Framework](https://robotframework.org)
 
+Official post about this [venture](https://forum.robotframework.org/t/moving-robot-framework-browser-automation-to-2020-or-2021/323).
+
+See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html).
+
+# Installation instructions
+
+Only Python 3.8 or later is supported.
+
+1. Install node.js e.g. from https://nodejs.org/en/download/
+2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
+
+# Examples
+
+Testing with [Robot Framework](https://robotframework.org)
+
     *** Settings ***
     Library   Browser
     
@@ -30,96 +45,22 @@ and [Python](https://python.org).
     assert browser.get_text("h1") == '🎭 Playwright'
     browser.close_all_browsers()
 
-Official post about this [venture](https://forum.robotframework.org/t/moving-robot-framework-browser-automation-to-2020-or-2021/323).
+## Clear selector syntax, supports chaining of css and xpath selectors
 
-See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html).
+    TODO: selector chain example here (maybe with nice shadow DOM trickery)
 
-# Installation instructions
+## Manipulate elements on Page
 
-Only Python 3.8 or later is supported.
+    New Page   ${LOGIN_URL}
+    ${ref}=    Get Element    h1
+    Get Attribute    ${ref}    innerText    ==    Login Page
+    Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
+    Get Attribute    ${ref}    innerText    ==    abc
 
-1. Install node.js e.g. from https://nodejs.org/en/download/
-2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
 
 # Development
 
-## Source code organization
-
-These are the directories containing source code and tests:
-
- - `Browser`, contains the Python source code for the actual Robot Framework test library.
- - `node/playwright-wrapper`, contains a wrapper for Playwirght that implements the grpc protocol, implemented in Typescript.
- - `node/dynamic-test-app`, contains a test application used in the acceptance tests, implemented in Typescript + React.
- - `protobuf`, contains the Protocol Buffer definitions used by the communication between the library and Playwirght wrapper.
- - `utest`, unit tests for the Python code.
- - `atest`, acceptance tests written with Robot Framework.
-
-## Development environment
-
-Install Python, nodejs and yarn. Make sure you have `make` available.
-- https://www.python.org/downloads/
-- https://nodejs.org/
-- https://classic.yarnpkg.com/en/docs/install
-
-Setup development environment with `make dev-env`.
-This creates a Python virtualenv in .venv directory, and install both Python and
-nodejs dependencies.
-
-To update the dependencies use either `make dev-env` to update all or
-alternatively `make .venv` or `make node-deps` to update only Python or nodejs
-dependencies, respectively.
-
-Make sure to run `source .venv/bin/activate` to activate the correct virtualenv.
-
-Run `make build` or `yarn build` to build the Typescript code. Also run `make build`
-after changes to the protocol (protos/playwright.proto) to re-generate protobuffer code.
-
-### Development in Windows
-
-Install [Chocolatey](https://chocolatey.org/) and then install development tools with
-`choco install sed make`.
-
-After that, the development workflow should work as described in the previous chapter.
-The only difference is that the virtualenv needs to be activated by running
-`.venv\Scripts\activate` in the command prompt.
-
-## Testing
-There are both unit tests written with pytest and acceptance test written with
-Robot Framework. These can be run manually with `make utest` and `make atest`.
-To run continuously pytests in a watch mode `make utest-watch`.
-To rerun failed tests you can use `make test-failed` The tests are also executed in a prepush hook.
-
-## Running tests in docker container
-
-Docker container builds a clean install package. This can be used to check that a builded package works correctly in a clean environment without development dependencies.
-
-1. Build the container `make docker`
-2. Run tests mounted from host machine `make docker-test`.
-3. See results in `atest/output`
-
-## Releasing
-1. Ensure generated code and types are up to date with `make build`
-2. Ensure tests and linting pass on CI
-3. Check that you have permissions to release on Github and PyPi
-4. Run `make version VERSION=<new_version>` to update the version information to both Python and Node components.
-5. Use `make release` to create and release artifacts and upload to PyPi
-6. Create Github release
-
-## Code style
-Python code style is enforced with flake8 and black. These are executed in a
-precommit hook, but can also be invoked manually with `make lint-python`.
-
-JS / TS code style is enforced with eslint. Lints are run in precommit hooks, but can be run manually with `make lint-node`.
-
-## Architecture
-
-There are 3 different interfaces that the library is targeting to use in browser automation and testing:
-
-1. User interface: Interactions with DOM elements.
-2. Internals of a webapp: State, Cookies, Storage, Methods.
-3. Requests & Responses: Interface between a browser and servers .
-
-Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.typescriptlang.org/) and [Playwright](https://playwright.dev/)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
 
 ## Contributors
 
