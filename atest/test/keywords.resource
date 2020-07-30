@@ -2,6 +2,7 @@
 Resource          variables.resource
 Library           Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}
 Library           OperatingSystem
+Library           DateTime
 Library           ../library/common.py
 
 *** Keywords ***

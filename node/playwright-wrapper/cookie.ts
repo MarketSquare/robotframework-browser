@@ -18,14 +18,18 @@ interface CookieData {
 }
 
 export async function getCookies(callback: sendUnaryData<Response.String>, context?: BrowserContext) {
-    exists(context, callback, `Tried to get all cookie's, but not context open.`);
-    const allCookies = await context.cookies();
-    console.log(allCookies);
-    const cookieName = [];
-    for (const cookie of allCookies as Array<Cookie>) {
-        cookieName.push(cookie.name);
+    exists(context, callback, `Tried to get all cookie's, but no context is active.`);
+    try {
+        const allCookies = await context.cookies();
+        console.log(allCookies);
+        const cookieName = [];
+        for (const cookie of allCookies as Array<Cookie>) {
+            cookieName.push(cookie.name);
+        }
+        callback(null, stringResponse(JSON.stringify(allCookies), cookieName.toString()));
+     } catch (e) {
+        callback(e, null)
     }
-    callback(null, stringResponse(JSON.stringify(allCookies), cookieName.toString()));
 }
 
 export async function addCookie(
@@ -33,8 +37,13 @@ export async function addCookie(
     callback: sendUnaryData<Response.Empty>,
     context?: BrowserContext,
 ) {
-    exists(context, callback, `Tried to add cookie, but not context open.`);
-    const cookie: CookieData = JSON.parse(call.request.getBody());
-    await context.addCookies([cookie]);
-    callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
+    exists(context, callback, `Tried to add cookie, but no context is active.`);
+    try {
+        const cookie: CookieData = JSON.parse(call.request.getBody());
+        console.log('Cookie data: ' + call.request.getBody());
+        await context.addCookies([cookie]);
+        callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
+    } catch (e) {
+        callback(e, null)
+    }
 }
