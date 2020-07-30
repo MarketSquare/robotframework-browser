@@ -47,3 +47,13 @@ export async function addCookie(
         callback(e, null);
     }
 }
+
+export async function deleteAllCookies(callback: sendUnaryData<Response.Empty>, context?: BrowserContext) {
+    exists(context, callback, `Tried to delete all cookies, but no context is active.`);
+    try {
+        await context.clearCookies();
+        callback(null, emptyWithLog('All cookies deleted.'));
+    } catch (e) {
+        callback(e, null);
+    }
+}

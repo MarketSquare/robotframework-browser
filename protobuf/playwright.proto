@@ -161,8 +161,11 @@ message Response {
 }
 
 service  Playwright {
+  /* Cookie messages */
   rpc AddCookie(Request.Json) returns (Response.Empty) {}
   rpc GetCookies(Request.Empty) returns (Response.String) {}
+  rpc DeleteAllCookies(Request.Empty) returns (Response.Empty) {}
+  /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty) {}
