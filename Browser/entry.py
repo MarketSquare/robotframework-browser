@@ -1,30 +1,54 @@
 import os
-from subprocess import Popen, PIPE, STDOUT, DEVNULL, run, CalledProcessError
+from subprocess import Popen, PIPE, STDOUT, DEVNULL, CalledProcessError
+import subprocess
 import sys
+from pathlib import Path
+
+from .utils import logger
+
+USAGE = """USAGE
+  rf-browser [command]
+AVAILABLE COMMANDS
+  init  Install required nodejs dependencies
+"""
+
+
+def run():
+    if len(sys.argv) < 2:
+        print(USAGE)
+        sys.exit(1)
+    cmd = sys.argv[1]
+    if cmd == "init":
+        rfbrowser_init()
+    else:
+        print(f"Invalid command `{cmd}`")
+        print(USAGE)
 
 
 def ensure_node_dependencies():
     # Checks if node is in PATH, errors if it isn't
     try:
-        run(["node", "-v"], stdout=DEVNULL, check=True)
-    except (CalledProcessError, FileNotFoundError) as exception:
+        subprocess.run(["node", "-v"], stdout=DEVNULL, check=True)
+    except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
         print(
             "Couldn't execute node. Please ensure you have node.js installed and in PATH."
             "See https://nodejs.org/ for documentation"
         )
         sys.exit(exception)
-        raise
+        return
 
-    installation_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "wrapper"
-    )
-    for dirname, dirnames, filenames in os.walk(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), topdown=False
-    ):
-        # debug print print(f"Walking directories. Current subdirs {dirnames}")
-        if "node_modules" in dirnames:
-            return
+    rfbrowser_dir = Path(__file__).parent
+    installation_dir = os.path.join(rfbrowser_dir, "wrapper")
+    subfolders = os.listdir(rfbrowser_dir.parent) + os.listdir(installation_dir)
 
+    if "node_modules" in subfolders:
+        return
+    logger.error("Run `rfbrowser init` to install node dependencies")
+    sys.exit(1)
+    return
+
+
+def rfbrowser_init():
     print("installing node dependencies...")
     installation_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "wrapper"

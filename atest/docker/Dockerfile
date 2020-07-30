@@ -72,4 +72,5 @@ USER pwuser
 # Install pabot to support atest
 RUN pip install --user robotframework-pabot
 RUN pip install --user dist/robotframework_browser-*-py3-none-any.whl
+RUN rfbrowser init
 ENV NODE_PATH=/usr/lib/node_modules

@@ -31,6 +31,7 @@ setup_kwargs = {
     "packages": packages,
     "package_data": package_data,
     "install_requires": install_requires,
+    "entry_points": {"console_scripts": ["rfbrowser=Browser.entry:run"]},
     "python_requires": ">=3.8,<4.0",
     "classifiers": [
         "Development Status :: 1 - Planning",

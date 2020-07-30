@@ -20,8 +20,7 @@ Only Python 3.8 or later is supported.
 
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
-
-Node dependencies (including the browsers for use in testing) will automatically be installed on first library import, so the first import after installing might take a few minutes.
+3. Install the node dependencies: run `rfbrowser init` in your shell
 
 # Examples
 
