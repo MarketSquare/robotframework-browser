@@ -6,7 +6,7 @@ Test Setup        Open Browser To Form Page
 Cookies From Closed Context
     Close All Browsers
     Run Keyword And Expect Error
-    ...    Tried to get all cookie's, but not context open.
+    ...    Tried to get all cookie's, but no context is active.
     ...    Get Cookies
 
 Get Cookies Should Return Empty List When No Cookies Are Available
@@ -23,7 +23,7 @@ Add Cookie Should Fail If Context Is Not Open
     ${url} =    Get Url
     Close All Browsers
     Run Keyword And Expect Error
-    ...    Tried to add cookie, but not context open.
+    ...    Tried to add cookie, but no context is active.
     ...    Add Cookie    Foo    Bar    url=${url}
 
 Add Cookie With Url
@@ -40,6 +40,27 @@ Add Cookie With Domain And Path
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
     Should Be Equal    ${cookies}[0][path]    /prefilled_email_form.html
+
+Add Cookie With URL And Domain Should Fail
+    ${url} =    Get Url
+    ${parsed_url} =    common.Parse Url    ${url}
+    Run Keyword And Expect Error
+    ...    Cookie should have either url or domain
+    ...    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    domain=${parsed_url.netloc}
+    ...    path=${parsed_url.path}
+
+Add Cookie With All Settings
+    ${url} =    Get Url
+    ${date_string} =    Get Current Date     increment=1 day
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    expiry=${date_string}
 
 *** Keywords ***
 Check Cookie
