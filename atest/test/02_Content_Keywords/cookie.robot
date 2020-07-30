@@ -61,6 +61,47 @@ Add Cookie With All Settings
     ...    Bar
     ...    url=${url}
     ...    expiry=${date_string}
+    ...    http_only=True
+    ...    secure=True
+    ...    same_site=Lax
+    ${cookies} =    Get Cookies
+    Check Cookie    ${cookies}    1    Foo    Bar
+    Should Be Equal    ${cookies}[0][path]    /
+    Should Be Equal    ${cookies}[0][sameSite]    Lax
+    ${epoch} =    Convert Date    ${date_string}    result_format=epoch    exclude_millis=True
+    ${epoch} =    Convert To Integer    ${epoch}
+    Should Be Equal    ${cookies}[0][expires]    ${epoch}
+    Should Be Equal    ${cookies}[0][httpOnly]    ${True}
+    Should Be Equal    ${cookies}[0][secure]    ${False}
+
+Add Cookie With Expiry As Epoch String
+    ${url} =    Get Url
+    ${date_string} =    Get Current Date    increment=1 day    result_format=epoch
+    ${date_string} =    Convert To Integer    ${date_string}
+    ${date_string} =    Convert To String    ${date_string}
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    expiry=${date_string}
+    ${cookies} =    Get Cookies
+    Check Cookie    ${cookies}    1    Foo    Bar
+    ${epoch} =    Convert To Integer    ${date_string}
+    Should Be Equal    ${cookies}[0][expires]    ${epoch}
+
+Add Cookie With Expiry As Epoch Int
+    ${url} =    Get Url
+    ${date_string} =    Get Current Date    increment=1 day    result_format=epoch
+    ${date_string} =    Convert To Integer    ${date_string}
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    expiry=${date_string}
+    ${cookies} =    Get Cookies
+    Check Cookie    ${cookies}    1    Foo    Bar
+    ${epoch} =    Convert To Integer    ${date_string}
+    Should Be Equal    ${cookies}[0][expires]    ${epoch}
 
 *** Keywords ***
 Check Cookie
