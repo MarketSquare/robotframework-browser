@@ -8,13 +8,9 @@
 
 ----
 
-Robot Framework Browser library powered by [Playwright](https://playwright.dev/). Moving browser automation to year 2020 (or 2021)!
+[Robot Framework](https://robotframework.org) Browser library powered by [Playwright](https://playwright.dev/). Moving browser automation to year 2020 (or 2021)!
 
 Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visibility.
-
-Supporting testing and automation with [Robot Framework](https://robotframework.org)
-
-Official post about this [venture](https://forum.robotframework.org/t/moving-robot-framework-browser-automation-to-2020-or-2021/323).
 
 See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html).
 
