@@ -70,7 +70,9 @@ Add Cookie With All Settings
     Should Be Equal    ${cookies}[0][sameSite]    Lax
     ${epoch} =    Convert Date    ${date_string}    result_format=epoch    exclude_millis=True
     ${epoch} =    Convert To Integer    ${epoch}
-    Should Be Equal    ${cookies}[0][expires]    ${epoch}
+    ${epoch} =    Convert To String    ${epoch}
+    ${expires} =    Convert To String    ${cookies}[0][expires]
+    Should Contain    ${expires}    ${epoch}[:-1]    # To avoid rounding error
     Should Be Equal    ${cookies}[0][httpOnly]    ${True}
     Should Be Equal    ${cookies}[0][secure]    ${False}
 
