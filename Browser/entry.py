@@ -26,6 +26,9 @@ def run():
 
 
 def ensure_node_dependencies():
+    # Skip the checks when initializing
+    if len(sys.argv) > 1 and sys.argv[1] == "init":
+        return
     # Checks if node is in PATH, errors if it isn't
     try:
         subprocess.run(["node", "-v"], stdout=DEVNULL, check=True)
