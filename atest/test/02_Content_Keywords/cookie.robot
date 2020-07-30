@@ -105,6 +105,13 @@ Add Cookie With Expiry As Epoch Int
     ${epoch} =    Convert To Integer    ${date_string}
     Should Be Equal    ${cookies}[0][expires]    ${epoch}
 
+Delete All Cookies
+    ${url} =    Get Url
+    Add Cookie    Foo    Bar    url=${url}
+    Delete All Cookies
+    ${cookies} =    Get Cookies
+    Should Be Empty    ${cookies}
+
 *** Keywords ***
 Check Cookie
     [Arguments]    ${cookies}    ${len}    ${name}    ${value}
