@@ -10,7 +10,7 @@ from Browser.utils import logger
 
 
 class Cookie(LibraryComponent):
-    @keyword
+    @keyword(tags=["Getter", "PageContent"])
     def get_cookies(self):
         """Returns cookies from the current active browser context"""
         with self.playwright.grpc_channel() as stub:
@@ -22,7 +22,7 @@ class Cookie(LibraryComponent):
                 logger.info(f"Found cookies: {response.log}")
         return json.loads(response.body)
 
-    @keyword
+    @keyword(tags=["Setter", "PageContent"])
     def add_cookie(
         self,
         name: str,
@@ -83,3 +83,10 @@ class Cookie(LibraryComponent):
         if cookie.get("path") and cookie.get("domain"):
             return True
         return False
+
+    @keyword(tags=["Setter", "PageContent"])
+    def delete_all_cookies(self):
+        """Deletes all cookies from the currently active browser context."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.DeleteAllCookies(Request.Empty())
+        logger.info(response.log)

@@ -112,6 +112,11 @@ Delete All Cookies
     ${cookies} =    Get Cookies
     Should Be Empty    ${cookies}
 
+Delete All Cookies When Cookies Does Not Exist
+    Delete All Cookies
+    ${cookies} =    Get Cookies
+    Should Be Empty    ${cookies}
+
 *** Keywords ***
 Check Cookie
     [Arguments]    ${cookies}    ${len}    ${name}    ${value}
