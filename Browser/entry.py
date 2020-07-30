@@ -38,8 +38,10 @@ def ensure_node_dependencies():
         return
 
     rfbrowser_dir = Path(__file__).parent
-    installation_dir = os.path.join(rfbrowser_dir, "wrapper")
-    subfolders = os.listdir(rfbrowser_dir.parent) + os.listdir(installation_dir)
+    installation_dir = rfbrowser_dir / "wrapper"
+    # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
+    project_folder = rfbrowser_dir.parent
+    subfolders = os.listdir(project_folder) + os.listdir(installation_dir)
 
     if "node_modules" in subfolders:
         return
@@ -50,17 +52,16 @@ def ensure_node_dependencies():
 
 def rfbrowser_init():
     print("installing node dependencies...")
-    installation_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "wrapper"
-    )
-    if not os.path.isfile(os.path.join(installation_dir, "package.json")):
+    installation_dir = Path(__file__).parent / "wrapper"
+
+    if not (installation_dir / "package.json").is_file():
         print(
             "Directory needs to contain package.json "
             + "and have write permissions to succesfully install all dependencies. "
             + "\nPrinting contents:"
         )
         for root, dirs, files in os.walk(installation_dir):
-            level = root.replace(installation_dir, "").count(os.sep)
+            level = root.replace(installation_dir.__str__(), "").count(os.sep)
             indent = " " * 4 * (level)
             print("{}{}/".format(indent, os.path.basename(root)))
             subindent = " " * 4 * (level + 1)

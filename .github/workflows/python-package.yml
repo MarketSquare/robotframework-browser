@@ -99,8 +99,8 @@ jobs:
           VERSION: 0.11.0
         run: |
           pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
-          pip install -U robotframework-pabot
           rfbrowser init
+          pip install -U robotframework-pabot
       - name: Run Robot Framework tests
         run: |
           make atest-global-pythonpath
