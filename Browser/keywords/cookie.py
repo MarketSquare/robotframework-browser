@@ -23,7 +23,16 @@ class Cookie(LibraryComponent):
 
     @keyword
     def add_cookie(
-        self, name, value, url=None, domain=None, path=None, expiry=None, http_only=None, secure=None, same_site=None
+        self,
+        name,
+        value,
+        url=None,
+        domain=None,
+        path=None,
+        expiry=None,
+        http_only=None,
+        secure=None,
+        same_site=None,
     ):
         """Adds a cookie to your current context.
 
