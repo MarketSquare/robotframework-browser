@@ -27,8 +27,8 @@ export async function getCookies(callback: sendUnaryData<Response.String>, conte
             cookieName.push(cookie.name);
         }
         callback(null, stringResponse(JSON.stringify(allCookies), cookieName.toString()));
-     } catch (e) {
-        callback(e, null)
+    } catch (e) {
+        callback(e, null);
     }
 }
 
@@ -44,6 +44,6 @@ export async function addCookie(
         await context.addCookies([cookie]);
         callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
     } catch (e) {
-        callback(e, null)
+        callback(e, null);
     }
 }

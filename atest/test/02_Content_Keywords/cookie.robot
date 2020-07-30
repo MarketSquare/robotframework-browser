@@ -55,7 +55,7 @@ Add Cookie With URL And Domain Should Fail
 
 Add Cookie With All Settings
     ${url} =    Get Url
-    ${date_string} =    Get Current Date     increment=1 day
+    ${date_string} =    Get Current Date    increment=1 day
     Add Cookie
     ...    Foo
     ...    Bar
