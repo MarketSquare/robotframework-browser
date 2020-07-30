@@ -31,23 +31,22 @@ Add Cookie With Url
     Add Cookie    Foo    Bar    url=${url}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
-    Should Be Equal    ${cookies}[0][path]      /
-
+    Should Be Equal    ${cookies}[0][path]    /
 
 Add Cookie With Domain And Path
     ${url} =    Get Url
     ${parsed_url} =    common.Parse Url    ${url}
-    Add Cookie    Foo    Bar    domain=${parsed_url.netloc}     path=${parsed_url.path}
+    Add Cookie    Foo    Bar    domain=${parsed_url.netloc}    path=${parsed_url.path}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
-    Should Be Equal    ${cookies}[0][path]      /prefilled_email_form.html
+    Should Be Equal    ${cookies}[0][path]    /prefilled_email_form.html
 
-** Keywords ***
+*** Keywords ***
 Check Cookie
-    [Arguments]     ${cookies}    ${len}    ${name}    ${value}
+    [Arguments]    ${cookies}    ${len}    ${name}    ${value}
     ${cookies_len} =    Get Length    ${cookies}
     ${len} =    Convert To Integer    ${len}
-    Should Be Equal    ${cookies_len}                   ${len}
-    Should Be Equal    ${cookies}[${len - 1}][name]     ${name}
+    Should Be Equal    ${cookies_len}    ${len}
+    Should Be Equal    ${cookies}[${len - 1}][name]    ${name}
     Should Be Equal    ${cookies}[${len - 1}][value]    ${value}
     Should Be Equal    ${cookies}[${len - 1}][domain]    localhost
