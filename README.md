@@ -25,9 +25,11 @@ Only Python 3.8 or later is supported.
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
 
+Node dependencies (including the browsers for use in testing) will automatically be installed on first library import, so the first import after installing might take a few minutes.
+
 # Examples
 
-Testing with [Robot Framework](https://robotframework.org)
+### Testing with [Robot Framework](https://robotframework.org)
 
     *** Settings ***
     Library   Browser
@@ -37,7 +39,7 @@ Testing with [Robot Framework](https://robotframework.org)
         New Page    https://playwright.dev
         Get Text    h1    ==    🎭 Playwright
 
-and [Python](https://python.org).
+### and testing with [Python](https://python.org).
 
     import Browser
     browser = Browser.Browser()
@@ -45,11 +47,15 @@ and [Python](https://python.org).
     assert browser.get_text("h1") == '🎭 Playwright'
     browser.close_all_browsers()
 
-## Clear selector syntax, supports chaining of css and xpath selectors
+### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
-    TODO: selector chain example here (maybe with nice shadow DOM trickery)
+    # Select element containing text "Login" with text selector strategy 
+    # and select it's parent `input` element with xpath
+    Click    "Login" >> xpath=../input
+    # Select element with CSS strategy and select button in it with text strategy
+    Click    div.dialog >> "Ok"
 
-## Manipulate elements on Page
+### Evaluate in browser page
 
     New Page   ${LOGIN_URL}
     ${ref}=    Get Element    h1
@@ -57,6 +63,17 @@ and [Python](https://python.org).
     Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
     Get Attribute    ${ref}    innerText    ==    abc
 
+### Asynchronously waiting for HTTP requests and responses
+
+    # The button with id `delayed_request` fires a delayed request. We use a promise to capture it.
+    {promise}=    Promise To    Wait For Response    matcher=    timeout=3s
+    Click    \#delayed_request
+    ${body}=    Wait For    ${promise}
+
+### Sending HTTP requests and parsing their responses
+
+    &{response}=    HTTP    /api/post    POST    {"name": "John"}
+    Should Be Equal    ${response.status}    ${200}
 
 # Development
 
