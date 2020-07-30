@@ -68,11 +68,8 @@ Add Cookie With All Settings
     Check Cookie    ${cookies}    1    Foo    Bar
     Should Be Equal    ${cookies}[0][path]    /
     Should Be Equal    ${cookies}[0][sameSite]    Lax
-    ${epoch} =    Convert Date    ${date_string}    result_format=epoch    exclude_millis=True
-    ${epoch} =    Convert To Integer    ${epoch}
-    ${epoch} =    Convert To String    ${epoch}
     ${expires} =    Convert To String    ${cookies}[0][expires]
-    Should Contain    ${expires}    ${epoch}[:-1]    # To avoid rounding error
+    Should Match Regexp    ${expires}    \\d
     Should Be Equal    ${cookies}[0][httpOnly]    ${True}
     Should Be Equal    ${cookies}[0][secure]    ${False}
 
