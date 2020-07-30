@@ -1,4 +1,5 @@
 import json
+from typing import Optional, Dict, Any
 
 from robot.libraries.DateTime import convert_date  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -24,15 +25,15 @@ class Cookie(LibraryComponent):
     @keyword
     def add_cookie(
         self,
-        name,
-        value,
-        url=None,
-        domain=None,
-        path=None,
-        expiry=None,
-        http_only=None,
-        secure=None,
-        same_site=None,
+        name: str,
+        value: str,
+        url: Optional[str] = None,
+        domain: Optional[str] = None,
+        path: Optional[str] = None,
+        expiry: Optional[str] = None,
+        http_only: Optional[bool] = None,
+        secure: Optional[bool] = None,
+        same_site: Optional[str] = None,
     ):
         """Adds a cookie to your current context.
 
@@ -42,12 +43,12 @@ class Cookie(LibraryComponent):
         library or an epoch timestamp.
 
         Example:
-        | `Add Cookie` | foo | bar | http://address.com/path/to/site |
-        | `Add Cookie` | foo | bar | domain=example.com              |
-        | `Add Cookie` | foo | bar | expiry=2027-09-28 16:21:35 | # Expiry as timestamp.     |
-        | `Add Cookie` | foo | bar | expiry=1822137695          | # Expiry as epoch seconds. |
+        | `Add Cookie` | foo | bar | http://address.com/path/to/site |                                 |                            |
+        | `Add Cookie` | foo | bar | domain=example.com              | path=/foo/bar                   |                            |
+        | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=2027-09-28 16:21:35      | # Expiry as timestamp.     |
+        | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=1822137695               | # Expiry as epoch seconds. |
         """
-        cookie = {"name": name, "value": value}
+        cookie: Dict[str, Any] = {"name": name, "value": value}
         if url:
             cookie["url"] = url
         if path:
@@ -70,13 +71,13 @@ class Cookie(LibraryComponent):
             response = stub.AddCookie(Request.Json(body=cookie_json))
             logger.info(response.log)
 
-    def _expiry(self, expiry: str):
+    def _expiry(self, expiry: str) -> int:
         try:
             return int(expiry)
         except ValueError:
             return int(convert_date(expiry, result_format="epoch"))
 
-    def _check_data(self, cookie: dict):
+    def _check_data(self, cookie: dict) -> bool:
         if cookie.get("url"):
             return True
         if cookie.get("path") and cookie.get("domain"):
