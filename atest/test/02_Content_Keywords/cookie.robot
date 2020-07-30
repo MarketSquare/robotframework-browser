@@ -112,6 +112,12 @@ Delete All Cookies
     ${cookies} =    Get Cookies
     Should Be Empty    ${cookies}
 
+Delete All Cookies From Closed Context
+    Close All Browsers
+    Run Keyword And Expect Error
+    ...    Tried to delete all cookies, but no context is active.
+    ...    Delete All Cookies
+
 Delete All Cookies When Cookies Does Not Exist
     Delete All Cookies
     ${cookies} =    Get Cookies
