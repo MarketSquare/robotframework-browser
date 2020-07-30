@@ -19,21 +19,22 @@ class Cookie(LibraryComponent):
                 logger.info("No cookies found.")
             else:
                 logger.info(f"Found cookies: {response.log}")
-        return response.body
+        return json.loads(response.body)
 
     @keyword
     def add_cookie(
-        self, name, value, url=None, path=None, domain=None, secure=None, expiry=None
+        self, name, value, url=None, domain=None, path=None, expiry=None, http_only=None, secure=None, same_site=None
     ):
         """Adds a cookie to your current context.
 
-        ``name`` and ``value`` are required, ``path``, ``domain``, ``secure``
-        and ``expiry`` are optional.  Expiry supports the same formats as
-        the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
+        ``name`` and ``value`` are required.  ``url``, ``domain``, `path``, ``expiry``, `http_only``, ``secure``
+        and ``same_site`` are optional, but cookie must contain either url or  domain/path pair. Expiry supports
+        the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
         library or an epoch timestamp.
+
         Example:
-        | `Add Cookie` | foo | bar |                            |
-        | `Add Cookie` | foo | bar | domain=example.com         |
+        | `Add Cookie` | foo | bar | http://address.com/path/to/site |
+        | `Add Cookie` | foo | bar | domain=example.com              |
         | `Add Cookie` | foo | bar | expiry=2027-09-28 16:21:35 | # Expiry as timestamp.     |
         | `Add Cookie` | foo | bar | expiry=1822137695          | # Expiry as epoch seconds. |
         """
@@ -44,10 +45,14 @@ class Cookie(LibraryComponent):
             cookie["path"] = path
         if domain:
             cookie["domain"] = domain
+        if http_only:
+            cookie["httpOnly"] = http_only
+        if expiry:
+            cookie["expires"] = self._expiry(expiry)
         if secure:
             cookie["secure"] = secure
-        if expiry:
-            cookie["expiry"] = self._expiry(expiry)
+        if same_site:
+            cookie["sameSite"] = same_site
         if not self._check_data(cookie):
             raise ValueError("Cookie should have a url or a domain/path pair.")
         cookie_json = json.dumps(cookie)
