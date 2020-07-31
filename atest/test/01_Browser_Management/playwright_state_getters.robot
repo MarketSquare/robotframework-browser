@@ -29,3 +29,23 @@ Get Viewport Size
     ${size}    Evaluate    {"height": 600, "width": 800}
     Get Viewport Size    ==    {"height": 600, "width": 800}
     Get Viewport Size    ==    ${size}
+
+Multipage order
+    New Page  ${FORM_URL}
+    Get title  ==  prefilled_email_form.html
+    Page encapsulating keyword
+    Get title  ==  prefilled_email_form.html
+    [Teardown]  Close Page
+
+*** Keywords ***
+Page encapsulating keyword
+    New Page  ${WELCOME_URL}
+    Get title  ==  Welcome Page
+    Page encapsulating keyword 2
+    Get title  ==  Welcome Page
+    [Teardown]  Close Page
+
+Page encapsulating keyword 2
+    New Page  ${ERROR_URL}
+    Get title  ==  Error Page
+    [Teardown]  Close Page
