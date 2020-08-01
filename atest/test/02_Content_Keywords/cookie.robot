@@ -123,6 +123,40 @@ Delete All Cookies When Cookies Does Not Exist
 Eat All Cookies
     Eat All Cookies
 
+Get Cookie
+    ${url} =    Get Url
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    http_only=True
+    ...    secure=True
+    ...    same_site=Lax
+    Add Cookie
+    ...    Tidii
+    ...    kala
+    ...    url=${url}
+    ...    http_only=True
+    ...    secure=True
+    ...    same_site=Lax
+    ${cookie} =    Get Cookie    Tidii
+    Should Be Equal    ${cookie}[name]    Tidii
+    Should Be Equal    ${cookie}[value]    kala
+
+Get Cookie Should Fail If Cookie Is Not Found
+    ${url} =    Get Url
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    http_only=True
+    ...    secure=True
+    ...    same_site=Lax
+    Run Keyword And Expect Error
+    ...    ValueError: Cookie with name FOO is not found.
+    ...    Get Cookie
+    ...    FOO
+
 *** Keywords ***
 Check Cookie
     [Arguments]    ${cookies}    ${len}    ${name}    ${value}
