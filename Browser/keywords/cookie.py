@@ -96,3 +96,26 @@ class Cookie(LibraryComponent):
         """Eat all cookies for all easter."""
         self.delete_all_cookies()
         self.library.open_browser("https://youtu.be/-qTIGg3I5y8", headless=False)
+
+    @keyword(tags=["Getter", "PageContent"])
+    def get_cookie(self, cookie: str) -> dict:
+        """Returns information of cookie with name as an object.
+
+        If no cookie is found with name, keyword fails. The cookie object contains
+        details about the cookie. Attributes available in the object are documented in the table below.
+
+        | Attribute | Explanation                                                                                |
+        | name      | The name of a cookie.                                                                      |
+        | value     | Value of the cookie.                                                                       |
+        | url       | Define the scope of the cookie, what URLs the cookies should be sent to.                   |
+        | domain    | Specifies which hosts are allowed to receive the cookie.                                   |
+        | path      | Indicates a URL path that must exist in the requested URL, for example `/`.                |
+        | expiry    | Lifetime of a cookie.                                                                      |
+        | httpOnly  | When true, the cookie is not accessible via JavaScript.                                    |
+        | secure    | When true, the cookie is only used with HTTPS connections.                                 |
+        | sameSite  | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
+        """
+        for cookie_dict in self.get_cookies():
+            if cookie_dict["name"] == cookie:
+                return cookie_dict
+        raise ValueError(f"Cookie with name {cookie} is not found.")
