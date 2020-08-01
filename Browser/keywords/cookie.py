@@ -12,7 +12,10 @@ from Browser.utils import logger
 class Cookie(LibraryComponent):
     @keyword(tags=["Getter", "PageContent"])
     def get_cookies(self) -> List[dict]:
-        """Returns cookies from the current active browser context"""
+        """Returns cookies from the current active browser context.
+
+        Return value contains list of dictionaries. See `Get Cookie` documentation about the dictionary keys.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetCookies(Request().Empty())
             cookie_names = response.log
@@ -35,7 +38,7 @@ class Cookie(LibraryComponent):
         secure: Optional[bool] = None,
         same_site: Optional[str] = None,
     ):
-        """Adds a cookie to your current context.
+        """Adds a cookie to currently active browser context.
 
         ``name`` and ``value`` are required.  ``url``, ``domain``, `path``, ``expiry``, `http_only``, ``secure``
         and ``same_site`` are optional, but cookie must contain either url or  domain/path pair. Expiry supports
@@ -101,19 +104,19 @@ class Cookie(LibraryComponent):
     def get_cookie(self, cookie: str) -> dict:
         """Returns information of cookie with name as an dictionary.
 
-        If no cookie is found with name, keyword fails. The cookie object contains
-        details about the cookie. Attributes available in the object are documented in the table below.
+        If no cookie is found with name, keyword fails. The cookie dictionary contains
+        details about the cookie. Keys available in the dictionary are documented in the table below.
 
-        | Attribute | Explanation                                                                                |
-        | name      | The name of a cookie.                                                                      |
-        | value     | Value of the cookie.                                                                       |
-        | url       | Define the scope of the cookie, what URLs the cookies should be sent to.                   |
-        | domain    | Specifies which hosts are allowed to receive the cookie.                                   |
-        | path      | Indicates a URL path that must exist in the requested URL, for example `/`.                |
-        | expiry    | Lifetime of a cookie.                                                                      |
-        | httpOnly  | When true, the cookie is not accessible via JavaScript.                                    |
-        | secure    | When true, the cookie is only used with HTTPS connections.                                 |
-        | sameSite  | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
+        | Value    | Explanation                                                                                |
+        | name     | The name of a cookie, mandatory.                                                           |
+        | value    | Value of the cookie, mandatory.                                                            |
+        | url      | Define the scope of the cookie, what URLs the cookies should be sent to.                   |
+        | domain   | Specifies which hosts are allowed to receive the cookie.                                   |
+        | path     | Indicates a URL path that must exist in the requested URL, for example `/`.                |
+        | expiry   | Lifetime of a cookie.                                                                      |
+        | httpOnly | When true, the cookie is not accessible via JavaScript.                                    |
+        | secure   | When true, the cookie is only used with HTTPS connections.                                 |
+        | sameSite | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
 
         See
         [playwright documentation|https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextaddcookiescookies]
