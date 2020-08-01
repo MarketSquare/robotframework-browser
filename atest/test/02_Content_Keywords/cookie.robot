@@ -120,6 +120,9 @@ Delete All Cookies When Cookies Does Not Exist
     ${cookies} =    Get Cookies
     Should Be Empty    ${cookies}
 
+Eat All Cookies
+    Eat All Cookies
+
 *** Keywords ***
 Check Cookie
     [Arguments]    ${cookies}    ${len}    ${name}    ${value}

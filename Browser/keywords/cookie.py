@@ -90,3 +90,9 @@ class Cookie(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.DeleteAllCookies(Request.Empty())
         logger.info(response.log)
+
+    @keyword
+    def eat_all_cookies(self):
+        """Eat all cookies for all easter."""
+        self.delete_all_cookies()
+        self.library.open_browser("https://youtu.be/-qTIGg3I5y8", headless=False)
