@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from robot.libraries.DateTime import convert_date  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -11,7 +11,7 @@ from Browser.utils import logger
 
 class Cookie(LibraryComponent):
     @keyword(tags=["Getter", "PageContent"])
-    def get_cookies(self):
+    def get_cookies(self) -> List[dict]:
         """Returns cookies from the current active browser context"""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetCookies(Request().Empty())
@@ -99,7 +99,7 @@ class Cookie(LibraryComponent):
 
     @keyword(tags=["Getter", "PageContent"])
     def get_cookie(self, cookie: str) -> dict:
-        """Returns information of cookie with name as an object.
+        """Returns information of cookie with name as an dictionary.
 
         If no cookie is found with name, keyword fails. The cookie object contains
         details about the cookie. Attributes available in the object are documented in the table below.
@@ -114,6 +114,10 @@ class Cookie(LibraryComponent):
         | httpOnly  | When true, the cookie is not accessible via JavaScript.                                    |
         | secure    | When true, the cookie is only used with HTTPS connections.                                 |
         | sameSite  | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
+
+        See
+        [playwright documentation|https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextaddcookiescookies]
+        for details about each attribute.
         """
         for cookie_dict in self.get_cookies():
             if cookie_dict["name"] == cookie:
