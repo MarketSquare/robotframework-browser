@@ -131,16 +131,19 @@ export class BrowserState {
         this.name = name;
         this.browser = browser;
         this.context = context ? { c: context, index: 0 } : undefined;
+        this._pageStack = [];
         this.page = page ? { p: page, index: 0 } : undefined;
     }
     private _context?: IndexedContext;
     private _page?: IndexedPage;
+    private _pageStack: IndexedPage[];
     browser: Browser;
     name?: string;
 
-    public async close() {
+    public async close(): Promise<void> {
         this.context = undefined;
         this.page = undefined;
+        this._pageStack = [];
         await this.browser.close();
     }
 
@@ -154,7 +157,7 @@ export class BrowserState {
             return context;
         }
     }
-    get context() {
+    get context(): IndexedContext | undefined {
         return this._context;
     }
     set context(newContext: IndexedContext | undefined) {
@@ -162,13 +165,25 @@ export class BrowserState {
         if (!newContext) console.log('Set active context to undefined');
         else console.log('Changed active context');
     }
-    get page() {
+    get page(): IndexedPage | undefined {
         return this._page;
     }
     set page(newPage: IndexedPage | undefined) {
+        if (newPage !== undefined) {
+            this._pageStack.push(newPage);
+            console.log('Changed active page');
+        } else {
+            console.log('Set active page to undefined');
+        }
         this._page = newPage;
-        if (!newPage) console.log('Set active page to undefined');
-        else console.log('Changed active page');
+    }
+    public popPage(): void {
+        this._pageStack.pop();
+        if (this._pageStack.length > 0) {
+            this._page = this._pageStack[this._pageStack.length - 1];
+        } else {
+            this._page = undefined;
+        }
     }
 }
 
@@ -226,9 +241,7 @@ export async function closeContext(
 export async function closePage(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState): Promise<void> {
     const activeBrowser = openBrowsers.getActiveBrowser(callback);
     await openBrowsers.getActivePage()?.close();
-    await _switchPage(0, activeBrowser, false).catch((_) =>
-        console.log("Couldn't change active Page after closing Page"),
-    );
+    activeBrowser.popPage();
     callback(null, emptyWithLog('Succesfully closed Page'));
 }
 
