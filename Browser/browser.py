@@ -187,6 +187,9 @@ class Browser(DynamicCore):
     def _close(self):
         self.playwright.close()
 
+    def _start_suite(self, name, attrs):
+        self._execution_stack.append(self.getters.get_browser_catalog())
+
     def _start_test(self, name, attrs):
         self._execution_stack.append(self.getters.get_browser_catalog())
 
@@ -194,24 +197,31 @@ class Browser(DynamicCore):
         if len(self.promises._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
-        # WIP CODE BEGINS
         catalog_before_test = self._execution_stack.pop()
-        catalog_after_test = self.getters.get_browser_catalog()
-        ctx_before_ids = [c["id"] for b in catalog_before_test for c in b["contexts"]]
-        ctx_after_ids = [c["id"] for b in catalog_after_test for c in b["contexts"]]
+        self._prune_execution_stack(catalog_before_test)
+
+    def _end_suite(self, name, attrs):
+        catalog_before_suite = self._execution_stack.pop()
+        self._prune_execution_stack(catalog_before_suite)
+
+    def _prune_execution_stack(self, catalog_before):
+        # WIP CODE BEGINS
+        catalog_after = self.getters.get_browser_catalog()
+        ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
+        ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
         new_ctx_ids = [c for c in ctx_after_ids if c not in ctx_before_ids]
         for ctx_id in new_ctx_ids:
             self.playwright_state.switch_context(ctx_id)
             self.playwright_state.close_context()
         pages_before = [
-            (int(p["id"]), c["id"])
-            for b in catalog_before_test
+            (p["id"], c["id"])
+            for b in catalog_before
             for c in b["contexts"]
             for p in c["pages"]
         ]
         pages_after = [
-            (int(p["id"]), c["id"])
-            for b in catalog_after_test
+            (p["id"], c["id"])
+            for b in catalog_after
             for c in b["contexts"]
             for p in c["pages"]
             if c["id"] not in new_ctx_ids
@@ -221,7 +231,7 @@ class Browser(DynamicCore):
             self.playwright_state.switch_context(ctx_id)
             self.playwright_state.switch_page(page_id)
             self.playwright_state.close_page()
-        for browser in catalog_after_test:
+        for browser in catalog_after:
             if browser["activeBrowser"]:
                 activeContext = browser.get("activeContext", None)
                 activePage = browser.get("activePage", None)
