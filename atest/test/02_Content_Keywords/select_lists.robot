@@ -59,7 +59,7 @@ Deselect Options Explicitly
     Get Selected Options    select[name=possible_channels]    text    ==
 
 Deselect Options With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Deselect Options    notamatch
     [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
