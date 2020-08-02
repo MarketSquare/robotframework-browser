@@ -208,6 +208,8 @@ export class BrowserState {
     set context(newContext: IndexedContext | undefined) {
         this._context = newContext;
         if (newContext !== undefined) {
+            // prevent duplicates
+            this._contextStack = this._contextStack.filter((c) => c.c !== newContext.c);
             this._contextStack.push(newContext);
             console.log('Changed active context');
         } else console.log('Set active context to undefined');
