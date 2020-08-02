@@ -98,7 +98,14 @@ class Cookie(LibraryComponent):
     def eat_all_cookies(self):
         """Eat all cookies for all easter."""
         self.delete_all_cookies()
-        self.library.open_browser("https://youtu.be/-qTIGg3I5y8", headless=False)
+        logger.info("""
+        <iframe
+        width="560" height="315"
+        src="https://www.youtube.com/embed/I5e6ftNpGsU"
+        frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen>
+        </iframe>""", html=True)
+        logger.warn("Cookie monster ate all cookies!!")
 
     @keyword(tags=["Getter", "PageContent"])
     def get_cookie(self, cookie: str) -> dict:
