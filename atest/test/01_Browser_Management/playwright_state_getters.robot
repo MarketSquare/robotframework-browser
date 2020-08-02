@@ -45,6 +45,14 @@ Multicontext order
     Get title    ==    Welcome Page
     [Teardown]    Close Context
 
+Multibrowser order
+    New Browser    browser=chromium
+    New Page    ${ERROR_URL}
+    Get title    ==    Error Page
+    Browser encapsulating keyword
+    Get title    ==    Error Page
+    [Teardown]    Close Browser
+
 *** Keywords ***
 Page encapsulating keyword
     New Page    ${WELCOME_URL}
@@ -65,3 +73,9 @@ Context encapsulating keyword
     New Page    ${FORM_URL}
     Get title    ==    prefilled_email_form.html
     [Teardown]    Close Context
+
+Browser encapsulating keyword
+    New Browser    browser=firefox
+    New Page    ${WELCOME_URL}
+    Get title    ==    Welcome Page
+    [Teardown]    Close Browser
