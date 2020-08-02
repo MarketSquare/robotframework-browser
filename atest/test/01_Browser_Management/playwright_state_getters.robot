@@ -37,6 +37,14 @@ Multipage order
     Get title    ==    prefilled_email_form.html
     [Teardown]    Close Page
 
+Multicontext order
+    New Context
+    New Page    ${WELCOME_URL}
+    Get title    ==    Welcome Page
+    Context encapsulating keyword
+    Get title    ==    Welcome Page
+    [Teardown]    Close Context
+
 *** Keywords ***
 Page encapsulating keyword
     New Page    ${WELCOME_URL}
@@ -49,3 +57,11 @@ Page encapsulating keyword 2
     New Page    ${ERROR_URL}
     Get title    ==    Error Page
     [Teardown]    Close Page
+
+Context encapsulating keyword
+    New Context
+    New Page    ${ERROR_URL}
+    Get title    ==    Error Page
+    New Page    ${FORM_URL}
+    Get title    ==    prefilled_email_form.html
+    [Teardown]   Close Context
