@@ -6,7 +6,6 @@ Test Teardown     Close All Browsers
 
 *** Test Cases ***
 Get Multiple Browsers
-    [Tags]    Not-Implemented
     New Browser
     New Page    ${FORM_URL}
     New Context
@@ -14,14 +13,14 @@ Get Multiple Browsers
     New Browser
     New Page    http://example.com
     ${browsers}    Get Browser Catalog
-    Fail
+    ${expected}    evaluate  [{"type": "chromium", "id": 0, "contexts": [{"type": "context", "id": 0, "pages": [{"type": "page", "title": "prefilled_email_form.html", "url": "http://localhost:7272/prefilled_email_form.html", "id": "0"}]}, {"type": "context", "id": 1, "pages": [{"type": "page", "title": "Login Page", "url": "http://localhost:7272/dist/", "id": "0"}]}], "activePage": 0, "activeContext": 1, "activeBrowser": False}, {"type": "chromium", "id": 1, "contexts": [{"type": "context", "id": 0, "pages": [{"type": "page", "title": "Example Domain", "url": "http://example.com/", "id": "0"}]}], "activePage": 0, "activeContext": 0, "activeBrowser": True}]
+    should be equal  ${browsers}  ${expected}
 
 Get Closed Browsers
     New Browser
     Close Browser
     ${browsers}    Get Browser Catalog
-    ${closed_browser}    Evaluate    {'type': 'browser', 'id': 0, 'state': 'CLOSED'}
-    Should Contain    ${browsers}    ${closed_browser}
+    should be empty   ${browsers}
 
 Get Viewport Size
     New Context    viewport={"height": 600, "width": 800}

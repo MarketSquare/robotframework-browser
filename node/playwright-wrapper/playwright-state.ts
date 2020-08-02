@@ -52,26 +52,18 @@ async function _newPage(context: BrowserContext): Promise<IndexedPage> {
 
 export class PlaywrightState {
     constructor() {
-        this.activeBrowser = 0;
-        this.browsers = [];
+        this.activeBrowser = undefined;
+        this._browserStack = [];
         this.elementHandles = new Map();
     }
-    browsers: (BrowserState | 'CLOSED')[];
-    activeBrowser: number;
+    _browserStack: BrowserState[];
+    _ids = 0;
+    activeBrowser: BrowserState | undefined;
     elementHandles: Map<string, ElementHandle>;
     public getActiveBrowser = <T>(callback: sendUnaryData<T>): BrowserState => {
-        const currentBrowser = this.browsers[this.activeBrowser];
-        if (currentBrowser === 'CLOSED') {
+        const currentBrowser = this.activeBrowser;
+        if (currentBrowser === undefined) {
             const error = new Error('Browser has been closed.');
-            callback(error, null);
-            throw error;
-        } else if (currentBrowser === undefined) {
-            const mapped = this.browsers.map((browserState) => {
-                if (typeof browserState === 'string') return browserState;
-                else return browserState?.name;
-            });
-            const message = `No browser for index ${this.activeBrowser}. Open browsers: ` + mapped;
-            const error = new Error(message);
             callback(error, null);
             throw error;
         } else {
@@ -79,31 +71,81 @@ export class PlaywrightState {
         }
     };
 
+    public switchTo = <T>(id: number, callback: sendUnaryData<T>): BrowserState => {
+        this.activeBrowser = this._browserStack.filter((b) => b.id === id)[0];
+        this._browserStack = this._browserStack.filter((b) => b.id !== id);
+        this._browserStack.push(this.activeBrowser);
+        return this.getActiveBrowser(callback);
+    };
+
     public async getOrCreateActiveBrowser(): Promise<BrowserState> {
-        const currentBrowser = this.browsers[this.activeBrowser];
-        if (currentBrowser == 'CLOSED' || !currentBrowser) {
+        const currentBrowser = this.activeBrowser;
+        if (currentBrowser === undefined) {
             const [newBrowser, name] = await _newBrowser();
             const newState = new BrowserState(name, newBrowser);
-            this.browsers[this.activeBrowser] = newState;
+            this.activeBrowser = newState;
+            this._browserStack.push(newState);
             return newState;
         } else {
             return currentBrowser;
         }
     }
 
+    public async closeAll(): Promise<void> {
+        const browsers = this._browserStack;
+        for (const b of browsers) {
+            await b.close();
+        }
+        this._browserStack = [];
+        this.activeBrowser = undefined;
+    }
+
+    public getCatalog() {
+        return this._browserStack.map((browser) => {
+            const contexts = browser.browser.contexts().map((context, i) => {
+                return {
+                    type: 'context',
+                    id: i,
+                    pages: context.pages(),
+                };
+            });
+            return {
+                type: browser.name,
+                id: browser.id,
+                contexts: contexts,
+                activePage: browser.page?.index,
+                activeContext: browser.context?.index,
+                activeBrowser: this.activeBrowser === browser,
+            };
+        });
+    }
+
+    public addBrowser(name: string, browser: Browser): BrowserState {
+        const browserState = new BrowserState(name, browser);
+        browserState.id = this._ids++;
+        this._browserStack.push(browserState);
+        this.activeBrowser = browserState;
+        return browserState;
+    }
+
+    public popBrowser(): void {
+        this._browserStack.pop();
+        if (this._browserStack.length > 0) {
+            this.activeBrowser = this._browserStack[this._browserStack.length - 1];
+        } else {
+            this.activeBrowser = undefined;
+        }
+    }
+
     public getActiveContext = (): BrowserContext | undefined => {
-        const currentBrowser = this.browsers[this.activeBrowser];
-        if (currentBrowser === 'CLOSED') return undefined;
-        return currentBrowser?.context?.c;
+        return this.activeBrowser?.context?.c;
     };
 
     public getActivePage = (): Page | undefined => {
-        const currentBrowser = this.browsers[this.activeBrowser];
-        if (currentBrowser === 'CLOSED') return undefined;
-        return currentBrowser?.page?.p;
+        return this.activeBrowser?.page?.p;
     };
 
-    public addElement(id: string, handle: ElementHandle) {
+    public addElement(id: string, handle: ElementHandle): void {
         this.elementHandles.set(id, handle);
     }
 
@@ -134,12 +176,14 @@ export class BrowserState {
         this._contextStack = [];
         this.context = context ? { c: context, index: 0, pageStack: [] } : undefined;
         this.page = page ? { p: page, index: 0 } : undefined;
+        this.id = -1;
     }
     private _context?: IndexedContext;
     private _page?: IndexedPage;
     private _contextStack: IndexedContext[];
     browser: Browser;
     name?: string;
+    id: number;
 
     public async close(): Promise<void> {
         this.context = undefined;
@@ -207,38 +251,18 @@ export class BrowserState {
 
 export async function closeBrowser(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
     const index = openBrowsers.activeBrowser;
-    const currentBrowser = openBrowsers.browsers[index];
-    if (currentBrowser === 'CLOSED') {
+    const currentBrowser = openBrowsers.activeBrowser;
+    if (currentBrowser === undefined) {
         callback(new Error(`Tried to close Browser ${index}, was already closed.`), null);
         return;
     }
     await currentBrowser.close();
-    openBrowsers.browsers[index] = 'CLOSED';
-
-    const newIndex = openBrowsers.browsers.findIndex((element) => element !== 'CLOSED');
-    openBrowsers.activeBrowser = newIndex;
-    const activeBrowser = openBrowsers.browsers[newIndex];
-    if (activeBrowser && activeBrowser !== 'CLOSED') {
-        await _switchContext(0, activeBrowser).catch((_) =>
-            console.log("Couldn't change active Context after closing browser"),
-        );
-        await _switchPage(0, activeBrowser, false).catch((_) =>
-            console.log("Couldn't change active Page after closing browser"),
-        );
-    }
+    openBrowsers.popBrowser();
     callback(null, emptyWithLog('Closed browser'));
 }
 
 export async function closeAllBrowsers(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
-    const browsers = openBrowsers.browsers;
-    for (let i = 0; i < browsers.length; i++) {
-        const b = browsers[i];
-        if (b !== 'CLOSED') {
-            await b.close();
-        }
-        openBrowsers.browsers[i] = 'CLOSED';
-    }
-    openBrowsers.activeBrowser = 0;
+    await openBrowsers.closeAll();
     callback(null, emptyWithLog('Closed all browsers'));
 }
 
@@ -308,11 +332,8 @@ export async function newBrowser(
     try {
         const options = JSON.parse(call.request.getRawoptions());
         const [browser, name] = await _newBrowser(browserType, headless, options);
-        const browserState = new BrowserState(name, browser);
-
-        const newIndex = openBrowsers.browsers.push(browserState) - 1;
-        openBrowsers.activeBrowser = newIndex;
-        const response = intResponse(newIndex);
+        const browserState = openBrowsers.addBrowser(name, browser);
+        const response = intResponse(browserState.id);
         response.setLog('Succesfully created browser with options ${options}');
         callback(null, response);
     } catch (error) {
@@ -420,16 +441,8 @@ export async function switchBrowser(
 ): Promise<void> {
     const index = call.request.getIndex();
     const previous = openBrowsers.activeBrowser;
-    openBrowsers.activeBrowser = index;
-    const switchedBrowser = openBrowsers.getActiveBrowser(callback);
-    try {
-        // Try to switch to page and context in target browser
-        await _switchContext(switchedBrowser.context?.index || 0, switchedBrowser);
-        await _switchPage(switchedBrowser.page?.index || 0, switchedBrowser, false);
-    } catch (pwError) {
-        console.log(pwError);
-    }
-    const response = intResponse(previous);
+    openBrowsers.switchTo(index, callback);
+    const response = intResponse(previous?.id || -1);
     response.setLog('Succesfully changed active browser');
     callback(null, response);
 }
@@ -440,32 +453,7 @@ export async function getBrowserCatalog(
 ): Promise<void> {
     const response = new Response.String();
 
-    const mappedBrowsers = openBrowsers.browsers.map((browser, index) => {
-        if (browser !== 'CLOSED') {
-            const contexts = browser.browser.contexts().map((context, i) => {
-                return {
-                    type: 'context',
-                    id: i,
-                    pages: context.pages(),
-                };
-            });
-            return {
-                type: browser.name,
-                id: index,
-                contexts: contexts,
-                activePage: browser.page?.index,
-                activeContext: browser.context?.index,
-                activeBrowser: openBrowsers.activeBrowser === index,
-            };
-        } else {
-            return {
-                type: 'browser',
-                id: index,
-                state: 'CLOSED',
-            };
-        }
-    });
-
+    const mappedBrowsers = openBrowsers.getCatalog();
     // This for looping is done instead of a .map on the pages() lists to avoid needing to handle deeply nested page.title() promises.
     for (const b of mappedBrowsers) {
         const contextList = b.contexts;
