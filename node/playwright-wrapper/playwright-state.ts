@@ -170,6 +170,8 @@ export class BrowserState {
     }
     set page(newPage: IndexedPage | undefined) {
         if (newPage !== undefined) {
+            // prevent duplicates
+            this._pageStack = this._pageStack.filter((p) => p.p !== newPage.p);
             this._pageStack.push(newPage);
             console.log('Changed active page');
         } else {
