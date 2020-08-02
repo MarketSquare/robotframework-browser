@@ -219,7 +219,7 @@ class Browser(DynamicCore):
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
             self.playwright_state.switch_context(ctx_id)
-            self.playwright_state.switch_page(int(page_id))
+            self.playwright_state.switch_page(page_id)
             self.playwright_state.close_page()
         for browser in catalog_after_test:
             if browser["activeBrowser"]:
