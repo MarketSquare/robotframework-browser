@@ -10,7 +10,7 @@ Type Text with Clearing
     Get TextField Value    css=input#username_field    ==    username
 
 Type Text With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Type Text    notamatch    text
     [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
@@ -23,7 +23,7 @@ Clear Text
     Get TextField Value    css=input#username_field    ==    username
 
 Clear Text With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Clear Text    notamatch
     [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
@@ -32,7 +32,7 @@ Fill with css selector
     Get TextField Value    css=input#username_field    ==    username
 
 Fill Text With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Text    notamatch    text
     [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
@@ -45,7 +45,7 @@ Type Secret
     Get TextField Value    css=input#password_field    ==    password
 
 Fill Secret With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Secret    notamatch    secret
     [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
