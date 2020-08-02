@@ -41,7 +41,7 @@ async function _newBrowserContext(
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const index = browser.contexts().length - 1;
-    return { index: index, c: context };
+    return { index: index, c: context, pageStack: [] };
 }
 
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
@@ -119,6 +119,7 @@ export class PlaywrightState {
 type IndexedContext = {
     c: BrowserContext;
     index: number;
+    pageStack: IndexedPage[];
 };
 
 type IndexedPage = {
@@ -130,20 +131,20 @@ export class BrowserState {
     constructor(name: string, browser: Browser, context?: BrowserContext, page?: Page) {
         this.name = name;
         this.browser = browser;
-        this.context = context ? { c: context, index: 0 } : undefined;
-        this._pageStack = [];
+        this._contextStack = [];
+        this.context = context ? { c: context, index: 0, pageStack: [] } : undefined;
         this.page = page ? { p: page, index: 0 } : undefined;
     }
     private _context?: IndexedContext;
     private _page?: IndexedPage;
-    private _pageStack: IndexedPage[];
+    private _contextStack: IndexedContext[];
     browser: Browser;
     name?: string;
 
     public async close(): Promise<void> {
         this.context = undefined;
         this.page = undefined;
-        this._pageStack = [];
+        this._contextStack = [];
         await this.browser.close();
     }
 
@@ -162,17 +163,20 @@ export class BrowserState {
     }
     set context(newContext: IndexedContext | undefined) {
         this._context = newContext;
-        if (!newContext) console.log('Set active context to undefined');
-        else console.log('Changed active context');
+        if (newContext !== undefined) {
+            this._contextStack.push(newContext);
+            console.log('Changed active context');
+        } else console.log('Set active context to undefined');
     }
     get page(): IndexedPage | undefined {
         return this._page;
     }
     set page(newPage: IndexedPage | undefined) {
-        if (newPage !== undefined) {
+        const currentContext = this._context;
+        if (newPage !== undefined && currentContext !== undefined) {
             // prevent duplicates
-            this._pageStack = this._pageStack.filter((p) => p.p !== newPage.p);
-            this._pageStack.push(newPage);
+            currentContext.pageStack = currentContext.pageStack.filter((p) => p.p !== newPage.p);
+            currentContext.pageStack.push(newPage);
             console.log('Changed active page');
         } else {
             console.log('Set active page to undefined');
@@ -180,10 +184,22 @@ export class BrowserState {
         this._page = newPage;
     }
     public popPage(): void {
-        this._pageStack.pop();
-        if (this._pageStack.length > 0) {
-            this._page = this._pageStack[this._pageStack.length - 1];
+        const pageStack = this._context?.pageStack || [];
+        pageStack.pop();
+        if (pageStack.length > 0) {
+            this._page = pageStack[pageStack.length - 1];
         } else {
+            this._page = undefined;
+        }
+    }
+    public popContext(): void {
+        this._contextStack.pop();
+        if (this._contextStack.length > 0) {
+            this._context = this._contextStack[this._contextStack.length - 1];
+            const pageStack = this._context.pageStack;
+            this._page = pageStack[pageStack.length - 1];
+        } else {
+            this._context = undefined;
             this._page = undefined;
         }
     }
@@ -232,11 +248,7 @@ export async function closeContext(
 ): Promise<void> {
     const activeBrowser = openBrowsers.getActiveBrowser(callback);
     await openBrowsers.getActiveContext()?.close();
-
-    await _switchContext(0, activeBrowser).catch((_) => console.log("Couldn't change active Context after closing"));
-    await _switchPage(0, activeBrowser, false).catch((_) =>
-        console.log("Couldn't change active Page after closing Context"),
-    );
+    activeBrowser.popContext();
     callback(null, emptyWithLog('Succesfully closed Context'));
 }
 
@@ -357,7 +369,7 @@ async function _switchPage(index: number, browserState: BrowserState, waitForPag
 async function _switchContext(index: number, browserState: BrowserState) {
     const contexts = browserState.browser.contexts();
     if (contexts && contexts[index]) {
-        browserState.context = { index: index, c: contexts[index] };
+        browserState.context = { index: index, c: contexts[index], pageStack: [] };
         return;
     } else {
         const mapped = contexts

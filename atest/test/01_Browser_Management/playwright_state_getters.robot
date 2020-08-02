@@ -64,4 +64,4 @@ Context encapsulating keyword
     Get title    ==    Error Page
     New Page    ${FORM_URL}
     Get title    ==    prefilled_email_form.html
-    [Teardown]   Close Context
+    [Teardown]    Close Context
