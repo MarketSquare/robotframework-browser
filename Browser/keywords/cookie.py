@@ -1,31 +1,62 @@
 import json
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
 
 from robot.libraries.DateTime import convert_date  # type: ignore
+from robot.utils import DotDict  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from Browser.base import LibraryComponent
 from Browser.generated.playwright_pb2 import Request
 from Browser.utils import logger
+from Browser.utils.data_types import CookieType
 from Browser.utils.meta_python import locals_to_params
 
 
 class Cookie(LibraryComponent):
     @keyword(tags=["Getter", "PageContent"])
-    def get_cookies(self) -> List[Dict[str, Any]]:
+    def get_cookies(
+        self, return_type: CookieType = CookieType.dictionary
+    ) -> Union[List[DotDict], str]:
         """Returns cookies from the current active browser context.
 
         Return value contains list of dictionaries. See `Get Cookie` documentation about the dictionary keys.
         """
+        response = self._get_cookies()
+        if not response.log:
+            logger.info("No cookies found.")
+            return []
+        else:
+            logger.info(f"Found cookies: {response.log}")
+        cookies = json.loads(response.body)
+        if return_type == CookieType.dictionary:
+            return self._format_cookies_as_dot_dict(cookies)
+        return self._format_cookies_as_string(cookies)
+
+    def _get_cookies(self):
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetCookies(Request().Empty())
-            cookie_names = response.log
-            if not cookie_names:
-                logger.info("No cookies found.")
-                return []
+            return stub.GetCookies(Request().Empty())
+
+    def _format_cookies_as_string(self, cookies: List[dict]):
+        pairs = []
+        for cookie in cookies:
+            pairs.append(f'{cookie["name"]}={cookie["value"]}')
+        return "; ".join(pairs)
+
+    def _format_cookies_as_dot_dict(self, cookies: List[dict]):
+        as_list = []
+        for cookie in cookies:
+            as_list.append(self._cookie_as_dot_dict(cookie))
+        return as_list
+
+    def _cookie_as_dot_dict(self, cookie):
+        dot_dict = DotDict()
+        for key in cookie:
+            if key == "expires":
+                dot_dict[key] = datetime.fromtimestamp(cookie[key])
             else:
-                logger.info(f"Found cookies: {response.log}")
-        return json.loads(response.body)
+                dot_dict[key] = cookie[key]
+        return dot_dict
 
     @keyword(tags=["Setter", "PageContent"])
     def add_cookie(

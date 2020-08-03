@@ -2,6 +2,11 @@ from enum import Enum, auto
 from typing import TypedDict
 
 
+class CookieType(Enum):
+    dictionary = "dict"
+    string = "str"
+
+
 class RequestMethod(Enum):
     HEAD = auto()
     GET = auto()

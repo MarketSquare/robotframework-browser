@@ -73,34 +73,57 @@ Add Cookie With All Settings
     Should Be Equal    ${cookies}[0][httpOnly]    ${True}
     Should Be Equal    ${cookies}[0][secure]    ${False}
 
-Add Cookie With Expiry As Epoch String
+Add Cookie With All Settings As string
     ${url} =    Get Url
-    ${date_string} =    Get Current Date    increment=1 day    result_format=epoch
-    ${date_string} =    Convert To Integer    ${date_string}
-    ${date_string} =    Convert To String    ${date_string}
+    ${date_string} =    Get Current Date    increment=1 day
+    Add Cookie
+    ...    Tidii
+    ...    Kala
+    ...    url=${url}
     Add Cookie
     ...    Foo
     ...    Bar
     ...    url=${url}
     ...    expires=${date_string}
+    ...    httpOnly=True
+    ...    secure=True
+    ...    sameSite=Lax
+    ${cookies} =    Get Cookies    string
+    Should Contain    ${cookies}    Tidii=Kala; Foo=Bar
+
+Add Cookie With Expiry As Epoch String
+    ${url} =    Get Url
+    ${epoch} =    Get Current Date    increment=1 day    result_format=epoch
+    ${date_time} =    Convert Date    ${epoch}
+    ${epoch} =    Convert To Integer    ${epoch}
+    ${epoch} =    Convert To String    ${epoch}
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    expires=${epoch}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
-    ${epoch} =    Convert To Integer    ${date_string}
-    Should Be Equal    ${cookies}[0][expires]    ${epoch}
+    ${epoch_as_str} =    Convert To String    ${cookies}[0][expires]
+    Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
+    ${expires}    Set Variable    ${cookies}[0][expires]
+    Should Be Equal    ${expires.year}    ${expires.year}
 
 Add Cookie With Expiry As Epoch Int
     ${url} =    Get Url
-    ${date_string} =    Get Current Date    increment=1 day    result_format=epoch
-    ${date_string} =    Convert To Integer    ${date_string}
+    ${epoch} =    Get Current Date    increment=1 day    result_format=epoch
     Add Cookie
     ...    Foo
     ...    Bar
     ...    url=${url}
-    ...    expires=${date_string}
+    ...    expires=${epoch}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
-    ${epoch} =    Convert To Integer    ${date_string}
-    Should Be Equal    ${cookies}[0][expires]    ${epoch}
+    ${epoch_as_str} =    Convert To String    ${cookies}[0][expires]
+    Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
+    ${expires}    Set Variable    ${cookies}[0][expires]
+    ${date_time} =    Convert Date    ${epoch}
+    Should Be Equal    ${expires.year}    ${expires.year}
 
 Delete All Cookies
     ${url} =    Get Url
