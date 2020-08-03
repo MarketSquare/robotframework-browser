@@ -1,15 +1,12 @@
 import json
-from typing import (
-    Dict,
-    Optional,
-)
+from typing import Dict, Optional
 
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.data_types import MouseButton, KeyboardModifier, SelectAttribute
+from ..utils.data_types import KeyboardModifier, MouseButton, SelectAttribute
 from ..utils.time_conversion import timestr_to_millisecs
 
 

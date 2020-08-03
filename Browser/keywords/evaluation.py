@@ -1,7 +1,7 @@
 import json
+from typing import Any
 
 from robotlibcore import keyword  # type: ignore
-from typing import Any
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request

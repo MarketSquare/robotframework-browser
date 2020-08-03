@@ -1,13 +1,13 @@
 import json
+from typing import Dict, Literal, Optional
 
 from robotlibcore import keyword  # type: ignore
-from typing import Optional, Dict, Literal
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.time_conversion import timestr_to_millisecs
 from ..utils.data_types import RequestMethod
+from ..utils.time_conversion import timestr_to_millisecs
 
 
 def _get_headers(body: str, headers: Dict):

@@ -2,20 +2,20 @@ import os
 import re
 from typing import List
 
-from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .keywords import (
     Control,
     Cookie,
+    Evaluation,
     Getters,
     Interaction,
+    Network,
     PlaywrightState,
     Promises,
     Waiter,
     WebAppState,
-    Evaluation,
-    Network,
 )
 from .playwright import Playwright
 from .utils import logger

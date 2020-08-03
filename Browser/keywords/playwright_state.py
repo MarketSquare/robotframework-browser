@@ -1,16 +1,12 @@
 import json
-from typing import (
-    Dict,
-    List,
-    Optional,
-)
+from typing import Dict, List, Optional
 
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.data_types import SupportedBrowsers, ViewportDimensions, ColorScheme
+from ..utils.data_types import ColorScheme, SupportedBrowsers, ViewportDimensions
 from ..utils.meta_python import locals_to_params
 from ..utils.time_conversion import timestr_to_millisecs
 

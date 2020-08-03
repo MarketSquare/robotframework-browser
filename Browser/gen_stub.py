@@ -1,6 +1,7 @@
-import Browser
 import inspect
 from typing import Any
+
+import Browser
 
 
 def is_named_method(keyword_name: str) -> bool:

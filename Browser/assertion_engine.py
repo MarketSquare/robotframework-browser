@@ -1,14 +1,5 @@
 import re
-from typing import (
-    Any,
-    cast,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    TypeVar,
-)
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 

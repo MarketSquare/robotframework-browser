@@ -59,6 +59,7 @@ lint-python:
 	black --config Browser/pyproject.toml Browser/
 	black --config Browser/pyproject.toml utest/
 	flake8 --config Browser/.flake8 Browser/ utest/
+	isort Browser/
 
 node/.linted: build node/playwright-wrapper/*.ts node/dynamic-test-app/src/*
 	yarn run lint

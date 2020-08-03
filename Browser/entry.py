@@ -1,8 +1,8 @@
 import os
-from subprocess import Popen, PIPE, STDOUT, DEVNULL, CalledProcessError
 import subprocess
 import sys
 from pathlib import Path
+from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
 from .utils import logger
 

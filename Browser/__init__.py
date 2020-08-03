@@ -1,17 +1,18 @@
+from .browser import Browser
+from .entry import ensure_node_dependencies
 from .utils.data_types import (
-    TypedDict,
     AssertionOperator,
-    ElementState,
     ColorScheme,
-    ViewportDimensions,
-    SupportedBrowsers,
-    SelectAttribute,
+    ElementState,
     KeyboardModifier,
     MouseButton,
     RequestMethod,
+    SelectAttribute,
+    SupportedBrowsers,
+    TypedDict,
+    ViewportDimensions,
 )
 from .version import VERSION
-from .browser import Browser
 
 __version__ = VERSION
 __all__ = [
@@ -28,6 +29,5 @@ __all__ = [
     "Browser",
 ]
 
-from .entry import ensure_node_dependencies
 
 ensure_node_dependencies()

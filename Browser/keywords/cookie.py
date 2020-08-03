@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from robot.libraries.DateTime import convert_date  # type: ignore
 from robotlibcore import keyword  # type: ignore

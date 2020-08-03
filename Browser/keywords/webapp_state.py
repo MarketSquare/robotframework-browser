@@ -1,8 +1,5 @@
 import json
-from typing import (
-    Any,
-    Optional,
-)
+from typing import Any, Optional
 
 from robotlibcore import keyword  # type: ignore
 

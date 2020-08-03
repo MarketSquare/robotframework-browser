@@ -2,16 +2,16 @@ import contextlib
 import functools
 import os
 import socket
-from subprocess import Popen, STDOUT
 import time
+from subprocess import STDOUT, Popen
 
 import grpc  # type: ignore
-from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 
-from Browser.generated.playwright_pb2 import Request
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
-from Browser.utils.time_conversion import timestr_to_millisecs
+from Browser.generated.playwright_pb2 import Request
 from Browser.utils import logger
+from Browser.utils.time_conversion import timestr_to_millisecs
 
 
 class Playwright:

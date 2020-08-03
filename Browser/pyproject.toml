@@ -14,3 +14,8 @@ exclude = '''
   | __init__\.pyi
 )/
 '''
+
+[tool.isort]
+profile = "black"
+src_paths="."
+skip_glob = ["generated", "__init__.pyi"]
