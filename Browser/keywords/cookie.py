@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Dict, Any, List
+from typing import Optional, Any, Dict, List
 
 from robot.libraries.DateTime import convert_date  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -7,11 +7,12 @@ from robotlibcore import keyword  # type: ignore
 from Browser.base import LibraryComponent
 from Browser.generated.playwright_pb2 import Request
 from Browser.utils import logger
+from Browser.utils.meta_python import locals_to_params
 
 
 class Cookie(LibraryComponent):
     @keyword(tags=["Getter", "PageContent"])
-    def get_cookies(self) -> List[dict]:
+    def get_cookies(self) -> List[Dict[str, Any]]:
         """Returns cookies from the current active browser context.
 
         Return value contains list of dictionaries. See `Get Cookie` documentation about the dictionary keys.
@@ -21,6 +22,7 @@ class Cookie(LibraryComponent):
             cookie_names = response.log
             if not cookie_names:
                 logger.info("No cookies found.")
+                return []
             else:
                 logger.info(f"Found cookies: {response.log}")
         return json.loads(response.body)
@@ -33,10 +35,10 @@ class Cookie(LibraryComponent):
         url: Optional[str] = None,
         domain: Optional[str] = None,
         path: Optional[str] = None,
-        expiry: Optional[str] = None,
-        http_only: Optional[bool] = None,
+        expires: Optional[str] = None,
+        httpOnly: Optional[bool] = None,
         secure: Optional[bool] = None,
-        same_site: Optional[str] = None,
+        sameSite: Optional[str] = None,
     ):
         """Adds a cookie to currently active browser context.
 
@@ -51,24 +53,10 @@ class Cookie(LibraryComponent):
         | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=2027-09-28 16:21:35      | # Expiry as timestamp.     |
         | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=1822137695               | # Expiry as epoch seconds. |
         """
-        cookie: Dict[str, Any] = {"name": name, "value": value}
-        if url:
-            cookie["url"] = url
-        if path:
-            cookie["path"] = path
-        if domain:
-            cookie["domain"] = domain
-        if http_only:
-            cookie["httpOnly"] = http_only
-        if expiry:
-            cookie["expires"] = self._expiry(expiry)
-        if secure:
-            cookie["secure"] = secure
-        if same_site:
-            cookie["sameSite"] = same_site
-        if not self._check_data(cookie):
-            raise ValueError("Cookie should have a url or a domain/path pair.")
-        cookie_json = json.dumps(cookie)
+        params = locals_to_params(locals())
+        if expires:
+            params["expires"] = self._expiry(expires)
+        cookie_json = json.dumps(params)
         logger.debug(f"Adding cookie: {cookie_json}")
         with self.playwright.grpc_channel() as stub:
             response = stub.AddCookie(Request.Json(body=cookie_json))
@@ -79,13 +67,6 @@ class Cookie(LibraryComponent):
             return int(expiry)
         except ValueError:
             return int(convert_date(expiry, result_format="epoch"))
-
-    def _check_data(self, cookie: dict) -> bool:
-        if cookie.get("url"):
-            return True
-        if cookie.get("path") and cookie.get("domain"):
-            return True
-        return False
 
     @keyword(tags=["Setter", "PageContent"])
     def delete_all_cookies(self):
@@ -111,7 +92,7 @@ class Cookie(LibraryComponent):
         logger.warn("Cookie monster ate all cookies!!")
 
     @keyword(tags=["Getter", "PageContent"])
-    def get_cookie(self, cookie: str) -> dict:
+    def get_cookie(self, cookie: str) -> Dict[str, Any]:
         """Returns information of cookie with name as an dictionary.
 
         If no cookie is found with name, keyword fails. The cookie dictionary contains

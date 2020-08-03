@@ -16,7 +16,7 @@ Get Cookies Should Return Empty List When No Cookies Are Available
 
 Add Cookie Without Url, Path and Domain
     Run Keyword And Expect Error
-    ...    ValueError: Cookie should have a url or a domain/path pair.
+    ...    Cookie should have a url or a domain/path pair
     ...    Add Cookie    Foo    Bar
 
 Add Cookie Should Fail If Context Is Not Open
@@ -60,10 +60,10 @@ Add Cookie With All Settings
     ...    Foo
     ...    Bar
     ...    url=${url}
-    ...    expiry=${date_string}
-    ...    http_only=True
+    ...    expires=${date_string}
+    ...    httpOnly=True
     ...    secure=True
-    ...    same_site=Lax
+    ...    sameSite=Lax
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
     Should Be Equal    ${cookies}[0][path]    /
@@ -82,7 +82,7 @@ Add Cookie With Expiry As Epoch String
     ...    Foo
     ...    Bar
     ...    url=${url}
-    ...    expiry=${date_string}
+    ...    expires=${date_string}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
     ${epoch} =    Convert To Integer    ${date_string}
@@ -96,7 +96,7 @@ Add Cookie With Expiry As Epoch Int
     ...    Foo
     ...    Bar
     ...    url=${url}
-    ...    expiry=${date_string}
+    ...    expires=${date_string}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
     ${epoch} =    Convert To Integer    ${date_string}
@@ -129,16 +129,16 @@ Get Cookie
     ...    Foo
     ...    Bar
     ...    url=${url}
-    ...    http_only=True
+    ...    httpOnly=True
     ...    secure=True
-    ...    same_site=Lax
+    ...    sameSite=Lax
     Add Cookie
     ...    Tidii
     ...    kala
     ...    url=${url}
-    ...    http_only=True
+    ...    httpOnly=True
     ...    secure=True
-    ...    same_site=Lax
+    ...    sameSite=Lax
     ${cookie} =    Get Cookie    Tidii
     Should Be Equal    ${cookie}[name]    Tidii
     Should Be Equal    ${cookie}[value]    kala
@@ -149,9 +149,9 @@ Get Cookie Should Fail If Cookie Is Not Found
     ...    Foo
     ...    Bar
     ...    url=${url}
-    ...    http_only=True
+    ...    httpOnly=True
     ...    secure=True
-    ...    same_site=Lax
+    ...    sameSite=Lax
     Run Keyword And Expect Error
     ...    ValueError: Cookie with name FOO is not found.
     ...    Get Cookie
