@@ -101,29 +101,29 @@ export class PlaywrightState {
     }
 
     public async getCatalog() {
+        const pageToContents = async (page: IndexedPage) => {
+            return {
+                type: 'page',
+                title: await page.p.title(),
+                url: page.p.url(),
+                id: page.index,
+            };
+        };
+
+        const contextToContents = async (context: IndexedContext) => {
+            return {
+                type: 'context',
+                id: context.index,
+                pages: await Promise.all(context.pageStack.map(pageToContents)),
+            };
+        };
+
         return Promise.all(
             this._browserStack.map(async (browser) => {
                 return {
                     type: browser.name,
                     id: browser.id,
-                    contexts: await Promise.all(
-                        browser.contextStack.map(async (context) => {
-                            return {
-                                type: 'context',
-                                id: context.index,
-                                pages: await Promise.all(
-                                    context.pageStack.map(async (page) => {
-                                        return {
-                                            type: 'page',
-                                            title: await page.p.title(),
-                                            url: page.p.url(),
-                                            id: page.index,
-                                        };
-                                    }),
-                                ),
-                            };
-                        }),
-                    ),
+                    contexts: await Promise.all(browser.contextStack.map(contextToContents)),
                     activePage: browser.page?.index,
                     activeContext: browser.context?.index,
                     activeBrowser: this.activeBrowser === browser,
