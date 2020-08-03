@@ -20,6 +20,7 @@ from .keywords import (
 )
 from .playwright import Playwright
 from .utils import logger
+from .utils.data_types import AutoClosingLevel
 from .version import VERSION
 
 
@@ -141,6 +142,15 @@ class Browser(DynamicCore):
     Builtin Evaluating expressions]
     for more info on the syntax.
 
+    = Automatic page and context closing =
+
+    Library will close pages and contexts that are created during test execution.
+    Pages and contexts created before test in Suite Setup or Suite Teardown will be closed after that suite.
+    This will remove the burden of closing these resources in teardowns.
+
+    Browsers will not be automatically closed. A browser is expensive to create and should be reused.
+
+    Automatic closing can be configured or switched off with the ``auto_closing_level`` library parameter.
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
@@ -148,8 +158,14 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
+    _auto_closing_level: AutoClosingLevel
 
-    def __init__(self, timeout="10s", enable_playwright_debug: bool = False):
+    def __init__(
+        self,
+        timeout="10s",
+        enable_playwright_debug: bool = False,
+        auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
+    ):
         """Browser library can be taken into use with optional arguments:
 
         - ``timeout``:
@@ -158,6 +174,10 @@ class Browser(DynamicCore):
         - ``enable_playwright_debug``:
           Enable low level debug information from the playwright tool. Mainly
           Useful for the library developers and for debugging purposes.
+        - ``auto_closing_level``:
+          Configure context and page automatic closing. Default is after each test.
+          Other options are SUITE for closing after each suite and MANUAL
+          for no automatic closing.
         """
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
@@ -180,6 +200,7 @@ class Browser(DynamicCore):
             WebAppState(self),
         ]
         self.playwright = Playwright(timeout, enable_playwright_debug)
+        self._auto_closing_level = auto_closing_level
         DynamicCore.__init__(self, libraries)
 
     @property
@@ -190,21 +211,25 @@ class Browser(DynamicCore):
         self.playwright.close()
 
     def _start_suite(self, name, attrs):
-        self._execution_stack.append(self.getters.get_browser_catalog())
+        if self._auto_closing_level != AutoClosingLevel.MANUAL:
+            self._execution_stack.append(self.getters.get_browser_catalog())
 
     def _start_test(self, name, attrs):
-        self._execution_stack.append(self.getters.get_browser_catalog())
+        if self._auto_closing_level == AutoClosingLevel.TEST:
+            self._execution_stack.append(self.getters.get_browser_catalog())
 
     def _end_test(self, name, attrs):
         if len(self.promises._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
-        catalog_before_test = self._execution_stack.pop()
-        self._prune_execution_stack(catalog_before_test)
+        if self._auto_closing_level == AutoClosingLevel.TEST:
+            catalog_before_test = self._execution_stack.pop()
+            self._prune_execution_stack(catalog_before_test)
 
     def _end_suite(self, name, attrs):
-        catalog_before_suite = self._execution_stack.pop()
-        self._prune_execution_stack(catalog_before_suite)
+        if self._auto_closing_level != AutoClosingLevel.MANUAL:
+            catalog_before_suite = self._execution_stack.pop()
+            self._prune_execution_stack(catalog_before_suite)
 
     def _prune_execution_stack(self, catalog_before):
         # WIP CODE BEGINS
@@ -233,6 +258,7 @@ class Browser(DynamicCore):
             self.playwright_state.switch_context(ctx_id)
             self.playwright_state.switch_page(page_id)
             self.playwright_state.close_page()
+        # try to set active page and context back to right place.
         for browser in catalog_after:
             if browser["activeBrowser"]:
                 activeContext = browser.get("activeContext", None)

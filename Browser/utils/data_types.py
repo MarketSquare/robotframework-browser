@@ -42,6 +42,12 @@ ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
 ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
 
 
+class AutoClosingLevel(Enum):
+    SUITE = "SUITE"
+    TEST = "TEST"
+    MANUAL = "MANUAL"
+
+
 class ElementState(Enum):
     attached = auto()
     detached = auto()

@@ -1,6 +1,6 @@
 *** Settings ***
 Library           Browser
-Resource          imports.resource
+Resource          ../imports.resource
 Suite Setup       New Page    ${ERROR_URL}
 
 *** Test Cases ***
