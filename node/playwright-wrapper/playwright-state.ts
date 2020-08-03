@@ -56,13 +56,14 @@ async function _newPage(context: BrowserContext): Promise<IndexedPage> {
 
 export class PlaywrightState {
     constructor() {
-        this.activeBrowser = undefined;
-        this._browserStack = [];
+        this.browserStack = [];
         this.elementHandles = new Map();
     }
-    _browserStack: BrowserState[];
-    _ids = 0;
-    activeBrowser: BrowserState | undefined;
+    private browserStack: BrowserState[];
+    private ids = 0;
+    get activeBrowser() {
+        return lastItem(this.browserStack);
+    }
     elementHandles: Map<string, ElementHandle>;
     public getActiveBrowser = <T>(callback: sendUnaryData<T>): BrowserState => {
         const currentBrowser = this.activeBrowser;
@@ -76,9 +77,10 @@ export class PlaywrightState {
     };
 
     public switchTo = <T>(id: number, callback: sendUnaryData<T>): BrowserState => {
-        this.activeBrowser = this._browserStack.filter((b) => b.id === id)[0];
-        this._browserStack = this._browserStack.filter((b) => b.id !== id);
-        this._browserStack.push(this.activeBrowser);
+        const browser = this.browserStack.find((b) => b.id === id);
+        exists(browser, callback, `No browser for id '${id}'`);
+        this.browserStack = this.browserStack.filter((b) => b.id !== id);
+        this.browserStack.push(browser);
         return this.getActiveBrowser(callback);
     };
 
@@ -87,8 +89,7 @@ export class PlaywrightState {
         if (currentBrowser === undefined) {
             const [newBrowser, name] = await _newBrowser();
             const newState = new BrowserState(name, newBrowser);
-            this.activeBrowser = newState;
-            this._browserStack.push(newState);
+            this.browserStack.push(newState);
             return newState;
         } else {
             return currentBrowser;
@@ -96,12 +97,11 @@ export class PlaywrightState {
     }
 
     public async closeAll(): Promise<void> {
-        const browsers = this._browserStack;
+        const browsers = this.browserStack;
         for (const b of browsers) {
             await b.close();
         }
-        this._browserStack = [];
-        this.activeBrowser = undefined;
+        this.browserStack = [];
     }
 
     public async getCatalog() {
@@ -123,7 +123,7 @@ export class PlaywrightState {
         };
 
         return Promise.all(
-            this._browserStack.map(async (browser) => {
+            this.browserStack.map(async (browser) => {
                 return {
                     type: browser.name,
                     id: browser.id,
@@ -138,19 +138,13 @@ export class PlaywrightState {
 
     public addBrowser(name: string, browser: Browser): BrowserState {
         const browserState = new BrowserState(name, browser);
-        browserState.id = this._ids++;
-        this._browserStack.push(browserState);
-        this.activeBrowser = browserState;
+        browserState.id = this.ids++;
+        this.browserStack.push(browserState);
         return browserState;
     }
 
     public popBrowser(): void {
-        this._browserStack.pop();
-        if (this._browserStack.length > 0) {
-            this.activeBrowser = lastItem(this._browserStack);
-        } else {
-            this.activeBrowser = undefined;
-        }
+        this.browserStack.pop();
     }
 
     public getActiveContext = (): BrowserContext | undefined => {
@@ -186,12 +180,10 @@ type IndexedPage = {
 };
 
 export class BrowserState {
-    constructor(name: string, browser: Browser, context?: BrowserContext, page?: Page) {
+    constructor(name: string, browser: Browser) {
         this.name = name;
         this.browser = browser;
         this._contextStack = [];
-        this.context = context ? { c: context, index: 0, pageStack: [] } : undefined;
-        this.page = page ? { p: page, index: 0 } : undefined;
         this.id = -1;
     }
     private _contextStack: IndexedContext[];
