@@ -1,5 +1,5 @@
 import { sendUnaryData, status, Metadata } from 'grpc';
-import { Page, errors, ElementHandle, Frame } from 'playwright';
+import { BrowserContext, Page, errors, ElementHandle, Frame } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 
@@ -24,9 +24,30 @@ export async function waitUntilElementExists<T>(
     return element;
 }
 
-export async function invokeOnPage(page: Page | undefined, callback: any, methodName: string, ...args: any[]) {
+export async function invokeOnPage<T>(
+    page: Page | undefined,
+    callback: sendUnaryData<T>,
+    methodName: string,
+    ...args: any[]
+) {
     exists(page, callback, `Tried to do playwright action '${methodName}', but no open page.`);
     const fn: any = (page as { [key: string]: any })[methodName].bind(page);
+    try {
+        return await fn(...args);
+    } catch (e) {
+        console.log(`Error invoking Playwright action '${methodName}': ${e}`);
+        callback(e, null);
+    }
+}
+
+export async function invokeOnContext<T>(
+    context: BrowserContext | undefined,
+    callback: sendUnaryData<T>,
+    methodName: string,
+    ...args: any[]
+) {
+    exists(context, callback, `Tried to do playwright action '${methodName}', but no open context.`);
+    const fn: any = (context as { [key: string]: any })[methodName].bind(context);
     try {
         return await fn(...args);
     } catch (e) {
