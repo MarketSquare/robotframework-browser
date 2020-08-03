@@ -65,6 +65,13 @@ Only Python 3.8 or later is supported.
     Click    \#delayed_request
     ${body}=    Wait For    ${promise}
 
+### Device Descriptors
+    
+    ${device}=  Get Device  iPhone X
+    New Context  &{device}
+    New Page
+    Get Viewport Size  # returns { "width": 375, "height": 812 }
+
 ### Sending HTTP requests and parsing their responses
 
     &{response}=    HTTP    /api/post    POST    {"name": "John"}

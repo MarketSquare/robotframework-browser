@@ -2,6 +2,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import * as browserControl from './browser-control';
 import * as cookie from './cookie';
+import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
@@ -289,6 +290,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         const response = new Response.String();
         response.setBody('OK');
         callback(null, response);
+        return;
     }
 
     async highlightElements(
@@ -310,5 +312,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         return network.httpRequest(call, callback, this.getActivePage());
+    }
+
+    async getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return deviceDescriptors.getDevice(call, callback);
+    }
+    async getDevices(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return deviceDescriptors.getDevices(callback);
     }
 }

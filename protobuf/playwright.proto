@@ -113,10 +113,15 @@ message Request {
      string method = 2;
      string body = 3;
      string headers = 4;
-   }
+  }
+  
   message HttpCapture {
     string urlOrPredicate = 1;
     float timeout = 2;
+  }
+  
+  message Device {
+    string name = 1;
   }
 }
 
@@ -238,6 +243,9 @@ service  Playwright {
   
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
   rpc WaitForResponse(Request.HttpCapture) returns (Response.String);
+
+  rpc GetDevice(Request.Device) returns (Response.String);
+  rpc GetDevices(Request.Empty) returns (Response.String);
 
   /* Playwright State handling keywords */
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty);

@@ -8,6 +8,7 @@ from robotlibcore import DynamicCore  # type: ignore
 from .keywords import (
     Control,
     Cookie,
+    Devices,
     Evaluation,
     Getters,
     Interaction,
@@ -168,6 +169,7 @@ class Browser(DynamicCore):
         libraries = [
             self.browser_control,
             Cookie(self),
+            Devices(self),
             Evaluation(self),
             Interaction(self),
             self.getters,
