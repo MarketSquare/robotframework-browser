@@ -1,6 +1,6 @@
 import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { BrowserContext, Cookie } from 'playwright';
-import { exists } from './playwirght-invoke';
+import { invokeOnContext } from './playwirght-invoke';
 
 import { Request, Response } from './generated/playwright_pb';
 import { stringResponse, emptyWithLog } from './response-util';
@@ -18,18 +18,13 @@ interface CookieData {
 }
 
 export async function getCookies(callback: sendUnaryData<Response.String>, context?: BrowserContext) {
-    exists(context, callback, `Tried to get all cookie's, but no context is active.`);
-    try {
-        const allCookies = await context.cookies();
-        console.log(allCookies);
-        const cookieName = [];
-        for (const cookie of allCookies as Array<Cookie>) {
-            cookieName.push(cookie.name);
-        }
-        callback(null, stringResponse(JSON.stringify(allCookies), cookieName.toString()));
-    } catch (e) {
-        callback(e, null);
+    const allCookies = await invokeOnContext(context, callback, 'cookies');
+    console.log(allCookies);
+    const cookieName = [];
+    for (const cookie of allCookies as Array<Cookie>) {
+        cookieName.push(cookie.name);
     }
+    callback(null, stringResponse(JSON.stringify(allCookies), cookieName.toString()));
 }
 
 export async function addCookie(
@@ -37,23 +32,13 @@ export async function addCookie(
     callback: sendUnaryData<Response.Empty>,
     context?: BrowserContext,
 ) {
-    exists(context, callback, `Tried to add cookie, but no context is active.`);
-    try {
-        const cookie: CookieData = JSON.parse(call.request.getBody());
-        console.log('Cookie data: ' + call.request.getBody());
-        await context.addCookies([cookie]);
-        callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
-    } catch (e) {
-        callback(e, null);
-    }
+    const cookie: CookieData = JSON.parse(call.request.getBody());
+    console.log('Cookie data: ' + call.request.getBody());
+    await invokeOnContext(context, callback, 'addCookies', [cookie]);
+    callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
 }
 
 export async function deleteAllCookies(callback: sendUnaryData<Response.Empty>, context?: BrowserContext) {
-    exists(context, callback, `Tried to delete all cookies, but no context is active.`);
-    try {
-        await context.clearCookies();
-        callback(null, emptyWithLog('All cookies deleted.'));
-    } catch (e) {
-        callback(e, null);
-    }
+    await invokeOnContext(context, callback, 'clearCookies');
+    callback(null, emptyWithLog('All cookies deleted.'));
 }
