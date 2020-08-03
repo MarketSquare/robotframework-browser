@@ -1,8 +1,5 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
+import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { IPlaywrightServer } from './generated/playwright_grpc_pb';
-import { Response, Request } from './generated/playwright_pb';
-import { class_async_timer } from './execution-time-decorators';
 import * as browserControl from './browser-control';
 import * as cookie from './cookie';
 import * as evaluation from './evaluation';
@@ -10,7 +7,10 @@ import * as getters from './getters';
 import * as interaction from './interaction';
 import * as network from './network';
 import * as playwrightState from './playwright-state';
+import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { PlaywrightState } from './playwright-state';
+import { Request, Response } from './generated/playwright_pb';
+import { class_async_timer } from './execution-time-decorators';
 
 @class_async_timer
 export class PlaywrightServer implements IPlaywrightServer {

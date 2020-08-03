@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState, useRef } from 'react';
+import React, { ChangeEvent, useRef, useState } from 'react';
 
 function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     event.persist();

@@ -1,9 +1,9 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { BrowserContext, Page } from 'playwright';
+import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { Response, Request } from './generated/playwright_pb';
-import { invokeOnPage, exists } from './playwirght-invoke';
+import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
+import { exists, invokeOnPage } from './playwirght-invoke';
 
 export async function goTo(
     call: ServerUnaryCall<Request.Url>,

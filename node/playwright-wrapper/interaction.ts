@@ -1,9 +1,9 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
+import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { Response, Request } from './generated/playwright_pb';
-import { invokePlaywrightMethod } from './playwirght-invoke';
-import { emptyWithLog } from './response-util';
 import { PlaywrightState } from './playwright-state';
+import { Request, Response } from './generated/playwright_pb';
+import { emptyWithLog } from './response-util';
+import { invokePlaywrightMethod } from './playwirght-invoke';
 
 export async function selectOption(
     call: ServerUnaryCall<Request.SelectElementSelector>,

@@ -1,10 +1,10 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
-import { Page, ElementHandle } from 'playwright';
+import { ElementHandle, Page } from 'playwright';
+import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { Response, Request, Types } from './generated/playwright_pb';
-import { invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
-import { stringResponse, boolResponse, intResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
+import { Request, Response, Types } from './generated/playwright_pb';
+import { boolResponse, intResponse, stringResponse } from './response-util';
+import { invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 
 export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
     const title = await invokeOnPage(page, callback, 'title');

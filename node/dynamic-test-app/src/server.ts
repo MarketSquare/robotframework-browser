@@ -1,7 +1,7 @@
-import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import * as path from 'path';
+import * as express from 'express';
 import * as fs from 'fs';
+import * as path from 'path';
 
 const app = express.default();
 app.use(bodyParser.json());

@@ -1,5 +1,5 @@
-import { sendUnaryData, status, Metadata } from 'grpc';
-import { BrowserContext, Page, errors, ElementHandle, Frame } from 'playwright';
+import { BrowserContext, ElementHandle, Frame, Page, errors } from 'playwright';
+import { Metadata, sendUnaryData, status } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 

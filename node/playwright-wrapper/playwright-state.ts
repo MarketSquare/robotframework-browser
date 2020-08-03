@@ -1,9 +1,9 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
-import { chromium, firefox, webkit, Browser, BrowserContext, Page, ElementHandle } from 'playwright';
+import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
+import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { Response, Request } from './generated/playwright_pb';
-import { invokeOnPage, exists } from './playwirght-invoke';
+import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, intResponse } from './response-util';
+import { exists, invokeOnPage } from './playwirght-invoke';
 
 async function _newBrowser(
     browserType?: string,
