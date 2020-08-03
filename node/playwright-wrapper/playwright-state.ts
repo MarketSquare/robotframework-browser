@@ -5,6 +5,10 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, intResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
+function lastItem<T>(array: T[]): T | undefined {
+    return array[array.length - 1];
+}
+
 async function _newBrowser(
     browserType?: string,
     headless?: boolean,
@@ -143,7 +147,7 @@ export class PlaywrightState {
     public popBrowser(): void {
         this._browserStack.pop();
         if (this._browserStack.length > 0) {
-            this.activeBrowser = this._browserStack[this._browserStack.length - 1];
+            this.activeBrowser = lastItem(this._browserStack);
         } else {
             this.activeBrowser = undefined;
         }
@@ -190,8 +194,6 @@ export class BrowserState {
         this.page = page ? { p: page, index: 0 } : undefined;
         this.id = -1;
     }
-    private _context?: IndexedContext;
-    private _page?: IndexedPage;
     private _contextStack: IndexedContext[];
     browser: Browser;
     name?: string;
@@ -215,10 +217,9 @@ export class BrowserState {
         }
     }
     get context(): IndexedContext | undefined {
-        return this._context;
+        return lastItem(this._contextStack);
     }
     set context(newContext: IndexedContext | undefined) {
-        this._context = newContext;
         if (newContext !== undefined) {
             // prevent duplicates
             this._contextStack = this._contextStack.filter((c) => c.c !== newContext.c);
@@ -227,10 +228,12 @@ export class BrowserState {
         } else console.log('Set active context to undefined');
     }
     get page(): IndexedPage | undefined {
-        return this._page;
+        const context = this.context;
+        if (context) return lastItem(context.pageStack);
+        else return undefined;
     }
     set page(newPage: IndexedPage | undefined) {
-        const currentContext = this._context;
+        const currentContext = this.context;
         if (newPage !== undefined && currentContext !== undefined) {
             // prevent duplicates
             currentContext.pageStack = currentContext.pageStack.filter((p) => p.p !== newPage.p);
@@ -239,29 +242,21 @@ export class BrowserState {
         } else {
             console.log('Set active page to undefined');
         }
-        this._page = newPage;
     }
     get contextStack(): IndexedContext[] {
         return this._contextStack;
     }
     public popPage(): void {
-        const pageStack = this._context?.pageStack || [];
+        const pageStack = this.context?.pageStack || [];
         pageStack.pop();
-        if (pageStack.length > 0) {
-            this._page = pageStack[pageStack.length - 1];
-        } else {
-            this._page = undefined;
-        }
     }
     public popContext(): void {
         this._contextStack.pop();
-        if (this._contextStack.length > 0) {
-            this._context = this._contextStack[this._contextStack.length - 1];
-            const pageStack = this._context.pageStack;
-            this._page = pageStack[pageStack.length - 1];
+        const context = lastItem(this._contextStack);
+        if (context) {
+            this.context = context;
         } else {
-            this._context = undefined;
-            this._page = undefined;
+            this.context = undefined;
         }
     }
 }
