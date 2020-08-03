@@ -41,7 +41,7 @@ export function setTimeout(
     callback: sendUnaryData<Response.Empty>,
     context?: BrowserContext,
 ) {
-    exists(context, callback, 'Tried to set timeout, no open browser');
+    exists(context, callback, 'Tried to set timeout, no open context');
     const timeout = call.request.getTimeout();
     context.setDefaultTimeout(timeout);
     callback(null, emptyWithLog(`Set timeout to: ${timeout}`));

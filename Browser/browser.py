@@ -1,5 +1,6 @@
 import os
 import re
+from typing import List
 
 from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
@@ -158,16 +159,19 @@ class Browser(DynamicCore):
           Useful for the library developers and for debugging purposes.
         """
         self.ROBOT_LIBRARY_LISTENER = self
+        self._execution_stack: List[object] = []
         # This is more explicit than to have all the libraries be referenceable when they don't need it.
         self.browser_control = Control(self)
         self.promises = Promises(self)
+        self.getters = Getters(self)
+        self.playwright_state = PlaywrightState(self)
         libraries = [
             self.browser_control,
             Cookie(self),
             Evaluation(self),
             Interaction(self),
-            Getters(self),
-            PlaywrightState(self),
+            self.getters,
+            self.playwright_state,
             Network(self),
             self.promises,
             Waiter(self),
@@ -183,10 +187,58 @@ class Browser(DynamicCore):
     def _close(self):
         self.playwright.close()
 
+    def _start_suite(self, name, attrs):
+        self._execution_stack.append(self.getters.get_browser_catalog())
+
+    def _start_test(self, name, attrs):
+        self._execution_stack.append(self.getters.get_browser_catalog())
+
     def _end_test(self, name, attrs):
         if len(self.promises._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
+        catalog_before_test = self._execution_stack.pop()
+        self._prune_execution_stack(catalog_before_test)
+
+    def _end_suite(self, name, attrs):
+        catalog_before_suite = self._execution_stack.pop()
+        self._prune_execution_stack(catalog_before_suite)
+
+    def _prune_execution_stack(self, catalog_before):
+        # WIP CODE BEGINS
+        catalog_after = self.getters.get_browser_catalog()
+        ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
+        ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
+        new_ctx_ids = [c for c in ctx_after_ids if c not in ctx_before_ids]
+        for ctx_id in new_ctx_ids:
+            self.playwright_state.switch_context(ctx_id)
+            self.playwright_state.close_context()
+        pages_before = [
+            (p["id"], c["id"])
+            for b in catalog_before
+            for c in b["contexts"]
+            for p in c["pages"]
+        ]
+        pages_after = [
+            (p["id"], c["id"])
+            for b in catalog_after
+            for c in b["contexts"]
+            for p in c["pages"]
+            if c["id"] not in new_ctx_ids
+        ]
+        new_page_ids = [p for p in pages_after if p not in pages_before]
+        for page_id, ctx_id in new_page_ids:
+            self.playwright_state.switch_context(ctx_id)
+            self.playwright_state.switch_page(page_id)
+            self.playwright_state.close_page()
+        for browser in catalog_after:
+            if browser["activeBrowser"]:
+                activeContext = browser.get("activeContext", None)
+                activePage = browser.get("activePage", None)
+                if not new_ctx_ids and activeContext is not None:
+                    self.playwright_state.switch_context(activeContext)
+                    if not (activePage, activeContext) in new_page_ids:
+                        self.playwright_state.switch_page(activePage)
 
     def run_keyword(self, name, args, kwargs=None):
         try:

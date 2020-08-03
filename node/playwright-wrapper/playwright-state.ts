@@ -100,24 +100,36 @@ export class PlaywrightState {
         this.activeBrowser = undefined;
     }
 
-    public getCatalog() {
-        return this._browserStack.map((browser) => {
-            const contexts = browser.browser.contexts().map((context, i) => {
+    public async getCatalog() {
+        return Promise.all(
+            this._browserStack.map(async (browser) => {
                 return {
-                    type: 'context',
-                    id: i,
-                    pages: context.pages(),
+                    type: browser.name,
+                    id: browser.id,
+                    contexts: await Promise.all(
+                        browser.contextStack.map(async (context) => {
+                            return {
+                                type: 'context',
+                                id: context.index,
+                                pages: await Promise.all(
+                                    context.pageStack.map(async (page) => {
+                                        return {
+                                            type: 'page',
+                                            title: await page.p.title(),
+                                            url: page.p.url(),
+                                            id: page.index,
+                                        };
+                                    }),
+                                ),
+                            };
+                        }),
+                    ),
+                    activePage: browser.page?.index,
+                    activeContext: browser.context?.index,
+                    activeBrowser: this.activeBrowser === browser,
                 };
-            });
-            return {
-                type: browser.name,
-                id: browser.id,
-                contexts: contexts,
-                activePage: browser.page?.index,
-                activeContext: browser.context?.index,
-                activeBrowser: this.activeBrowser === browser,
-            };
-        });
+            }),
+        );
     }
 
     public addBrowser(name: string, browser: Browser): BrowserState {
@@ -228,6 +240,9 @@ export class BrowserState {
             console.log('Set active page to undefined');
         }
         this._page = newPage;
+    }
+    get contextStack(): IndexedContext[] {
+        return this._contextStack;
     }
     public popPage(): void {
         const pageStack = this._context?.pageStack || [];
@@ -454,29 +469,6 @@ export async function getBrowserCatalog(
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const response = new Response.String();
-
-    const mappedBrowsers = openBrowsers.getCatalog();
-    // This for looping is done instead of a .map on the pages() lists to avoid needing to handle deeply nested page.title() promises.
-    for (const b of mappedBrowsers) {
-        const contextList = b.contexts;
-        if (contextList) {
-            for (const c of contextList) {
-                for (const i in c.pages) {
-                    const page = c.pages[i];
-                    const t = await page.title();
-                    const url = page.url();
-                    c.pages[i] = {
-                        type: 'page',
-                        title: t,
-                        url: url,
-                        id: i,
-                    } as any;
-                }
-            }
-        }
-    }
-
-    response.setBody(JSON.stringify(mappedBrowsers));
-
+    response.setBody(JSON.stringify(await openBrowsers.getCatalog()));
     callback(null, response);
 }

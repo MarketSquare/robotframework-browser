@@ -51,7 +51,7 @@ class Control(LibraryComponent):
     def set_timeout(self, timeout: str):
         """Sets the timeout used by most input and getter keywords.
 
-        Technically this is the timeout of current playwright context.
+        Timeout of is for current playwright context.
         """
         parsed_timeout = timestr_to_millisecs(timeout)
         with self.playwright.grpc_channel() as stub:
