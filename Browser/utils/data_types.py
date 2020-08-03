@@ -43,9 +43,9 @@ ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": in
 
 
 class AutoClosingLevel(Enum):
-    SUITE = "SUITE"
-    TEST = "TEST"
-    MANUAL = "MANUAL"
+    SUITE = auto()
+    TEST = auto()
+    MANUAL = auto()
 
 
 class ElementState(Enum):
