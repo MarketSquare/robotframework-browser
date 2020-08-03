@@ -11,8 +11,18 @@ Cookies From Closed Context
 
 Get Cookies Should Return Empty List When No Cookies Are Available
     ${empty_list}    Create List
-    ${cookies} =    Get Cookies
+    ${cookies} =    Get Cookies    dictionary
     Should Be Equal    ${cookies}    ${empty_list}
+    ${cookies} =    Get Cookies    dict
+    Should Be Equal    ${cookies}    ${empty_list}
+
+Get Cookies With String Type
+    ${url} =    Get Url
+    Add Cookie    Foo    Bar    url=${url}
+    ${cookies} =    Get Cookies    str
+    Should Be Equal    Foo=Bar    ${cookies}
+    ${cookies} =    Get Cookies    string
+    Should Be Equal    Foo=Bar    ${cookies}
 
 Add Cookie Without Url, Path and Domain
     Run Keyword And Expect Error
@@ -165,6 +175,27 @@ Get Cookie
     ${cookie} =    Get Cookie    Tidii
     Should Be Equal    ${cookie}[name]    Tidii
     Should Be Equal    ${cookie}[value]    kala
+    Should Be Equal    ${cookie.name}    Tidii
+    Should Be Equal    ${cookie.value}    kala
+
+Get Cookie As String
+    ${url} =    Get Url
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    httpOnly=True
+    ...    secure=True
+    ...    sameSite=Lax
+    Add Cookie
+    ...    Tidii
+    ...    kala
+    ...    url=${url}
+    ...    httpOnly=True
+    ...    secure=True
+    ...    sameSite=Lax
+    ${cookie} =    Get Cookie    Tidii    string
+    Should Be Equal    ${cookie}    Tidii=kala
 
 Get Cookie Should Fail If Cookie Is Not Found
     ${url} =    Get Url
@@ -179,6 +210,13 @@ Get Cookie Should Fail If Cookie Is Not Found
     ...    ValueError: Cookie with name FOO is not found.
     ...    Get Cookie
     ...    FOO
+
+Get Cookie Should Fail With Invalid return_type
+    Run Keyword And Expect Error
+    ...    ValueError: Argument 'return_type' got value 'invalid_type' that cannot be converted to CookieType*
+    ...    Get Cookie
+    ...    FOO
+    ...    invalid_type
 
 *** Keywords ***
 Check Cookie

@@ -4,7 +4,9 @@ from typing import TypedDict
 
 class CookieType(Enum):
     dictionary = "dict"
-    string = "str"
+    dict = "dict"
+    string = "string"
+    str = "str"
 
 
 class RequestMethod(Enum):
