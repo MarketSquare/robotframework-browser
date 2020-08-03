@@ -22,7 +22,7 @@ class Cookie(LibraryComponent):
 
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns list of Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionaries]
-        Then dictionary contains all possible key value pairs of the cookie. See `Get Cookie` keyword documentation
+        The dictionary contains all possible key value pairs of the cookie. See `Get Cookie` keyword documentation
         about the dictionary keys and values.
 
         If ``return_type`` is ``string`` or ``str``, then keyword returns the cookie as a string in format:
@@ -137,6 +137,12 @@ class Cookie(LibraryComponent):
         self, cookie: str, return_type: CookieType = CookieType.dictionary
     ) -> Union[DotDict, str]:
         """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
+
+        If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns a of Robot Framework
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary]
+        The dictionary contains all possible key value pairs of the cookie. If ``return_type`` is ``string`` or ``str``
+        , then keyword returns the cookie as a string in format: ``name1=value1``. The return value contains only
+        ``name`` and ``value`` keys of the cookie.
 
         If no cookie is found with ``name`` keyword fails. The cookie dictionary contains
         details about the cookie. Keys available in the dictionary are documented in the table below.
