@@ -19,9 +19,10 @@ export function intResponse(body: number) {
     return response;
 }
 
-export function boolResponse(value: boolean) {
+export function boolResponse(value: boolean, logMessage = '') {
     const response = new Response.Bool();
     response.setBody(value);
+    response.setLog(logMessage);
     return response;
 }
 

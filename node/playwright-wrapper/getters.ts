@@ -69,8 +69,12 @@ export async function getBoolProperty(
     callback: sendUnaryData<Response.Bool>,
     state: PlaywrightState,
 ) {
+    const selector = call.request.getSelector();
     const content = await getProperty(call, callback, state);
-    callback(null, boolResponse(content || false));
+    callback(
+        null,
+        boolResponse(content || false, 'Retrieved dom property for element ' + selector + ' containing ' + content),
+    );
 }
 
 async function getProperty<T>(
