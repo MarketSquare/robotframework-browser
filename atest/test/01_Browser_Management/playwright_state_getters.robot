@@ -74,7 +74,7 @@ Context encapsulating keyword
     [Teardown]    Close Context
 
 Browser encapsulating keyword
-    New Browser    browser=firefox
+    New Browser    browser=${BROWSER}
     New Page    ${WELCOME_URL}
     Get title    ==    Welcome Page
     [Teardown]    Close Browser
