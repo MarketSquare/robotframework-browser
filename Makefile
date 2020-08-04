@@ -109,7 +109,10 @@ Browser/__init__.pyi: ${filtered_python_sources}
 build: node_modules/.installed protobuf webpack-typescript Browser/__init__.pyi
 
 watch-webpack: build
-	yarn run webpack --watch
+	yarn watch
+
+run-test-app: build
+	node node/dynamic-test-app/dist/server.js
 
 package: build keyword-docs
 	rm -rf dist/
