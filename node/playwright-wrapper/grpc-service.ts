@@ -114,6 +114,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         return browserControl.takeScreenshot(call, callback, this.getActivePage());
     }
 
+    async getBoundingBox(
+        call: ServerUnaryCall<Request.ElementSelector>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        return getters.getBoundingBox(call, callback, this.state);
+    }
+
     async setTimeout(call: ServerUnaryCall<Request.Timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return browserControl.setTimeout(call, callback, this.getActiveBrowser(callback)?.context?.c);
     }

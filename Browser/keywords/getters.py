@@ -14,7 +14,7 @@ from ..assertion_engine import (
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.data_types import AssertionOperator, SelectAttribute
+from ..utils.data_types import AssertionOperator, BoundingBoxFields, SelectAttribute
 
 
 class Getters(LibraryComponent):
@@ -360,3 +360,25 @@ class Getters(LibraryComponent):
                     assertion_expected,
                     f"Style value for {key} is ",
                 )
+
+    @keyword(tags=["Getter", "Assertion"])
+    def get_boundingbox(self, selector: str, *keys: BoundingBoxFields):
+        """ Gets elements size and location as an object {x: int, y: int, width: int, height: int}.
+
+            Optionally filters the returned values based on ``keys``.
+
+            Example use:
+            | unfiltered:       |                  |            |   |   |
+            | ${bounding_box}=  | Get BoundingBox  | \\#element |   |   |
+            | filtered:         |                  |            |   |   |
+            | ${xy}=            | Get BoundingBox  | \\#element | x | y |
+
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
+            parsed = json.loads(response.body)
+            logger.debug(parsed)
+            if keys:
+                parsed = {key.value: parsed[key.value] for key in keys}
+            return parsed

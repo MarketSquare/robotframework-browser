@@ -49,6 +49,14 @@ ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
 ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
 
 
+class BoundingBoxFields(Enum):
+    width = "width"
+    height = "height"
+    x = "x"
+    y = "y"
+    ALL = "ALL"
+
+
 class AutoClosingLevel(Enum):
     SUITE = auto()
     TEST = auto()

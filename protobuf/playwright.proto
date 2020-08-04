@@ -242,9 +242,10 @@ service  Playwright {
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
   rpc GetStyle(Request.ElementSelector) returns (Response.String);
+  /* Gets elements x, y coordinates and width, height as json object */ 
+  rpc GetBoundingBox(Request.ElementSelector) returns (Response.String);
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.String);
-  
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
   rpc WaitForResponse(Request.HttpCapture) returns (Response.String);
   rpc WaitForDownload(Request.FilePath) returns (Response.String);

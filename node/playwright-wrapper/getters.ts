@@ -4,7 +4,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, stringResponse } from './response-util';
-import { invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 
 export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
     const title = await invokeOnPage(page, callback, 'title');
@@ -121,4 +121,19 @@ export async function getViewportSize(
 ): Promise<void> {
     const result = await invokeOnPage(page, callback, 'viewportSize');
     callback(null, stringResponse(JSON.stringify(result)));
+}
+
+export async function getBoundingBox(
+    call: ServerUnaryCall<Request.ElementSelector>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+): Promise<void> {
+    const selector = call.request.getSelector();
+    const elem = await determineElement(state, selector, callback);
+    if (!elem) {
+        callback(new Error(`No element matching ${elem} found`), null);
+        return;
+    }
+    const boundingBox = await elem.boundingBox();
+    callback(null, stringResponse(JSON.stringify(boundingBox)));
 }

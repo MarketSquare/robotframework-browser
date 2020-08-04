@@ -4,13 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import {
-    determineElement,
-    exists,
-    invokeOnPage,
-    invokePlaywrightMethod,
-    waitUntilElementExists,
-} from './playwirght-invoke';
+import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 
 declare global {
@@ -105,6 +99,7 @@ export async function waitForFunction(
         script = eval(script);
     }
 
+    // TODO: This might behave weirdly if element selector points to a different page
     const result = await invokeOnPage(state.getActivePage(), callback, 'waitForFunction', script, elem, options);
     callback(null, stringResponse(JSON.stringify(result.jsonValue)));
 }
