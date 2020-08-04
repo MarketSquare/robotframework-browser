@@ -1,31 +1,72 @@
 import json
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import List, Optional, Union
 
 from robot.libraries.DateTime import convert_date  # type: ignore
+from robot.utils import DotDict  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from Browser.base import LibraryComponent
 from Browser.generated.playwright_pb2 import Request
 from Browser.utils import logger
+from Browser.utils.data_types import CookieType
 from Browser.utils.meta_python import locals_to_params
 
 
 class Cookie(LibraryComponent):
     @keyword(tags=["Getter", "PageContent"])
-    def get_cookies(self) -> List[Dict[str, Any]]:
+    def get_cookies(
+        self, return_type: CookieType = CookieType.dictionary
+    ) -> Union[List[DotDict], str]:
         """Returns cookies from the current active browser context.
 
-        Return value contains list of dictionaries. See `Get Cookie` documentation about the dictionary keys.
+        If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns list of Robot Framework
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionaries]
+        The dictionary contains all possible key value pairs of the cookie. See `Get Cookie` keyword documentation
+        about the dictionary keys and values.
+
+        If ``return_type`` is ``string`` or ``str``, then keyword returns the cookie as a string in format:
+        ``name1=value1; name2=value2; name3=value3``. The return value contains only ``name`` and ``value`` keys of the
+        cookie.
         """
+        response, cookies = self._get_cookies()
+        if not response.log:
+            logger.info("No cookies found.")
+            return []
+        else:
+            logger.info(f"Found cookies: {response.log}")
+        if return_type == CookieType.dictionary:
+            return self._format_cookies_as_dot_dict(cookies)
+        return self._format_cookies_as_string(cookies)
+
+    def _get_cookies(self):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetCookies(Request().Empty())
-            cookie_names = response.log
-            if not cookie_names:
-                logger.info("No cookies found.")
-                return []
+            return response, json.loads(response.body)
+
+    def _format_cookies_as_string(self, cookies: List[dict]):
+        pairs = []
+        for cookie in cookies:
+            pairs.append(self._cookie_as_string(cookie))
+        return "; ".join(pairs)
+
+    def _cookie_as_string(self, cookie: dict) -> str:
+        return f'{cookie["name"]}={cookie["value"]}'
+
+    def _format_cookies_as_dot_dict(self, cookies: List[dict]):
+        as_list = []
+        for cookie in cookies:
+            as_list.append(self._cookie_as_dot_dict(cookie))
+        return as_list
+
+    def _cookie_as_dot_dict(self, cookie):
+        dot_dict = DotDict()
+        for key in cookie:
+            if key == "expires":
+                dot_dict[key] = datetime.fromtimestamp(cookie[key])
             else:
-                logger.info(f"Found cookies: {response.log}")
-        return json.loads(response.body)
+                dot_dict[key] = cookie[key]
+        return dot_dict
 
     @keyword(tags=["Setter", "PageContent"])
     def add_cookie(
@@ -42,16 +83,16 @@ class Cookie(LibraryComponent):
     ):
         """Adds a cookie to currently active browser context.
 
-        ``name`` and ``value`` are required.  ``url``, ``domain``, `path``, ``expiry``, `http_only``, ``secure``
-        and ``same_site`` are optional, but cookie must contain either url or  domain/path pair. Expiry supports
+        ``name`` and ``value`` are required.  ``url``, ``domain``, ``path``, ``expires``, ``httpOnly``, ``secure``
+        and ``sameSite`` are optional, but cookie must contain either url or  domain/path pair. Expiry supports
         the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
         library or an epoch timestamp.
 
         Example:
-        | `Add Cookie` | foo | bar | http://address.com/path/to/site |                                 |                            |
-        | `Add Cookie` | foo | bar | domain=example.com              | path=/foo/bar                   |                            |
-        | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=2027-09-28 16:21:35      | # Expiry as timestamp.     |
-        | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=1822137695               | # Expiry as epoch seconds. |
+        | `Add Cookie` | foo | bar | http://address.com/path/to/site |                                 | # Using url argument.             |
+        | `Add Cookie` | foo | bar | domain=example.com              | path=/foo/bar                   | # Using domain and url arguments. |
+        | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=2027-09-28 16:21:35      | # Expiry as timestamp.            |
+        | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=1822137695               | # Expiry as epoch seconds.        |
         """
         params = locals_to_params(locals())
         if expires:
@@ -92,10 +133,18 @@ class Cookie(LibraryComponent):
         logger.warn("Cookie monster ate all cookies!!")
 
     @keyword(tags=["Getter", "PageContent"])
-    def get_cookie(self, cookie: str) -> Dict[str, Any]:
-        """Returns information of cookie with name as an dictionary.
+    def get_cookie(
+        self, cookie: str, return_type: CookieType = CookieType.dictionary
+    ) -> Union[DotDict, str]:
+        """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
 
-        If no cookie is found with name, keyword fails. The cookie dictionary contains
+        If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns a of Robot Framework
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary]
+        The dictionary contains all possible key value pairs of the cookie. If ``return_type`` is ``string`` or ``str``
+        , then keyword returns the cookie as a string in format: ``name1=value1``. The return value contains only
+        ``name`` and ``value`` keys of the cookie.
+
+        If no cookie is found with ``name`` keyword fails. The cookie dictionary contains
         details about the cookie. Keys available in the dictionary are documented in the table below.
 
         | Value    | Explanation                                                                                |
@@ -104,16 +153,24 @@ class Cookie(LibraryComponent):
         | url      | Define the scope of the cookie, what URLs the cookies should be sent to.                   |
         | domain   | Specifies which hosts are allowed to receive the cookie.                                   |
         | path     | Indicates a URL path that must exist in the requested URL, for example `/`.                |
-        | expiry   | Lifetime of a cookie.                                                                      |
+        | expiry   | Lifetime of a cookie. Returned as datatime object.                                         |
         | httpOnly | When true, the cookie is not accessible via JavaScript.                                    |
         | secure   | When true, the cookie is only used with HTTPS connections.                                 |
         | sameSite | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
 
         See
-        [playwright documentation|https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextaddcookiescookies]
+        [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextaddcookiescookies|playwright documentation]
         for details about each attribute.
+
+        Example:
+        | ${cookie} =     | Get Cookie            | Foobar  |
+        | Should Be Equal | ${cookie.value}       | Tidii   |
+        | Should Be Equal | ${cookie.expiry.year} | ${2020} |
         """
-        for cookie_dict in self.get_cookies():
+        _, cookies = self._get_cookies()
+        for cookie_dict in cookies:
             if cookie_dict["name"] == cookie:
-                return cookie_dict
+                if return_type == CookieType.dictionary:
+                    return self._cookie_as_dot_dict(cookie_dict)
+                return self._cookie_as_string(cookie_dict)
         raise ValueError(f"Cookie with name {cookie} is not found.")
