@@ -101,7 +101,7 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def click(self, selector: str):
-        """Clicks the element found by ``selector``. """
+        """Clicks the element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().ElementSelector(selector=selector))
             logger.debug(response.log)
