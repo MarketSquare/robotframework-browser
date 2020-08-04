@@ -220,12 +220,12 @@ class Getters(LibraryComponent):
             response = stub.GetBoolProperty(
                 Request().ElementProperty(selector=selector, property="checked")
             )
-            logger.info(f"Checkbox is {'checked' if response.log else 'unchecked'}")
-            value: bool = response.body
-
-            return bool_verify_assertion(
-                value, assertion_operator, expected_state, f"Checkbox {selector} is"
-            )
+        logger.info(response.log)
+        value: bool = response.body
+        logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
+        return bool_verify_assertion(
+            value, assertion_operator, expected_state, f"Checkbox {selector} is"
+        )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_element_count(
