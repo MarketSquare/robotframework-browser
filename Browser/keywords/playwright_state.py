@@ -242,7 +242,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["BrowserControl", "EventHandler"])
     def auto_activate_pages(self):
         """Toggles automatically changing active page to latest opened page."""
         with self.playwright.grpc_channel() as stub:

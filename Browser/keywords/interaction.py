@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Dict, Optional
 
 from robotlibcore import keyword  # type: ignore
@@ -54,7 +55,7 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(Request().ClearText(selector=selector))
-            logger.info(response.log)
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def type_secret(
@@ -96,14 +97,14 @@ class Interaction(LibraryComponent):
         """  # noqa
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(Request().PressKeys(selector=selector, key=keys))
-            logger.info(response.log)
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def click(self, selector: str, force: bool = False):
         """Clicks the element found by ``selector``. """
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().ElementSelector(selector=selector))
-            logger.info(response.log)
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def click_with_options(
@@ -153,7 +154,7 @@ class Interaction(LibraryComponent):
                     selector=selector, options=options_json
                 )
             )
-            logger.info(response.log)
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def focus(self, selector: str):
@@ -164,7 +165,7 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(Request().ElementSelector(selector=selector))
-            logger.info(response.log)
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def check_checkbox(self, selector: str):
@@ -174,7 +175,7 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(Request().ElementSelector(selector=selector))
-            logger.info(response.log)
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def uncheck_checkbox(self, selector: str):
@@ -186,7 +187,7 @@ class Interaction(LibraryComponent):
             response = stub.UncheckCheckbox(
                 Request().ElementSelector(selector=selector)
             )
-            logger.info(response.log)
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def select_options_by(self, attribute: SelectAttribute, selector: str, *values):
@@ -213,20 +214,20 @@ class Interaction(LibraryComponent):
             response = stub.SelectOption(
                 Request().SelectElementSelector(selector=selector, matcherJson=matchers)
             )
-            logger.info(response.log)
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``."""
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(Request().ElementSelector(selector=selector))
-            logger.info(response.log)
+            logger.debug(response.log)
 
     def _fill_text(self, selector: str, text: str, log_response: bool = True):
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(Request().FillText(selector=selector, text=text))
             if log_response:
-                logger.info(response.log)
+                logger.debug(response.log)
 
     def _type_text(
         self,
@@ -244,4 +245,18 @@ class Interaction(LibraryComponent):
                 )
             )
             if log_response:
-                logger.info(response.log)
+                logger.debug(response.log)
+
+    @keyword(tags=["Setter", "PageContent", "EventHandler"])
+    def upload_file(self, path: str):
+        """ Upload file from ``path`` into next file chooser dialog on page. Example use:
+
+            | Upload File |  ${CURDIR}/test_upload_file
+            | Click       |  \\#file_chooser
+
+        """
+        p = Path(path)
+        p.resolve(strict=True)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.UploadFile(Request().FileUploadPath(path=str(p)))
+            logger.debug(response.log)

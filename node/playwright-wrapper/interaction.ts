@@ -1,9 +1,10 @@
+import { FileChooser, Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog } from './response-util';
-import { invokePlaywrightMethod } from './playwirght-invoke';
+import { invokeOnPage, invokePlaywrightMethod } from './playwirght-invoke';
 
 export async function selectOption(
     call: ServerUnaryCall<Request.SelectElementSelector>,
@@ -145,4 +146,15 @@ export async function uncheckCheckbox(
     const selector = call.request.getSelector();
     await invokePlaywrightMethod(state, callback, 'uncheck', selector);
     callback(null, emptyWithLog('Unchecked checkbox: ' + selector));
+}
+
+export async function uploadFile(
+    call: ServerUnaryCall<Request.FileUploadPath>,
+    callback: sendUnaryData<Response.Empty>,
+    page?: Page,
+) {
+    const path = call.request.getPath();
+    const fn = async (fileChooser: FileChooser) => await fileChooser.setFiles(path);
+    await invokeOnPage(page, callback, 'on', 'filechooser', fn);
+    callback(null, emptyWithLog('Succesfully uploaded file'));
 }

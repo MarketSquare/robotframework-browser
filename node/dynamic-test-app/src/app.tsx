@@ -50,11 +50,21 @@ async function delayedRequest() {
     console.log(await fetch('/api/get/json'));
 }
 
+function fileUploaded(labelElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (files && files[0].name === 'test_upload_file' && labelElement.current) {
+        labelElement.current.innerHTML = 'test_upload_file';
+    } else {
+        labelElement.current!.innerHTML = 'wrong_upload_filename';
+    }
+}
+
 export default function Site() {
     const username = useRef('');
     const password = useRef('');
 
     const [submit, setSubmit] = useState(false);
+    const uploadLabel = React.createRef<HTMLDivElement>();
 
     const handleSubmit = () => {
         setSubmit(true);
@@ -116,6 +126,13 @@ export default function Site() {
                 <button id="delayed_request" onClick={delayedRequest}>
                     Fires a request in 200ms
                 </button>
+                <div id="upload_label" ref={uploadLabel}></div>
+                <input
+                    type="file"
+                    id="file_chooser"
+                    name="file_chooser"
+                    onChange={(event) => fileUploaded(uploadLabel, event)}
+                />
                 <ProgressBar />
             </>
         );

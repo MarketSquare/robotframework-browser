@@ -320,4 +320,11 @@ export class PlaywrightServer implements IPlaywrightServer {
     async getDevices(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         return deviceDescriptors.getDevices(callback);
     }
+
+    async uploadFile(
+        call: ServerUnaryCall<Request.FileUploadPath>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.uploadFile(call, callback, this.getActivePage());
+    }
 }
