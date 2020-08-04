@@ -5,6 +5,9 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
 import { invokeOnContext } from './playwirght-invoke';
 
+import * as pino from 'pino';
+const logger = pino.default();
+
 interface CookieData {
     name: string;
     value: string;
@@ -19,7 +22,7 @@ interface CookieData {
 
 export async function getCookies(callback: sendUnaryData<Response.String>, context?: BrowserContext) {
     const allCookies = await invokeOnContext(context, callback, 'cookies');
-    console.log(allCookies);
+    logger.info('Cookies: ' + JSON.stringify(allCookies));
     const cookieName = [];
     for (const cookie of allCookies as Array<Cookie>) {
         cookieName.push(cookie.name);
@@ -33,7 +36,7 @@ export async function addCookie(
     context?: BrowserContext,
 ) {
     const cookie: CookieData = JSON.parse(call.request.getBody());
-    console.log('Cookie data: ' + call.request.getBody());
+    logger.info('Cookie data: ' + call.request.getBody());
     await invokeOnContext(context, callback, 'addCookies', [cookie]);
     callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
 }
