@@ -258,5 +258,5 @@ class Interaction(LibraryComponent):
         p = Path(path)
         p.resolve(strict=True)
         with self.playwright.grpc_channel() as stub:
-            response = stub.UploadFile(Request().FileUploadPath(path=str(p)))
+            response = stub.UploadFile(Request().FilePath(path=str(p)))
             logger.debug(response.log)

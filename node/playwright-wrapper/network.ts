@@ -63,3 +63,18 @@ export async function waitForRequest(
     const result = await invokeOnPage(page, callback, 'waitForRequest', urlOrPredicate, { timeout: timeout });
     callback(null, stringResponse(result.url()));
 }
+
+export async function waitForDownload(
+    call: ServerUnaryCall<pb.Request.FilePath>,
+    callback: sendUnaryData<pb.Response.String>,
+    page?: Page,
+) {
+    const saveAs = call.request.getPath();
+    const downloadObject = await invokeOnPage(page, callback, 'waitForEvent', 'download');
+
+    if (saveAs) {
+        await downloadObject.saveAs(saveAs);
+    }
+    const path = await downloadObject.path();
+    callback(null, stringResponse(JSON.stringify(path)));
+}

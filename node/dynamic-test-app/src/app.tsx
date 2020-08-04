@@ -133,6 +133,9 @@ export default function Site() {
                     name="file_chooser"
                     onChange={(event) => fileUploaded(uploadLabel, event)}
                 />
+                <a id="file_download" href="index.js" download="test_download_file">
+                    Download file{' '}
+                </a>
                 <ProgressBar />
             </>
         );

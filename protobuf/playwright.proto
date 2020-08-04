@@ -7,7 +7,7 @@ message Request {
     string path = 1;
   }
 
-  message FileUploadPath {
+  message FilePath {
     string path = 1;
   }
 
@@ -247,11 +247,12 @@ service  Playwright {
   
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
   rpc WaitForResponse(Request.HttpCapture) returns (Response.String);
+  rpc WaitForDownload(Request.FilePath) returns (Response.String);
 
   rpc GetDevice(Request.Device) returns (Response.String);
   rpc GetDevices(Request.Empty) returns (Response.String);
 
-  rpc UploadFile(Request.FileUploadPath) returns (Response.Empty);
+  rpc UploadFile(Request.FilePath) returns (Response.Empty);
 
   /* Playwright State handling keywords */
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty);

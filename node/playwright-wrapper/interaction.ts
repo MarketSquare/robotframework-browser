@@ -149,7 +149,7 @@ export async function uncheckCheckbox(
 }
 
 export async function uploadFile(
-    call: ServerUnaryCall<Request.FileUploadPath>,
+    call: ServerUnaryCall<Request.FilePath>,
     callback: sendUnaryData<Response.Empty>,
     page?: Page,
 ) {

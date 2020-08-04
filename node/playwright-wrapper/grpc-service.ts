@@ -272,6 +272,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         return evaluation.waitForFunction(call, callback, this.state);
     }
 
+    async waitForDownload(
+        call: ServerUnaryCall<Request.FilePath>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        return network.waitForDownload(call, callback, this.getActivePage());
+    }
+
     async executeJavascript(
         call: ServerUnaryCall<Request.JavascriptCode>,
         callback: sendUnaryData<Response.JavascriptExecutionResult>,
@@ -321,10 +328,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         return deviceDescriptors.getDevices(callback);
     }
 
-    async uploadFile(
-        call: ServerUnaryCall<Request.FileUploadPath>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
+    async uploadFile(call: ServerUnaryCall<Request.FilePath>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return interaction.uploadFile(call, callback, this.getActivePage());
     }
 }
