@@ -127,4 +127,4 @@ version:
 	${rm_cmd} Browser/version.py.bak package.json.bak .github/workflows/python-package.yml.bak
 
 release: package
-	python3 -m twine upload --repository pypi dist/*
+	python -m twine upload --repository pypi dist/*
