@@ -25,23 +25,23 @@ Only Python 3.8 or later is supported.
 # Examples
 
 ### Testing with [Robot Framework](https://robotframework.org)
+```RobotFramework
+*** Settings ***
+Library   Browser
 
-    *** Settings ***
-    Library   Browser
-    
-    *** Test Cases ***
-    Example Test
-        New Page    https://playwright.dev
-        Get Text    h1    ==    🎭 Playwright
-
+*** Test Cases ***
+Example Test
+    New Page    https://playwright.dev
+    Get Text    h1    ==    🎭 Playwright
+```
 ### and testing with [Python](https://python.org).
-
-    import Browser
-    browser = Browser.Browser()
-    browser.new_page("https://playwright.dev")
-    assert browser.get_text("h1") == '🎭 Playwright'
-    browser.close_all_browsers()
-
+```python
+import Browser
+browser = Browser.Browser()
+browser.new_page("https://playwright.dev")
+assert browser.get_text("h1") == '🎭 Playwright'
+browser.close_all_browsers()
+```
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
     # Select element containing text "Login" with text selector strategy 
