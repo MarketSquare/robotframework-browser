@@ -24,6 +24,22 @@ export async function waitUntilElementExists<T>(
     return element;
 }
 
+export async function invokeOnMouse<T>(
+    page: Page | undefined,
+    callback: sendUnaryData<T>,
+    methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
+    ...args: any[]
+) {
+    exists(page, callback, `Tried to do mouse action '${methodName}', but no open page.`);
+    try {
+        const fn: any = page.mouse[methodName].bind(page.mouse);
+        return await fn(...args);
+    } catch (e) {
+        console.log(`Error invoking Playwright action '${methodName}': ${e}`);
+        callback(e, null);
+    }
+}
+
 export async function invokeOnPage<T>(
     page: Page | undefined,
     callback: sendUnaryData<T>,
@@ -31,8 +47,8 @@ export async function invokeOnPage<T>(
     ...args: any[]
 ) {
     exists(page, callback, `Tried to do playwright action '${methodName}', but no open page.`);
-    const fn: any = (page as { [key: string]: any })[methodName].bind(page);
     try {
+        const fn: any = (page as { [key: string]: any })[methodName].bind(page);
         return await fn(...args);
     } catch (e) {
         console.log(`Error invoking Playwright action '${methodName}': ${e}`);
@@ -47,8 +63,8 @@ export async function invokeOnContext<T>(
     ...args: any[]
 ) {
     exists(context, callback, `Tried to do playwright action '${methodName}', but no open context.`);
-    const fn: any = (context as { [key: string]: any })[methodName].bind(context);
     try {
+        const fn: any = (context as { [key: string]: any })[methodName].bind(context);
         return await fn(...args);
     } catch (e) {
         console.log(`Error invoking Playwright action '${methodName}': ${e}`);
