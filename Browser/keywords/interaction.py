@@ -7,7 +7,12 @@ from robotlibcore import keyword  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.data_types import KeyboardModifier, MouseButton, SelectAttribute
+from ..utils.data_types import (
+    AlertAction,
+    KeyboardModifier,
+    MouseButton,
+    SelectAttribute,
+)
 from ..utils.time_conversion import timestr_to_millisecs
 
 
@@ -259,4 +264,22 @@ class Interaction(LibraryComponent):
         p.resolve(strict=True)
         with self.playwright.grpc_channel() as stub:
             response = stub.UploadFile(Request().FilePath(path=str(p)))
+            logger.debug(response.log)
+
+    @keyword(tags=["PageContent", "EventHandler"])
+    def handle_alert(self, action: AlertAction, prompt_input: str = ""):
+        """ Handle next dialog on page with ``action``. Dialog can be any of alert, beforeunload, confirm or prompt.
+
+            ``action`` can be ``accept`` or ``dismiss``
+            ``prompt_input`` is value to enter into prompt. Only valid if ``action`` is accept.
+        """
+
+        with self.playwright.grpc_channel() as stub:
+            if prompt_input and action is not AlertAction.accept:
+                raise ValueError("prompt_input is only valid if action is 'accept'")
+            response = stub.HandleAlert(
+                Request().AlertAction(
+                    alertAction=action.value, promptInput=prompt_input
+                )
+            )
             logger.debug(response.log)

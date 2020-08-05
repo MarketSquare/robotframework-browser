@@ -68,16 +68,16 @@ Get Style and Assert
     Get Style    h1    align-content    ==    normal
 
 Get Element Size
-    ${expected}=    Evaluate    {'x': 8, 'y': 232.875, 'width': 37.90625, 'height': 30}
+    ${expected}=    Evaluate    {'x': 0, 'y': 400, 'width': 40, 'height': 30}
     ${bounding_box}=    Get BoundingBox    \#progress_bar
     Should Be Equal    ${bounding_box}    ${expected}
 
 Get Element x and y
-    ${expected}=    Evaluate    {'x': 8, 'y': 232.875}
+    ${expected}=    Evaluate    {'x': 0, 'y': 400 }
     ${xy}=    Get BoundingBox    \#progress_bar    x    y
     Should Be Equal    ${xy}    ${expected}
 
 Get Element width and height
-    ${expected}=    Evaluate    {'width': 37.90625, 'height': 30}
+    ${expected}=    Evaluate    {'width': 40, 'height': 30}
     ${wh}=    Get BoundingBox    \#progress_bar    width    height
     Should Be Equal    ${wh}    ${expected}

@@ -127,6 +127,11 @@ message Request {
   message Device {
     string name = 1;
   }
+
+  message AlertAction {
+    string alertAction = 1;
+    string promptInput = 2;  
+  }
 }
 
 message Types {
@@ -252,6 +257,8 @@ service  Playwright {
 
   rpc GetDevice(Request.Device) returns (Response.String);
   rpc GetDevices(Request.Empty) returns (Response.String);
+
+  rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
 
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
 

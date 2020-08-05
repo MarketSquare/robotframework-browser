@@ -2,6 +2,11 @@ from enum import Enum, auto
 from typing import TypedDict
 
 
+class AlertAction(Enum):
+    accept = "accept"
+    dismiss = "dismiss"
+
+
 class CookieType(Enum):
     dictionary = "dict"
     dict = "dict"

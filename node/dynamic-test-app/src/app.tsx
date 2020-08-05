@@ -28,7 +28,17 @@ function ProgressBar() {
         return () => clearInterval(interval);
     });
     return (
-        <div id="progress" style={{ width: '30%', height: '30px', backgroundColor: 'gray' }}>
+        <div
+            id="progress"
+            style={{
+                position: 'absolute',
+                top: '400px',
+                left: '0px',
+                width: '400px',
+                height: '30px',
+                backgroundColor: 'gray',
+            }}
+        >
             <div
                 id="progress_bar"
                 onClick={() => {
@@ -50,13 +60,19 @@ async function delayedRequest() {
     console.log(await fetch('/api/get/json'));
 }
 
-function fileUploaded(labelElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
+function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
-    if (files && files[0].name === 'test_upload_file' && labelElement.current) {
-        labelElement.current.innerHTML = 'test_upload_file';
+    if (files && files[0].name === 'test_upload_file') {
+        uploadResultElement.current!.innerHTML = 'test_upload_file';
     } else {
-        labelElement.current!.innerHTML = 'wrong_upload_filename';
+        uploadResultElement.current!.innerHTML = 'wrong_upload_filename';
     }
+}
+
+function testPrompt(promptResultElement: React.RefObject<HTMLElement>) {
+    const input = prompt('Enter a value');
+    if (input) promptResultElement.current!.innerHTML = input;
+    else promptResultElement.current!.innerHTML = 'prompt_not_filled';
 }
 
 export default function Site() {
@@ -64,7 +80,8 @@ export default function Site() {
     const password = useRef('');
 
     const [submit, setSubmit] = useState(false);
-    const uploadLabel = React.createRef<HTMLDivElement>();
+    const uploadResult = React.createRef<HTMLDivElement>();
+    const promptResult = React.createRef<HTMLDivElement>();
 
     const handleSubmit = () => {
         setSubmit(true);
@@ -126,12 +143,24 @@ export default function Site() {
                 <button id="delayed_request" onClick={delayedRequest}>
                     Fires a request in 200ms
                 </button>
-                <div id="upload_label" ref={uploadLabel}></div>
+                <button id="alerts" onClick={() => alert('Am an alert')}>
+                    Pops up an alert
+                </button>
+                <div id="prompt_result" ref={promptResult} />
+                <button id="prompts" onClick={() => testPrompt(promptResult)}>
+                    Pops up a prompt
+                </button>
+                <button className="pure-button">Doesn't do anything</button>
+                <button className="pure-button">Doesn't do anything</button>
+                <button className="pure-button">Doesn't do anything</button>
+                <button className="pure-button">Doesn't do anything</button>
+                <button className="pure-button">Doesn't do anything</button>
+                <div id="upload_result" ref={uploadResult}></div>
                 <input
                     type="file"
                     id="file_chooser"
                     name="file_chooser"
-                    onChange={(event) => fileUploaded(uploadLabel, event)}
+                    onChange={(event) => fileUploaded(uploadResult, event)}
                 />
                 <a id="file_download" href="index.js" download="test_download_file">
                     Download file{' '}

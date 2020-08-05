@@ -1,4 +1,4 @@
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
+import { Server, ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import * as browserControl from './browser-control';
 import * as cookie from './cookie';
@@ -337,5 +337,12 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async uploadFile(call: ServerUnaryCall<Request.FilePath>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return interaction.uploadFile(call, callback, this.getActivePage());
+    }
+
+    async handleAlert(
+        call: ServerUnaryCall<Request.AlertAction>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.handleAlert(call, callback, this.getActivePage());
     }
 }
