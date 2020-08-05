@@ -380,5 +380,5 @@ class Getters(LibraryComponent):
             parsed = json.loads(response.body)
             logger.debug(parsed)
             if keys:
-                parsed = {key.value: parsed[key.value] for key in keys}
+                parsed = {key.name: parsed[key.name] for key in keys}
             return parsed

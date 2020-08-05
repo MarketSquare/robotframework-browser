@@ -3,15 +3,15 @@ from typing import TypedDict
 
 
 class AlertAction(Enum):
-    accept = "accept"
-    dismiss = "dismiss"
+    accept = auto()
+    dismiss = auto()
 
 
 class CookieType(Enum):
-    dictionary = "dict"
-    dict = "dict"
-    string = "string"
-    str = "str"
+    dictionary = auto()
+    dict = dictionary
+    string = auto()
+    str = string
 
 
 class RequestMethod(Enum):
@@ -44,9 +44,9 @@ class SelectAttribute(Enum):
 
 
 class SupportedBrowsers(Enum):
-    chromium = "chromium"
-    firefox = "firefox"
-    webkit = "webkit"
+    chromium = auto()
+    firefox = auto()
+    webkit = auto()
 
 
 ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
@@ -55,11 +55,11 @@ ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": in
 
 
 class BoundingBoxFields(Enum):
-    width = "width"
-    height = "height"
-    x = "x"
-    y = "y"
-    ALL = "ALL"
+    width = auto()
+    height = auto()
+    x = auto()
+    y = auto()
+    ALL = auto()
 
 
 class AutoClosingLevel(Enum):

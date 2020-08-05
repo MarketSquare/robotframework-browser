@@ -278,8 +278,6 @@ class Interaction(LibraryComponent):
             if prompt_input and action is not AlertAction.accept:
                 raise ValueError("prompt_input is only valid if action is 'accept'")
             response = stub.HandleAlert(
-                Request().AlertAction(
-                    alertAction=action.value, promptInput=prompt_input
-                )
+                Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
             )
             logger.debug(response.log)

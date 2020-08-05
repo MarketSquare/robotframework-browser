@@ -109,7 +109,7 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
 
             response = stub.NewBrowser(
-                Request().Browser(browser=browser.value, rawOptions=options)
+                Request().Browser(browser=browser.name, rawOptions=options)
             )
             logger.info(response.log)
             return response.body

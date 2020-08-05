@@ -35,7 +35,7 @@ class Cookie(LibraryComponent):
             return []
         else:
             logger.info(f"Found cookies: {response.log}")
-        if return_type == CookieType.dictionary:
+        if return_type is CookieType.dictionary:
             return self._format_cookies_as_dot_dict(cookies)
         return self._format_cookies_as_string(cookies)
 
@@ -170,7 +170,7 @@ class Cookie(LibraryComponent):
         _, cookies = self._get_cookies()
         for cookie_dict in cookies:
             if cookie_dict["name"] == cookie:
-                if return_type == CookieType.dictionary:
+                if return_type is CookieType.dictionary:
                     return self._cookie_as_dot_dict(cookie_dict)
                 return self._cookie_as_string(cookie_dict)
         raise ValueError(f"Cookie with name {cookie} is not found.")
