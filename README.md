@@ -44,12 +44,13 @@ browser.close_all_browsers()
 ```
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
-    # Select element containing text "Login" with text selector strategy 
-    # and select it's parent `input` element with xpath
-    Click    "Login" >> xpath=../input
-    # Select element with CSS strategy and select button in it with text strategy
-    Click    div.dialog >> "Ok"
-
+```RobotFramework
+# Select element containing text "Login" with text selector strategy 
+# and select it's parent `input` element with xpath
+Click    "Login" >> xpath=../input
+# Select element with CSS strategy and select button in it with text strategy
+Click    div.dialog >> "Ok"
+```
 ### Evaluate in browser page
 
     New Page   ${LOGIN_URL}
