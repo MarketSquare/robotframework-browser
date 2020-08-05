@@ -345,4 +345,15 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         return interaction.handleAlert(call, callback, this.getActivePage());
     }
+
+    async mouseMove(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return interaction.mouseMove(call, callback, this.getActivePage());
+    }
+
+    async mouseButton(
+        call: ServerUnaryCall<Request.MouseButtonOptions>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.mouseButton(call, callback, this.getActivePage());
+    }
 }

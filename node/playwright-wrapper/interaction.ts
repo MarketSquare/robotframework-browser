@@ -4,7 +4,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog } from './response-util';
-import { invokeOnPage, invokePlaywrightMethod } from './playwirght-invoke';
+import { invokeOnMouse, invokeOnPage, invokePlaywrightMethod } from './playwirght-invoke';
 
 export async function selectOption(
     call: ServerUnaryCall<Request.SelectElementSelector>,
@@ -172,4 +172,25 @@ export async function handleAlert(
     };
     await invokeOnPage(page, callback, 'on', 'dialog', fn);
     callback(null, emptyWithLog('Set event handler for next alert'));
+}
+
+export async function mouseButton(
+    call: ServerUnaryCall<Request.MouseButtonOptions>,
+    callback: sendUnaryData<Response.Empty>,
+    page?: Page,
+): Promise<void> {
+    const action = call.request.getAction() as 'click' | 'up' | 'down';
+    const params = JSON.parse(call.request.getJson());
+    await invokeOnMouse(page, callback, action, params);
+    callback(null, emptyWithLog(`Succesfully executed ${action}`));
+}
+
+export async function mouseMove(
+    call: ServerUnaryCall<Request.Json>,
+    callback: sendUnaryData<Response.Empty>,
+    page?: Page,
+): Promise<void> {
+    const params = JSON.parse(call.request.getBody());
+    await invokeOnMouse(page, callback, 'move', params);
+    callback(null, emptyWithLog(`Succesfully moved mouse to ${params.x}, ${params.y}`));
 }

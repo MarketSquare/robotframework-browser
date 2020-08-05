@@ -22,6 +22,10 @@ class RequestMethod(Enum):
     PATCH = auto()
     DELETE = auto()
 
+class MouseButtonAction(Enum):
+    click = auto()
+    down = auto()
+    up = auto()
 
 class MouseButton(Enum):
     left = auto()

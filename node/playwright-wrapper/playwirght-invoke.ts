@@ -30,6 +30,7 @@ export async function invokeOnMouse<T>(
     methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
     ...args: any[]
 ) {
+    console.log(`Invoking mouse action ${methodName} with params ${JSON.stringify(args)}`)
     exists(page, callback, `Tried to do mouse action '${methodName}', but no open page.`);
     try {
         const fn: any = page.mouse[methodName].bind(page.mouse);

@@ -15,6 +15,11 @@ message Request {
     string body = 1;
   }
 
+  message MouseButtonOptions {
+    string action = 1;
+    string json = 2;
+  }
+
   message Browser {
     string browser = 1;
     bool headless = 2;
@@ -259,6 +264,9 @@ service  Playwright {
   rpc GetDevices(Request.Empty) returns (Response.String);
 
   rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
+
+  rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);
+  rpc MouseMove(Request.Json) returns (Response.Empty);
 
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
 

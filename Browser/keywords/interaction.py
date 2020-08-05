@@ -10,6 +10,7 @@ from ..utils import logger
 from ..utils.data_types import (
     AlertAction,
     KeyboardModifier,
+    MouseButtonAction,
     MouseButton,
     SelectAttribute,
 )
@@ -281,3 +282,58 @@ class Interaction(LibraryComponent):
                 Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
             )
             logger.debug(response.log)
+
+    @keyword(tags=["VirtualMouse", "PageContent"])
+    def mouse_button(
+        self,
+        action: MouseButtonAction,
+        x: float = None,
+        y: float = None,
+        button: MouseButton = MouseButton.left,
+        clickCount: int = None,
+        delay: int = None,
+    ):
+        """ Click or hold a mouse button down.
+
+            ``action``
+            ``x``
+            ``y``
+            ``button``
+            ``clickCount``
+            ``delay``
+        """
+        with self.playwright.grpc_channel() as stub:
+            body = {}
+            if delay and action is not MouseButtonAction.click:
+                raise ValueError("Delay is only valid on a mouse click")
+            if action is MouseButtonAction.down or action is MouseButtonAction.up:
+                if x or y:
+                    raise ValueError("Coordinates are not valid on MouseAction.up or MouseAction.down")
+                body = { "options": {}}
+            else:
+                body = {"x": x, "y": y, "options": {}}
+            if button:
+                body["options"]["button"] = button.name
+            if clickCount:
+                body["options"]["clickCount"] = clickCount
+            if delay:
+                body["options"]["delay"] = delay
+            response = stub.MouseButton(Request().MouseButtonOptions(action=action.name, json = json.dumps(body)))
+            logger.debug(response.body)
+
+    @keyword(tags=["VirtualMouse", "PageContent"])
+    def mouse_move(self, x: float , y: float, steps: int):
+        """ Instead of selectors command mouse with coordinates.
+            The Click commands will leave the virtual mouse on the specified coordinates.
+            ``x``
+            ``y``
+            ``steps``
+        """
+        with self.playwright.grpc_channel() as stub:
+            body = {"x": x, "y": y }
+            if steps:
+                body["options"] = { "steps": steps }
+            response = stub.MouseMove(Request().Json(body = json.dumps(body)))
+            logger.debug(response.body)
+
+
