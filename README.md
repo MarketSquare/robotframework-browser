@@ -52,32 +52,32 @@ Click    "Login" >> xpath=../input
 Click    div.dialog >> "Ok"
 ```
 ### Evaluate in browser page
-
-    New Page   ${LOGIN_URL}
-    ${ref}=    Get Element    h1
-    Get Attribute    ${ref}    innerText    ==    Login Page
-    Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
-    Get Attribute    ${ref}    innerText    ==    abc
-
+```RobotFramework
+New Page   ${LOGIN_URL}
+${ref}=    Get Element    h1
+Get Attribute    ${ref}    innerText    ==    Login Page
+Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
+Get Attribute    ${ref}    innerText    ==    abc
+```
 ### Asynchronously waiting for HTTP requests and responses
-
-    # The button with id `delayed_request` fires a delayed request. We use a promise to capture it.
-    {promise}=    Promise To    Wait For Response    matcher=    timeout=3s
-    Click    \#delayed_request
-    ${body}=    Wait For    ${promise}
-
+```RobotFramework
+# The button with id `delayed_request` fires a delayed request. We use a promise to capture it.
+{promise}=    Promise To    Wait For Response    matcher=    timeout=3s
+Click    \#delayed_request
+${body}=    Wait For    ${promise}
+```
 ### Device Descriptors
-    
-    ${device}=  Get Device  iPhone X
-    New Context  &{device}
-    New Page
-    Get Viewport Size  # returns { "width": 375, "height": 812 }
-
+```RobotFramework
+${device}=  Get Device  iPhone X
+New Context  &{device}
+New Page
+Get Viewport Size  # returns { "width": 375, "height": 812 }
+```
 ### Sending HTTP requests and parsing their responses
-
-    &{response}=    HTTP    /api/post    POST    {"name": "John"}
-    Should Be Equal    ${response.status}    ${200}
-
+```RobotFramework
+&{response}=    HTTP    /api/post    POST    {"name": "John"}
+Should Be Equal    ${response.status}    ${200}
+```
 # Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
