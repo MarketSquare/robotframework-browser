@@ -33,13 +33,13 @@ export async function invokeOnMouse<T>(
     methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
     args: Record<any, any>,
 ) {
-    console.log(`Invoking mouse action ${methodName} with params ${JSON.stringify(args)}`);
+    logger.info(`Invoking mouse action ${methodName} with params ${JSON.stringify(args)}`);
     exists(page, callback, `Tried to do mouse action '${methodName}', but no open page.`);
     try {
         const fn: any = page.mouse[methodName].bind(page.mouse);
         return await fn(...Object.values(args));
     } catch (e) {
-        console.log(`Error invoking Playwright action 'mouse.${methodName}': ${e}`);
+        logger.error(`Error invoking Playwright action 'mouse.${methodName}': ${e}`);
         callback(e, null);
     }
 }

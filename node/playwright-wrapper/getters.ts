@@ -151,6 +151,6 @@ export async function getPageSource(
     page?: Page,
 ): Promise<void> {
     const result = await invokeOnPage(page, callback, 'content');
-    console.log(result);
+    logger.info(result);
     callback(null, stringResponse(JSON.stringify(result)));
 }
