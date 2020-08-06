@@ -15,5 +15,16 @@ Test screenshotting failing test
 
 Test screenshotting by using keyword
     [Teardown]    Remove File    ${TestScreenshot}.png
-    Take Page Screenshot    ${TestScreenshot}
+    Take Screenshot    ${TestScreenshot}
+    Should Exist    ${TestScreenshot}.png
+
+Test Element Screenshotting
+    [Teardown]    Remove File    ${TestScreenshot}.png
+    Take Screenshot    ${TestScreenshot}    selector=\#username_field
+    Should Exist    ${TestScreenshot}.png
+
+Test ElementHandle screenshotting
+    [Teardown]    Remove File    ${TestScreenshot}.png
+    ${ref}=    Get Element    \#username_field
+    Take screenshot    ${TestScreenshot}    ${ref}
     Should Exist    ${TestScreenshot}.png

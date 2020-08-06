@@ -108,10 +108,10 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async takeScreenshot(
-        call: ServerUnaryCall<Request.ScreenshotPath>,
+        call: ServerUnaryCall<Request.ScreenshotOptions>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return browserControl.takeScreenshot(call, callback, this.getActivePage());
+        return browserControl.takeScreenshot(call, callback, this.state);
     }
 
     async getBoundingBox(

@@ -32,16 +32,26 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     @keyword
-    def take_page_screenshot(self, path: str = ""):
+    def take_screenshot(self, path: str = "", selector: str = ""):
         """Takes screenshot of the current window and saves it to ``path``.
 
         The default path is the Robot Framework output directory.
+
+        ``selector```: Take a screenshot of the element matched by selector.
+        If not provided take a screenshot of current viewport.
         """
         if not path:
             path = self.library.get_screenshot_path
-        logger.info(f"Taking screenshot into ${path}")
+        logger.debug(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
-            response = stub.TakeScreenshot(Request().ScreenshotPath(path=path))
+            response = (
+                stub.TakeScreenshot(
+                    Request().ScreenshotOptions(path=path, selector=selector)
+                )
+                if selector
+                else stub.TakeScreenshot(Request().ScreenshotOptions(path=path))
+            )
+
             logger.info(
                 f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",
                 html=True,

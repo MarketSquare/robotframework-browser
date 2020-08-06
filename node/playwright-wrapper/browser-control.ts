@@ -1,9 +1,10 @@
 import { BrowserContext, Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
+import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
+import { determineElement, exists, invokeOnPage } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
-import { exists, invokeOnPage } from './playwirght-invoke';
 
 export async function goTo(
     call: ServerUnaryCall<Request.Url>,
@@ -26,13 +27,22 @@ export async function goForward(callback: sendUnaryData<Response.Empty>, page?: 
 }
 
 export async function takeScreenshot(
-    call: ServerUnaryCall<Request.ScreenshotPath>,
+    call: ServerUnaryCall<Request.ScreenshotOptions>,
     callback: sendUnaryData<Response.String>,
-    page?: Page,
+    state: PlaywrightState,
 ) {
     // Add the file extension here because the image type is defined by playwrights defaults
     const path = call.request.getPath() + '.png';
-    await invokeOnPage(page, callback, 'screenshot', { path: path });
+    const selector = call.request.getSelector();
+    if (selector) {
+        const elem = await determineElement(state, selector, callback);
+        exists(elem, callback, `Tried to capture element screenshot, element '${selector}' wasn't found`);
+        await elem.screenshot({ path: path });
+    } else {
+        const page = state.getActivePage();
+        exists(page, callback, 'Tried to take screenshot, no page was open');
+        await invokeOnPage(page, callback, 'screenshot', { path: path });
+    }
     callback(null, stringResponse(path));
 }
 

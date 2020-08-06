@@ -3,8 +3,9 @@ syntax = "proto3";
 message Request {
   message Empty {}
 
-  message ScreenshotPath {
+  message ScreenshotOptions {
     string path = 1;
+    string selector = 2;
   }
 
   message FilePath {
@@ -185,7 +186,7 @@ service  Playwright {
   rpc GetCookies(Request.Empty) returns (Response.String);
   rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
   /* Screen shot method */
-  rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String);
+  rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty);
   /* Navigate to the next page in history */
