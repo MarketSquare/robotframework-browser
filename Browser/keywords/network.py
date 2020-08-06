@@ -99,7 +99,7 @@ class Network(LibraryComponent):
         ``matcher``: Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout``: (optional) uses default timout if not set.
+        ``timeout``: (optional) uses default timeout if not set.
 
         """
         return self._wait_for_http("Request", matcher, timeout)
@@ -111,7 +111,7 @@ class Network(LibraryComponent):
         ``matcher``: Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout``: (optional) uses default timout if not set.
+        ``timeout``: (optional) uses default timeout if not set.
 
         """
         return self._wait_for_http("Response", matcher, timeout)
