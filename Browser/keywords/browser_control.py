@@ -44,14 +44,9 @@ class Control(LibraryComponent):
             path = self.library.get_screenshot_path
         logger.debug(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
-            response = (
-                stub.TakeScreenshot(
-                    Request().ScreenshotOptions(path=path, selector=selector)
-                )
-                if selector
-                else stub.TakeScreenshot(Request().ScreenshotOptions(path=path))
+            response = stub.TakeScreenshot(
+                Request().ScreenshotOptions(path=path, selector=selector)
             )
-
             logger.info(
                 f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",
                 html=True,
