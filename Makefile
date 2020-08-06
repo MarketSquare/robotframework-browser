@@ -48,11 +48,13 @@ atest-global-pythonpath: clean-atest
 test-failed: build
 	python -m pabot.pabot --pabotlib --verbose --exclude Not-Implemented --loglevel DEBUG --rerunfailed atest/output/output.xml --outputdir atest/output atest/test
 
-docker:
-	docker build --tag rfbrowser --file atest/docker/Dockerfile .
-docker-test:
+docker-base: 
+	DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Playwright20.04/Dockerfile .
+docker-builder: docker-base
+	DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file atest/docker/Dockerfile .
+docker-test: docker-builder
 	rm -rf atest/output
-	docker run -it --rm --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest rfbrowser robot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test
+	DOCKER_BUILDKIT=1 docker run -it --rm --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest rfbrowser pabot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test
 
 lint-python:
 	mypy --config-file Browser/mypy.ini Browser/ utest/
