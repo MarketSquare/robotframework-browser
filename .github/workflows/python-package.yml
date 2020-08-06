@@ -120,3 +120,14 @@ jobs:
           name: Clean install results
           path: atest/output
 
+  docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build image
+        run: |
+          make docker
+      - name: Test image
+        run: |
+          make docker-test
+
