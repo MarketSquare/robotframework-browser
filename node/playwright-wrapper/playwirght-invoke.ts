@@ -28,15 +28,15 @@ export async function invokeOnMouse<T>(
     page: Page | undefined,
     callback: sendUnaryData<T>,
     methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
-    ...args: any[]
+    args: Record<any, any>,
 ) {
-    console.log(`Invoking mouse action ${methodName} with params ${JSON.stringify(args)}`)
+    console.log(`Invoking mouse action ${methodName} with params ${JSON.stringify(args)}`);
     exists(page, callback, `Tried to do mouse action '${methodName}', but no open page.`);
     try {
         const fn: any = page.mouse[methodName].bind(page.mouse);
-        return await fn(...args);
+        return await fn(...Object.values(args));
     } catch (e) {
-        console.log(`Error invoking Playwright action '${methodName}': ${e}`);
+        console.log(`Error invoking Playwright action 'mouse.${methodName}': ${e}`);
         callback(e, null);
     }
 }

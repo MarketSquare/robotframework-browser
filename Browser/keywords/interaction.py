@@ -10,8 +10,9 @@ from ..utils import logger
 from ..utils.data_types import (
     AlertAction,
     KeyboardModifier,
-    MouseButtonAction,
     MouseButton,
+    MouseButtonAction,
+    MouseOptionsDict,
     SelectAttribute,
 )
 from ..utils.time_conversion import timestr_to_millisecs
@@ -287,11 +288,11 @@ class Interaction(LibraryComponent):
     def mouse_button(
         self,
         action: MouseButtonAction,
-        x: float = None,
-        y: float = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
         button: MouseButton = MouseButton.left,
-        clickCount: int = None,
-        delay: int = None,
+        clickCount: int = 1,
+        delay: int = 0,
     ):
         """ Click or hold a mouse button down.
 
@@ -303,26 +304,40 @@ class Interaction(LibraryComponent):
             ``delay``
         """
         with self.playwright.grpc_channel() as stub:
-            body = {}
+            body: MouseOptionsDict = {}
             if delay and action is not MouseButtonAction.click:
                 raise ValueError("Delay is only valid on a mouse click")
             if action is MouseButtonAction.down or action is MouseButtonAction.up:
                 if x or y:
-                    raise ValueError("Coordinates are not valid on MouseAction.up or MouseAction.down")
-                body = { "options": {}}
+                    raise ValueError(
+                        "Coordinates are not valid on MouseAction.up or MouseAction.down"
+                    )
+                body = {
+                    "options": {
+                        "button": button.name,
+                        "clickCount": clickCount,
+                        "delay": delay,
+                    }
+                }
             else:
-                body = {"x": x, "y": y, "options": {}}
-            if button:
-                body["options"]["button"] = button.name
-            if clickCount:
-                body["options"]["clickCount"] = clickCount
-            if delay:
-                body["options"]["delay"] = delay
-            response = stub.MouseButton(Request().MouseButtonOptions(action=action.name, json = json.dumps(body)))
-            logger.debug(response.body)
+                body = {}
+                if x:
+                    body["x"] = float(x)
+                if y:
+                    body["y"] = float(y)
+                body["options"] = {
+                    "button": button.name,
+                    "clickCount": clickCount,
+                    "delay": delay,
+                }
+
+            response = stub.MouseButton(
+                Request().MouseButtonOptions(action=action.name, json=json.dumps(body))
+            )
+            logger.debug(response.log)
 
     @keyword(tags=["VirtualMouse", "PageContent"])
-    def mouse_move(self, x: float , y: float, steps: int):
+    def mouse_move(self, x: float, y: float, steps: int = 1):
         """ Instead of selectors command mouse with coordinates.
             The Click commands will leave the virtual mouse on the specified coordinates.
             ``x``
@@ -330,10 +345,6 @@ class Interaction(LibraryComponent):
             ``steps``
         """
         with self.playwright.grpc_channel() as stub:
-            body = {"x": x, "y": y }
-            if steps:
-                body["options"] = { "steps": steps }
-            response = stub.MouseMove(Request().Json(body = json.dumps(body)))
-            logger.debug(response.body)
-
-
+            body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
+            response = stub.MouseMove(Request().Json(body=json.dumps(body)))
+            logger.debug(response.log)
