@@ -141,3 +141,13 @@ export async function getBoundingBox(
     const boundingBox = await elem.boundingBox();
     callback(null, stringResponse(JSON.stringify(boundingBox)));
 }
+
+export async function getPageSource(
+    call: ServerUnaryCall<Request.Empty>,
+    callback: sendUnaryData<Response.String>,
+    page?: Page,
+): Promise<void> {
+    const result = await invokeOnPage(page, callback, 'content');
+    console.log(result);
+    callback(null, stringResponse(JSON.stringify(result)));
+}

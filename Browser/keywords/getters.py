@@ -60,6 +60,23 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "State "
             )
 
+    @keyword(tags=["Getter", "BrowserControl"])
+    def get_page_source(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ) -> str:
+        """Gets pages HTML source as a string.
+
+        Optionally does a string assertion."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetPageSource(Request().Empty())
+            logger.debug(response.log)
+            value = json.loads(response.body)
+            return verify_assertion(
+                value, assertion_operator, assertion_expected, "HTML: "
+            )
+
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_title(
         self,

@@ -81,3 +81,6 @@ Get Element width and height
     ${expected}=    Evaluate    {'width': 40, 'height': 30}
     ${wh}=    Get BoundingBox    \#progress_bar    width    height
     Should Be Equal    ${wh}    ${expected}
+
+Get Page Source
+    Get Page Source    contains    <title>Login Page</title>

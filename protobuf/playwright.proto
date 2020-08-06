@@ -211,8 +211,10 @@ service  Playwright {
   rpc GetBoolProperty(Request.ElementProperty) returns (Response.Bool);
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
   rpc GetViewportSize(Request.Empty) returns (Response.String);
-  /* *Returns current playwright page url*/
+  /* Returns current playwright page url*/
   rpc GetUrl(Request.Empty) returns (Response.String);
+  /* Gets pages HTML code */
+  rpc GetPageSource(Request.Empty) returns (Response.String);
   /* Clicks element specified by selector */
   rpc Click(Request.ElementSelector) returns (Response.Empty);
   /* Inputs a list of keypresses to element specified by selector */
