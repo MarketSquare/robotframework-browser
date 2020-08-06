@@ -7,6 +7,9 @@ import { Request, Response } from './generated/playwright_pb';
 import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
 declare global {
     interface Window {
         __SET_RFBROWSER_STATE__: <T>(a: T) => T;
@@ -91,7 +94,7 @@ export async function waitForFunction(
     let script = call.request.getScript();
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    console.log(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
+    logger.info(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
 
     let elem;
     if (selector) {

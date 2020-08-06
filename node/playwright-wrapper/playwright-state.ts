@@ -5,6 +5,9 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, intResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
 }
@@ -216,8 +219,8 @@ export class BrowserState {
             // prevent duplicates
             this._contextStack = this._contextStack.filter((c) => c.c !== newContext.c);
             this._contextStack.push(newContext);
-            console.log('Changed active context');
-        } else console.log('Set active context to undefined');
+            logger.info('Changed active context');
+        } else logger.info('Set active context to undefined');
     }
     get page(): IndexedPage | undefined {
         const context = this.context;
@@ -230,9 +233,9 @@ export class BrowserState {
             // prevent duplicates
             currentContext.pageStack = currentContext.pageStack.filter((p) => p.p !== newPage.p);
             currentContext.pageStack.push(newPage);
-            console.log('Changed active page');
+            logger.info('Changed active page');
         } else {
-            console.log('Set active page to undefined');
+            logger.info('Set active page to undefined');
         }
     }
     get contextStack(): IndexedContext[] {
@@ -364,7 +367,7 @@ export async function autoActivatePages(
         );
         const pageIndex = browserState.context.c.pages().length;
         browserState.context.pageStack.push({ p: page, index: pageIndex });
-        console.log('Changed active page');
+        logger.info('Changed active page');
     });
     callback(null, emptyWithLog('Will focus future ``pages`` in this context'));
 }
@@ -380,14 +383,14 @@ async function _switchPage(index: number, browserState: BrowserState, waitForPag
         return;
     } else if (waitForPage) {
         try {
-            console.log('Started waiting for a page to pop up');
+            logger.info('Started waiting for a page to pop up');
             const page = await context.waitForEvent('page');
             browserState.page = { index: index, p: page };
             await page.bringToFront();
             return;
         } catch (pwError) {
-            console.log('Wait was not fulfilled');
-            console.log(pwError);
+            logger.info('Wait was not fulfilled');
+            logger.error(pwError);
             const mapped = pages?.map((p) => p.url()).join(',');
             const message = `No page for index ${index}. Open pages: ${mapped}`;
             const error = new Error(message);
@@ -421,7 +424,7 @@ export async function switchPage(
     browserState?: BrowserState,
 ) {
     exists(browserState, callback, "Tried to switch Page but browser wasn't open");
-    console.log('Changing current active page');
+    logger.info('Changing current active page');
     const index = call.request.getIndex();
     const previous = browserState.page?.index || 0;
     await _switchPage(index, browserState, true).catch((error) => callback(error, null));

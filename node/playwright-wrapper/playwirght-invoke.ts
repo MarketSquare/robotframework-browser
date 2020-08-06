@@ -3,6 +3,9 @@ import { Metadata, sendUnaryData, status } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
 export async function waitUntilElementExists<T>(
     state: PlaywrightState,
     callback: sendUnaryData<T>,
@@ -52,7 +55,7 @@ export async function invokeOnPage<T>(
         const fn: any = (page as { [key: string]: any })[methodName].bind(page);
         return await fn(...args);
     } catch (e) {
-        console.log(`Error invoking Playwright action '${methodName}': ${e}`);
+        logger.info(`Error invoking Playwright action '${methodName}': ${e}`);
         callback(e, null);
     }
 }
@@ -68,7 +71,7 @@ export async function invokeOnContext<T>(
         const fn: any = (context as { [key: string]: any })[methodName].bind(context);
         return await fn(...args);
     } catch (e) {
-        console.log(`Error invoking Playwright action '${methodName}': ${e}`);
+        logger.info(`Error invoking Playwright action '${methodName}': ${e}`);
         callback(e, null);
     }
 }
@@ -198,10 +201,10 @@ function splitElementHandleAndElementSelector<T>(
             elementHandleId: parts[1],
             subSelector: parts[2],
         };
-        console.log(`Split element= selector into parts: ${JSON.stringify(splitted)}`);
+        logger.info(`Split element= selector into parts: ${JSON.stringify(splitted)}`);
         return splitted;
     } else if (parts[1]) {
-        console.log(`element= selector parsed without children`);
+        logger.info(`element= selector parsed without children`);
         return {
             elementHandleId: parts[1],
             subSelector: '',
