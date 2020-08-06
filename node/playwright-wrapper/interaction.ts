@@ -6,6 +6,9 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog } from './response-util';
 import { invokeOnMouse, invokeOnPage, invokePlaywrightMethod } from './playwirght-invoke';
 
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
 export async function selectOption(
     call: ServerUnaryCall<Request.SelectElementSelector>,
     callback: sendUnaryData<Response.Empty>,
@@ -16,7 +19,7 @@ export async function selectOption(
     const result = await invokePlaywrightMethod(state, callback, 'selectOption', selector, matcher);
 
     if (result.length == 0) {
-        console.log("Couldn't select any options");
+        logger.info("Couldn't select any options");
         const error = new Error(`No options matched ${matcher}`);
         callback(error, null);
     }

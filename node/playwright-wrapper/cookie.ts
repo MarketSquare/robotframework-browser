@@ -6,7 +6,7 @@ import { emptyWithLog, stringResponse } from './response-util';
 import { invokeOnContext } from './playwirght-invoke';
 
 import * as pino from 'pino';
-const logger = pino.default();
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 interface CookieData {
     name: string;

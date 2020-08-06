@@ -6,6 +6,9 @@ import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, stringResponse } from './response-util';
 import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
 export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
     const title = await invokeOnPage(page, callback, 'title');
     callback(null, stringResponse(title));
@@ -88,10 +91,10 @@ async function getProperty<T>(
         const propertyName = call.request.getProperty();
         const property = await element.getProperty(propertyName);
         const content = await property.jsonValue();
-        console.log(`Retrieved dom property for element ${selector} containing ${content}`);
+        logger.info(`Retrieved dom property for element ${selector} containing ${content}`);
         return content;
     } catch (e) {
-        console.log(e);
+        logger.error(e);
         callback(e, null);
     }
 }
@@ -103,7 +106,7 @@ export async function getStyle(
 ): Promise<void> {
     const selector = call.request.getSelector();
 
-    console.log('Getting css of element on page');
+    logger.info('Getting css of element on page');
     const result = await invokePlaywrightMethod(state, callback, '$eval', selector, function (element: Element) {
         const rawStyle = window.getComputedStyle(element);
         const mapped: Record<string, string> = {};
