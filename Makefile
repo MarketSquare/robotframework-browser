@@ -52,9 +52,9 @@ docker-base:
 	DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Playwright20.04/Dockerfile .
 docker-builder: docker-base
 	DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file atest/docker/Dockerfile .
-docker-test: docker-builder
+docker-test:
 	rm -rf atest/output
-	DOCKER_BUILDKIT=1 docker run -it --rm --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest rfbrowser pabot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test
+	docker run --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest -it rfbrowser sh -c "PATH=$$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /atest/output /atest/test"
 
 lint-python:
 	mypy --config-file Browser/mypy.ini Browser/ utest/

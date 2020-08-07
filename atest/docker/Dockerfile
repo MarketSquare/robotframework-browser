@@ -39,7 +39,8 @@ RUN pip3 install --user robotframework-pabot
 WORKDIR /app
 COPY --from=BrowserBuilder /app/dist /app/dist
 RUN pip3 install --user dist/robotframework_browser-*-py3-none-any.whl
-RUN /home/pwuser/.local/bin/rfbrowser init
+# Hard to update PATH for all shells in a docker image so we run python scripts with manual paths
+RUN ~/.local/bin/rfbrowser init
 
 # What were these used for previously
 # RUN mv /root/.cache/ /home/pwuser/.cache
