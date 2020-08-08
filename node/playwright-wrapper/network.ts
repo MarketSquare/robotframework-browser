@@ -2,8 +2,8 @@ import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
+import { emptyWithLog, stringResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
-import {emptyWithLog, stringResponse} from './response-util';
 export async function httpRequest(
     call: ServerUnaryCall<pb.Request.HttpRequest>,
     callback: sendUnaryData<pb.Response.String>,

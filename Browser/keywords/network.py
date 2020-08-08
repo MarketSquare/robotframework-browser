@@ -124,5 +124,7 @@ class Network(LibraryComponent):
 
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.WaitUntilNetworkIsIdle(Request().Timeout(timeout=timestr_to_millisecs(timeout)))
+            response = stub.WaitUntilNetworkIsIdle(
+                Request().Timeout(timeout=timestr_to_millisecs(timeout))
+            )
             logger.debug(response.log)
