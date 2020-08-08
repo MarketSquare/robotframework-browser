@@ -262,6 +262,7 @@ service  Playwright {
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
   rpc WaitForResponse(Request.HttpCapture) returns (Response.String);
   rpc WaitForDownload(Request.FilePath) returns (Response.String);
+  rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
 
   rpc GetDevice(Request.Device) returns (Response.String);
   rpc GetDevices(Request.Empty) returns (Response.String);

@@ -3,7 +3,7 @@ import { Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { invokeOnPage } from './playwirght-invoke';
-import { stringResponse } from './response-util';
+import {emptyWithLog, stringResponse} from './response-util';
 export async function httpRequest(
     call: ServerUnaryCall<pb.Request.HttpRequest>,
     callback: sendUnaryData<pb.Response.String>,
@@ -62,6 +62,16 @@ export async function waitForRequest(
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForRequest', urlOrPredicate, { timeout: timeout });
     callback(null, stringResponse(result.url()));
+}
+
+export async function waitUntilNetworkIsIdle(
+    call: ServerUnaryCall<pb.Request.Timeout>,
+    callback: sendUnaryData<pb.Response.Empty>,
+    page?: Page,
+) {
+    const timeout = call.request.getTimeout();
+    await invokeOnPage(page, callback, 'waitForLoadState', 'networkidle', { timeout: timeout });
+    callback(null, emptyWithLog('Network is idle'));
 }
 
 export async function waitForDownload(
