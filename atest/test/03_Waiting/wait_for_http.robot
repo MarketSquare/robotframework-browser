@@ -20,6 +20,10 @@ Wait For Response synchronous
     Click    \#delayed_request
     Wait For Response    timeout=1s
 
+Wait For Response synchronous with default timeout
+    Click    \#delayed_request
+    Wait For Response
+
 Wait For Response async
     ${promise}=    Promise To    Wait For Response    matcher=    timeout=3s
     Click    \#delayed_request
