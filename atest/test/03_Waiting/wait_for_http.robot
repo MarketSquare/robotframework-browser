@@ -30,7 +30,7 @@ Wait For Response async
     ${body}=    Wait For    ${promise}
 
 Wait until network is idle works
-   Click    \#server_delayed_response
-   Get text   \#server_delayed_response  ==  Server response after 400ms
-   Wait until network is idle   timeout=3s
-   Get text   \#server_delayed_response  ==  after some time I respond
+    Click    \#server_delayed_response
+    Get text    \#server_delayed_response    ==    Server response after 400ms
+    Wait until network is idle    timeout=3s
+    Get text    \#server_delayed_response    ==    after some time I respond
