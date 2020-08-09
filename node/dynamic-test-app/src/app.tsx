@@ -60,6 +60,12 @@ async function delayedRequest() {
     console.log(await fetch('/api/get/json'));
 }
 
+async function delayedServerSideRequest() {
+    const elem = window.document.getElementById('server_delayed_response');
+    if (elem === null) return;
+    elem.innerText = (await (await fetch('/api/get/delay')).json()).greeting;
+}
+
 function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
     if (files && files[0].name === 'test_upload_file') {
@@ -142,6 +148,9 @@ export default function Site() {
                 </button>
                 <button id="delayed_request" onClick={delayedRequest}>
                     Fires a request in 200ms
+                </button>
+                <button id="server_delayed_response" onClick={delayedServerSideRequest}>
+                    Server response after 400ms
                 </button>
                 <button id="alerts" onClick={() => alert('Am an alert')}>
                     Pops up an alert
