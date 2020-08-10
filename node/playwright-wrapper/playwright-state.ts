@@ -357,8 +357,13 @@ export async function autoActivatePages(
     );
 
     browserState.context.c.on('page', (page) => {
-        const pageIndex = browserState?.context?.c?.pages().length;
-        browserState.page = { index: pageIndex || 0, p: page };
+        exists(
+            browserState?.context?.c,
+            callback,
+            `Tried to focus on new page in context, context didn't exist! This should be impossible.`,
+        );
+        const pageIndex = browserState.context.c.pages().length;
+        browserState.context.pageStack.push({ p: page, index: pageIndex });
         console.log('Changed active page');
     });
     callback(null, emptyWithLog('Will focus future ``pages`` in this context'));

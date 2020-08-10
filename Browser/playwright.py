@@ -3,7 +3,8 @@ import functools
 import os
 import socket
 import time
-from subprocess import STDOUT, Popen
+from pathlib import Path
+from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 
 import grpc  # type: ignore
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
@@ -20,6 +21,7 @@ class Playwright:
     def __init__(self, timeout: str, enable_playwright_debug: bool):
         self.timeout = timeout
         self.enable_playwright_debug = enable_playwright_debug
+        self.ensure_node_dependencies()
 
     @property
     def outputdir(self):
@@ -33,6 +35,30 @@ class Playwright:
         process = self.start_playwright()
         self.wait_until_server_up()
         return process
+
+    def ensure_node_dependencies(self):
+        # Checks if node is in PATH, errors if it isn't
+        try:
+            run(["node", "-v"], stdout=DEVNULL, check=True)
+        except (CalledProcessError, FileNotFoundError, PermissionError) as err:
+            raise RuntimeError(
+                "Couldn't execute node. Please ensure you have node.js installed and in PATH. "
+                "See https://nodejs.org/ for instructions. "
+                f"Original error is {err}"
+            )
+
+        rfbrowser_dir = Path(__file__).parent
+        installation_dir = rfbrowser_dir / "wrapper"
+        # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
+        project_folder = rfbrowser_dir.parent
+        subfolders = os.listdir(project_folder) + os.listdir(installation_dir)
+
+        if "node_modules" in subfolders:
+            return
+        raise RuntimeError(
+            f"Could not find node dependencies in installation directory `{installation_dir}.` "
+            "Run `rfbrowser init` to install the dependencies."
+        )
 
     def start_playwright(self):
         workdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")

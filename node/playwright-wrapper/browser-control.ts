@@ -66,3 +66,14 @@ export async function setViewportSize(
     await invokeOnPage(page, callback, 'setViewportSize', size);
     callback(null, emptyWithLog(`Set viewport size to: ${size}`));
 }
+
+export async function toggleOffline(
+    call: ServerUnaryCall<Request.Bool>,
+    callback: sendUnaryData<Response.Empty>,
+    context?: BrowserContext,
+) {
+    exists(context, callback, 'Tried to toggle context to offline, no open context');
+    const offline = call.request.getValue();
+    await context.setOffline(offline);
+    callback(null, emptyWithLog(`Set context to ${offline}`));
+}

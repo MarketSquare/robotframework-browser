@@ -1,3 +1,5 @@
+import time
+
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
@@ -41,7 +43,7 @@ class Control(LibraryComponent):
         If not provided take a screenshot of current viewport.
         """
         if not path:
-            path = self.library.get_screenshot_path
+            path = self.library.outputdir + str(time.time())
         logger.debug(f"Taking screenshot into ${path}")
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
@@ -51,6 +53,7 @@ class Control(LibraryComponent):
                 f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",
                 html=True,
             )
+            return response.body
 
     @keyword(tags=["BrowserControl"])
     def set_timeout(self, timeout: str):
@@ -91,4 +94,13 @@ class Control(LibraryComponent):
             response = stub.SetViewportSize(
                 Request().Viewport(height=height, width=width)
             )
+            logger.info(response.log)
+
+    @keyword(tags=["BrowserControl"])
+    def set_offline(self, offline: bool = True):
+        """ Toggles current Context's offline emulation.
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetOffline(Request().Bool(value=offline))
             logger.info(response.log)

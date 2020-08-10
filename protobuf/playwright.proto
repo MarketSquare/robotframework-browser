@@ -138,6 +138,10 @@ message Request {
     string alertAction = 1;
     string promptInput = 2;  
   }
+
+  message Bool {
+    bool value = 1;
+  }
 }
 
 message Types {
@@ -273,6 +277,8 @@ service  Playwright {
   rpc MouseMove(Request.Json) returns (Response.Empty);
 
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
+
+  rpc ToggleOffline(Request.Bool) returns (Response.Empty);
 
   /* Playwright State handling keywords */
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty);

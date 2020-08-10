@@ -28,3 +28,8 @@ Test ElementHandle screenshotting
     ${ref}=    Get Element    \#username_field
     Take screenshot    ${TestScreenshot}    ${ref}
     Should Exist    ${TestScreenshot}.png
+
+Test screenshotting without path
+    ${path}=    Take Screenshot
+    Should Exist    ${path}
+    Remove File    ${path}
