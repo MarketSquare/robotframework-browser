@@ -14,10 +14,10 @@ class Evaluation(LibraryComponent):
     def execute_javascript(self, function: str, selector: str = "") -> Any:
         """Executes given javascript on the page.
 
-        ``function`` a valid javascript function or a javascript function body. For example
+        ``function`` <str> A valid javascript function or a javascript function body. **Required** For example
         ``() => true`` and ``true`` will behave similarly.
 
-        ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
+        ``selector`` <str> Selector to resolve and pass to the JavaScript function. This will be the first
         argument the function receives. If given a selector a function is necessary, with an argument
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
 
@@ -32,7 +32,12 @@ class Evaluation(LibraryComponent):
 
     @keyword(tags=["PageContent"])
     def highlight_elements(self, selector: str, duration: str = "5s"):
-        """Adds a red highlight to elements matched by ``selector`` for ``duration``"""
+        """Adds a red highlight to elements matched by the ``selector`` for ``duration``.
+
+        ``selector`` <str> Selector which shall be highlighted. **Required**
+
+        ``duration`` <str> Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
+        """
         with self.playwright.grpc_channel() as stub:
             duration_ms = timestr_to_millisecs(duration)
             response = stub.HighlightElements(

@@ -27,6 +27,10 @@ class Getters(LibraryComponent):
         """Returns the current URL.
 
         Optionally asserts that it matches the specified assertion.
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
@@ -43,6 +47,10 @@ class Getters(LibraryComponent):
         assertion_expected: Any = None,
     ) -> object:
         """Returns page model state object.
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
 
         This must be given on the page to ``window.__SET_RFBROWSER_STATE__``
 
@@ -68,7 +76,11 @@ class Getters(LibraryComponent):
     ) -> str:
         """Gets pages HTML source as a string.
 
-        Optionally does a string assertion."""
+        Optionally does a string assertion.
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageSource(Request().Empty())
             logger.debug(response.log)
@@ -86,6 +98,10 @@ class Getters(LibraryComponent):
         """Returns the title of the current page.
 
         Optionally asserts that it matches the specified assertion.
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
@@ -105,6 +121,10 @@ class Getters(LibraryComponent):
         """Returns text attribute of the element found by ``selector``.
 
         Optionally asserts that the text matches the specified assertion.
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
@@ -124,10 +144,18 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
-        """Returns ``attribute`` of the element found by ``selector``.
+        """Returns the ``attribute`` of the element found by ``selector``.
 
         Optionally asserts that the attribute value matches the specified
         assertion.
+
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+
+        ``attribute`` <str> Requested attribute name. **Required**
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
@@ -149,6 +177,12 @@ class Getters(LibraryComponent):
         """Returns value of the textfield found by ``selector``.
 
         Optionally asserts that the value matches the specified assertion.
+
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
         """
         return self.get_attribute(
             selector, "value", assertion_operator, assertion_expected
@@ -166,10 +200,12 @@ class Getters(LibraryComponent):
 
         Optionally asserts that these match the specified assertion.
 
-        ``option_attribute``: which attribute shall be returned/verified.
-        Allowed values are ``<"value"|"label"|"text"|"index">``
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
 
-        ``assertion_operator`` see `Assertions`.
+        ``option_attribute`` <str> Which attribute shall be returned/verified.
+        Allowed values are ``<"value"|"label"|"text"|"index">`` **Required**
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
         - ``==`` and ``!=`` can work with multiple values
         - ``contains``/``*=`` only accepts one single expected value
@@ -178,13 +214,13 @@ class Getters(LibraryComponent):
 
         Example:
 
-        | `Select Options By`    | label                 | //select[2] | Email | Mobile | | |
-        | ${selected_list}     | `Get Selected Options`  | //select[2] | | | | # getter |
-        | `Get Selected Options` | //select[2] | label | == | Mobile | Mail | #assertion content |
-        | `Select Options By`    | label                 | select#names | 2 | 4 | |
-        | `Get Selected Options` | select#names | index | == | 2      | 4     | #assertion index  |
-        | `Get Selected Options` | select#names | label | *= | Mikko  |     | #assertion contains |
-        | `Get Selected Options` | select#names | label | validate | len(value) == 3  | | #assertion length |
+        | `Select Options By`    | label                  | //select[2]  | Email    | Mobile           |      |                     |
+        | ${selected_list}       | `Get Selected Options` | //select[2]  |          |                  |      | # getter            |
+        | `Get Selected Options` | //select[2]            | label        | `==`     | Mobile           | Mail | #assertion content  |
+        | `Select Options By`    | label                  | select#names | 2        | 4                |      |                     |
+        | `Get Selected Options` | select#names           | index        | `==`     | 2                | 4    | #assertion index    |
+        | `Get Selected Options` | select#names           | label        | *=       | Mikko            |      | #assertion contains |
+        | `Get Selected Options` | select#names           | label        | validate | len(value) == 3  |      | #assertion length   |
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -217,21 +253,24 @@ class Getters(LibraryComponent):
     ):
         """Returns the state of the checkbox found by ``selector``.
 
-        - ``checked`` => ``True``
-        - ``unchecked`` => ``False``
+        ``selector`` <str> Selector which shall be examined
 
         Optionally asserts that the state matches the specified assertion.
 
-        ``assertion_operator`` see `Assertions`.
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
         - ``==`` and ``!=`` are allowed on boolean values
         - other operators are not accepted.
 
-        ``expected_state``: boolean value of expected state.
+        ``expected_state`` <str> boolean value of expected state.
         Strings are interpreted as booleans.
         All strings are ``${True}`` except of the
         following `FALSE, NO, OFF, 0, UNCHECKED, NONE, ${EMPTY}``.
         (case-insensitive).
+
+        - ``checked`` => ``True``
+        - ``unchecked`` => ``False``
+
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
@@ -254,6 +293,14 @@ class Getters(LibraryComponent):
         """Returns the count of elements found with ``selector``.
 
         Optionally asserts that the count matches the specified assertion.
+
+        ``selector`` <str> Selector which shall be counted.
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` <str|int> Expected value for the counting
+
+
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
@@ -269,40 +316,42 @@ class Getters(LibraryComponent):
 
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
     def get_browser_catalog(self):
-        """ Returns all Browsers, open Contexts in them and open Pages in these contexts.
+        """ Returns all browsers, open contexts in them and open pages in these contexts.
 
             The data is parsed into a python list containing data representing the open Objects.
 
-            On the root level the data contains a list of open Browsers.
+            On the root level the data contains a list of open browsers.
 
-            `` Browser: { type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
-            `` Context: {type: 'context', 'id': int, pages: List[Page]} ``
-            `` Page: {type: 'page', 'id': int, title: str, url: str} ``
+            Browser: ``{type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
 
-            Sample: ``
-            [{
-                "type": "firefox",
-                "id": 0,
-                "contexts": [{
-                    "type": "context",
-                    "id": 0,
-                    "pages": [{
-                        "type": "page",
-                        "title": "prefilled_email_form.html",
-                        "url": "http://localhost:7272/prefilled_email_form.html",
-                        "id": "0"
-                    }]
-                }, {
-                    "type": "context",
-                    "id": 1,
-                    "pages": [{
-                        "type": "page",
-                        "title": "Login Page",
-                        "url": "http://localhost:7272/dist/",
-                        "id": "0"
-                    }]
-                }]
-            }]
+            Context: ``{type: 'context', 'id': int, pages: List[Page]}``
+
+            Page: ``{type: 'page', 'id': int, title: str, url: str}``
+
+            Sample:
+            | [{
+            |     "type": "firefox",
+            |     "id": 0,
+            |     "contexts": [{
+            |         "type": "context",
+            |         "id": 0,
+            |         "pages": [{
+            |             "type": "page",
+            |             "title": "prefilled_email_form.html",
+            |             "url": "http://localhost:7272/prefilled_email_form.html",
+            |             "id": "0"
+            |         }]
+            |     }, {
+            |         "type": "context",
+            |         "id": 1,
+            |         "pages": [{
+            |             "type": "page",
+            |             "title": "Login Page",
+            |             "url": "http://localhost:7272/dist/",
+            |             "id": "0"
+            |         }]
+            |     }]
+            | }]
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -317,7 +366,14 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Dict[str, int]] = None,
     ):
-        """Gets the current viewport dimensions """
+        """Returns the current viewport dimensions.
+
+        Optionally asserts that the count matches the specified assertion.
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <Dict<str, int>> See `Assertions` for further details. Defaults to None.
+         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
             parsed = json.loads(response.body)
@@ -331,7 +387,8 @@ class Getters(LibraryComponent):
 
         The reference can be used in subsequent selectors.
 
-        See `library introduction` for more details on the selector syntax.
+        ``selector`` <str> Selector from which shall be retrieved.
+        See `library introduction` for more details on the selector syntax. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(Request().ElementSelector(selector=selector))
@@ -339,7 +396,10 @@ class Getters(LibraryComponent):
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_elements(self, selector: str):
-        """Returns a reference to playwright element handle for all matched elements by ``selector``."""
+        """Returns a reference to playwright element handle for all matched elements by ``selector``.
+
+        ``selector`` <str> Selector from which shall be retrieved. **Required**
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElements(Request().ElementSelector(selector=selector))
             data = json.loads(response.body)
@@ -353,11 +413,17 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
-        """Gets the computed style properties of the element selected by ``selector``
+        """Gets the computed style properties of the element selected by ``selector``.
 
-            With any other value than "ALL" will try to get CSS property with key ``key``
+        Optionally matches with any sequence assertion operator.
 
-            Optionally matches with any sequence assertion operator.
+        ``selector`` <str> Selector from which the style shall be retrieved. **Required**
+
+        ``key`` <str> Key of the requested CSS property. Rerieves "ALL" styles by default.
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(Request().ElementSelector(selector=selector))
@@ -382,7 +448,9 @@ class Getters(LibraryComponent):
     def get_boundingbox(self, selector: str, *keys: BoundingBoxFields):
         """ Gets elements size and location as an object {x: int, y: int, width: int, height: int}.
 
-            Optionally filters the returned values based on ``keys``.
+            ``selector`` <str> Selector from which shall be retrieved. **Required**
+
+            ``keys`` <BoundingBoxFields> Optionally filters the returned values.
 
             Example use:
             | unfiltered:       |                  |            |   |   |
