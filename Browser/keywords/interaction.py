@@ -28,6 +28,10 @@ class Interaction(LibraryComponent):
         Sends a ``keydown``, ``keypress/input``, and ``keyup`` event for each
         character in the text.
 
+        ``selector`` <str> Selector for the text field. **Required**
+
+
+
         ``delay``: delay between the single key strokes. It may be either a
         number or a Robot Framework time string. Time strings are fully
         explained in an appendix of Robot Framework User Guide.

@@ -28,7 +28,9 @@ class Control(LibraryComponent):
 
     @keyword(tags=["BrowserControl"])
     def go_to(self, url: str):
-        """Navigates to the given ``url``."""
+        """Navigates to the given ``url``.
+
+        ``url`` <str> URL to be navigated to."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(Request().Url(url=url))
             logger.info(response.log)
@@ -37,9 +39,9 @@ class Control(LibraryComponent):
     def take_screenshot(self, path: str = "", selector: str = ""):
         """Takes screenshot of the current window and saves it to ``path``.
 
-        The default path is the Robot Framework output directory.
+        ``path`` <str> Path under which to save. The default path is the Robot Framework output directory.
 
-        ``selector```: Take a screenshot of the element matched by selector.
+        ``selector`` <str> Take a screenshot of the element matched by selector.
         If not provided take a screenshot of current viewport.
         """
         if not path:
@@ -59,7 +61,7 @@ class Control(LibraryComponent):
     def set_timeout(self, timeout: str):
         """Sets the timeout used by most input and getter keywords.
 
-        Timeout of is for current playwright context.
+        ``timeout`` <str> Timeout of it is for current playwright context.
         """
         self.library.playwright.timeout = timeout
         parsed_timeout = timestr_to_millisecs(timeout)
@@ -71,7 +73,7 @@ class Control(LibraryComponent):
     def add_style_tag(self, content: str):
         """Adds a <style type="text/css"> tag with the content.
 
-        ``content``: Raw CSS content to be injected into frame.
+        ``content`` <str> Raw CSS content to be injected into frame.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))
@@ -89,7 +91,12 @@ class Control(LibraryComponent):
         `Set Viewport Size` will resize the page.
         A lot of websites don't expect phones to change size,
         so you should set the viewport size before navigating to
-        the page with `New Context` before opening the page itself."""
+        the page with `New Context` before opening the page itself.
+
+        ``width`` <int> Sets the width size
+
+        ``height`` <int> Sets the heigth size
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetViewportSize(
                 Request().Viewport(height=height, width=width)

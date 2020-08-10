@@ -83,10 +83,26 @@ class Cookie(LibraryComponent):
     ):
         """Adds a cookie to currently active browser context.
 
-        ``name`` and ``value`` are required.  ``url``, ``domain``, ``path``, ``expires``, ``httpOnly``, ``secure``
-        and ``sameSite`` are optional, but cookie must contain either url or  domain/path pair. Expiry supports
+        ``name`` <str> Name of the cookie. **Required**
+
+        ``value`` <str> Given value for the cookie. **Required**
+
+        ``url`` <str> Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
+
+        ``domain`` <str> Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
+
+        ``path`` <str> Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
+
+        ``expires`` <str> Given expiry for the cookie. Can be of date format or unix time.supports
         the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
         library or an epoch timestamp.
+        - example: 2027-09-28 16:21:35
+
+        ``httpOnly`` <bool> Sets the httpOnly token.
+
+        ``secure`` <bool> Sets the secure token.
+
+        ``samesite`` <"Strict"|"Lax"|"None"> Sets the samesite mode.
 
         Example:
         | `Add Cookie` | foo | bar | http://address.com/path/to/site |                                 | # Using url argument.             |
@@ -140,8 +156,8 @@ class Cookie(LibraryComponent):
 
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns a of Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary]
-        The dictionary contains all possible key value pairs of the cookie. If ``return_type`` is ``string`` or ``str``
-        , then keyword returns the cookie as a string in format: ``name1=value1``. The return value contains only
+        The dictionary contains all possible key value pairs of the cookie. If ``return_type`` is ``string`` or ``str``,
+        then keyword returns the cookie as a string in format: ``name1=value1``. The return value contains only
         ``name`` and ``value`` keys of the cookie.
 
         If no cookie is found with ``name`` keyword fails. The cookie dictionary contains
