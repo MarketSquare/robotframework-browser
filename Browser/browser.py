@@ -168,9 +168,9 @@ class Browser(DynamicCore):
     ):
         """Browser library can be taken into use with optional arguments:
 
-        - ``timeout``:
+        ``timeout`` <str>
           Timeout for keywords that operate on elements. The keywords will wait
-          for this time for the element to appear into the page.
+          for this time for the element to appear into the page. Defaults to "10s" => 10 seconds.
         - ``enable_playwright_debug``:
           Enable low level debug information from the playwright tool. Mainly
           Useful for the library developers and for debugging purposes.
