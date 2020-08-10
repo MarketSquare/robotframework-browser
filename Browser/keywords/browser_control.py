@@ -95,3 +95,12 @@ class Control(LibraryComponent):
                 Request().Viewport(height=height, width=width)
             )
             logger.info(response.log)
+
+    @keyword(tags=["BrowserControl"])
+    def set_offline(self, offline: bool = True):
+        """ Toggles current Context's offline emulation.
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetOffline(Request().Bool(value=offline))
+            logger.info(response.log)
