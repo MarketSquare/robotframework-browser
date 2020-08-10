@@ -31,8 +31,23 @@ Highlight Element on page
     Get Element Count    .robotframework-browser-highlight    ==    0
     Highlight Elements    .pure-button    duration=200ms
     Get Element Count    .robotframework-browser-highlight    ==    5
+    Sleep    100ms
+    Get Element Count    .robotframework-browser-highlight    ==    5
     Sleep    400ms
     Get Element Count    .robotframework-browser-highlight    ==    0
+
+Highlight Element with style
+    Highlight Elements    input#login_button    duration=200ms
+    Get Style    .robotframework-browser-highlight    border-bottom-width    ==    2px
+    Get Style    .robotframework-browser-highlight    border-bottom-style    ==    dotted
+    Get Style    .robotframework-browser-highlight    border-bottom-color    ==    rgb(0, 0, 255)
+    Sleep    200ms
+    Highlight Elements    input#login_button    duration=100ms    width=4px    style=solid    color=\#FF00FF
+    ${style}=    Get Style    .robotframework-browser-highlight
+    Should Be True    "${style}[border-bottom-width]" == "4px"
+    Should Be True    "${style}[border-bottom-style]" == "solid"
+    Should Be True    "${style}[border-bottom-color]" == "rgb(255, 0, 255)"
+    Sleep    100ms
 
 Page state
     Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123

@@ -121,24 +121,32 @@ export async function highlightElements(
 ) {
     const selector = call.request.getSelector();
     const duration = call.request.getDuration();
-    const highlighter = (elements: Array<Element>, duration: number) => {
+    const width = call.request.getWidth();
+    const style = call.request.getStyle();
+    const color = call.request.getColor();
+    const highlighter = (elements: Array<Element>, options: any) => {
         elements.forEach((e: Element) => {
             const d = document.createElement('div');
             d.className = 'robotframework-browser-highlight';
             d.appendChild(document.createTextNode(''));
             d.style.position = 'fixed';
             const rect = e.getBoundingClientRect();
-            d.style.top = '' + rect.top + 'px';
-            d.style.left = '' + rect.left + 'px';
-            d.style.width = '' + rect.width + 'px';
-            d.style.height = '' + rect.height + 'px';
-            d.style.border = '1px solid red';
+            d.style.top = `${rect.top}px`;
+            d.style.left = `${rect.left}px`;
+            d.style.width = `${rect.width}px`;
+            d.style.height = `${rect.height}px`;
+            d.style.border = `${options.wdt} ${options.stl} ${options.clr}`;
             document.body.appendChild(d);
             setTimeout(() => {
                 d.remove();
-            }, duration);
+            }, options.dur);
         });
     };
-    await invokePlaywrightMethod(state, callback, '$$eval', selector, highlighter, duration);
+    await invokePlaywrightMethod(state, callback, '$$eval', selector, highlighter, {
+        dur: duration,
+        wdt: width,
+        stl: style,
+        clr: color,
+    });
     callback(null, emptyWithLog(`Highlighted elements for ${duration}.`));
 }
