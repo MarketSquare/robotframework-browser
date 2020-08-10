@@ -82,6 +82,8 @@ class Network(LibraryComponent):
 
     def _wait_for_http(self, method: Literal["Request", "Response"], matcher, timeout):
         with self.playwright.grpc_channel() as stub:
+            if not timeout:
+                timeout = self.library.playwright.timeout
             function = getattr(stub, f"WaitFor{method}")
             response = function(
                 Request().HttpCapture(
