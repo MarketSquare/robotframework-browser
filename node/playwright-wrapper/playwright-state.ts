@@ -371,12 +371,14 @@ async function _switchPage(index: number, browserState: BrowserState, waitForPag
 
     if (pages[index]) {
         browserState.page = { index: index, p: pages[index] };
+        await pages[index].bringToFront();
         return;
     } else if (waitForPage) {
         try {
             console.log('Started waiting for a page to pop up');
             const page = await context.waitForEvent('page');
             browserState.page = { index: index, p: page };
+            await page.bringToFront();
             return;
         } catch (pwError) {
             console.log('Wait was not fulfilled');
