@@ -4,8 +4,6 @@ import sys
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
-from .utils import logger
-
 USAGE = """USAGE
   rf-browser [command]
 AVAILABLE COMMANDS
@@ -25,42 +23,13 @@ def run():
         print(USAGE)
 
 
-def ensure_node_dependencies():
-    # Skip the checks when initializing
-    if len(sys.argv) > 1 and sys.argv[1] == "init":
-        return
-    # Checks if node is in PATH, errors if it isn't
-    try:
-        subprocess.run(["node", "-v"], stdout=DEVNULL, check=True)
-    except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
-        print(
-            "Couldn't execute node. Please ensure you have node.js installed and in PATH."
-            "See https://nodejs.org/ for documentation"
-        )
-        sys.exit(exception)
-        return
-
-    rfbrowser_dir = Path(__file__).parent
-    installation_dir = rfbrowser_dir / "wrapper"
-    # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
-    project_folder = rfbrowser_dir.parent
-    subfolders = os.listdir(project_folder) + os.listdir(installation_dir)
-
-    if "node_modules" in subfolders:
-        return
-    logger.error("Run `rfbrowser init` to install node dependencies")
-    sys.exit(1)
-    return
-
-
 def rfbrowser_init():
-    print("installing node dependencies...")
+    print("Installing node dependencies...")
     installation_dir = Path(__file__).parent / "wrapper"
 
     if not (installation_dir / "package.json").is_file():
         print(
-            "Directory needs to contain package.json "
-            + "and have write permissions to succesfully install all dependencies. "
+            f"Installation directory `{installation_dir}` does not contain the required package.json "
             + "\nPrinting contents:"
         )
         for root, dirs, files in os.walk(installation_dir):
@@ -72,7 +41,17 @@ def rfbrowser_init():
                 print("{}{}".format(subindent, f))
         raise RuntimeError("Could not find robotframework-browser's package.json")
 
-    print("installing rfbrowser node dependencies at {}".format(installation_dir))
+    print("Installing rfbrowser node dependencies at {}".format(installation_dir))
+
+    try:
+        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True)
+    except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
+        print(
+            "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
+            "See https://nodejs.org/ for documentation"
+        )
+        sys.exit(exception)
+
     process = Popen(
         "npm install --production",
         shell=True,
