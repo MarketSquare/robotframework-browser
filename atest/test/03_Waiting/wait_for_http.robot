@@ -20,7 +20,17 @@ Wait For Response synchronous
     Click    \#delayed_request
     Wait For Response    timeout=1s
 
+Wait For Response synchronous with default timeout
+    Click    \#delayed_request
+    Wait For Response
+
 Wait For Response async
     ${promise}=    Promise To    Wait For Response    matcher=    timeout=3s
     Click    \#delayed_request
     ${body}=    Wait For    ${promise}
+
+Wait until network is idle works
+    Go To    ${ROOT_URL}/delayed-load.html
+    Get text    \#server_delayed_response    ==    Server response after 400ms
+    Wait until network is idle    timeout=3s
+    Get text    \#server_delayed_response    ==    after some time I respond

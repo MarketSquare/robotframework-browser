@@ -21,6 +21,13 @@ app.get('/api/get/text', (req, res) => {
     res.send('HELLO');
 });
 
+app.get('/api/get/delay', (req, res) => {
+    setTimeout(() => {
+        res.header('Content-Type', 'application/json');
+        res.send(JSON.stringify({ greeting: 'after some time I respond' }));
+    }, 400);
+});
+
 app.post('/api/post', (req, res) => {
     res.header('Content-Type', 'application/json');
     res.send(JSON.stringify({ name: req.body.name, id: 1 }));
