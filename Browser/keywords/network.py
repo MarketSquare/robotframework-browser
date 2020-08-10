@@ -82,6 +82,8 @@ class Network(LibraryComponent):
 
     def _wait_for_http(self, method: Literal["Request", "Response"], matcher, timeout):
         with self.playwright.grpc_channel() as stub:
+            if not timeout:
+                timeout = self.library.playwright.timeout
             function = getattr(stub, f"WaitFor{method}")
             response = function(
                 Request().HttpCapture(
@@ -115,3 +117,18 @@ class Network(LibraryComponent):
 
         """
         return self._wait_for_http("Response", matcher, timeout)
+
+    @keyword(tags=["Wait", "HTTP"])
+    def wait_until_network_is_idle(self, timeout: str = ""):
+        """ Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
+
+            Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
+
+        ``timeout``: (optional) uses default timeout if not set.
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.WaitUntilNetworkIsIdle(
+                Request().Timeout(timeout=timestr_to_millisecs(timeout))
+            )
+            logger.debug(response.log)

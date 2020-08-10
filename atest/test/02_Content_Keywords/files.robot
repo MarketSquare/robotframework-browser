@@ -25,12 +25,12 @@ Wait For Download
     ${file_path}=    Wait For    ${dl_promise}
     File Should Exist    ${file_path}
     Remove File    ${file_path}
-#Wait For Download with custom path
-#    New Context    acceptDownloads=True
-#    New Page    ${LOGIN_URL}
-#    ${dl_promise}=    Promise To    Wait For Download    saveAs=${CURDIR}/download_file
-#    Click    \#file_download
-#    ${file_path}=    Wait For    ${dl_promise}
-#    File Should Exist    ${file_path}
-#    Remove File    ${file_path}
-#    Fail
+
+Wait For Download with custom path
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    ${dl_promise}=    Promise To    Wait For Download    saveAs=${CURDIR}/download_file
+    Click    \#file_download
+    ${file_path}=    Wait For    ${dl_promise}
+    File Should Exist    ${file_path}
+    Remove File    ${file_path}

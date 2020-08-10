@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>I have a delayed resource</title>
+    </head>
+    <body>
+	<div id="root">
+	    <button id="server_delayed_response">
+		Server response after 400ms
+	    </button>
+	</div>
+	<script>
+
+
+	    setTimeout( () => {
+		fetch("/api/get/delay").then((c) => {
+		    console.log(c); 
+
+		    const elem = window.document.getElementById('server_delayed_response');
+		    c.json().then((parsed) => {
+			elem.innerText = parsed.greeting;
+		    })
+		    console.log("Fetched")
+		}
+		)}, 300)
+	</script>
+    </body>
+</html>

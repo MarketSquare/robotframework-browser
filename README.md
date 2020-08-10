@@ -82,6 +82,16 @@ Should Be Equal    ${response.status}    ${200}
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
 
+## Core team
+
+In order of appearance.
+
+  * Mikko Korpela
+  * Tatu Aalto
+  * Janne Härkönen
+  * Kerkko Pelttari
+  * René Rohner
+
 ## Contributors
 
 This project is community driven and becomes a reality only through the work of all the people who contribute.

@@ -58,6 +58,7 @@ class Control(LibraryComponent):
 
         Timeout of is for current playwright context.
         """
+        self.library.playwright.timeout = timeout
         parsed_timeout = timestr_to_millisecs(timeout)
         with self.playwright.grpc_channel() as stub:
             response = stub.SetTimeout(Request().Timeout(timeout=parsed_timeout))
