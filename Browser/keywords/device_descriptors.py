@@ -10,7 +10,7 @@ from ..utils import logger
 class Devices(LibraryComponent):
     @keyword(tags=["DeviceDescriptor"])
     def get_devices(self):
-        """ Return a dict of all playwright device descriptors.
+        """ Returns a dict of all playwright device descriptors.
 
             See Playwright's [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
             for a formatted list.
@@ -23,6 +23,10 @@ class Devices(LibraryComponent):
     @keyword(tags=["DeviceDescriptor"])
     def get_device(self, name: str):
         """ Get a single device decriptor with name exactly matching name.
+
+            ``name`` <str> Given name of the requested device. See Playwright's
+            [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
+            for a formatted list.
 
             Allows a concise syntax to set website testing values to exact matches of specific
             mobile devices.
