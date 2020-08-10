@@ -120,7 +120,9 @@ class Network(LibraryComponent):
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_until_network_is_idle(self, timeout: str = ""):
-        """ Waits until no network traffic on page for at least 500ms.
+        """ Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
+
+            Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
 
         ``timeout``: (optional) uses default timeout if not set.
 
