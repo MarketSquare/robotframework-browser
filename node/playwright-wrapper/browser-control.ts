@@ -67,7 +67,7 @@ export async function setViewportSize(
     callback(null, emptyWithLog(`Set viewport size to: ${size}`));
 }
 
-export async function toggleOffline(
+export async function setOffline(
     call: ServerUnaryCall<Request.Bool>,
     callback: sendUnaryData<Response.Empty>,
     context?: BrowserContext,

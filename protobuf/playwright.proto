@@ -91,6 +91,9 @@ message Request {
   message ElementSelectorWithDuration {
     string selector = 1;
     int32 duration = 2;
+    string width = 3;
+    string style = 4;
+    string color = 5;
   }
 
   message SelectElementSelector {
@@ -278,7 +281,7 @@ service  Playwright {
 
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
 
-  rpc ToggleOffline(Request.Bool) returns (Response.Empty);
+  rpc SetOffline(Request.Bool) returns (Response.Empty);
 
   /* Playwright State handling keywords */
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty);

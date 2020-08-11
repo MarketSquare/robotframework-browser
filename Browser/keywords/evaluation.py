@@ -31,7 +31,14 @@ class Evaluation(LibraryComponent):
             return json.loads(response.result)
 
     @keyword(tags=["PageContent"])
-    def highlight_elements(self, selector: str, duration: str = "5s"):
+    def highlight_elements(
+        self,
+        selector: str,
+        duration: str = "5s",
+        width: str = "2px",
+        style: str = "dotted",
+        color: str = "blue",
+    ):
         """Adds a red highlight to elements matched by the ``selector`` for ``duration``.
 
         ``selector`` <str> Selector which shall be highlighted. **Required**
@@ -42,7 +49,11 @@ class Evaluation(LibraryComponent):
             duration_ms = timestr_to_millisecs(duration)
             response = stub.HighlightElements(
                 Request().ElementSelectorWithDuration(
-                    selector=selector, duration=duration_ms
+                    selector=selector,
+                    duration=duration_ms,
+                    width=width,
+                    style=style,
+                    color=color,
                 )
             )
             logger.info(response.log)
