@@ -443,8 +443,8 @@ export async function switchContext(
 
     await _switchContext(index, browserState).catch((error) => callback(error, null));
     await _switchPage(browserState.page?.index || 0, browserState, false).catch((error) => {
-        logger.error(error)
-    })
+        logger.error(error);
+    });
     const response = intResponse(previous);
     response.setLog('Succesfully changed active context');
     callback(null, response);
