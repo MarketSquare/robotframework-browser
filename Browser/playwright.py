@@ -10,10 +10,8 @@ from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
-from Browser.utils import logger
-from Browser.utils.time_conversion import timestr_to_millisecs
 
-from .utils import find_free_port
+from .utils import find_free_port, logger, timestr_to_millisecs
 
 
 class Playwright:

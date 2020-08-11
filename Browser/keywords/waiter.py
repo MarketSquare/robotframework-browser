@@ -6,9 +6,7 @@ from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
-from ..utils.data_types import ElementState
-from ..utils.time_conversion import timestr_to_millisecs
+from ..utils import ElementState, logger, timestr_to_millisecs
 
 
 class Waiter(LibraryComponent):
@@ -98,7 +96,7 @@ class Waiter(LibraryComponent):
 
             With default filepath downloaded files are deleted when Context the download happened in is closed.
 
-            ``saveAs`` override filename to save as.
+            ``saveAs`` filename to save as. File will also temporarily be saved in playwright context's default DL location.
 
             | New Context    | acceptDownloads=True
             | New Page       | ${LOGIN_URL}

@@ -19,8 +19,7 @@ from .keywords import (
     WebAppState,
 )
 from .playwright import Playwright
-from .utils import logger
-from .utils.data_types import AutoClosingLevel
+from .utils import AutoClosingLevel, logger
 from .version import VERSION
 
 
