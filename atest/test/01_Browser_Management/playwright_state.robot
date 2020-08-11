@@ -1,7 +1,5 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       No Operation
-Test Setup        No Operation
 Test Teardown     Close All Browsers
 
 *** Keywords ***
