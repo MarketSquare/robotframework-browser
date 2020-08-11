@@ -1,6 +1,7 @@
 import contextlib
 import socket
 
+
 def find_free_port() -> str:
     with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(("", 0))

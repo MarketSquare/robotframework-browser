@@ -6,7 +6,9 @@ from Browser.assertion_engine import AssertionOperator
 
 @pytest.fixture()
 def application_server():
-    process = subprocess.Popen(["node", "./node/dynamic-test-app/dist/server.js", "30"])
+    process = subprocess.Popen(
+        ["node", "./node/dynamic-test-app/dist/server.js", "7272"]
+    )
     yield
     process.terminate()
 
