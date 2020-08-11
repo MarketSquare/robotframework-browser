@@ -303,7 +303,7 @@ export async function newPage(
     const url = call.request.getUrl() || 'about:blank';
     await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
     const response = intResponse(page.index);
-    response.setLog('Succesfully initialized new page object and opened url');
+    response.setLog('Succesfully initialized new page object and opened url: ' + url);
     callback(null, response);
 }
 
@@ -320,7 +320,7 @@ export async function newContext(
         browserState.context = context;
 
         const response = intResponse(context.index);
-        response.setLog(`Succesfully created context with options ${options}`);
+        response.setLog('Succesfully created context with options: ' + JSON.stringify(options));
         callback(null, response);
     } catch (error) {
         callback(error, null);
@@ -341,7 +341,7 @@ export async function newBrowser(
         const [browser, name] = await _newBrowser(browserType, headless, options);
         const browserState = openBrowsers.addBrowser(name, browser);
         const response = intResponse(browserState.id);
-        response.setLog('Succesfully created browser with options ${options}');
+        response.setLog('Succesfully created browser with options: ' + JSON.stringify(options));
         callback(null, response);
     } catch (error) {
         callback(error, null);
