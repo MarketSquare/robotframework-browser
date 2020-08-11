@@ -75,7 +75,9 @@ class Waiter(LibraryComponent):
                 )
                 logger.info(response.log)
             elif state.name in funct:
-                self.wait_for_function(funct[state.name], selector=selector, timeout=timeout)
+                self.wait_for_function(
+                    funct[state.name], selector=selector, timeout=timeout
+                )
 
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_function(
