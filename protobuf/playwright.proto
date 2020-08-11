@@ -91,6 +91,9 @@ message Request {
   message ElementSelectorWithDuration {
     string selector = 1;
     int32 duration = 2;
+    string width = 3;
+    string style = 4;
+    string color = 5;
   }
 
   message SelectElementSelector {
