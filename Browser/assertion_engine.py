@@ -3,8 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
-from .utils.data_types import AssertionOperator
-from .utils.robot_booleans import is_truthy
+from .utils import AssertionOperator, is_truthy
 
 NumericalOperators = [
     AssertionOperator["=="],

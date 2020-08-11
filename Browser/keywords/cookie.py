@@ -6,11 +6,9 @@ from robot.libraries.DateTime import convert_date  # type: ignore
 from robot.utils import DotDict  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
-from Browser.base import LibraryComponent
-from Browser.generated.playwright_pb2 import Request
-from Browser.utils import logger
-from Browser.utils.data_types import CookieType
-from Browser.utils.meta_python import locals_to_params
+from ..base import LibraryComponent
+from ..generated.playwright_pb2 import Request
+from ..utils import CookieType, locals_to_params, logger
 
 
 class Cookie(LibraryComponent):

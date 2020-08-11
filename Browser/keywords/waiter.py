@@ -6,9 +6,7 @@ from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
-from ..utils.data_types import ElementState
-from ..utils.time_conversion import timestr_to_millisecs
+from ..utils import ElementState, logger, timestr_to_millisecs
 
 
 class Waiter(LibraryComponent):
