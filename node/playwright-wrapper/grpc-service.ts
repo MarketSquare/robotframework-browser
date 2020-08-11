@@ -364,7 +364,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         return interaction.mouseButton(call, callback, this.getActivePage());
     }
 
-    async toggleOffline(call: ServerUnaryCall<Request.Bool>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return browserControl.toggleOffline(call, callback, this.getActiveContext());
+    async setOffline(call: ServerUnaryCall<Request.Bool>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return browserControl.setOffline(call, callback, this.getActiveContext());
     }
 }

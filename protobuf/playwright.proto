@@ -281,7 +281,7 @@ service  Playwright {
 
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
 
-  rpc ToggleOffline(Request.Bool) returns (Response.Empty);
+  rpc SetOffline(Request.Bool) returns (Response.Empty);
 
   /* Playwright State handling keywords */
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty);

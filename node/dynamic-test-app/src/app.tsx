@@ -82,6 +82,7 @@ export default function Site() {
     const [submit, setSubmit] = useState(false);
     const uploadResult = React.createRef<HTMLDivElement>();
     const promptResult = React.createRef<HTMLDivElement>();
+    const networkPinger = React.createRef<HTMLDivElement>();
 
     const handleSubmit = () => {
         setSubmit(true);
@@ -99,6 +100,21 @@ export default function Site() {
         if (submit) return <PostSubmit />;
         else return <PreSubmit />;
     }
+
+    function networkPing() {
+        fetch('/api/get/json')
+            .then(() => {
+                networkPinger.current!.innerText = 'Online';
+            })
+            .catch(() => {
+                networkPinger.current!.innerText = 'no connection';
+            });
+    }
+
+    React.useEffect(() => {
+        const interval = setInterval(networkPing, 500);
+        return () => clearInterval(interval);
+    }, []);
 
     function PreSubmit() {
         document.title = 'Login Page';
@@ -150,6 +166,9 @@ export default function Site() {
                 <button id="prompts" onClick={() => testPrompt(promptResult)}>
                     Pops up a prompt
                 </button>
+                <div id="network_pinger" ref={networkPinger}>
+                    Online
+                </div>
                 <button className="pure-button">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
