@@ -11,7 +11,7 @@ const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
     const title = await invokeOnPage(page, callback, 'title');
-    callback(null, stringResponse(title));
+    callback(null, stringResponse(title, 'Active page title is: ' + title));
 }
 
 export async function getUrl(callback: sendUnaryData<Response.String>, page?: Page) {
