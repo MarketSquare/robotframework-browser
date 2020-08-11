@@ -442,7 +442,9 @@ export async function switchContext(
     const previous = browserState.context?.index || 0;
 
     await _switchContext(index, browserState).catch((error) => callback(error, null));
-    await _switchPage(browserState.page?.index || 0, browserState, false);
+    await _switchPage(browserState.page?.index || 0, browserState, false).catch((error) => {
+        logger.error(error)
+    })
     const response = intResponse(previous);
     response.setLog('Succesfully changed active context');
     callback(null, response);
