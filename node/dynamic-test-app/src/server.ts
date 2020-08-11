@@ -5,7 +5,7 @@ import * as path from 'path';
 
 const app = express.default();
 app.use(bodyParser.json());
-const port = 7272;
+const port = parseInt(process.argv[2]) || 7272;
 
 app.head('/api/get/json', (req, res) => {
     res.header('Content-Type', 'application/json');
@@ -67,4 +67,4 @@ app.get('*', (req, res) => {
     res.send(listing);
 });
 
-app.listen(port, () => console.log('Succesfully started server on http://localhost:7272'));
+app.listen(port, () => console.log(`Succesfully started server on http://localhost:${port}`));
