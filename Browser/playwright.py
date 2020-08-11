@@ -1,7 +1,6 @@
 import contextlib
 import functools
 import os
-import socket
 import time
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
@@ -13,6 +12,7 @@ import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 from Browser.utils import logger
 from Browser.utils.time_conversion import timestr_to_millisecs
+from .utils import find_free_port
 
 
 class Playwright:
@@ -64,7 +64,7 @@ class Playwright:
         workdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
         playwright_script = os.path.join(workdir, "index.js")
         logfile = open(os.path.join(self.outputdir, "playwright-log.txt"), "w")
-        port = str(self.find_free_port())
+        port = str(find_free_port())
         env = dict(os.environ)
         env["PORT"] = port
         env["TIMEOUT"] = str(timestr_to_millisecs(self.timeout))
@@ -142,9 +142,3 @@ class Playwright:
         logger.debug("Closing Playwright process")
         self._playwright_process.kill()
         logger.debug("Playwright process killed")
-
-    def find_free_port(self) -> str:
-        with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-            s.bind(("", 0))
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            return s.getsockname()[1]
