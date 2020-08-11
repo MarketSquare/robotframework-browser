@@ -96,7 +96,7 @@ class Waiter(LibraryComponent):
 
             With default filepath downloaded files are deleted when Context the download happened in is closed.
 
-            ``saveAs`` override filename to save as.
+            ``saveAs`` filename to save as. File will also temporarily be saved in playwright context's default DL location.
 
             | New Context    | acceptDownloads=True
             | New Page       | ${LOGIN_URL}
