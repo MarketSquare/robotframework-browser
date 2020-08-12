@@ -36,7 +36,7 @@ export async function httpRequest(
                 });
             });
         }, opts);
-        callback(null, stringResponse(JSON.stringify(response)));
+        callback(null, stringResponse(JSON.stringify(response), 'Request performed succesfully.'));
     } catch (e) {
         callback(e, null);
     }
@@ -51,7 +51,7 @@ export async function waitForResponse(
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, { timeout: timeout });
     const body = await result.json();
-    callback(null, stringResponse(body));
+    callback(null, stringResponse(body, ''));
 }
 export async function waitForRequest(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
@@ -61,7 +61,7 @@ export async function waitForRequest(
     const urlOrPredicate = call.request.getUrlorpredicate();
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForRequest', urlOrPredicate, { timeout: timeout });
-    callback(null, stringResponse(result.url()));
+    callback(null, stringResponse(result.url(), 'Requested compeleted withing timeout.'));
 }
 
 export async function waitUntilNetworkIsIdle(
@@ -86,5 +86,5 @@ export async function waitForDownload(
         await downloadObject.saveAs(saveAs);
     }
     const path = await downloadObject.path();
-    callback(null, stringResponse(JSON.stringify(path)));
+    callback(null, stringResponse(JSON.stringify(path), 'Download done successfully to.'));
 }

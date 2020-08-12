@@ -9,9 +9,9 @@ export async function getDevice(call: ServerUnaryCall<Request.Device>, callback:
     const name = call.request.getName();
     const device = devices[name];
     if (!device) callback(new Error(`No device named ${name}`), null);
-    callback(null, stringResponse(JSON.stringify(device)));
+    callback(null, stringResponse(JSON.stringify(device), ''));
 }
 
 export async function getDevices(callback: sendUnaryData<Response.String>) {
-    callback(null, stringResponse(JSON.stringify(devices)));
+    callback(null, stringResponse(JSON.stringify(devices), ''));
 }

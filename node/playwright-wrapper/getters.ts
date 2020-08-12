@@ -16,7 +16,7 @@ export async function getTitle(callback: sendUnaryData<Response.String>, page?: 
 
 export async function getUrl(callback: sendUnaryData<Response.String>, page?: Page) {
     const url = await invokeOnPage(page, callback, 'url');
-    callback(null, stringResponse(url));
+    callback(null, stringResponse(url, url));
 }
 
 export async function getElementCount(
@@ -64,7 +64,7 @@ export async function getDomProperty(
     state: PlaywrightState,
 ) {
     const content = await getProperty(call, callback, state);
-    callback(null, stringResponse(content));
+    callback(null, stringResponse(content, ''));
 }
 
 export async function getBoolProperty(
@@ -117,7 +117,7 @@ export async function getStyle(
         }
         return JSON.stringify(mapped);
     });
-    const response = stringResponse(result);
+    const response = stringResponse(result, 'Style get succesfully.');
     callback(null, response);
 }
 
@@ -127,7 +127,7 @@ export async function getViewportSize(
     page?: Page,
 ): Promise<void> {
     const result = await invokeOnPage(page, callback, 'viewportSize');
-    callback(null, stringResponse(JSON.stringify(result)));
+    callback(null, stringResponse(JSON.stringify(result), ''));
 }
 
 export async function getBoundingBox(
@@ -142,7 +142,7 @@ export async function getBoundingBox(
         return;
     }
     const boundingBox = await elem.boundingBox();
-    callback(null, stringResponse(JSON.stringify(boundingBox)));
+    callback(null, stringResponse(JSON.stringify(boundingBox), ''));
 }
 
 export async function getPageSource(
@@ -152,5 +152,5 @@ export async function getPageSource(
 ): Promise<void> {
     const result = await invokeOnPage(page, callback, 'content');
     logger.info(result);
-    callback(null, stringResponse(JSON.stringify(result)));
+    callback(null, stringResponse(JSON.stringify(result), ''));
 }
