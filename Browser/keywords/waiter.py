@@ -30,24 +30,52 @@ class Waiter(LibraryComponent):
         - ``detached``: to not be present in DOM.
         - ``visible``: to have non-empty bounding box and no visibility:hidden.
         - ``hidden``: to be detached from DOM, or have an empty bounding box or visibility:hidden.
+        - ``enabled``: to not be ``disabled``.
+        - ``disabled``: to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
+        - ``editable``: to not be ``readOnly``.
+        - ``readonly``: to be ``readOnly``. Can be used on <input> and <textarea>.
+        - ``selected``: to be ``selected``. Can be used on <option>.
+        - ``deselected``: to not be ``selected``.
+        - ``focused``: to be the ``activeElement``.
+        - ``defocused``: to not be the ``activeElement``.
+        - ``checked``: to be ``checked``. Can be used on <input>.
+        - ``unchecked``: to not be ``checked``.
 
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
         ``timeout``: (optional) uses default timeout if not set.
         """
+        funct = {
+            "enabled": "e => !e.disabled",
+            "disabled": "e => e.disabled",
+            "editable": "e => !e.readOnly",
+            "readonly": "e => e.readOnly",
+            "selected": "e => e.selected",
+            "deselected": "e => !e.selected",
+            "focused": "e => document.activeElement === e",
+            "defocused": "e => document.activeElement !== e",
+            "checked": "e => e.checked",
+            "unchecked": "e => !e.checked",
+        }
+
         with self.playwright.grpc_channel() as stub:
-            options: Dict[str, object] = {"state": state.name}
-            if timeout:
-                timeout_ms = timestr_to_millisecs(timeout)
-                options["timeout"] = timeout_ms
-            options_json = json.dumps(options)
-            response = stub.WaitForElementsState(
-                Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+            if state.name in ["attached", "detached", "visible", "hidden"]:
+                options: Dict[str, object] = {"state": state.name}
+                if timeout:
+                    timeout_ms = timestr_to_millisecs(timeout)
+                    options["timeout"] = timeout_ms
+                options_json = json.dumps(options)
+                response = stub.WaitForElementsState(
+                    Request().ElementSelectorWithOptions(
+                        selector=selector, options=options_json
+                    )
                 )
-            )
-            logger.info(response.log)
+                logger.info(response.log)
+            elif state.name in funct:
+                self.wait_for_function(
+                    funct[state.name], selector=selector, timeout=timeout
+                )
 
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_function(

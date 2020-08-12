@@ -94,6 +94,16 @@ class ElementState(Enum):
     detached = auto()
     visible = auto()
     hidden = auto()
+    enabled = auto()
+    disabled = auto()
+    editable = auto()
+    readonly = auto()
+    selected = auto()
+    deselected = auto()
+    focused = auto()
+    defocused = auto()
+    checked = auto()
+    unchecked = auto()
 
 
 AssertionOperator = Enum(
