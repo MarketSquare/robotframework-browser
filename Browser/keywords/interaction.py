@@ -365,9 +365,9 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword
+    @keyword(tags=["VirtualKeyboard", "PageContent"])
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
-        """ Input text, inserting with
+        """ Input text into page with virtual keyboard, inserting with
             ``action``
                 ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
                 ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
