@@ -28,9 +28,7 @@ class Getters(LibraryComponent):
 
         Optionally asserts that it matches the specified assertion.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
@@ -48,9 +46,7 @@ class Getters(LibraryComponent):
     ) -> object:
         """Returns page model state object.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
 
         This must be given on the page to ``window.__SET_RFBROWSER_STATE__``
 
@@ -78,9 +74,8 @@ class Getters(LibraryComponent):
 
         Optionally does a string assertion.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None."""
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageSource(Request().Empty())
             logger.debug(response.log)
@@ -99,9 +94,7 @@ class Getters(LibraryComponent):
 
         Optionally asserts that it matches the specified assertion.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
@@ -122,9 +115,7 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the text matches the specified assertion.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
@@ -153,9 +144,7 @@ class Getters(LibraryComponent):
 
         ``attribute`` <str> Requested attribute name. **Required**
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
@@ -180,9 +169,7 @@ class Getters(LibraryComponent):
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         return self.get_attribute(
             selector, "value", assertion_operator, assertion_expected
@@ -202,8 +189,8 @@ class Getters(LibraryComponent):
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
 
-        ``option_attribute`` <str> Which attribute shall be returned/verified.
-        Allowed values are ``<"value"|"label"|"text"|"index">`` **Required**
+        ``option_attribute`` <SelectAttribute.label> Which attribute shall be returned/verified.
+        Allowed values are ``<"value"|"label"|"text"|"index">``. Defaults to label.
 
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
@@ -266,7 +253,7 @@ class Getters(LibraryComponent):
         Strings are interpreted as booleans.
         All strings are ``${True}`` except of the
         following `FALSE, NO, OFF, 0, UNCHECKED, NONE, ${EMPTY}``.
-        (case-insensitive).
+        (case-insensitive). Defaults to unchecked
 
         - ``checked`` => ``True``
         - ``unchecked`` => ``False``
@@ -370,9 +357,9 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the count matches the specified assertion.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
 
-        ``assertion_expected`` <Dict<str, int>> See `Assertions` for further details. Defaults to None.
+        ``assertion_expected`` <Dict<str, int>> Defaults to None.
          """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
@@ -419,11 +406,9 @@ class Getters(LibraryComponent):
 
         ``selector`` <str> Selector from which the style shall be retrieved. **Required**
 
-        ``key`` <str> Key of the requested CSS property. Rerieves "ALL" styles by default.
+        ``key`` <str> Key of the requested CSS property. Retrieves "ALL" styles by default.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` <any> See `Assertions` for further details. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(Request().ElementSelector(selector=selector))

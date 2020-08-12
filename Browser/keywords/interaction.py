@@ -28,14 +28,17 @@ class Interaction(LibraryComponent):
         Sends a ``keydown``, ``keypress/input``, and ``keyup`` event for each
         character in the text.
 
-        ``selector`` <str> Selector for the text field. **Required**
+        ``selector`` <str> Selector of the text field. **Required**
 
+        ``text`` <str> Text for the text field. **Required**
 
-
-        ``delay``: delay between the single key strokes. It may be either a
+        ``delay`` <str> Delay between the single key strokes. It may be either a
         number or a Robot Framework time string. Time strings are fully
-        explained in an appendix of Robot Framework User Guide.
+        explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
         Example: ``50 ms``
+
+        ``clear`` <bool> Set to false, if the field shall not be cleared before typing.
+        Defaults to true.
 
         See `Fill Text` for direct filling of the full text at once.
         """
@@ -53,6 +56,10 @@ class Interaction(LibraryComponent):
         [contenteditable] element, this method throws an error. Note that
         you can pass an empty string as ``text`` to clear the input field.
 
+        ``selector`` <str> Selector of the text field. **Required**
+
+        ``text`` <str> Text for the text field. **Required**
+
         See `Type Text` for emulating typing text character by character.
         """
         self._fill_text(selector, text)
@@ -61,8 +68,11 @@ class Interaction(LibraryComponent):
     def clear_text(self, selector: str):
         """Clears the text field found by ``selector``.
 
+        ``selector`` <str> Selector of the text field. **Required**
+
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
+
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(Request().ClearText(selector=selector))
@@ -77,6 +87,18 @@ class Interaction(LibraryComponent):
         The difference to `Type Text` is that this keyword does not log the
         text to be written into the text field.
 
+        ``selector`` <str> Selector of the text field. **Required**
+
+        ``secret`` <str> Secret text for the text field. **Required**
+
+        ``delay`` <str> Delay between the single key strokes. It may be either a
+        number or a Robot Framework time string. Time strings are fully
+        explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
+        Example: ``50 ms``
+
+        ``clear`` <bool> Set to false, if the field shall not be cleared before typing.
+        Defaults to true.
+
         See `Type Text` for details.
         """
         self._type_text(selector, secret, delay, clear, log_response=False)
@@ -88,6 +110,10 @@ class Interaction(LibraryComponent):
         The difference to `Fill Text` is that this keyword does not log the
         text to be written into the text field.
 
+        ``selector`` <str> Selector of the text field. **Required**
+
+        ``secret`` <str> Secret text for the text field. **Required**
+
         See `Fill Text` for details.
         """
         self._fill_text(selector, secret, log_response=False)
@@ -95,6 +121,8 @@ class Interaction(LibraryComponent):
     @keyword(tags=["Setter", "PageContent"])
     def press_keys(self, selector: str, *keys: str):
         """Types the given key combination into element found by ``selector``.
+
+        ``selector`` <str> Selector of the text field. **Required**
 
         Supports values like "a, b" which will be automatically typed.
         .
@@ -105,6 +133,11 @@ class Interaction(LibraryComponent):
         See playwright's documentation for a more comprehensive list of
         supported input keys.
         [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
+
+        Example: 
+
+        | Keyword      | Selector                   | Keys | Keys | Keys | Keys | Keys        | Keys |
+        | Press Keys   | //*[@id="username_field"]  |  h   |   e  |  l   |  o   |  ArrowLeft  |  l   |
         """  # noqa
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(Request().PressKeys(selector=selector, key=keys))
@@ -112,7 +145,10 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def click(self, selector: str):
-        """Clicks the element found by ``selector``."""
+        """Clicks the element found by ``selector``.
+
+        ``selector`` <str> Selector of the element to click. **Required**
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().ElementSelector(selector=selector))
             logger.debug(response.log)
@@ -129,22 +165,24 @@ class Interaction(LibraryComponent):
         force: bool = False,
         *modifiers: KeyboardModifier,
     ):
-        """Simulates mouse click on the element found by ``selector``.
+        """Simulates mouse click with multiple options on the element found by ``selector``.
 
-        ``button``: ``<"left"|"right"|"middle">`` Defaults to ``left`` if invalid.
+        ``selector`` <str> Selector element to click. **Required**
 
-        ``clickCount``: <int> defaults to 1.
+        ``button`` <left|right|middle> Defaults to ``left`` if invalid.
 
-        ``delay``: <robot time> Time to wait between mousedown and mouseup.
+        ``click_count`` <int> Defaults to 1.
+
+        ``delay`` <robot time> Time to wait between mousedown and mouseup in milliseconds.
         Defaults to 0.
 
-        ``position_x`` & ``position_y``: <int> A point to click relative to the
+        ``position_x`` & ``position_y`` <int> A point to click relative to the
         top-left corner of element padding box.
         If not specified, clicks to some visible point of the element.
 
-        ``force``: skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+        ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
-        ``*modifiers``: ``<list<"Alt"|"Control"|"Meta"|"Shift">>``
+        ``*modifiers`` ``<list<"Alt"|"Control"|"Meta"|"Shift">>``
         Modifier keys to press. Ensures that only these modifiers are pressed
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
@@ -171,6 +209,8 @@ class Interaction(LibraryComponent):
     def focus(self, selector: str):
         """Moves focus on to the element found by ``selector``.
 
+        ``selector`` <str> Selector of the element. **Required**
+
         If there's no element matching selector, the method waits until a
         matching element appears in the DOM.
         """
@@ -182,6 +222,8 @@ class Interaction(LibraryComponent):
     def check_checkbox(self, selector: str):
         """Checks the checkbox or selects radio button found by ``selector``.
 
+        ``selector`` <str> Selector of the checkbox. **Required**
+
         Does nothing if the element is already checked/selected.
         """
         with self.playwright.grpc_channel() as stub:
@@ -192,6 +234,8 @@ class Interaction(LibraryComponent):
     def uncheck_checkbox(self, selector: str):
         """Unchecks the checkbox found by ``selector``.
 
+        ``selector`` <str> Selector of the checkbox. **Required**
+
         Does nothing if the element is not checked/selected.
         """
         with self.playwright.grpc_channel() as stub:
@@ -201,12 +245,14 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
-    def select_options_by(self, attribute: SelectAttribute, selector: str, *values):
+    def select_options_by(self, selector: str, attribute: SelectAttribute, *values):
         """Selects options from select element found by ``selector``.
+
+        ``selector`` <str> Selector of the select tag. **Required**
 
         Matches based on the chosen attribute with list of ``values``.
         Possible attributes to match options by:
-        ``attribute``: ``<"value"|"label"|"text"|"index">``
+        ``attribute`` ``<"value"|"label"|"text"|"index">``
 
         If no values to select are passed will deselect options in element.
         """
@@ -229,7 +275,10 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def deselect_options(self, selector: str):
-        """Deselects all options from select element found by ``selector``."""
+        """Deselects all options from select element found by ``selector``.
+
+        ``selector`` <str> Selector of the select tag. **Required**
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(Request().ElementSelector(selector=selector))
             logger.debug(response.log)
@@ -260,7 +309,11 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent", "EventHandler"])
     def upload_file(self, path: str):
-        """ Upload file from ``path`` into next file chooser dialog on page. Example use:
+        """ Upload file from ``path`` into next file chooser dialog on page.
+
+        ``path`` <str> Path to file to be uploaded.
+
+        Example use:
 
             | Upload File |  ${CURDIR}/test_upload_file
             | Click       |  \\#file_chooser
@@ -274,10 +327,13 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["PageContent", "EventHandler"])
     def handle_alert(self, action: AlertAction, prompt_input: str = ""):
-        """ Handle next dialog on page with ``action``. Dialog can be any of alert, beforeunload, confirm or prompt.
+        """ Handle next dialog on page with ``action``. Dialog can be any of alert,
+        beforeunload, confirm or prompt.
 
-            ``action`` can be ``accept`` or ``dismiss``
-            ``prompt_input`` is value to enter into prompt. Only valid if ``action`` is accept.
+            ``action`` <accept|dismiss> How to handle the alert. **Required**
+
+            ``prompt_input`` <str> The value to enter into prompt. Only valid if
+            ``action`` equals accept. Defaults to empty string.
         """
 
         with self.playwright.grpc_channel() as stub:
@@ -300,12 +356,17 @@ class Interaction(LibraryComponent):
     ):
         """ Click or hold a mouse button down.
 
-            ``action``
-            ``x``
-            ``y``
-            ``button``
-            ``clickCount``
-            ``delay``
+            ``action`` <click|up|down>
+
+            ``x`` <int>
+
+            ``y`` <int>
+
+            ``button`` <left|right|middle> Defaults to ``left`` if invalid.
+
+            ``clickCount`` <int> Deterine how often shall be clicked. Defaults to 1.
+
+            ``delay`` <int> Delay can only be set if the action is click.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {}

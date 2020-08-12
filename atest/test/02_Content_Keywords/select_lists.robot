@@ -48,7 +48,7 @@ Select Options By text
 
 Select Options By With Nonmatching Selector
     Set Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Select Options By    label    notamatch    Label
+    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Select Options By    notamatch    label    Label
     [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Deselect Options Implicitly
@@ -66,5 +66,5 @@ Deselect Options With Nonmatching Selector
 *** Keywords ***
 Select Option And Verify Selection
     [Arguments]    ${attribute}    ${list_id}    @{selection}
-    Select Options By    ${attribute}    ${list_id}    @{selection}
+    Select Options By    ${list_id}    ${attribute}    @{selection}
     Get Selected Options    ${list_id}    ${attribute}    ==    @{selection}
