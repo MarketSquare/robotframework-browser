@@ -9,6 +9,8 @@ from ..generated.playwright_pb2 import Request
 from ..utils import logger
 from ..utils.data_types import (
     AlertAction,
+    KeyAction,
+    KeyboardInputAction,
     KeyboardModifier,
     MouseButton,
     MouseButtonAction,
@@ -351,4 +353,34 @@ class Interaction(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
             response = stub.MouseMove(Request().Json(body=json.dumps(body)))
+            logger.debug(response.log)
+
+    @keyword(tags=["VirtualKeyboard", "PageContent"])
+    def keyboard_key(self, action: KeyAction, key: str):
+        """ Press a keyboard key on the virtual keyboard or set a key up or down
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.KeyboardKey(
+                Request().KeyboardKeypress(action=action.name, key=key)
+            )
+            logger.debug(response.log)
+
+    @keyword
+    def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
+        """ Input text, inserting with
+            ``action``
+                ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
+                ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
+
+                To press a special key, like Control or ArrowDown, use keyboard.press.
+
+            NOTE Modifier keys DO NOT effect these methods. For testing modifier effects use single key presses with ``Keyboard Key  press``
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.KeyboardInput(
+                Request().KeyboardInputOptions(
+                    action=action.name, input=input, delay=delay
+                )
+            )
             logger.debug(response.log)

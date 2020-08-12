@@ -4,7 +4,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog } from './response-util';
-import { invokeOnMouse, invokeOnPage, invokePlaywrightMethod } from './playwirght-invoke';
+import { invokeOnKeyboard, invokeOnMouse, invokeOnPage, invokePlaywrightMethod } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -196,4 +196,27 @@ export async function mouseMove(
     const params = JSON.parse(call.request.getBody());
     await invokeOnMouse(page, callback, 'move', params);
     callback(null, emptyWithLog(`Succesfully moved mouse to ${params.x}, ${params.y}`));
+}
+export async function keyboardKey(
+    call: ServerUnaryCall<Request.KeyboardKeypress>,
+    callback: sendUnaryData<Response.Empty>,
+    page?: Page,
+): Promise<void> {
+    const action = call.request.getAction() as 'down' | 'up' | 'press';
+    const key = call.request.getKey();
+    await invokeOnKeyboard(page, callback, action, key);
+    callback(null, emptyWithLog(`Succesfully did ${action} for ${key}`));
+}
+
+export async function keyboardInput(
+    call: ServerUnaryCall<Request.KeyboardInputOptions>,
+    callback: sendUnaryData<Response.Empty>,
+    page?: Page,
+): Promise<void> {
+    const action = call.request.getAction() as 'insertText' | 'type';
+    const delay = call.request.getDelay();
+    const input = call.request.getInput();
+
+    await invokeOnKeyboard(page, callback, action, input, { delay: delay });
+    callback(null, emptyWithLog(`Succesfully did virtual keyboard action ${action} with input ${input}`));
 }

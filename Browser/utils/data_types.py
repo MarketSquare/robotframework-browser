@@ -35,6 +35,17 @@ class MouseButton(Enum):
     right = auto()
 
 
+class KeyAction(Enum):
+    down = auto()
+    up = auto()
+    press = auto()
+
+
+class KeyboardInputAction(Enum):
+    insertText = auto()
+    type = auto()
+
+
 class KeyboardModifier(Enum):
     Alt = auto()
     Control = auto()
