@@ -54,7 +54,15 @@ docker-builder: docker-base
 	DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file atest/docker/Dockerfile .
 docker-test:
 	rm -rf atest/output
-	docker run --rm --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest -v $(shell pwd)/node/:/node/ rfbrowser sh -c "PATH=$$PATH:~/.local/bin pabot --verbose --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /atest/output /atest/test"
+	docker run\
+	    --rm \
+	    --ipc=host\
+	    --security-opt seccomp=atest/docker/chrome.json \
+	    -v $(shell pwd)/atest/:/atest \
+	    -v $(shell pwd)/node/:/node/ \
+	    rfbrowser \
+	    sh -c \
+		"PATH=$$PATH:~/.local/bin node --version && PATH=$$PATH:~/.local/bin pabot --verbose --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /atest/output /atest/test"
 
 lint-python:
 	mypy --config-file Browser/mypy.ini Browser/ utest/
