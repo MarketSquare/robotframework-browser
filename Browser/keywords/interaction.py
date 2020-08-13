@@ -356,10 +356,10 @@ class Interaction(LibraryComponent):
         clickCount: int = 1,
         delay: int = 0,
     ):
-        """ Click, hold a mouse button down or release it. Moving the mouse between holding down 
+        """ Click, hold a mouse button down or release it. Moving the mouse between holding down
         and releasing it for example is possible.
 
-            ``action`` <click|up|down> Determines if it is a mouseclick, holding down a key or releasing it. 
+            ``action`` <click|up|down> Determines if it is a mouseclick, holding down a key or releasing it.
 
             ``x`` <int> and ``y`` <int> Coordinates for a click only. Defaults to None.
             **Required** if action is a click.
@@ -407,11 +407,11 @@ class Interaction(LibraryComponent):
     def mouse_move(self, x: float, y: float, steps: int = 1):
         """ Instead of selectors command mouse with coordinates.
             The Click commands will leave the virtual mouse on the specified coordinates.
-            
+
             ``x`` <float> ``y`` <float> are absolute coordinates starting at the top left
-            of the page
-            
-            ``steps`` <int> Number of intermediate steps for the mouse event. 
+            of the page.
+
+            ``steps`` <int> Number of intermediate steps for the mouse event.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}

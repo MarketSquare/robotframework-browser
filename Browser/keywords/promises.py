@@ -19,12 +19,12 @@ class Promises(LibraryComponent):
         Wrap a Browser library keyword and make it a promise.
         Returns that promise and executes the keyword on background.
 
-        ``kw`` <str> Keyword that will work async on background. 
+        ``kw`` <str> Keyword that will work async on background.
 
         Example:
-        | ${promise}=  |  Promise To        |  Wait For Response  |  matcher=  |  timeout=3s |
-        | Click        |  \#delayed_request |                     |            |             |
-        | ${body}=     |  Wait For          |  ${promise}         |            |             |
+        | ${promise}=  |  Promise To         |  Wait For Response  |  matcher=  |  timeout=3s |
+        | Click        |  \\#delayed_request |                     |            |             |
+        | ${body}=     |  Wait For           |  ${promise}         |            |             |
         """
         browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
             self.library
@@ -50,9 +50,9 @@ class Promises(LibraryComponent):
         ``promises`` *Work in progress*
 
         Example:
-        | ${promise}=  |  Promise To        |  Wait For Response  |  matcher=  |  timeout=3s |
-        | Click        |  \#delayed_request |                     |            |             |
-        | ${body}=     |  Wait For          |  ${promise}         |            |             |
+        | ${promise}=  |  Promise To         |  Wait For Response  |  matcher=  |  timeout=3s |
+        | Click        |  \\#delayed_request |                     |            |             |
+        | ${body}=     |  Wait For           |  ${promise}         |            |             |
         """
         self._unresolved_promises -= {*promises}
         if len(promises) == 1:
