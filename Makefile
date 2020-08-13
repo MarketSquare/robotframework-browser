@@ -61,8 +61,7 @@ docker-test:
 	    -v $(shell pwd)/atest/:/atest \
 	    -v $(shell pwd)/node/:/node/ \
 	    rfbrowser \
-	    sh -c \
-		"PATH=$$PATH:~/.local/bin node --version && PATH=$$PATH:~/.local/bin pabot --verbose --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /atest/output /atest/test"
+	    sh -c "PATH=$$PATH:~/.local/bin pabot --verbose --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /atest/output /atest/test"
 
 lint-python:
 	mypy --config-file Browser/mypy.ini Browser/ utest/
