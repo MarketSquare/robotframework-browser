@@ -15,10 +15,16 @@ class Promises(LibraryComponent):
 
     @keyword(tags=["Wait"])
     def promise_to(self, kw: str, *args):
-        """
-        *EXPERIMENTAL* *WORK IN PROGRESS*
+        """ *EXPERIMENTAL* *WORK IN PROGRESS*
         Wrap a Browser library keyword and make it a promise.
         Returns that promise and executes the keyword on background.
+
+        ``kw`` <str> Keyword that will work async on background. 
+
+        Example:
+        | ${promise}=  |  Promise To        |  Wait For Response  |  matcher=  |  timeout=3s |
+        | Click        |  \#delayed_request |                     |            |             |
+        | ${body}=     |  Wait For          |  ${promise}         |            |             |
         """
         browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
             self.library
@@ -40,6 +46,13 @@ class Promises(LibraryComponent):
         Waits for promises to finish and returns results from them.
         Returns one result if one promise waited. Otherwise returns an array of results.
         If one fails, then this keyword will fail.
+
+        ``promises`` *Work in progress*
+
+        Example:
+        | ${promise}=  |  Promise To        |  Wait For Response  |  matcher=  |  timeout=3s |
+        | Click        |  \#delayed_request |                     |            |             |
+        | ${body}=     |  Wait For          |  ${promise}         |            |             |
         """
         self._unresolved_promises -= {*promises}
         if len(promises) == 1:

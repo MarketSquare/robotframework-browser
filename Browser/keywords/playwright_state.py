@@ -31,9 +31,9 @@ class PlaywrightState(LibraryComponent):
         Creates a new browser, context and page with specified settings.
             Only supports some of the settings Create _ Keywords do
 
-        If ``url`` is provided, navigates there.
+        ``url`` <str> Navigates to URL if provided. Defaults to None.
 
-        The optional ``browser`` argument specifies which browser to use. The
+        ``browser`` <firefox|chromium|webkit> Specifies which browser to use. The
         supported browsers are listed in the table below. The browser names
         are case-sensitive.
         |   = Value =     |        = Name(s) =                                   |
@@ -41,6 +41,7 @@ class PlaywrightState(LibraryComponent):
         | chromium        | [https://www.chromium.org/Home|Chromium]             |
         | webkit          | [https://webkit.org/|webkit]                         |
 
+        ``headless`` <bool> If set to False, a GUI is provided. Defaults to True.
         """
 
         self.new_browser(browser, headless=headless)
@@ -222,12 +223,11 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def new_page(self, url: Optional[str] = None):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
-
             Returns a stable identifier for the created page.
-            If ``url`` parameter is specified will open the new page to the specified URL.
+
+            ``url`` <str> if specified it will open the new page to the specified URL.
 
         """
-
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(Request().Url(url=url))
             logger.info(response.log)
@@ -236,10 +236,10 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def switch_page(self, index: int):
         """Switches the active browser page to another open page by ``index``.
-
             Returns a stable identifier for the previous page.
+            Newly opened pages get appended to the end of the list.
 
-            Newly opened pages get appended to the end of the list
+            ``index`` <int> Index id of the page to be changed to. Starting at 0.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchPage(Request().Index(index=index))
@@ -256,8 +256,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def switch_browser(self, index: int):
         """Switches the currently active Browser to another open Browser.
-
             Returns a stable identifier for the previous browser.
+
+            ``index`` <int> Index id of the browser to be changed to. Starting at 0.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=index))
@@ -267,8 +268,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def switch_context(self, index: int):
         """ Switches the active BrowserContext to another open context.
-
             Returns a stable identifier for the previous context.
+
+            ``index`` <int> Index id of the context to be changed to. Starting at 0.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchContext(Request().Index(index=index))
