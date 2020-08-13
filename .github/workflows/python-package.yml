@@ -132,4 +132,10 @@ jobs:
         run: |
           sudo chmod 777 atest
           make docker-test
+      - uses: actions/upload-artifact@v1
+        if: ${{ always() }}
+        with:
+          name: Docker test results
+          path: atest/output
+
 
