@@ -3,7 +3,7 @@ Resource          imports.resource
 Test Setup        New Page    ${LOGIN_URL}
 
 *** Variables ***
-${FailureScreenshot}=    ${OUTPUT_DIR}${/}Test_screenshotting_failing_test_FAILURE_SCREENSHOT.png
+${FailureScreenshot}=    ${OUTPUT_DIR}${/}Test_screenshotting_failing_test_FAILURE_SCREENSHOT_1.png
 ${TestScreenshot}=    ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
@@ -28,3 +28,8 @@ Test ElementHandle screenshotting
     ${ref}=    Get Element    \#username_field
     Take screenshot    ${TestScreenshot}    ${ref}
     Should Exist    ${TestScreenshot}.png
+
+Test screenshotting without path
+    ${path}=    Take Screenshot
+    Should Exist    ${path}
+    Remove File    ${path}

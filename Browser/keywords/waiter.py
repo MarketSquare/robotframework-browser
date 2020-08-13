@@ -1,13 +1,12 @@
 import json
+from pathlib import Path
 from typing import Dict
 
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
-from ..utils.data_types import ElementState
-from ..utils.time_conversion import timestr_to_millisecs
+from ..utils import ElementState, logger, timestr_to_millisecs
 
 
 class Waiter(LibraryComponent):
@@ -31,24 +30,52 @@ class Waiter(LibraryComponent):
         - ``detached``: to not be present in DOM.
         - ``visible``: to have non-empty bounding box and no visibility:hidden.
         - ``hidden``: to be detached from DOM, or have an empty bounding box or visibility:hidden.
+        - ``enabled``: to not be ``disabled``.
+        - ``disabled``: to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
+        - ``editable``: to not be ``readOnly``.
+        - ``readonly``: to be ``readOnly``. Can be used on <input> and <textarea>.
+        - ``selected``: to be ``selected``. Can be used on <option>.
+        - ``deselected``: to not be ``selected``.
+        - ``focused``: to be the ``activeElement``.
+        - ``defocused``: to not be the ``activeElement``.
+        - ``checked``: to be ``checked``. Can be used on <input>.
+        - ``unchecked``: to not be ``checked``.
 
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
         ``timeout``: (optional) uses default timeout if not set.
         """
+        funct = {
+            "enabled": "e => !e.disabled",
+            "disabled": "e => e.disabled",
+            "editable": "e => !e.readOnly",
+            "readonly": "e => e.readOnly",
+            "selected": "e => e.selected",
+            "deselected": "e => !e.selected",
+            "focused": "e => document.activeElement === e",
+            "defocused": "e => document.activeElement !== e",
+            "checked": "e => e.checked",
+            "unchecked": "e => !e.checked",
+        }
+
         with self.playwright.grpc_channel() as stub:
-            options: Dict[str, object] = {"state": state.name}
-            if timeout:
-                timeout_ms = timestr_to_millisecs(timeout)
-                options["timeout"] = timeout_ms
-            options_json = json.dumps(options)
-            response = stub.WaitForElementsState(
-                Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+            if state.name in ["attached", "detached", "visible", "hidden"]:
+                options: Dict[str, object] = {"state": state.name}
+                if timeout:
+                    timeout_ms = timestr_to_millisecs(timeout)
+                    options["timeout"] = timeout_ms
+                options_json = json.dumps(options)
+                response = stub.WaitForElementsState(
+                    Request().ElementSelectorWithOptions(
+                        selector=selector, options=options_json
+                    )
                 )
-            )
-            logger.info(response.log)
+                logger.info(response.log)
+            elif state.name in funct:
+                self.wait_for_function(
+                    funct[state.name], selector=selector, timeout=timeout
+                )
 
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_function(
@@ -90,12 +117,14 @@ class Waiter(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=["Wait"])
-    def wait_for_download(self):
+    def wait_for_download(self, saveAs: str = ""):
         """ Waits for next download event on page. Returns file path to downloaded file.
 
             To enable downloads context's ``acceptDownloads`` needs to be true.
 
-            Downloaded files are deleted when Context the download happened in is closed.
+            With default filepath downloaded files are deleted when Context the download happened in is closed.
+
+            ``saveAs`` filename to save as. File will also temporarily be saved in playwright context's default DL location.
 
             | New Context    | acceptDownloads=True
             | New Page       | ${LOGIN_URL}
@@ -103,12 +132,7 @@ class Waiter(LibraryComponent):
             | Click          | \\#file_download
             | ${file_path}=  | Wait For  ${dl_promise}
         """
-        # TODO: replace with argument saveAs: str ="" in function signature after PW 1.3
-        # TODO: add to docstring along with above change WIP: Will only work with playwright > 1.3 ``saveAs`` override filename to save as.
-        saveAs = None
         with self.playwright.grpc_channel() as stub:
-            from pathlib import Path
-
             if not saveAs:
                 response = stub.WaitForDownload(Request().FilePath())
                 logger.debug(response.log)

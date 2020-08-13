@@ -43,7 +43,8 @@ export async function takeScreenshot(
         exists(page, callback, 'Tried to take screenshot, no page was open');
         await invokeOnPage(page, callback, 'screenshot', { path: path });
     }
-    callback(null, stringResponse(path));
+    const message = 'Screenshot succesfully captured to: ' + path;
+    callback(null, stringResponse(path, message));
 }
 
 export function setTimeout(
@@ -65,4 +66,15 @@ export async function setViewportSize(
     const size = { width: call.request.getWidth(), height: call.request.getHeight() };
     await invokeOnPage(page, callback, 'setViewportSize', size);
     callback(null, emptyWithLog(`Set viewport size to: ${size}`));
+}
+
+export async function setOffline(
+    call: ServerUnaryCall<Request.Bool>,
+    callback: sendUnaryData<Response.Empty>,
+    context?: BrowserContext,
+) {
+    exists(context, callback, 'Tried to toggle context to offline, no open context');
+    const offline = call.request.getValue();
+    await context.setOffline(offline);
+    callback(null, emptyWithLog(`Set context to ${offline}`));
 }

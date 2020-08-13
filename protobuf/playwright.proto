@@ -21,6 +21,17 @@ message Request {
     string json = 2;
   }
 
+  message KeyboardKeypress {
+    string action = 1;
+    string key = 2;
+  }
+
+  message KeyboardInputOptions {
+    string action = 1;
+    string input = 2;
+    int32 delay = 3;
+  }
+
   message Browser {
     string browser = 1;
     bool headless = 2;
@@ -91,6 +102,9 @@ message Request {
   message ElementSelectorWithDuration {
     string selector = 1;
     int32 duration = 2;
+    string width = 3;
+    string style = 4;
+    string color = 5;
   }
 
   message SelectElementSelector {
@@ -137,6 +151,10 @@ message Request {
   message AlertAction {
     string alertAction = 1;
     string promptInput = 2;  
+  }
+
+  message Bool {
+    bool value = 1;
   }
 }
 
@@ -272,7 +290,12 @@ service  Playwright {
   rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);
   rpc MouseMove(Request.Json) returns (Response.Empty);
 
+  rpc KeyboardKey(Request.KeyboardKeypress) returns (Response.Empty);
+  rpc KeyboardInput(Request.KeyboardInputOptions) returns (Response.Empty);
+
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
+
+  rpc SetOffline(Request.Bool) returns (Response.Empty);
 
   /* Playwright State handling keywords */
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty);

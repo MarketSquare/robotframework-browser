@@ -35,6 +35,17 @@ class MouseButton(Enum):
     right = auto()
 
 
+class KeyAction(Enum):
+    down = auto()
+    up = auto()
+    press = auto()
+
+
+class KeyboardInputAction(Enum):
+    insertText = auto()
+    type = auto()
+
+
 class KeyboardModifier(Enum):
     Alt = auto()
     Control = auto()
@@ -83,6 +94,16 @@ class ElementState(Enum):
     detached = auto()
     visible = auto()
     hidden = auto()
+    enabled = auto()
+    disabled = auto()
+    editable = auto()
+    readonly = auto()
+    selected = auto()
+    deselected = auto()
+    focused = auto()
+    defocused = auto()
+    checked = auto()
+    unchecked = auto()
 
 
 AssertionOperator = Enum(
@@ -90,13 +111,13 @@ AssertionOperator = Enum(
     {
         "equal": "==",
         "==": "==",
-        "shouldbe": "==",
+        "should be": "==",
         "inequal": "!=",
         "!=": "!=",
-        "shouldnotbe": "!=",
-        "lessthan": "<",
+        "should not be": "!=",
+        "less than": "<",
         "<": "<",
-        "greaterthan": ">",
+        "greater than": ">",
         ">": ">",
         "<=": "<=",
         ">=": ">=",
@@ -104,8 +125,9 @@ AssertionOperator = Enum(
         "*=": "*=",
         "starts": "^=",
         "^=": "^=",
-        "shouldstartwith": "^=",
+        "should start with": "^=",
         "ends": "$=",
+        "should end with": "$=",
         "$=": "$=",
         "matches": "$",
         "validate": "validate",

@@ -363,4 +363,22 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         return interaction.mouseButton(call, callback, this.getActivePage());
     }
+
+    async keyboardKey(
+        call: ServerUnaryCall<Request.KeyboardKeypress>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.keyboardKey(call, callback, this.getActivePage());
+    }
+
+    async keyboardInput(
+        call: ServerUnaryCall<Request.KeyboardInputOptions>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.keyboardInput(call, callback, this.getActivePage());
+    }
+
+    async setOffline(call: ServerUnaryCall<Request.Bool>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return browserControl.setOffline(call, callback, this.getActiveContext());
+    }
 }

@@ -1,5 +1,4 @@
 from .browser import Browser
-from .entry import ensure_node_dependencies
 from .utils.data_types import (
     AssertionOperator,
     ColorScheme,
@@ -28,6 +27,3 @@ __all__ = [
     "RequestMethod",
     "Browser",
 ]
-
-
-ensure_node_dependencies()

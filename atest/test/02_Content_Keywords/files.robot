@@ -1,5 +1,10 @@
 *** Settings ***
 Resource          imports.resource
+Test Setup        Set Library Timeout
+Test Teardown     Restore Library Timeout
+
+*** Variables ***
+${custom_dl_path}    ${CURDIR}/download_file
 
 *** Test Cases ***
 Upload File
@@ -25,12 +30,22 @@ Wait For Download
     ${file_path}=    Wait For    ${dl_promise}
     File Should Exist    ${file_path}
     Remove File    ${file_path}
-#Wait For Download with custom path
-#    New Context    acceptDownloads=True
-#    New Page    ${LOGIN_URL}
-#    ${dl_promise}=    Promise To    Wait For Download    saveAs=${CURDIR}/download_file
-#    Click    \#file_download
-#    ${file_path}=    Wait For    ${dl_promise}
-#    File Should Exist    ${file_path}
-#    Remove File    ${file_path}
-#    Fail
+
+Wait For Download with custom path
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    ${dl_promise}=    Promise To    Wait For Download    saveAs=${custom_dl_path}
+    Click    \#file_download
+    ${file_path}=    Wait For    ${dl_promise}
+    File Should Exist    ${file_path}
+    File Should Exist    ${custom_dl_path}
+    Remove File    ${custom_dl_path}
+    Remove File    ${file_path}
+
+*** Keywords ***
+Set Library Timeout
+    ${timeout} =    Set Timeout    2 seconds
+    Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
+
+Restore Library Timeout
+    Set Timeout    ${ORIGINAL_TIMEOUT}
