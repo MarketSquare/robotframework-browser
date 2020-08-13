@@ -135,7 +135,7 @@ jobs:
       - uses: actions/upload-artifact@v1
         if: ${{ always() }}
         with:
-          name: Docker test results
+          name: Clean install results
           path: atest/output
 
 

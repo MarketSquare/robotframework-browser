@@ -54,14 +54,16 @@ docker-builder: docker-base
 	DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file atest/docker/Dockerfile .
 docker-test:
 	rm -rf atest/output
+	mkdir atest/output
 	docker run\
 	    --rm \
 	    --ipc=host\
 	    --security-opt seccomp=atest/docker/chrome.json \
-	    -v $(shell pwd)/atest/:/atest \
-	    -v $(shell pwd)/node/:/node/ \
+	    -v $(shell pwd)/atest/:/app/atest \
+	    -v $(shell pwd)/node/:/app/node/ \
+	    --workdir /app \
 	    rfbrowser \
-	    sh -c "ROBOT_SYSLOG_FILE=/atest/output/syslog.txt PATH=$$PATH:~/.local/bin pabot --verbose --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /atest/output /atest/test"
+	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$$PATH:~/.local/bin pabot --verbose --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /app/atest/output /app/atest/test"
 
 lint-python:
 	mypy --config-file Browser/mypy.ini Browser/ utest/
