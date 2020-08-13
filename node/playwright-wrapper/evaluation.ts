@@ -7,6 +7,9 @@ import { Request, Response } from './generated/playwright_pb';
 import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
 declare global {
     interface Window {
         __SET_RFBROWSER_STATE__: <T>(a: T) => T;
@@ -27,7 +30,7 @@ export async function getElement(
     const handle = await invokePlaywrightMethod(state, callback, '$', call.request.getSelector());
     const id = uuidv4();
     state.addElement(id, handle);
-    callback(null, stringResponse(`element=${id}`));
+    callback(null, stringResponse(`element=${id}`, 'Element found successfully.'));
 }
 
 /** Resolve a list of elementHandles, create global UUIDs for them, and store the
@@ -47,7 +50,7 @@ export async function getElements(
         state.addElement(id, handle);
         return `element=${id}`;
     });
-    callback(null, stringResponse(JSON.stringify(response)));
+    callback(null, stringResponse(JSON.stringify(response), 'Elements found succesfully.'));
 }
 
 export async function executeJavascript(
@@ -91,7 +94,7 @@ export async function waitForFunction(
     let script = call.request.getScript();
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    console.log(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
+    logger.info(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
 
     let elem;
     if (selector) {
@@ -101,7 +104,7 @@ export async function waitForFunction(
 
     // TODO: This might behave weirdly if element selector points to a different page
     const result = await invokeOnPage(state.getActivePage(), callback, 'waitForFunction', script, elem, options);
-    callback(null, stringResponse(JSON.stringify(result.jsonValue)));
+    callback(null, stringResponse(JSON.stringify(result.jsonValue), ''));
 }
 
 export async function addStyleTag(

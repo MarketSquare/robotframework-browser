@@ -1,4 +1,4 @@
-import time
+from pathlib import Path
 
 from robotlibcore import keyword  # type: ignore
 
@@ -35,21 +35,35 @@ class Control(LibraryComponent):
             response = stub.GoTo(Request().Url(url=url))
             logger.info(response.log)
 
+    def _get_screenshot_path(self, filename: str):
+        directory = self.library.outputdir
+        index = 0
+        while True:
+            index += 1
+            indexed = Path(filename.replace("{index}", str(index)))
+            logger.debug(indexed)
+            path = Path(directory / indexed)
+            # filename didn't contain {index} or unique path was found
+            if "{index}" not in filename or not path.is_file():
+                return path
+
     @keyword
-    def take_screenshot(self, path: str = "", selector: str = ""):
+    def take_screenshot(self, filename: str = "", selector: str = ""):
         """Takes screenshot of the current window and saves it to ``path``.
 
-        ``path`` <str> Path under which to save. The default path is the Robot Framework output directory.
+        ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output directory.
+        String ``{index}`` in path will be replaced with a rolling number. Use this to not override filenames.
 
         ``selector`` <str> Take a screenshot of the element matched by selector.
         If not provided take a screenshot of current viewport.
         """
-        if not path:
-            path = self.library.outputdir + str(time.time())
-        logger.debug(f"Taking screenshot into ${path}")
+        string_path_no_extension = str(self._get_screenshot_path(filename))
+        logger.debug(f"Taking screenshot into ${filename}")
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
-                Request().ScreenshotOptions(path=path, selector=selector)
+                Request().ScreenshotOptions(
+                    path=string_path_no_extension, selector=selector
+                )
             )
             logger.info(
                 f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",

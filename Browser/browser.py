@@ -26,7 +26,7 @@ from .version import VERSION
 class Browser(DynamicCore):
     """Browser library is a browser automation library for Robot Framework.
 
-    This is hte keyword documentation for Browser library. For information
+    This is the keyword documentation for Browser library. For information
     about installation, support, and more please visit the
     [https://github.com/MarketSquare/robotframework-playwright|project pages].
     For more information about Robot Framework itself, see [https://robotframework.org|robotframework.org].
@@ -43,7 +43,7 @@ class Browser(DynamicCore):
 
     = Finding elements =
 
-    All keywords in hte library that need to interact with an element
+    All keywords in the library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
     how to find the element.
 
@@ -102,8 +102,8 @@ class Browser(DynamicCore):
     reference can be used as a *first* part of a selector by using a special selector
     syntax `element=` like this:
 
-    | ${ref}=  |  Get Element  |  .some_class  |
-    | Click    |  element=${ref} >>  .some_child |
+    | ${ref}=  |  Get Element  |  .some_class                    |
+    |          | Click         |  element=${ref} >>  .some_child |
 
     The `.some_child` selector in the example is relative to the element referenced by ${ref}.
 
@@ -113,26 +113,27 @@ class Browser(DynamicCore):
     can optionally assert.
     Currently supported assertion operators are:
 
-    |      = Operator =               |              = Description =                          |
-    | ``==`` or ``should be``         | equal                                                 |
-    | ``!=`` or ``should not be``     | not equal                                             |
-    | ``>``                           | greater than                                          |
-    | ``>=``                          | greater than or equal                                 |
-    | ``<``                           | less than                                             |
-    | ``<=``                          | less than or equal                                    |
-    | ``*=`` or ``contains``          | for checking that a value contains an element         |
-    | ``matches``                     | for matching against a regular expression.            |
-    | ``^=`` or ``should start with`` | starts with                                           |
-    | ``$=`` or ``should end with``   | ends with                                             |
-    | ``validate``                    | use BuiltIn Evaluate. Access to actual with ``value`` |
+    |      = Operator =                           |              = Description =                                         |
+    | ``==``, ``equal`` or ``should be``          | equal                                                                |
+    | ``!=``, ``inequal`` or ``should not be``    | not equal                                                            |
+    | ``>`` or ``greater than``                   | greater than                                                         |
+    | ``>=``                                      | greater than or equal                                                |
+    | ``<`` or ``less than``                      | less than                                                            |
+    | ``<=``                                      | less than or equal                                                   |
+    | ``*=`` or ``contains``                      | for checking that a value contains an element                        |
+    | ``matches``                                 | for matching against a regular expression. Remember to escape ``\\`` |
+    | ``^=``, ``should start with`` or ``starts`` | starts with                                                          |
+    | ``$=``, ``should end with`` or ``ends``     | ends with                                                            |
+    | ``validate``                                | use BuiltIn Evaluate. Access to actual with ``value``                |
+    | ``evaluate`` or ``then``                    | use Python expression. Access to actual with ``value``               |
 
-    Assertion value can be any valid robot value, and the keywords will provide an error
+    The expected assertion value can be any valid robot value, and the keywords will provide an error
     message if the assertion fails.
 
-    = The 'then' closure =
+    == The 'then' or 'evaluate' closure ==
 
     Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
-    can optionally also use ``then`` closure to modify the returned value with
+    can optionally also use ``then`` or ``evaluate`` closure to modify the returned value with
     BuiltIn Evaluate. Actual value can be accessed with ``value``.
 
     For example ``Get Title  then  'TITLE: '+value``.
@@ -140,6 +141,15 @@ class Browser(DynamicCore):
     [https://robotframework.org/robotframework/latest/libraries/BuiltIn.html#Evaluating%20expressions|
     Builtin Evaluating expressions]
     for more info on the syntax.
+
+    == Examples ==
+
+    | Keyword   | Selector                 | Key      | Assertion Operator | Assertion Expected                                   |
+    | Get Title  |                         |          | equal              | Page Title                                           |
+    | Get Style  |  //*[@id="div-element"] |   width  |  >                 |  100                                                 |
+    | Get Title  |                         |          |  matches           |  \\\\w+\\\\s\\\\w+                                   |
+    | Get Title  |                         |          |  validate          |  value == "Login Page"                               |
+    | Get Title  |                         |          |  evaluate          | value if value == "some value" else "something else" |
 
     = Automatic page and context closing =
 
@@ -167,13 +177,13 @@ class Browser(DynamicCore):
     ):
         """Browser library can be taken into use with optional arguments:
 
-        ``timeout`` <str>
+        - ``timeout`` <str>
           Timeout for keywords that operate on elements. The keywords will wait
           for this time for the element to appear into the page. Defaults to "10s" => 10 seconds.
-        - ``enable_playwright_debug``:
+        - ``enable_playwright_debug`` <bool>
           Enable low level debug information from the playwright tool. Mainly
           Useful for the library developers and for debugging purposes.
-        - ``auto_closing_level``:
+        - ``auto_closing_level`` <SUITE|TEST|MANUAL>
           Configure context and page automatic closing. Default is after each test.
           Other options are SUITE for closing after each suite and MANUAL
           for no automatic closing.
@@ -316,5 +326,5 @@ class Browser(DynamicCore):
     def failure_screenshot_path(self, test_name):
         return os.path.join(
             BuiltIn().get_variable_value("${OUTPUTDIR}"),
-            test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT",
+            test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT_{index}",
         ).replace("\\", "\\\\")

@@ -43,7 +43,8 @@ export async function takeScreenshot(
         exists(page, callback, 'Tried to take screenshot, no page was open');
         await invokeOnPage(page, callback, 'screenshot', { path: path });
     }
-    callback(null, stringResponse(path));
+    const message = 'Screenshot succesfully captured to: ' + path;
+    callback(null, stringResponse(path, message));
 }
 
 export function setTimeout(

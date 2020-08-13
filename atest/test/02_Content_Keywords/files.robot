@@ -1,5 +1,7 @@
 *** Settings ***
 Resource          imports.resource
+Test Setup        Set Library Timeout
+Test Teardown     Restore Library Timeout
 
 *** Variables ***
 ${custom_dl_path}    ${CURDIR}/download_file
@@ -39,3 +41,11 @@ Wait For Download with custom path
     File Should Exist    ${custom_dl_path}
     Remove File    ${custom_dl_path}
     Remove File    ${file_path}
+
+*** Keywords ***
+Set Library Timeout
+    ${timeout} =    Set Timeout    2 seconds
+    Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
+
+Restore Library Timeout
+    Set Timeout    ${ORIGINAL_TIMEOUT}
