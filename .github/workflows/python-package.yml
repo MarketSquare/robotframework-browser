@@ -130,5 +130,6 @@ jobs:
           make docker-builder
       - name: Test image
         run: |
+          sudo chmod 777 atest
           make docker-test
 
