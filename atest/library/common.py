@@ -24,10 +24,6 @@ def start_test_server():
     process = Popen(
         ["node", test_app_path, port], stdout=PIPE, stderr=STDOUT, cwd=root_dir
     )
-    if process.stderr:
-        raise Exception(
-            f"Unexpected error starting test app. Details: {process.stderr}"
-        )
     SERVERS[port] = process
     return port
 
