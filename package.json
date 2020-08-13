@@ -42,8 +42,8 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "echo 'precommit 🔱' && make lint",
-      "pre-push": "echo 'prepush 🚀' && make build && make utest && make atest"
+      "pre-commit": "echo 'precommit 🔱' && inv lint",
+      "pre-push": "echo 'prepush 🚀' && inv build && inv utest && inv atest"
     }
   },
   "scripts": {

@@ -45,20 +45,20 @@ jobs:
         flake8 --config Browser/.flake8 Browser
     - name: Build Protos and check with tsc
       run: |
-        make build
+        inv build
     - name: Start xvfb
       run: |
         export DISPLAY=:99.0
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
       run: |
-       make utest
+       inv utest
     - name: Run Robot Framework tests
       run: |
-        xvfb-run --auto-servernum make atest
+        xvfb-run --auto-servernum inv atest
     - name: Create Distributable Package
       run: |
-        make package
+        inv package
     - uses: actions/upload-artifact@v1
       if: ${{ always() }}
       with:
@@ -108,10 +108,10 @@ jobs:
         run: |
           pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
           rfbrowser init
-          pip install -U robotframework-pabot
+          pip install -r Browser/dev-requirements.txt
       - name: Run Robot Framework tests
         run: |
-          xvfb-run --auto-servernum make atest-global-pythonpath
+          xvfb-run --auto-servernum inv atest-global-pythonpath
         env:
           NODE_PATH: /usr/lib/node_modules
       - uses: actions/upload-artifact@v1
@@ -119,4 +119,3 @@ jobs:
         with:
           name: Clean install results
           path: atest/output
-
