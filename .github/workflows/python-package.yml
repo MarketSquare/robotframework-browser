@@ -126,7 +126,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build image
         run: |
-          make docker
+          make docker-base
+          make docker-builder
       - name: Test image
         run: |
           make docker-test
