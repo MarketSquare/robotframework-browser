@@ -27,7 +27,7 @@ export function boolResponse(value: boolean, logMessage = '') {
     return response;
 }
 
-export function jsResponse(result: string) {
+export function jsResponse(result: string, logMessage: string) {
     const response = new Response.JavascriptExecutionResult();
     response.setResult(JSON.stringify(result));
     return response;
