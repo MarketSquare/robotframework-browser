@@ -4,9 +4,12 @@ import re
 import shutil
 
 from invoke import task, Exit
-from pabot import pabot
-import pytest
-from robot.libdoc import libdoc
+try:
+    from pabot import pabot
+    import pytest
+    from robot.libdoc import libdoc
+except ModuleNotFoundError:
+    print('Assuming that this is for "inv deps" command and ignoring error.')
 
 root_dir = Path(os.path.dirname(__file__))
 atest_output = root_dir / "atest" / "output"
