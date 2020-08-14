@@ -26,7 +26,7 @@ class Devices(LibraryComponent):
 
             ``name`` <str> Given name of the requested device. See Playwright's
             [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
-            for a formatted list.
+            for a formatted list. **Required**
 
             Allows a concise syntax to set website testing values to exact matches of specific
             mobile devices.

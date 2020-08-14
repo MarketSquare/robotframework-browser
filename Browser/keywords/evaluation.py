@@ -14,8 +14,8 @@ class Evaluation(LibraryComponent):
     def execute_javascript(self, function: str, selector: str = "") -> Any:
         """Executes given javascript on the page.
 
-        ``function`` <str> A valid javascript function or a javascript function body. **Required** For example
-        ``() => true`` and ``true`` will behave similarly.
+        ``function`` <str> A valid javascript function or a javascript function body. For example
+        ``() => true`` and ``true`` will behave similarly. **Required**
 
         ``selector`` <str> Selector to resolve and pass to the JavaScript function. This will be the first
         argument the function receives. If given a selector a function is necessary, with an argument
@@ -39,11 +39,18 @@ class Evaluation(LibraryComponent):
         style: str = "dotted",
         color: str = "blue",
     ):
-        """Adds a red highlight to elements matched by the ``selector`` for ``duration``.
+        """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment. 
 
-        ``selector`` <str> Selector which shall be highlighted. **Required**
+        ``selector`` <str> Selectors which shall be highlighted. **Required**
 
         ``duration`` <str> Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
+
+        ``width`` <str> Sets the width of the higlight border. Defaults to 2px.
+
+        ``style`` <solid|dotted|double|dashed> Sets the style of the border. Defaults to dotted.
+
+        ``color`` <str> Sets the color of the border. Valid colors i.e. are:
+        ``red``, ``blue``, ``yellow``, ``pink``, ``black``
         """
         with self.playwright.grpc_channel() as stub:
             duration_ms = timestr_to_millisecs(duration)

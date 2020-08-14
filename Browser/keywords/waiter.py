@@ -102,7 +102,10 @@ class Waiter(LibraryComponent):
 
         ``timeout`` <str> (optional) uses default timeout of 10 seconds if not set.
 
-        [https://github.com/MarketSquare/robotframework-browser/tree/master/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
+        Example usage:
+        | ${promise}  |  Promise To    |  Wait For Function  |  element => element.style.width=="100%"  |  selector=\#progress_bar  |  timeout=4s |
+        | Click       | \#progress_bar |
+        | Wait For    | ${promise}     |
         """
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
