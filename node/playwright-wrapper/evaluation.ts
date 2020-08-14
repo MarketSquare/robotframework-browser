@@ -67,12 +67,12 @@ export async function executeJavascript(
     }
 
     const result = await invokeOnPage(state.getActivePage(), callback, 'evaluate', script, elem);
-    callback(null, jsResponse(result));
+    callback(null, jsResponse(result, 'JavaScript executed successfully.'));
 }
 
 export async function getPageState(callback: sendUnaryData<Response.JavascriptExecutionResult>, page?: Page) {
     const result = await invokeOnPage(page, callback, 'evaluate', () => window.__RFBROWSER__);
-    callback(null, jsResponse(result));
+    callback(null, jsResponse(result, 'Page state evaluated successfully.'));
 }
 
 export async function waitForElementState(
