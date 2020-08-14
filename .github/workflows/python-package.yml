@@ -106,7 +106,7 @@ jobs:
         env:
           VERSION: 0.13.0
         run: |
-          pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
+          pip install "robotframework_browser-$VERSION-py3-none-any.whl"
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Run Robot Framework tests
