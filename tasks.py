@@ -204,7 +204,7 @@ def docker(c):
     c.run("docker build --tag rfbrowser --file atest/docker/Dockerfile .")
 
 
-@task(clean_atest)
+@task(clean_atest, build)
 def docker_test(c):
     c.run(
         "docker run -it --rm --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest rfbrowser robot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test"
