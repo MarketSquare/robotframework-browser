@@ -100,7 +100,7 @@ class Cookie(LibraryComponent):
 
         ``secure`` <bool> Sets the secure token.
 
-        ``samesite`` <"Strict"|"Lax"|"None"> Sets the samesite mode.
+        ``samesite`` <Strict|Lax|None> Sets the samesite mode.
 
         Example:
         | `Add Cookie` | foo | bar | http://address.com/path/to/site |                                 | # Using url argument.             |

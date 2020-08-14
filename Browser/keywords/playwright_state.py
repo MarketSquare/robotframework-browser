@@ -147,12 +147,12 @@ class PlaywrightState(LibraryComponent):
         that can be used in `Switch Context`.
 
         ``acceptDownloads`` <bool> Whether to automatically downloadall the attachments.
-        Defaults to false where all the downloads are canceled.
+        Defaults to False where all the downloads are canceled.
 
         ``ignoreHTTPSErrors`` <bool> Whether to ignore HTTPS errors during navigation.
-        Defaults to false.
+        Defaults to False.
 
-        ``bypassCSP`` <bool> Toggles bypassing page's Content-Security-Policy.
+        ``bypassCSP`` <bool> Toggles bypassing page's Content-Security-Policy. Defaults to False.
 
         ``viewport`` <dict> Sets a consistent viewport for each page.
         Defaults to an ``{'width': 1280, 'height': 720}`` viewport.
@@ -165,21 +165,22 @@ class PlaywrightState(LibraryComponent):
         (can be thought of as dpr). Defaults to 1.
 
         ``isMobile`` <bool> Whether the meta viewport tag is taken into account
-        and touch events are enabled. Defaults to false. Not supported in Firefox.
+        and touch events are enabled. Defaults to False. Not supported in Firefox.
 
-        ``hasTouch`` <bool> Specifies if viewport supports touch events. Defaults to false.
+        ``hasTouch`` <bool> Specifies if viewport supports touch events. Defaults to False.
 
         ``javaScriptEnabled`` <bool> Whether or not to enable JavaScript in the context.
-        Defaults to true.
+        Defaults to True.
 
         ``timezoneId`` <str> Changes the timezone of the context.
         See [https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt?originalUrl=https:%2F%2Fcs.chromium.org%2F|ICU’s metaZones.txt]
         for a list of supported timezone IDs.
 
-        ``geolocation`` <dict> ``{'latitude': 59.95, 'longitude': 30.31667}``
-        - ``latitude`` <number> Latitude between -90 and 90. *required*
-        - ``longitude`` <number> Longitude between -180 and 180. *required*
+        ``geolocation`` <dict> Sets the geolocation. No location is set be default.
+        - ``latitude`` <number> Latitude between -90 and 90. **Required**
+        - ``longitude`` <number> Longitude between -180 and 180. **Required**
         - ``accuracy`` Optional <number> Non-negative accuracy value. Defaults to 0.
+        Example usage: ``{'latitude': 59.95, 'longitude': 30.31667}``
 
         ``locale`` <str> Specify user locale, for example ``en-GB``, ``de-DE``, etc.
         Locale will affect ``navigator.language`` value, ``Accept-Language`` request header value
@@ -191,14 +192,14 @@ class PlaywrightState(LibraryComponent):
         ``extraHTTPHeaders`` <dict[str, str]> A dictionary containing additional HTTP headers
         to be sent with every request. All header values must be strings.
 
-        ``offline`` <bool> Whether to emulate network being offline. Defaults to ``False``.
+        ``offline`` <bool> Whether to emulate network being offline. Defaults to False.
 
-        ``httpCredentials`` <Object> Credentials for HTTP authentication.
+        ``httpCredentials`` <Dict<str, str>> Credentials for HTTP authentication.
         - example: ``{'username': 'admin', 'password': '123456'}``
         - ``username`` <str>
         - ``password`` <str>
 
-        ``colorScheme`` <"dark"|"light"|"no-preference"> Emulates 'prefers-colors-scheme'
+        ``colorScheme`` <dark|light|no-preference> Emulates 'prefers-colors-scheme'
         media feature, supported values are 'light', 'dark', 'no-preference'.
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
         for more details. Defaults to ``light``.
@@ -225,7 +226,7 @@ class PlaywrightState(LibraryComponent):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
             Returns a stable identifier for the created page.
 
-            ``url`` <str> if specified it will open the new page to the specified URL.
+            ``url`` <str> If specified it will open the new page to the specified URL.
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -239,7 +240,7 @@ class PlaywrightState(LibraryComponent):
             Returns a stable identifier for the previous page.
             Newly opened pages get appended to the end of the list.
 
-            ``index`` <int> Index id of the page to be changed to. Starting at 0.
+            ``index`` <int> Index id of the page to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchPage(Request().Index(index=index))
@@ -258,7 +259,7 @@ class PlaywrightState(LibraryComponent):
         """Switches the currently active Browser to another open Browser.
             Returns a stable identifier for the previous browser.
 
-            ``index`` <int> Index id of the browser to be changed to. Starting at 0.
+            ``index`` <int> Index id of the browser to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=index))
@@ -270,7 +271,7 @@ class PlaywrightState(LibraryComponent):
         """ Switches the active BrowserContext to another open context.
             Returns a stable identifier for the previous context.
 
-            ``index`` <int> Index id of the context to be changed to. Starting at 0.
+            ``index`` <int> Index id of the context to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchContext(Request().Index(index=index))
