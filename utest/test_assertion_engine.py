@@ -1,5 +1,5 @@
 import pytest
-from Browser.assertion_engine import verify_assertion, AssertionOperator
+from Browser.assertion_engine import verify_assertion, AssertionOperator, with_assertions
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
@@ -20,6 +20,21 @@ def test_not_equals():
 def test_contains():
     _validate_operator(AssertionOperator["contains"], "actual", "ctua", "nope")
     _validate_operator(AssertionOperator["*="], "actual", "tual", "nope")
+
+
+def test_with_assertions():
+    @with_assertions
+    def keyword():
+        verify_assertion(3, AssertionOperator['=='], 3)
+    keyword()
+
+
+def test_negative_with_assertions():
+    @with_assertions
+    def keyword():
+        verify_assertion(3, AssertionOperator['=='], 2)
+    with pytest.raises(AssertionError):
+        keyword()
 
 
 def test_greater():

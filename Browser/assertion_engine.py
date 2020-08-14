@@ -1,4 +1,6 @@
+import functools
 import re
+import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
@@ -47,6 +49,10 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
 T = TypeVar("T")
 
 
+class AssertionVerificationError(AssertionError):
+    pass
+
+
 def verify_assertion(
     value: T, operator: Optional[AssertionOperator], expected: Any, message=""
 ) -> Any:
@@ -59,8 +65,22 @@ def verify_assertion(
         raise RuntimeError(f"{message} `{operator}` is not a valid assertion operator")
     validator, text = handler
     if not validator(value, expected):
-        raise AssertionError(f"{message} `{value}` {text} `{expected}`")
+        raise AssertionVerificationError(f"{message} `{value}` {text} `{expected}`")
     return value
+
+
+def with_assertions(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        start = time.time()
+        err:Optional[AssertionVerificationError] = None
+        while time.time() - start < 0.3:
+            try:
+                return func(*args, **kwargs)
+            except AssertionVerificationError as e:
+                err = e
+        raise err
+    return wrapped
 
 
 def int_str_verify_assertion(
