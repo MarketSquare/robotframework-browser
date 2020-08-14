@@ -15,3 +15,11 @@ class LibraryComponent:
     @property
     def playwright(self):
         return self.library.playwright
+
+    @property
+    def timeout(self) -> str:
+        return self.library.timeout
+
+    @timeout.setter
+    def timeout(self, value: str):
+        self.library.timeout = value
