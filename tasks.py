@@ -34,7 +34,11 @@ def clean(c):
     for target in [dist_dir, build_dir, python_protobuf_dir, node_protobuf_dir]:
         if target.exists():
             shutil.rmtree(target)
-    for timestamp_file in [node_timestamp_file, node_lint_timestamp_file, python_lint_timestamp_file]:
+    for timestamp_file in [
+        node_timestamp_file,
+        node_lint_timestamp_file,
+        python_lint_timestamp_file,
+    ]:
         timestamp_file.unlink(missing_ok=True)
 
 
@@ -147,7 +151,8 @@ def atest_global_pythonpath(c):
     _run_robot()
 
 
-@task(clean_atest)
+# Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
+@task()
 def atest_failed(c):
     _run_robot(["--rerunfailed", "atest/output/output.xml"])
 
@@ -169,8 +174,10 @@ def _run_robot(extra_args=None):
 
 @task
 def lint_python(c):
-    all_py_sources = list(python_src_dir.glob("**/*.py")) + list((root_dir / "utest").glob("**/*.py"))
-    if _sources_changed(all_py_sources , python_lint_timestamp_file):
+    all_py_sources = list(python_src_dir.glob("**/*.py")) + list(
+        (root_dir / "utest").glob("**/*.py")
+    )
+    if _sources_changed(all_py_sources, python_lint_timestamp_file):
         c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
         c.run("black --config Browser/pyproject.toml Browser/")
         c.run("flake8 --config Browser/.flake8 Browser/ utest/")
