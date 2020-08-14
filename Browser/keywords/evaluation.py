@@ -39,7 +39,7 @@ class Evaluation(LibraryComponent):
         style: str = "dotted",
         color: str = "blue",
     ):
-        """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment. 
+        """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment.
 
         ``selector`` <str> Selectors which shall be highlighted. **Required**
 

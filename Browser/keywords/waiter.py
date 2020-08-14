@@ -103,8 +103,8 @@ class Waiter(LibraryComponent):
         ``timeout`` <str> (optional) uses default timeout of 10 seconds if not set.
 
         Example usage:
-        | ${promise}  |  Promise To    |  Wait For Function  |  element => element.style.width=="100%"  |  selector=\#progress_bar  |  timeout=4s |
-        | Click       | \#progress_bar |
+        | ${promise}  |  Promise To    |  Wait For Function  |  element => element.style.width=="100%"  |  selector=\\#progress_bar  |  timeout=4s |
+        | Click       | \\#progress_bar |
         | Wait For    | ${promise}     |
         """
         with self.playwright.grpc_channel() as stub:

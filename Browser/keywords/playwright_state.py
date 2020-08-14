@@ -159,7 +159,7 @@ class PlaywrightState(LibraryComponent):
         Value of ``viewport`` can be a dict or a string
         representation of a dictionary.
 
-        ``userAgent`` <str> Specific user agent to use in this context. 
+        ``userAgent`` <str> Specific user agent to use in this context.
 
         ``deviceScaleFactor`` <float> Specify device scale factor
         (can be thought of as dpr). Defaults to 1.
