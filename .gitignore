@@ -17,6 +17,8 @@ robotframework_browser.egg-info/
 .venv
 
 node/.linted
+node/.built
+Browser/.linted
 
 # Robot Framework outputs
 log.html
