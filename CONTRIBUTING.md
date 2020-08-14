@@ -23,7 +23,7 @@ The minimum Python version is 3.8.
 
 ```
 python -m venv .venv
-source .venv/bin/activate.  # On linux and OSX
+source .venv/bin/activate  # On linux and OSX
 .venv\Scripts\activate.bat  # On Windows
 ```
 
