@@ -36,16 +36,20 @@ class Control(LibraryComponent):
             response = stub.GoTo(Request().Url(url=url))
             logger.info(response.log)
 
-    def _get_screenshot_path(self, filename: str):
+    def _get_screenshot_path(self, filename: str) -> Path:
         directory = self.library.outputdir
+        # Filename didn't contain {index}
+        if "{index}" not in filename:
+            return Path(directory) / filename
         index = 0
         while True:
+            logger.info(index)
             index += 1
             indexed = Path(filename.replace("{index}", str(index)))
             logger.debug(indexed)
-            path = Path(directory / indexed)
-            # filename didn't contain {index} or unique path was found
-            if "{index}" not in filename or not path.is_file():
+            path = Path(directory) / indexed
+            # Unique path was found
+            if not path.with_suffix(".png").is_file():
                 return path
 
     @keyword
