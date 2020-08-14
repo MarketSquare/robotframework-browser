@@ -13,9 +13,10 @@ export function stringResponse(body: string, logMessage: string) {
     return response;
 }
 
-export function intResponse(body: number) {
+export function intResponse(body: number, logMessage: string) {
     const response = new Response.Int();
     response.setBody(body);
+    response.setLog(logMessage);
     return response;
 }
 
