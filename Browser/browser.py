@@ -188,6 +188,7 @@ class Browser(DynamicCore):
           Other options are SUITE for closing after each suite and MANUAL
           for no automatic closing.
         """
+        self.timeout = timeout
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
         # This is more explicit than to have all the libraries be referenceable when they don't need it.
@@ -208,7 +209,7 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self.playwright = Playwright(timeout, enable_playwright_debug)
+        self.playwright = Playwright(self, enable_playwright_debug)
         self._auto_closing_level = auto_closing_level
         DynamicCore.__init__(self, libraries)
 
