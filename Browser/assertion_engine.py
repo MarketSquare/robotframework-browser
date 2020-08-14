@@ -73,13 +73,14 @@ def with_assertions(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         start = time.time()
-        err:Optional[AssertionVerificationError] = None
+        err: Optional[AssertionVerificationError] = None
         while time.time() - start < 0.3:
             try:
                 return func(*args, **kwargs)
             except AssertionVerificationError as e:
                 err = e
         raise err
+
     return wrapped
 
 
