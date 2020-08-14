@@ -124,8 +124,8 @@ class Browser(DynamicCore):
     | ``matches``                                 | for matching against a regular expression. Remember to escape ``\\`` |
     | ``^=``, ``should start with`` or ``starts`` | starts with                                                          |
     | ``$=``, ``should end with`` or ``ends``     | ends with                                                            |
-    | ``validate``                                | use BuiltIn Evaluate. Access to actual with ``value``                |
-    | ``evaluate`` or ``then``                    | use Python expression. Access to actual with ``value``               |
+    | ``validate``                                | use Python expression to validate. Access by ``value``               |
+    | ``evaluate`` or ``then``                    | use Python expression and return it. Access to actual with ``value`` |
 
     The expected assertion value can be any valid robot value, and the keywords will provide an error
     message if the assertion fails.
