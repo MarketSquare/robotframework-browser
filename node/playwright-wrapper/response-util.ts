@@ -20,7 +20,7 @@ export function intResponse(body: number, logMessage: string) {
     return response;
 }
 
-export function boolResponse(value: boolean, logMessage = '') {
+export function boolResponse(value: boolean, logMessage: string) {
     const response = new Response.Bool();
     response.setBody(value);
     response.setLog(logMessage);
