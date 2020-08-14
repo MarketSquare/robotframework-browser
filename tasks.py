@@ -9,10 +9,17 @@ import pytest
 from robot.libdoc import libdoc
 
 root_dir = Path(os.path.dirname(__file__))
-venv_dir = root_dir / ".venv"
 atest_output = root_dir / "atest" / "output"
 dist_dir = root_dir / "dist"
 build_dir = root_dir / "build"
+proto_sources = (root_dir / "protobuf").glob("*.proto")
+python_src_dir = root_dir / "Browser"
+python_protobuf_dir = python_src_dir / "generated"
+node_protobuf_dir = root_dir / "node" / "playwright-wrapper" / "generated"
+node_dir = root_dir / "node"
+node_timestamp_file = node_dir / ".built"
+node_lint_timestamp_file = node_dir / ".linted"
+python_lint_timestamp_file = python_src_dir / ".linted"
 
 
 @task
@@ -24,23 +31,34 @@ def deps(c):
 
 @task
 def clean(c):
-    if dist_dir.exists():
-        shutil.rmtree(dist_dir)
-    if build_dir.exists():
-        shutil.rmtree(build_dir)
+    for target in [dist_dir, build_dir, python_protobuf_dir, node_protobuf_dir]:
+        if target.exists():
+            shutil.rmtree(target)
+    for timestamp_file in [node_timestamp_file, node_lint_timestamp_file, python_lint_timestamp_file]:
+        timestamp_file.unlink(missing_ok=True)
 
 
 @task
-def protobuf_python(c):
-    gendir = root_dir / "Browser" / "generated"
-    if not gendir.exists():
-        gendir.mkdir()
-        init_path = gendir / "__init__.py"
-        c.run(f"touch {init_path}")
+def protobuf(c):
+    if not python_protobuf_dir.exists():
+        python_protobuf_dir.mkdir()
+        c.run(f"touch {python_protobuf_dir / '__init__.py'}")
+    if not node_protobuf_dir.exists():
+        node_protobuf_dir.mkdir()
+    gen_timestamp_file = python_protobuf_dir / ".generated"
+    if _sources_changed(proto_sources, gen_timestamp_file):
+        _python_protobuf_gen(c)
+        _node_protobuf_gen(c)
+        gen_timestamp_file.touch()
+    else:
+        print("no changes in .proto files, skipping protobuf build")
+
+
+def _python_protobuf_gen(c):
     c.run(
-        "python -m grpc_tools.protoc -I protobuf --python_out=Browser/generated --grpc_python_out=Browser/generated --mypy_out=Browser/generated protobuf/*.proto"
+        f"python -m grpc_tools.protoc -I protobuf --python_out=Browser/generated --grpc_python_out={python_protobuf_dir} --mypy_out={python_protobuf_dir} protobuf/*.proto"
     )
-    genfile = gendir / "playwright_pb2_grpc.py"
+    genfile = python_protobuf_dir / "playwright_pb2_grpc.py"
     content = (
         open(genfile)
         .read()
@@ -53,17 +71,13 @@ def protobuf_python(c):
         outfile.write(content)
 
 
-@task
-def protobuf_node(c):
-    gendir = root_dir / "node" / "playwright-wrapper" / "generated"
-    if not gendir.exists():
-        gendir.mkdir()
+def _node_protobuf_gen(c):
     protoc_plugin = root_dir / "node_modules" / ".bin" / "grpc_tools_node_protoc_plugin"
     protoc_ts_plugin = root_dir / "node_modules" / ".bin" / "protoc-gen-ts"
     c.run(
         f"yarn run grpc_tools_node_protoc \
-		--js_out=import_style=commonjs,binary:{gendir} \
-		--grpc_out={gendir} \
+		--js_out=import_style=commonjs,binary:{node_protobuf_dir} \
+		--grpc_out={node_protobuf_dir} \
 		--plugin=protoc-gen-grpc={protoc_plugin} \
 		-I ./protobuf \
 		protobuf/*.proto"
@@ -71,25 +85,32 @@ def protobuf_node(c):
     c.run(
         f"yarn run grpc_tools_node_protoc \
 		--plugin=protoc-gen-ts={protoc_ts_plugin} \
-		--ts_out={gendir} \
+		--ts_out={node_protobuf_dir} \
 		-I ./protobuf \
 		protobuf/*.proto"
     )
 
 
-@task(protobuf_python, protobuf_node)
-def protobuf(c):
-    pass
-
-
-@task
+@task(protobuf)
 def node_build(c):
-    c.run("yarn build")
+    if _sources_changed(node_dir.glob("**/*.ts"), node_timestamp_file):
+        c.run("yarn build")
+        node_timestamp_file.touch()
+    else:
+        print("no changes in .ts files, skipping node build")
 
 
 @task(protobuf, node_build)
 def build(c):
     c.run("python -m Browser.gen_stub")
+
+
+def _sources_changed(source_files, timestamp_file):
+    if timestamp_file.exists():
+        last_built = timestamp_file.lstat().st_mtime
+        src_last_modified = [f.lstat().st_mtime for f in source_files]
+        return not all([last_built >= modified for modified in src_last_modified])
+    return True
 
 
 @task(build)
@@ -148,15 +169,24 @@ def _run_robot(extra_args=None):
 
 @task
 def lint_python(c):
-    c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
-    c.run("black --config Browser/pyproject.toml Browser/")
-    c.run("flake8 --config Browser/.flake8 Browser/ utest/")
-    c.run("isort Browser/")
+    all_py_sources = list(python_src_dir.glob("**/*.py")) + list((root_dir / "utest").glob("**/*.py"))
+    if _sources_changed(all_py_sources , python_lint_timestamp_file):
+        c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
+        c.run("black --config Browser/pyproject.toml Browser/")
+        c.run("flake8 --config Browser/.flake8 Browser/ utest/")
+        c.run("isort Browser/")
+        python_lint_timestamp_file.touch()
+    else:
+        print("no changes in .py files, skipping python lint")
 
 
 @task
 def lint_node(c):
-    c.run("yarn run lint")
+    if _sources_changed(node_dir.glob("**/*.ts"), node_lint_timestamp_file):
+        c.run("yarn run lint")
+        node_lint_timestamp_file.touch()
+    else:
+        print("no changes in .ts files, skipping node lint")
 
 
 @task
