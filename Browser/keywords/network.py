@@ -128,6 +128,8 @@ class Network(LibraryComponent):
 
         """
         with self.playwright.grpc_channel() as stub:
+            if not timeout:
+                timeout = self.library.playwright.timeout
             response = stub.WaitUntilNetworkIsIdle(
                 Request().Timeout(timeout=timestr_to_millisecs(timeout))
             )
