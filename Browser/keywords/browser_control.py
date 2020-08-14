@@ -30,7 +30,8 @@ class Control(LibraryComponent):
     def go_to(self, url: str):
         """Navigates to the given ``url``.
 
-        ``url`` <str> URL to be navigated to."""
+        ``url`` <str> URL to be navigated to. **Required**
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(Request().Url(url=url))
             logger.info(response.log)
@@ -49,7 +50,7 @@ class Control(LibraryComponent):
 
     @keyword
     def take_screenshot(self, filename: str = "", selector: str = ""):
-        """Takes screenshot of the current window and saves it to ``path``.
+        """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
         ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output directory.
         String ``{index}`` in path will be replaced with a rolling number. Use this to not override filenames.
@@ -75,7 +76,7 @@ class Control(LibraryComponent):
     def set_timeout(self, timeout: str):
         """Sets the timeout used by most input and getter keywords.
 
-        ``timeout`` <str> Timeout of it is for current playwright context.
+        ``timeout`` <str> Timeout of it is for current playwright context. **Required**
         """
         self.library.playwright.timeout = timeout
         parsed_timeout = timestr_to_millisecs(timeout)
@@ -87,7 +88,7 @@ class Control(LibraryComponent):
     def add_style_tag(self, content: str):
         """Adds a <style type="text/css"> tag with the content.
 
-        ``content`` <str> Raw CSS content to be injected into frame.
+        ``content`` <str> Raw CSS content to be injected into frame. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))
@@ -107,9 +108,9 @@ class Control(LibraryComponent):
         so you should set the viewport size before navigating to
         the page with `New Context` before opening the page itself.
 
-        ``width`` <int> Sets the width size
+        ``width`` <int> Sets the width size. **Required**
 
-        ``height`` <int> Sets the heigth size
+        ``height`` <int> Sets the heigth size. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetViewportSize(
@@ -121,6 +122,8 @@ class Control(LibraryComponent):
     def set_offline(self, offline: bool = True):
         """ Toggles current Context's offline emulation.
 
+        ``offline`` <bool> Toggles the offline mode. Set to False to switch back
+        to online mode. Defaults to True.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetOffline(Request().Bool(value=offline))

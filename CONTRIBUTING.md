@@ -13,60 +13,50 @@ These are the directories containing source code and tests:
 
 ## Development environment
 
-Install Python, nodejs and yarn. Make sure you have `make` available.
+Install Python, nodejs and yarn.
 - https://www.python.org/downloads/
 - https://nodejs.org/
 - https://classic.yarnpkg.com/en/docs/install
 
-Setup development environment with `make dev-env`.
-This creates a Python virtualenv in .venv directory, and install both Python and
-nodejs dependencies.
+Create a Python virtualenv e.g. with https://docs.python.org/3/library/venv.html.
+The minimum Python version is 3.8.
+[Invoke](http://www.pyinvoke.org/index.html) is used as a task runner / build tool.
 
-To update the dependencies use either `make dev-env` to update all or
-alternatively `make .venv` or `make node-deps` to update only Python or nodejs
-dependencies, respectively.
+Activate your virtualenv and install `invoke` with
 
-Make sure to run `source .venv/bin/activate` to activate the correct virtualenv.
+  > pip install invoke
 
-Run `make build` or `yarn build` to build the Typescript code. Also run `make build`
-after changes to the protocol (protos/playwright.proto) to re-generate protobuffer code.
+Other dependencies can be installed/updated with `inv deps`. This command installs and updated both Python and nodejs dependecies.
 
-### Development in Windows
-
-Install [Chocolatey](https://chocolatey.org/) and then install development tools with
-`choco install sed make`.
-
-After that, the development workflow should work as described in the previous chapter.
-The only difference is that the virtualenv needs to be activated by running
-`.venv\Scripts\activate` in the command prompt.
+Run `inv -l` to get list of current build commands.
 
 ## Testing
 There are both unit tests written with pytest and acceptance test written with
-Robot Framework. These can be run manually with `make utest` and `make atest`.
-To run continuously pytests in a watch mode `make utest-watch`.
-To rerun failed tests you can use `make test-failed` The tests are also executed in a prepush hook.
+Robot Framework. These can be run manually with `inv utest` and `inv atest`.
+To run continuously pytests in a watch mode `inv utest-watch`.
+To rerun failed tests you can use `inv atest-failed` The tests are also executed in a prepush hook.
 
 ## Running tests in docker container
 
 Docker container builds a clean install package. This can be used to check that a builded package works correctly in a clean environment without development dependencies.
 
-1. Build the container `make docker`
-2. Run tests mounted from host machine `make docker-test`.
+1. Build the container `inv docker`
+2. Run tests mounted from host machine `inv docker-test`.
 3. See results in `atest/output`
 
 ## Releasing
-1. Ensure generated code and types are up to date with `make build`
+1. Ensure generated code and types are up to date with `inv build`
 2. Ensure tests and linting pass on CI
 3. Check that you have permissions to release on Github and PyPi
-4. Run `make version VERSION=<new_version>` to update the version information to both Python and Node components.
-5. Use `make release` to create and release artifacts and upload to PyPi
+4. Run `inv <new_version>` to update the version information to both Python and Node components.
+5. Use `inv release` to create and release artifacts and upload to PyPi
 6. Create Github release
 
 ## Code style
 Python code style is enforced with flake8 and black. These are executed in a
-precommit hook, but can also be invoked manually with `make lint-python`.
+precommit hook, but can also be invoked manually with `inv lint-python`.
 
-JS / TS code style is enforced with eslint. Lints are run in precommit hooks, but can be run manually with `make lint-node`.
+JS / TS code style is enforced with eslint. Lints are run in precommit hooks, but can be run manually with `inv lint-node`.
 
 ## Architecture
 

@@ -356,19 +356,19 @@ class Interaction(LibraryComponent):
         clickCount: int = 1,
         delay: int = 0,
     ):
-        """ Click or hold a mouse button down.
+        """ Click, hold a mouse button down or release it. Moving the mouse between holding down
+        and releasing it for example is possible.
 
-            ``action`` <click|up|down>
+            ``action`` <click|up|down> Determines if it is a mouseclick, holding down a key or releasing it.
 
-            ``x`` <int>
-
-            ``y`` <int>
+            ``x`` <int> and ``y`` <int> Coordinates for a click only. Defaults to None.
+            **Required** if action is a click.
 
             ``button`` <left|right|middle> Defaults to ``left`` if invalid.
 
             ``clickCount`` <int> Deterine how often shall be clicked. Defaults to 1.
 
-            ``delay`` <int> Delay can only be set if the action is click.
+            ``delay`` <int> Delay in ms between the clicks. Can only be set if the action is click.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {}
@@ -407,9 +407,11 @@ class Interaction(LibraryComponent):
     def mouse_move(self, x: float, y: float, steps: int = 1):
         """ Instead of selectors command mouse with coordinates.
             The Click commands will leave the virtual mouse on the specified coordinates.
-            ``x``
-            ``y``
-            ``steps``
+
+            ``x`` <float> ``y`` <float> are absolute coordinates starting at the top left
+            of the page.
+
+            ``steps`` <int> Number of intermediate steps for the mouse event.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
@@ -418,7 +420,31 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["VirtualKeyboard", "PageContent"])
     def keyboard_key(self, action: KeyAction, key: str):
-        """ Press a keyboard key on the virtual keyboard or set a key up or down
+        """ Press a keyboard key on the virtual keyboard or set a key up or down.
+
+        ``action`` <up|down|press> Determine whether the key should be released,
+        hold or pressed. ``down`` or ``up`` are useful for combinations i.e. with Shift.
+        **Required**
+
+        ``key`` <str> The key to be pressed. An example of valid keys are:
+
+        ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA``- ``KeyZ``, ``Backquote``, ``Minus``,
+        ``Equal``, ``Backslash``, ``Backspace``, ``Tab``, ``Delete``, ``Escape``, ``ArrowDown``,
+        ``End``, ``Enter``, ``Home``, ``Insert``, ``PageDown``, ``PageUp``, ``ArrowRight``, ``ArrowUp``
+        , etc.
+
+        Useful keys for ``down`` and ``up`` for example are:
+
+        ``Shift``, ``Control``, ``Alt``, ``Meta``, ``ShiftLeft``
+
+        Example excecution:
+        | Keyboard Key | press | S         |
+        | Keyboard Key | down  | Shift     |
+        | Keyboard Key | press | ArrowLeft |
+        | Keyboard Key | press | Delete    |
+        | Keyboard Key | up    | Shift     |
+
+        Note: Capital letters don't need to be written by the help of Shift. You can type them in directly.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardKey(
@@ -428,14 +454,19 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["VirtualKeyboard", "PageContent"])
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
-        """ Input text into page with virtual keyboard, inserting with
-            ``action``
-                ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
-                ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
+        """ Input text into page with virtual keyboard.
 
-                To press a special key, like Control or ArrowDown, use keyboard.press.
+            ``action`` <insertText|type> **Required**
 
-            NOTE Modifier keys DO NOT effect these methods. For testing modifier effects use single key presses with ``Keyboard Key  press``
+                - ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
+
+                - ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
+
+            ``input`` <str> The inputstring to be typed. No special keys possible. **Required**
+
+            Note: To press a special key, like Control or ArrowDown, use keyboard.press.
+            Modifier keys DO NOT effect these methods. For testing modifier effects use single key
+            presses with ``Keyboard Key  press``
 
         """
         with self.playwright.grpc_channel() as stub:
