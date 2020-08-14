@@ -130,12 +130,12 @@ jobs:
           path: node/dynamic-test-app
       - name: Build image
         run: |
-          make docker-base
-          make docker-builder
+          inv docker-base
+          inv docker-builder
       - name: Test image
         run: |
           sudo chmod 777 atest
-          make docker-test
+          inv docker-test
       - uses: actions/upload-artifact@v1
         if: ${{ always() }}
         with:

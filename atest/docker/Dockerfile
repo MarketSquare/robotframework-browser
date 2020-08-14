@@ -30,7 +30,7 @@ FROM playwright-focal AS CleanInstallTester
 # Add pip
 USER root
 RUN apt-get update
-RUN apt-get install -y python3-pip
+RUN apt-get install -y python3-pip python-invoke
 USER pwuser
 
 # Install pabot to support atest
