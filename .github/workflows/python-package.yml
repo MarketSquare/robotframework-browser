@@ -120,6 +120,8 @@ jobs:
           name: Clean install results
           path: atest/output
   docker-image:
+    # This is necessary because we need the demo application artifacts
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
