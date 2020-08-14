@@ -130,6 +130,10 @@ jobs:
         with:
           name: demoapp
           path: node/dynamic-test-app
+      - name: Install Invoke build tool
+        run: |
+          apt-get update -y
+          apt-get install -y python-invoke
       - name: Build image
         run: |
           inv docker-base
