@@ -98,10 +98,10 @@ class Network(LibraryComponent):
     def wait_for_request(self, matcher: str = "", timeout: str = ""):
         """ Waits for request matching matcher to be made.
 
-        ``matcher``: Request URL string, JavaScript regex or JavaScript function to match request by.
+        ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout``: (optional) uses default timeout if not set.
+        ``timeout`` <str> Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
 
         """
         return self._wait_for_http("Request", matcher, timeout)
@@ -110,10 +110,10 @@ class Network(LibraryComponent):
     def wait_for_response(self, matcher: str = "", timeout: str = ""):
         """ Waits for response matching matcher and returns python dict with contents.
 
-        ``matcher``: Request URL string, JavaScript regex or JavaScript function to match request by.
+        ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout``: (optional) uses default timeout if not set.
+        ``timeout`` <str> Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
 
         """
         return self._wait_for_http("Response", matcher, timeout)
@@ -124,7 +124,7 @@ class Network(LibraryComponent):
 
             Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
 
-        ``timeout``: (optional) uses default timeout if not set.
+        ``timeout`` <str> Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
 
         """
         with self.playwright.grpc_channel() as stub:
