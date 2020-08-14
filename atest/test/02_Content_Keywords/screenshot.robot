@@ -33,3 +33,10 @@ Test screenshotting without path
     ${path}=    Take Screenshot
     Should Exist    ${path}
     Remove File    ${path}
+
+Test screenshot filename incrementation
+    [Teardown]    Remove Screenshot Files
+    Take Screenshot    ${TestScreenshot}_{index}
+    Take Screenshot    ${TestScreenshot}_{index}
+    Should Exist    ${TestScreenshot}_1.png
+    Should Exist    ${TestScreenshot}_2.png
