@@ -71,7 +71,7 @@ jobs:
     - uses: actions/upload-artifact@v1
       with:
         name: demoapp
-        path: node/dynamic-test-app/dist
+        path: node/dynamic-test-app
   test-install:
     needs: build
     runs-on: ubuntu-latest
@@ -89,7 +89,7 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: demoapp
-          path: node/dynamic-test-app/dist
+          path: node/dynamic-test-app
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
@@ -124,6 +124,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Download package for install testing
+        uses: actions/download-artifact@v1
+        with:
+          name: demoapp
+          path: node/dynamic-test-app
       - name: Build image
         run: |
           make docker-base
