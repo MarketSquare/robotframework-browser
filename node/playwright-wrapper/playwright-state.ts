@@ -302,7 +302,7 @@ export async function newPage(
     browserState.page = page;
     const url = call.request.getUrl() || 'about:blank';
     await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
-    const response = intResponse(page.index);
+    const response = intResponse(page.index, 'New page opeened.');
     response.setLog('Succesfully initialized new page object and opened url: ' + url);
     callback(null, response);
 }
@@ -319,7 +319,7 @@ export async function newContext(
         const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser);
         browserState.context = context;
 
-        const response = intResponse(context.index);
+        const response = intResponse(context.index, 'New context opened');
         response.setLog('Succesfully created context with options: ' + JSON.stringify(options));
         callback(null, response);
     } catch (error) {
@@ -340,7 +340,7 @@ export async function newBrowser(
         const options = JSON.parse(call.request.getRawoptions());
         const [browser, name] = await _newBrowser(browserType, headless, options);
         const browserState = openBrowsers.addBrowser(name, browser);
-        const response = intResponse(browserState.id);
+        const response = intResponse(browserState.id, 'New browser opened, with options: ' + options);
         response.setLog('Succesfully created browser with options: ' + JSON.stringify(options));
         callback(null, response);
     } catch (error) {
@@ -428,8 +428,7 @@ export async function switchPage(
     const index = call.request.getIndex();
     const previous = browserState.page?.index || 0;
     await _switchPage(index, browserState, true).catch((error) => callback(error, null));
-    const response = intResponse(previous);
-    response.setLog('Succesfully changed active page');
+    const response = intResponse(previous, 'Succesfully changed active page');
     callback(null, response);
 }
 
@@ -445,8 +444,7 @@ export async function switchContext(
     await _switchPage(browserState.page?.index || 0, browserState, false).catch((error) => {
         logger.error(error);
     });
-    const response = intResponse(previous);
-    response.setLog('Succesfully changed active context');
+    const response = intResponse(previous, 'Succesfully changed active context');
     callback(null, response);
 }
 
@@ -458,8 +456,7 @@ export async function switchBrowser(
     const index = call.request.getIndex();
     const previous = openBrowsers.activeBrowser;
     openBrowsers.switchTo(index, callback);
-    const response = intResponse(previous?.id || -1);
-    response.setLog('Succesfully changed active browser');
+    const response = intResponse(previous?.id || -1, 'Succesfully changed active browser');
     callback(null, response);
 }
 
