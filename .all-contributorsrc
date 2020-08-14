@@ -157,6 +157,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "gdroes",
+      "name": "gdroes",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/6716450?v=4",
+      "profile": "https://github.com/gdroes",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
