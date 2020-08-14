@@ -49,3 +49,7 @@ Submit Credentials
 Welcome Page Should Be Open
     Get Url    ==    ${WELCOME_URL}
     Get Title    ==    Welcome Page
+
+Remove Screenshot Files
+    Remove File    ${TestScreenshot}_1.png
+    Remove File    ${TestScreenshot}_2.png
