@@ -9,7 +9,8 @@ from ..assertion_engine import (
     int_dict_verify_assertion,
     int_str_verify_assertion,
     list_verify_assertion,
-    verify_assertion, with_assertions,
+    verify_assertion,
+    with_assertions,
 )
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
