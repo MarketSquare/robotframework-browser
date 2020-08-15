@@ -4,6 +4,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robot.utils import timestr_to_secs  # type: ignore
 
 from .utils import AssertionOperator, is_truthy
 
@@ -71,12 +72,13 @@ def verify_assertion(
 
 def with_assertions(func):
     @functools.wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapped(self, *args, **kwargs):
         start = time.time()
         err: Optional[AssertionVerificationError] = None
-        while time.time() - start < 0.3:
+        timeout = timestr_to_secs(self.timeout)
+        while time.time() - start < timeout:
             try:
-                return func(*args, **kwargs)
+                return func(self, *args, **kwargs)
             except AssertionVerificationError as e:
                 err = e
         raise err

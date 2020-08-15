@@ -22,19 +22,19 @@ def test_contains():
     _validate_operator(AssertionOperator["*="], "actual", "tual", "nope")
 
 
+class FakeBrowser:
+    timeout = "0.3s"
+
+    @with_assertions
+    def is_three(self, value):
+        verify_assertion(value, AssertionOperator['=='], 3)
+
+
 def test_with_assertions():
-    @with_assertions
-    def keyword():
-        verify_assertion(3, AssertionOperator['=='], 3)
-    keyword()
-
-
-def test_negative_with_assertions():
-    @with_assertions
-    def keyword():
-        verify_assertion(3, AssertionOperator['=='], 2)
+    fb = FakeBrowser()
+    fb.is_three(3)
     with pytest.raises(AssertionError):
-        keyword()
+        fb.is_three(2)
 
 
 def test_greater():
