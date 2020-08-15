@@ -11,7 +11,7 @@ Open PDF in another tab
 Open html in another tab
     New Page    ${WELCOME_URL}
     Click    text=Open html
-    Switch Page  ${1}
-    Get Title   ==   Error Page
+    Switch Page    ${1}
+    Get Title    ==    Error Page
     Close Page
-    Get Tilte   ==   Welcome Page
+    Get Tilte    ==    Welcome Page
