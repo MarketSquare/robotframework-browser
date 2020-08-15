@@ -24,10 +24,17 @@ def test_contains():
 
 class FakeBrowser:
     timeout = "0.3s"
+    counter = 1
 
     @with_assertions
     def is_three(self, value):
         verify_assertion(value, AssertionOperator['=='], 3)
+
+    @with_assertions
+    def second_run_success(self):
+        current = self.counter
+        self.counter += 1
+        verify_assertion(current, AssertionOperator['=='], 2)
 
 
 def test_with_assertions():
@@ -35,6 +42,7 @@ def test_with_assertions():
     fb.is_three(3)
     with pytest.raises(AssertionError):
         fb.is_three(2)
+    fb.second_run_success()
 
 
 def test_greater():
