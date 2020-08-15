@@ -128,7 +128,7 @@ class Browser(DynamicCore):
     | ``evaluate`` or ``then``                    | use Python expression and return it. Access to actual with ``value`` |
 
     The expected assertion value can be any valid robot value, and the keywords will provide an error
-    message if the assertion fails.
+    message if the assertion fails. Assertions will retry until ``timeout`` has expired if they do not directly pass.
 
     == The 'then' or 'evaluate' closure ==
 
