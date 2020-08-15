@@ -14,4 +14,4 @@ Open html in another tab
     Switch Page    ${1}
     Get Title    ==    Error Page
     Close Page
-    Get Tilte    ==    Welcome Page
+    Get Title    ==    Welcome Page
