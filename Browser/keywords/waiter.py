@@ -62,7 +62,12 @@ class Waiter(LibraryComponent):
         }
 
         with self.playwright.grpc_channel() as stub:
-            if state in [ElementState.attached, ElementState.detached, ElementState.visible, ElementState.hidden]:
+            if state in [
+                ElementState.attached,
+                ElementState.detached,
+                ElementState.visible,
+                ElementState.hidden,
+            ]:
                 options: Dict[str, object] = {"state": state.name}
                 if timeout:
                     timeout_ms = timestr_to_millisecs(timeout)
@@ -75,9 +80,7 @@ class Waiter(LibraryComponent):
                 )
                 logger.info(response.log)
             else:
-                self.wait_for_function(
-                    funct[state], selector=selector, timeout=timeout
-                )
+                self.wait_for_function(funct[state], selector=selector, timeout=timeout)
 
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_function(
