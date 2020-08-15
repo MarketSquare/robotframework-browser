@@ -15,7 +15,7 @@ class Promises(LibraryComponent):
 
     @keyword(tags=["Wait"])
     def promise_to(self, kw: str, *args):
-        """ *EXPERIMENTAL* *WORK IN PROGRESS*
+        """
         Wrap a Browser library keyword and make it a promise.
         Returns that promise and executes the keyword on background.
 
@@ -42,7 +42,6 @@ class Promises(LibraryComponent):
     @keyword(tags=["Wait"])
     def wait_for(self, *promises: Future):
         """
-        *EXPERIMENTAL* *WORK IN PROGRESS*
         Waits for promises to finish and returns results from them.
         Returns one result if one promise waited. Otherwise returns an array of results.
         If one fails, then this keyword will fail.
@@ -62,7 +61,6 @@ class Promises(LibraryComponent):
     @keyword(tags=["Wait"])
     def wait_for_all_promises(self):
         """
-        *EXPERIMENTAL* *WORK IN PROGRESS*
         Waits for all promises to finish.
         If one fails, then this keyword will fail.
         """
