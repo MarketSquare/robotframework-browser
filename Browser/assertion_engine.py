@@ -50,10 +50,6 @@ handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
 T = TypeVar("T")
 
 
-class AssertionVerificationError(BaseException):
-    pass
-
-
 def verify_assertion(
     value: T, operator: Optional[AssertionOperator], expected: Any, message=""
 ) -> Any:
@@ -66,19 +62,19 @@ def verify_assertion(
         raise RuntimeError(f"{message} `{operator}` is not a valid assertion operator")
     validator, text = handler
     if not validator(value, expected):
-        raise AssertionVerificationError(f"{message} `{value}` {text} `{expected}`")
+        raise AssertionError(f"{message} `{value}` {text} `{expected}`")
     return value
 
 
 @wrapt.decorator
 def with_assertions(wrapped, instance, args, kwargs):
     start = time.time()
-    err: Optional[AssertionVerificationError] = None
+    err: Optional[AssertionError] = None
     timeout = timestr_to_secs(instance.timeout)
     while time.time() - start < timeout:
         try:
             return wrapped(*args, **kwargs)
-        except AssertionVerificationError as e:
+        except AssertionError as e:
             err = e
             if timeout - (time.time() - start) > 0.1:
                 logger.debug("Verification failure - retrying")
