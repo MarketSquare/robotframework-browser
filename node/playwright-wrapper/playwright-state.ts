@@ -108,12 +108,12 @@ export class PlaywrightState {
     }
 
     public async getCatalog() {
-        const pageToContents = async (page: IndexedPage) => {
+        const pageToContents = async (page: Page, index: number) => {
             return {
                 type: 'page',
-                title: await page.p.title(),
-                url: page.p.url(),
-                id: page.index,
+                title: await page.title(),
+                url: page.url(),
+                id: index,
             };
         };
 
@@ -121,7 +121,7 @@ export class PlaywrightState {
             return {
                 type: 'context',
                 id: context.index,
-                pages: await Promise.all(context.pageStack.map(pageToContents)),
+                pages: await Promise.all(context.c.pages().map(pageToContents)),
             };
         };
 
