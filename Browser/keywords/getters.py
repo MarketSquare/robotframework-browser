@@ -67,7 +67,8 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "State "
             )
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @with_assertions
     def get_page_source(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -163,7 +164,6 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
-    @with_assertions
     def get_textfield_value(
         self,
         selector: str,
@@ -311,8 +311,7 @@ class Getters(LibraryComponent):
                 f"Element count for selector `{selector}` is",
             )
 
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
-    @with_assertions
+    @keyword(tags=["Getter", "BrowserControl"])
     def get_browser_catalog(self):
         """ Returns all browsers, open contexts in them and open pages in these contexts.
 
@@ -442,8 +441,7 @@ class Getters(LibraryComponent):
                     f"Style value for {key} is ",
                 )
 
-    @keyword(tags=["Getter", "Assertion"])
-    @with_assertions
+    @keyword(tags=["Getter"])
     def get_boundingbox(self, selector: str, *keys: BoundingBoxFields):
         """ Gets elements size and location as an object {x: int, y: int, width: int, height: int}.
 
