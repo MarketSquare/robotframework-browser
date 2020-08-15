@@ -9,7 +9,7 @@ from ..assertion_engine import (
     int_dict_verify_assertion,
     int_str_verify_assertion,
     list_verify_assertion,
-    verify_assertion,
+    verify_assertion, with_assertions,
 )
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -19,6 +19,7 @@ from ..utils.data_types import AssertionOperator, BoundingBoxFields, SelectAttri
 
 class Getters(LibraryComponent):
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @with_assertions
     def get_url(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -39,6 +40,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @with_assertions
     def get_page_state(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -85,6 +87,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertions
     def get_title(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -105,6 +108,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertions
     def get_text(
         self,
         selector: str,
@@ -128,6 +132,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertions
     def get_attribute(
         self,
         selector: str,
@@ -157,6 +162,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertions
     def get_textfield_value(
         self,
         selector: str,
@@ -176,6 +182,7 @@ class Getters(LibraryComponent):
         )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertions
     def get_selected_options(
         self,
         selector: str,
@@ -232,6 +239,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertions
     def get_checkbox_state(
         self,
         selector: str,
@@ -271,6 +279,7 @@ class Getters(LibraryComponent):
         )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertions
     def get_element_count(
         self,
         selector: str,
@@ -302,6 +311,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @with_assertions
     def get_browser_catalog(self):
         """ Returns all browsers, open contexts in them and open pages in these contexts.
 
@@ -348,6 +358,7 @@ class Getters(LibraryComponent):
             return parsed
 
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @with_assertions
     def get_viewport_size(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -393,6 +404,7 @@ class Getters(LibraryComponent):
             return data
 
     @keyword(tags=["Getter", "Assertion"])
+    @with_assertions
     def get_style(
         self,
         selector: str,
@@ -430,6 +442,7 @@ class Getters(LibraryComponent):
                 )
 
     @keyword(tags=["Getter", "Assertion"])
+    @with_assertions
     def get_boundingbox(self, selector: str, *keys: BoundingBoxFields):
         """ Gets elements size and location as an object {x: int, y: int, width: int, height: int}.
 

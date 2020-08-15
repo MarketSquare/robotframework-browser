@@ -1,8 +1,8 @@
-import functools
 import re
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
 
+import wrapt  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robot.utils import timestr_to_secs  # type: ignore
 
@@ -70,20 +70,17 @@ def verify_assertion(
     return value
 
 
-def with_assertions(func):
-    @functools.wraps(func)
-    def wrapped(self, *args, **kwargs):
-        start = time.time()
-        err: Optional[AssertionVerificationError] = None
-        timeout = timestr_to_secs(self.timeout)
-        while time.time() - start < timeout:
-            try:
-                return func(self, *args, **kwargs)
-            except AssertionVerificationError as e:
-                err = e
-        raise err
-
-    return wrapped
+@wrapt.decorator
+def with_assertions(wrapped, instance, args, kwargs):
+    start = time.time()
+    err: Optional[AssertionVerificationError] = None
+    timeout = timestr_to_secs(instance.timeout)
+    while time.time() - start < timeout:
+        try:
+            return wrapped(*args, **kwargs)
+        except AssertionVerificationError as e:
+            err = e
+    raise err
 
 
 def int_str_verify_assertion(
