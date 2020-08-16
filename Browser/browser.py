@@ -1,6 +1,7 @@
 import os
 import re
-from typing import List
+from concurrent.futures._base import Future
+from typing import List, Set
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
@@ -191,7 +192,7 @@ class Browser(DynamicCore):
         self.timeout = timeout
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
-        self.promises = Promises(self)
+        self._unresolved_promises: Set[Future] = set()
         self.getters = Getters(self)
         self.playwright_state = PlaywrightState(self)
         libraries = [
@@ -203,7 +204,7 @@ class Browser(DynamicCore):
             self.getters,
             self.playwright_state,
             Network(self),
-            self.promises,
+            Promises(self),
             Waiter(self),
             WebAppState(self),
         ]
@@ -227,7 +228,7 @@ class Browser(DynamicCore):
             self._execution_stack.append(self.getters.get_browser_catalog())
 
     def _end_test(self, name, attrs):
-        if len(self.promises._unresolved_promises) > 0:
+        if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
