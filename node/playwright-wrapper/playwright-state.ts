@@ -1,9 +1,9 @@
-import {Browser, BrowserContext, chromium, ElementHandle, firefox, Page, webkit} from 'playwright';
-import {sendUnaryData, ServerUnaryCall} from 'grpc';
+import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
+import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import {Request, Response} from './generated/playwright_pb';
-import {emptyWithLog, intResponse} from './response-util';
-import {exists, invokeOnPage} from './playwirght-invoke';
+import { Request, Response } from './generated/playwright_pb';
+import { emptyWithLog, intResponse } from './response-util';
+import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
 
