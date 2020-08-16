@@ -321,10 +321,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         return evaluation.highlightElements(call, callback, this.state);
     }
 
-    async download(
-        call: ServerUnaryCall<Request.Url>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
+    async download(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.String>): Promise<void> {
         return evaluation.download(call, callback, this.state);
     }
 

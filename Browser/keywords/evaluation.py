@@ -71,10 +71,6 @@ class Evaluation(LibraryComponent):
         Download given url content and return downloaded file path
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.Download(
-                Request().Url(
-                    url=url
-                )
-            )
+            response = stub.Download(Request().Url(url=url))
             logger.info(response.log)
             return response.body
