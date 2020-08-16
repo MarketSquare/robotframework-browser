@@ -1,11 +1,12 @@
-import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
+import {Browser, BrowserContext, chromium, ElementHandle, firefox, Page, webkit} from 'playwright';
+import {sendUnaryData, ServerUnaryCall} from 'grpc';
 
-import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, intResponse } from './response-util';
-import { exists, invokeOnPage } from './playwirght-invoke';
+import {Request, Response} from './generated/playwright_pb';
+import {emptyWithLog, intResponse} from './response-util';
+import {exists, invokeOnPage} from './playwirght-invoke';
 
 import * as pino from 'pino';
+
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 function lastItem<T>(array: T[]): T | undefined {
@@ -48,7 +49,7 @@ async function _newBrowserContext(
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const index = browser.contexts().length - 1;
-    return { index: index, c: context, pageStack: [] };
+    return { index: index, c: context, pageStack: [], options: options };
 }
 
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
@@ -175,6 +176,7 @@ type IndexedContext = {
     c: BrowserContext;
     index: number;
     pageStack: IndexedPage[];
+    options?: Record<string, unknown>;
 };
 
 type IndexedPage = {
@@ -216,6 +218,10 @@ export class BrowserState {
     }
     set context(newContext: IndexedContext | undefined) {
         if (newContext !== undefined) {
+            if (newContext.options === undefined) {
+                // copy known options
+                newContext.options = this._contextStack.find((c) => c.c === newContext.c)?.options;
+            }
             // prevent duplicates
             this._contextStack = this._contextStack.filter((c) => c.c !== newContext.c);
             this._contextStack.push(newContext);
@@ -413,8 +419,7 @@ async function _switchContext(index: number, browserState: BrowserState) {
             .map((p) => p.url());
 
         const message = `No context for index ${index}. Open contexts: ${mapped}`;
-        const error = new Error(message);
-        throw error;
+        throw new Error(message);
     }
 }
 

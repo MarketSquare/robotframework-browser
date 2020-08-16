@@ -159,6 +159,20 @@ export async function download(
     callback: sendUnaryData<Response.String>,
     state: PlaywrightState,
 ) {
+    const browserState = state.activeBrowser;
+    if (browserState === undefined) {
+        callback(Error('Download requires an active browser'), stringResponse('', 'No browser is active'));
+        return;
+    }
+    const context = browserState.context;
+    if (context === undefined) {
+        callback(Error('Download requires an active context'), stringResponse('', 'No context is active'));
+        return;
+    }
+    if (!(context.options?.acceptDownloads ?? false)) {
+        callback(Error('Context acceptDownloads is false'), stringResponse('', 'Context does not allow downloads'));
+        return;
+    }
     const page = state.getActivePage();
     if (page === undefined) {
         callback(Error('Download requires an active page'), stringResponse('', 'No page is active'));
