@@ -193,7 +193,6 @@ class Browser(DynamicCore):
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
         self._unresolved_promises: Set[Future] = set()
-        self.getters = Getters(self)
         self.playwright_state = PlaywrightState(self)
         libraries = [
             Control(self),
@@ -201,7 +200,7 @@ class Browser(DynamicCore):
             Devices(self),
             Evaluation(self),
             Interaction(self),
-            self.getters,
+            Getters(self),
             self.playwright_state,
             Network(self),
             Promises(self),
@@ -221,11 +220,11 @@ class Browser(DynamicCore):
 
     def _start_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
-            self._execution_stack.append(self.getters.get_browser_catalog())
+            self._execution_stack.append(self.get_browser_catalog())
 
     def _start_test(self, name, attrs):
         if self._auto_closing_level == AutoClosingLevel.TEST:
-            self._execution_stack.append(self.getters.get_browser_catalog())
+            self._execution_stack.append(self.get_browser_catalog())
 
     def _end_test(self, name, attrs):
         if len(self._unresolved_promises) > 0:
@@ -242,7 +241,7 @@ class Browser(DynamicCore):
 
     def _prune_execution_stack(self, catalog_before):
         # WIP CODE BEGINS
-        catalog_after = self.getters.get_browser_catalog()
+        catalog_after = self.get_browser_catalog()
         ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
         ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
         new_ctx_ids = [c for c in ctx_after_ids if c not in ctx_before_ids]
