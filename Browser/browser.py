@@ -191,13 +191,11 @@ class Browser(DynamicCore):
         self.timeout = timeout
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
-        # This is more explicit than to have all the libraries be referenceable when they don't need it.
-        self.browser_control = Control(self)
         self.promises = Promises(self)
         self.getters = Getters(self)
         self.playwright_state = PlaywrightState(self)
         libraries = [
-            self.browser_control,
+            Control(self),
             Cookie(self),
             Devices(self),
             Evaluation(self),
@@ -320,7 +318,7 @@ class Browser(DynamicCore):
     def screenshot_on_failure(self, test_name):
         try:
             path = self.failure_screenshot_path(test_name)
-            self.browser_control.take_screenshot(path)
+            self.take_screenshot(path)
         except Exception as err:
             logger.info(f"Was unable to take page screenshot after failure:\n{err}")
 
