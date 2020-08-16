@@ -10,15 +10,17 @@ Open PDF in another tab and download it
     Click    text=Open pdf
     Switch Page    ${1}
     ${url}=    Get Url    should end with    .pdf
-    ${p}=    Promise to    Wait for download
-    Download    ${url}
-    ${path}=    Wait for    ${p}
+    ${path}=   Download    ${url}
     ${actual_size}=    get file size    ${path}
     Should be equal    ${actual_size}    ${32201}
     remove file    ${path}
     Close Page
     Get Url    should end with    welcome.html
     [Teardown]    Close Browser
+
+Download without page fails
+    New Context    acceptDownloads=${TRUE}
+    Run keyword and expect error   Download requires an active page  Download   ${WELCOME_URL}
 
 Open html in another tab
     New Page    ${WELCOME_URL}
@@ -27,3 +29,11 @@ Open html in another tab
     Get Title    ==    Error Page
     Close Page
     Get Title    ==    Welcome Page
+
+Download works also headless
+    New Context    acceptDownloads=${TRUE}
+    New Page    ${WELCOME_URL}
+    ${path}=   Download    ${WELCOME_URL}
+    ${actual_size}=    get file size    ${path}
+    Should be equal    ${actual_size}    ${449}
+    remove file    ${path}

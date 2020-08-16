@@ -159,29 +159,31 @@ export async function download(
     callback: sendUnaryData<Response.String>,
     state: PlaywrightState,
 ) {
+    const page = state.getActivePage();
+    if (page === undefined) {
+        callback(Error('Download requires an active page'), stringResponse('', 'No page is active'));
+        return;
+    }
     const urlString = call.request.getUrl();
     const script = (urlString: string) => {
-        console.log('1. Download script started');
-        console.log(urlString);
         return fetch(urlString)
             .then((resp) => {
-                console.log('2. Download scriptus');
                 return resp.blob();
             })
             .then((blob) => {
-                console.log('3. Download scriptus');
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.style.display = 'none';
                 a.href = url;
-                a.download = '';
+                a.download = urlString;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
-                console.log('4. Download scriptus');
                 return a.download;
             });
     };
-    const result = await state.getActivePage()?.evaluate(script, urlString);
-    callback(null, stringResponse(result ?? '', 'Url content downloaded to a file'));
+    const downloadStarted = page.waitForEvent('download');
+    await page.evaluate(script, urlString);
+    const path = await (await downloadStarted).path();
+    callback(null, stringResponse(path || '', 'Url content downloaded to a file'));
 }
