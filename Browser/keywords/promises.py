@@ -1,5 +1,4 @@
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Set
 
 from robot.api.deco import keyword  # type: ignore
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
@@ -11,7 +10,6 @@ class Promises(LibraryComponent):
     def __init__(self, library):
         LibraryComponent.__init__(self, library)
         self._executor = ThreadPoolExecutor(max_workers=256)
-        self._unresolved_promises: Set[Future] = set()
 
     @keyword(tags=["Wait"])
     def promise_to(self, kw: str, *args):
@@ -36,7 +34,7 @@ class Promises(LibraryComponent):
         named = dict(named)
 
         promise = self._executor.submit(handler.current_handler(), *positional, **named)
-        self._unresolved_promises.add(promise)
+        self.unresolved_promises.add(promise)
         return promise
 
     @keyword(tags=["Wait"])
@@ -53,7 +51,7 @@ class Promises(LibraryComponent):
         | Click        |  \\#delayed_request |                     |            |             |
         | ${body}=     |  Wait For           |  ${promise}         |            |             |
         """
-        self._unresolved_promises -= {*promises}
+        self.unresolved_promises -= {*promises}
         if len(promises) == 1:
             return promises[0].result()
         return [promise.result() for promise in promises]
@@ -64,4 +62,4 @@ class Promises(LibraryComponent):
         Waits for all promises to finish.
         If one fails, then this keyword will fail.
         """
-        self.wait_for(*self._unresolved_promises)
+        self.wait_for(*self.unresolved_promises)

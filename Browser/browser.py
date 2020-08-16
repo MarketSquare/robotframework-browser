@@ -1,6 +1,7 @@
 import os
 import re
-from typing import List
+from concurrent.futures._base import Future
+from typing import List, Set
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
@@ -191,21 +192,18 @@ class Browser(DynamicCore):
         self.timeout = timeout
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
-        # This is more explicit than to have all the libraries be referenceable when they don't need it.
-        self.browser_control = Control(self)
-        self.promises = Promises(self)
-        self.getters = Getters(self)
-        self.playwright_state = PlaywrightState(self)
+        self._unresolved_promises: Set[Future] = set()
+        self._playwright_state = PlaywrightState(self)
         libraries = [
-            self.browser_control,
+            Control(self),
             Cookie(self),
             Devices(self),
             Evaluation(self),
             Interaction(self),
-            self.getters,
-            self.playwright_state,
+            Getters(self),
+            self._playwright_state,
             Network(self),
-            self.promises,
+            Promises(self),
             Waiter(self),
             WebAppState(self),
         ]
@@ -222,14 +220,14 @@ class Browser(DynamicCore):
 
     def _start_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
-            self._execution_stack.append(self.getters.get_browser_catalog())
+            self._execution_stack.append(self.get_browser_catalog())
 
     def _start_test(self, name, attrs):
         if self._auto_closing_level == AutoClosingLevel.TEST:
-            self._execution_stack.append(self.getters.get_browser_catalog())
+            self._execution_stack.append(self.get_browser_catalog())
 
     def _end_test(self, name, attrs):
-        if len(self.promises._unresolved_promises) > 0:
+        if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
@@ -243,13 +241,13 @@ class Browser(DynamicCore):
 
     def _prune_execution_stack(self, catalog_before):
         # WIP CODE BEGINS
-        catalog_after = self.getters.get_browser_catalog()
+        catalog_after = self.get_browser_catalog()
         ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
         ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
         new_ctx_ids = [c for c in ctx_after_ids if c not in ctx_before_ids]
         for ctx_id in new_ctx_ids:
-            self.playwright_state.switch_context(ctx_id)
-            self.playwright_state.close_context()
+            self._playwright_state.switch_context(ctx_id)
+            self._playwright_state.close_context()
         pages_before = [
             (p["id"], c["id"])
             for b in catalog_before
@@ -265,18 +263,18 @@ class Browser(DynamicCore):
         ]
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
-            self.playwright_state.switch_context(ctx_id)
-            self.playwright_state.switch_page(page_id)
-            self.playwright_state.close_page()
+            self._playwright_state.switch_context(ctx_id)
+            self._playwright_state.switch_page(page_id)
+            self._playwright_state.close_page()
         # try to set active page and context back to right place.
         for browser in catalog_after:
             if browser["activeBrowser"]:
                 activeContext = browser.get("activeContext", None)
                 activePage = browser.get("activePage", None)
                 if not new_ctx_ids and activeContext is not None:
-                    self.playwright_state.switch_context(activeContext)
+                    self._playwright_state.switch_context(activeContext)
                     if not (activePage, activeContext) in new_page_ids:
-                        self.playwright_state.switch_page(activePage)
+                        self._playwright_state.switch_page(activePage)
 
     def run_keyword(self, name, args, kwargs=None):
         try:
@@ -320,7 +318,7 @@ class Browser(DynamicCore):
     def screenshot_on_failure(self, test_name):
         try:
             path = self.failure_screenshot_path(test_name)
-            self.browser_control.take_screenshot(path)
+            self.take_screenshot(path)
         except Exception as err:
             logger.info(f"Was unable to take page screenshot after failure:\n{err}")
 
