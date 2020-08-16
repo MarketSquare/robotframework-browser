@@ -10,3 +10,7 @@ isort >= 5.2.2
 wheel>=0.34.2
 robotframework-pabot >= 1.8.1
 twine >= 3.2.0
+
+# Include normal dependencies from requirements.txt. Makes it possible to use
+# requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
+-r requirements.txt

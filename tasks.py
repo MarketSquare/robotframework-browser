@@ -29,7 +29,6 @@ python_lint_timestamp_file = python_src_dir / ".linted"
 def deps(c):
     c.run("pip install -U pip")
     c.run("pip install -r Browser/dev-requirements.txt")
-    c.run("pip install -r Browser/requirements.txt")
     c.run("yarn")
 
 
