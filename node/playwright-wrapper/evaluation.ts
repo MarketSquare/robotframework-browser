@@ -1,5 +1,5 @@
 import { ElementHandle, Page } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
+import {ServerUnaryCall, sendUnaryData, Server} from 'grpc';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -152,4 +152,36 @@ export async function highlightElements(
         clr: color,
     });
     callback(null, emptyWithLog(`Highlighted elements for ${duration}.`));
+}
+
+export async function download(
+    call: ServerUnaryCall<Request.Url>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+) {
+    const urlString = call.request.getUrl();
+    const script = (urlString: string) => {
+        console.log('1. Download script started');
+        console.log(urlString);
+        return fetch(urlString).then(
+            (resp) => {
+                console.log('2. Download scriptus');
+                return resp.blob();
+            })
+            .then((blob) => {
+            console.log('3. Download scriptus');
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            console.log('4. Download scriptus');
+            return a.download;
+        });
+    };
+    const result = await state.getActivePage()?.evaluate(script, urlString);
+    callback(null, stringResponse(result ?? '', 'Url content downloaded to a file'));
 }

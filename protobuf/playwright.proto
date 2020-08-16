@@ -259,6 +259,8 @@ service  Playwright {
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty);
+  /* Download url content */
+  rpc Download(Request.Url) returns (Response.String);
   /* Clicks element specified by selector and options */
   rpc ClickWithOptions(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */

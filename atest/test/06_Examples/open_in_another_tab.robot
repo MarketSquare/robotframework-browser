@@ -1,13 +1,21 @@
 *** Settings ***
 Resource          imports.resource
+Library           OperatingSystem
 
 *** Test Cases ***
-Open PDF in another tab
-    [Setup]    New Browser    headless=${FALSE}
+Open PDF in another tab and download it
+    [Setup]    New Browser    headless=${FALSE}  downloadsPath=${EXECDIR}
+    New Context   acceptDownloads=${TRUE}
     New Page    ${WELCOME_URL}
     Click    text=Open pdf
     Switch Page    ${1}
-    Get Url    should end with    Moving%20Robot%20Framework%20browser%20automation%20to%202020%20(or%202021).pdf
+    ${url}=    Get Url    should end with    .pdf
+    ${p}=      Promise to   Wait for download
+    Download   ${url}
+    ${path}=   Wait for  ${p}
+    ${actual_size}=   get file size   ${path}
+    Should be equal  ${actual_size}   ${32201}
+    remove file  ${path}
     Close Page
     Get Url    should end with    welcome.html
     [Teardown]    Close Browser
