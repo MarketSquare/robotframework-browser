@@ -193,7 +193,7 @@ class Browser(DynamicCore):
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
         self._unresolved_promises: Set[Future] = set()
-        self.playwright_state = PlaywrightState(self)
+        self._playwright_state = PlaywrightState(self)
         libraries = [
             Control(self),
             Cookie(self),
@@ -201,7 +201,7 @@ class Browser(DynamicCore):
             Evaluation(self),
             Interaction(self),
             Getters(self),
-            self.playwright_state,
+            self._playwright_state,
             Network(self),
             Promises(self),
             Waiter(self),
@@ -246,8 +246,8 @@ class Browser(DynamicCore):
         ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
         new_ctx_ids = [c for c in ctx_after_ids if c not in ctx_before_ids]
         for ctx_id in new_ctx_ids:
-            self.playwright_state.switch_context(ctx_id)
-            self.playwright_state.close_context()
+            self._playwright_state.switch_context(ctx_id)
+            self._playwright_state.close_context()
         pages_before = [
             (p["id"], c["id"])
             for b in catalog_before
@@ -263,18 +263,18 @@ class Browser(DynamicCore):
         ]
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
-            self.playwright_state.switch_context(ctx_id)
-            self.playwright_state.switch_page(page_id)
-            self.playwright_state.close_page()
+            self._playwright_state.switch_context(ctx_id)
+            self._playwright_state.switch_page(page_id)
+            self._playwright_state.close_page()
         # try to set active page and context back to right place.
         for browser in catalog_after:
             if browser["activeBrowser"]:
                 activeContext = browser.get("activeContext", None)
                 activePage = browser.get("activePage", None)
                 if not new_ctx_ids and activeContext is not None:
-                    self.playwright_state.switch_context(activeContext)
+                    self._playwright_state.switch_context(activeContext)
                     if not (activePage, activeContext) in new_page_ids:
-                        self.playwright_state.switch_page(activePage)
+                        self._playwright_state.switch_page(activePage)
 
     def run_keyword(self, name, args, kwargs=None):
         try:
