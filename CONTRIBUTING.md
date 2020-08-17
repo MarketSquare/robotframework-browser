@@ -18,11 +18,13 @@ Install Python, nodejs and yarn.
 - https://nodejs.org/
 - https://classic.yarnpkg.com/en/docs/install
 
-Create a Python virtualenv e.g. with https://docs.python.org/3/library/venv.html.
-The minimum Python version is 3.8.
+N.B The minimum Python version is 3.8.
+
+Run `python bootsrap.py` to create a virtual environment with correct dependencies.
+After that, make sure to activate the virtual env before running other development commands.
 
 ```
-python -m venv .venv
+python bootstrap.py
 source .venv/bin/activate  # On linux and OSX
 .venv\Scripts\activate.bat  # On Windows
 ```
