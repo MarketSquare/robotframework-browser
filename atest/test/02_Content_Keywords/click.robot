@@ -8,9 +8,9 @@ Click Button
     Get Text    text=Login failed. Invalid user name and/or password.
 
 Click Nonmatching Selector
-    Set Timeout    50ms
+    ${originaltimeout}=  Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `css=notamatch` within timeout.    Click    css=notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${originaltimeout}
 
 Click With Invalid Selector
     Run Keyword And Expect Error    STARTS: Invalid selector    Click    input[type="submit"]X
