@@ -164,10 +164,6 @@ message Types {
     string label = 3;
     bool selected = 4;
   }
-  message RawJson {
-    string log = 1;
-    string body = 2;
-  }
 }
 
 message Response {
@@ -259,6 +255,8 @@ service  Playwright {
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty);
+  /* Download url content */
+  rpc Download(Request.Url) returns (Response.String);
   /* Clicks element specified by selector and options */
   rpc ClickWithOptions(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */

@@ -26,7 +26,7 @@ export async function getElementCount(
 ) {
     const selector = call.request.getSelector();
     const response: Array<ElementHandle> = await invokePlaywrightMethod(state, callback, '$$', selector);
-    callback(null, intResponse(response.length));
+    callback(null, intResponse(response.length, 'Found ' + response.length + 'element(s).'));
 }
 
 export async function getSelectContent(

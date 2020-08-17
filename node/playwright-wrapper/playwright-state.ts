@@ -6,6 +6,7 @@ import { emptyWithLog, intResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
+
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 function lastItem<T>(array: T[]): T | undefined {
@@ -48,7 +49,7 @@ async function _newBrowserContext(
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const index = browser.contexts().length - 1;
-    return { index: index, c: context, pageStack: [] };
+    return { index: index, c: context, pageStack: [], options: options };
 }
 
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
@@ -108,12 +109,12 @@ export class PlaywrightState {
     }
 
     public async getCatalog() {
-        const pageToContents = async (page: IndexedPage) => {
+        const pageToContents = async (page: Page, index: number) => {
             return {
                 type: 'page',
-                title: await page.p.title(),
-                url: page.p.url(),
-                id: page.index,
+                title: await page.title(),
+                url: page.url(),
+                id: index,
             };
         };
 
@@ -121,7 +122,7 @@ export class PlaywrightState {
             return {
                 type: 'context',
                 id: context.index,
-                pages: await Promise.all(context.pageStack.map(pageToContents)),
+                pages: await Promise.all(context.c.pages().map(pageToContents)),
             };
         };
 
@@ -175,6 +176,7 @@ type IndexedContext = {
     c: BrowserContext;
     index: number;
     pageStack: IndexedPage[];
+    options?: Record<string, unknown>;
 };
 
 type IndexedPage = {
@@ -216,6 +218,10 @@ export class BrowserState {
     }
     set context(newContext: IndexedContext | undefined) {
         if (newContext !== undefined) {
+            if (newContext.options === undefined) {
+                // copy known options
+                newContext.options = this._contextStack.find((c) => c.c === newContext.c)?.options;
+            }
             // prevent duplicates
             this._contextStack = this._contextStack.filter((c) => c.c !== newContext.c);
             this._contextStack.push(newContext);
@@ -302,7 +308,7 @@ export async function newPage(
     browserState.page = page;
     const url = call.request.getUrl() || 'about:blank';
     await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
-    const response = intResponse(page.index);
+    const response = intResponse(page.index, 'New page opeened.');
     response.setLog('Succesfully initialized new page object and opened url: ' + url);
     callback(null, response);
 }
@@ -319,7 +325,7 @@ export async function newContext(
         const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser);
         browserState.context = context;
 
-        const response = intResponse(context.index);
+        const response = intResponse(context.index, 'New context opened');
         response.setLog('Succesfully created context with options: ' + JSON.stringify(options));
         callback(null, response);
     } catch (error) {
@@ -340,7 +346,7 @@ export async function newBrowser(
         const options = JSON.parse(call.request.getRawoptions());
         const [browser, name] = await _newBrowser(browserType, headless, options);
         const browserState = openBrowsers.addBrowser(name, browser);
-        const response = intResponse(browserState.id);
+        const response = intResponse(browserState.id, 'New browser opened, with options: ' + options);
         response.setLog('Succesfully created browser with options: ' + JSON.stringify(options));
         callback(null, response);
     } catch (error) {
@@ -413,8 +419,7 @@ async function _switchContext(index: number, browserState: BrowserState) {
             .map((p) => p.url());
 
         const message = `No context for index ${index}. Open contexts: ${mapped}`;
-        const error = new Error(message);
-        throw error;
+        throw new Error(message);
     }
 }
 
@@ -428,8 +433,7 @@ export async function switchPage(
     const index = call.request.getIndex();
     const previous = browserState.page?.index || 0;
     await _switchPage(index, browserState, true).catch((error) => callback(error, null));
-    const response = intResponse(previous);
-    response.setLog('Succesfully changed active page');
+    const response = intResponse(previous, 'Succesfully changed active page');
     callback(null, response);
 }
 
@@ -445,8 +449,7 @@ export async function switchContext(
     await _switchPage(browserState.page?.index || 0, browserState, false).catch((error) => {
         logger.error(error);
     });
-    const response = intResponse(previous);
-    response.setLog('Succesfully changed active context');
+    const response = intResponse(previous, 'Succesfully changed active context');
     callback(null, response);
 }
 
@@ -458,8 +461,7 @@ export async function switchBrowser(
     const index = call.request.getIndex();
     const previous = openBrowsers.activeBrowser;
     openBrowsers.switchTo(index, callback);
-    const response = intResponse(previous?.id || -1);
-    response.setLog('Succesfully changed active browser');
+    const response = intResponse(previous?.id || -1, 'Succesfully changed active browser');
     callback(null, response);
 }
 

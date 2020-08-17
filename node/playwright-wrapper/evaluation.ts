@@ -1,5 +1,5 @@
 import { ElementHandle, Page } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
+import { Server, ServerUnaryCall, sendUnaryData } from 'grpc';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -67,12 +67,12 @@ export async function executeJavascript(
     }
 
     const result = await invokeOnPage(state.getActivePage(), callback, 'evaluate', script, elem);
-    callback(null, jsResponse(result));
+    callback(null, jsResponse(result, 'JavaScript executed successfully.'));
 }
 
 export async function getPageState(callback: sendUnaryData<Response.JavascriptExecutionResult>, page?: Page) {
     const result = await invokeOnPage(page, callback, 'evaluate', () => window.__RFBROWSER__);
-    callback(null, jsResponse(result));
+    callback(null, jsResponse(result, 'Page state evaluated successfully.'));
 }
 
 export async function waitForElementState(
@@ -152,4 +152,52 @@ export async function highlightElements(
         clr: color,
     });
     callback(null, emptyWithLog(`Highlighted elements for ${duration}.`));
+}
+
+export async function download(
+    call: ServerUnaryCall<Request.Url>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+) {
+    const browserState = state.activeBrowser;
+    if (browserState === undefined) {
+        callback(Error('Download requires an active browser'), stringResponse('', 'No browser is active'));
+        return;
+    }
+    const context = browserState.context;
+    if (context === undefined) {
+        callback(Error('Download requires an active context'), stringResponse('', 'No context is active'));
+        return;
+    }
+    if (!(context.options?.acceptDownloads ?? false)) {
+        callback(Error('Context acceptDownloads is false'), stringResponse('', 'Context does not allow downloads'));
+        return;
+    }
+    const page = state.getActivePage();
+    if (page === undefined) {
+        callback(Error('Download requires an active page'), stringResponse('', 'No page is active'));
+        return;
+    }
+    const urlString = call.request.getUrl();
+    const script = (urlString: string) => {
+        return fetch(urlString)
+            .then((resp) => {
+                return resp.blob();
+            })
+            .then((blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = urlString;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                return a.download;
+            });
+    };
+    const downloadStarted = page.waitForEvent('download');
+    await page.evaluate(script, urlString);
+    const path = await (await downloadStarted).path();
+    callback(null, stringResponse(path || '', 'Url content downloaded to a file'));
 }

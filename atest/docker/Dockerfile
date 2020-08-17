@@ -23,7 +23,7 @@ WORKDIR /app
 COPY . /app
 RUN pip install -r Browser/dev-requirements.txt
 RUN yarn install
-RUN make package
+RUN inv package
 
 FROM BrowserBase AS CleanInstallTester
 WORKDIR /app

@@ -1,9 +1,12 @@
 import re
+import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
 
+import wrapt  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robot.utils import timestr_to_secs  # type: ignore
 
-from .utils import AssertionOperator, is_truthy
+from .utils import AssertionOperator, is_truthy, logger
 
 NumericalOperators = [
     AssertionOperator["=="],
@@ -61,6 +64,22 @@ def verify_assertion(
     if not validator(value, expected):
         raise AssertionError(f"{message} `{value}` {text} `{expected}`")
     return value
+
+
+@wrapt.decorator
+def with_assertions(wrapped, instance, args, kwargs):
+    start = time.time()
+    err: Optional[AssertionError] = None
+    timeout = timestr_to_secs(instance.timeout)
+    while time.time() - start < timeout:
+        try:
+            return wrapped(*args, **kwargs)
+        except AssertionError as e:
+            err = e
+            if timeout - (time.time() - start) > 0.1:
+                logger.debug("Verification failure - retrying")
+                time.sleep(0.1)
+    raise err
 
 
 def int_str_verify_assertion(
