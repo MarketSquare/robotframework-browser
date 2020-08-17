@@ -75,7 +75,7 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
             return wrapped(*args, **kwargs)
         except AssertionError as e:
             elapsed = time.time() - start
-            if elapsed > timeout:
+            if elapsed > timeout or not instance.assertion_polling_enabled:
                 raise e
             logger.debug("Verification failure - retrying")
             if timeout - elapsed > 0.016:

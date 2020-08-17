@@ -175,6 +175,7 @@ class Browser(DynamicCore):
         timeout="10s",
         enable_playwright_debug: bool = False,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
+        assertion_polling_enabled: bool = True,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -188,8 +189,11 @@ class Browser(DynamicCore):
           Configure context and page automatic closing. Default is after each test.
           Other options are SUITE for closing after each suite and MANUAL
           for no automatic closing.
+        - ``assertion_polling_enabled`` <bool>
+          Disable assertion polling by setting this flag to false.
         """
         self.timeout = timeout
+        self.assertion_polling_enabled = assertion_polling_enabled
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
         self._unresolved_promises: Set[Future] = set()
