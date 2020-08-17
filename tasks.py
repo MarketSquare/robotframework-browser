@@ -4,6 +4,7 @@ import re
 import shutil
 
 from invoke import task, Exit
+
 try:
     from pabot import pabot
     import pytest
@@ -220,6 +221,13 @@ def docker_base(c):
 def docker_builder(c):
     c.run(
         "DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file atest/docker/Dockerfile ."
+    )
+
+
+@task
+def docker_stable_image(c):
+    c.run(
+        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser-stable --file atest/docker/Dockerfile.latest_release ."
     )
 
 
