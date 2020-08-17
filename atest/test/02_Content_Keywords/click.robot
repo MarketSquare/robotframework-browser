@@ -8,7 +8,7 @@ Click Button
     Get Text    text=Login failed. Invalid user name and/or password.
 
 Click Nonmatching Selector
-    ${originaltimeout}=  Set Browser Timeout    50ms
+    ${originaltimeout}=    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `css=notamatch` within timeout.    Click    css=notamatch
     [Teardown]    Set Browser Timeout    ${originaltimeout}
 
