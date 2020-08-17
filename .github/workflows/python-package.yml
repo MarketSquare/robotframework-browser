@@ -123,6 +123,9 @@ jobs:
     # This is necessary because we need the demo application artifacts
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
     steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
@@ -130,6 +133,10 @@ jobs:
         with:
           name: demoapp
           path: node/dynamic-test-app
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Install Invoke build tool
         run: |
           python -m pip install --upgrade pip
