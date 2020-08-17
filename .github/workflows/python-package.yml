@@ -133,7 +133,8 @@ jobs:
       - name: Install Invoke build tool
         run: |
           apt-get update -y
-          apt-get install -y python-invoke
+          apt-get install -y python-pip
+          pip install invoke
       - name: Build image
         run: |
           inv docker-base
