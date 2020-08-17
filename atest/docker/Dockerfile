@@ -24,17 +24,18 @@ COPY yarn.lock /app/yarn.lock
 RUN yarn install
 
 COPY . /app
-RUN make package
+RUN inv package
 
 FROM playwright-focal AS CleanInstallTester
 # Add pip
 USER root
 RUN apt-get update
-RUN apt-get install -y python3-pip python-invoke
+RUN apt-get install -y python3-pip
 USER pwuser
 
 # Install pabot to support atest
 RUN pip3 install --user robotframework-pabot
+RUN pip3 install invoke
 
 WORKDIR /app
 COPY --from=BrowserBuilder /app/dist /app/dist
