@@ -1,5 +1,5 @@
 import pytest
-from Browser.assertion_engine import verify_assertion, AssertionOperator, with_assertions
+from Browser.assertion_engine import verify_assertion, AssertionOperator, with_assertion_polling
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
@@ -26,11 +26,11 @@ class FakeBrowser:
     timeout = "0.3s"
     counter = 1
 
-    @with_assertions
+    @with_assertion_polling
     def is_three(self, value):
         verify_assertion(value, AssertionOperator['=='], 3)
 
-    @with_assertions
+    @with_assertion_polling
     def second_run_success(self):
         current = self.counter
         self.counter += 1

@@ -67,19 +67,19 @@ def verify_assertion(
 
 
 @wrapt.decorator
-def with_assertions(wrapped, instance, args, kwargs):
+def with_assertion_polling(wrapped, instance, args, kwargs):
     start = time.time()
-    err: Optional[AssertionError] = None
     timeout = timestr_to_secs(instance.timeout)
-    while time.time() - start < timeout:
+    while True:
         try:
             return wrapped(*args, **kwargs)
         except AssertionError as e:
-            err = e
-            if timeout - (time.time() - start) > 0.1:
-                logger.debug("Verification failure - retrying")
-                time.sleep(0.1)
-    raise err
+            elapsed = time.time() - start
+            if elapsed > timeout:
+                raise e
+            logger.debug("Verification failure - retrying")
+            if timeout - elapsed > 0.016:
+                time.sleep(0.016)  # 60 fps
 
 
 def int_str_verify_assertion(
