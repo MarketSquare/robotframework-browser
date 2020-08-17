@@ -184,7 +184,7 @@ class Interaction(LibraryComponent):
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
-        ``*modifiers`` ``<list<"Alt"|"Control"|"Meta"|"Shift">>``
+        ``*modifiers`` ``<Alt|Control|Meta|Shift>``
         Modifier keys to press. Ensures that only these modifiers are pressed
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
