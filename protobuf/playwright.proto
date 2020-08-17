@@ -156,6 +156,12 @@ message Request {
   message Bool {
     bool value = 1;
   }
+
+  message PagePath {
+    string page = 1;
+    string context = 2;
+    string browser = 3;
+  }
 }
 
 message Types {
@@ -306,6 +312,6 @@ service  Playwright {
   rpc CloseBrowser(Request.Empty) returns (Response.Empty);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
-  rpc ClosePage(Request.Empty) returns (Response.Empty);
+  rpc ClosePage(Request.PagePath) returns (Response.Empty);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.String);
 }

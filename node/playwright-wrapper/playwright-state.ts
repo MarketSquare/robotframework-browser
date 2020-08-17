@@ -140,6 +140,12 @@ export class PlaywrightState {
         );
     }
 
+    public getBrowser(id: string): BrowserState | undefined {
+        if (id === 'CURRENT') return this.activeBrowser;
+        // Is this the best way to get a browser by Id?
+        return this.browserStack.filter((elem) => elem.id === parseInt(id))[0];
+    }
+
     public addBrowser(name: string, browser: Browser): BrowserState {
         const browserState = new BrowserState(name, browser);
         browserState.id = this.ids++;
@@ -213,7 +219,7 @@ export class BrowserState {
             return context;
         }
     }
-    get context(): IndexedContext | undefined {
+    get currentContext(): IndexedContext | undefined {
         return lastItem(this._contextStack);
     }
     set context(newContext: IndexedContext | undefined) {
@@ -228,11 +234,17 @@ export class BrowserState {
             logger.info('Changed active context');
         } else logger.info('Set active context to undefined');
     }
-    get page(): IndexedPage | undefined {
+    get currentPage(): IndexedPage | undefined {
         const context = this.context;
         if (context) return lastItem(context.pageStack);
         else return undefined;
     }
+
+    public getContext(id: string): IndexedContext | undefined {
+        if (id === 'CURRENT') return this.currentContext;
+        else return this._contextStack.find((c) => c.index === parseInt(id));
+    }
+
     set page(newPage: IndexedPage | undefined) {
         const currentContext = this.context;
         if (newPage !== undefined && currentContext !== undefined) {
@@ -289,8 +301,21 @@ export async function closeContext(
     callback(null, emptyWithLog('Succesfully closed Context'));
 }
 
-export async function closePage(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState): Promise<void> {
-    const activeBrowser = openBrowsers.getActiveBrowser(callback);
+export async function closePage(
+    call: ServerUnaryCall<Request.PagePath>,
+    callback: sendUnaryData<Response.Empty>,
+    openBrowsers: PlaywrightState,
+): Promise<void> {
+    const pageId = call.request.getPage();
+    const contextId = call.request.getContext();
+    const browserId = call.request.getBrowser();
+
+    const browser = openBrowsers.getBrowser(browserId);
+    exists(browser, callback, 'TODO');
+    const context = browser.getContext(contextId);
+    exists(context, callback, 'TODO');
+    const page = context.getPage(pageId);
+
     await openBrowsers.getActivePage()?.close();
     activeBrowser.popPage();
     callback(null, emptyWithLog('Succesfully closed Page'));

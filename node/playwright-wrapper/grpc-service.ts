@@ -38,8 +38,8 @@ export class PlaywrightServer implements IPlaywrightServer {
         return playwrightState.closeContext(callback, this.state);
     }
 
-    async closePage(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return playwrightState.closePage(callback, this.state);
+    async closePage(call: ServerUnaryCall<Request.PagePath>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return playwrightState.closePage(call, callback, this.state);
     }
 
     async getBrowserCatalog(
