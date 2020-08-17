@@ -233,15 +233,6 @@ def docker_stable_image(c):
     )
 
 
-@task(docker_stable_image)
-def docker_publish(c):
-    from Browser import VERSION
-
-    c.run(
-        f"docker push docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION}"
-    )
-
-
 @task(clean_atest, build)
 def docker_test(c):
     c.run("mkdir atest/output")
