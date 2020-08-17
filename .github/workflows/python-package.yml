@@ -72,17 +72,6 @@ jobs:
       with:
         name: demoapp
         path: node/dynamic-test-app
-    - name: Run Docker tests 
-      run: |
-        inv docker-base
-        inv docker-builder
-        sudo chmod 777 atest
-        inv docker-test
-    - name: Docker test results
-      uses: actions/upload-artifact@v2
-      with:
-        name: Docker test results
-        path: atest/output
   test-install:
     needs: build
     runs-on: ubuntu-latest

@@ -213,7 +213,7 @@ def lint(c):
 @task
 def docker_base(c):
     c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Playwright20.04/Dockerfile ."
+        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Dockerfile.playwright20.04 ."
     )
 
 
