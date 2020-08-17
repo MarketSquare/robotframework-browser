@@ -59,19 +59,19 @@ jobs:
     - name: Create Distributable Package
       run: |
         inv package
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       if: ${{ always() }}
       with:
         name: Test results
         path: atest/output
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: artifacts
         path: dist/
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: demoapp
-        path: node/dynamic-test-app/dist
+        path: node/dynamic-test-app
   test-install:
     needs: build
     runs-on: ubuntu-latest
@@ -82,14 +82,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: artifacts
       - name: Download package for install testing
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: demoapp
-          path: node/dynamic-test-app/dist
+          path: node/dynamic-test-app
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
@@ -106,7 +106,7 @@ jobs:
         env:
           VERSION: 0.13.0
         run: |
-          pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
+          pip install "robotframework_browser-$VERSION-py3-none-any.whl"
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Run Robot Framework tests
@@ -114,7 +114,7 @@ jobs:
           xvfb-run --auto-servernum inv atest-global-pythonpath
         env:
           NODE_PATH: /usr/lib/node_modules
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
           name: Clean install results

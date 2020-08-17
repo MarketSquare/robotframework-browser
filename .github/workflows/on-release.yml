@@ -1,0 +1,21 @@
+name: Release tasks
+
+on:
+  release:
+    types: [ published ]
+
+
+docker-image:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: marketsquare/robotframework-browser
+          tag_with_ref: true
+          dockerfile: atest/docker/Dockerfile.latest_release
