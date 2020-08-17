@@ -226,8 +226,19 @@ def docker_builder(c):
 
 @task
 def docker_stable_image(c):
+    from Browser import VERSION
+
     c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser-stable --file atest/docker/Dockerfile.latest_release ."
+        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file atest/docker/Dockerfile.latest_release ."
+    )
+
+
+@task(docker_stable_image)
+def docker_publish(c):
+    from Browser import VERSION
+
+    c.run(
+        f"docker push docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION}"
     )
 
 
