@@ -4,6 +4,7 @@ import os
 import time
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
+from typing import TYPE_CHECKING
 
 import grpc  # type: ignore
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
@@ -11,14 +12,19 @@ from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
+from .base import LibraryComponent
+
+if TYPE_CHECKING:
+    from .browser import Browser
+
 from .utils import find_free_port, logger, timestr_to_millisecs
 
 
-class Playwright:
+class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwirght process."""
 
-    def __init__(self, timeout: str, enable_playwright_debug: bool):
-        self.timeout = timeout
+    def __init__(self, library: "Browser", enable_playwright_debug: bool):
+        LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
         self.ensure_node_dependencies()
 

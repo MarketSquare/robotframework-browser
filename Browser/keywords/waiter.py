@@ -49,20 +49,25 @@ class Waiter(LibraryComponent):
         ``timeout`` <str> (optional) uses default timeout of 10 seconds if not set.
         """
         funct = {
-            "enabled": "e => !e.disabled",
-            "disabled": "e => e.disabled",
-            "editable": "e => !e.readOnly",
-            "readonly": "e => e.readOnly",
-            "selected": "e => e.selected",
-            "deselected": "e => !e.selected",
-            "focused": "e => document.activeElement === e",
-            "defocused": "e => document.activeElement !== e",
-            "checked": "e => e.checked",
-            "unchecked": "e => !e.checked",
+            ElementState.enabled: "e => !e.disabled",
+            ElementState.disabled: "e => e.disabled",
+            ElementState.editable: "e => !e.readOnly",
+            ElementState.readonly: "e => e.readOnly",
+            ElementState.selected: "e => e.selected",
+            ElementState.deselected: "e => !e.selected",
+            ElementState.focused: "e => document.activeElement === e",
+            ElementState.defocused: "e => document.activeElement !== e",
+            ElementState.checked: "e => e.checked",
+            ElementState.unchecked: "e => !e.checked",
         }
 
         with self.playwright.grpc_channel() as stub:
-            if state.name in ["attached", "detached", "visible", "hidden"]:
+            if state in [
+                ElementState.attached,
+                ElementState.detached,
+                ElementState.visible,
+                ElementState.hidden,
+            ]:
                 options: Dict[str, object] = {"state": state.name}
                 if timeout:
                     timeout_ms = timestr_to_millisecs(timeout)
@@ -74,10 +79,8 @@ class Waiter(LibraryComponent):
                     )
                 )
                 logger.info(response.log)
-            elif state.name in funct:
-                self.wait_for_function(
-                    funct[state.name], selector=selector, timeout=timeout
-                )
+            else:
+                self.wait_for_function(funct[state], selector=selector, timeout=timeout)
 
     @keyword(tags=["Wait", "PageContent"])
     def wait_for_function(

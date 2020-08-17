@@ -36,16 +36,20 @@ class Control(LibraryComponent):
             response = stub.GoTo(Request().Url(url=url))
             logger.info(response.log)
 
-    def _get_screenshot_path(self, filename: str):
+    def _get_screenshot_path(self, filename: str) -> Path:
         directory = self.library.outputdir
+        # Filename didn't contain {index}
+        if "{index}" not in filename:
+            return Path(directory) / filename
         index = 0
         while True:
+            logger.info(index)
             index += 1
             indexed = Path(filename.replace("{index}", str(index)))
             logger.debug(indexed)
-            path = Path(directory / indexed)
-            # filename didn't contain {index} or unique path was found
-            if "{index}" not in filename or not path.is_file():
+            path = Path(directory) / indexed
+            # Unique path was found
+            if not path.with_suffix(".png").is_file():
                 return path
 
     @keyword
@@ -73,16 +77,20 @@ class Control(LibraryComponent):
             return response.body
 
     @keyword(tags=["BrowserControl"])
-    def set_timeout(self, timeout: str):
+    def set_timeout(self, timeout: str) -> str:
         """Sets the timeout used by most input and getter keywords.
 
         ``timeout`` <str> Timeout of it is for current playwright context. **Required**
+
+        Returns the previous value of the timeout.
         """
-        self.library.playwright.timeout = timeout
         parsed_timeout = timestr_to_millisecs(timeout)
+        old_timeout = self.timeout
+        self.timeout = timeout
         with self.playwright.grpc_channel() as stub:
             response = stub.SetTimeout(Request().Timeout(timeout=parsed_timeout))
             logger.info(response.log)
+        return old_timeout
 
     @keyword(tags=["PageContent"])
     def add_style_tag(self, content: str):

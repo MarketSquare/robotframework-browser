@@ -4,9 +4,12 @@ import re
 import shutil
 
 from invoke import task, Exit
-from pabot import pabot
-import pytest
-from robot.libdoc import libdoc
+try:
+    from pabot import pabot
+    import pytest
+    from robot.libdoc import libdoc
+except ModuleNotFoundError:
+    print('Assuming that this is for "inv deps" command and ignoring error.')
 
 root_dir = Path(os.path.dirname(__file__))
 atest_output = root_dir / "atest" / "output"
@@ -24,8 +27,8 @@ python_lint_timestamp_file = python_src_dir / ".linted"
 
 @task
 def deps(c):
+    c.run("pip install -U pip")
     c.run("pip install -r Browser/dev-requirements.txt")
-    c.run("pip install -r Browser/requirements.txt")
     c.run("yarn")
 
 
@@ -151,7 +154,8 @@ def atest_global_pythonpath(c):
     _run_robot()
 
 
-@task(clean_atest)
+# Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
+@task()
 def atest_failed(c):
     _run_robot(["--rerunfailed", "atest/output/output.xml"])
 

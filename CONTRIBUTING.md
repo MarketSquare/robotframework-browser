@@ -20,6 +20,13 @@ Install Python, nodejs and yarn.
 
 Create a Python virtualenv e.g. with https://docs.python.org/3/library/venv.html.
 The minimum Python version is 3.8.
+
+```
+python -m venv .venv
+source .venv/bin/activate  # On linux and OSX
+.venv\Scripts\activate.bat  # On Windows
+```
+
 [Invoke](http://www.pyinvoke.org/index.html) is used as a task runner / build tool.
 
 Activate your virtualenv and install `invoke` with

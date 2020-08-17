@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from robotlibcore import keyword  # type: ignore
 
-from ..assertion_engine import verify_assertion
+from ..assertion_engine import verify_assertion, with_assertions
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
@@ -12,6 +12,7 @@ from ..utils.data_types import AssertionOperator
 
 class WebAppState(LibraryComponent):
     @keyword(name="localStorage get Item", tags=["WebAppState", "Assertion", "Getter"])
+    @with_assertions
     def local_storage_get_item(
         self,
         key: str,
@@ -83,6 +84,7 @@ class WebAppState(LibraryComponent):
     @keyword(
         name="sessionStorage get Item", tags=["WebAppState", "Assertion", "Getter"]
     )
+    @with_assertions
     def session_storage_get_item(
         self,
         key: str,
