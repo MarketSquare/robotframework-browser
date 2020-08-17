@@ -72,6 +72,17 @@ jobs:
       with:
         name: demoapp
         path: node/dynamic-test-app
+    - name: Run Docker tests 
+      run: |
+        inv docker-base
+        inv docker-builder
+        sudo chmod 777 atest
+        inv docker-test
+    - name: Docker test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: Docker test results
+        path: atest/output
   test-install:
     needs: build
     runs-on: ubuntu-latest
@@ -114,41 +125,6 @@ jobs:
           xvfb-run --auto-servernum inv atest-global-pythonpath
         env:
           NODE_PATH: /usr/lib/node_modules
-      - uses: actions/upload-artifact@v2
-        if: ${{ always() }}
-        with:
-          name: Clean install results
-          path: atest/output
-  docker-image:
-    # This is necessary because we need the demo application artifacts
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.8]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Download package for install testing
-        uses: actions/download-artifact@v2
-        with:
-          name: demoapp
-          path: node/dynamic-test-app
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Invoke build tool
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install invoke
-      - name: Build image
-        run: |
-          inv docker-base
-          inv docker-builder
-      - name: Test image
-        run: |
-          sudo chmod 777 atest
-          inv docker-test
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
