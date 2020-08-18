@@ -1,5 +1,6 @@
 from enum import Enum, auto
-from typing import TypedDict
+
+from typing_extensions import TypedDict
 
 
 class AlertAction(Enum):
