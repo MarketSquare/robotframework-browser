@@ -43,13 +43,6 @@ export class PlaywrightServer implements IPlaywrightServer {
         return playwrightState.closePage(callback, this.state);
     }
 
-    async closeSpecific(
-        call: ServerUnaryCall<Request.PagePath>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        return playwrightState.closeSpecific(call, callback, this.state);
-    }
-
     async getBrowserCatalog(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.String>,

@@ -49,10 +49,16 @@ class PlaywrightState(LibraryComponent):
         self.new_page(url)
 
     @keyword(tags=["BrowserControl"])
-    def close_browser(self):
+    def close_browser(self, browser: str = "CURRENT"):
         """Closes the current browser. Activated browser is set to first active browser.
         """
         with self.playwright.grpc_channel() as stub:
+            if browser == "ALL":
+                self.close_all_browsers()
+                return
+            if browser != "CURRENT":
+                self.switch_browser(int(browser))
+
             response = stub.CloseBrowser(Request.Empty())
             logger.info(response.log)
 
@@ -63,29 +69,50 @@ class PlaywrightState(LibraryComponent):
             response = stub.CloseAllBrowsers(Request().Empty())
             logger.info(response.log)
 
+    def _correct_browser(self, browser: str):
+        if browser == "ALL":
+            raise ValueError
+        if browser != "CURRENT":
+            self.switch_browser(int(browser))
+
+    def _correct_context(self, context: str):
+        if context == "ALL":
+            raise ValueError
+        if context != "CURRENT":
+            self.switch_context(int(context))
+
     @keyword(tags=["BrowserControl"])
-    def close_context(self):
-        """Closes the current Context. Activated context is set to first active context."""
+    def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
+        """Closes the current Context. Activated context is set to first active context.
+
+            ``browser`` Close context in specified browser. If value is not "CURRENT" it should be an int referencing the id of the browser where to close context
+            ``context`` Close context with specified id
+        """
         with self.playwright.grpc_channel() as stub:
+            self._correct_browser(browser)
+            if context == "ALL":
+                return NotImplementedError()
+            if context != "CURRENT":
+                self.switch_context(int(context))
+
             response = stub.CloseContext(Request().Empty())
             logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
-    def close_page(self):
-        """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three. Activated page is set to first active page."""
-        with self.playwright.grpc_channel() as stub:
-            response = stub.ClosePage(Request().Empty())
-            logger.info(response.log)
-
-    @keyword(tags=["BrowserControl"])
-    def close_specific(
+    def close_page(
         self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
     ):
-        """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three.    """
+        """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three. Activated page is set to first active page."""
         with self.playwright.grpc_channel() as stub:
-            response = stub.CloseSpecific(
-                Request().PagePath(page=page, context=context, browser=browser)
-            )
+            self._correct_browser(browser)
+            self._correct_context(context)
+
+            if page == "ALL":
+                return NotImplementedError()
+            if page != "CURRENT":
+                self.switch_page(int(page))
+
+            response = stub.ClosePage(Request().Empty())
             logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
