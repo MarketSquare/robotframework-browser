@@ -233,6 +233,7 @@ export class BrowserState {
         if (context) return lastItem(context.pageStack);
         else return undefined;
     }
+
     set page(newPage: IndexedPage | undefined) {
         const currentContext = this.context;
         if (newPage !== undefined && currentContext !== undefined) {
