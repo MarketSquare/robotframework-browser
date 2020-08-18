@@ -9,7 +9,7 @@ Click Count
 
 Delay Click
     Click With Options    \#clickWithOptions    delay=1100
-    Get Text              \#mouse_delay_time    >    1000
+    Get Text              \#mouse_delay_time    validate     value > 1000
 
 Left Right and Middle Click
     Browser.Click With Options    \#clickWithOptions    right
