@@ -8,4 +8,4 @@ Add Style
 
 Verify Style
     Add Style Tag    \#goes_hidden{color:aqua}
-    Get Style        \#goes_hidden    color    ==     rgb(0, 255, 255)
+    Get Style    \#goes_hidden    color    ==    rgb(0, 255, 255)
