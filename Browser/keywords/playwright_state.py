@@ -71,12 +71,19 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
-    def close_page(
-        self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
-    ):
+    def close_page(self):
         """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three. Activated page is set to first active page."""
         with self.playwright.grpc_channel() as stub:
-            response = stub.ClosePage(
+            response = stub.ClosePage(Request().Empty())
+            logger.info(response.log)
+
+    @keyword(tags=["BrowserControl"])
+    def close_specific(
+        self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
+    ):
+        """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three.    """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseSpecific(
                 Request().PagePath(page=page, context=context, browser=browser)
             )
             logger.info(response.log)

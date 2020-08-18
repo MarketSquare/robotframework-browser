@@ -312,6 +312,7 @@ service  Playwright {
   rpc CloseBrowser(Request.Empty) returns (Response.Empty);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
-  rpc ClosePage(Request.PagePath) returns (Response.Empty);
+  rpc ClosePage(Request.Empty) returns (Response.Empty);
+  rpc CloseSpecific(Request.PagePath) returns (Response.Empty);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.String);
 }

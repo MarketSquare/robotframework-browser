@@ -24,6 +24,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.state.getActiveBrowser(callback);
     private getActiveContext = () => this.state.getActiveContext();
     private getActivePage = () => this.state.getActivePage();
+
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return playwrightState.closeBrowser(callback, this.state);
     }
@@ -38,8 +39,15 @@ export class PlaywrightServer implements IPlaywrightServer {
         return playwrightState.closeContext(callback, this.state);
     }
 
-    async closePage(call: ServerUnaryCall<Request.PagePath>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return playwrightState.closePage(call, callback, this.state);
+    async closePage(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return playwrightState.closePage(callback, this.state);
+    }
+
+    async closeSpecific(
+        call: ServerUnaryCall<Request.PagePath>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return playwrightState.closeSpecific(call, callback, this.state);
     }
 
     async getBrowserCatalog(
