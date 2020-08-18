@@ -33,7 +33,9 @@ source .venv/bin/activate  # On linux and OSX
 
 Activate your virtualenv and install `invoke` with
 
-  > pip install invoke
+```
+pip install invoke
+```
 
 Other dependencies can be installed/updated with `inv deps`. This command installs and updated both Python and nodejs dependecies.
 
