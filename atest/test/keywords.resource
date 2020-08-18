@@ -2,6 +2,8 @@
 Resource          variables.resource
 Library           Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}
 Library           OperatingSystem
+Library           DateTime
+Library           ../library/common.py
 
 *** Keywords ***
 Open Browser To No Page
@@ -47,3 +49,7 @@ Submit Credentials
 Welcome Page Should Be Open
     Get Url    ==    ${WELCOME_URL}
     Get Title    ==    Welcome Page
+
+Remove Screenshot Files
+    Remove File    ${TestScreenshot}_1.png
+    Remove File    ${TestScreenshot}_2.png

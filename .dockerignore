@@ -6,3 +6,4 @@ node_modules
 .pytest_cache
 .github
 .idea
+.venv

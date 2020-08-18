@@ -1,15 +1,17 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
+import { Server, ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { IPlaywrightServer } from './generated/playwright_grpc_pb';
-import { Response, Request } from './generated/playwright_pb';
-import { class_async_timer } from './execution-time-decorators';
 import * as browserControl from './browser-control';
+import * as cookie from './cookie';
+import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
 import * as network from './network';
 import * as playwrightState from './playwright-state';
+import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { PlaywrightState } from './playwright-state';
+import { Request, Response } from './generated/playwright_pb';
+import { class_async_timer } from './execution-time-decorators';
 
 @class_async_timer
 export class PlaywrightServer implements IPlaywrightServer {
@@ -20,7 +22,9 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.state.getActiveBrowser(callback);
+    private getActiveContext = () => this.state.getActiveContext();
     private getActivePage = () => this.state.getActivePage();
+
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return playwrightState.closeBrowser(callback, this.state);
     }
@@ -44,6 +48,21 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         return playwrightState.getBrowserCatalog(callback, this.state);
+    }
+
+    async getCookies(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return cookie.getCookies(callback, this.getActiveContext());
+    }
+
+    async addCookie(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return cookie.addCookie(call, callback, this.getActiveContext());
+    }
+
+    async deleteAllCookies(
+        call: ServerUnaryCall<Request.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return cookie.deleteAllCookies(callback, this.getActiveContext());
     }
 
     async autoActivatePages(
@@ -90,10 +109,21 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async takeScreenshot(
-        call: ServerUnaryCall<Request.ScreenshotPath>,
+        call: ServerUnaryCall<Request.ScreenshotOptions>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return browserControl.takeScreenshot(call, callback, this.getActivePage());
+        return browserControl.takeScreenshot(call, callback, this.state);
+    }
+
+    async getBoundingBox(
+        call: ServerUnaryCall<Request.ElementSelector>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        return getters.getBoundingBox(call, callback, this.state);
+    }
+
+    async getPageSource(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return getters.getPageSource(call, callback, this.getActivePage());
     }
 
     async setTimeout(call: ServerUnaryCall<Request.Timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
@@ -246,12 +276,22 @@ export class PlaywrightServer implements IPlaywrightServer {
     async waitForResponse(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
         return network.waitForResponse(call, callback, this.getActivePage());
     }
+    async waitUntilNetworkIsIdle(call: ServerUnaryCall<Request.Timeout>, callback: sendUnaryData<Response.Empty>) {
+        return network.waitUntilNetworkIsIdle(call, callback, this.getActivePage());
+    }
 
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         return evaluation.waitForFunction(call, callback, this.state);
+    }
+
+    async waitForDownload(
+        call: ServerUnaryCall<Request.FilePath>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        return network.waitForDownload(call, callback, this.getActivePage());
     }
 
     async executeJavascript(
@@ -272,6 +312,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         const response = new Response.String();
         response.setBody('OK');
         callback(null, response);
+        return;
     }
 
     async highlightElements(
@@ -279,6 +320,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         return evaluation.highlightElements(call, callback, this.state);
+    }
+
+    async download(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return evaluation.download(call, callback, this.state);
     }
 
     async setViewportSize(
@@ -293,5 +338,52 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         return network.httpRequest(call, callback, this.getActivePage());
+    }
+
+    async getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return deviceDescriptors.getDevice(call, callback);
+    }
+    async getDevices(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return deviceDescriptors.getDevices(callback);
+    }
+
+    async uploadFile(call: ServerUnaryCall<Request.FilePath>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return interaction.uploadFile(call, callback, this.getActivePage());
+    }
+
+    async handleAlert(
+        call: ServerUnaryCall<Request.AlertAction>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.handleAlert(call, callback, this.getActivePage());
+    }
+
+    async mouseMove(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return interaction.mouseMove(call, callback, this.getActivePage());
+    }
+
+    async mouseButton(
+        call: ServerUnaryCall<Request.MouseButtonOptions>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.mouseButton(call, callback, this.getActivePage());
+    }
+
+    async keyboardKey(
+        call: ServerUnaryCall<Request.KeyboardKeypress>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.keyboardKey(call, callback, this.getActivePage());
+    }
+
+    async keyboardInput(
+        call: ServerUnaryCall<Request.KeyboardInputOptions>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.keyboardInput(call, callback, this.getActivePage());
+    }
+
+    async setOffline(call: ServerUnaryCall<Request.Bool>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return browserControl.setOffline(call, callback, this.getActiveContext());
     }
 }

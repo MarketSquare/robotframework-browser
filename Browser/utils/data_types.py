@@ -1,5 +1,18 @@
 from enum import Enum, auto
-from typing import TypedDict
+
+from typing_extensions import TypedDict
+
+
+class AlertAction(Enum):
+    accept = auto()
+    dismiss = auto()
+
+
+class CookieType(Enum):
+    dictionary = auto()
+    dict = dictionary
+    string = auto()
+    str = string
 
 
 class RequestMethod(Enum):
@@ -11,10 +24,27 @@ class RequestMethod(Enum):
     DELETE = auto()
 
 
+class MouseButtonAction(Enum):
+    click = auto()
+    down = auto()
+    up = auto()
+
+
 class MouseButton(Enum):
     left = auto()
     middle = auto()
     right = auto()
+
+
+class KeyAction(Enum):
+    down = auto()
+    up = auto()
+    press = auto()
+
+
+class KeyboardInputAction(Enum):
+    insertText = auto()
+    type = auto()
 
 
 class KeyboardModifier(Enum):
@@ -32,14 +62,32 @@ class SelectAttribute(Enum):
 
 
 class SupportedBrowsers(Enum):
-    chromium = "chromium"
-    firefox = "firefox"
-    webkit = "webkit"
+    chromium = auto()
+    firefox = auto()
+    webkit = auto()
 
 
 ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
 
 ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
+
+MouseOptionsDict = TypedDict(
+    "MouseOptionsDict", {"x": float, "y": float, "options": dict}, total=False
+)
+
+
+class BoundingBoxFields(Enum):
+    width = auto()
+    height = auto()
+    x = auto()
+    y = auto()
+    ALL = auto()
+
+
+class AutoClosingLevel(Enum):
+    SUITE = auto()
+    TEST = auto()
+    MANUAL = auto()
 
 
 class ElementState(Enum):
@@ -47,6 +95,16 @@ class ElementState(Enum):
     detached = auto()
     visible = auto()
     hidden = auto()
+    enabled = auto()
+    disabled = auto()
+    editable = auto()
+    readonly = auto()
+    selected = auto()
+    deselected = auto()
+    focused = auto()
+    defocused = auto()
+    checked = auto()
+    unchecked = auto()
 
 
 AssertionOperator = Enum(
@@ -54,13 +112,13 @@ AssertionOperator = Enum(
     {
         "equal": "==",
         "==": "==",
-        "shouldbe": "==",
+        "should be": "==",
         "inequal": "!=",
         "!=": "!=",
-        "shouldnotbe": "!=",
-        "lessthan": "<",
+        "should not be": "!=",
+        "less than": "<",
         "<": "<",
-        "greaterthan": ">",
+        "greater than": ">",
         ">": ">",
         "<=": "<=",
         ">=": ">=",
@@ -68,8 +126,9 @@ AssertionOperator = Enum(
         "*=": "*=",
         "starts": "^=",
         "^=": "^=",
-        "shouldstartwith": "^=",
+        "should start with": "^=",
         "ends": "$=",
+        "should end with": "$=",
         "$=": "$=",
         "matches": "$",
         "validate": "validate",

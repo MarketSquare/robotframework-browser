@@ -44,8 +44,8 @@ Get Elements Include Hidden
 
 Get Element and Click
     New Page    ${LOGIN_URL}
-    ${refs}=    Get Elements    button
-    Should Be Equal As Numbers    ${{ len(${refs}) }}    3
+    ${refs}=    Get Elements    .pure-button
+    Should Be Equal As Numbers    ${{ len(${refs}) }}    5
     FOR    ${elem}    IN    @{refs}
         Click    ${elem}
     END

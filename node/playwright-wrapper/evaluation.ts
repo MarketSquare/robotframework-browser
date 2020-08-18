@@ -1,17 +1,14 @@
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
-import { Page, ElementHandle } from 'playwright';
+import { ElementHandle, Page } from 'playwright';
+import { Server, ServerUnaryCall, sendUnaryData } from 'grpc';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Request, Response } from './generated/playwright_pb';
-import {
-    exists,
-    invokeOnPage,
-    invokePlaywrightMethod,
-    waitUntilElementExists,
-    determineElement,
-} from './playwirght-invoke';
-import { emptyWithLog, jsResponse, stringResponse } from './response-util';
 import { PlaywrightState } from './playwright-state';
+import { Request, Response } from './generated/playwright_pb';
+import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { emptyWithLog, jsResponse, stringResponse } from './response-util';
+
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 declare global {
     interface Window {
@@ -33,7 +30,7 @@ export async function getElement(
     const handle = await invokePlaywrightMethod(state, callback, '$', call.request.getSelector());
     const id = uuidv4();
     state.addElement(id, handle);
-    callback(null, stringResponse(`element=${id}`));
+    callback(null, stringResponse(`element=${id}`, 'Element found successfully.'));
 }
 
 /** Resolve a list of elementHandles, create global UUIDs for them, and store the
@@ -53,7 +50,7 @@ export async function getElements(
         state.addElement(id, handle);
         return `element=${id}`;
     });
-    callback(null, stringResponse(JSON.stringify(response)));
+    callback(null, stringResponse(JSON.stringify(response), 'Elements found succesfully.'));
 }
 
 export async function executeJavascript(
@@ -70,12 +67,12 @@ export async function executeJavascript(
     }
 
     const result = await invokeOnPage(state.getActivePage(), callback, 'evaluate', script, elem);
-    callback(null, jsResponse(result));
+    callback(null, jsResponse(result, 'JavaScript executed successfully.'));
 }
 
 export async function getPageState(callback: sendUnaryData<Response.JavascriptExecutionResult>, page?: Page) {
     const result = await invokeOnPage(page, callback, 'evaluate', () => window.__RFBROWSER__);
-    callback(null, jsResponse(result));
+    callback(null, jsResponse(result, 'Page state evaluated successfully.'));
 }
 
 export async function waitForElementState(
@@ -97,7 +94,7 @@ export async function waitForFunction(
     let script = call.request.getScript();
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
-    console.log(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
+    logger.info(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
 
     let elem;
     if (selector) {
@@ -105,8 +102,9 @@ export async function waitForFunction(
         script = eval(script);
     }
 
+    // TODO: This might behave weirdly if element selector points to a different page
     const result = await invokeOnPage(state.getActivePage(), callback, 'waitForFunction', script, elem, options);
-    callback(null, stringResponse(JSON.stringify(result.jsonValue)));
+    callback(null, stringResponse(JSON.stringify(result.jsonValue), ''));
 }
 
 export async function addStyleTag(
@@ -126,24 +124,80 @@ export async function highlightElements(
 ) {
     const selector = call.request.getSelector();
     const duration = call.request.getDuration();
-    const highlighter = (elements: Array<Element>, duration: number) => {
+    const width = call.request.getWidth();
+    const style = call.request.getStyle();
+    const color = call.request.getColor();
+    const highlighter = (elements: Array<Element>, options: any) => {
         elements.forEach((e: Element) => {
             const d = document.createElement('div');
             d.className = 'robotframework-browser-highlight';
             d.appendChild(document.createTextNode(''));
             d.style.position = 'fixed';
             const rect = e.getBoundingClientRect();
-            d.style.top = '' + rect.top + 'px';
-            d.style.left = '' + rect.left + 'px';
-            d.style.width = '' + rect.width + 'px';
-            d.style.height = '' + rect.height + 'px';
-            d.style.border = '1px solid red';
+            d.style.top = `${rect.top}px`;
+            d.style.left = `${rect.left}px`;
+            d.style.width = `${rect.width}px`;
+            d.style.height = `${rect.height}px`;
+            d.style.border = `${options.wdt} ${options.stl} ${options.clr}`;
             document.body.appendChild(d);
             setTimeout(() => {
                 d.remove();
-            }, duration);
+            }, options.dur);
         });
     };
-    await invokePlaywrightMethod(state, callback, '$$eval', selector, highlighter, duration);
+    await invokePlaywrightMethod(state, callback, '$$eval', selector, highlighter, {
+        dur: duration,
+        wdt: width,
+        stl: style,
+        clr: color,
+    });
     callback(null, emptyWithLog(`Highlighted elements for ${duration}.`));
+}
+
+export async function download(
+    call: ServerUnaryCall<Request.Url>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+) {
+    const browserState = state.activeBrowser;
+    if (browserState === undefined) {
+        callback(Error('Download requires an active browser'), stringResponse('', 'No browser is active'));
+        return;
+    }
+    const context = browserState.context;
+    if (context === undefined) {
+        callback(Error('Download requires an active context'), stringResponse('', 'No context is active'));
+        return;
+    }
+    if (!(context.options?.acceptDownloads ?? false)) {
+        callback(Error('Context acceptDownloads is false'), stringResponse('', 'Context does not allow downloads'));
+        return;
+    }
+    const page = state.getActivePage();
+    if (page === undefined) {
+        callback(Error('Download requires an active page'), stringResponse('', 'No page is active'));
+        return;
+    }
+    const urlString = call.request.getUrl();
+    const script = (urlString: string) => {
+        return fetch(urlString)
+            .then((resp) => {
+                return resp.blob();
+            })
+            .then((blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = urlString;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                return a.download;
+            });
+    };
+    const downloadStarted = page.waitForEvent('download');
+    await page.evaluate(script, urlString);
+    const path = await (await downloadStarted).path();
+    callback(null, stringResponse(path || '', 'Url content downloaded to a file'));
 }

@@ -1,11 +1,11 @@
-import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import * as path from 'path';
+import * as express from 'express';
 import * as fs from 'fs';
+import * as path from 'path';
 
 const app = express.default();
 app.use(bodyParser.json());
-const port = 7272;
+const port = parseInt(process.argv[2]) || 7272;
 
 app.head('/api/get/json', (req, res) => {
     res.header('Content-Type', 'application/json');
@@ -19,6 +19,13 @@ app.get('/api/get/json', (req, res) => {
 
 app.get('/api/get/text', (req, res) => {
     res.send('HELLO');
+});
+
+app.get('/api/get/delay', (req, res) => {
+    setTimeout(() => {
+        res.header('Content-Type', 'application/json');
+        res.send(JSON.stringify({ greeting: 'after some time I respond' }));
+    }, 400);
 });
 
 app.post('/api/post', (req, res) => {
@@ -60,4 +67,4 @@ app.get('*', (req, res) => {
     res.send(listing);
 });
 
-app.listen(port, () => console.log('Succesfully started server on http://localhost:7272'));
+app.listen(port, () => console.log(`Succesfully started server on http://localhost:${port}`));

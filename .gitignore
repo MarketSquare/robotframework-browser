@@ -2,6 +2,7 @@ Browser/wrapper/*.js
 Browser/wrapper
 Browser/generated
 Browser/__init__.pyi
+Browser/**/*.pyc
 node/playwright-wrapper/generated
 
 node/dynamic-test-app/dist/*.js
@@ -16,6 +17,8 @@ robotframework_browser.egg-info/
 .venv
 
 node/.linted
+node/.built
+Browser/.linted
 
 # Robot Framework outputs
 log.html
@@ -23,6 +26,7 @@ output.xml
 report.html
 atest/output
 playwright-log.txt
+lsp
 
 node_modules/
 dist

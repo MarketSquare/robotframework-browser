@@ -1,9 +1,9 @@
 import * as pb from './generated/playwright_pb';
-import { sendUnaryData, ServerUnaryCall } from 'grpc';
 import { Page } from 'playwright';
+import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
+import { emptyWithLog, stringResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
-import { stringResponse } from './response-util';
 export async function httpRequest(
     call: ServerUnaryCall<pb.Request.HttpRequest>,
     callback: sendUnaryData<pb.Response.String>,
@@ -36,7 +36,7 @@ export async function httpRequest(
                 });
             });
         }, opts);
-        callback(null, stringResponse(JSON.stringify(response)));
+        callback(null, stringResponse(JSON.stringify(response), 'Request performed succesfully.'));
     } catch (e) {
         callback(e, null);
     }
@@ -51,7 +51,7 @@ export async function waitForResponse(
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, { timeout: timeout });
     const body = await result.json();
-    callback(null, stringResponse(body));
+    callback(null, stringResponse(body, ''));
 }
 export async function waitForRequest(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
@@ -61,5 +61,30 @@ export async function waitForRequest(
     const urlOrPredicate = call.request.getUrlorpredicate();
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForRequest', urlOrPredicate, { timeout: timeout });
-    callback(null, stringResponse(result.url()));
+    callback(null, stringResponse(result.url(), 'Requested compeleted withing timeout.'));
+}
+
+export async function waitUntilNetworkIsIdle(
+    call: ServerUnaryCall<pb.Request.Timeout>,
+    callback: sendUnaryData<pb.Response.Empty>,
+    page?: Page,
+) {
+    const timeout = call.request.getTimeout();
+    await invokeOnPage(page, callback, 'waitForLoadState', 'networkidle', { timeout: timeout });
+    callback(null, emptyWithLog('Network is idle'));
+}
+
+export async function waitForDownload(
+    call: ServerUnaryCall<pb.Request.FilePath>,
+    callback: sendUnaryData<pb.Response.String>,
+    page?: Page,
+) {
+    const saveAs = call.request.getPath();
+    const downloadObject = await invokeOnPage(page, callback, 'waitForEvent', 'download');
+
+    if (saveAs) {
+        await downloadObject.saveAs(saveAs);
+    }
+    const path = await downloadObject.path();
+    callback(null, stringResponse(JSON.stringify(path), 'Download done successfully to.'));
 }

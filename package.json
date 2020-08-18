@@ -1,6 +1,6 @@
 {
   "name": "robotframework-playwright",
-  "version": "0.11.0",
+  "version": "0.15.0",
   "main": "index.ts",
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
@@ -14,6 +14,7 @@
     "eslint": "^7.3.1",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-sort-imports-es6-autofix": "^0.5.0",
     "express": "^4.17.1",
     "grpc-tools": "^1.9.0",
     "grpc_tools_node_protoc_ts": "^4.0.0",
@@ -36,17 +37,18 @@
     "@types/uuid": "^8.0.0",
     "google-protobuf": "3.9.2",
     "grpc": "^1.24.3",
-    "playwright": "^1.2.1",
+    "playwright": "^1.3.0",
     "uuid": "^8.2.0"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "echo 'precommit 🔱' && make lint",
-      "pre-push": "echo 'prepush 🚀' && make build && make utest && make atest"
+      "pre-commit": "echo 'precommit 🔱' && inv lint",
+      "pre-push": "echo 'prepush 🚀' && inv build && inv utest && inv atest"
     }
   },
   "scripts": {
     "build": "webpack --config node/webpack.config.js",
+    "watch": "webpack --config node/webpack.config.js --watch",
     "lint": "eslint 'node/**/*.{ts,tsx}' --quiet --fix"
   }
 }

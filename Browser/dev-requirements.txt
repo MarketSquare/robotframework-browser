@@ -1,3 +1,4 @@
+invoke >= 1.4.1
 pytest >= 5.4.3
 pytest-watch >= 4.2.0
 black >= 19.10b0
@@ -5,6 +6,11 @@ mypy >= 0.782
 mypy-protobuf >= 1.23
 flake8 >= 3.8.3
 robotframework >= 3.2.1
+isort >= 5.2.2
 wheel>=0.34.2
 robotframework-pabot >= 1.8.1
 twine >= 3.2.0
+
+# Include normal dependencies from requirements.txt. Makes it possible to use
+# requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
+-r requirements.txt

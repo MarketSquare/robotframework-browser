@@ -1,7 +1,5 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       No Operation
-Test Setup        No Operation
 Test Teardown     Close All Browsers
 
 *** Keywords ***
@@ -131,3 +129,21 @@ Set Viewport Size
     ${desired_second}    Evaluate    {"height": 600, "width": 800}
     ${second_size}    Get Viewport Size
     Should Be Equal    ${desired_second}    ${second_size}
+
+Page Index is stable when other pages closed
+    ${first}=    New Page
+    ${second}=    New Page
+    ${third}=    New Page
+    Close Page
+    Close Page
+    ${last}=    Switch Page    ${first}
+    Should Be Equal    ${first}    ${last}
+
+Context Index is stable when other contexts closed
+    ${first}=    New Context
+    ${second}=    New Context
+    ${third}=    New Context
+    Close Context
+    Close Context
+    ${last}=    Switch Context    ${first}
+    Should Be Equal    ${first}    ${last}

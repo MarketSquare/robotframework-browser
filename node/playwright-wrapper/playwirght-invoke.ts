@@ -1,7 +1,10 @@
-import { sendUnaryData, status, Metadata } from 'grpc';
-import { Page, errors, ElementHandle, Frame } from 'playwright';
+import { BrowserContext, ElementHandle, Frame, Page, errors } from 'playwright';
+import { Metadata, sendUnaryData, status } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
+
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function waitUntilElementExists<T>(
     state: PlaywrightState,
@@ -24,13 +27,63 @@ export async function waitUntilElementExists<T>(
     return element;
 }
 
-export async function invokeOnPage(page: Page | undefined, callback: any, methodName: string, ...args: any[]) {
+async function invokeFunction<T>(callback: sendUnaryData<T>, method: any, ...args: any[]) {
+    exists(method, callback, `Bind failure with '${method}'`);
+    try {
+        return await method(...Object.values(args));
+    } catch (e) {
+        logger.error(`Error invoking Playwright action '${method}': ${e}`);
+        callback(e, null);
+    }
+}
+
+export async function invokeOnMouse<T>(
+    page: Page | undefined,
+    callback: sendUnaryData<T>,
+    methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
+    args: Record<any, any>,
+) {
+    exists(page, callback, `Tried to execute mouse action '${methodName}' but no open page`);
+    logger.info(`Invoking mouse action ${methodName} with params ${JSON.stringify(args)}`);
+    const fn: any = page?.mouse[methodName].bind(page.mouse);
+    return await invokeFunction(callback, fn, ...Object.values(args));
+}
+
+export async function invokeOnKeyboard<T>(
+    page: Page | undefined,
+    callback: sendUnaryData<T>,
+    methodName: 'down' | 'up' | 'press' | 'insertText' | 'type',
+    ...args: any[]
+) {
+    exists(page, callback, `Tried to execute keyboard action '${methodName}' but no open page`);
+    logger.info(`Invoking keyboard action ${methodName} with params ${JSON.stringify(args)}`);
+    const fn: any = page?.keyboard[methodName].bind(page.keyboard);
+    return await invokeFunction(callback, fn, ...args);
+}
+
+export async function invokeOnPage<T>(
+    page: Page | undefined,
+    callback: sendUnaryData<T>,
+    methodName: string,
+    ...args: any[]
+) {
     exists(page, callback, `Tried to do playwright action '${methodName}', but no open page.`);
     const fn: any = (page as { [key: string]: any })[methodName].bind(page);
+    return await invokeFunction(callback, fn, ...args);
+}
+
+export async function invokeOnContext<T>(
+    context: BrowserContext | undefined,
+    callback: sendUnaryData<T>,
+    methodName: string,
+    ...args: any[]
+) {
+    exists(context, callback, `Tried to do playwright action '${methodName}', but no open context.`);
     try {
+        const fn: any = (context as { [key: string]: any })[methodName].bind(context);
         return await fn(...args);
     } catch (e) {
-        console.log(`Error invoking Playwright action '${methodName}': ${e}`);
+        logger.info(`Error invoking Playwright action '${methodName}': ${e}`);
         callback(e, null);
     }
 }
@@ -160,10 +213,10 @@ function splitElementHandleAndElementSelector<T>(
             elementHandleId: parts[1],
             subSelector: parts[2],
         };
-        console.log(`Split element= selector into parts: ${JSON.stringify(splitted)}`);
+        logger.info(`Split element= selector into parts: ${JSON.stringify(splitted)}`);
         return splitted;
     } else if (parts[1]) {
-        console.log(`element= selector parsed without children`);
+        logger.info(`element= selector parsed without children`);
         return {
             elementHandleId: parts[1],
             subSelector: '',

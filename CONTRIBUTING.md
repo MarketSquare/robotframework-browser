@@ -1,3 +1,82 @@
+# Development setup
+
+## Source code organization
+
+These are the directories containing source code and tests:
+
+ - `Browser`, contains the Python source code for the actual Robot Framework test library.
+ - `node/playwright-wrapper`, contains a wrapper for Playwirght that implements the grpc protocol, implemented in Typescript.
+ - `node/dynamic-test-app`, contains a test application used in the acceptance tests, implemented in Typescript + React.
+ - `protobuf`, contains the Protocol Buffer definitions used by the communication between the library and Playwirght wrapper.
+ - `utest`, unit tests for the Python code.
+ - `atest`, acceptance tests written with Robot Framework.
+
+## Development environment
+
+Install Python, nodejs and yarn.
+- https://www.python.org/downloads/
+- https://nodejs.org/
+- https://classic.yarnpkg.com/en/docs/install
+
+N.B The minimum Python version is 3.8.
+
+Run `python bootsrap.py` to create a virtual environment with correct dependencies.
+After that, make sure to activate the virtual env before running other development commands.
+
+```
+python bootstrap.py
+source .venv/bin/activate  # On linux and OSX
+.venv\Scripts\activate.bat  # On Windows
+```
+
+[Invoke](http://www.pyinvoke.org/index.html) is used as a task runner / build tool.
+
+Activate your virtualenv and install `invoke` with
+
+  > pip install invoke
+
+Other dependencies can be installed/updated with `inv deps`. This command installs and updated both Python and nodejs dependecies.
+
+Run `inv -l` to get list of current build commands.
+
+## Testing
+There are both unit tests written with pytest and acceptance test written with
+Robot Framework. These can be run manually with `inv utest` and `inv atest`.
+To run continuously pytests in a watch mode `inv utest-watch`.
+To rerun failed tests you can use `inv atest-failed` The tests are also executed in a prepush hook.
+
+## Running tests in docker container
+
+Docker container builds a clean install package. This can be used to check that a builded package works correctly in a clean environment without development dependencies.
+
+1. Build the container `inv docker`
+2. Run tests mounted from host machine `inv docker-test`.
+3. See results in `atest/output`
+
+## Releasing
+1. Ensure generated code and types are up to date with `inv build`
+2. Ensure tests and linting pass on CI
+3. Check that you have permissions to release on Github and PyPi
+4. Run `inv <new_version>` to update the version information to both Python and Node components.
+5. Use `inv release` to create and release artifacts and upload to PyPi
+6. Create Github release
+
+## Code style
+Python code style is enforced with flake8 and black. These are executed in a
+precommit hook, but can also be invoked manually with `inv lint-python`.
+
+JS / TS code style is enforced with eslint. Lints are run in precommit hooks, but can be run manually with `inv lint-node`.
+
+## Architecture
+
+There are 3 different interfaces that the library is targeting to use in browser automation and testing:
+
+1. User interface: Interactions with DOM elements.
+2. Internals of a webapp: State, Cookies, Storage, Methods.
+3. Requests & Responses: Interface between a browser and servers .
+
+Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.typescriptlang.org/) and [Playwright](https://playwright.dev/)
+
 # Contributing
 
 When contributing to this repository, please first discuss the change you wish to make via issue,

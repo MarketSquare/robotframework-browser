@@ -10,9 +10,9 @@ Type Text with Clearing
     Get TextField Value    css=input#username_field    ==    username
 
 Type Text With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Type Text    notamatch    text
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Clear Text
     Fill Text    input#username_field    Wrong Text
@@ -23,18 +23,18 @@ Clear Text
     Get TextField Value    css=input#username_field    ==    username
 
 Clear Text With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Clear Text    notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill with css selector
     Fill Text    css=input#username_field    username
     Get TextField Value    css=input#username_field    ==    username
 
 Fill Text With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Text    notamatch    text
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill Secret
     Fill Secret    css=input#password_field    password
@@ -45,9 +45,9 @@ Type Secret
     Get TextField Value    css=input#password_field    ==    password
 
 Fill Secret With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Secret    notamatch    secret
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Type Text with Delay
     Type Text    input#username_field    username    delay=10 ms

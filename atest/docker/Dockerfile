@@ -1,4 +1,4 @@
-FROM python:3.8-buster AS BrowserBase
+FROM python:3.8-buster AS BrowserBuilder
 RUN mkdir /app
 WORKDIR /app
 RUN \
@@ -10,66 +10,40 @@ RUN \
     rm -rf /var/lib/apt/lists/*
 COPY Browser/requirements.txt /app/requirements.txt
 RUN pip install -r requirements.txt
+COPY Browser/dev-requirements.txt /app/dev-requirements.txt
+RUN pip install -r dev-requirements.txt
 
-FROM BrowserBase AS BrowserBuilder
 RUN \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list && \
     wget -qO- https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
     apt-get update && \
     apt-get install -yqq yarn && \
-    pip install pipenv && \
     rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-COPY . /app
-RUN pip install -r Browser/dev-requirements.txt
+COPY package.json /app/package.json
+COPY yarn.lock /app/yarn.lock
 RUN yarn install
-RUN make package
 
-FROM BrowserBase AS CleanInstallTester
-WORKDIR /app
-# Install WebKit dependencies
-RUN apt-get update && apt-get install -y libwoff1 \
-                                         libopus0 \
-                                         libwebp6 \
-                                         libwebpdemux2 \
-                                         libenchant1c2a \
-                                         libgudev-1.0-0 \
-                                         libsecret-1-0 \
-                                         libhyphen0 \
-                                         libgdk-pixbuf2.0-0 \
-                                         libegl1 \
-                                         libnotify4 \
-                                         libxslt1.1 \
-                                         libevent-2.1-6 \
-                                         libgles2 \
-                                         libvpx5
-# Install gstreamer and plugins to support video playback in WebKit.
-RUN apt-get update && apt-get install -y gstreamer1.0-gl \
-                                         gstreamer1.0-plugins-base \
-                                         gstreamer1.0-plugins-good \
-                                         gstreamer1.0-plugins-bad
-# Install Chromium dependencies
-RUN apt-get update && apt-get install -y libnss3 \
-                                         libxss1 \
-                                         libasound2 \
-                                         fonts-noto-color-emoji
-# Install Firefox dependencies
-RUN apt-get update && apt-get install -y libdbus-glib-1-2 \
-                                         libxt6
-# Install ffmpeg to bring in audio and video codecs necessary for playing videos in Firefox.
-RUN apt-get update && apt-get install -y ffmpeg
-# Add user so we don't need --no-sandbox in Chromium
-RUN groupadd -r pwuser && useradd -r -g pwuser -G audio,video pwuser \
-    && mkdir -p /home/pwuser/Downloads \
-    && chown -R pwuser:pwuser /home/pwuser
-# (Optional) Install XVFB if there's a need to run browsers in headful mode
-RUN apt-get update && apt-get install -y xvfb
-COPY --from=BrowserBuilder /app/dist /app/dist
-# Run everything after as non-privileged user.
-RUN mv /root/.cache/ /home/pwuser/.cache
-RUN chmod a+rwx -R /home/pwuser/.cache
+COPY . /app
+RUN inv package
+
+FROM playwright-focal AS CleanInstallTester
+# Add pip
+USER root
+RUN apt-get update
+RUN apt-get install -y python3-pip
 USER pwuser
+
 # Install pabot to support atest
-RUN pip install --user robotframework-pabot
-RUN pip install --user dist/robotframework_browser-*-py3-none-any.whl
+RUN pip3 install --user robotframework-pabot
+RUN pip3 install invoke
+
+WORKDIR /app
+COPY --from=BrowserBuilder /app/dist /app/dist
+RUN pip3 install --user dist/robotframework_browser-*-py3-none-any.whl
+# Hard to update PATH for all shells in a docker image so we run python scripts with manual paths
+RUN ~/.local/bin/rfbrowser init
+
+# What were these used for previously
+# RUN mv /root/.cache/ /home/pwuser/.cache
+# RUN chmod a+rwx -R /home/pwuser/.cache
 ENV NODE_PATH=/usr/lib/node_modules

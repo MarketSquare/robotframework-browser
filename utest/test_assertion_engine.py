@@ -1,5 +1,5 @@
 import pytest
-from Browser.assertion_engine import verify_assertion, AssertionOperator
+from Browser.assertion_engine import verify_assertion, AssertionOperator, with_assertion_polling
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
@@ -20,6 +20,40 @@ def test_not_equals():
 def test_contains():
     _validate_operator(AssertionOperator["contains"], "actual", "ctua", "nope")
     _validate_operator(AssertionOperator["*="], "actual", "tual", "nope")
+
+
+class FakeBrowser:
+    timeout = "0.1s"
+    counter = 1
+    assertion_polling_enabled = True
+
+    @with_assertion_polling
+    def is_three(self, value):
+        verify_assertion(value, AssertionOperator['=='], 3)
+
+    @with_assertion_polling
+    def second_run_success(self):
+        current = self.counter
+        self.counter += 1
+        verify_assertion(current, AssertionOperator['=='], 2)
+
+
+def test_with_assertions_polling():
+    fb = FakeBrowser()
+    fb.is_three(3)
+    with pytest.raises(AssertionError):
+        fb.is_three(2)
+    fb.second_run_success()
+
+
+def test_without_assertions_polling():
+    fb = FakeBrowser()
+    fb.assertion_polling_enabled = False
+    fb.is_three(3)
+    with pytest.raises(AssertionError):
+        fb.is_three(2)
+    with pytest.raises(AssertionError):
+        fb.second_run_success()
 
 
 def test_greater():
@@ -81,7 +115,7 @@ def test_then(with_suite):
 def test_start_with():
     _validate_operator(AssertionOperator["^="], "Hello Robots", "Hello", "Robots")
     _validate_operator(
-        AssertionOperator["shouldstartwith"], "Hello Robots", "Hello", "Robots"
+        AssertionOperator["should start with"], "Hello Robots", "Hello", "Robots"
     )
     _validate_operator(
         AssertionOperator["^="], "Hel[4,5]?[1-9]+ Robots", "Hel[4,5]?[1-", ".*"

@@ -3,8 +3,33 @@ syntax = "proto3";
 message Request {
   message Empty {}
 
-  message ScreenshotPath {
+  message ScreenshotOptions {
     string path = 1;
+    string selector = 2;
+  }
+
+  message FilePath {
+    string path = 1;
+  }
+
+  message Json {
+    string body = 1;
+  }
+
+  message MouseButtonOptions {
+    string action = 1;
+    string json = 2;
+  }
+
+  message KeyboardKeypress {
+    string action = 1;
+    string key = 2;
+  }
+
+  message KeyboardInputOptions {
+    string action = 1;
+    string input = 2;
+    int32 delay = 3;
   }
 
   message Browser {
@@ -77,6 +102,9 @@ message Request {
   message ElementSelectorWithDuration {
     string selector = 1;
     int32 duration = 2;
+    string width = 3;
+    string style = 4;
+    string color = 5;
   }
 
   message SelectElementSelector {
@@ -109,10 +137,24 @@ message Request {
      string method = 2;
      string body = 3;
      string headers = 4;
-   }
+  }
+  
   message HttpCapture {
     string urlOrPredicate = 1;
     float timeout = 2;
+  }
+  
+  message Device {
+    string name = 1;
+  }
+
+  message AlertAction {
+    string alertAction = 1;
+    string promptInput = 2;  
+  }
+
+  message Bool {
+    bool value = 1;
   }
 }
 
@@ -121,10 +163,6 @@ message Types {
     string value = 2;
     string label = 3;
     bool selected = 4;
-  }
-  message RawJson {
-    string log = 1;
-    string body = 2;
   }
 }
 
@@ -157,90 +195,117 @@ message Response {
 }
 
 service  Playwright {
-  rpc TakeScreenshot(Request.ScreenshotPath) returns (Response.String) {}
+  /* Cookie messages */
+  rpc AddCookie(Request.Json) returns (Response.Empty);
+  rpc GetCookies(Request.Empty) returns (Response.String);
+  rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
+  /* Screen shot method */
+  rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
-  rpc GoTo(Request.Url) returns (Response.Empty) {}
+  rpc GoTo(Request.Url) returns (Response.Empty);
   /* Navigate to the next page in history */
-  rpc GoBack(Request.Url) returns (Response.Empty) {}
+  rpc GoBack(Request.Url) returns (Response.Empty);
   /* Navigate to the previous page in history. */
-  rpc GoForward(Request.Url) returns (Response.Empty) {}
+  rpc GoForward(Request.Url) returns (Response.Empty);
   /* Gets title of currently open Playwright page */
-  rpc GetTitle(Request.Empty) returns (Response.String) {}
+  rpc GetTitle(Request.Empty) returns (Response.String);
   /* Returns the count of elements found with selector */
-  rpc GetElementCount(Request.ElementSelector) returns (Response.Int) {}
+  rpc GetElementCount(Request.ElementSelector) returns (Response.Int);
   /* Wraps playwrights page.fill to input text into input specified with selector */
-  rpc InputText(Request.TextInput) returns (Response.Empty) {}
+  rpc InputText(Request.TextInput) returns (Response.Empty);
    /* Wraps playwrights page.type to type text into input specified with selector */
-  rpc TypeText(Request.TypeText) returns (Response.Empty) {}
+  rpc TypeText(Request.TypeText) returns (Response.Empty);
   /* Wraps playwrights page.fill to fill text of input specified with selector */
-  rpc FillText(Request.FillText) returns (Response.Empty) {}
+  rpc FillText(Request.FillText) returns (Response.Empty);
   /* Wraps playwrights page.fill with empty text to clear input specified with selector */
-  rpc ClearText(Request.ClearText) returns (Response.Empty) {}
+  rpc ClearText(Request.ClearText) returns (Response.Empty);
   /* Gets the DOM property 'property' of selector specified element */
-  rpc GetDomProperty(Request.ElementProperty) returns (Response.String) {}
+  rpc GetDomProperty(Request.ElementProperty) returns (Response.String);
   /* Gets the boolean DOM property 'property' of selector specified element */
-  rpc GetBoolProperty(Request.ElementProperty) returns (Response.Bool) {}
+  rpc GetBoolProperty(Request.ElementProperty) returns (Response.Bool);
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
-  rpc GetViewportSize(Request.Empty) returns (Response.String) {}
-  /* *Returns current playwright page url*/
-  rpc GetUrl(Request.Empty) returns (Response.String) {}
+  rpc GetViewportSize(Request.Empty) returns (Response.String);
+  /* Returns current playwright page url*/
+  rpc GetUrl(Request.Empty) returns (Response.String);
+  /* Gets pages HTML code */
+  rpc GetPageSource(Request.Empty) returns (Response.String);
   /* Clicks element specified by selector */
-  rpc Click(Request.ElementSelector) returns (Response.Empty) {}
+  rpc Click(Request.ElementSelector) returns (Response.Empty);
   /* Inputs a list of keypresses to element specified by selector */
-  rpc Press(Request.PressKeys) returns (Response.Empty) {}
+  rpc Press(Request.PressKeys) returns (Response.Empty);
   /* Gets the Select element specified by selector and returns the contents */
-  rpc GetSelectContent(Request.ElementSelector) returns (Response.Select) {}
+  rpc GetSelectContent(Request.ElementSelector) returns (Response.Select);
   /* Selects option matching matcher in Select element matching selector */
-  rpc SelectOption(Request.SelectElementSelector) returns (Response.Empty) {}
+  rpc SelectOption(Request.SelectElementSelector) returns (Response.Empty);
   /* Deselects options in Select element matching selector */
-  rpc DeselectOption(Request.ElementSelector) returns (Response.Empty) {}
+  rpc DeselectOption(Request.ElementSelector) returns (Response.Empty);
   /* Checks checkbox specified by selector */
-  rpc CheckCheckbox(Request.ElementSelector) returns (Response.Empty) {}
+  rpc CheckCheckbox(Request.ElementSelector) returns (Response.Empty);
   /* Unchecks checkbox specified by selector */
-  rpc UncheckCheckbox(Request.ElementSelector) returns (Response.Empty) {}
+  rpc UncheckCheckbox(Request.ElementSelector) returns (Response.Empty);
   /* Health check endpoint for the service */
-  rpc Health(Request.Empty) returns (Response.String) {}
+  rpc Health(Request.Empty) returns (Response.String);
   /* Returns a reference to a Playwirght element handle.*/
-  rpc GetElement(Request.ElementSelector) returns (Response.String) {}
+  rpc GetElement(Request.ElementSelector) returns (Response.String);
   /* Returns references to multiple Playwirght element handles.*/
-  rpc GetElements(Request.ElementSelector) returns (Response.String) {}
+  rpc GetElements(Request.ElementSelector) returns (Response.String);
   /* Set's  playwright timeout */
-  rpc SetTimeout(Request.Timeout) returns (Response.Empty) {}
+  rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */
-  rpc AddStyleTag(Request.StyleTag) returns (Response.Empty) {}
+  rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
-  rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty) {}
+  rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty);
+  /* Download url content */
+  rpc Download(Request.Url) returns (Response.String);
   /* Clicks element specified by selector and options */
-  rpc ClickWithOptions(Request.ElementSelectorWithOptions) returns (Response.Empty) {}
+  rpc ClickWithOptions(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */
-  rpc Focus(Request.ElementSelector) returns (Response.Empty) {}
+  rpc Focus(Request.ElementSelector) returns (Response.Empty);
   /* Waits for element be in a specific state*/
-  rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty) {}
+  rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Executes javascript on the active page */
-  rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.String) {}
-  rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult) {}
+  rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.String);
+  rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
-  rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult) {}
-  rpc SetViewportSize(Request.Viewport) returns (Response.Empty) {}
+  rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
+  rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
-  rpc GetStyle(Request.ElementSelector) returns (Response.String) {}
+  rpc GetStyle(Request.ElementSelector) returns (Response.String);
+  /* Gets elements x, y coordinates and width, height as json object */ 
+  rpc GetBoundingBox(Request.ElementSelector) returns (Response.String);
   /* Makes a `fetch` request in the browser */
-  rpc HttpRequest(Request.HttpRequest) returns (Response.String) {}
-  
-  rpc WaitForRequest(Request.HttpCapture) returns (Response.String) {}
-  rpc WaitForResponse(Request.HttpCapture) returns (Response.String) {}
+  rpc HttpRequest(Request.HttpRequest) returns (Response.String);
+  rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
+  rpc WaitForResponse(Request.HttpCapture) returns (Response.String);
+  rpc WaitForDownload(Request.FilePath) returns (Response.String);
+  rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
+
+  rpc GetDevice(Request.Device) returns (Response.String);
+  rpc GetDevices(Request.Empty) returns (Response.String);
+
+  rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
+
+  rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);
+  rpc MouseMove(Request.Json) returns (Response.Empty);
+
+  rpc KeyboardKey(Request.KeyboardKeypress) returns (Response.Empty);
+  rpc KeyboardInput(Request.KeyboardInputOptions) returns (Response.Empty);
+
+  rpc UploadFile(Request.FilePath) returns (Response.Empty);
+
+  rpc SetOffline(Request.Bool) returns (Response.Empty);
 
   /* Playwright State handling keywords */
-  rpc AutoActivatePages(Request.Empty) returns (Response.Empty) {}
-  rpc SwitchPage(Request.Index) returns (Response.Int) {}
-  rpc SwitchContext(Request.Index) returns (Response.Int) {}
-  rpc SwitchBrowser(Request.Index) returns (Response.Int) {}
-  rpc NewPage(Request.Url) returns (Response.Int) {}
-  rpc NewContext(Request.Context) returns (Response.Int) {}
-  rpc NewBrowser(Request.Browser) returns (Response.Int) {}
-  rpc CloseBrowser(Request.Empty) returns (Response.Empty) {}
-  rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty) {}
-  rpc CloseContext(Request.Empty) returns (Response.Empty) {}
-  rpc ClosePage(Request.Empty) returns (Response.Empty) {}
-  rpc GetBrowserCatalog(Request.Empty) returns (Response.String) {}
+  rpc AutoActivatePages(Request.Empty) returns (Response.Empty);
+  rpc SwitchPage(Request.Index) returns (Response.Int);
+  rpc SwitchContext(Request.Index) returns (Response.Int);
+  rpc SwitchBrowser(Request.Index) returns (Response.Int);
+  rpc NewPage(Request.Url) returns (Response.Int);
+  rpc NewContext(Request.Context) returns (Response.Int);
+  rpc NewBrowser(Request.Browser) returns (Response.Int);
+  rpc CloseBrowser(Request.Empty) returns (Response.Empty);
+  rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
+  rpc CloseContext(Request.Empty) returns (Response.Empty);
+  rpc ClosePage(Request.Empty) returns (Response.Empty);
+  rpc GetBrowserCatalog(Request.Empty) returns (Response.String);
 }

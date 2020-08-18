@@ -1,6 +1,8 @@
-import Browser
-import inspect
 from typing import Any
+
+from robotlibcore import KeywordBuilder  # type: ignore
+
+import Browser
 
 
 def is_named_method(keyword_name: str) -> bool:
@@ -39,40 +41,44 @@ def get_function_list_from_keywords(keywords):
         method_name = get_method_name_for_keyword(keyword)
         keyword_arguments = br.get_keyword_arguments(keyword)
         keyword_types = br.get_keyword_types(keyword)
-        arguments_list = list()
-        for argument in keyword_arguments:
-            if isinstance(argument, tuple):
-                arg_str = argument[0]
-                default_value = argument[1]
-                arg_type_str = get_type_sting_from_argument(arg_str, keyword_types)
-                if arg_type_str:
-                    if default_value is None:
-                        arg_type_str = f"Optional[{arg_type_str}]"
-                    if arg_type_str == "str":
-                        default_value = f"'{default_value}'"
-                    arg_str = arg_str + f": {arg_type_str}"
-                elif isinstance(default_value, str):
-                    default_value = f"'{default_value}'"
-                arg_str = arg_str + f" = {default_value}"
-            else:
-                arg_str = argument
-                arg_type_str = get_type_sting_from_argument(arg_str, keyword_types)
-                if arg_type_str:
-                    arg_str = arg_str + f": {arg_type_str}"
-            arguments_list.append(arg_str)
-        arguments_string = (
-            f", {', '.join(arguments_list)}" if len(arguments_list) > 0 else ""
-        )
-        functions.append(f"    def {method_name}(self{arguments_string}): ...\n")
+        functions.append(keyword_line(keyword_arguments, keyword_types, method_name))
     functions.sort()
     return functions
+
+
+def keyword_line(keyword_arguments, keyword_types, method_name):
+    arguments_list = list()
+    for argument in keyword_arguments:
+        if isinstance(argument, tuple):
+            arg_str = argument[0]
+            default_value = argument[1]
+            arg_type_str = get_type_sting_from_argument(arg_str, keyword_types)
+            if arg_type_str:
+                if default_value is None:
+                    arg_type_str = f"Optional[{arg_type_str}]"
+                if arg_type_str == "str":
+                    default_value = f"'{default_value}'"
+                arg_str = arg_str + f": {arg_type_str}"
+            elif isinstance(default_value, str):
+                default_value = f"'{default_value}'"
+            arg_str = arg_str + f" = {default_value}"
+        else:
+            arg_str = argument
+            arg_type_str = get_type_sting_from_argument(arg_str, keyword_types)
+            if arg_type_str:
+                arg_str = arg_str + f": {arg_type_str}"
+        arguments_list.append(arg_str)
+    arguments_string = (
+        f", {', '.join(arguments_list)}" if len(arguments_list) > 0 else ""
+    )
+    return f"    def {method_name}(self{arguments_string}): ...\n"
 
 
 br: Any = Browser.Browser()
 function_list = get_function_list_from_keywords(br.get_keyword_names())
 
 
-pyi_boilerplate = f"""from concurrent.futures import Future
+pyi_boilerplate = """from concurrent.futures import Future
 from typing import (
     Any,
     Dict,
@@ -85,10 +91,14 @@ from .utils.data_types import *
 
 
 class Browser:
-
-    def __init__(self, {str(inspect.signature(br.__init__))[1:]}: ...\n
 """
 
+init_method = KeywordBuilder.build(br.__init__)
 with open("Browser/__init__.pyi", "w") as stub_file:
     stub_file.write(pyi_boilerplate)
+    stub_file.write(
+        keyword_line(
+            init_method.argument_specification, init_method.argument_types, "__init__"
+        )
+    )
     stub_file.writelines(function_list)

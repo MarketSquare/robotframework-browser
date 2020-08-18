@@ -22,6 +22,6 @@ Uncheck Checkbox
     Get Checkbox State    [name=can_send_email]    ==    ${False}
 
 Get Checkbox State With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `xpath=//notamatch` within timeout.    Get Checkbox State    xpath=//notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}

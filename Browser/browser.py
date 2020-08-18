@@ -1,29 +1,33 @@
 import os
 import re
+from concurrent.futures._base import Future
+from typing import List, Set
 
-from robot.libraries.BuiltIn import BuiltIn, EXECUTION_CONTEXTS  # type: ignore
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .keywords import (
     Control,
+    Cookie,
+    Devices,
+    Evaluation,
     Getters,
     Interaction,
+    Network,
     PlaywrightState,
     Promises,
     Waiter,
     WebAppState,
-    Evaluation,
-    Network,
 )
 from .playwright import Playwright
-from .utils import logger
+from .utils import AutoClosingLevel, logger
 from .version import VERSION
 
 
 class Browser(DynamicCore):
     """Browser library is a browser automation library for Robot Framework.
 
-    This is hte keyword documentation for Browser library. For information
+    This is the keyword documentation for Browser library. For information
     about installation, support, and more please visit the
     [https://github.com/MarketSquare/robotframework-playwright|project pages].
     For more information about Robot Framework itself, see [https://robotframework.org|robotframework.org].
@@ -40,7 +44,7 @@ class Browser(DynamicCore):
 
     = Finding elements =
 
-    All keywords in hte library that need to interact with an element
+    All keywords in the library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
     how to find the element.
 
@@ -99,8 +103,8 @@ class Browser(DynamicCore):
     reference can be used as a *first* part of a selector by using a special selector
     syntax `element=` like this:
 
-    | ${ref}=  |  Get Element  |  .some_class  |
-    | Click    |  element=${ref} >>  .some_child |
+    | ${ref}=  |  Get Element  |  .some_class                    |
+    |          | Click         |  element=${ref} >>  .some_child |
 
     The `.some_child` selector in the example is relative to the element referenced by ${ref}.
 
@@ -110,26 +114,27 @@ class Browser(DynamicCore):
     can optionally assert.
     Currently supported assertion operators are:
 
-    |      = Operator =               |              = Description =                          |
-    | ``==`` or ``should be``         | equal                                                 |
-    | ``!=`` or ``should not be``     | not equal                                             |
-    | ``>``                           | greater than                                          |
-    | ``>=``                          | greater than or equal                                 |
-    | ``<``                           | less than                                             |
-    | ``<=``                          | less than or equal                                    |
-    | ``*=`` or ``contains``          | for checking that a value contains an element         |
-    | ``matches``                     | for matching against a regular expression.            |
-    | ``^=`` or ``should start with`` | starts with                                           |
-    | ``$=`` or ``should end with``   | ends with                                             |
-    | ``validate``                    | use BuiltIn Evaluate. Access to actual with ``value`` |
+    |      = Operator =                           |              = Description =                                         |
+    | ``==``, ``equal`` or ``should be``          | equal                                                                |
+    | ``!=``, ``inequal`` or ``should not be``    | not equal                                                            |
+    | ``>`` or ``greater than``                   | greater than                                                         |
+    | ``>=``                                      | greater than or equal                                                |
+    | ``<`` or ``less than``                      | less than                                                            |
+    | ``<=``                                      | less than or equal                                                   |
+    | ``*=`` or ``contains``                      | for checking that a value contains an element                        |
+    | ``matches``                                 | for matching against a regular expression. Remember to escape ``\\`` |
+    | ``^=``, ``should start with`` or ``starts`` | starts with                                                          |
+    | ``$=``, ``should end with`` or ``ends``     | ends with                                                            |
+    | ``validate``                                | use Python expression to validate. Access by ``value``               |
+    | ``evaluate`` or ``then``                    | use Python expression and return it. Access to actual with ``value`` |
 
-    Assertion value can be any valid robot value, and the keywords will provide an error
-    message if the assertion fails.
+    The expected assertion value can be any valid robot value, and the keywords will provide an error
+    message if the assertion fails. Assertions will retry until ``timeout`` has expired if they do not directly pass.
 
-    = The 'then' closure =
+    == The 'then' or 'evaluate' closure ==
 
     Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
-    can optionally also use ``then`` closure to modify the returned value with
+    can optionally also use ``then`` or ``evaluate`` closure to modify the returned value with
     BuiltIn Evaluate. Actual value can be accessed with ``value``.
 
     For example ``Get Title  then  'TITLE: '+value``.
@@ -138,6 +143,24 @@ class Browser(DynamicCore):
     Builtin Evaluating expressions]
     for more info on the syntax.
 
+    == Examples ==
+
+    | Keyword   | Selector                 | Key      | Assertion Operator | Assertion Expected                                   |
+    | Get Title  |                         |          | equal              | Page Title                                           |
+    | Get Style  |  //*[@id="div-element"] |   width  |  >                 |  100                                                 |
+    | Get Title  |                         |          |  matches           |  \\\\w+\\\\s\\\\w+                                   |
+    | Get Title  |                         |          |  validate          |  value == "Login Page"                               |
+    | Get Title  |                         |          |  evaluate          | value if value == "some value" else "something else" |
+
+    = Automatic page and context closing =
+
+    Library will close pages and contexts that are created during test execution.
+    Pages and contexts created before test in Suite Setup or Suite Teardown will be closed after that suite.
+    This will remove the burden of closing these resources in teardowns.
+
+    Browsers will not be automatically closed. A browser is expensive to create and should be reused.
+
+    Automatic closing can be configured or switched off with the ``auto_closing_level`` library parameter.
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
@@ -145,33 +168,51 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
+    _auto_closing_level: AutoClosingLevel
 
-    def __init__(self, timeout="10s", enable_playwright_debug: bool = False):
+    def __init__(
+        self,
+        timeout="10s",
+        enable_playwright_debug: bool = False,
+        auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
+        assertion_polling_enabled: bool = True,
+    ):
         """Browser library can be taken into use with optional arguments:
 
-        - ``timeout``:
+        - ``timeout`` <str>
           Timeout for keywords that operate on elements. The keywords will wait
-          for this time for the element to appear into the page.
-        - ``enable_playwright_debug``:
+          for this time for the element to appear into the page. Defaults to "10s" => 10 seconds.
+        - ``enable_playwright_debug`` <bool>
           Enable low level debug information from the playwright tool. Mainly
           Useful for the library developers and for debugging purposes.
+        - ``auto_closing_level`` <SUITE|TEST|MANUAL>
+          Configure context and page automatic closing. Default is after each test.
+          Other options are SUITE for closing after each suite and MANUAL
+          for no automatic closing.
+        - ``assertion_polling_enabled`` <bool>
+          Disable assertion polling by setting this flag to false.
         """
+        self.timeout = timeout
+        self.assertion_polling_enabled = assertion_polling_enabled
         self.ROBOT_LIBRARY_LISTENER = self
-        # This is more explicit than to have all the libraries be referenceable when they don't need it.
-        self.browser_control = Control(self)
-        self.promises = Promises(self)
+        self._execution_stack: List[object] = []
+        self._unresolved_promises: Set[Future] = set()
+        self._playwright_state = PlaywrightState(self)
         libraries = [
-            self.browser_control,
+            Control(self),
+            Cookie(self),
+            Devices(self),
             Evaluation(self),
             Interaction(self),
             Getters(self),
-            PlaywrightState(self),
+            self._playwright_state,
             Network(self),
-            self.promises,
+            Promises(self),
             Waiter(self),
             WebAppState(self),
         ]
-        self.playwright = Playwright(timeout, enable_playwright_debug)
+        self.playwright = Playwright(self, enable_playwright_debug)
+        self._auto_closing_level = auto_closing_level
         DynamicCore.__init__(self, libraries)
 
     @property
@@ -181,10 +222,63 @@ class Browser(DynamicCore):
     def _close(self):
         self.playwright.close()
 
+    def _start_suite(self, name, attrs):
+        if self._auto_closing_level != AutoClosingLevel.MANUAL:
+            self._execution_stack.append(self.get_browser_catalog())
+
+    def _start_test(self, name, attrs):
+        if self._auto_closing_level == AutoClosingLevel.TEST:
+            self._execution_stack.append(self.get_browser_catalog())
+
     def _end_test(self, name, attrs):
-        if len(self.promises._unresolved_promises) > 0:
+        if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
+        if self._auto_closing_level == AutoClosingLevel.TEST:
+            catalog_before_test = self._execution_stack.pop()
+            self._prune_execution_stack(catalog_before_test)
+
+    def _end_suite(self, name, attrs):
+        if self._auto_closing_level != AutoClosingLevel.MANUAL:
+            catalog_before_suite = self._execution_stack.pop()
+            self._prune_execution_stack(catalog_before_suite)
+
+    def _prune_execution_stack(self, catalog_before):
+        # WIP CODE BEGINS
+        catalog_after = self.get_browser_catalog()
+        ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
+        ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
+        new_ctx_ids = [c for c in ctx_after_ids if c not in ctx_before_ids]
+        for ctx_id in new_ctx_ids:
+            self._playwright_state.switch_context(ctx_id)
+            self._playwright_state.close_context()
+        pages_before = [
+            (p["id"], c["id"])
+            for b in catalog_before
+            for c in b["contexts"]
+            for p in c["pages"]
+        ]
+        pages_after = [
+            (p["id"], c["id"])
+            for b in catalog_after
+            for c in b["contexts"]
+            for p in c["pages"]
+            if c["id"] not in new_ctx_ids
+        ]
+        new_page_ids = [p for p in pages_after if p not in pages_before]
+        for page_id, ctx_id in new_page_ids:
+            self._playwright_state.switch_context(ctx_id)
+            self._playwright_state.switch_page(page_id)
+            self._playwright_state.close_page()
+        # try to set active page and context back to right place.
+        for browser in catalog_after:
+            if browser["activeBrowser"]:
+                activeContext = browser.get("activeContext", None)
+                activePage = browser.get("activePage", None)
+                if not new_ctx_ids and activeContext is not None:
+                    self._playwright_state.switch_context(activeContext)
+                    if not (activePage, activeContext) in new_page_ids:
+                        self._playwright_state.switch_page(activePage)
 
     def run_keyword(self, name, args, kwargs=None):
         try:
@@ -228,12 +322,12 @@ class Browser(DynamicCore):
     def screenshot_on_failure(self, test_name):
         try:
             path = self.failure_screenshot_path(test_name)
-            self.browser_control.take_page_screenshot(path)
+            self.take_screenshot(path)
         except Exception as err:
             logger.info(f"Was unable to take page screenshot after failure:\n{err}")
 
     def failure_screenshot_path(self, test_name):
         return os.path.join(
             BuiltIn().get_variable_value("${OUTPUTDIR}"),
-            test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT",
+            test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT_{index}",
         ).replace("\\", "\\\\")

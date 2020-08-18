@@ -125,7 +125,7 @@
     {
       "login": "tuxmux28",
       "name": "Christoph",
-      "avatar_url": "https://ca.slack-edge.com/T07PJQ9S7-U9G5U3F1S-68b82820b0f9-512",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/2794048?v=4",
       "profile": "https://github.com/tuxmux28",
       "contributions": [
         "test"
@@ -138,6 +138,33 @@
       "profile": "https://github.com/mikahanninen",
       "contributions": [
         "question"
+      ]
+    },
+    {
+      "login": "imbus",
+      "name": "imbus",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/67375753?v=4",
+      "profile": "https://www.imbus.de",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "Finalrykku",
+      "name": "Finalrykku",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/19802569?v=4",
+      "profile": "https://github.com/Finalrykku",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "gdroes",
+      "name": "gdroes",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/6716450?v=4",
+      "profile": "https://github.com/gdroes",
+      "contributions": [
+        "test"
       ]
     }
   ],

@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.7, 3.8]
         node-version: [12.x]
 
     steps:
@@ -45,29 +45,33 @@ jobs:
         flake8 --config Browser/.flake8 Browser
     - name: Build Protos and check with tsc
       run: |
-        make build
+        inv build
+    - name: Start xvfb
+      run: |
+        export DISPLAY=:99.0
+        Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
       run: |
-       make utest
+       inv utest
     - name: Run Robot Framework tests
       run: |
-        make atest
+        xvfb-run --auto-servernum inv atest
     - name: Create Distributable Package
       run: |
-        make package
-    - uses: actions/upload-artifact@v1
+        inv package
+    - uses: actions/upload-artifact@v2
       if: ${{ always() }}
       with:
         name: Test results
         path: atest/output
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: artifacts
         path: dist/
-    - uses: actions/upload-artifact@v1
+    - uses: actions/upload-artifact@v2
       with:
         name: demoapp
-        path: node/dynamic-test-app/dist
+        path: node/dynamic-test-app
   test-install:
     needs: build
     runs-on: ubuntu-latest
@@ -78,14 +82,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: artifacts
       - name: Download package for install testing
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v2
         with:
           name: demoapp
-          path: node/dynamic-test-app/dist
+          path: node/dynamic-test-app
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
@@ -94,20 +98,24 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Start xvfb
+        run: |
+          export DISPLAY=:99.0
+          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
       - name: Install Robot Framework Browser
         env:
-          VERSION: 0.11.0
+          VERSION: 0.15.0
         run: |
-          pip install "artifacts/robotframework_browser-$VERSION-py3-none-any.whl"
-          pip install -U robotframework-pabot
+          pip install "robotframework_browser-$VERSION-py3-none-any.whl"
+          rfbrowser init
+          pip install -r Browser/dev-requirements.txt
       - name: Run Robot Framework tests
         run: |
-          make atest-global-pythonpath
+          xvfb-run --auto-servernum inv atest-global-pythonpath
         env:
           NODE_PATH: /usr/lib/node_modules
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
           name: Clean install results
           path: atest/output
-

@@ -30,9 +30,9 @@ Get Selected Options
     ...    Get Selected Options    select[name=possible_channels]    label    ==    Email    Telephone    Direct mail
 
 Get Selected Options With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Selected Options    notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Option By label
     Select Option And Verify Selection    label    select[name=preferred_channel]    Direct mail
@@ -47,9 +47,9 @@ Select Options By text
     Select Option And Verify Selection    text    select[name=interests]    Males    Females
 
 Select Options By With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Select Options By    label    notamatch    Label
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    Set Browser Timeout    50ms
+    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Select Options By    notamatch    label    Label
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
@@ -59,12 +59,12 @@ Deselect Options Explicitly
     Get Selected Options    select[name=possible_channels]    text    ==
 
 Deselect Options With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Deselect Options    notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 *** Keywords ***
 Select Option And Verify Selection
     [Arguments]    ${attribute}    ${list_id}    @{selection}
-    Select Options By    ${attribute}    ${list_id}    @{selection}
+    Select Options By    ${list_id}    ${attribute}    @{selection}
     Get Selected Options    ${list_id}    ${attribute}    ==    @{selection}

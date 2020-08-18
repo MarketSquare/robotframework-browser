@@ -1,23 +1,37 @@
 import json
-from typing import (
-    Dict,
-    List,
-    Optional,
-)
+from typing import Dict, List, Optional
 
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
-from ..utils.data_types import SupportedBrowsers, ViewportDimensions, ColorScheme
-from ..utils.meta_python import locals_to_params
-from ..utils.time_conversion import timestr_to_millisecs
+from ..utils import (
+    ColorScheme,
+    SupportedBrowsers,
+    ViewportDimensions,
+    locals_to_params,
+    logger,
+    timestr_to_millisecs,
+)
 
 
 class PlaywrightState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages.
     """
+
+    """ Helpers for Switch_ and Close_ keywords """
+
+    def _correct_browser(self, browser: str):
+        if browser == "ALL":
+            raise ValueError
+        if browser != "CURRENT":
+            self.switch_browser(int(browser))
+
+    def _correct_context(self, context: str):
+        if context == "ALL":
+            raise ValueError
+        if context != "CURRENT":
+            self.switch_context(int(context))
 
     @keyword(tags=["BrowserControl"])
     def open_browser(
@@ -31,9 +45,9 @@ class PlaywrightState(LibraryComponent):
         Creates a new browser, context and page with specified settings.
             Only supports some of the settings Create _ Keywords do
 
-        If ``url`` is provided, navigates there.
+        ``url`` <str> Navigates to URL if provided. Defaults to None.
 
-        The optional ``browser`` argument specifies which browser to use. The
+        ``browser`` <firefox|chromium|webkit> Specifies which browser to use. The
         supported browsers are listed in the table below. The browser names
         are case-sensitive.
         |   = Value =     |        = Name(s) =                                   |
@@ -41,6 +55,7 @@ class PlaywrightState(LibraryComponent):
         | chromium        | [https://www.chromium.org/Home|Chromium]             |
         | webkit          | [https://webkit.org/|webkit]                         |
 
+        ``headless`` <bool> If set to False, a GUI is provided. Defaults to True.
         """
 
         self.new_browser(browser, headless=headless)
@@ -48,10 +63,16 @@ class PlaywrightState(LibraryComponent):
         self.new_page(url)
 
     @keyword(tags=["BrowserControl"])
-    def close_browser(self):
+    def close_browser(self, browser: str = "CURRENT"):
         """Closes the current browser. Activated browser is set to first active browser.
         """
         with self.playwright.grpc_channel() as stub:
+            if browser == "ALL":
+                self.close_all_browsers()
+                return
+            if browser != "CURRENT":
+                self.switch_browser(int(browser))
+
             response = stub.CloseBrowser(Request.Empty())
             logger.info(response.log)
 
@@ -63,16 +84,36 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
-    def close_context(self):
-        """Closes the current Context. Activated context is set to first active context."""
+    def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
+        """Closes the current Context. Activated context is set to first active context.
+
+            ``browser`` Close context in specified browser. If value is not "CURRENT" it should be an int referencing the id of the browser where to close context
+            ``context`` Close context with specified id
+        """
         with self.playwright.grpc_channel() as stub:
+            self._correct_browser(browser)
+            if context == "ALL":
+                return NotImplementedError()
+            if context != "CURRENT":
+                self.switch_context(int(context))
+
             response = stub.CloseContext(Request().Empty())
             logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
-    def close_page(self):
-        """Closes the current Page. Activated page is set to first active page."""
+    def close_page(
+        self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
+    ):
+        """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three. Activated page is set to first active page."""
         with self.playwright.grpc_channel() as stub:
+            self._correct_browser(browser)
+            self._correct_context(context)
+
+            if page == "ALL":
+                return NotImplementedError()
+            if page != "CURRENT":
+                self.switch_page(int(page))
+
             response = stub.ClosePage(Request().Empty())
             logger.info(response.log)
 
@@ -113,7 +154,7 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
 
             response = stub.NewBrowser(
-                Request().Browser(browser=browser.value, rawOptions=options)
+                Request().Browser(browser=browser.name, rawOptions=options)
             )
             logger.info(response.log)
             return response.body
@@ -146,12 +187,12 @@ class PlaywrightState(LibraryComponent):
         that can be used in `Switch Context`.
 
         ``acceptDownloads`` <bool> Whether to automatically downloadall the attachments.
-        Defaults to false where all the downloads are canceled.
+        Defaults to False where all the downloads are canceled.
 
         ``ignoreHTTPSErrors`` <bool> Whether to ignore HTTPS errors during navigation.
-        Defaults to false.
+        Defaults to False.
 
-        ``bypassCSP`` <bool> Toggles bypassing page's Content-Security-Policy.
+        ``bypassCSP`` <bool> Toggles bypassing page's Content-Security-Policy. Defaults to False.
 
         ``viewport`` <dict> Sets a consistent viewport for each page.
         Defaults to an ``{'width': 1280, 'height': 720}`` viewport.
@@ -164,21 +205,22 @@ class PlaywrightState(LibraryComponent):
         (can be thought of as dpr). Defaults to 1.
 
         ``isMobile`` <bool> Whether the meta viewport tag is taken into account
-        and touch events are enabled. Defaults to false. Not supported in Firefox.
+        and touch events are enabled. Defaults to False. Not supported in Firefox.
 
-        ``hasTouch`` <bool> Specifies if viewport supports touch events. Defaults to false.
+        ``hasTouch`` <bool> Specifies if viewport supports touch events. Defaults to False.
 
         ``javaScriptEnabled`` <bool> Whether or not to enable JavaScript in the context.
-        Defaults to true.
+        Defaults to True.
 
         ``timezoneId`` <str> Changes the timezone of the context.
         See [https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt?originalUrl=https:%2F%2Fcs.chromium.org%2F|ICU’s metaZones.txt]
         for a list of supported timezone IDs.
 
-        ``geolocation`` <dict> ``{'latitude': 59.95, 'longitude': 30.31667}``
-        - ``latitude`` <number> Latitude between -90 and 90. *required*
-        - ``longitude`` <number> Longitude between -180 and 180. *required*
+        ``geolocation`` <dict> Sets the geolocation. No location is set be default.
+        - ``latitude`` <number> Latitude between -90 and 90. **Required**
+        - ``longitude`` <number> Longitude between -180 and 180. **Required**
         - ``accuracy`` Optional <number> Non-negative accuracy value. Defaults to 0.
+        Example usage: ``{'latitude': 59.95, 'longitude': 30.31667}``
 
         ``locale`` <str> Specify user locale, for example ``en-GB``, ``de-DE``, etc.
         Locale will affect ``navigator.language`` value, ``Accept-Language`` request header value
@@ -190,14 +232,14 @@ class PlaywrightState(LibraryComponent):
         ``extraHTTPHeaders`` <dict[str, str]> A dictionary containing additional HTTP headers
         to be sent with every request. All header values must be strings.
 
-        ``offline`` <bool> Whether to emulate network being offline. Defaults to ``False``.
+        ``offline`` <bool> Whether to emulate network being offline. Defaults to False.
 
-        ``httpCredentials`` <Object> Credentials for HTTP authentication.
+        ``httpCredentials`` <Dict<str, str>> Credentials for HTTP authentication.
         - example: ``{'username': 'admin', 'password': '123456'}``
         - ``username`` <str>
         - ``password`` <str>
 
-        ``colorScheme`` <"dark"|"light"|"no-preference"> Emulates 'prefers-colors-scheme'
+        ``colorScheme`` <dark|light|no-preference> Emulates 'prefers-colors-scheme'
         media feature, supported values are 'light', 'dark', 'no-preference'.
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
         for more details. Defaults to ``light``.
@@ -222,31 +264,17 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def new_page(self, url: Optional[str] = None):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
-
             Returns a stable identifier for the created page.
-            If ``url`` parameter is specified will open the new page to the specified URL.
+
+            ``url`` <str> If specified it will open the new page to the specified URL.
 
         """
-
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(Request().Url(url=url))
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl"])
-    def switch_page(self, index: int):
-        """Switches the active browser page to another open page by ``index``.
-
-            Returns a stable identifier for the previous page.
-
-            Newly opened pages get appended to the end of the list
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.SwitchPage(Request().Index(index=index))
-            logger.info(response.log)
-            return response.body
-
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["BrowserControl", "EventHandler"])
     def auto_activate_pages(self):
         """Toggles automatically changing active page to latest opened page."""
         with self.playwright.grpc_channel() as stub:
@@ -256,8 +284,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def switch_browser(self, index: int):
         """Switches the currently active Browser to another open Browser.
-
             Returns a stable identifier for the previous browser.
+
+            ``index`` <int> Index id of the browser to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=index))
@@ -265,12 +294,31 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=["BrowserControl"])
-    def switch_context(self, index: int):
+    def switch_context(self, index: int, browser: str = "CURRENT"):
         """ Switches the active BrowserContext to another open context.
-
             Returns a stable identifier for the previous context.
+
+            ``index`` <int> Index id of the context to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
+            self._correct_browser(browser)
             response = stub.SwitchContext(Request().Index(index=index))
+            logger.info(response.log)
+            return response.body
+
+    @keyword(tags=["BrowserControl"])
+    def switch_page(
+        self, index: int, context: str = "CURRENT", browser: str = "CURRENT"
+    ):
+        """Switches the active browser page to another open page by ``index``.
+            Returns a stable identifier for the previous page.
+            Newly opened pages get appended to the end of the list.
+
+            ``index`` <int> Index id of the page to be changed to. Starting at 0. **Required**
+        """
+        with self.playwright.grpc_channel() as stub:
+            self._correct_browser(browser)
+            self._correct_context(context)
+            response = stub.SwitchPage(Request().Index(index=index))
             logger.info(response.log)
             return response.body
