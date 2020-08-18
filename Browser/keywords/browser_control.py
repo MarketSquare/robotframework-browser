@@ -77,7 +77,7 @@ class Control(LibraryComponent):
             return response.body
 
     @keyword(tags=["BrowserControl"])
-    def set_timeout(self, timeout: str) -> str:
+    def set_browser_timeout(self, timeout: str) -> str:
         """Sets the timeout used by most input and getter keywords.
 
         ``timeout`` <str> Timeout of it is for current playwright context. **Required**

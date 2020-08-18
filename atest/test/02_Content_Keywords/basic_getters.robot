@@ -21,9 +21,9 @@ Get Text Assert Validate
     Get Text    h1    validate    value.startswith('Login')
 
 Get Text With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    [Setup]    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Text    notamatch
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute and Assert
     Get Attribute    h1    innerText    ==    Login Page
@@ -41,9 +41,9 @@ Get Attribute and Then .. (Closure)
     Should be equal    ${text}    Lokin Pake
 
 Get Attribute With Nonmatching Selector
-    [Setup]    Set Timeout    50ms
+    [Setup]    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Attribute    notamatch    attributeName
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Element Count
     ${count}=    Get Element Count    h1
