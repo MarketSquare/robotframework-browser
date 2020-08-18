@@ -214,7 +214,7 @@ class Interaction(LibraryComponent):
         ``selector`` <str> Selector of the element. **Required**
 
         If there's no element matching selector, the method waits until a
-        matching element appears in the DOM.
+        matching element appears in the DOM. Timeouts after 10 seconds.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(Request().ElementSelector(selector=selector))
@@ -317,8 +317,8 @@ class Interaction(LibraryComponent):
 
         Example use:
 
-            | Upload File |  ${CURDIR}/test_upload_file
-            | Click       |  \\#file_chooser
+            | Upload File |  ${CURDIR}/test_upload_file |
+            | Click       |  \\#file_chooser            |
 
         """
         p = Path(path)
@@ -368,7 +368,7 @@ class Interaction(LibraryComponent):
 
             ``clickCount`` <int> Deterine how often shall be clicked. Defaults to 1.
 
-            ``delay`` <int> Delay in ms between the clicks. Can only be set if the action is click.
+            ``delay`` <int> Delay in ms between the mousedown and mouseup event. Can only be set if the action is click.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {}
