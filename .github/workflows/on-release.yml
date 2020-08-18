@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Build prerequisite Playwright-focal image
+        run: |
+          DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Dockerfile.playwright20.04 .
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v1
         with:
