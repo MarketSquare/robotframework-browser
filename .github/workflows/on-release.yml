@@ -19,7 +19,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
-          repository: marketsquare/robotframework-browser
-          tags: rfbrowser-stable
+          # Weirdly the image "name" is required and has to be here
+          repository: marketsquare/robotframework-browser/rfbrowser-stable
           tag_with_ref: true
           dockerfile: atest/docker/Dockerfile.latest_release
