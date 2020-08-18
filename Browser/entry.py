@@ -44,7 +44,7 @@ def rfbrowser_init():
     print("Installing rfbrowser node dependencies at {}".format(installation_dir))
 
     try:
-        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True)
+        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=False)
     except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
         print(
             "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."

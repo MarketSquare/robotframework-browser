@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useRef, useState } from 'react';
+import React, { ChangeEvent, FocusEvent, useRef, useState } from 'react';
 
 function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     event.persist();
@@ -83,6 +83,35 @@ export default function Site() {
     const uploadResult = React.createRef<HTMLDivElement>();
     const promptResult = React.createRef<HTMLDivElement>();
     const networkPinger = React.createRef<HTMLDivElement>();
+    const mouseDelayDiv = React.createRef<HTMLDivElement>();
+    const clickCount = React.createRef<HTMLDivElement>();
+    const mouseButton = React.createRef<HTMLDivElement>();
+    const coordinatesDivX = React.createRef<HTMLDivElement>();
+    const coordinatesDivY = React.createRef<HTMLDivElement>();
+    const keypresses = React.createRef<HTMLDivElement>();
+
+    let mouseDelay: number;
+    let mouseDownTime: number;
+    let click_Count = 0;
+    let countKeyPress = 0;
+
+    function eventMouseDown(e: any) {
+        mouseDownTime = new Date().getTime();
+        mouseButton.current!.innerHTML = '';
+        if (e.button == 0) mouseButton.current!.innerHTML = 'left';
+        if (e.button == 1) mouseButton.current!.innerHTML = 'middle';
+        if (e.button == 2) mouseButton.current!.innerHTML = 'right';
+        coordinatesDivX.current!.innerHTML = e.pageX.toString();
+        coordinatesDivY.current!.innerHTML = e.pageY.toString();
+    }
+
+    function eventMouseUp() {
+        const mouseupTime = new Date().getTime();
+        mouseDelay = mouseupTime - mouseDownTime;
+        click_Count += 1;
+        clickCount.current!.innerHTML = click_Count.toString();
+        mouseDelayDiv.current!.innerHTML = mouseDelay.toString();
+    }
 
     const handleSubmit = () => {
         setSubmit(true);
@@ -90,6 +119,8 @@ export default function Site() {
 
     function usernameChange(event: ChangeEvent<HTMLInputElement>) {
         username.current = event.target.value;
+        countKeyPress += 1;
+        keypresses.current!.innerHTML = countKeyPress.toString();
     }
 
     function passwordChange(event: ChangeEvent<HTMLInputElement>) {
@@ -174,7 +205,17 @@ export default function Site() {
                 <button className="pure-button">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
+                <button id="clickWithOptions" onMouseDown={eventMouseDown} onMouseUp={eventMouseUp}>
+                    Click with Options
+                </button>
                 <div id="upload_result" ref={uploadResult}></div>
+                <div id="mouse_delay_time" ref={mouseDelayDiv}></div>
+                <div id="click_count" ref={clickCount}></div>
+                <div id="mouse_button" ref={mouseButton}></div>
+                <div id="coordinatesX" ref={coordinatesDivX}></div>
+                <div id="coordinatesY" ref={coordinatesDivY}></div>
+                <div id="countKeyPress" ref={keypresses}></div>
+
                 <input
                     type="file"
                     id="file_chooser"
