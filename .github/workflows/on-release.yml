@@ -5,7 +5,8 @@ on:
     types: [ published ]
 
 
-docker-image:
+jobs:
+  docker-image:
     needs: build
     runs-on: ubuntu-latest
     steps:
