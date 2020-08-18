@@ -19,6 +19,20 @@ class PlaywrightState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages.
     """
 
+    """ Helpers for Switch_ and Close_ keywords """
+
+    def _correct_browser(self, browser: str):
+        if browser == "ALL":
+            raise ValueError
+        if browser != "CURRENT":
+            self.switch_browser(int(browser))
+
+    def _correct_context(self, context: str):
+        if context == "ALL":
+            raise ValueError
+        if context != "CURRENT":
+            self.switch_context(int(context))
+
     @keyword(tags=["BrowserControl"])
     def open_browser(
         self,
@@ -68,18 +82,6 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseAllBrowsers(Request().Empty())
             logger.info(response.log)
-
-    def _correct_browser(self, browser: str):
-        if browser == "ALL":
-            raise ValueError
-        if browser != "CURRENT":
-            self.switch_browser(int(browser))
-
-    def _correct_context(self, context: str):
-        if context == "ALL":
-            raise ValueError
-        if context != "CURRENT":
-            self.switch_context(int(context))
 
     @keyword(tags=["BrowserControl"])
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
@@ -272,19 +274,6 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl"])
-    def switch_page(self, index: int):
-        """Switches the active browser page to another open page by ``index``.
-            Returns a stable identifier for the previous page.
-            Newly opened pages get appended to the end of the list.
-
-            ``index`` <int> Index id of the page to be changed to. Starting at 0. **Required**
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.SwitchPage(Request().Index(index=index))
-            logger.info(response.log)
-            return response.body
-
     @keyword(tags=["BrowserControl", "EventHandler"])
     def auto_activate_pages(self):
         """Toggles automatically changing active page to latest opened page."""
@@ -305,13 +294,31 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=["BrowserControl"])
-    def switch_context(self, index: int):
+    def switch_context(self, index: int, browser: str = "CURRENT"):
         """ Switches the active BrowserContext to another open context.
             Returns a stable identifier for the previous context.
 
             ``index`` <int> Index id of the context to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
+            self._correct_browser(browser)
             response = stub.SwitchContext(Request().Index(index=index))
+            logger.info(response.log)
+            return response.body
+
+    @keyword(tags=["BrowserControl"])
+    def switch_page(
+        self, index: int, context: str = "CURRENT", browser: str = "CURRENT"
+    ):
+        """Switches the active browser page to another open page by ``index``.
+            Returns a stable identifier for the previous page.
+            Newly opened pages get appended to the end of the list.
+
+            ``index`` <int> Index id of the page to be changed to. Starting at 0. **Required**
+        """
+        with self.playwright.grpc_channel() as stub:
+            self._correct_browser(browser)
+            self._correct_context(context)
+            response = stub.SwitchPage(Request().Index(index=index))
             logger.info(response.log)
             return response.body
