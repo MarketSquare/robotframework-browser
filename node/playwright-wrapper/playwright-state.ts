@@ -274,22 +274,6 @@ export class BrowserState {
     }
 }
 
-export async function closeSpecific(
-    call: ServerUnaryCall<Request.PagePath>,
-    callback: sendUnaryData<Response.Empty>,
-    openBrowsers: PlaywrightState,
-) {
-    const pageId = call.request.getPage();
-    const contextId = call.request.getContext();
-    const browserId = call.request.getBrowser();
-
-    const browser = openBrowsers.getBrowser(browserId);
-    exists(browser, callback, 'TODO');
-    const context = browser.getContext(contextId);
-    exists(context, callback, 'TODO');
-    const page = context.getPage(pageId);
-}
-
 export async function closeBrowser(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
     const index = openBrowsers.activeBrowser;
     const currentBrowser = openBrowsers.activeBrowser;
@@ -322,6 +306,22 @@ export async function closePage(callback: sendUnaryData<Response.Empty>, openBro
     await openBrowsers.getActivePage()?.close();
     activeBrowser.popPage();
     callback(null, emptyWithLog('Succesfully closed Page'));
+}
+
+export async function closeSpecific(
+    call: ServerUnaryCall<Request.PagePath>,
+    callback: sendUnaryData<Response.Empty>,
+    openBrowsers: PlaywrightState,
+) {
+    const pageId = call.request.getPage();
+    const contextId = call.request.getContext();
+    const browserId = call.request.getBrowser();
+
+    const browser = openBrowsers.getBrowser(browserId);
+    exists(browser, callback, 'TODO');
+    const context = browser.getContext(contextId);
+    exists(context, callback, 'TODO');
+    const page = context.getPage(pageId);
 }
 
 export async function newPage(
