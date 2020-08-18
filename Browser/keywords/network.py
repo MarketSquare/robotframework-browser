@@ -1,7 +1,8 @@
 import json
-from typing import Dict, Literal, Optional
+from typing import Dict, Optional
 
 from robotlibcore import keyword  # type: ignore
+from typing_extensions import Literal
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request

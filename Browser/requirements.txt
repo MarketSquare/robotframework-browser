@@ -1,5 +1,7 @@
+backports.cached-property >= 1.0.0
 grpcio >=1.31.0,<2.0.0
 grpcio-tools >=1.31.0,<2.0.0
 robotframework >=3.2.1
 robotframework-pythonlibcore >=2.1.0
+typing-extensions >= 3.7.4.2
 wrapt >= 1.12.1

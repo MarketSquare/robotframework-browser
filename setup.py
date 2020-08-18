@@ -32,7 +32,7 @@ setup_kwargs = {
     "package_data": package_data,
     "install_requires": install_requires,
     "entry_points": {"console_scripts": ["rfbrowser=Browser.entry:run"]},
-    "python_requires": ">=3.8,<4.0",
+    "python_requires": ">=3.7,<4.0",
     "classifiers": [
         "Development Status :: 1 - Planning",
         "License :: OSI Approved :: Apache Software License",
