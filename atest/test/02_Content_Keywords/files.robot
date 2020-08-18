@@ -44,8 +44,8 @@ Wait For Download with custom path
 
 *** Keywords ***
 Set Library Timeout
-    ${timeout} =    Set Timeout    2 seconds
+    ${timeout} =    Set Browser Timeout    2 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
 Restore Library Timeout
-    Set Timeout    ${ORIGINAL_TIMEOUT}
+    Set Browser Timeout    ${ORIGINAL_TIMEOUT}

@@ -22,6 +22,8 @@ Only Python 3.8 or later is supported.
 2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
 3. Install the node dependencies: run `rfbrowser init` in your shell
 
+Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages).
+
 # Examples
 
 ### Testing with [Robot Framework](https://robotframework.org)

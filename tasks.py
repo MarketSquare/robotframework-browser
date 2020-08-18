@@ -4,6 +4,7 @@ import re
 import shutil
 
 from invoke import task, Exit
+
 try:
     from pabot import pabot
     import pytest
@@ -210,14 +211,42 @@ def lint(c):
 
 
 @task
-def docker(c):
-    c.run("docker build --tag rfbrowser --file atest/docker/Dockerfile .")
+def docker_base(c):
+    c.run(
+        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Dockerfile.playwright20.04 ."
+    )
+
+
+@task
+def docker_builder(c):
+    c.run(
+        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file atest/docker/Dockerfile ."
+    )
+
+
+@task
+def docker_stable_image(c):
+    from Browser import VERSION
+
+    c.run(
+        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file atest/docker/Dockerfile.latest_release ."
+    )
 
 
 @task(clean_atest, build)
 def docker_test(c):
+    c.run("mkdir atest/output")
     c.run(
-        "docker run -it --rm --ipc=host --security-opt seccomp=atest/docker/chrome.json -v $(shell pwd)/atest/:/atest rfbrowser robot --loglevel debug --exclude Not-Implemented -d /atest/output /atest/test"
+        """docker run\
+	    --rm \
+	    --ipc=host\
+	    --security-opt seccomp=atest/docker/chrome.json \
+	    -v $(pwd)/atest/:/app/atest \
+	    -v $(pwd)/node/:/app/node/ \
+	    --workdir /app \
+	    rfbrowser \
+	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --verbose --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /app/atest/output /app/atest/test"
+          """
     )
 
 

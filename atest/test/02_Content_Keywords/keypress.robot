@@ -20,6 +20,6 @@ Press Keys Combination of Keystrokes in Select List
     Get Selected Options    select[name="possible_channels"]    value    ==    email    phone    directmail
 
 Press Keys With Nonmatching Selector
-    Set Timeout    50ms
+    Set Browser Timeout    50ms
     Run Keyword And Expect Error    Could not find element with selector `css=notamatch` within timeout.    Press Keys    css=notamatch    F
-    [Teardown]    Set Timeout    ${PLAYWRIGHT_TIMEOUT}
+    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
