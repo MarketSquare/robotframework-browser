@@ -16,7 +16,7 @@ Move In Circle
 
 Click Count
     ${xy}=    Get Boundingbox    \#clickWithOptions    x    y
-    Mouse Button    click    @{xy}    clickCount=10
+    Mouse Button    click    &{xy}    clickCount=10
     Get Text    \#click_count    ==    10
 
 Delay click
