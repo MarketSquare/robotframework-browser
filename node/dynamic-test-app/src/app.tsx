@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useRef, useState } from 'react';
+import React, { ChangeEvent, useRef, useState, FocusEvent } from 'react';
 
 function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     event.persist();
@@ -88,10 +88,12 @@ export default function Site() {
     const mouseButton = React.createRef<HTMLDivElement>();
     const coordinatesDivX = React.createRef<HTMLDivElement>();
     const coordinatesDivY = React.createRef<HTMLDivElement>();
+    const Keypresses = React.createRef<HTMLDivElement>();
 
     let mouseDelay: number;
     let mouseDownTime: number;
     let click_Count = 0;
+    let countKeyPress = 0;
 
     function EventMouseDown(e :any ) {
         mouseDownTime = new Date().getTime();
@@ -117,11 +119,15 @@ export default function Site() {
 
     function usernameChange(event: ChangeEvent<HTMLInputElement>) {
         username.current = event.target.value;
+        countKeyPress += 1;
+        Keypresses.current!.innerHTML = countKeyPress.toString();
     }
 
     function passwordChange(event: ChangeEvent<HTMLInputElement>) {
         password.current = event.target.value;
     }
+
+    
 
     function Body() {
         if (submit) return <PostSubmit />;
@@ -165,7 +171,7 @@ export default function Site() {
                                     <label htmlFor="password_field">Password:</label>
                                 </td>
                                 <td>
-                                    <input id="password_field" size={30} type="password" onChange={passwordChange} />
+                                    <input id="password_field" size={30} type="password" onChange={passwordChange}/>
                                 </td>
                             </tr>
                             <tr>
@@ -210,6 +216,8 @@ export default function Site() {
                 <div id="mouse_button" ref={mouseButton}></div>
                 <div id="coordinatesX" ref={coordinatesDivX}></div>
                 <div id="coordinatesY" ref={coordinatesDivY}></div>
+                <div id="countKeyPress" ref={Keypresses}></div>
+                
                 <input
                     type="file"
                     id="file_chooser"
