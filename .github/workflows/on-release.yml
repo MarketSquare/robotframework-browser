@@ -20,6 +20,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
           repository: marketsquare/robotframework-browser
-          name: rfbrowser-stable
+          tags: rfbrowser-stable
           tag_with_ref: true
           dockerfile: atest/docker/Dockerfile.latest_release
