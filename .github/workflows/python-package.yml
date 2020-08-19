@@ -111,18 +111,17 @@ jobs:
           pip install "robotframework_browser-$VERSION-py3-none-any.whl"
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
+      - name: Set node_path env var
+        run: |
+          ::set-env name=NODE_PATH::/usr/lib/node_modules
       - name: Run Robot Framework tests on unix-like OS
         if: ${{ matrix.os }} != windows-latest
         run: |
           xvfb-run --auto-servernum inv atest-global-pythonpath
-        env:
-          NODE_PATH: /usr/lib/node_modules
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os }} == windows-latest
         run: |
           inv atest-global-pythonpath
-        env:
-          NODE_PATH: /usr/lib/node_modules
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
