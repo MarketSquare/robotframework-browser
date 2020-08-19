@@ -108,11 +108,9 @@ jobs:
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
       - name: Install Robot Framework Browser
-        env:
-          VERSION: 0.15.0
         run: |
           ls
-          pip install rfbrowser.whl
+          pip install ./rfbrowser.whl
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Set node_path env var
