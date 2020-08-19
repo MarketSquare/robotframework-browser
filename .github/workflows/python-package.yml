@@ -76,6 +76,7 @@ jobs:
     needs: build
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: [3.8]
