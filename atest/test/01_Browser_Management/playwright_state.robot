@@ -147,3 +147,24 @@ Context Index is stable when other contexts closed
     Close Context
     ${last}=    Switch Context    ${first}
     Should Be Equal    ${first}    ${last}
+
+Page indices are unique
+    ${first}=    New Page
+    Close Page
+    ${second}=    New Page
+    Should Not Be Equal    ${first}    ${second}
+    Fail
+
+Context indices are unique
+    ${first}=    New Context
+    Close Context
+    ${second}=    New Context
+    Should Not Be Equal    ${first}    ${second}
+    Fail
+
+Browser indices are unique
+    ${first}=    New Browser
+    Close Browser
+    ${second}=    New Browser
+    Should Not Be Equal    ${first}    ${second}
+    Fail
