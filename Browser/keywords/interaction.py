@@ -200,7 +200,7 @@ class Interaction(LibraryComponent):
                 options["modifiers"] = [m.name for m in modifiers]
             options_json = json.dumps(options)
             logger.debug(f"Click Options are: {options_json}")
-            response = stub.Click(
+            response = stub.ClickWithOptions(
                 Request().ElementSelectorWithOptions(
                     selector=selector, options=options_json
                 )

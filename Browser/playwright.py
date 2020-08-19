@@ -1,5 +1,4 @@
 import contextlib
-import functools
 import os
 import time
 from pathlib import Path
@@ -7,6 +6,7 @@ from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 from typing import TYPE_CHECKING
 
 import grpc  # type: ignore
+from backports.cached_property import cached_property
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
@@ -35,7 +35,7 @@ class Playwright(LibraryComponent):
         else:
             return "."
 
-    @functools.cached_property
+    @cached_property
     def _playwright_process(self) -> Popen:
         process = self.start_playwright()
         self.wait_until_server_up()
