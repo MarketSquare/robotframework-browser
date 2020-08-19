@@ -64,10 +64,13 @@ jobs:
       with:
         name: Test results
         path: atest/output
+    - name: Rename build wheel
+      run: |
+        mv dist/robotframework-browser-*-py3-none-any.whl dist/robotframework_browser_master.whl
     - uses: actions/upload-artifact@v2
       with:
-        name: robotframework_browser.whl
-        path: dist/robotframework_browser-*-py3-none-any.whl
+        name: rfbrowser-wheel 
+        path: dist/robotframework_browser_master.whl
     - uses: actions/upload-artifact@v2
       with:
         name: demoapp
@@ -86,8 +89,7 @@ jobs:
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
-          path: rfbrowser.whl
-          name: robotframework_browser.whl
+          name: rfbrowser-wheel
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
@@ -109,8 +111,7 @@ jobs:
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
       - name: Install Robot Framework Browser
         run: |
-          ls
-          pip install ./rfbrowser.whl
+          pip install ./robotframework_browser_master.whl
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Set node_path env var
