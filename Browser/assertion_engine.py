@@ -20,6 +20,7 @@ NumericalOperators = [
 SequenceOperators = [
     AssertionOperator["*="],
     AssertionOperator["validate"],
+    AssertionOperator["then"],
     AssertionOperator["=="],
     AssertionOperator["!="],
 ]
@@ -82,14 +83,13 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
                 time.sleep(0.016)  # 60 fps
 
 
-def int_str_verify_assertion(
+def float_str_verify_assertion(
     value: T, operator: Optional[AssertionOperator], expected: Any, message=""
 ):
     if operator is None:
         return value
     elif operator in NumericalOperators:
-        expected = int(expected)
-
+        expected = float(expected)
     elif operator in [
         AssertionOperator["validate"],
         AssertionOperator["then"],
