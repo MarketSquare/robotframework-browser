@@ -285,9 +285,9 @@ def version(c, version):
     node_version_file = root_dir / "package.json"
     node_version_matcher = re.compile('"version": ".*"')
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
-    workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
-    workflow_version_matcher = re.compile("VERSION: .*")
-    _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")
+    # workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
+    # workflow_version_matcher = re.compile("VERSION: .*")
+    # _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")
 
 
 def _replace_version(filepath, matcher, version):
