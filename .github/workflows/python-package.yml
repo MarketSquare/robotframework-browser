@@ -112,8 +112,7 @@ jobs:
           VERSION: 0.15.0
         run: |
           ls
-          ls robotframework-browser
-          pip install robotframework-browser/rfbrowser.whl
+          pip install rfbrowser.whl
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Set node_path env var
