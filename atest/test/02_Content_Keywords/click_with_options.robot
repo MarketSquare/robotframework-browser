@@ -6,7 +6,11 @@ Test Setup        New Page    ${LOGIN_URL}
 Click Count
     Click With Options    \#clickWithOptions    click_count=10
     Get Text    \#click_count    ==    10
-# When delay is set raises Could not find element with selector `#clickWithOptions` within timeout. error
+
+Click Count with Delay
+    [Tags]    Not-Implemented
+    Click With Options    \#clickWithOptions    delay=100    click_count=10
+    Get Text    \#click_count    ==    10
 
 Delay Click
     [Tags]    Not-Implemented
@@ -26,14 +30,12 @@ Left Right and Middle Click
     Get Text    \#mouse_button    ==    middle
     Click With Options    \#clickWithOptions    left
     Get Text    \#mouse_button    ==    left
-# Invalid usage since coordinates are usually return as centre.
-# When we go to x=1, y=1 we are at top left of element, not 1, 1 pixels off the centre
 
 Click with Coordinates
     [Tags]    Not-Implemented
-    Click With Options    \#clickWithOptions
-    ${x}=    Get Text    \#coordinatesX
-    ${y}=    Get Text    \#coordinatesY
+    ${xy}     Get Boundingbox     \#clickWithOptions    x    y
+    ${x}      Evaluate    ${xy}[x]+1
+    ${y}      Evaluate    ${xy}[y]+1
     Click With Options    \#clickWithOptions    position_x=1    position_y=1
-    Get Text    \#coordinatesX    validate    int(${x}+1)==int(value)
-    Get Text    \#coordinatesY    validate    int(${y}+1)==int(value)
+    Get Text    \#coordinatesX    validate    int(${x})==int(value)
+    Get Text    \#coordinatesY    validate    int(${y})==int(value)

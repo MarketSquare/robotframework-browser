@@ -65,6 +65,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def close_browser(self, browser: str = "CURRENT"):
         """Closes the current browser. Activated browser is set to first active browser.
+        Closes all context and pages belonging to this browser.
+
+        ``browser`` <str> Closes the browser with specified id. Defaults to CURRENT. 
         """
         with self.playwright.grpc_channel() as stub:
             if browser == "ALL":
@@ -78,17 +81,21 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=["BrowserControl"])
     def close_all_browsers(self):
-        """Closes all open browsers."""
+        """Closes all open browsers, contexts and pages."""
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseAllBrowsers(Request().Empty())
             logger.info(response.log)
 
     @keyword(tags=["BrowserControl"])
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
-        """Closes the current Context. Activated context is set to first active context.
+        # Add to page if ALL is implemented: If ALL is passed, all contexts of the browser will be closed.
+        """Closes a Context. Activated context is set to first active context.
+        Closes pages belonging to this context.
 
-            ``browser`` Close context in specified browser. If value is not "CURRENT" it should be an int referencing the id of the browser where to close context
-            ``context`` Close context with specified id
+        ``context`` <str> Close context with specified id. Defaults to CURRENT.
+
+        ``browser`` <str> Close context in specified browser. If value is not "CURRENT"
+        it should be an int referencing the id of the browser where to close context.
         """
         with self.playwright.grpc_channel() as stub:
             self._correct_browser(browser)
@@ -104,7 +111,16 @@ class PlaywrightState(LibraryComponent):
     def close_page(
         self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
     ):
-        """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three. Activated page is set to first active page."""
+        # Add to page if ALL is implemented: If ALL is passed, all pages of the context will be closed.
+        """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three.
+        Activated page is set to first active page.
+        
+        ``page`` <str> Id of the page to close. Defaults to CURRENT.
+
+        ``context`` <str> Id of the context that belongs to the page to be closed. Defaults to CURRENT.
+
+        ``browser`` <str> Id of the browser that belongs to the page to be closed. Defaults to CURRENT.
+        """
         with self.playwright.grpc_channel() as stub:
             self._correct_browser(browser)
             self._correct_context(context)
@@ -139,9 +155,44 @@ class PlaywrightState(LibraryComponent):
 
         Returns a stable identifier for the created browser.
 
-        A Browser is the Playwright object that controls a single Browser process.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsertypelaunchoptions |Playwright browserType.launch]
-        for a full list of supported options.
+        ``browser`` <chromium|firefox|webkit> Opens the specified browser. Defaults to chromium.
+
+        ``headless`` <bool> Set to False if you want a GUI. Defaults to False.
+
+        ``executablePath`` <str> Path to a browser executable to run instead of the bundled one.
+        If executablePath is a relative path, then it is resolved relative to current working
+        directory. Note that Playwright only works with the bundled Chromium, Firefox or
+        WebKit, use at your own risk. Defaults to None.
+
+        ``args`` <List<str>> Additional arguments to pass to the browser instance. The list of
+        Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/ | here].
+        Defaults to None.
+
+        ``ignoreDefaultArgs`` <List<str>> If an array is given, then filters out the given default arguments. 
+        Defaults to None.
+
+        ``proxy`` <Dict> Network proxy settings.
+        - server <string> Proxy to be used for all requests. HTTP and SOCKS proxies are supported, for example ``http://myproxy.com:3128`` or ``socks5://myproxy.com:3128``. Short form ``myproxy.com:3128`` is considered an HTTP proxy.
+        - bypass <string> Optional coma-separated domains to bypass proxy, for example ``".com, chromium.org, .domain.com"``.
+        - username <string> Optional username to use if HTTP proxy requires authentication.
+        - password <string> Optional password to use if HTTP proxy requires authentication.
+
+        ``downloadsPath`` <str> If specified, accepted downloads are downloaded into this folder. 
+        Otherwise, temporary folder is created and is deleted when browser is closed.
+
+        ``handleSIGINT`` <bool> Close the browser process on Ctrl-C. Defaults to True.
+
+        ``handleSIGTERM`` <bool> Close the browser process on SIGTERM. Defaults to True.
+
+        ``handleSIGHUP`` <bool> Close the browser process on SIGHUP. Defaults to True.
+
+        ``timeout`` <int> Maximum time in milliseconds to wait for the browser instance to start. Defaults to 30000 (30 seconds). Pass 0 to disable timeout.
+
+        ``env`` <Dict<str, str|int|bool>> Specify environment variables that will be visible to the browser. Defaults to None.
+
+        ``devtools`` <bool> Chromium-only Whether to auto-open a Developer Tools panel for each tab. If this option is true, the headless option will be set false.
+
+        ``slowMo`` <int> Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay.
         """
         params = locals_to_params(locals())
         if timeout:
@@ -213,7 +264,7 @@ class PlaywrightState(LibraryComponent):
         Defaults to True.
 
         ``timezoneId`` <str> Changes the timezone of the context.
-        See [https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt?originalUrl=https:%2F%2Fcs.chromium.org%2F|ICU’s metaZones.txt]
+        See [https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt | ICU’s metaZones.txt]
         for a list of supported timezone IDs.
 
         ``geolocation`` <dict> Sets the geolocation. No location is set be default.
@@ -226,8 +277,8 @@ class PlaywrightState(LibraryComponent):
         Locale will affect ``navigator.language`` value, ``Accept-Language`` request header value
         as well as number and date formatting rules.
 
-        ``permissions`` <list[str]> A list of permissions to grant to all pages in this context.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options|grantPermissions] for more details.
+        ``permissions`` <list<str>> A list of permissions to grant to all pages in this context.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options | grantPermissions] for more details.
 
         ``extraHTTPHeaders`` <dict[str, str]> A dictionary containing additional HTTP headers
         to be sent with every request. All header values must be strings.

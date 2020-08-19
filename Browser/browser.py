@@ -42,6 +42,21 @@ class Browser(DynamicCore):
 
     %TOC%
 
+    = Browser, Context and Page =
+
+    Browser library works with three different layers that build on each other:
+    Browser, Context and Page. The context layer is useful e.g. for testing
+    different users on the same webpage without opening a whole new browser context.
+    When a new page is opened as the first step with `New Page`, `New Browser`
+    and `New Context` are executed with default values first. The same goes vice
+    versa with `Close Browser`.
+
+    If there is no browser opened in Suite Setup and `New Page` is executed in
+    Test Setup, the corresponding pages and context is closed automatically after
+    the test. The browser remains open and will be closed at the end of execution.
+
+    Each Browser, Context and Page has a unique ID with which they can be adressed.
+
     = Finding elements =
 
     All keywords in the library that need to interact with an element
@@ -54,6 +69,62 @@ class Browser(DynamicCore):
     Playwright node module: xpath, css, id and text. The strategy can either
     be explicitly specified with a prefix or the strategy can be implicit.
 
+    Selector is a string that consists of one or more clauses separated by 
+    ``>>`` token, e.g. ``clause1 >> clause2 >> clause3``. When multiple clauses
+    are present, next one is queried relative to the previous one's result.
+    Browser library supports concatination of different selectors seperated by ``>>``.
+
+    For example:
+    ``"Hello" >> ../.. >> css=button``
+
+    Each clause contains a selector engine name and selector body, e.g.
+    ``engine=body``. Here ``engine`` is one of the supported engines (e.g. css or
+    a custom one). Selector ``body`` follows the format of the particular engine,
+    e.g. for css engine it should be a [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector].
+    Body format is assumed to ignore leading and trailing white spaces,
+    so that extra whitespace can be added for readability. If selector
+    engine needs to include ``>>`` in the body, it should be escaped
+    inside a string to not be confused with clause separator,
+    e.g. ``text="some >> text"``.
+
+    Selector engine name can be prefixed with ``*`` to capture element that
+    matches the particular clause instead of the last one. For example,
+    ``css=article >> text=Hello`` captures the element with the text ``Hello``,
+    and ``*css=article >> text=Hello`` (note the *) captures the article element
+    that contains some element with the text Hello.
+
+    For convenience, selectors in the wrong format are heuristically converted
+    to the right format:
+
+    - Selector starting with // or .. is assumed to be xpath=selector. Example: ``Click    //button`` is converted to ``Click    xpath=//button``.
+    - Selector starting and ending with a quote (either " or ') is assumed to be text=selector. Example: ``Click    Submit`` is converted to ``Click    text=Submit``.
+    - Otherwise, selector is assumed to be css=selector. Example: ``Click    button`` is converted to ``Click    css=button``.
+
+    == Examples ==
+    | # queries 'div' css selector
+    | Get Element    css=div
+    |
+    | # queries '//html/body/div' xpath selector
+    | Get Element    //html/body/div
+    |
+    | # queries '"foo"' text selector
+    | Get Element    text="foo"
+    |
+    | # queries 'span' css selector inside the result of '//html/body/div' xpath selector
+    | Get Element    xpath=//html/body/div >> css=span
+    |
+    | # converted to 'css=div'
+    | Get Element    div
+    |
+    | # converted to 'xpath=//html/body/div'
+    | Get Element    //html/body/div
+    |
+    | # converted to 'text=foo'
+    | Get Element    foo
+    |
+    | # queries the div element of every 2nd span element inside an element with the id foo
+    | Get Element    \#foo >> css=span:nth-child(2n+1) >> div
+
     === Implicit selector strategy ===
 
     The default selector strategy is `css`. If selector does not contain
@@ -63,8 +134,11 @@ class Browser(DynamicCore):
 
     Examples:
 
-    | `Click` | span > button | # Use css selector strategy the element.   |
-    | `Click` | //span/button | # Use xpath selector strategy the element. |
+    | # Use css selector strategy the element.
+    | `Click`  span > button
+    |
+    | # Use xpath selector strategy the element.
+    | `Click`  //span/button
 
     === Explicit selector strategy ===
 
@@ -81,7 +155,7 @@ class Browser(DynamicCore):
     | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
     | text         | Browser text engine.       | ``text=Login``                 |
 
-    == Finding elements inside frames ==
+    === Finding elements inside frames ===
 
     By default, selector chains do not cross frame boundaries. It means that a
     simple CSS selector is not able to select and element located inside an iframe
@@ -93,9 +167,90 @@ class Browser(DynamicCore):
     ``<iframe name="iframe" src="src.html"><button id="btn">Click Me</button></iframe>``,
     here's a keyword call that clicks the button inside the frame.
 
-    | Click  | iframe[name="iframe"] >>> #btn  |
+    | Click   iframe[name="iframe"] >>> #btn
 
     The selectors on the left and right side of ``>>>`` can be any valid selectors.
+
+    === CSS:light ===
+
+    ``css:light`` engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/querySelector | Document.querySelector]
+    and behaves according to the CSS spec.
+    However, it does not pierce shadow roots, which may be inconvenient when working with
+    [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM | Shadow DOM and Web Components].
+    For that reason, ``css`` engine pierces shadow roots. More specifically, every
+    [https://developer.mozilla.org/en-US/docs/Web/CSS/Descendant_combinator|Descendant]
+    combinator pierces an arbitrary number of open shadow roots, including the implicit
+    descendant combinator at the start of the selector.
+
+    ``css`` engine first searches for elements in the light dom in the iteration order,
+    and then recursively inside open shadow roots in the iteration order. It does not
+    search inside closed shadow roots or iframes.
+
+    Examples:
+
+    | <article>
+    |   <div>In the light dom</div>
+    |   <div slot='myslot'>In the light dom, but goes into the shadow slot</div>
+    |   <open mode shadow root>
+    |       <div class='in-the-shadow'>
+    |           <span class='content'>
+    |               In the shadow dom
+    |               <open mode shadow root>
+    |                   <li id='target'>Deep in the shadow</li>
+    |               </open mode shadow root>
+    |           </span>
+    |       </div>
+    |       <slot name='myslot'></slot>
+    |   </open mode shadow root>
+    | </article>
+
+    Note that ``<open mode shadow root>`` is not an html element, but rather a shadow root
+    created with ``element.attachShadow({mode: 'open'})``.
+
+    - Both ``"css=article div"`` and ``"css:light=article div"`` match the first ``<div>In the light dom</div>``.
+    - Both ``"css=article > div"`` and ``"css:light=article > div"`` match two ``div`` elements that are direct children of the ``article``.
+    - ``"css=article .in-the-shadow"`` matches the ``<div class='in-the-shadow'>``, piercing the shadow root, while ``"css:light=article .in-the-shadow"`` does not match anything.
+    - ``"css:light=article div > span"`` does not match anything, because both light-dom ``div`` elements do not contain a ``span``.
+    - ``"css=article div > span"`` matches the ``<span class='content'>``, piercing the shadow root.
+    - ``"css=article > .in-the-shadow"`` does not match anything, because ``<div class='in-the-shadow'>`` is not a direct child of ``article``
+    - ``"css:light=article > .in-the-shadow"`` does not match anything.
+    - ``"css=article li#target"`` matches the ``<li id='target'>Deep in the shadow</li>``, piercing two shadow roots.
+
+    === xpath ===
+
+    XPath engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/evaluate|Document.evaluate].
+    Example: ``xpath=//html/body``.
+
+    Malformed selector starting with ``//`` or ``..`` is assumed to be an xpath selector.
+    For example, ``//html/body`` is converted to ``xpath=//html/body``.
+
+    Note that xpath does not pierce shadow roots.
+
+    === text and text:light ===
+
+    Text engine finds an element that contains a text node with the passed text.
+    For example, ``Click    text=Login`` clicks on a login button, and
+    ``Wait For Elements State   lazy loaded text`` waits for the "lazy loaded text"
+    to appear in the page.
+
+    - By default, the match is case-insensitive, ignores leading/trailing whitespace and searches for a substring. This means text= Login matches ``<button>Button loGIN (click me)</button>``.
+    - Text body can be escaped with single or double quotes for precise matching, insisting on exact match, including specified whitespace and case. This means ``text="Login "`` will only match ``<button>Login </button>`` with exactly one space after "Login". Quoted text follows the usual escaping rules, e.g. use ``\"`` to escape double quote in a double-quoted string: ``text="foo\"bar"``.
+    - Text body can also be a JavaScript-like regex wrapped in / symbols. This means ``text=/^\\s*Login$/i`` will match ``<button> loGIN</button>`` with any number of spaces before "Login" and no spaces after.
+    - Input elements of the type button and submit are rendered with their value as text, and text engine finds them. For example, ``text=Login`` matches ``<input type=button value="Login">``.
+    
+    Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
+    to be a text selector. For example, ``Click    Login`` is converted to ``Click    text=Login``.
+
+    ``text`` engine open pierces shadow roots similarly to ``css``, while ``text:light`` does not.
+    Text engine first searches for elements in the light dom in the iteration order, and then
+    recursively inside open shadow roots in the iteration order. It does not search inside
+    closed shadow roots or iframes.
+
+    === id, data-testid, data-test-id, data-test and their :light counterparts ===
+    
+    Attribute engines are selecting based on the corresponding attribute value.
+    For example: ``data-test-id=foo`` is equivalent to ``css=[data-test-id="foo"]``,
+    and ``id:light=foo`` is equivalent to ``css:light=[id="foo"]``.
 
     == Element reference syntax ==
 
