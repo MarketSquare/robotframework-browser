@@ -36,5 +36,5 @@ then that team member will no longer be part of the core team.
 
 ## Signed by:
 
-We agree on all of this by commiting a signed commit on this file that adds signers name here:
- 
+We agree on all of this by commiting a signed commit `git commit -S` on this file
+that adds signers name here:
