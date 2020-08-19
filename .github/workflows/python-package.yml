@@ -109,7 +109,7 @@ jobs:
         env:
           VERSION: 0.15.0
         run: |
-          pip install "robotframework_browser-*-py3-none-any.whl"
+          pip install robotframework_browser-*-py3-none-any.whl
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Set node_path env var
