@@ -111,6 +111,8 @@ jobs:
         env:
           VERSION: 0.15.0
         run: |
+          ls robotframework-browser
+          ls
           pip install robotframework-browser/rfbrowser.whl
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
