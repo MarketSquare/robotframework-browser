@@ -1,8 +1,9 @@
 import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, intResponse } from './response-util';
+import { emptyWithLog, intResponse, stringResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -48,12 +49,12 @@ async function _newBrowserContext(
         });
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
-    const id = browser.contexts().length - 1;
+    const id = uuidv4();
     return { id: id, c: context, pageStack: [], options: options };
 }
 
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
-    const id = context.pages().length;
+    const id = uuidv4();
     const newPage = await context.newPage();
     return { id: id, p: newPage };
 }
@@ -64,7 +65,6 @@ export class PlaywrightState {
         this.elementHandles = new Map();
     }
     private browserStack: BrowserState[];
-    private ids = 0;
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
@@ -80,7 +80,7 @@ export class PlaywrightState {
         }
     };
 
-    public switchTo = <T>(id: number, callback: sendUnaryData<T>): BrowserState => {
+    public switchTo = <T>(id: Uuid, callback: sendUnaryData<T>): BrowserState => {
         const browser = this.browserStack.find((b) => b.id === id);
         exists(browser, callback, `No browser for id '${id}'`);
         this.browserStack = this.browserStack.filter((b) => b.id !== id);
@@ -142,7 +142,7 @@ export class PlaywrightState {
 
     public addBrowser(name: string, browser: Browser): BrowserState {
         const browserState = new BrowserState(name, browser);
-        browserState.id = this.ids++;
+        browserState.id = uuidv4();
         this.browserStack.push(browserState);
         return browserState;
     }
@@ -174,27 +174,30 @@ export class PlaywrightState {
 
 type IndexedContext = {
     c: BrowserContext;
-    id: number;
+    id: Uuid;
     pageStack: IndexedPage[];
     options?: Record<string, unknown>;
 };
 
 type IndexedPage = {
     p: Page;
-    id: number;
+    id: Uuid;
 };
+
+// Meta type to make it clearer where we are handling actual id's
+type Uuid = string
 
 export class BrowserState {
     constructor(name: string, browser: Browser) {
         this.name = name;
         this.browser = browser;
         this._contextStack = [];
-        this.id = -1;
+        this.id = uuidv4();
     }
     private _contextStack: IndexedContext[];
     browser: Browser;
     name?: string;
-    id: number;
+    id: Uuid;
 
     public async close(): Promise<void> {
         this.context = undefined;
@@ -299,7 +302,7 @@ export async function closePage(callback: sendUnaryData<Response.Empty>, openBro
 
 export async function newPage(
     call: ServerUnaryCall<Request.Url>,
-    callback: sendUnaryData<Response.Int>,
+    callback: sendUnaryData<Response.String>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
@@ -309,14 +312,14 @@ export async function newPage(
     browserState.page = page;
     const url = call.request.getUrl() || 'about:blank';
     await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
-    const response = intResponse(page.id, 'New page opeened.');
+    const response = stringResponse(page.id, 'New page opeened.');
     response.setLog('Succesfully initialized new page object and opened url: ' + url);
     callback(null, response);
 }
 
 export async function newContext(
     call: ServerUnaryCall<Request.Context>,
-    callback: sendUnaryData<Response.Int>,
+    callback: sendUnaryData<Response.String>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const hideRfBrowser = call.request.getHiderfbrowser();
@@ -326,7 +329,7 @@ export async function newContext(
         const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser);
         browserState.context = context;
 
-        const response = intResponse(context.id, 'New context opened');
+        const response = stringResponse(context.id, 'New context opened');
         response.setLog('Succesfully created context with options: ' + JSON.stringify(options));
         callback(null, response);
     } catch (error) {
@@ -337,7 +340,7 @@ export async function newContext(
 
 export async function newBrowser(
     call: ServerUnaryCall<Request.Browser>,
-    callback: sendUnaryData<Response.Int>,
+    callback: sendUnaryData<Response.String>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const browserType = call.request.getBrowser();
@@ -347,8 +350,7 @@ export async function newBrowser(
         const options = JSON.parse(call.request.getRawoptions());
         const [browser, name] = await _newBrowser(browserType, headless, options);
         const browserState = openBrowsers.addBrowser(name, browser);
-        const response = intResponse(browserState.id, 'New browser opened, with options: ' + options);
-        response.setLog('Succesfully created browser with options: ' + JSON.stringify(options));
+        const response = stringResponse(browserState.id, 'New browser opened, with options: ' + options);
         callback(null, response);
     } catch (error) {
         callback(error, null);
@@ -372,33 +374,34 @@ export async function autoActivatePages(
             callback,
             `Tried to focus on new page in context, context didn't exist! This should be impossible.`,
         );
-        const pageIndex = browserState.context.c.pages().length;
+        const pageIndex = uuidv4();
         browserState.context.pageStack.push({ p: page, id: pageIndex });
         logger.info('Changed active page');
     });
     callback(null, emptyWithLog('Will focus future ``pages`` in this context'));
 }
 
-async function _switchPage(id: number, browserState: BrowserState, waitForPage: boolean) {
-    const context = browserState.context?.c;
+async function _switchPage(id: string, browserState: BrowserState, waitForPage: boolean) {
+    const context = browserState.context;
     if (!context) throw new Error('Tried to switch page, no open context');
-    const pages = context.pages();
+    const pages = context.pageStack;
 
-    if (pages[id]) {
-        browserState.page = { id: id, p: pages[id] };
-        await pages[id].bringToFront();
+    const page = pages.find(p => p.id == id)
+    if (page) {
+        browserState.page = { id: id, p: page.p };
+        await page.p.bringToFront();
         return;
     } else if (waitForPage) {
         try {
             logger.info('Started waiting for a page to pop up');
-            const page = await context.waitForEvent('page');
+            const page = await context.c.waitForEvent('page');
             browserState.page = { id: id, p: page };
             await page.bringToFront();
             return;
         } catch (pwError) {
             logger.info('Wait was not fulfilled');
             logger.error(pwError);
-            const mapped = pages?.map((p) => p.url()).join(',');
+            const mapped = pages?.map((page) => page.p.url()).join(',');
             const message = `No page for id ${id}. Open pages: ${mapped}`;
             const error = new Error(message);
             throw error;
@@ -408,10 +411,11 @@ async function _switchPage(id: number, browserState: BrowserState, waitForPage: 
     }
 }
 
-async function _switchContext(id: number, browserState: BrowserState) {
-    const contexts = browserState.browser.contexts();
-    if (contexts && contexts[id]) {
-        browserState.context = { id: id, c: contexts[id], pageStack: [] };
+async function _switchContext(id: string, browserState: BrowserState) {
+    const contexts = browserState.contextStack;
+    const context = contexts.find(context => context.id == id)
+    if (contexts && context) {
+        browserState.context = context;
         return;
     } else {
         const mapped = contexts
@@ -426,7 +430,7 @@ async function _switchContext(id: number, browserState: BrowserState) {
 
 export async function switchPage(
     call: ServerUnaryCall<Request.Index>,
-    callback: sendUnaryData<Response.Int>,
+    callback: sendUnaryData<Response.String>,
     browserState?: BrowserState,
 ) {
     exists(browserState, callback, "Tried to switch Page but browser wasn't open");
@@ -434,13 +438,13 @@ export async function switchPage(
     const id = call.request.getIndex();
     const previous = browserState.page?.id || 0;
     await _switchPage(id, browserState, true).catch((error) => callback(error, null));
-    const response = intResponse(previous, 'Succesfully changed active page');
+    const response = stringResponse(previous, 'Succesfully changed active page');
     callback(null, response);
 }
 
 export async function switchContext(
     call: ServerUnaryCall<Request.Index>,
-    callback: sendUnaryData<Response.Int>,
+    callback: sendUnaryData<Response.String>,
     browserState: BrowserState,
 ): Promise<void> {
     const id = call.request.getIndex();
@@ -450,19 +454,19 @@ export async function switchContext(
     await _switchPage(browserState.page?.id || 0, browserState, false).catch((error) => {
         logger.error(error);
     });
-    const response = intResponse(previous, 'Succesfully changed active context');
+    const response = stringResponse(previous, 'Succesfully changed active context');
     callback(null, response);
 }
 
 export async function switchBrowser(
     call: ServerUnaryCall<Request.Index>,
-    callback: sendUnaryData<Response.Int>,
+    callback: sendUnaryData<Response.String>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const id = call.request.getIndex();
     const previous = openBrowsers.activeBrowser;
     openBrowsers.switchTo(id, callback);
-    const response = intResponse(previous?.id || -1, 'Succesfully changed active browser');
+    const response = stringResponse(previous?.id || -1, 'Succesfully changed active browser');
     callback(null, response);
 }
 
