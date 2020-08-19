@@ -82,12 +82,12 @@ jobs:
         python-version: [3.8]
         node-version: [12.x]
     steps:
+      - uses: actions/checkout@v2
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
           path: rfbrowser.whl
           name: robotframework_browser.whl
-      - uses: actions/checkout@v2
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
@@ -111,7 +111,7 @@ jobs:
         env:
           VERSION: 0.15.0
         run: |
-          pip install rfbrowser.whl
+          pip install robotframework-browser/rfbrowser.whl
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Set node_path env var
