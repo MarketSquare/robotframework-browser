@@ -54,7 +54,7 @@ def clean(c):
 def protobuf(c):
     if not python_protobuf_dir.exists():
         python_protobuf_dir.mkdir()
-        c.run(f"touch {python_protobuf_dir / '__init__.py'}")
+        (python_protobuf_dir / "__init__.py").touch()
     if not node_protobuf_dir.exists():
         node_protobuf_dir.mkdir()
     gen_timestamp_file = python_protobuf_dir / ".generated"
