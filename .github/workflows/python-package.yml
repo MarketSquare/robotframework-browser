@@ -66,8 +66,8 @@ jobs:
         path: atest/output
     - uses: actions/upload-artifact@v2
       with:
-        name: artifacts
-        path: dist/
+        name: robotframework_browser.whl
+        path: dist/robotframework_browser-*-py3-none-any.whl
     - uses: actions/upload-artifact@v2
       with:
         name: demoapp
@@ -86,7 +86,8 @@ jobs:
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
-          name: artifacts
+          path: rfbrowser.whl
+          name: robotframework_browser.whl
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
@@ -110,7 +111,7 @@ jobs:
         env:
           VERSION: 0.15.0
         run: |
-          pip install robotframework_browser-*-py3-none-any.whl
+          pip install rfbrowser.whl
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Set node_path env var
