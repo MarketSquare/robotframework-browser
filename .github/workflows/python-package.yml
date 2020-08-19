@@ -66,6 +66,8 @@ jobs:
         path: atest/output
     - name: Rename build wheel
       run: |
+        ls
+        ls dist
         mv dist/robotframework-browser-*-py3-none-any.whl dist/robotframework_browser_master.whl
     - uses: actions/upload-artifact@v2
       with:
