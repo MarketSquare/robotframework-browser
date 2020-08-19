@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import platform
 import re
 import shutil
 
@@ -84,8 +85,16 @@ def _python_protobuf_gen(c):
 
 
 def _node_protobuf_gen(c):
-    protoc_plugin = root_dir / "node_modules" / ".bin" / "grpc_tools_node_protoc_plugin"
-    protoc_ts_plugin = root_dir / "node_modules" / ".bin" / "protoc-gen-ts"
+    plugin_suffix = ".cmd" if platform.platform().startswith("Windows") else ""
+    protoc_plugin = (
+        root_dir
+        / "node_modules"
+        / ".bin"
+        / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
+    )
+    protoc_ts_plugin = (
+        root_dir / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
+    )
     c.run(
         f"yarn run grpc_tools_node_protoc \
 		--js_out=import_style=commonjs,binary:{node_protobuf_dir} \
