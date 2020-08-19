@@ -90,7 +90,7 @@ In order of appearance.
 
   * Mikko Korpela
   * Tatu Aalto
-  * Janne Härkönen
+  * Janne Härkönen (Alumnus)
   * Kerkko Pelttari
   * René Rohner
 
