@@ -20,7 +20,7 @@ Install Python, nodejs and yarn.
 
 N.B The minimum Python version is 3.8.
 
-Run `python bootsrap.py` to create a virtual environment with correct dependencies.
+Run `python bootstrap.py` to create a virtual environment with correct dependencies.
 After that, make sure to activate the virtual env before running other development commands.
 
 ```
@@ -33,7 +33,9 @@ source .venv/bin/activate  # On linux and OSX
 
 Activate your virtualenv and install `invoke` with
 
-  > pip install invoke
+```
+pip install invoke
+```
 
 Other dependencies can be installed/updated with `inv deps`. This command installs and updated both Python and nodejs dependecies.
 
