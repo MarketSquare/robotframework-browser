@@ -74,9 +74,10 @@ jobs:
         path: node/dynamic-test-app
   test-install:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: [3.8]
         node-version: [12.x]
     steps:
@@ -99,6 +100,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Start xvfb
+        if: ${{ matrix.os }} != windows-latest
         run: |
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
@@ -109,9 +111,16 @@ jobs:
           pip install "robotframework_browser-$VERSION-py3-none-any.whl"
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
-      - name: Run Robot Framework tests
+      - name: Run Robot Framework tests on unix-like OS
+        if: ${{ matrix.os }} != windows-latest
         run: |
           xvfb-run --auto-servernum inv atest-global-pythonpath
+        env:
+          NODE_PATH: /usr/lib/node_modules
+      - name: Run Robot Framework tests on windows
+        if: ${{ matrix.os }} == windows-latest
+        run: |
+          inv atest-global-pythonpath
         env:
           NODE_PATH: /usr/lib/node_modules
       - uses: actions/upload-artifact@v2
