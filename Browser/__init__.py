@@ -8,14 +8,12 @@ from .utils.data_types import (
     RequestMethod,
     SelectAttribute,
     SupportedBrowsers,
-    TypedDict,
     ViewportDimensions,
 )
 from .version import VERSION
 
 __version__ = VERSION
 __all__ = [
-    "TypedDict",
     "AssertionOperator",
     "ElementState",
     "ColorScheme",

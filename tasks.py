@@ -43,7 +43,11 @@ def clean(c):
         node_lint_timestamp_file,
         python_lint_timestamp_file,
     ]:
-        timestamp_file.unlink(missing_ok=True)
+        try:
+            # python 3.7 doesn't support missing_ok so we need a try catch
+            timestamp_file.unlink()
+        except OSError as e:
+            pass
 
 
 @task
