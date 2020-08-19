@@ -8,7 +8,7 @@ Open PDF in another tab and download it
     New Context    acceptDownloads=${TRUE}
     New Page    ${WELCOME_URL}
     Click    text=Open pdf
-    Switch Page    ${1}
+    Switch Page    CURRENT
     ${url}=    Get Url    should end with    .pdf
     ${path}=    Download    ${url}
     ${actual_size}=    get file size    ${path}
@@ -30,7 +30,7 @@ Download with no acceptDownloads fails
 Open html in another tab
     New Page    ${WELCOME_URL}
     Click    text=Open html
-    Switch Page    ${1}
+    Switch Page    CURRENT
     Get Title    ==    Error Page
     Close Page
     Get Title    ==    Welcome Page

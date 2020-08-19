@@ -4,7 +4,6 @@ Test Teardown     Close All Browsers
 
 *** Keywords ***
 Open Browser and assert Login Page
-    [Arguments]    ${local_browser}
     Open Browser To Login Page
     Get Text    h1    ==    Login Page
 
@@ -30,11 +29,11 @@ New Browser does not open a page
 New Browser does not create a context
     New Browser
     # Use Switch context to test that no context exists here
-    Run Keyword And Expect Error    *No context for index 0.*    Switch Context    0
+    Run Keyword And Expect Error    *No context for id 0.*    Switch Context    0
 
 New Context does not open a page
     New Context
-    Run Keyword And Expect Error    *No page for index 0.*    Switch Page    0
+    Run Keyword And Expect Error    *No page for id 0.*    Switch Page    0
 
 Open Browser opens everything
     Open Browser    url=${FORM_URL}
@@ -51,9 +50,9 @@ New Browser with invalid browser fails on RF side
 Create Chain Works
     New Browser
     New Context
-    New Page    ${LOGIN_URL}
+    ${first}=    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    Switch Page    0
+    Switch Page    ${first}
     Get Title    matches    (?i)login
 
 Close Browser switches active page
@@ -86,7 +85,7 @@ Switch Browser
     New Page Form
     ${second_url}    Get Url
     ${before_switch}    Switch Browser    ${first_browser}
-    Should Be Equal As Numbers    ${second_browser}    ${before_switch}
+    Should Be Equal    ${second_browser}    ${before_switch}
     ${third_url}    Get Url
     Get Title    matches    (?i)login
 
@@ -109,15 +108,16 @@ Focus Next Page on popup
     Auto Activate Pages
     Click    button#pops_up
     # FIXME: Workaround, this need is caused by eventhandlers laziness
-    Sleep    1s
+    # Sleep    1s
     Wait For Elements State    "Popped Up!"
 
 Switch Page after popup
-    Open Browser and assert Login Page    chromium
+    ${first}=    New Page    ${LOGIN_URL}
     Click    button#pops_up
-    Switch Page    1
+    Switch Page    CURRENT
     Wait For Elements State    "Popped Up!"
-    Switch Page    0
+    Fail
+    Switch Page    ${first}
     Wait For Elements State    button#pops_up
 
 Set Viewport Size
@@ -153,18 +153,15 @@ Page indices are unique
     Close Page
     ${second}=    New Page
     Should Not Be Equal    ${first}    ${second}
-    Fail
 
 Context indices are unique
     ${first}=    New Context
     Close Context
     ${second}=    New Context
     Should Not Be Equal    ${first}    ${second}
-    Fail
 
 Browser indices are unique
     ${first}=    New Browser
     Close Browser
     ${second}=    New Browser
     Should Not Be Equal    ${first}    ${second}
-    Fail
