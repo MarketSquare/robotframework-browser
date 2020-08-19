@@ -100,7 +100,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Start xvfb
-        if: ${{ matrix.os != windows-latest }}
+        if: matrix.os != 'windows-latest'
         run: |
           echo ${{ matrix.os }}
           export DISPLAY=:99.0
@@ -116,11 +116,11 @@ jobs:
         run: |
           ::set-env name=NODE_PATH::/usr/lib/node_modules
       - name: Run Robot Framework tests on unix-like OS
-        if: ${{ matrix.os != windows-latest }}
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           xvfb-run --auto-servernum inv atest-global-pythonpath
       - name: Run Robot Framework tests on windows
-        if: ${{ matrix.os == windows-latest }}
+        if: ${{ matrix.os == 'windows-latest' }}
         run: |
           inv atest-global-pythonpath
       - uses: actions/upload-artifact@v2
