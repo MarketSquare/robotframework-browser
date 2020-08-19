@@ -126,5 +126,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
-          name: Clean install results
+          name: ${{ matrix.os }} Clean install results
           path: atest/output
