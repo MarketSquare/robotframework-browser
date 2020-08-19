@@ -82,12 +82,12 @@ jobs:
         python-version: [3.8]
         node-version: [12.x]
     steps:
-      - uses: actions/checkout@v2
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
           path: rfbrowser.whl
           name: robotframework_browser.whl
+      - uses: actions/checkout@v2
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
