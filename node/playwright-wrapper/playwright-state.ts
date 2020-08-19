@@ -185,7 +185,7 @@ type IndexedPage = {
 };
 
 // Meta type to make it clearer where we are handling actual id's
-type Uuid = string
+type Uuid = string;
 
 export class BrowserState {
     constructor(name: string, browser: Browser) {
@@ -386,7 +386,7 @@ async function _switchPage(id: string, browserState: BrowserState, waitForPage: 
     if (!context) throw new Error('Tried to switch page, no open context');
     const pages = context.pageStack;
 
-    const page = pages.find(p => p.id == id)
+    const page = pages.find((p) => p.id == id);
     if (page) {
         browserState.page = { id: id, p: page.p };
         await page.p.bringToFront();
@@ -413,15 +413,15 @@ async function _switchPage(id: string, browserState: BrowserState, waitForPage: 
 
 async function _switchContext(id: string, browserState: BrowserState) {
     const contexts = browserState.contextStack;
-    const context = contexts.find(context => context.id == id)
+    const context = contexts.find((context) => context.id == id);
     if (contexts && context) {
         browserState.context = context;
         return;
     } else {
         const mapped = contexts
-            ?.map((c) => c.pages())
+            ?.map((c) => c.pageStack)
             .reduce((acc, val) => acc.concat(val), [])
-            .map((p) => p.url());
+            .map((page) => page.p.url());
 
         const message = `No context for id ${id}. Open contexts: ${mapped}`;
         throw new Error(message);
@@ -436,7 +436,7 @@ export async function switchPage(
     exists(browserState, callback, "Tried to switch Page but browser wasn't open");
     logger.info('Changing current active page');
     const id = call.request.getIndex();
-    const previous = browserState.page?.id || 0;
+    const previous = browserState.page?.id || 'NONE';
     await _switchPage(id, browserState, true).catch((error) => callback(error, null));
     const response = stringResponse(previous, 'Succesfully changed active page');
     callback(null, response);
@@ -448,10 +448,10 @@ export async function switchContext(
     browserState: BrowserState,
 ): Promise<void> {
     const id = call.request.getIndex();
-    const previous = browserState.context?.id || 0;
+    const previous = browserState.context?.id || 'NONE';
 
     await _switchContext(id, browserState).catch((error) => callback(error, null));
-    await _switchPage(browserState.page?.id || 0, browserState, false).catch((error) => {
+    await _switchPage(browserState.page?.id || 'NONE', browserState, false).catch((error) => {
         logger.error(error);
     });
     const response = stringResponse(previous, 'Succesfully changed active context');
@@ -466,7 +466,7 @@ export async function switchBrowser(
     const id = call.request.getIndex();
     const previous = openBrowsers.activeBrowser;
     openBrowsers.switchTo(id, callback);
-    const response = stringResponse(previous?.id || -1, 'Succesfully changed active browser');
+    const response = stringResponse(previous?.id || 'NONE', 'Succesfully changed active browser');
     callback(null, response);
 }
 
