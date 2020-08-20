@@ -114,7 +114,9 @@ def _node_protobuf_gen(c):
 
 @task(protobuf)
 def node_build(c):
-    if _sources_changed(node_dir.glob("**/*.ts"), node_timestamp_file):
+    if _sources_changed(
+        node_dir.glob("**/*.ts"), node_timestamp_file
+    ) or _sources_changed(node_dir.glob("**/*.tsx"), node_timestamp_file):
         c.run("yarn build")
         node_timestamp_file.touch()
     else:
