@@ -103,12 +103,12 @@ class Waiter(LibraryComponent):
         ``polling`` <str> Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
         Any other value for polling will be parsed as a robot framework time for interval between polls.
 
-        ``timeout`` <str> (optional) uses default timeout of 10 seconds if not set.
+        ``timeout`` <str> Uses default timeout of 10 seconds if not set.
 
         Example usage:
-        | ${promise}  |  Promise To    |  Wait For Function  |  element => element.style.width=="100%"  |  selector=\\#progress_bar  |  timeout=4s |
-        | Click       | \\#progress_bar |
-        | Wait For    | ${promise}     |
+        | ${promise}    Promise To      Wait For Function    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
+        | Click         \\#progress_bar
+        | Wait For      ${promise}
         """
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
@@ -135,11 +135,11 @@ class Waiter(LibraryComponent):
             ``saveAs`` <str> Filename to save as. File will also temporarily be saved in playwright context's default download location.
 
             Example usage:
-            | New Context    | acceptDownloads=True
-            | New Page       | ${LOGIN_URL}
-            | ${dl_promise}  | Promise To  Wait For Download
-            | Click          | \\#file_download
-            | ${file_path}=  | Wait For  ${dl_promise}
+            | New Context      acceptDownloads=True
+            | New Page         ${LOGIN_URL}
+            | ${dl_promise}    Promise To  Wait For Download
+            | Click            \\#file_download
+            | ${file_path}=    Wait For  ${dl_promise}
         """
         with self.playwright.grpc_channel() as stub:
             if not saveAs:
