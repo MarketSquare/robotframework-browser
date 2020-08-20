@@ -1,6 +1,6 @@
-import React, { ChangeEvent, FocusEvent, useRef, useState } from 'react';
-import Draggable from 'react-draggable';
 import { DraggableData, DraggableEvent } from 'react-draggable';
+import Draggable from 'react-draggable';
+import React, { ChangeEvent, FocusEvent, useRef, useState } from 'react';
 
 function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     event.persist();
@@ -79,28 +79,28 @@ function testPrompt(promptResultElement: React.RefObject<HTMLElement>) {
 
 function DraggableDiv() {
     const onControlledDrag = (e: DraggableEvent, position: DraggableData) => {
-        const {x, y} = position;
-        setControlledPosition({x, y});
+        const { x, y } = position;
+        setControlledPosition({ x, y });
     };
-    const [controlledPosition, setControlledPosition] = useState({x: 0, y: 0});
-    return <Draggable position={controlledPosition} onDrag={onControlledDrag} >
-        <div className="box" id="draggable">
-            My position can be changed programmatically. <br />
-            I have a drag handler to sync state.
-            <div>x
-                <div id="dragX">{controlledPosition.x}</div>
+    const [controlledPosition, setControlledPosition] = useState({ x: 0, y: 0 });
+    return (
+        <Draggable position={controlledPosition} onDrag={onControlledDrag}>
+            <div className="box" id="draggable">
+                My position can be changed programmatically. <br />I have a drag handler to sync state.
+                <div>
+                    x<div id="dragX">{controlledPosition.x}</div>
+                </div>
+                <div>
+                    y<div id="dragY">{controlledPosition.y}</div>
+                </div>
             </div>
-            <div>y
-                <div id="dragY">{controlledPosition.y}</div>
-            </div>
-        </div>
-    </Draggable>
+        </Draggable>
+    );
 }
 
 export default function Site() {
     const username = useRef('');
     const password = useRef('');
-
 
     const [submit, setSubmit] = useState(false);
     const uploadResult = React.createRef<HTMLDivElement>();
@@ -250,7 +250,6 @@ export default function Site() {
                 </a>
                 <ProgressBar />
                 <DraggableDiv />
-                
             </>
         );
     }

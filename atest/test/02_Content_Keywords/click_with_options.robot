@@ -33,9 +33,9 @@ Left Right and Middle Click
 
 Click with Coordinates
     [Tags]    Not-Implemented
-    ${xy}     Get Boundingbox     \#clickWithOptions    x    y
-    ${x}      Evaluate    ${xy}[x]+1
-    ${y}      Evaluate    ${xy}[y]+1
+    ${xy}    Get Boundingbox    \#clickWithOptions    x    y
+    ${x}    Evaluate    ${xy}[x]+1
+    ${y}    Evaluate    ${xy}[y]+1
     Click With Options    \#clickWithOptions    position_x=1    position_y=1
     Get Text    \#coordinatesX    validate    int(${x})==int(value)
     Get Text    \#coordinatesY    validate    int(${y})==int(value)

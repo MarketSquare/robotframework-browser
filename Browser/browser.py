@@ -38,6 +38,7 @@ class Browser(DynamicCore):
     [https://www.mozilla.org/en-US/firefox/new/|Firefox]
     and [https://webkit.org/|WebKit] with a single library.
 
+
     == Table of contents ==
 
     %TOC%
@@ -45,40 +46,84 @@ class Browser(DynamicCore):
     = Browser, Context and Page =
 
     Browser library works with three different layers that build on each other:
-    Browser, Context and Page. A browser can be started with one of the three
-    different engines Chromium, Firefox or Webkit. Since
-    [https://github.com/microsoft/playwright|Playwright] comes with a pack of builtin
+    *Browser*, *Context* and *Page*.
+
+
+    == Browsers ==
+
+    A *browser* can be started with one of the three
+    different engines Chromium, Firefox or Webkit.
+
+    === Supported Browsers ===
+    |   Browser     | Browser with this engine                          |
+    | ``chromium``  | Google Chrome, Microsoft Edge (since 2020), Opera |
+    | ``firefox``   | Mozilla Firefox                                   |
+    | ``webkit``    | Apple Safari, Mail, AppStore on MacOS and iOS     |
+
+    Since [https://github.com/microsoft/playwright|Playwright] comes with a pack of builtin
     binaries for all browsers, no additional drivers e.g. geckodriver are needed.
-    The browser process is started
-    ``headless`` (without a GUI) by default. Run `New Browser` with specified arguments
-    if a browser with a GUI is requested. A browser process can contain several contexts,
-    e.g. corresponds to several icognito browsers in Chrome. Compared to Selenium,
-    these do not require their own browser process or their own runtime environment.
-    This means that new Icognito browsers can be opened about 10 times faster than
-    Selenium. As in Chrome, a context can open different pages.
+
+    All these browsers that cover more than 85% of the world wide used browsers,
+    can be tested on Windows, Linux and MacOS.
+    Theres is not need for dedicated machines anymore.
+
+    A browser process is started ``headless`` (without a GUI) by default.
+    Run `New Browser` with specified arguments if a browser with a GUI is requested
+    or if a proxy has to be configured.
+    A browser process can contain several contexts.
+
+
+    == Contexts ==
+
+    A *context* corresponds to several independent incognito browsers in Chrome
+    that do not share cookies, sessions or profile settings.
+    Compared to Selenium, these do *not* require their own browser process!
+    Therefore, to get a clean environment the tests shall just close the current
+    context and open a new context.
+    Due to this new independent browser sessions can be opened with
+    Robot Framework Browser about 10 times faster than with Selenium by
+    just opening a `New Context` within the opened browser.
 
     The context layer is useful e.g. for testing different users sessions on the
-    same webpage without opening a whole new browser context. In order to test
-    downloads the ``acceptDownloads`` argument must be set in `New Context`.
-    Files can be downloaded either temporary or permanently on the file storage.
+    same webpage without opening a whole new browser context.
+    Contexts can also have detailed configurations, such as geo-location, language settings,
+    the viewport size or color scheme.
+    Contexts do also support http credentials to be set, so that basic authentication
+    can also be tested. To be able to download files within the test,
+    the ``acceptDownloads`` argument must be set to ``True`` in `New Context` keyword.
+    A context can contain different pages.
 
-    When a new page is opened as the first step with `New Page`, `New Browser`
-    and `New Context` are executed with default values first. The same goes vice
-    versa with `Close Browser`.
+
+    == Pages ==
+
+    A *page* does contain the content of the loaded web site.
+    Pages and browser tabs are the same.
+
+    Typical usage could be:
+    | *** Test Cases ***
+    | Starting a browser with a page
+    |     New Browser    chromium    headless=false
+    |     New Context    viewport={'width': 1920, 'height': 1080}
+    |     New Page       https://marketsquare.github.io/robotframework-browser/Browser.html
+    |     Get Title      ==    Browser
+
+    There are shortcuts to open new pages together with new browsers but the offer less control.
+
+    The `Open Browser` keyword opens a new browser, a new context and a new page.
+    This keyword is usefull for quick experiments or debugging sessions.
+
+    When a `New Page` is called without an open browser, `New Browser`
+    and `New Context` are executed with default values first.
 
     If there is no browser opened in Suite Setup and `New Page` is executed in
-    Test Setup, the corresponding pages and context is closed automatically after
+    Test Setup, the corresponding pages and context is closed automatically at the end of
     the test. The browser process remains open and will be closed at the end of
     execution.
 
     Each Browser, Context and Page has a unique ID with which they can be adressed.
-    A full list can be recieved by `Get Browser Catalog`.
+    A full catalog of what is open can be recieved by `Get Browser Catalog` as dictionary.
 
-    *Supported Browsers*
-    | Browser   | Call argment for `New Browser` |
-    | Chromium  | ``chromium``                   |
-    | Firefox   | ``firefox``                    |
-    | Safari    | ``webkit``                     |
+
 
     = Finding elements =
 
@@ -86,85 +131,135 @@ class Browser(DynamicCore):
     on a web page take an argument typically named ``selector`` that specifies
     how to find the element.
 
-    == Implicit selector strategy ==
+    Selector strategies that are supported by default are listed in the table
+    below.
 
-    The default selector strategy is `css`. If selector does not contain
-    one of the know selector strategies, `css`, `xpath`, `id` or `text` it is
-    assumed to contain css selector. Also `selectors` starting with `//`
-    considered as xpath selectors.
+    | = Strategy = |     = Match based on =     |         = Example =                |
+    | ``css``      | CSS selector.              | ``css=.class > #login_btn``        |
+    | ``xpath``    | XPath expression.          | ``xpath=//input[@id="login_btn"]`` |
+    | ``text``     | Browser text engine.       | ``text=Login``                     |
+    | ``id``       | Element ID Attribute.      | ``id=login_btn``                   |
 
-    Examples:
 
-    | # Use css selector strategy the element.
-    | `Click`  span > button
-    |
-    | # Use xpath selector strategy the element.
-    | `Click`  //span/button
-
-    == Explicit selector strategy ==
+    == Explicit Selector Strategy ==
 
     The explicit selector strategy is specified with a prefix using syntax
     ``strategy=value``. Spaces around the separator are ignored, so
     ``css=foo``, ``css= foo`` and ``css = foo`` are all equivalent.
 
-    Selector strategies that are supported by default are listed in the table
-    below.
 
-    | = Strategy = |     = Match based on =     |         = Example =            |
-    | css          | CSS selector.              | ``css=div#example``            |
-    | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
-    | text         | Browser text engine.       | ``text=Login``                 |
+    == Implicit Selector Strategy ==
 
-    === CSS ===
+    *The default selector strategy is `css`.*
 
-    As written before the default selector strategy is `css`. The engine is equivalent to
-    [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector].
-    Example: ``css=div#example``.
+    If selector does not contain one of the know explicit selector strategies, it is
+    assumed to contain css selector.
 
-    A Selector sorrounded by ``[]`` is assumed to be a css selector. For example
-    ``[href="index.php"] is converted to ``css=[href="index.php"]``. More
-    examples are displayed in `Examples`.
+    Selectors that are starting with ``//`` or ``..`` are considered as xpath selectors.
 
-    === xpath ===
+    Selectors that are in quotes are considered as text selectors.
+
+    Examples:
+
+    | # CSS selectors are default.
+    | `Click`  span > button.some_class         # This is equivalent
+    | `Click`  css=span > button.some_class     # to this.
+    |
+    | # // or .. leads to xpath selector strategy
+    | `Click`  //span/button[@class="some_class"]
+    | `Click`  xpath=//span/button[@class="some_class"]
+    |
+    | # "text" in quotes leads to exact text selector strategy
+    | `Click`  "Login"
+    | `Click`  text="Login"
+
+
+    == CSS ==
+
+    As written before, the default selector strategy is `css`. See
+    [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector]
+    for more information.
+
+    Any malformed selector not starting with ``//`` or ``..`` nor starting and ending
+    with a quote is assumed to be a css selector.
+
+    Example:
+    | `Click`  span > button.some_class
+
+
+    == XPath ==
 
     XPath engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/evaluate|Document.evaluate].
-    Example: ``xpath=//html/body``.
+    Example: ``xpath=//html/body//span[text()="Hello World"]``.
 
     Malformed selector starting with ``//`` or ``..`` is assumed to be an xpath selector.
     For example, ``//html/body`` is converted to ``xpath=//html/body``. More
     examples are displayed in `Examples`.
 
-    Note that xpath does not pierce shadow roots.
+    Note that xpath does not pierce [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|shadow_roots].
 
-    === text ===
+
+    == Text ==
 
     Text engine finds an element that contains a text node with the passed text.
     For example, ``Click    text=Login`` clicks on a login button, and
-    ``Wait For Elements State   lazy loaded text`` waits for the "lazy loaded text"
+    ``Wait For Elements State   text="lazy loaded text"`` waits for the "lazy loaded text"
     to appear in the page.
 
-    - By default, the match is case-insensitive, ignores leading/trailing whitespace and searches for a substring. This means text= Login matches ``<button>Button loGIN (click me)</button>``.
-    - Text body can be escaped with single or double quotes for precise matching, insisting on exact match, including specified whitespace and case. This means ``text="Login "`` will only match ``<button>Login </button>`` with exactly one space after "Login". Quoted text follows the usual escaping rules, e.g. use ``\"`` to escape double quote in a double-quoted string: ``text="foo\"bar"``.
-    - Text body can also be a JavaScript-like regex wrapped in / symbols. This means ``text=/^\\s*Login$/i`` will match ``<button> loGIN</button>`` with any number of spaces before "Login" and no spaces after.
-    - Input elements of the type button and submit are rendered with their value as text, and text engine finds them. For example, ``text=Login`` matches ``<input type=button value="Login">``.
-
     Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
-    to be a text selector. For example, ``Click    Login`` is converted to ``Click    text=Login``.
+    to be a text selector. For example, ``Click    "Login"`` is converted to ``Click    text="Login"``.
+    Be aware that these leads to exact matches only!
     More examples are displayed in `Examples`.
 
-    == Selector syntax ==
+
+    === insensitive match ===
+
+    By default, the match is case-insensitive, ignores leading/trailing whitespace and
+    searches for a substring. This means ``text= Login`` matches
+    ``<button>Button loGIN (click me)</button>``.
+
+    === exact match ===
+
+    Text body can be escaped with single or double quotes for precise matching,
+    insisting on exact match, including specified whitespace and case.
+    This means ``text="Login "`` will only match ``<button>Login </button>`` with exactly
+    one space after "Login". Quoted text follows the usual escaping rules, e.g.
+    use ``\\"`` to escape double quote in a double-quoted string: ``text="foo\\"bar"``.
+
+    === RegEx ===
+
+    Text body can also be a JavaScript-like regex wrapped in / symbols.
+    This means ``text=/^hello .*!$/i`` or ``text=/^Hello .*!$/`` will match ``<span>Hello Peter Parker!</span>``
+    with any name after ``Hello``, ending with ``!``.
+    The first one flagged with ``i`` for case-insensitive.
+    See [https://regex101.com/] for more information about RegEx.
+
+    === Button and Submit Values ===
+
+    Input elements of the type button and submit are rendered with their value as text,
+    and text engine finds them. For example, ``text=Login`` matches
+    ``<input type=button value="Login">``.
+
+
+
+    == Cascaded selector syntax ==
 
     Browser library supports the same selector strategies as the underlying
     Playwright node module: xpath, css, id and text. The strategy can either
     be explicitly specified with a prefix or the strategy can be implicit.
 
-    Selector is a string that consists of one or more clauses separated by
+    A major advantage of Browser is, that multiple selector engines can be used
+    within one selector. It is possible to mix XPath, CSS and Text selectors while
+    selecting a single element.
+
+    Selectors are strings that consists of one or more clauses separated by
     ``>>`` token, e.g. ``clause1 >> clause2 >> clause3``. When multiple clauses
     are present, next one is queried relative to the previous one's result.
     Browser library supports concatination of different selectors seperated by ``>>``.
 
     For example:
-    ``"Hello" >> ../.. >> css=button``
+    | `Highlight Elements`    "Hello" >> ../.. >> .select_button
+    | `Highlight Elements`    text=Hello >> xpath=../.. >> css=.select_button
 
     Each clause contains a selector engine name and selector body, e.g.
     ``engine=body``. Here ``engine`` is one of the supported engines (e.g. css or
@@ -183,11 +278,7 @@ class Browser(DynamicCore):
     that contains some element with the text Hello.
 
     For convenience, selectors in the wrong format are heuristically converted
-    to the right format:
-
-    - Selector starting with // or .. is assumed to be xpath=selector. Example: ``Click    //button`` is converted to ``Click    xpath=//button``.
-    - Selector starting and ending with a quote (either " or ') is assumed to be text=selector. Example: ``Click    Submit`` is converted to ``Click    text=Submit``.
-    - Otherwise, selector is assumed to be css=selector. Example: ``Click    button`` is converted to ``Click    css=button``.
+    to the right format. See `Implicit Selector Strategy`
 
     == Examples ==
     | # queries 'div' css selector
@@ -197,7 +288,7 @@ class Browser(DynamicCore):
     | Get Element    //html/body/div
     |
     | # queries '"foo"' text selector
-    | Get Element    text="foo"
+    | Get Element    text=foo
     |
     | # queries 'span' css selector inside the result of '//html/body/div' xpath selector
     | Get Element    xpath=//html/body/div >> css=span
@@ -208,13 +299,17 @@ class Browser(DynamicCore):
     | # converted to 'xpath=//html/body/div'
     | Get Element    //html/body/div
     |
-    | # converted to 'text=foo'
-    | Get Element    foo
+    | # converted to 'text="foo"'
+    | Get Element    "foo"
     |
     | # queries the div element of every 2nd span element inside an element with the id foo
     | Get Element    \\#foo >> css=span:nth-child(2n+1) >> div
+    | Get Element    id=foo >> css=span:nth-child(2n+1) >> div
 
-    === Finding elements inside frames ===
+    Be aware that using ``#`` as a starting character in Robot Framework would be interpreted as comment.
+    Due to that fact a ``#id`` must be escaped as ``\\#id``.
+
+    == Frames ==
 
     By default, selector chains do not cross frame boundaries. It means that a
     simple CSS selector is not able to select and element located inside an iframe
@@ -223,23 +318,47 @@ class Browser(DynamicCore):
     inside a frame.
 
     Given this simple pseudo html snippet:
-    ``<iframe name="iframe" src="src.html"><button id="btn">Click Me</button></iframe>``,
-    here's a keyword call that clicks the button inside the frame.
+    | <iframe id="iframe" src="src.html">
+    |   #document
+    |     <!DOCTYPE html>
+    |     <html>
+    |       <head></head>
+    |       <body>
+    |         <button id="btn">Click Me</button>
+    |       </body>
+    |     </html>
+    | </iframe>
 
-    | Click   iframe[name="iframe"] >>> #btn
+    Here's a keyword call that clicks the button inside the frame.
+
+    | Click   id=iframe >>> id=btn
 
     The selectors on the left and right side of ``>>>`` can be any valid selectors.
+    The selector clause directly before the frame opener ``>>>`` must select the frame element.
+
+    == WebComponents and Shadow DOM ==
+
+    Playwright and so also Browser are able to do automatic piercing of Shadow DOMs
+    and therefore are the best automation technology when working with WebComponents.
+
+    Also other technologies claim that they can handle
+    [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|Shadow DOM and Web Components].
+    However, non of them do pierce shadow roots automatically,
+    which may be inconvenient when working with Shadow DOM and Web Components.
+
+    For that reason, css engine pierces shadow roots. More specifically, every
+    [https://developer.mozilla.org/en-US/docs/Web/CSS/Descendant_combinator|Descendant combinator]
+    pierces an arbitrary number of open shadow roots, including the implicit descendant combinator
+    at the start of the selector.
+
+    That means, it is not nessesary to select each shadow host, open its shadow root and
+    select the next shadow host until you reach the element that should be controlled.
 
     === CSS:light ===
 
     ``css:light`` engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/querySelector | Document.querySelector]
     and behaves according to the CSS spec.
-    However, it does not pierce shadow roots, which may be inconvenient when working with
-    [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM | Shadow DOM and Web Components].
-    For that reason, ``css`` engine pierces shadow roots. More specifically, every
-    [https://developer.mozilla.org/en-US/docs/Web/CSS/Descendant_combinator|Descendant]
-    combinator pierces an arbitrary number of open shadow roots, including the implicit
-    descendant combinator at the start of the selector.
+    However, it does not pierce shadow roots.
 
     ``css`` engine first searches for elements in the light dom in the iteration order,
     and then recursively inside open shadow roots in the iteration order. It does not

@@ -19,11 +19,11 @@ Draggable Test
     [Tags]    Not-Implemented
     ${xy}=    Get Boundingbox    \#draggable    x    y
     # evaluate end coordinates
-    ${x}      Evaluate    ${xy}[x]+400
-    ${y}      Evaluate    ${xy}[y]+400
+    ${x}    Evaluate    ${xy}[x]+400
+    ${y}    Evaluate    ${xy}[y]+400
     Mouse Button    down    ${xy}[x]    ${xy}[y]
     Mouse Button    up    ${x}    ${y}
-    # just do a random move to make sure the element is not stuck to mouse any more 
+    # just do a random move to make sure the element is not stuck to mouse any more
     Mouse Move    0    0
     Get Text    \#dragX    ==    400
     Get Text    \#dragY    ==    400
