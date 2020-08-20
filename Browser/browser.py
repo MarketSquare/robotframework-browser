@@ -117,9 +117,9 @@ class Browser(DynamicCore):
 
     === CSS ===
 
-    As written before the default selector strategy is `css`. The engine is aquivalent to
+    As written before the default selector strategy is `css`. The engine is equivalent to
     [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector].
-    Example: ``css=div#example``. 
+    Example: ``css=div#example``.
 
     A Selector sorrounded by ``[]`` is assumed to be a css selector. For example
     ``[href="index.php"] is converted to ``css=[href="index.php"]``. More
@@ -147,7 +147,7 @@ class Browser(DynamicCore):
     - Text body can be escaped with single or double quotes for precise matching, insisting on exact match, including specified whitespace and case. This means ``text="Login "`` will only match ``<button>Login </button>`` with exactly one space after "Login". Quoted text follows the usual escaping rules, e.g. use ``\"`` to escape double quote in a double-quoted string: ``text="foo\"bar"``.
     - Text body can also be a JavaScript-like regex wrapped in / symbols. This means ``text=/^\\s*Login$/i`` will match ``<button> loGIN</button>`` with any number of spaces before "Login" and no spaces after.
     - Input elements of the type button and submit are rendered with their value as text, and text engine finds them. For example, ``text=Login`` matches ``<input type=button value="Login">``.
-    
+
     Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
     to be a text selector. For example, ``Click    Login`` is converted to ``Click    text=Login``.
     More examples are displayed in `Examples`.
@@ -158,7 +158,7 @@ class Browser(DynamicCore):
     Playwright node module: xpath, css, id and text. The strategy can either
     be explicitly specified with a prefix or the strategy can be implicit.
 
-    Selector is a string that consists of one or more clauses separated by 
+    Selector is a string that consists of one or more clauses separated by
     ``>>`` token, e.g. ``clause1 >> clause2 >> clause3``. When multiple clauses
     are present, next one is queried relative to the previous one's result.
     Browser library supports concatination of different selectors seperated by ``>>``.
@@ -212,7 +212,7 @@ class Browser(DynamicCore):
     | Get Element    foo
     |
     | # queries the div element of every 2nd span element inside an element with the id foo
-    | Get Element    \#foo >> css=span:nth-child(2n+1) >> div
+    | Get Element    \\#foo >> css=span:nth-child(2n+1) >> div
 
     === Finding elements inside frames ===
 
@@ -283,7 +283,7 @@ class Browser(DynamicCore):
     closed shadow roots or iframes.
 
     === id, data-testid, data-test-id, data-test and their :light counterparts ===
-    
+
     Attribute engines are selecting based on the corresponding attribute value.
     For example: ``data-test-id=foo`` is equivalent to ``css=[data-test-id="foo"]``,
     and ``id:light=foo`` is equivalent to ``css:light=[id="foo"]``.

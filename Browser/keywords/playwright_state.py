@@ -117,7 +117,7 @@ class PlaywrightState(LibraryComponent):
         # Add to page if ALL is implemented: If ALL is passed, all pages of the context will be closed.
         """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three.
         Activated page is set to first active page.
-        
+
         ``page`` < ``CURRENT`` | ``ALL`` |str> Id of the page to close. If value is not "CURRENT"
         it should be an int referencing the id of the context where to close page.
         If ``ALL`` is passed, all pages of the given context are closed. Defaults to CURRENT.
@@ -176,7 +176,7 @@ class PlaywrightState(LibraryComponent):
         Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/ | here].
         Defaults to None.
 
-        ``ignoreDefaultArgs`` <List<str>> If an array is given, then filters out the given default arguments. 
+        ``ignoreDefaultArgs`` <List<str>> If an array is given, then filters out the given default arguments.
         Defaults to None.
 
         ``proxy`` <Dict> Network proxy settings.
@@ -185,7 +185,7 @@ class PlaywrightState(LibraryComponent):
         - username <string> Optional username to use if HTTP proxy requires authentication.
         - password <string> Optional password to use if HTTP proxy requires authentication.
 
-        ``downloadsPath`` <str> If specified, accepted downloads are downloaded into this folder. 
+        ``downloadsPath`` <str> If specified, accepted downloads are downloaded into this folder.
         Otherwise, temporary folder is created and is deleted when browser is closed.
 
         ``handleSIGINT`` <bool> Close the browser process on Ctrl-C. Defaults to True.
