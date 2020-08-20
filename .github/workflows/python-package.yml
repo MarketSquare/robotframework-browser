@@ -70,8 +70,7 @@ jobs:
         ls
         echo ls dist
         ls dist
-        ls "dist/robotframework_browser-*-py3-none-any.whl"
-        mv dist/robotframework-browser-*-py3-none-any.whl dist/robotframework_browser_master.whl
+        mv dist/robotframework_browser-*-py3-none-any.whl dist/robotframework_browser_master.whl
     - uses: actions/upload-artifact@v2
       with:
         name: rfbrowser-wheel 
