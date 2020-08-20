@@ -138,8 +138,8 @@ class Interaction(LibraryComponent):
 
         Example: 
 
-        | Keyword      | Selector                   | Keys | Keys | Keys | Keys | Keys        | Keys |
-        | Press Keys   | //*[@id="username_field"]  |  h   |   e  |  l   |  o   |  ArrowLeft  |  l   |
+        | # Keyword       Selector                    *Keys
+        | Press Keys      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
         """  # noqa
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(Request().PressKeys(selector=selector, key=keys))
@@ -171,7 +171,7 @@ class Interaction(LibraryComponent):
 
         ``selector`` <str> Selector element to click. **Required**
 
-        ``button`` <left|right|middle> Defaults to ``left`` if invalid.
+        ``button`` < ``left`` | ``right`` | ``middle`` > Defaults to ``left`` if invalid.
 
         ``click_count`` <int> Defaults to 1.
 
@@ -184,7 +184,7 @@ class Interaction(LibraryComponent):
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
-        ``*modifiers`` ``<Alt|Control|Meta|Shift>``
+        ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
         Modifier keys to press. Ensures that only these modifiers are pressed
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
@@ -254,7 +254,7 @@ class Interaction(LibraryComponent):
 
         Matches based on the chosen attribute with list of ``values``.
         Possible attributes to match options by:
-        ``attribute`` ``<"value"|"label"|"text"|"index">``
+        ``attribute`` < ``value`` | ``label `` | ``text`` | ``index`` >
 
         If no values to select are passed will deselect options in element.
         """
@@ -317,8 +317,8 @@ class Interaction(LibraryComponent):
 
         Example use:
 
-            | Upload File |  ${CURDIR}/test_upload_file |
-            | Click       |  \\#file_chooser            |
+        | Upload File    ${CURDIR}/test_upload_file
+        | Click          \\#file_chooser
 
         """
         p = Path(path)
@@ -332,7 +332,7 @@ class Interaction(LibraryComponent):
         """ Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
 
-            ``action`` <accept|dismiss> How to handle the alert. **Required**
+            ``action`` < ``acceppt`` | ``dismiss`` > How to handle the alert. **Required**
 
             ``prompt_input`` <str> The value to enter into prompt. Only valid if
             ``action`` equals accept. Defaults to empty string.
@@ -359,12 +359,12 @@ class Interaction(LibraryComponent):
         """ Click, hold a mouse button down or release it. Moving the mouse between holding down
         and releasing it for example is possible.
 
-            ``action`` <click|up|down> Determines if it is a mouseclick, holding down a key or releasing it.
+            ``action`` < ``click`` | ``up`` | ``down`` > Determines if it is a mouseclick, holding down a key or releasing it.
 
             ``x`` <int> and ``y`` <int> Coordinates for a click only. Defaults to None.
             **Required** if action is a click.
 
-            ``button`` <left|right|middle> Defaults to ``left`` if invalid.
+            ``button`` < ``left``| ``right`` | ``middle`` > Defaults to ``left`` if invalid.
 
             ``clickCount`` <int> Deterine how often shall be clicked. Defaults to 1.
 
@@ -422,7 +422,7 @@ class Interaction(LibraryComponent):
     def keyboard_key(self, action: KeyAction, key: str):
         """ Press a keyboard key on the virtual keyboard or set a key up or down.
 
-        ``action`` <up|down|press> Determine whether the key should be released,
+        ``action`` < ``up`` | ``down`` | ``press`` > Determine whether the key should be released,
         hold or pressed. ``down`` or ``up`` are useful for combinations i.e. with Shift.
         **Required**
 
@@ -438,11 +438,11 @@ class Interaction(LibraryComponent):
         ``Shift``, ``Control``, ``Alt``, ``Meta``, ``ShiftLeft``
 
         Example excecution:
-        | Keyboard Key | press | S         |
-        | Keyboard Key | down  | Shift     |
-        | Keyboard Key | press | ArrowLeft |
-        | Keyboard Key | press | Delete    |
-        | Keyboard Key | up    | Shift     |
+        | Keyboard Key    press    S
+        | Keyboard Key    down     Shift
+        | Keyboard Key    press    ArrowLeft
+        | Keyboard Key    press    Delete
+        | Keyboard Key    up       Shift
 
         Note: Capital letters don't need to be written by the help of Shift. You can type them in directly.
         """
@@ -456,7 +456,7 @@ class Interaction(LibraryComponent):
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
         """ Input text into page with virtual keyboard.
 
-            ``action`` <insertText|type> **Required**
+            ``action`` < ``insertText`` | ``type`` > **Required**
 
                 - ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
 

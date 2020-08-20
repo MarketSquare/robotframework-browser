@@ -45,23 +45,112 @@ class Browser(DynamicCore):
     = Browser, Context and Page =
 
     Browser library works with three different layers that build on each other:
-    Browser, Context and Page. The context layer is useful e.g. for testing
-    different users on the same webpage without opening a whole new browser context.
+    Browser, Context and Page. A browser can be started with one of the three
+    different engines Chromium, Firefox or Webkit. Since
+    [https://github.com/microsoft/playwright|Playwright] comes with a pack of builtin
+    binaries for all browsers, no additional drivers e.g. geckodriver are needed.
+    The browser process is started
+    ``headless`` (without a GUI) by default. Run `New Browser` with specified arguments
+    if a browser with a GUI is requested. A browser process can contain several contexts,
+    e.g. corresponds to several icognito browsers in Chrome. Compared to Selenium,
+    these do not require their own browser process or their own runtime environment.
+    This means that new Icognito browsers can be opened about 10 times faster than
+    Selenium. As in Chrome, a context can open different pages.
+
+    The context layer is useful e.g. for testing different users sessions on the
+    same webpage without opening a whole new browser context. In order to test
+    downloads the ``acceptDownloads`` argument must be set in `New Context`.
+    Files can be downloaded either temporary or permanently on the file storage.
+
     When a new page is opened as the first step with `New Page`, `New Browser`
     and `New Context` are executed with default values first. The same goes vice
     versa with `Close Browser`.
 
     If there is no browser opened in Suite Setup and `New Page` is executed in
     Test Setup, the corresponding pages and context is closed automatically after
-    the test. The browser remains open and will be closed at the end of execution.
+    the test. The browser process remains open and will be closed at the end of
+    execution.
 
     Each Browser, Context and Page has a unique ID with which they can be adressed.
+    A full list can be recieved by `Get Browser Catalog`.
+
+    *Supported Browsers*
+    | Browser   | Call argment for `New Browser` |
+    | Chromium  | ``chromium``                   |
+    | Firefox   | ``firefox``                    |
+    | Safari    | ``webkit``                     |
 
     = Finding elements =
 
     All keywords in the library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
     how to find the element.
+
+    == Implicit selector strategy ==
+
+    The default selector strategy is `css`. If selector does not contain
+    one of the know selector strategies, `css`, `xpath`, `id` or `text` it is
+    assumed to contain css selector. Also `selectors` starting with `//`
+    considered as xpath selectors.
+
+    Examples:
+
+    | # Use css selector strategy the element.
+    | `Click`  span > button
+    |
+    | # Use xpath selector strategy the element.
+    | `Click`  //span/button
+
+    == Explicit selector strategy ==
+
+    The explicit selector strategy is specified with a prefix using syntax
+    ``strategy=value``. Spaces around the separator are ignored, so
+    ``css=foo``, ``css= foo`` and ``css = foo`` are all equivalent.
+
+    Selector strategies that are supported by default are listed in the table
+    below.
+
+    | = Strategy = |     = Match based on =     |         = Example =            |
+    | css          | CSS selector.              | ``css=div#example``            |
+    | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
+    | text         | Browser text engine.       | ``text=Login``                 |
+
+    === CSS ===
+
+    As written before the default selector strategy is `css`. The engine is aquivalent to
+    [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector].
+    Example: ``css=div#example``. 
+
+    A Selector sorrounded by ``[]`` is assumed to be a css selector. For example
+    ``[href="index.php"] is converted to ``css=[href="index.php"]``. More
+    examples are displayed in `Examples`.
+
+    === xpath ===
+
+    XPath engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/evaluate|Document.evaluate].
+    Example: ``xpath=//html/body``.
+
+    Malformed selector starting with ``//`` or ``..`` is assumed to be an xpath selector.
+    For example, ``//html/body`` is converted to ``xpath=//html/body``. More
+    examples are displayed in `Examples`.
+
+    Note that xpath does not pierce shadow roots.
+
+    === text ===
+
+    Text engine finds an element that contains a text node with the passed text.
+    For example, ``Click    text=Login`` clicks on a login button, and
+    ``Wait For Elements State   lazy loaded text`` waits for the "lazy loaded text"
+    to appear in the page.
+
+    - By default, the match is case-insensitive, ignores leading/trailing whitespace and searches for a substring. This means text= Login matches ``<button>Button loGIN (click me)</button>``.
+    - Text body can be escaped with single or double quotes for precise matching, insisting on exact match, including specified whitespace and case. This means ``text="Login "`` will only match ``<button>Login </button>`` with exactly one space after "Login". Quoted text follows the usual escaping rules, e.g. use ``\"`` to escape double quote in a double-quoted string: ``text="foo\"bar"``.
+    - Text body can also be a JavaScript-like regex wrapped in / symbols. This means ``text=/^\\s*Login$/i`` will match ``<button> loGIN</button>`` with any number of spaces before "Login" and no spaces after.
+    - Input elements of the type button and submit are rendered with their value as text, and text engine finds them. For example, ``text=Login`` matches ``<input type=button value="Login">``.
+    
+    Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
+    to be a text selector. For example, ``Click    Login`` is converted to ``Click    text=Login``.
+    More examples are displayed in `Examples`.
 
     == Selector syntax ==
 
@@ -125,36 +214,6 @@ class Browser(DynamicCore):
     | # queries the div element of every 2nd span element inside an element with the id foo
     | Get Element    \#foo >> css=span:nth-child(2n+1) >> div
 
-    === Implicit selector strategy ===
-
-    The default selector strategy is `css`. If selector does not contain
-    one of the know selector strategies, `css`, `xpath`, `id` or `text` it is
-    assumed to contain css selector. Also `selectors` starting with `//`
-    considered as xpath selectors.
-
-    Examples:
-
-    | # Use css selector strategy the element.
-    | `Click`  span > button
-    |
-    | # Use xpath selector strategy the element.
-    | `Click`  //span/button
-
-    === Explicit selector strategy ===
-
-    The explicit selector strategy is specified with a prefix using syntax
-    ``strategy=value``. Spaces around the separator are ignored, so
-    ``css=foo``, ``css= foo`` and ``css = foo`` are all equivalent.
-
-
-    Selector strategies that are supported by default are listed in the table
-    below.
-
-    | = Strategy = |     = Match based on =     |         = Example =            |
-    | css          | CSS selector.              | ``css=div#example``            |
-    | xpath        | XPath expression.          | ``xpath=//div[@id="example"]`` |
-    | text         | Browser text engine.       | ``text=Login``                 |
-
     === Finding elements inside frames ===
 
     By default, selector chains do not cross frame boundaries. It means that a
@@ -216,30 +275,7 @@ class Browser(DynamicCore):
     - ``"css:light=article > .in-the-shadow"`` does not match anything.
     - ``"css=article li#target"`` matches the ``<li id='target'>Deep in the shadow</li>``, piercing two shadow roots.
 
-    === xpath ===
-
-    XPath engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/evaluate|Document.evaluate].
-    Example: ``xpath=//html/body``.
-
-    Malformed selector starting with ``//`` or ``..`` is assumed to be an xpath selector.
-    For example, ``//html/body`` is converted to ``xpath=//html/body``.
-
-    Note that xpath does not pierce shadow roots.
-
-    === text and text:light ===
-
-    Text engine finds an element that contains a text node with the passed text.
-    For example, ``Click    text=Login`` clicks on a login button, and
-    ``Wait For Elements State   lazy loaded text`` waits for the "lazy loaded text"
-    to appear in the page.
-
-    - By default, the match is case-insensitive, ignores leading/trailing whitespace and searches for a substring. This means text= Login matches ``<button>Button loGIN (click me)</button>``.
-    - Text body can be escaped with single or double quotes for precise matching, insisting on exact match, including specified whitespace and case. This means ``text="Login "`` will only match ``<button>Login </button>`` with exactly one space after "Login". Quoted text follows the usual escaping rules, e.g. use ``\"`` to escape double quote in a double-quoted string: ``text="foo\"bar"``.
-    - Text body can also be a JavaScript-like regex wrapped in / symbols. This means ``text=/^\\s*Login$/i`` will match ``<button> loGIN</button>`` with any number of spaces before "Login" and no spaces after.
-    - Input elements of the type button and submit are rendered with their value as text, and text engine finds them. For example, ``text=Login`` matches ``<input type=button value="Login">``.
-    
-    Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
-    to be a text selector. For example, ``Click    Login`` is converted to ``Click    text=Login``.
+    === text:light ===
 
     ``text`` engine open pierces shadow roots similarly to ``css``, while ``text:light`` does not.
     Text engine first searches for elements in the light dom in the iteration order, and then
@@ -258,8 +294,8 @@ class Browser(DynamicCore):
     reference can be used as a *first* part of a selector by using a special selector
     syntax `element=` like this:
 
-    | ${ref}=  |  Get Element  |  .some_class                    |
-    |          | Click         |  element=${ref} >>  .some_child |
+    | ${ref}=    Get Element    .some_class
+    |            Click          element=${ref} >> .some_child
 
     The `.some_child` selector in the example is relative to the element referenced by ${ref}.
 
@@ -300,12 +336,12 @@ class Browser(DynamicCore):
 
     == Examples ==
 
-    | Keyword   | Selector                 | Key      | Assertion Operator | Assertion Expected                                   |
-    | Get Title  |                         |          | equal              | Page Title                                           |
-    | Get Style  |  //*[@id="div-element"] |   width  |  >                 |  100                                                 |
-    | Get Title  |                         |          |  matches           |  \\\\w+\\\\s\\\\w+                                   |
-    | Get Title  |                         |          |  validate          |  value == "Login Page"                               |
-    | Get Title  |                         |          |  evaluate          | value if value == "some value" else "something else" |
+    | *Keyword*    |  *Selector*             | *Key*    | *Assertion Operator* | *Assertion Expected*                                 |
+    | `Get Title`  |                         |          | equal                | Page Title                                           |
+    | `Get Style`  |  //*[@id="div-element"] |   width  |  >                   |  100                                                 |
+    | `Get Title`  |                         |          |  matches             |  \\\\w+\\\\s\\\\w+                                   |
+    | `Get Title`  |                         |          |  validate            |  value == "Login Page"                               |
+    | `Get Title`  |                         |          |  evaluate            | value if value == "some value" else "something else" |
 
     = Automatic page and context closing =
 

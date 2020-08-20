@@ -47,7 +47,7 @@ class PlaywrightState(LibraryComponent):
 
         ``url`` <str> Navigates to URL if provided. Defaults to None.
 
-        ``browser`` <firefox|chromium|webkit> Specifies which browser to use. The
+        ``browser`` < ``firefox`` | ``chromium`` | ``webkit`` > Specifies which browser to use. The
         supported browsers are listed in the table below. The browser names
         are case-sensitive.
         |   = Value =     |        = Name(s) =                                   |
@@ -67,7 +67,9 @@ class PlaywrightState(LibraryComponent):
         """Closes the current browser. Activated browser is set to first active browser.
         Closes all context and pages belonging to this browser.
 
-        ``browser`` <str> Closes the browser with specified id. Defaults to CURRENT. 
+        ``browser`` < ``CURRENT`` | ``ALL`` |str> If value is not ``CURRENT``
+        it should be an int referencing the id of the browser to be closed.
+        If ``ALL`` is provided `Close All Browsers` is executed.
         """
         with self.playwright.grpc_channel() as stub:
             if browser == "ALL":
@@ -88,14 +90,15 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=["BrowserControl"])
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
-        # Add to page if ALL is implemented: If ALL is passed, all contexts of the browser will be closed.
         """Closes a Context. Activated context is set to first active context.
         Closes pages belonging to this context.
 
-        ``context`` <str> Close context with specified id. Defaults to CURRENT.
+        ``context`` < ``CURRENT`` | ``ALL`` |str> Close context with specified id. If ``ALL``
+        is passed, all contexts of the specified browser are closed. Defaults to CURRENT.
 
-        ``browser`` <str> Close context in specified browser. If value is not "CURRENT"
+        ``browser`` < ``CURRENT`` | ``ALL`` |str> Close context in specified browser. If value is not "CURRENT"
         it should be an int referencing the id of the browser where to close context.
+        If ALL is passed, all contexts of the browser will be closed.
         """
         with self.playwright.grpc_channel() as stub:
             self._correct_browser(browser)
@@ -115,11 +118,16 @@ class PlaywrightState(LibraryComponent):
         """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three.
         Activated page is set to first active page.
         
-        ``page`` <str> Id of the page to close. Defaults to CURRENT.
+        ``page`` < ``CURRENT`` | ``ALL`` |str> Id of the page to close. If value is not "CURRENT"
+        it should be an int referencing the id of the context where to close page.
+        If ``ALL`` is passed, all pages of the given context are closed. Defaults to CURRENT.
 
-        ``context`` <str> Id of the context that belongs to the page to be closed. Defaults to CURRENT.
+        ``context`` < ``CURRENT`` | ``ALL`` |str> Id of the context that belongs to the page to be closed.
+        If ``ALL`` is passed, the requested pages of all contexts are closed. Defaults to CURRENT.
 
-        ``browser`` <str> Id of the browser that belongs to the page to be closed. Defaults to CURRENT.
+        ``browser`` < ``CURRENT`` | ``ALL`` |str> Id of the browser that belongs to the page to be closed.
+        If ``ALL`` is passed, the requested pages depending of the context of all browsers are closed.
+        Defaults to CURRENT.
         """
         with self.playwright.grpc_channel() as stub:
             self._correct_browser(browser)
@@ -347,9 +355,13 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def switch_context(self, index: int, browser: str = "CURRENT"):
         """ Switches the active BrowserContext to another open context.
-            Returns a stable identifier for the previous context.
+        Returns a stable identifier for the previous context.
 
-            ``index`` <int> Index id of the context to be changed to. Starting at 0. **Required**
+        ``index`` <int> Index id of the context to be changed to. Starting at 0. **Required**
+
+        ``browser`` < ``CURRENT`` | ``ALL`` |str> Switch context in specified browser. If value is not "CURRENT"
+        it should be an int referencing the id of the browser where to switch context.
+        If ALL is passed, the contexts of the browser will be closed.
         """
         with self.playwright.grpc_channel() as stub:
             self._correct_browser(browser)
@@ -362,10 +374,18 @@ class PlaywrightState(LibraryComponent):
         self, index: int, context: str = "CURRENT", browser: str = "CURRENT"
     ):
         """Switches the active browser page to another open page by ``index``.
-            Returns a stable identifier for the previous page.
-            Newly opened pages get appended to the end of the list.
+        Returns a stable identifier for the previous page.
+        Newly opened pages get appended to the end of the list.
 
-            ``index`` <int> Index id of the page to be changed to. Starting at 0. **Required**
+        ``index`` <int> Index id of the page to be changed to. Starting at 0. **Required**
+
+        ``context`` < ``CURRENT`` | ``ALL`` |str> Switch page in specified context. If value is not "CURRENT"
+        it should be an int referencing the id of the context where to switch page.
+        If ALL is passed, the pages of all contexts switch.
+
+        ``browser`` < ``CURRENT`` | ``ALL`` |str> Switch page in specified browser. If value is not "CURRENT"
+        it should be an int referencing the id of the browser where to switch page.
+        If ALL is passed, the page of all browsers depending on the context switch.
         """
         with self.playwright.grpc_channel() as stub:
             self._correct_browser(browser)
