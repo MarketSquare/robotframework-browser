@@ -186,10 +186,11 @@ def _run_robot(extra_args=None):
         "DEBUG",
         "--outputdir",
         str(atest_output),
-        "atest/test",
     ]
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "No-Windows-Support"])
+    default_args.append("atest/test")
+
     pabot.main(pabot_args + (extra_args or []) + default_args)
 
 
