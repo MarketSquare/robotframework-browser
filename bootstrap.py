@@ -21,9 +21,6 @@ if not venv_dir.exists():
 subprocess.run(
     [venv_python, "-m", "pip", "install", "-r", str(src_dir / "dev-requirements.txt"),]
 )
-subprocess.run(
-    [venv_python, "-m", "pip", "install", "-r", str(src_dir / "requirements.txt")]
-)
 
 activate_script = (
     "source .venv/bin/activate"
