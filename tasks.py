@@ -55,7 +55,7 @@ def clean(c):
 def protobuf(c):
     if not python_protobuf_dir.exists():
         python_protobuf_dir.mkdir()
-        c.run(f"touch {python_protobuf_dir / '__init__.py'}")
+        (python_protobuf_dir / "__init__.py").touch()
     if not node_protobuf_dir.exists():
         node_protobuf_dir.mkdir()
     gen_timestamp_file = python_protobuf_dir / ".generated"
@@ -186,8 +186,11 @@ def _run_robot(extra_args=None):
         "DEBUG",
         "--outputdir",
         str(atest_output),
-        "atest/test",
     ]
+    if platform.platform().startswith("Windows"):
+        default_args.extend(["--exclude", "No-Windows-Support"])
+    default_args.append("atest/test")
+
     pabot.main(pabot_args + (extra_args or []) + default_args)
 
 
@@ -299,9 +302,9 @@ def version(c, version):
     node_version_file = root_dir / "package.json"
     node_version_matcher = re.compile('"version": ".*"')
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
-    workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
-    workflow_version_matcher = re.compile("VERSION: .*")
-    _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")
+    # workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
+    # workflow_version_matcher = re.compile("VERSION: .*")
+    # _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")
 
 
 def _replace_version(filepath, matcher, version):
