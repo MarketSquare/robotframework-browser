@@ -37,6 +37,7 @@ Add Cookie Should Fail If Context Is Not Open
     ...    Add Cookie    Foo    Bar    url=${url}
 
 Add Cookie With Url
+    [Tags]    No-Windows-Support
     ${url} =    Get Url
     Add Cookie    Foo    Bar    url=${url}
     ${cookies} =    Get Cookies
@@ -44,6 +45,7 @@ Add Cookie With Url
     Should Be Equal    ${cookies}[0][path]    /
 
 Add Cookie With Domain And Path
+    [Tags]    No-Windows-Support
     ${url} =    Get Url
     ${parsed_url} =    common.Parse Url    ${url}
     Add Cookie    Foo    Bar    domain=${parsed_url.netloc}    path=${parsed_url.path}
@@ -157,6 +159,7 @@ Eat All Cookies
     Eat All Cookies
 
 Get Cookie
+    [Tags]    No-Windows-Support
     ${url} =    Get Url
     Add Cookie
     ...    Foo

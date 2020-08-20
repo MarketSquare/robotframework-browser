@@ -55,7 +55,7 @@ def clean(c):
 def protobuf(c):
     if not python_protobuf_dir.exists():
         python_protobuf_dir.mkdir()
-        c.run(f"touch {python_protobuf_dir / '__init__.py'}")
+        (python_protobuf_dir / "__init__.py").touch()
     if not node_protobuf_dir.exists():
         node_protobuf_dir.mkdir()
     gen_timestamp_file = python_protobuf_dir / ".generated"
@@ -186,8 +186,11 @@ def _run_robot(extra_args=None):
         "DEBUG",
         "--outputdir",
         str(atest_output),
-        "atest/test",
     ]
+    if platform.platform().startswith("Windows"):
+        default_args.extend(["--exclude", "No-Windows-Support"])
+    default_args.append("atest/test")
+
     pabot.main(pabot_args + (extra_args or []) + default_args)
 
 
@@ -286,8 +289,11 @@ def release(c):
     c.run("python -m twine upload --repository pypi dist/*")
 
 
-@task
+@task(docs)
 def version(c, version):
+    from Browser.version import VERSION
+
+    os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}")
     if not version:
         print("Give version with inv version <version>")
     py_version_file = root_dir / "Browser" / "version.py"
@@ -296,12 +302,49 @@ def version(c, version):
     node_version_file = root_dir / "package.json"
     node_version_matcher = re.compile('"version": ".*"')
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
-    workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
-    workflow_version_matcher = re.compile("VERSION: .*")
-    _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")
+    # workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
+    # workflow_version_matcher = re.compile("VERSION: .*")
+    # _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")
 
 
 def _replace_version(filepath, matcher, version):
     content = filepath.open().read()
     with open(filepath, "w") as out:
         out.write(matcher.sub(version, content))
+
+
+@task
+def gh_pages_index(c):
+    import os
+
+    links = [
+        f"""<a href="versions/{i}">{i}</a>"""
+        for i in sorted(os.listdir("docs/versions"))
+    ]
+
+    index_contents = f"""
+    <!DOCTYPE html>
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+        <head>
+            <meta charset="utf-8"/>
+            <title>Robot Framework Browser</title>
+            <link rel="stylesheet" href="style.css" type="text/css" />
+        </head>
+        <body>
+            <p>
+                Check out our GitHub homepage for details.
+                <a href="https://github.com/MarketSquare/robotframework-browser">Project Home</a>
+            </p>
+            <p>
+                <a href="Browser.html">Keyword Documentation</a>
+            </p>
+            <p>
+                <h3> Old releases</h3>
+                {links}
+            </p>
+        </body>
+    </html>
+    """
+
+    with open("docs/index.html", "w") as f:
+        f.write(index_contents)
