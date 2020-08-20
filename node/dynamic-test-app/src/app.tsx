@@ -1,4 +1,6 @@
 import React, { ChangeEvent, FocusEvent, useRef, useState } from 'react';
+import Draggable from 'react-draggable';
+import { DraggableData, DraggableEvent } from 'react-draggable';
 
 function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     event.persist();
@@ -75,9 +77,30 @@ function testPrompt(promptResultElement: React.RefObject<HTMLElement>) {
     else promptResultElement.current!.innerHTML = 'prompt_not_filled';
 }
 
+function DraggableDiv() {
+    const onControlledDrag = (e: DraggableEvent, position: DraggableData) => {
+        const {x, y} = position;
+        setControlledPosition({x, y});
+    };
+    const [controlledPosition, setControlledPosition] = useState({x: 0, y: 0});
+    return <Draggable position={controlledPosition} onDrag={onControlledDrag} >
+        <div className="box">
+            My position can be changed programmatically. <br />
+            I have a drag handler to sync state.
+            <div>
+                <div>x ({controlledPosition.x})</div>
+            </div>
+            <div>
+                <div> y ({controlledPosition.y})</div>
+            </div>
+        </div>
+    </Draggable>
+}
+
 export default function Site() {
     const username = useRef('');
     const password = useRef('');
+
 
     const [submit, setSubmit] = useState(false);
     const uploadResult = React.createRef<HTMLDivElement>();
@@ -226,6 +249,8 @@ export default function Site() {
                     Download file{' '}
                 </a>
                 <ProgressBar />
+                <DraggableDiv />
+                
             </>
         );
     }

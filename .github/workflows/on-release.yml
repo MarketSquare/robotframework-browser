@@ -23,3 +23,32 @@ jobs:
           repository: marketsquare/robotframework-browser/rfbrowser-stable
           tag_with_ref: true
           dockerfile: atest/docker/Dockerfile.latest_release
+  gh-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Dependencies for building docs # TODO: thin a bit
+        run: |
+          yarn --frozen-lockfile install
+          python -m pip install --upgrade pip
+          pip install -r Browser/dev-requirements.txt
+          inv build
+      - name: Build docs
+        run: |
+          inv docs
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@3.5.9
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: docs # The folder the action should deploy.

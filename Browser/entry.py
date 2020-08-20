@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -44,7 +45,10 @@ def rfbrowser_init():
     print("Installing rfbrowser node dependencies at {}".format(installation_dir))
 
     try:
-        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=False)
+        # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
+        # But shell=True breaks our linux CI
+        shell = True if platform.platform().startswith("Windows") else False
+        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=shell)
     except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
         print(
             "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
