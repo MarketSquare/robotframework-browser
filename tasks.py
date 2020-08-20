@@ -188,6 +188,8 @@ def _run_robot(extra_args=None):
         str(atest_output),
         "atest/test",
     ]
+    if platform.platform().startswith("Windows"):
+        default_args.append(["--exclude", "No-Windows-Support"])
     pabot.main(pabot_args + (extra_args or []) + default_args)
 
 
