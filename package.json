@@ -1,6 +1,6 @@
 {
   "name": "robotframework-playwright",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "main": "index.ts",
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
@@ -25,6 +25,7 @@
     "prettier": "^2.0.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-draggable": "^4.4.3",
     "react-router-dom": "^5.2.0",
     "ts-loader": "^7.0.5",
     "ts-node": "^8.10.2",

@@ -6,8 +6,8 @@ from robotlibcore import keyword  # type: ignore
 from ..assertion_engine import (
     bool_verify_assertion,
     dict_verify_assertion,
+    float_str_verify_assertion,
     int_dict_verify_assertion,
-    int_str_verify_assertion,
     list_verify_assertion,
     verify_assertion,
     with_assertion_polling,
@@ -304,7 +304,7 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector)
             )
             count = response.body
-            return int_str_verify_assertion(
+            return float_str_verify_assertion(
                 int(count),
                 assertion_operator,
                 expected_value,
@@ -441,19 +441,32 @@ class Getters(LibraryComponent):
                     f"Style value for {key} is ",
                 )
 
-    @keyword(tags=["Getter"])
-    def get_boundingbox(self, selector: str, *keys: BoundingBoxFields):
-        """ Gets elements size and location as an object {x: int, y: int, width: int, height: int}.
+    @keyword(tags=["Getter", "Assertion"])
+    def get_boundingbox(
+        self,
+        selector: str,
+        key: BoundingBoxFields = BoundingBoxFields.ALL,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ):
+        """ Gets elements size and location as an object {x: float, y: float, width: float, height: float}.
 
             ``selector`` <str> Selector from which shall be retrieved. **Required**
 
-            ``keys`` <BoundingBoxFields> Optionally filters the returned values.
+            ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+            If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
+            otherwise it will just return the single value selected by the key.
+
+            See `Assertions` for further details for the assertion arguments. Defaults to None.
 
             Example use:
-            | unfiltered:       |                  |            |   |   |
-            | ${bounding_box}=  | Get BoundingBox  | \\#element |   |   |
-            | filtered:         |                  |            |   |   |
-            | ${xy}=            | Get BoundingBox  | \\#element | x | y |
+            | ${bounding_box}=    Get BoundingBox    id=element    # unfiltered
+            | Log    ${bounding_box}    # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
+            | ${x}=    Get BoundingBox    id=element    x    # filtered
+            | Log    X: ${x}    # X: 559.09375
+            | # Assertions:
+            | Get BoundingBox    id=element    width    >    180
+            | Get BoundingBox    id=element    ALL    validate    value['x'] > value['y']*2
 
 
         """
@@ -461,6 +474,15 @@ class Getters(LibraryComponent):
             response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
             parsed = json.loads(response.body)
             logger.debug(parsed)
-            if keys:
-                parsed = {key.name: parsed[key.name] for key in keys}
-            return parsed
+            if key == BoundingBoxFields.ALL:
+                return dict_verify_assertion(
+                    parsed, assertion_operator, assertion_expected, "BoundingBox is"
+                )
+            else:
+                logger.info(f"Value of '{key}'': {parsed[key.name]}")
+                return float_str_verify_assertion(
+                    parsed[key.name],
+                    assertion_operator,
+                    assertion_expected,
+                    f"{key} is ",
+                )
