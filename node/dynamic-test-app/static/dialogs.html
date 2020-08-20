@@ -1,0 +1,48 @@
+<html>
+
+<body onbeforeunload="return beforeunloadFunc()">
+    <div>
+        <label for="confirm">confirm: </label>
+        <span id="confirm">---</span>
+        <div>
+            <button id="confirm_btn" onclick="confirmFunc()">exec confirm</button>
+        </div>
+    </div>
+    <div>
+        <label for="alert">alert: </label>
+        <span id="alert">---</span>
+        <div>
+            <button id="alert_btn" onclick="alertFunc()">exec alert</button>
+        </div>
+    </div>
+    <div>
+        <label for="prompt">prompt: </label>
+        <span id="prompt">---</span>
+        <div>
+            <button id="prompt_btn" onclick="promptFunc()">exec prompt</button>
+        </div>
+    </div>
+    <a id="beforeunload_btn" href="index.html">Let me out!</a>
+    <script>
+        function confirmFunc() {
+            var x = confirm("Confirm This...");
+            document.getElementById("confirm").innerHTML = x;
+        }
+        function alertFunc() {
+            alert("Alert");
+            document.getElementById("alert").innerHTML = "Alert Dismissed";
+        }
+        function promptFunc() {
+            var x = prompt("Give it to me:", "this is the text");
+            document.getElementById("prompt").innerHTML = x;
+            if (x == null) {
+                document.getElementById("prompt").innerHTML = "CANCELED";
+            }
+        }
+        function beforeunloadFunc() {
+            return "You want to leave?";
+        }
+    </script>
+</body>
+
+</html>

@@ -66,17 +66,19 @@ jobs:
         path: atest/output
     - uses: actions/upload-artifact@v2
       with:
-        name: artifacts
-        path: dist/
+        name: rfbrowser-wheel 
+        path: dist/robotframework_browser-*-py3-none-any.whl
     - uses: actions/upload-artifact@v2
       with:
         name: demoapp
         path: node/dynamic-test-app
   test-install:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: [3.8]
         node-version: [12.x]
     steps:
@@ -84,7 +86,7 @@ jobs:
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
-          name: artifacts
+          name: rfbrowser-wheel
       - name: Download package for install testing
         uses: actions/download-artifact@v2
         with:
@@ -98,24 +100,34 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Start xvfb
+      - name: Install Robot Framework Browser on unix-like
         run: |
-          export DISPLAY=:99.0
-          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-      - name: Install Robot Framework Browser
-        env:
-          VERSION: 0.15.0
+          pip install ./robotframework_browser-*-py3-none-any.whl
+        if: matrix.os != 'windows-latest'
+      - name: Install Robot Framework Browser on windows
         run: |
-          pip install "robotframework_browser-$VERSION-py3-none-any.whl"
+          pip install (gci *.whl)
+        if: matrix.os == 'windows-latest'
+      - name: Install node deps and pyhton deps for test running
+        run: |
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
-      - name: Run Robot Framework tests
+      - name: Set node_path env var
         run: |
+          echo "::set-env name=NODE_PATH::/usr/lib/node_modules"
+      - name: Test on unix-like os
+        if: matrix.os != 'windows-latest'
+        run: |
+          echo ${{ matrix.os }}
+          export DISPLAY=:99.0
+          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum inv atest-global-pythonpath
-        env:
-          NODE_PATH: /usr/lib/node_modules
+      - name: Run Robot Framework tests on windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          inv atest-global-pythonpath
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
-          name: Clean install results
+          name: ${{ matrix.os }} Clean install results
           path: atest/output
