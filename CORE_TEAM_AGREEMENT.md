@@ -40,3 +40,4 @@ We agree on all of this by commiting a signed commit `git commit -S` on this fil
 that adds signers name here:
  - Mikko Korpela
  - René Rohner
+ - Kerkko Pelttari
