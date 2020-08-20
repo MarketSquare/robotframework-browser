@@ -286,8 +286,11 @@ def release(c):
     c.run("python -m twine upload --repository pypi dist/*")
 
 
-@task
+@task(docs)
 def version(c, version):
+    from Browser.version import VERSION
+
+    os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}")
     if not version:
         print("Give version with inv version <version>")
     py_version_file = root_dir / "Browser" / "version.py"
@@ -305,3 +308,40 @@ def _replace_version(filepath, matcher, version):
     content = filepath.open().read()
     with open(filepath, "w") as out:
         out.write(matcher.sub(version, content))
+
+
+@task
+def gh_pages_index(c):
+    import os
+
+    links = [
+        f"""<a href="versions/{i}">{i}</a>"""
+        for i in sorted(os.listdir("docs/versions"))
+    ]
+
+    index_contents = f"""
+    <!DOCTYPE html>
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+        <head>
+            <meta charset="utf-8"/>
+            <title>Robot Framework Browser</title>
+            <link rel="stylesheet" href="style.css" type="text/css" />
+        </head>
+        <body>
+            <p>
+                Check out our GitHub homepage for details.
+                <a href="https://github.com/MarketSquare/robotframework-browser">Project Home</a>
+            </p>
+            <p>
+                <a href="Browser.html">Keyword Documentation</a>
+            </p>
+            <p>
+                <h3> Old releases</h3>
+                {links}
+            </p>
+        </body>
+    </html>
+    """
+
+    with open("docs/index.html", "w") as f:
+        f.write(index_contents)

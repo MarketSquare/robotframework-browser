@@ -46,6 +46,7 @@ jobs:
       - name: Build docs
         run: |
           inv docs
+          inv gh-pages-index
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@3.5.9
         with:

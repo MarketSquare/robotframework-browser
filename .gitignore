@@ -6,6 +6,7 @@ Browser/**/*.pyc
 node/playwright-wrapper/generated
 
 docs/Browser.html
+docs/index.html
 
 node/dynamic-test-app/dist/*.js
 node/dynamic-test-app/src/*.js
