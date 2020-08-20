@@ -52,22 +52,15 @@ def clean(c):
 
 
 @task
-def protobuf(c):
+def python_protobuf_gen(c):
     if not python_protobuf_dir.exists():
         python_protobuf_dir.mkdir()
-        c.run(f"touch {python_protobuf_dir / '__init__.py'}")
-    if not node_protobuf_dir.exists():
-        node_protobuf_dir.mkdir()
+        (python_protobuf_dir / "__init__.py").touch()
+
     gen_timestamp_file = python_protobuf_dir / ".generated"
-    if _sources_changed(proto_sources, gen_timestamp_file):
-        _python_protobuf_gen(c)
-        _node_protobuf_gen(c)
-        gen_timestamp_file.touch()
-    else:
-        print("no changes in .proto files, skipping protobuf build")
+    if not _sources_changed(proto_sources, gen_timestamp_file):
+        return
 
-
-def _python_protobuf_gen(c):
     c.run(
         f"python -m grpc_tools.protoc -I protobuf --python_out=Browser/generated --grpc_python_out={python_protobuf_dir} --mypy_out={python_protobuf_dir} protobuf/*.proto"
     )
@@ -82,6 +75,8 @@ def _python_protobuf_gen(c):
     )
     with open(genfile, "w") as outfile:
         outfile.write(content)
+
+    gen_timestamp_file.touch()
 
 
 def _node_protobuf_gen(c):
@@ -110,6 +105,18 @@ def _node_protobuf_gen(c):
 		-I ./protobuf \
 		protobuf/*.proto"
     )
+
+
+@task(python_protobuf_gen)
+def protobuf(c):
+    if not node_protobuf_dir.exists():
+        node_protobuf_dir.mkdir()
+    gen_timestamp_file = python_protobuf_dir / ".generated"
+    if _sources_changed(proto_sources, gen_timestamp_file):
+        _node_protobuf_gen(c)
+        gen_timestamp_file.touch()
+    else:
+        print("no changes in .proto files, skipping protobuf build")
 
 
 @task(protobuf)
@@ -270,7 +277,7 @@ def run_test_app(c):
     c.run("node node/dynamic-test-app/dist/server.js")
 
 
-@task
+@task(python_protobuf_gen)
 def docs(c):
     libdoc("Browser", str(root_dir / "docs" / "Browser.html"))
 
