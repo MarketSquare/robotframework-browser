@@ -64,7 +64,7 @@ export async function getDomProperty(
     state: PlaywrightState,
 ) {
     const content = await getProperty(call, callback, state);
-    callback(null, stringResponse(content || '', ''));
+    callback(null, stringResponse(content, ''));
 }
 
 export async function getBoolProperty(
@@ -76,7 +76,7 @@ export async function getBoolProperty(
     const content = await getProperty(call, callback, state);
     callback(
         null,
-        boolResponse(content == "true" || false, 'Retrieved dom property for element ' + selector + ' containing ' + content),
+        boolResponse(content || false, 'Retrieved dom property for element ' + selector + ' containing ' + content),
     );
 }
 
@@ -90,9 +90,9 @@ async function getProperty<T>(
     try {
         const propertyName = call.request.getProperty();
         const property = await element.getProperty(propertyName);
-        const json_property = await JSON.stringify(property);
-        logger.info(`Retrieved dom property for element ${selector} containing ${json_property}`);
-        return json_property;
+        const content = await property.jsonValue();
+        logger.info(`Retrieved dom property for element ${selector} containing ${content}`);
+        return content;
     } catch (e) {
         logger.error(e);
         callback(e, null);

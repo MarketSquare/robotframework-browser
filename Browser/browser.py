@@ -423,19 +423,19 @@ class Browser(DynamicCore):
     can optionally assert.
     Currently supported assertion operators are:
 
-    |      = Operator =   |   = Alternative Operators =       |              = Description =                                         | = Validate Equivalent =              |
-    | ``==``              | ``equal``, ``should be``          | Checks if returned value is equal to expected value.                 | ``value == expected``                |
-    | ``!=``              | ``inequal``, ``should not be``    | Checks if returned value is not equal to expected value.             | ``value != expected``                |
-    | ``>``               | ``greater than``                  | Checks if returned value is greater than expected value.             | ``value > expected``                 |
-    | ``>=``              |                                   | Checks if returned value is greater than or equal to expected value. | ``value >= expected``                |
-    | ``<``               | ``less than``                     | Checks if returned value is less than expected value.                | ``value < expected``                 |
-    | ``<=``              |                                   | Checks if returned value is less than or equal to expected value.    | ``value <= expected``                |
-    | ``*=``              | ``contains``                      | Checks if returned value contains expected value as substring.       | ``expected in value``                |
-    | ``^=``              | ``should start with``, ``starts`` | Checks if returned value starts with expected value.                 | ``re.search(f"^{expected}", value)`` |
-    | ``$=``              | ``should end with``, ``ends``     | Checks if returned value ends with expected value.                   | ``re.search(f"{expected}$", value)`` |
-    | ``matches``         |                                   | Checks if given RegEx matches minimum once in returned value.        | ``re.search(expected, value)``       |
-    | ``validate``        |                                   | Checks if given Python expression evaluates to ``True``.             |                                      |
-    | ``evaluate``        |  ``then``                         | When using this operator, the keyword does return the evaluated Python expression. |                        |
+    |      = Operator =                           |              = Description =                                           |
+    | ``==``, ``equal`` or ``should be``          | equal                                                                  |
+    | ``!=``, ``inequal`` or ``should not be``    | not equal                                                              |
+    | ``>`` or ``greater than``                   | greater than                                                           |
+    | ``>=``                                      | greater than or equal                                                  |
+    | ``<`` or ``less than``                      | less than                                                              |
+    | ``<=``                                      | less than or equal                                                     |
+    | ``*=`` or ``contains``                      | for checking that a value contains an element                          |
+    | ``matches``                                 | for matching against a regular expression. Remember to escape ``\\``   |
+    | ``^=``, ``should start with`` or ``starts`` | starts with                                                            |
+    | ``$=``, ``should end with`` or ``ends``     | ends with                                                              |
+    | ``validate``                                | use Python expression to validate. Access by ``value``                 |
+    | ``evaluate`` or ``then``                    | use Python expression and return it. Access to actual with ``value``   |
 
     See the list of [https://docs.python.org/3/library/stdtypes.html|Python Built-in Types] for a compairsion
     with ``validate`` and ``evaluate``.
@@ -443,20 +443,24 @@ class Browser(DynamicCore):
     The expected assertion value can be any valid robot value, and the keywords will provide an error
     message if the assertion fails. Assertions will retry until ``timeout`` has expired if they do not directly pass.
 
-    Be aware that some keywords return strings others return numbers.
+    Some getter keywords return values as strings. An easy mistake to make is to assert the
+    value with numbers. Compairsions of strings with ``greater than`` or ``less than`` only consider
+    the first character. Numbers should be validated with the assertion ``validate``.
 
-    * < less or greater > With Strings*
-    Compairisons of strings with ``greater than`` or ``less than`` compares each character,
-    starting from 0 reagarding where it stands in the code page.
-    Example: ``A < Z``, ``Z < a``, ``ac < dc`
-    It does never compare the length of elements. Neither lists nor strings.
-    The comparison stops at the first character that is different.
-    Examples: ``'abcde' < 'abd'``, ``'100.000' < '2'``
-    In Python 3 and therefore also in Browser it is not possible to compare numbers
-    with strings with a greater or less operator.
-    On keywords that return numbers, the given expected value is automatically
-    converted to a number before comparison.
+    Example:
+    | <div id="number"> 42 </div>
+    |
+    | Get Text     \\#number    ==          42                  # Valid
+    | Get Text     \\#number    <           123                 # False, but returns true
+    | Get Text     \\#number    >           7                   # True, but throws a FAIL
+    |
+    | Get Text     \\#number    validate    int(value) < 123    # Valid
+    | Get Text     \\#number    validate    int(value) > 7      # Valid
 
+    Counter examples are `Get Bounding Box` and `Get Element Count` which return a value. ``validate`` and a cast of ``value``
+    is not needed. See the example:
+
+    | Get BoundingBox    id=element    width    >    180
 
     The getters `Get Page State` and `Get Browser Catalog` return a dictionary. Values of the dictionary can directly asserted.
     Pay attention of possible types because they are evaluated in Python. For example:
