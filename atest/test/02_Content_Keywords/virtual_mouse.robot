@@ -17,12 +17,13 @@ Move In Circle
 
 Draggable Test
     [Tags]    Not-Implemented
-    ${xy}=    Get Boundingbox    \#draggable    x    y
+    ${x}=    Get Boundingbox    \#draggable    x
+    ${y}=    Get Boundingbox    \#draggable    y
     # evaluate end coordinates
-    ${x}    Evaluate    ${xy}[x]+400
-    ${y}    Evaluate    ${xy}[y]+400
-    Mouse Button    down    ${xy}[x]    ${xy}[y]
-    Mouse Button    up    ${x}    ${y}
+    ${xnew}    Evaluate    ${x}+400
+    ${ynew}    Evaluate    ${y}+400
+    Mouse Button    down    ${x}    ${y}
+    Mouse Button    up    ${xnew}    ${ynew}
     # just do a random move to make sure the element is not stuck to mouse any more
     Mouse Move    0    0
     Get Text    \#dragX    ==    400

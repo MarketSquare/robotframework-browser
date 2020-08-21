@@ -47,7 +47,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> object:
-        """Returns page model state object.
+        """Returns page model state object as a dictionary.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
@@ -255,7 +255,7 @@ class Getters(LibraryComponent):
 
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
-        - ``==`` and ``!=`` are allowed on boolean values
+        - ``==`` and ``!=`` and equivalent are allowed on boolean values
         - other operators are not accepted.
 
         ``expected_state`` <str> boolean value of expected state.
@@ -368,7 +368,10 @@ class Getters(LibraryComponent):
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
-        ``assertion_expected`` <Dict<str, int>> Defaults to None.
+        ``assertion_expected`` <dict<str, int>> Defaults to None.
+        Example:
+        | Get Viewport Size    ==    {'width':1280, 'height':720}
+
          """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
@@ -454,6 +457,8 @@ class Getters(LibraryComponent):
             ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
             If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
             otherwise it will just return the single value selected by the key.
+            Note: If a single value is retrieved, an assertion does *not* need a ``validate``
+            combined with a cast of ``value``.
 
             See `Assertions` for further details for the assertion arguments. Defaults to None.
 
