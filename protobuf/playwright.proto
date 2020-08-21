@@ -170,10 +170,12 @@ message Response {
   message Empty {
     string log = 1;
   }
+
   message String {
     string log = 1;
     string body = 2;
   }
+
   message Bool {
     string log = 1;
     bool body = 2;
@@ -188,6 +190,11 @@ message Response {
     repeated Types.SelectEntry entry = 1;
   }
 
+  message Json {
+    string log = 1;
+    string json = 2;
+  }
+
   message JavascriptExecutionResult {
     string log = 1;
     string result = 2;
@@ -197,7 +204,7 @@ message Response {
 service  Playwright {
   /* Cookie messages */
   rpc AddCookie(Request.Json) returns (Response.Empty);
-  rpc GetCookies(Request.Empty) returns (Response.String);
+  rpc GetCookies(Request.Empty) returns (Response.Json);
   rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
   /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
