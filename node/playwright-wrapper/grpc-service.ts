@@ -175,7 +175,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getViewportSize(
         call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return getters.getViewportSize(call, callback, this.getActivePage());
     }
