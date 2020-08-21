@@ -13,6 +13,7 @@ Get Multiple Browsers
     ${browsers}    Get Browser Catalog
     ${expected}    evaluate    [{"type": "chromium", "id": 0, "contexts": [{"type": "context", "id": 0, "pages": [{"type": "page", "title": "prefilled_email_form.html", "url": "http://${SERVER}/prefilled_email_form.html", "id": 0}]}, {"type": "context", "id": 1, "pages": [{"type": "page", "title": "Login Page", "url": "http://${SERVER}/dist/", "id": 0}]}], "activePage": 0, "activeContext": 1, "activeBrowser": False}, {"type": "chromium", "id": 1, "contexts": [{"type": "context", "id": 0, "pages": [{"type": "page", "title": "Example Domain", "url": "http://example.com/", "id": 0}]}], "activePage": 0, "activeContext": 0, "activeBrowser": True}]
     should be equal    ${browsers}    ${expected}
+    Should Contain    ${expected}[0]
 
 Get Closed Browsers
     New Browser

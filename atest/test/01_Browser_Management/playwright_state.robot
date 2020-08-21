@@ -4,6 +4,7 @@ Test Teardown     Close All Browsers
 
 *** Keywords ***
 Open Browser and assert Login Page
+    [Arguments]    ${local_browser}
     Open Browser To Login Page
     Get Text    h1    ==    Login Page
 
