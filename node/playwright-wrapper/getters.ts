@@ -64,7 +64,7 @@ export async function getDomProperty(
     state: PlaywrightState,
 ) {
     const content = await getProperty(call, callback, state);
-    callback(null, stringResponse(content, ''));
+    callback(null, stringResponse(content, 'Property received successfully.'));
 }
 
 export async function getBoolProperty(
