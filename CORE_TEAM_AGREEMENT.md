@@ -41,3 +41,4 @@ that adds signers name here:
  - Mikko Korpela
  - René Rohner
  - Kerkko Pelttari
+ - Tatu Aalto

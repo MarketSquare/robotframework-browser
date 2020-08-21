@@ -56,7 +56,7 @@ class Control(LibraryComponent):
     def take_screenshot(self, filename: str = "", selector: str = ""):
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
-        ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output directory.
+        ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output directory by default.
         String ``{index}`` in path will be replaced with a rolling number. Use this to not override filenames.
 
         ``selector`` <str> Take a screenshot of the element matched by selector.

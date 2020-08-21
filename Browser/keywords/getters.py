@@ -198,7 +198,7 @@ class Getters(LibraryComponent):
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
 
         ``option_attribute`` <SelectAttribute.label> Which attribute shall be returned/verified.
-        Allowed values are ``<"value"|"label"|"text"|"index">``. Defaults to label.
+        Allowed values are ``< ``value`` | ``label`` | ``text`` | ``index`` >``. Defaults to label.
 
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
@@ -209,13 +209,13 @@ class Getters(LibraryComponent):
 
         Example:
 
-        | `Select Options By`    | label                  | //select[2]  | Email    | Mobile           |      |                     |
-        | ${selected_list}       | `Get Selected Options` | //select[2]  |          |                  |      | # getter            |
-        | `Get Selected Options` | //select[2]            | label        | `==`     | Mobile           | Mail | #assertion content  |
-        | `Select Options By`    | label                  | select#names | 2        | 4                |      |                     |
-        | `Get Selected Options` | select#names           | index        | `==`     | 2                | 4    | #assertion index    |
-        | `Get Selected Options` | select#names           | label        | *=       | Mikko            |      | #assertion contains |
-        | `Get Selected Options` | select#names           | label        | validate | len(value) == 3  |      | #assertion length   |
+        | `Select Options By`      label                    //select[2]    Email      Mobile
+        | ${selected_list}         `Get Selected Options`   //select[2]                                         # getter
+        | `Get Selected Options`   //select[2]              label          `==`       Mobile             Mail   #assertion content
+        | `Select Options By`      label                    select#names   2          4
+        | `Get Selected Options`   select#names             index          `==`       2                  4      #assertion index
+        | `Get Selected Options`   select#names             label          *=         Mikko                     #assertion contain
+        | `Get Selected Options`   select#names             label          validate   len(value) == 3           #assertion length
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -296,8 +296,6 @@ class Getters(LibraryComponent):
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
         ``expected_value`` <str|int> Expected value for the counting
-
-
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
@@ -460,15 +458,13 @@ class Getters(LibraryComponent):
             See `Assertions` for further details for the assertion arguments. Defaults to None.
 
             Example use:
-            | ${bounding_box}=    Get BoundingBox    id=element    # unfiltered
-            | Log    ${bounding_box}    # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
-            | ${x}=    Get BoundingBox    id=element    x    # filtered
-            | Log    X: ${x}    # X: 559.09375
+            | ${bounding_box}=    Get BoundingBox    id=element                 # unfiltered
+            | Log                 ${bounding_box}                               # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
+            | ${x}=               Get BoundingBox    id=element    x            # filtered
+            | Log                 X: ${x}                                       # X: 559.09375
             | # Assertions:
-            | Get BoundingBox    id=element    width    >    180
-            | Get BoundingBox    id=element    ALL    validate    value['x'] > value['y']*2
-
-
+            | Get BoundingBox     id=element         width         >    180
+            | Get BoundingBox     id=element         ALL           validate    value['x'] > value['y']*2
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))

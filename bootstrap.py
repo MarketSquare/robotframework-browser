@@ -2,14 +2,16 @@
 
 Also installs the needed dependencies.
 """
-
-from pathlib import Path
 import platform
 import subprocess
-import sys
+from pathlib import Path
 from venv import EnvBuilder
 
 venv_dir = Path(".") / ".venv"
+if not platform.platform().startswith("Windows"):
+    venv_python = venv_dir / "bin" / "python"
+else:
+    venv_python = venv_dir / "python.exe"
 src_dir = Path(".") / "Browser"
 
 if not venv_dir.exists():
@@ -17,17 +19,7 @@ if not venv_dir.exists():
     EnvBuilder(with_pip=True).create(venv_dir)
 
 subprocess.run(
-    [
-        sys.executable,
-        "-m",
-        "pip",
-        "install",
-        "-r",
-        str(src_dir / "dev-requirements.txt"),
-    ]
-)
-subprocess.run(
-    [sys.executable, "-m", "pip", "install", "-r", str(src_dir / "requirements.txt")]
+    [venv_python, "-m", "pip", "install", "-r", str(src_dir / "dev-requirements.txt"),]
 )
 
 activate_script = (
