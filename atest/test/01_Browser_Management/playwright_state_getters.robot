@@ -24,8 +24,10 @@ Get Viewport Size
     New Context    viewport={"height": 600, "width": 800}
     New Page
     ${size}    Evaluate    {"height": 600, "width": 800}
-    Get Viewport Size    ==    {"height": 600, "width": 800}
-    Get Viewport Size    ==    ${size}
+    Get Viewport Size    ALL    ==    {"height": 600, "width": 800}
+    Get Viewport Size    ALL    ==    ${size}
+    Get Viewport Size    width    ==    800
+    Get Viewport Size    height    ==    600
 
 Multipage order
     New Page    ${FORM_URL}

@@ -31,4 +31,4 @@ Descriptor Properly sets context settings
     ${device}=    Get Device    iPhone X
     New Context    &{device}
     New Page
-    Get Viewport Size    ==    { "width": 375, "height": 812 }
+    Get Viewport Size    ALL    ==    { "width": 375, "height": 812 }

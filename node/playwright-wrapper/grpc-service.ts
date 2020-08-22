@@ -173,10 +173,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         return getters.getStyle(call, callback, this.state);
     }
 
-    async getViewportSize(
-        call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
+    async getViewportSize(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Json>): Promise<void> {
         return getters.getViewportSize(call, callback, this.getActivePage());
     }
 

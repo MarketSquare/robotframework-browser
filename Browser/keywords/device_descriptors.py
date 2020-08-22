@@ -38,7 +38,7 @@ class Devices(LibraryComponent):
             | ${device}=          Get Device       iPhone X
             | New Context         &{device}
             | New Page
-            | Get Viewport Size   returns { "width": 375, "height": 812 }
+            | Get Viewport Size   # returns { "width": 375, "height": 812 }
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevice(Request().Device(name=name))
