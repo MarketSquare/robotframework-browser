@@ -46,19 +46,19 @@ Get Property With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute
-    ${type}=    Get Attribute   id=login_button    type
+    ${type}=    Get Attribute    id=login_button    type
     Should Be Equal    ${type}    submit
 
 Get Attribute and Fail
-    Run Keyword And Expect Error    Attribute 'disabled' not found!    Get Attribute   id=login_button    disabled
+    Run Keyword And Expect Error    Attribute 'disabled' not found!    Get Attribute    id=login_button    disabled
 
 Get Attribute and Verify absense
-    Get Attribute   id=login_button    disabled     ==    ${None}
+    Get Attribute    id=login_button    disabled    ==    ${None}
 
 Get Attribute and return presents state
-    ${present}=    Get Attribute   id=login_button    value    evaluate    value is not None
+    ${present}=    Get Attribute    id=login_button    value    evaluate    value is not None
     Should Be True    ${present}
-    ${present}=    Get Attribute   id=login_button    disabled     evaluate    value is None
+    ${present}=    Get Attribute    id=login_button    disabled    evaluate    value is None
     Should Be True    ${present}
 
 Get Element Count
