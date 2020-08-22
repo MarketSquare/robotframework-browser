@@ -99,6 +99,33 @@ async function getProperty<T>(
     }
 }
 
+export async function getElementAttribute(
+    call: ServerUnaryCall<Request.ElementProperty>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+) {
+    const content = await getAttributeValue(call, callback, state);
+    callback(null, stringResponse(JSON.stringify(content), 'Property received successfully.'));
+}
+
+async function getAttributeValue<T>(
+    call: ServerUnaryCall<Request.ElementProperty>,
+    callback: sendUnaryData<T>,
+    state: PlaywrightState,
+) {
+    const selector = call.request.getSelector();
+    const element = await waitUntilElementExists(state, callback, selector);
+    try {
+        const attributeName = call.request.getProperty();
+        const attribute = await element.getAttribute(attributeName);
+        logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
+        return attribute;
+    } catch (e) {
+        logger.error(e);
+        callback(e, null);
+    }
+}
+
 export async function getStyle(
     call: ServerUnaryCall<Request.ElementSelector>,
     callback: sendUnaryData<Response.String>,
