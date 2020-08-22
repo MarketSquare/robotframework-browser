@@ -76,6 +76,12 @@ MouseOptionsDict = TypedDict(
 )
 
 
+class ViewportFields(Enum):
+    width = auto()
+    height = auto()
+    ALL = auto()
+
+
 class BoundingBoxFields(Enum):
     width = auto()
     height = auto()

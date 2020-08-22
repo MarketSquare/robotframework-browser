@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from robotlibcore import keyword  # type: ignore
 
@@ -15,7 +15,12 @@ from ..assertion_engine import (
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.data_types import AssertionOperator, BoundingBoxFields, SelectAttribute
+from ..utils.data_types import (
+    AssertionOperator,
+    BoundingBoxFields,
+    SelectAttribute,
+    ViewportFields,
+)
 
 
 class Getters(LibraryComponent):
@@ -123,44 +128,44 @@ class Getters(LibraryComponent):
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetDomProperty(
-                Request().ElementProperty(selector=selector, property="innerText")
-            )
-            logger.debug(response.log)
-            value = response.body
-            return verify_assertion(
-                value, assertion_operator, assertion_expected, f"Text {selector}"
-            )
+        return verify_assertion(
+            self.get_property(selector, "innerText"),
+            assertion_operator,
+            assertion_expected,
+            f"Text {selector}",
+        )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
-    def get_attribute(
+    def get_property(
         self,
         selector: str,
-        attribute: str,
+        property: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
-        """Returns the ``attribute`` of the element found by ``selector``.
+        """Returns the ``property`` of the element found by ``selector``.
 
-        Optionally asserts that the attribute value matches the specified
+        Optionally asserts that the property value matches the specified
         assertion.
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
 
-        ``attribute`` <str> Requested attribute name. **Required**
+        ``property`` <str> Requested property name. **Required**
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                Request().ElementProperty(selector=selector, property=attribute)
+                Request().ElementProperty(selector=selector, property=property)
             )
             logger.debug(response.log)
-            value = response.body
+            if response.body:
+                value = json.loads(response.body)
+            else:
+                raise AttributeError(f"Property {property} not found!")
             return verify_assertion(
-                value, assertion_operator, assertion_expected, f"Attribute {selector}"
+                value, assertion_operator, assertion_expected, f"Property {selector}"
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
@@ -178,8 +183,11 @@ class Getters(LibraryComponent):
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
-        return self.get_attribute(
-            selector, "value", assertion_operator, assertion_expected
+        return verify_assertion(
+            self.get_property(selector, "value"),
+            assertion_operator,
+            assertion_expected,
+            f"Value {selector}",
         )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
@@ -359,26 +367,43 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_viewport_size(
         self,
+        key: ViewportFields = ViewportFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Dict[str, int]] = None,
+        assertion_expected: Any = None,
     ):
         """Returns the current viewport dimensions.
 
         Optionally asserts that the count matches the specified assertion.
 
+        ``key`` < ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        If keys is set to ``ALL``(default) it will return the viewport size as dictionary,
+        otherwise it will just return the single value selected by the key.
+        Note: If a single value is retrieved, an assertion does *not* need a ``validate``
+        combined with a cast of ``value``.
+
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
-        ``assertion_expected`` <dict<str, int>> Defaults to None.
         Example:
-        | Get Viewport Size    ==    {'width':1280, 'height':720}
+        | Get Viewport Size    ALL    ==    {'width':1280, 'height':720}
+        | Get Viewport Size    width    >=    1200
 
-         """
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
             parsed = json.loads(response.body)
-            return int_dict_verify_assertion(
-                parsed, assertion_operator, assertion_expected, "Viewport size is"
-            )
+            logger.debug(parsed)
+            if key == ViewportFields.ALL:
+                return int_dict_verify_assertion(
+                    parsed, assertion_operator, assertion_expected, "Viewport size is"
+                )
+            else:
+                logger.info(f"Value of '{key}'': {parsed[key.name]}")
+                return float_str_verify_assertion(
+                    parsed[key.name],
+                    assertion_operator,
+                    assertion_expected,
+                    f"{key} is ",
+                )
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_element(self, selector: str):
@@ -476,7 +501,7 @@ class Getters(LibraryComponent):
             parsed = json.loads(response.body)
             logger.debug(parsed)
             if key == BoundingBoxFields.ALL:
-                return dict_verify_assertion(
+                return int_dict_verify_assertion(
                     parsed, assertion_operator, assertion_expected, "BoundingBox is"
                 )
             else:
