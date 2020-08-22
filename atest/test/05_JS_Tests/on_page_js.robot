@@ -14,15 +14,15 @@ Results from page
     should be equal    ${result3}    ${4.173033648}
 
 Mutate Element On Page
-    Get Attribute    h1    innerText    ==    Login Page
+    Get Property    h1    innerText    ==    Login Page
     Execute JavaScript    (elem) => elem.innerText = "abc"    h1
-    Get Attribute    h1    innerText    ==    abc
+    Get Property    h1    innerText    ==    abc
 
 Mutate Element On Page With ElementHandle
     ${ref}=    Get Element    h1
-    Get Attribute    ${ref}    innerText    ==    Login Page
+    Get Property    ${ref}    innerText    ==    Login Page
     Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
-    Get Attribute    ${ref}    innerText    ==    abc
+    Get Property    ${ref}    innerText    ==    abc
 
 Highlight Element on page
     Highlight Elements    css=input#login_button    duration=100ms

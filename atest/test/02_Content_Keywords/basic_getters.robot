@@ -25,24 +25,24 @@ Get Text With Nonmatching Selector
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Get Attribute and Assert
-    Get Attribute    h1    innerText    ==    Login Page
+Get Property and Assert
+    Get Property    h1    innerText    ==    Login Page
 
-Get Attribute innerText
-    ${inner_text}=    Get Attribute    ${UserNameLabel}    innerText
+Get Property innerText
+    ${inner_text}=    Get Property    ${UserNameLabel}    innerText
     Should Be Equal    ${inner_text}    User Name:
 
-Get Attribute size
-    ${size}=    Get Attribute    ${InputUsername}    type
+Get Property size
+    ${size}=    Get Property    ${InputUsername}    type
     Should Be Equal    ${size}    text
 
-Get Attribute and Then .. (Closure)
-    ${text}=    Get Attribute    h1    innerText    then    value.replace('g', 'k')
+Get Property and Then .. (Closure)
+    ${text}=    Get Property    h1    innerText    then    value.replace('g', 'k')
     Should be equal    ${text}    Lokin Pake
 
-Get Attribute With Nonmatching Selector
+Get Property With Nonmatching Selector
     [Setup]    Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Attribute    notamatch    attributeName
+    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Property    notamatch    attributeName
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Element Count

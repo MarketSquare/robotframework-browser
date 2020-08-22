@@ -55,6 +55,7 @@ class Browser(DynamicCore):
     different engines Chromium, Firefox or Webkit.
 
     === Supported Browsers ===
+
     |   Browser     | Browser with this engine                          |
     | ``chromium``  | Google Chrome, Microsoft Edge (since 2020), Opera |
     | ``firefox``   | Mozilla Firefox                                   |
@@ -212,13 +213,13 @@ class Browser(DynamicCore):
     More examples are displayed in `Examples`.
 
 
-    === insensitive match ===
+    === Insensitive match ===
 
     By default, the match is case-insensitive, ignores leading/trailing whitespace and
     searches for a substring. This means ``text= Login`` matches
     ``<button>Button loGIN (click me)</button>``.
 
-    === exact match ===
+    === Exact match ===
 
     Text body can be escaped with single or double quotes for precise matching,
     insisting on exact match, including specified whitespace and case.
@@ -232,15 +233,13 @@ class Browser(DynamicCore):
     This means ``text=/^hello .*!$/i`` or ``text=/^Hello .*!$/`` will match ``<span>Hello Peter Parker!</span>``
     with any name after ``Hello``, ending with ``!``.
     The first one flagged with ``i`` for case-insensitive.
-    See [https://regex101.com/] for more information about RegEx.
+    See [https://regex101.com/|https://regex101.com] for more information about RegEx.
 
     === Button and Submit Values ===
 
     Input elements of the type button and submit are rendered with their value as text,
     and text engine finds them. For example, ``text=Login`` matches
     ``<input type=button value="Login">``.
-
-
 
     == Cascaded selector syntax ==
 
@@ -424,22 +423,51 @@ class Browser(DynamicCore):
     can optionally assert.
     Currently supported assertion operators are:
 
-    |      = Operator =                           |              = Description =                                         |
-    | ``==``, ``equal`` or ``should be``          | equal                                                                |
-    | ``!=``, ``inequal`` or ``should not be``    | not equal                                                            |
-    | ``>`` or ``greater than``                   | greater than                                                         |
-    | ``>=``                                      | greater than or equal                                                |
-    | ``<`` or ``less than``                      | less than                                                            |
-    | ``<=``                                      | less than or equal                                                   |
-    | ``*=`` or ``contains``                      | for checking that a value contains an element                        |
-    | ``matches``                                 | for matching against a regular expression. Remember to escape ``\\`` |
-    | ``^=``, ``should start with`` or ``starts`` | starts with                                                          |
-    | ``$=``, ``should end with`` or ``ends``     | ends with                                                            |
-    | ``validate``                                | use Python expression to validate. Access by ``value``               |
-    | ``evaluate`` or ``then``                    | use Python expression and return it. Access to actual with ``value`` |
+    |      = Operator =   |   = Alternative Operators =       |              = Description =                                         | = Validate Equivalent =              |
+    | ``==``              | ``equal``, ``should be``          | Checks if returned value is equal to expected value.                 | ``value == expected``                |
+    | ``!=``              | ``inequal``, ``should not be``    | Checks if returned value is not equal to expected value.             | ``value != expected``                |
+    | ``>``               | ``greater than``                  | Checks if returned value is greater than expected value.             | ``value > expected``                 |
+    | ``>=``              |                                   | Checks if returned value is greater than or equal to expected value. | ``value >= expected``                |
+    | ``<``               | ``less than``                     | Checks if returned value is less than expected value.                | ``value < expected``                 |
+    | ``<=``              |                                   | Checks if returned value is less than or equal to expected value.    | ``value <= expected``                |
+    | ``*=``              | ``contains``                      | Checks if returned value contains expected value as substring.       | ``expected in value``                |
+    | ``^=``              | ``should start with``, ``starts`` | Checks if returned value starts with expected value.                 | ``re.search(f"^{expected}", value)`` |
+    | ``$=``              | ``should end with``, ``ends``     | Checks if returned value ends with expected value.                   | ``re.search(f"{expected}$", value)`` |
+    | ``matches``         |                                   | Checks if given RegEx matches minimum once in returned value.        | ``re.search(expected, value)``       |
+    | ``validate``        |                                   | Checks if given Python expression evaluates to ``True``.             |                                      |
+    | ``evaluate``        |  ``then``                         | When using this operator, the keyword does return the evaluated Python expression. |                        |
 
-    The expected assertion value can be any valid robot value, and the keywords will provide an error
-    message if the assertion fails. Assertions will retry until ``timeout`` has expired if they do not directly pass.
+
+    The keywords will provide an error message if the assertion fails.
+    Assertions will retry until ``timeout`` has expired if they do not pass.
+
+    Be aware that some keywords return strings others return numbers.
+    `Get Text` for example always returns a strings and has to be compared with a string.
+
+    Other Keywords have other specific types they return.
+    `Get Element Count` always returns an integer.
+    `Get Bounding Box` and `Get Viewport Size` can be filtered.
+    They return a dictionary without filter and a number when filtered.
+    These Keywords do autoconvert the expected value if a number is returned.
+
+    * < less or greater > With Strings*
+    Compairisons of strings with ``greater than`` or ``less than`` compares each character,
+    starting from 0 reagarding where it stands in the code page.
+    Example: ``A < Z``, ``Z < a``, ``ac < dc`
+    It does never compare the length of elements. Neither lists nor strings.
+    The comparison stops at the first character that is different.
+    Examples: ``'abcde' < 'abd'``, ``'100.000' < '2'``
+    In Python 3 and therefore also in Browser it is not possible to compare numbers
+    with strings with a greater or less operator.
+    On keywords that return numbers, the given expected value is automatically
+    converted to a number before comparison.
+
+
+    The getters `Get Page State` and `Get Browser Catalog` return a dictionary. Values of the dictionary can directly asserted.
+    Pay attention of possible types because they are evaluated in Python. For example:
+
+    | Get Page State    validate    2020 >= value['year']                     # Compairsion of numbers
+    | Get Page State    validate    "IMPORTANT MESSAGE!" == value['message']  # Compairsion of strings
 
     == The 'then' or 'evaluate' closure ==
 
@@ -455,12 +483,13 @@ class Browser(DynamicCore):
 
     == Examples ==
 
-    | *Keyword*    |  *Selector*             | *Key*    | *Assertion Operator* | *Assertion Expected*                                 |
-    | `Get Title`  |                         |          | equal                | Page Title                                           |
-    | `Get Style`  |  //*[@id="div-element"] |   width  |  >                   |  100                                                 |
-    | `Get Title`  |                         |          |  matches             |  \\\\w+\\\\s\\\\w+                                   |
-    | `Get Title`  |                         |          |  validate            |  value == "Login Page"                               |
-    | `Get Title`  |                         |          |  evaluate            | value if value == "some value" else "something else" |
+    | # *Keyword*    *Selector*                    *Key*        *Assertion Operator*    *Assertion Expected*
+    | Get Title                                           equal                 Page Title
+    | Get Title                                           ^=                    Page
+    | Get Style    //*[@id="div-element"]      width      >                     100
+    | Get Title                                           matches               \\\\w+\\\\s\\\\w+
+    | Get Title                                           validate              value == "Login Page"
+    | Get Title                                           evaluate              value if value == "some value" else "something else"
 
     = Automatic page and context closing =
 
@@ -495,7 +524,7 @@ class Browser(DynamicCore):
         - ``enable_playwright_debug`` <bool>
           Enable low level debug information from the playwright tool. Mainly
           Useful for the library developers and for debugging purposes.
-        - ``auto_closing_level`` <SUITE|TEST|MANUAL>
+        - ``auto_closing_level`` < ``SUITE`` | ``TEST`` | ``MANUAL`` >
           Configure context and page automatic closing. Default is after each test.
           Other options are SUITE for closing after each suite and MANUAL
           for no automatic closing.

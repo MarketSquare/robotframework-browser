@@ -57,9 +57,9 @@ Click    div.dialog >> "Ok"
 ```RobotFramework
 New Page   ${LOGIN_URL}
 ${ref}=    Get Element    h1
-Get Attribute    ${ref}    innerText    ==    Login Page
+Get Property    ${ref}    innerText    ==    Login Page
 Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
-Get Attribute    ${ref}    innerText    ==    abc
+Get Property    ${ref}    innerText    ==    abc
 ```
 ### Asynchronously waiting for HTTP requests and responses
 ```RobotFramework
