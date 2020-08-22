@@ -3,7 +3,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
-import { boolResponse, intResponse, stringResponse, jsonResponse } from './response-util';
+import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
 import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 
 import * as pino from 'pino';
