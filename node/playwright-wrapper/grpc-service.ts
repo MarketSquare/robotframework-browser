@@ -50,7 +50,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         return playwrightState.getBrowserCatalog(callback, this.state);
     }
 
-    async getCookies(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getCookies(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Json>): Promise<void> {
         return cookie.getCookies(callback, this.getActiveContext());
     }
 
@@ -175,7 +175,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getViewportSize(
         call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return getters.getViewportSize(call, callback, this.getActivePage());
     }

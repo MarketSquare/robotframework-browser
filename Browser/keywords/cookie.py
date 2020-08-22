@@ -40,7 +40,7 @@ class Cookie(LibraryComponent):
     def _get_cookies(self):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetCookies(Request().Empty())
-            return response, json.loads(response.body)
+            return response, json.loads(response.json)
 
     def _format_cookies_as_string(self, cookies: List[dict]):
         pairs = []
