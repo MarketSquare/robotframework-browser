@@ -390,7 +390,8 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
-            parsed = json.loads(response.body)
+            logger.info(response.log)
+            parsed = json.loads(response.json)
             logger.debug(parsed)
             if key == ViewportFields.ALL:
                 return int_dict_verify_assertion(

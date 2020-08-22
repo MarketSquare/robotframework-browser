@@ -2,7 +2,7 @@ import { BrowserContext, Cookie } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse } from './response-util';
 import { invokeOnContext } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -20,14 +20,14 @@ interface CookieData {
     sameSite?: 'Strict' | 'Lax' | 'None';
 }
 
-export async function getCookies(callback: sendUnaryData<Response.String>, context?: BrowserContext) {
+export async function getCookies(callback: sendUnaryData<Response.Json>, context?: BrowserContext) {
     const allCookies = await invokeOnContext(context, callback, 'cookies');
     logger.info({ 'Cookies: ': allCookies });
     const cookieName = [];
     for (const cookie of allCookies as Array<Cookie>) {
         cookieName.push(cookie.name);
     }
-    callback(null, stringResponse(JSON.stringify(allCookies), cookieName.toString()));
+    callback(null, jsonResponse(JSON.stringify(allCookies), cookieName.toString()));
 }
 
 export async function addCookie(
