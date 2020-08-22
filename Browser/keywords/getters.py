@@ -153,6 +153,9 @@ class Getters(LibraryComponent):
 
         ``property`` <str> Requested property name. **Required**
 
+        If ``assertion_operator`` is set and property is not found, ``value`` is ``None``
+        and Keyword does not fail. See `Get Attribute` for examples.
+
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
@@ -162,10 +165,60 @@ class Getters(LibraryComponent):
             logger.debug(response.log)
             if response.body:
                 value = json.loads(response.body)
+            elif assertion_operator is not None:
+                value = None
             else:
-                raise AttributeError(f"Property {property} not found!")
+                raise AttributeError(f"Property '{property}' not found!")
             return verify_assertion(
                 value, assertion_operator, assertion_expected, f"Property {selector}"
+            )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
+    def get_attribute(
+        self,
+        selector: str,
+        attribute: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ):
+        """Returns the HTML ``attribute`` of the element found by ``selector``.
+
+        Optionally asserts that the attribute value matches the specified
+        assertion.
+
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+
+        ``attribute`` <str> Requested attribute name. **Required**
+
+        When a attribute is selected that is not present and no assertion operator is set,
+        the keyword fails. If an assertion operator is set and the attribute is not present,
+        the returned value is ``None``.
+        This can be used to assert check the presents or the absents of an attribute.
+
+        Example Element:
+        | <button class="login button active" id="enabled_button" something>Login</button>
+
+        Example Code:
+        | Get Attribute   id=enabled_button    disabled                   # FAIL => "Attribute 'disabled' not found!"
+        | Get Attribute   id=enabled_button    disabled     ==    None     # PASS => returns: None
+        | Get Attribute   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
+        | Get Attribute   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
+
+
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetElementAttribute(
+                Request().ElementProperty(selector=selector, property=attribute)
+            )
+            logger.debug(response.log)
+            value = json.loads(response.body)
+            if assertion_operator is None and value is None:
+                raise AttributeError(f"Attribute '{attribute}' not found!")
+            logger.debug(f"Attribute is: {value}")
+            return verify_assertion(
+                value, assertion_operator, assertion_expected, f"Attribute {selector}"
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
