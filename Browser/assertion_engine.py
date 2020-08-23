@@ -96,12 +96,12 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
                     time.sleep(0.01)
     finally:
         now = time.time()
-        logger.debug(f"""Assertion polling statistics:
+        logger.debug(
+            f"""Assertion polling statistics:
 First element asserted in: {(retries_start or now) - start} seconds
 Total tries: {tries}
-Elapsed time in retries {now - (retries_start or now)} seconds""")
-
-
+Elapsed time in retries {now - (retries_start or now)} seconds"""
+        )
 
 
 def float_str_verify_assertion(
