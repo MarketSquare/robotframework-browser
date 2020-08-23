@@ -514,7 +514,7 @@ class Browser(DynamicCore):
         timeout="10s",
         enable_playwright_debug: bool = False,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
-        assertion_polling_enabled: bool = True,
+        retry_assertions_until="1s",
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -528,11 +528,14 @@ class Browser(DynamicCore):
           Configure context and page automatic closing. Default is after each test.
           Other options are SUITE for closing after each suite and MANUAL
           for no automatic closing.
-        - ``assertion_polling_enabled`` <bool>
-          Disable assertion polling by setting this flag to false.
+        - ``retry_assertions_until`` <str>
+          Timeout for retrying assertions on keywords before failing the keywords.
+          This timeout starts counting from the first failure.
+          Global ``timeout`` will still be in effect.
+          This allows stopping execution faster to assertion failure when element is found fast.
         """
         self.timeout = timeout
-        self.assertion_polling_enabled = assertion_polling_enabled
+        self.retry_assertions_until = retry_assertions_until
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
         self._unresolved_promises: Set[Future] = set()

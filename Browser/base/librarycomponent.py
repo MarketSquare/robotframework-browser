@@ -26,8 +26,12 @@ class LibraryComponent:
         self.library.timeout = value
 
     @property
-    def assertion_polling_enabled(self) -> bool:
-        return self.library.assertion_polling_enabled
+    def retry_assertions_until(self) -> str:
+        return self.library.retry_assertions_until
+
+    @retry_assertions_until.setter
+    def retry_assertions_until(self, value: str):
+        self.library.retry_assertions_until = value
 
     @property
     def unresolved_promises(self):
