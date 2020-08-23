@@ -89,7 +89,7 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
                 retries_start = time.time()
             elapsed = time.time() - start
             elapsed_retries = time.time() - retries_start
-            if elapsed > timeout or elapsed_retries > retry_assertions_until:
+            if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
                 logger.debug(f"Verification failed after {tries} times and timeouting")
                 raise e
             if timeout - elapsed > 0.01:
