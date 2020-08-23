@@ -179,5 +179,5 @@ export async function getPageSource(
 ): Promise<void> {
     const result = await invokeOnPage(page, callback, 'content');
     logger.info(result);
-    callback(null, stringResponse(JSON.stringify(result), ''));
+    callback(null, stringResponse(JSON.stringify(result), 'Page source obtained succesfully.'));
 }
