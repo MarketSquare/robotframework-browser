@@ -259,7 +259,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getElements(
         call: ServerUnaryCall<Request.ElementSelector>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return evaluation.getElements(call, callback, this.state);
     }
@@ -286,7 +286,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return evaluation.waitForFunction(call, callback, this.state);
     }

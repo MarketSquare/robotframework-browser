@@ -222,6 +222,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
     def get_textfield_value(
         self,
         selector: str,
@@ -480,8 +481,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElements(Request().ElementSelector(selector=selector))
-            data = json.loads(response.body)
-            return data
+            return json.loads(response.json)
 
     @keyword(tags=["Getter", "Assertion"])
     @with_assertion_polling
