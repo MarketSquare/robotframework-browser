@@ -122,6 +122,7 @@ class Waiter(LibraryComponent):
                     script=function, selector=selector, options=options_json,
                 )
             )
+            logger.debug(response.json)
             logger.info(response.log)
 
     @keyword(tags=["Wait"])

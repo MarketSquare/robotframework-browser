@@ -273,7 +273,7 @@ service  Playwright {
   /* Waits for element be in a specific state*/
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Executes javascript on the active page */
-  rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.String);
+  rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
