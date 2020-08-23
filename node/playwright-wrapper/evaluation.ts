@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
-import { emptyWithLog, jsResponse, stringResponse } from './response-util';
+import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -39,7 +39,7 @@ export async function getElement(
  */
 export async function getElements(
     call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.String>,
+    callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
 ) {
     await waitUntilElementExists(state, callback, call.request.getSelector());
@@ -50,7 +50,7 @@ export async function getElements(
         state.addElement(id, handle);
         return `element=${id}`;
     });
-    callback(null, stringResponse(JSON.stringify(response), 'Elements found succesfully.'));
+    callback(null, jsonResponse(JSON.stringify(response), 'Elements found succesfully.'));
 }
 
 export async function executeJavascript(
