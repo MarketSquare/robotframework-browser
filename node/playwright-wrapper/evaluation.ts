@@ -88,7 +88,7 @@ export async function waitForElementState(
 
 export async function waitForFunction(
     call: ServerUnaryCall<Request.WaitForFunctionOptions>,
-    callback: sendUnaryData<Response.String>,
+    callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
 ): Promise<void> {
     let script = call.request.getScript();
@@ -104,7 +104,7 @@ export async function waitForFunction(
 
     // TODO: This might behave weirdly if element selector points to a different page
     const result = await invokeOnPage(state.getActivePage(), callback, 'waitForFunction', script, elem, options);
-    callback(null, stringResponse(JSON.stringify(result.jsonValue), ''));
+    callback(null, jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Fcuntion completed succesfully.'));
 }
 
 export async function addStyleTag(

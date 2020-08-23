@@ -286,7 +286,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return evaluation.waitForFunction(call, callback, this.state);
     }
