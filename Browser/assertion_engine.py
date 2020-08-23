@@ -131,14 +131,18 @@ def map_list(selected: List):
 def list_verify_assertion(
     value: List, operator: Optional[AssertionOperator], expected: List, message="",
 ):
-    if operator and operator not in SequenceOperators:
-        raise AttributeError(
-            f"Operator '{operator.name}' is not allowed in this Keyword."
-            f"Allowed operators are: '{SequenceOperators}'"
-        )
-    expected.sort()
-    value.sort()
-
+    if operator:
+        if operator not in SequenceOperators:
+            raise AttributeError(
+                f"Operator '{operator.name}' is not allowed in this Keyword."
+                f"Allowed operators are: '{SequenceOperators}'"
+            )
+        if operator in [
+            AssertionOperator["=="],
+            AssertionOperator["!="],
+        ]:
+            expected.sort()
+            value.sort()
     return verify_assertion(map_list(value), operator, map_list(expected), message)
 
 

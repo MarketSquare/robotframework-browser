@@ -222,6 +222,72 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
+    def get_attribute_names(
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected,
+    ):
+        """Returns all HTML attribute names of an element as a list.
+
+        Optionally asserts that these match the specified assertion.
+
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        Available assertions:
+        - ``==`` and ``!=`` can work with multiple values
+        - ``contains``/``*=`` only accepts one single expected value
+
+        Other operators are not allowed.
+        """
+        with self.playwright.grpc_channel() as stub:
+            function = "(element) => element.getAttributeNames()"
+            response = stub.ExecuteJavascript(
+                Request().JavascriptCode(script=function, selector=selector)
+            )
+            attribute_names = json.loads(response.result)
+            logger.info(attribute_names)
+            expected = list(assertion_expected)
+            return list_verify_assertion(
+                attribute_names, assertion_operator, expected, "Attribute names"
+            )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
+    def get_classes(
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected,
+    ):
+        """Returns all classes of an element as a list.
+
+        Optionally asserts that the value matches the specified assertion.
+
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        Available assertions:
+        - ``==`` and ``!=`` can work with multiple values
+        - ``contains``/``*=`` only accepts one single expected value
+
+        Other operators are not allowed.
+        """
+        class_dict = self.get_property(selector, "classList")
+        expected = list(assertion_expected)
+        return list_verify_assertion(
+            list(class_dict.values()),
+            assertion_operator,
+            expected,
+            f"Classes of {selector}",
+        )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
     def get_textfield_value(
         self,
         selector: str,
@@ -333,12 +399,12 @@ class Getters(LibraryComponent):
             response = stub.GetBoolProperty(
                 Request().ElementProperty(selector=selector, property="checked")
             )
-        logger.info(response.log)
-        value: bool = response.body
-        logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
-        return bool_verify_assertion(
-            value, assertion_operator, expected_state, f"Checkbox {selector} is"
-        )
+            logger.info(response.log)
+            value: bool = response.body
+            logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
+            return bool_verify_assertion(
+                value, assertion_operator, expected_state, f"Checkbox {selector} is"
+            )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling

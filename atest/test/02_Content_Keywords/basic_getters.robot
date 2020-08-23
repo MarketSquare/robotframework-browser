@@ -61,6 +61,31 @@ Get Attribute and return presents state
     ${present}=    Get Attribute    id=login_button    disabled    evaluate    value is None
     Should Be True    ${present}
 
+Get Attribute Names
+    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    ${attrs}=    Get Attribute Names    [name="readonly_input"]
+    FOR    ${attr}    IN    @{attrs}
+        ${value}=    Get Attribute    [name="readonly_input"]    ${attr}
+        Log    ${attr}=${value}
+    END
+    [Teardown]    Close Page
+
+Get Attribute Names and Assert single and multiple
+    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    Get Attribute Names    [name="readonly_input"]    ==    type    name    value    readonly
+    Get Attribute Names    [name="disabled_input"]    contains    disabled
+    Get Attribute Names    [name="disabled_input"]    validate    value[-1] == "disabled"
+    [Teardown]    Close Page
+
+Get Classes
+    ${classes}=    Get Classes    id=draggable
+    Should Be Equal    ${classes}    ${{["box", "react-draggable"]}}
+
+Get Classes and Assert
+    Get Classes    id=draggable    contains    react-draggable
+    Get Classes    id=draggable    ==    react-draggable    box
+    Get Classes    id=draggable    validate    "react-draggable-dragged" not in value
+
 Get Element Count
     ${count}=    Get Element Count    h1
     Should Be Equal    ${count}    ${1}

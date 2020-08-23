@@ -38,7 +38,7 @@ class PlaywrightState(LibraryComponent):
         self,
         url: Optional[str] = None,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
-        headless: bool = True,
+        headless: bool = False,
     ):
         """Opens a new browser instance.
 
@@ -55,7 +55,7 @@ class PlaywrightState(LibraryComponent):
         | chromium        | [https://www.chromium.org/Home|Chromium]             |
         | webkit          | [https://webkit.org/|webkit]                         |
 
-        ``headless`` <bool> If set to False, a GUI is provided. Defaults to True.
+        ``headless`` <bool> If set to False, a GUI is provided otherwise it is hidden. Defaults to False.
         """
 
         self.new_browser(browser, headless=headless)
