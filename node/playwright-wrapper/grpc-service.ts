@@ -166,6 +166,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         return getters.getBoolProperty(call, callback, this.state);
     }
 
+    async getElementAttribute(
+        call: ServerUnaryCall<Request.ElementProperty>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        return getters.getElementAttribute(call, callback, this.state);
+    }
+
     async getStyle(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.String>,
