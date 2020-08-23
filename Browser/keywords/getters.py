@@ -222,6 +222,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
     def get_textfield_value(
         self,
         selector: str,
