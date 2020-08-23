@@ -26,12 +26,12 @@ class LibraryComponent:
         self.library.timeout = value
 
     @property
-    def retry_assertions_until(self) -> str:
-        return self.library.retry_assertions_until
+    def retry_assertions_for(self) -> str:
+        return self.library.retry_assertions_for
 
-    @retry_assertions_until.setter
-    def retry_assertions_until(self, value: str):
-        self.library.retry_assertions_until = value
+    @retry_assertions_for.setter
+    def retry_assertions_for(self, value: str):
+        self.library.retry_assertions_for = value
 
     @property
     def unresolved_promises(self):

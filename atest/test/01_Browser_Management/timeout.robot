@@ -29,10 +29,10 @@ Test Overriding With Short
 
 Test assertion timeouts
     New Page    ${LOGIN_URL}
-    ${old} =    Set retry assertions until    0s
+    ${old} =    Set retry assertions for    0s
     Run Keyword And Expect Error    *    Get title    ==    Wrong title
     Get title    ==    Login Page
-    set retry assertions until    ${old}
+    set retry assertions for    ${old}
 
 Set Browser Timeout Should Return Old Value
     New Context

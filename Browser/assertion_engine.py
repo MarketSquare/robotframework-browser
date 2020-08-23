@@ -77,7 +77,7 @@ def verify_assertion(
 def with_assertion_polling(wrapped, instance, args, kwargs):
     start = time.time()
     timeout = timestr_to_secs(instance.timeout)
-    retry_assertions_until = timestr_to_secs(instance.retry_assertions_until)
+    retry_assertions_until = timestr_to_secs(instance.retry_assertions_for)
     retries_start: Optional[float] = None
     tries = 1
     try:
