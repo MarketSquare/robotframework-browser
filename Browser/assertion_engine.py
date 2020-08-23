@@ -77,16 +77,31 @@ def verify_assertion(
 def with_assertion_polling(wrapped, instance, args, kwargs):
     start = time.time()
     timeout = timestr_to_secs(instance.timeout)
-    while True:
-        try:
-            return wrapped(*args, **kwargs)
-        except AssertionError as e:
-            elapsed = time.time() - start
-            if elapsed > timeout or not instance.assertion_polling_enabled:
-                raise e
-            logger.debug("Verification failure - retrying")
-            if timeout - elapsed > 0.016:
-                time.sleep(0.016)  # 60 fps
+    retry_assertions_until = timestr_to_secs(instance.retry_assertions_for)
+    retries_start: Optional[float] = None
+    tries = 1
+    try:
+        while True:
+            try:
+                return wrapped(*args, **kwargs)
+            except AssertionError as e:
+                if retries_start is None:
+                    retries_start = time.time()
+                elapsed = time.time() - start
+                elapsed_retries = time.time() - retries_start
+                if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
+                    raise e
+                tries += 1
+                if timeout - elapsed > 0.01:
+                    time.sleep(0.01)
+    finally:
+        now = time.time()
+        logger.debug(
+            f"""Assertion polling statistics:
+First element asserted in: {(retries_start or now) - start} seconds
+Total tries: {tries}
+Elapsed time in retries {now - (retries_start or now)} seconds"""
+        )
 
 
 def float_str_verify_assertion(

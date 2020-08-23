@@ -546,8 +546,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElements(Request().ElementSelector(selector=selector))
-            data = json.loads(response.body)
-            return data
+            return json.loads(response.json)
 
     @keyword(tags=["Getter", "Assertion"])
     @with_assertion_polling
