@@ -29,6 +29,10 @@ class LibraryComponent:
     def retry_assertions_until(self) -> str:
         return self.library.retry_assertions_until
 
+    @retry_assertions_until.setter
+    def retry_assertions_until(self, value: str):
+        self.library.retry_assertions_until = value
+
     @property
     def unresolved_promises(self):
         return self.library._unresolved_promises

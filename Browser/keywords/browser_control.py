@@ -92,6 +92,18 @@ class Control(LibraryComponent):
             logger.info(response.log)
         return old_timeout
 
+    @keyword(tags=["BrowserControl"])
+    def set_retry_assertions_until(self, timeout: str) -> str:
+        """Sets the timeout used in retrying assertions when they fail.
+
+        ``timeout`` <str>
+
+        Returns the previous value of the retry_assertions_until.
+        """
+        old_retry_assertions_until = self.retry_assertions_until
+        self.retry_assertions_until = timeout
+        return old_retry_assertions_until
+
     @keyword(tags=["PageContent"])
     def add_style_tag(self, content: str):
         """Adds a <style type="text/css"> tag with the content.
