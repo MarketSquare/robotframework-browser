@@ -80,7 +80,7 @@ Wait For Elements State to hide with Promise
     Wait For Elements State    \#victim    visible    300ms
     Click with Options     \#submit    noWaitAfter=True
     Wait for    ${promise}
-    Run Keyword and Expect Error    Could not find element with selector `\#victim` within timeout.    Wait For Elements State    \#victim    visible    300ms
+    Run Keyword and Expect Error    Could not find element with selector `\#victim` within timeout.    Wait For Elements State    \#victim    hidden    300ms
 
 Wait For Elements State to hide fails with Promise
     ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    3ms
@@ -92,4 +92,4 @@ Wait For Elements State to hide with Promise and wait for all promises
     Wait For Elements State    \#victim    visible    300ms
     Click with Options     \#submit    noWaitAfter=True
     Wait for all promises
-    Run Keyword and Expect Error    Could not find element with selector `\#victim` within timeout.    Wait For Elements State    \#victim    checked    300ms
+    Run Keyword and Expect Error    Could not find element with selector `\#victim` within timeout.    Wait For Elements State    \#victim    hidden    300ms
