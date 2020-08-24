@@ -157,6 +157,10 @@ class Getters(LibraryComponent):
         and Keyword does not fail. See `Get Attribute` for examples.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        Example Code:
+        | Get Property  id=element_with_content  innerHTML  # returns elements innerHTML
+
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
