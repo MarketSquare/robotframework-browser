@@ -166,6 +166,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "reaktor",
+      "name": "Reaktor",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/71799?v=4",
+      "profile": "https://reaktor.com",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
