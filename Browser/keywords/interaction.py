@@ -170,6 +170,13 @@ class Interaction(LibraryComponent):
     ):
         """Simulates mouse click with multiple options on the element found by ``selector``.
 
+        This keyword clicks an element matching ``selector`` by performing the following steps:
+        - Find an element matches selector. If there is none, wait until a matching element is attached to the DOM.
+        - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
+        - Scroll the element into view if needed.
+        - Use `Mouse Button` to click in the center of the element, or the specified position.
+        - Wait for initiated navigations to either succeed or fail, unless ``noWaitAfter`` option is set.
+
         ``selector`` <str> Selector element to click. **Required**
 
         ``button`` < ``left`` | ``right`` | ``middle`` > Defaults to ``left`` if invalid.
@@ -184,6 +191,12 @@ class Interaction(LibraryComponent):
         If not specified, clicks to some visible point of the element.
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+
+        ``noWaitAfter`` <bool> Actions that initiate navigations are waiting for
+        these navigations to happen and for pages to start loading.
+        You can opt out of waiting via setting this flag.
+        You would only need this option in the exceptional cases such as navigating
+        to inaccessible pages. Defaults to ``False``.
 
         ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
         Modifier keys to press. Ensures that only these modifiers are pressed
