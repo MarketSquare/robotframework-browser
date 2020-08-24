@@ -75,7 +75,7 @@ Wait For Elements State fails on too short timeout
     Run Keyword and Expect Error    STARTS:page.waitForFunction: Timeout 300ms exceeded.    Wait For Elements State    \#victim    unchecked    300ms
 
 Wait For Elements State to hide with Promise
-    Select Options By    \#dropdown    value    hidden      # Now it is visible
+    Select Options By    \#dropdown    value    hidden    # Now it is visible
     ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms
     Sleep    200 ms    reson=to check that the promise keeps beeing active
@@ -87,12 +87,12 @@ Wait For Elements State to hide with Promise
     Should Be True    ($end - $start) < 0.7
 
 Wait For Elements State to hide fails with Promise
-    Select Options By    \#dropdown    value    hidden      # Now it is visible
+    Select Options By    \#dropdown    value    hidden    # Now it is visible
     ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    200ms
     Run Keyword and Expect Error    Could not find element with selector `\#victim` within timeout.    Wait for    ${promise}
 
 Wait For Elements State to hide with Promise and wait for all promises
-    Select Options By    \#dropdown    value    hidden      # Now it is visible
+    Select Options By    \#dropdown    value    hidden    # Now it is visible
     ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms
     Sleep    200 ms    reson=to check that the promise keeps beeing active
