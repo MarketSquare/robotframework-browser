@@ -1,0 +1,144 @@
+<html>
+    <body>
+        
+        <script>
+            var victimaction;
+            function sleep(milliseconds) {
+                const date = Date.now();
+                let currentDate = null;
+                do {
+                    currentDate = Date.now();
+                } while (currentDate - date < milliseconds);
+            }
+
+            function waiter(event) {
+                //document.getElementById("victim").innerHTML = this.value;
+                document.getElementById("place").innerHTML = "";
+                victimaction = this.value;
+                switch(this.value) {
+                    case "attached":
+                        // no victim yet
+                        break;
+                    case "detached":
+                        document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
+                        break;
+                    case "visible":
+                        document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
+                        document.getElementById("victim").setAttribute("hidden", true);
+                        break;
+                    case "hidden":
+                        document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
+                        break;
+                    case "enabled":
+                        document.getElementById("place").innerHTML = '<button id="victim" disabled="true">victim</button>'
+                        break;
+                    case "disabled":
+                        document.getElementById("place").innerHTML = '<button id="victim">victim</button>'
+                        break;
+                    case "editable":
+                        document.getElementById("place").innerHTML = '<input id="victim" type="text" readonly="true"></input>'
+                        break;
+                    case "readonly":
+                        document.getElementById("place").innerHTML = '<input id="victim" type="text"></input>'
+                        break;
+                    case "selected":
+                        document.getElementById("place").innerHTML = '<select multiple id="person" name="person"><option value="victim">Victim</option></selected>'
+                        break;
+                    case "deselected":
+                        document.getElementById("place").innerHTML = '<select multiple id="person" name="person"><option value="victim" selected>Victim</option></selected>'
+                        break;
+                    case "focused":
+                        document.getElementById("place").innerHTML = '<input id="victim" type="text"></input>'
+                        break;
+                    case "defocused":
+                        document.getElementById("place").innerHTML = '<input id="victim" type="text"></input>'
+                        document.getElementById("victim").focus();
+                        break;
+                    case "checked":
+                        document.getElementById("place").innerHTML = '<input type="checkbox" id="victim" name="victim" value="victim" />'
+                        break;
+                    case "unchecked":
+                        document.getElementById("place").innerHTML = '<input type="checkbox" id="victim" name="victim" value="victim" checked />'
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            function submit(event) {
+                sleep(500);
+                switch(victimaction) {
+                    case "attached":
+                        document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
+                        break;
+                    case "detached":
+                        document.getElementById("place").innerHTML = "";
+                        break;
+                    case "visible":
+                        document.getElementById("victim").removeAttribute("hidden");
+                        break;
+                    case "hidden":
+                        document.getElementById("victim").setAttribute("hidden", true);
+                        break;
+                    case "enabled":
+                        document.getElementById("victim").removeAttribute("disabled");
+                        break;
+                    case "disabled":
+                        document.getElementById("victim").setAttribute("disabled", true);
+                        break;
+                    case "editable":
+                        document.getElementById("victim").removeAttribute("readonly");
+                        break;
+                    case "readonly":
+                        document.getElementById("victim").setAttribute("readonly", true);
+                        break;
+                    case "selected":
+                        document.getElementById("person").value = "victim";
+                        break;
+                    case "deselected":
+                        document.getElementById("person").value = "";
+                        break;
+                    case "focused":
+                        document.getElementById("victim").focus();
+                        break;
+                    case "defocused":
+                        document.getElementById("victim").blur();
+                        break;
+                    case "checked":
+                        document.getElementById("victim").setAttribute("checked", true);
+                        break;
+                    case "unchecked":
+                        document.getElementById("victim").removeAttribute("checked");
+                        break;
+                    default:
+                        console.log("idiot");
+                        break;
+                }
+            }
+        </script>
+        <!--form onsubmit="submit.call(this, event)"-->
+            <label for="dd">Choose a Wait for element state:</label>
+            <select name="dd" id="dropdown" onchange="waiter.call(this, event)">
+                <option value="--">--</option>
+              <option value="attached">attached</option>
+              <option value="detached">detached</option>
+              <option value="visible">visible</option>
+              <option value="hidden">hidden</option>
+              <option value="enabled">enabled</option>
+              <option value="disabled">disabled</option>
+              <option value="editable">editable</option>
+              <option value="readonly">readonly</option>
+              <option value="selected">selected</option>
+              <option value="deselected">deselected</option>
+              <option value="focused">focused</option>
+              <option value="defocused">defocused</option>
+              <option value="checked">checked</option>
+              <option value="unchecked">unchecked</option>
+
+            </select>
+            <br><br>
+            <button id="submit" type="submit" value="Submit" onclick="submit.call(this, event)">Go</button>
+        <!--/form-->
+        <div id="place"></div>
+    </body>
+</html>
