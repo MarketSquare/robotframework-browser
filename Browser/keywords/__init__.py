@@ -7,6 +7,7 @@ from .interaction import Interaction
 from .network import Network
 from .playwright_state import PlaywrightState
 from .promises import Promises
+from .runonfailure import RunOnFailureKeywords
 from .waiter import Waiter
 from .webapp_state import WebAppState
 
@@ -20,6 +21,7 @@ __all__ = [
     "Network",
     "PlaywrightState",
     "Promises",
+    "RunOnFailureKeywords",
     "Waiter",
     "WebAppState",
 ]

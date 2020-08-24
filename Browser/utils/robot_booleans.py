@@ -15,4 +15,4 @@ def is_truthy(item: Any) -> bool:
 
 
 def is_falsy(item: Any) -> bool:
-    return not is_truthy(item)
+    return item is None or not is_truthy(item)
