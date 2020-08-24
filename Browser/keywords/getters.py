@@ -243,17 +243,13 @@ class Getters(LibraryComponent):
 
         Other operators are not allowed.
         """
-        with self.playwright.grpc_channel() as stub:
-            function = "(element) => element.getAttributeNames()"
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(script=function, selector=selector)
-            )
-            attribute_names = json.loads(response.result)
-            logger.info(attribute_names)
-            expected = list(assertion_expected)
-            return list_verify_assertion(
-                attribute_names, assertion_operator, expected, "Attribute names"
-            )
+        attribute_names = self.library.execute_javascript(
+            "(element) => element.getAttributeNames()", selector
+        )
+        expected = list(assertion_expected)
+        return list_verify_assertion(
+            attribute_names, assertion_operator, expected, "Attribute names"
+        )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
