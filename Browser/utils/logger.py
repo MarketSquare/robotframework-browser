@@ -11,6 +11,10 @@ def debug(msg: Any, html=False):
     logger.debug(msg, html)
 
 
+def trace(msg: Any, html=False):
+    logger.trace(msg, html)
+
+
 def warn(msg: Any, html=False):
     logger.warn(msg, html)
 
