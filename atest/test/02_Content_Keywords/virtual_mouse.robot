@@ -16,7 +16,7 @@ Move In Circle
     Mouse Move    0    0
 
 Draggable Test
-    [Tags]    Not-Implemented
+    #[Tags]    Not-Implemented
     ${x}=    Get Boundingbox    \#draggable    x
     ${y}=    Get Boundingbox    \#draggable    y
     # evaluate end coordinates
