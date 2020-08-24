@@ -43,10 +43,9 @@ class Control(LibraryComponent):
             return Path(directory) / filename
         index = 0
         while True:
-            logger.info(index)
             index += 1
             indexed = Path(filename.replace("{index}", str(index)))
-            logger.debug(indexed)
+            logger.trace(indexed)
             path = Path(directory) / indexed
             # Unique path was found
             if not path.with_suffix(".png").is_file():
