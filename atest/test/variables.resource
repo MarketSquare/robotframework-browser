@@ -14,5 +14,6 @@ ${ELEMENT_STATE_URL}    ${ROOT_URL}/enabled_disabled_fields_form.html
 ${FRAMES_URL}     ${ROOT_URL}/frames/iframes.html
 ${WELCOME_URL}    ${ROOT_URL}/welcome.html
 ${ERROR_URL}      ${ROOT_URL}/error.html
+${WAIT_URL}       ${ROOT_URL}/waitfor.html
 ${DEFAULT_TEST_TIMEOUT}    30 seconds
 ${PLAYWRIGHT_TIMEOUT}    1 second

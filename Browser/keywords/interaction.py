@@ -165,9 +165,17 @@ class Interaction(LibraryComponent):
         position_x: Optional[int] = None,
         position_y: Optional[int] = None,
         force: bool = False,
+        noWaitAfter: bool = False,
         *modifiers: KeyboardModifier,
     ):
         """Simulates mouse click with multiple options on the element found by ``selector``.
+
+        This keyword clicks an element matching ``selector`` by performing the following steps:
+        - Find an element matches selector. If there is none, wait until a matching element is attached to the DOM.
+        - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
+        - Scroll the element into view if needed.
+        - Use `Mouse Button` to click in the center of the element, or the specified position.
+        - Wait for initiated navigations to either succeed or fail, unless ``noWaitAfter`` option is set.
 
         ``selector`` <str> Selector element to click. **Required**
 
@@ -184,6 +192,12 @@ class Interaction(LibraryComponent):
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
+        ``noWaitAfter`` <bool> Actions that initiate navigations are waiting for
+        these navigations to happen and for pages to start loading.
+        You can opt out of waiting via setting this flag.
+        You would only need this option in the exceptional cases such as navigating
+        to inaccessible pages. Defaults to ``False``.
+
         ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
         Modifier keys to press. Ensures that only these modifiers are pressed
         during the click, and then restores current modifiers back.
@@ -198,6 +212,8 @@ class Interaction(LibraryComponent):
                 options["position"] = positions
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
+            if noWaitAfter:
+                options["noWaitAfter"] = noWaitAfter
             options_json = json.dumps(options)
             logger.debug(f"Click Options are: {options_json}")
             response = stub.ClickWithOptions(
@@ -373,11 +389,27 @@ class Interaction(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {}
             if delay and action is not MouseButtonAction.click:
-                raise ValueError("Delay is only valid on a mouse click")
-            if action is MouseButtonAction.down or action is MouseButtonAction.up:
-                if x or y:
+                raise ValueError("Delay is only valid on 'click' action.")
+            if action == MouseButtonAction.click:
+                body = {}
+                if x and y:
+                    body["x"] = float(x)
+                    body["y"] = float(y)
+                else:
                     raise ValueError(
-                        "Coordinates are not valid on MouseAction.up or MouseAction.down"
+                        f"`Mouse Button    Click` requires that x and y are set! x: {x}, y: {y}"
+                    )
+                body["options"] = {
+                    "button": button.name,
+                    "clickCount": clickCount,
+                    "delay": delay,
+                }
+            else:
+                if x and y:
+                    self.mouse_move(x, y)
+                else:
+                    logger.info(
+                        f"No coordinates where set. Action will appear at current position. x: {x}, y {y}"
                     )
                 body = {
                     "options": {
@@ -385,17 +417,6 @@ class Interaction(LibraryComponent):
                         "clickCount": clickCount,
                         "delay": delay,
                     }
-                }
-            else:
-                body = {}
-                if x:
-                    body["x"] = float(x)
-                if y:
-                    body["y"] = float(y)
-                body["options"] = {
-                    "button": button.name,
-                    "clickCount": clickCount,
-                    "delay": delay,
                 }
 
             response = stub.MouseButton(
@@ -415,6 +436,7 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
+            logger.info(f"Moving mouse to x: {x}, y: {y} coordinates.")
             response = stub.MouseMove(Request().Json(body=json.dumps(body)))
             logger.debug(response.log)
 
