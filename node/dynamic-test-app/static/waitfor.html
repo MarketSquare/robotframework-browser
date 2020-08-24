@@ -3,12 +3,8 @@
         
         <script>
             var victimaction;
-            function sleep(milliseconds) {
-                const date = Date.now();
-                let currentDate = null;
-                do {
-                    currentDate = Date.now();
-                } while (currentDate - date < milliseconds);
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
             }
 
             function waiter(event) {
@@ -65,8 +61,8 @@
                 }
             }
 
-            function submit(event) {
-                sleep(500);
+            async function submit(event) {
+                await sleep(500);
                 switch(victimaction) {
                     case "attached":
                         document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
