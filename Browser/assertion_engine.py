@@ -1,3 +1,4 @@
+import ast
 import re
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
@@ -23,6 +24,11 @@ SequenceOperators = [
     AssertionOperator["then"],
     AssertionOperator["=="],
     AssertionOperator["!="],
+]
+
+EvaluationOperators = [
+    AssertionOperator["validate"],
+    AssertionOperator["then"],
 ]
 
 handlers: Dict[AssertionOperator, Tuple[Callable, str]] = {
@@ -71,16 +77,31 @@ def verify_assertion(
 def with_assertion_polling(wrapped, instance, args, kwargs):
     start = time.time()
     timeout = timestr_to_secs(instance.timeout)
-    while True:
-        try:
-            return wrapped(*args, **kwargs)
-        except AssertionError as e:
-            elapsed = time.time() - start
-            if elapsed > timeout or not instance.assertion_polling_enabled:
-                raise e
-            logger.debug("Verification failure - retrying")
-            if timeout - elapsed > 0.016:
-                time.sleep(0.016)  # 60 fps
+    retry_assertions_until = timestr_to_secs(instance.retry_assertions_for)
+    retries_start: Optional[float] = None
+    tries = 1
+    try:
+        while True:
+            try:
+                return wrapped(*args, **kwargs)
+            except AssertionError as e:
+                if retries_start is None:
+                    retries_start = time.time()
+                elapsed = time.time() - start
+                elapsed_retries = time.time() - retries_start
+                if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
+                    raise e
+                tries += 1
+                if timeout - elapsed > 0.01:
+                    time.sleep(0.01)
+    finally:
+        now = time.time()
+        logger.debug(
+            f"""Assertion polling statistics:
+First element asserted in: {(retries_start or now) - start} seconds
+Total tries: {tries}
+Elapsed time in retries {now - (retries_start or now)} seconds"""
+        )
 
 
 def float_str_verify_assertion(
@@ -125,14 +146,18 @@ def map_list(selected: List):
 def list_verify_assertion(
     value: List, operator: Optional[AssertionOperator], expected: List, message="",
 ):
-    if operator and operator not in SequenceOperators:
-        raise AttributeError(
-            f"Operator '{operator.name}' is not allowed in this Keyword."
-            f"Allowed operators are: '{SequenceOperators}'"
-        )
-    expected.sort()
-    value.sort()
-
+    if operator:
+        if operator not in SequenceOperators:
+            raise AttributeError(
+                f"Operator '{operator.name}' is not allowed in this Keyword."
+                f"Allowed operators are: '{SequenceOperators}'"
+            )
+        if operator in [
+            AssertionOperator["=="],
+            AssertionOperator["!="],
+        ]:
+            expected.sort()
+            value.sort()
     return verify_assertion(map_list(value), operator, map_list(expected), message)
 
 
@@ -159,13 +184,17 @@ def int_dict_verify_assertion(
 ):
     if not operator:
         return value
+    elif operator in SequenceOperators:
+        if operator not in EvaluationOperators and isinstance(expected, str):
+            evaluated_expected = ast.literal_eval(expected)
+        else:
+            evaluated_expected = expected
+        return verify_assertion(value, operator, evaluated_expected, message)
     elif expected and operator in NumericalOperators:
         for k, v in value.items():
             exp = expected[k]
             verify_assertion(v, operator, exp, message)
-        return True
-    elif operator in SequenceOperators:
-        return verify_assertion(value, operator, expected, message)
+        return value
     else:
         raise AttributeError(
             f"Operator '{operator.name}' is not allowed in this Keyword."

@@ -25,25 +25,66 @@ Get Text With Nonmatching Selector
     Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Get Attribute and Assert
-    Get Attribute    h1    innerText    ==    Login Page
+Get Property and Assert
+    Get Property    h1    innerText    ==    Login Page
 
-Get Attribute innerText
-    ${inner_text}=    Get Attribute    ${UserNameLabel}    innerText
+Get Property innerText
+    ${inner_text}=    Get Property    ${UserNameLabel}    innerText
     Should Be Equal    ${inner_text}    User Name:
 
-Get Attribute size
-    ${size}=    Get Attribute    ${InputUsername}    type
+Get Property size
+    ${size}=    Get Property    ${InputUsername}    type
     Should Be Equal    ${size}    text
 
-Get Attribute and Then .. (Closure)
-    ${text}=    Get Attribute    h1    innerText    then    value.replace('g', 'k')
+Get Property and Then .. (Closure)
+    ${text}=    Get Property    h1    innerText    then    value.replace('g', 'k')
     Should be equal    ${text}    Lokin Pake
 
-Get Attribute With Nonmatching Selector
+Get Property With Nonmatching Selector
     [Setup]    Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Attribute    notamatch    attributeName
+    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Property    notamatch    attributeName
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
+
+Get Attribute
+    ${type}=    Get Attribute    id=login_button    type
+    Should Be Equal    ${type}    submit
+
+Get Attribute and Fail
+    Run Keyword And Expect Error    Attribute 'disabled' not found!    Get Attribute    id=login_button    disabled
+
+Get Attribute and Verify absense
+    Get Attribute    id=login_button    disabled    ==    ${None}
+
+Get Attribute and return presents state
+    ${present}=    Get Attribute    id=login_button    value    evaluate    value is not None
+    Should Be True    ${present}
+    ${present}=    Get Attribute    id=login_button    disabled    evaluate    value is None
+    Should Be True    ${present}
+
+Get Attribute Names
+    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    ${attrs}=    Get Attribute Names    [name="readonly_input"]
+    FOR    ${attr}    IN    @{attrs}
+        ${value}=    Get Attribute    [name="readonly_input"]    ${attr}
+        Log    ${attr}=${value}
+    END
+    [Teardown]    Close Page
+
+Get Attribute Names and Assert single and multiple
+    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    Get Attribute Names    [name="readonly_input"]    ==    type    name    value    readonly
+    Get Attribute Names    [name="disabled_input"]    contains    disabled
+    Get Attribute Names    [name="disabled_input"]    validate    value[-1] == "disabled"
+    [Teardown]    Close Page
+
+Get Classes
+    ${classes}=    Get Classes    id=draggable
+    Should Be Equal    ${classes}    ${{["box", "react-draggable"]}}
+
+Get Classes and Assert
+    Get Classes    id=draggable    contains    react-draggable
+    Get Classes    id=draggable    ==    react-draggable    box
+    Get Classes    id=draggable    validate    "react-draggable-dragged" not in value
 
 Get Element Count
     ${count}=    Get Element Count    h1

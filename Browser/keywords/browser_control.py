@@ -56,7 +56,7 @@ class Control(LibraryComponent):
     def take_screenshot(self, filename: str = "", selector: str = ""):
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
-        ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output directory.
+        ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output directory by default.
         String ``{index}`` in path will be replaced with a rolling number. Use this to not override filenames.
 
         ``selector`` <str> Take a screenshot of the element matched by selector.
@@ -91,6 +91,18 @@ class Control(LibraryComponent):
             response = stub.SetTimeout(Request().Timeout(timeout=parsed_timeout))
             logger.info(response.log)
         return old_timeout
+
+    @keyword(tags=["BrowserControl"])
+    def set_retry_assertions_for(self, timeout: str) -> str:
+        """Sets the timeout used in retrying assertions when they fail.
+
+        ``timeout`` <str>
+
+        Returns the previous value of the retry_assertions_until.
+        """
+        old_retry_assertions_for = self.retry_assertions_for
+        self.retry_assertions_for = timeout
+        return old_retry_assertions_for
 
     @keyword(tags=["PageContent"])
     def add_style_tag(self, content: str):

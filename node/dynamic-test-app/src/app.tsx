@@ -85,13 +85,13 @@ function DraggableDiv() {
     const [controlledPosition, setControlledPosition] = useState({ x: 0, y: 0 });
     return (
         <Draggable position={controlledPosition} onDrag={onControlledDrag}>
-            <div className="box">
+            <div className="box" id="draggable">
                 My position can be changed programmatically. <br />I have a drag handler to sync state.
                 <div>
-                    <div>x ({controlledPosition.x})</div>
+                    x<div id="dragX">{controlledPosition.x}</div>
                 </div>
                 <div>
-                    <div> y ({controlledPosition.y})</div>
+                    y<div id="dragY">{controlledPosition.y}</div>
                 </div>
             </div>
         </Draggable>

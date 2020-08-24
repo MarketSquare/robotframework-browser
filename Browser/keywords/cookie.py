@@ -40,7 +40,7 @@ class Cookie(LibraryComponent):
     def _get_cookies(self):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetCookies(Request().Empty())
-            return response, json.loads(response.body)
+            return response, json.loads(response.json)
 
     def _format_cookies_as_string(self, cookies: List[dict]):
         pairs = []
@@ -100,13 +100,13 @@ class Cookie(LibraryComponent):
 
         ``secure`` <bool> Sets the secure token.
 
-        ``samesite`` <Strict|Lax|None> Sets the samesite mode.
+        ``samesite`` < ``Strict`` | ``Lax`` | ``None`` > Sets the samesite mode.
 
         Example:
-        | `Add Cookie` | foo | bar | http://address.com/path/to/site |                                 | # Using url argument.             |
-        | `Add Cookie` | foo | bar | domain=example.com              | path=/foo/bar                   | # Using domain and url arguments. |
-        | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=2027-09-28 16:21:35      | # Expiry as timestamp.            |
-        | `Add Cookie` | foo | bar | http://address.com/path/to/site | expiry=1822137695               | # Expiry as epoch seconds.        |
+        | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
+        | `Add Cookie`   foo   bar   domain=example.com                path=/foo/bar                     # Using domain and url arguments.
+        | `Add Cookie`   foo   bar   http://address.com/path/to/site   expiry=2027-09-28 16:21:35        # Expiry as timestamp.
+        | `Add Cookie`   foo   bar   http://address.com/path/to/site   expiry=1822137695                 # Expiry as epoch seconds.
         """
         params = locals_to_params(locals())
         if expires:
@@ -152,6 +152,8 @@ class Cookie(LibraryComponent):
     ) -> Union[DotDict, str]:
         """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
 
+        ``cookie`` <str> Name of the cookie to be retrieved.
+
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns a of Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary]
         The dictionary contains all possible key value pairs of the cookie. If ``return_type`` is ``string`` or ``str``,
@@ -161,7 +163,7 @@ class Cookie(LibraryComponent):
         If no cookie is found with ``name`` keyword fails. The cookie dictionary contains
         details about the cookie. Keys available in the dictionary are documented in the table below.
 
-        | Value    | Explanation                                                                                |
+        | *Value*  | *Explanation*                                                                              |
         | name     | The name of a cookie, mandatory.                                                           |
         | value    | Value of the cookie, mandatory.                                                            |
         | url      | Define the scope of the cookie, what URLs the cookies should be sent to.                   |
@@ -177,9 +179,9 @@ class Cookie(LibraryComponent):
         for details about each attribute.
 
         Example:
-        | ${cookie} =     | Get Cookie            | Foobar  |
-        | Should Be Equal | ${cookie.value}       | Tidii   |
-        | Should Be Equal | ${cookie.expiry.year} | ${2020} |
+        | ${cookie}=        Get Cookie              Foobar
+        | Should Be Equal   ${cookie.value}         Tidii
+        | Should Be Equal   ${cookie.expiry.year}   ${2020}
         """
         _, cookies = self._get_cookies()
         for cookie_dict in cookies:

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional, Union
 
 from robotlibcore import keyword  # type: ignore
 
@@ -15,7 +15,12 @@ from ..assertion_engine import (
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.data_types import AssertionOperator, BoundingBoxFields, SelectAttribute
+from ..utils.data_types import (
+    AssertionOperator,
+    BoundingBoxFields,
+    SelectAttribute,
+    ViewportFields,
+)
 
 
 class Getters(LibraryComponent):
@@ -47,7 +52,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> object:
-        """Returns page model state object.
+        """Returns page model state object as a dictionary.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
@@ -123,14 +128,53 @@ class Getters(LibraryComponent):
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
+        return verify_assertion(
+            self.get_property(selector, "innerText"),
+            assertion_operator,
+            assertion_expected,
+            f"Text {selector}",
+        )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
+    def get_property(
+        self,
+        selector: str,
+        property: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ):
+        """Returns the ``property`` of the element found by ``selector``.
+
+        Optionally asserts that the property value matches the specified
+        assertion.
+
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+
+        ``property`` <str> Requested property name. **Required**
+
+        If ``assertion_operator`` is set and property is not found, ``value`` is ``None``
+        and Keyword does not fail. See `Get Attribute` for examples.
+
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        Example Code:
+        | Get Property  id=element_with_content  innerHTML  # returns elements innerHTML
+
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                Request().ElementProperty(selector=selector, property="innerText")
+                Request().ElementProperty(selector=selector, property=property)
             )
             logger.debug(response.log)
-            value = response.body
+            if response.body:
+                value = json.loads(response.body)
+            elif assertion_operator is not None:
+                value = None
+            else:
+                raise AttributeError(f"Property '{property}' not found!")
             return verify_assertion(
-                value, assertion_operator, assertion_expected, f"Text {selector}"
+                value, assertion_operator, assertion_expected, f"Property {selector}"
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
@@ -142,7 +186,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
-        """Returns the ``attribute`` of the element found by ``selector``.
+        """Returns the HTML ``attribute`` of the element found by ``selector``.
 
         Optionally asserts that the attribute value matches the specified
         assertion.
@@ -151,19 +195,103 @@ class Getters(LibraryComponent):
 
         ``attribute`` <str> Requested attribute name. **Required**
 
+        When a attribute is selected that is not present and no assertion operator is set,
+        the keyword fails. If an assertion operator is set and the attribute is not present,
+        the returned value is ``None``.
+        This can be used to assert check the presents or the absents of an attribute.
+
+        Example Element:
+        | <button class="login button active" id="enabled_button" something>Login</button>
+
+        Example Code:
+        | Get Attribute   id=enabled_button    disabled                   # FAIL => "Attribute 'disabled' not found!"
+        | Get Attribute   id=enabled_button    disabled     ==    None     # PASS => returns: None
+        | Get Attribute   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
+        | Get Attribute   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
+
+
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetDomProperty(
+            response = stub.GetElementAttribute(
                 Request().ElementProperty(selector=selector, property=attribute)
             )
             logger.debug(response.log)
-            value = response.body
+            value = json.loads(response.body)
+            if assertion_operator is None and value is None:
+                raise AttributeError(f"Attribute '{attribute}' not found!")
+            logger.debug(f"Attribute is: {value}")
             return verify_assertion(
                 value, assertion_operator, assertion_expected, f"Attribute {selector}"
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
+    def get_attribute_names(
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected,
+    ):
+        """Returns all HTML attribute names of an element as a list.
+
+        Optionally asserts that these match the specified assertion.
+
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        Available assertions:
+        - ``==`` and ``!=`` can work with multiple values
+        - ``contains``/``*=`` only accepts one single expected value
+
+        Other operators are not allowed.
+        """
+        with self.playwright.grpc_channel() as stub:
+            function = "(element) => element.getAttributeNames()"
+            response = stub.ExecuteJavascript(
+                Request().JavascriptCode(script=function, selector=selector)
+            )
+            attribute_names = json.loads(response.result)
+            logger.info(attribute_names)
+            expected = list(assertion_expected)
+            return list_verify_assertion(
+                attribute_names, assertion_operator, expected, "Attribute names"
+            )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
+    def get_classes(
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected,
+    ):
+        """Returns all classes of an element as a list.
+
+        Optionally asserts that the value matches the specified assertion.
+
+        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+
+        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+
+        Available assertions:
+        - ``==`` and ``!=`` can work with multiple values
+        - ``contains``/``*=`` only accepts one single expected value
+
+        Other operators are not allowed.
+        """
+        class_dict = self.get_property(selector, "classList")
+        expected = list(assertion_expected)
+        return list_verify_assertion(
+            list(class_dict.values()),
+            assertion_operator,
+            expected,
+            f"Classes of {selector}",
+        )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @with_assertion_polling
     def get_textfield_value(
         self,
         selector: str,
@@ -178,8 +306,11 @@ class Getters(LibraryComponent):
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
-        return self.get_attribute(
-            selector, "value", assertion_operator, assertion_expected
+        return verify_assertion(
+            self.get_property(selector, "value"),
+            assertion_operator,
+            assertion_expected,
+            f"Value {selector}",
         )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
@@ -198,7 +329,7 @@ class Getters(LibraryComponent):
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
 
         ``option_attribute`` <SelectAttribute.label> Which attribute shall be returned/verified.
-        Allowed values are ``<"value"|"label"|"text"|"index">``. Defaults to label.
+        Allowed values are ``< ``value`` | ``label`` | ``text`` | ``index`` >``. Defaults to label.
 
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
@@ -209,13 +340,13 @@ class Getters(LibraryComponent):
 
         Example:
 
-        | `Select Options By`    | label                  | //select[2]  | Email    | Mobile           |      |                     |
-        | ${selected_list}       | `Get Selected Options` | //select[2]  |          |                  |      | # getter            |
-        | `Get Selected Options` | //select[2]            | label        | `==`     | Mobile           | Mail | #assertion content  |
-        | `Select Options By`    | label                  | select#names | 2        | 4                |      |                     |
-        | `Get Selected Options` | select#names           | index        | `==`     | 2                | 4    | #assertion index    |
-        | `Get Selected Options` | select#names           | label        | *=       | Mikko            |      | #assertion contains |
-        | `Get Selected Options` | select#names           | label        | validate | len(value) == 3  |      | #assertion length   |
+        | `Select Options By`      label                    //select[2]    Email      Mobile
+        | ${selected_list}         `Get Selected Options`   //select[2]                                         # getter
+        | `Get Selected Options`   //select[2]              label          `==`       Mobile             Mail   #assertion content
+        | `Select Options By`      label                    select#names   2          4
+        | `Get Selected Options`   select#names             index          `==`       2                  4      #assertion index
+        | `Get Selected Options`   select#names             label          *=         Mikko                     #assertion contain
+        | `Get Selected Options`   select#names             label          validate   len(value) == 3           #assertion length
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -255,7 +386,7 @@ class Getters(LibraryComponent):
 
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
-        - ``==`` and ``!=`` are allowed on boolean values
+        - ``==`` and ``!=`` and equivalent are allowed on boolean values
         - other operators are not accepted.
 
         ``expected_state`` <str> boolean value of expected state.
@@ -272,12 +403,12 @@ class Getters(LibraryComponent):
             response = stub.GetBoolProperty(
                 Request().ElementProperty(selector=selector, property="checked")
             )
-        logger.info(response.log)
-        value: bool = response.body
-        logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
-        return bool_verify_assertion(
-            value, assertion_operator, expected_state, f"Checkbox {selector} is"
-        )
+            logger.info(response.log)
+            value: bool = response.body
+            logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
+            return bool_verify_assertion(
+                value, assertion_operator, expected_state, f"Checkbox {selector} is"
+            )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
@@ -296,8 +427,6 @@ class Getters(LibraryComponent):
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
         ``expected_value`` <str|int> Expected value for the counting
-
-
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
@@ -361,23 +490,44 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_viewport_size(
         self,
+        key: ViewportFields = ViewportFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Dict[str, int]] = None,
+        assertion_expected: Any = None,
     ):
         """Returns the current viewport dimensions.
 
         Optionally asserts that the count matches the specified assertion.
 
+        ``key`` < ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        If keys is set to ``ALL``(default) it will return the viewport size as dictionary,
+        otherwise it will just return the single value selected by the key.
+        Note: If a single value is retrieved, an assertion does *not* need a ``validate``
+        combined with a cast of ``value``.
+
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
-        ``assertion_expected`` <Dict<str, int>> Defaults to None.
-         """
+        Example:
+        | Get Viewport Size    ALL    ==    {'width':1280, 'height':720}
+        | Get Viewport Size    width    >=    1200
+
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
-            parsed = json.loads(response.body)
-            return int_dict_verify_assertion(
-                parsed, assertion_operator, assertion_expected, "Viewport size is"
-            )
+            logger.info(response.log)
+            parsed = json.loads(response.json)
+            logger.debug(parsed)
+            if key == ViewportFields.ALL:
+                return int_dict_verify_assertion(
+                    parsed, assertion_operator, assertion_expected, "Viewport size is"
+                )
+            else:
+                logger.info(f"Value of '{key}'': {parsed[key.name]}")
+                return float_str_verify_assertion(
+                    parsed[key.name],
+                    assertion_operator,
+                    assertion_expected,
+                    f"{key} is ",
+                )
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_element(self, selector: str):
@@ -400,8 +550,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElements(Request().ElementSelector(selector=selector))
-            data = json.loads(response.body)
-            return data
+            return json.loads(response.json)
 
     @keyword(tags=["Getter", "Assertion"])
     @with_assertion_polling
@@ -456,26 +605,26 @@ class Getters(LibraryComponent):
             ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
             If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
             otherwise it will just return the single value selected by the key.
+            Note: If a single value is retrieved, an assertion does *not* need a ``validate``
+            combined with a cast of ``value``.
 
             See `Assertions` for further details for the assertion arguments. Defaults to None.
 
             Example use:
-            | ${bounding_box}=    Get BoundingBox    id=element    # unfiltered
-            | Log    ${bounding_box}    # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
-            | ${x}=    Get BoundingBox    id=element    x    # filtered
-            | Log    X: ${x}    # X: 559.09375
+            | ${bounding_box}=    Get BoundingBox    id=element                 # unfiltered
+            | Log                 ${bounding_box}                               # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
+            | ${x}=               Get BoundingBox    id=element    x            # filtered
+            | Log                 X: ${x}                                       # X: 559.09375
             | # Assertions:
-            | Get BoundingBox    id=element    width    >    180
-            | Get BoundingBox    id=element    ALL    validate    value['x'] > value['y']*2
-
-
+            | Get BoundingBox     id=element         width         >    180
+            | Get BoundingBox     id=element         ALL           validate    value['x'] > value['y']*2
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
             parsed = json.loads(response.body)
             logger.debug(parsed)
             if key == BoundingBoxFields.ALL:
-                return dict_verify_assertion(
+                return int_dict_verify_assertion(
                     parsed, assertion_operator, assertion_expected, "BoundingBox is"
                 )
             else:

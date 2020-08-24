@@ -45,7 +45,7 @@ class Network(LibraryComponent):
 
         Accepts the following arguments:
           - ``url`` <str> The request url, e.g. ``/api/foo``.
-          - ``method`` <GET|POST|PUT|PATCH|DELETE|HEAD> The HTTP method for the request. Defaults to GET.
+          - ``method`` < ``GET`` | ``POST`` | ``PUT`` | ``PATCH`` | ``DELETE`` | ``HEAD`` > The HTTP method for the request. Defaults to GET.
           - ``body`` <str> The request body. GET requests cannot have a body. If the body can be parsed as JSON,
           the ``Content-Type`` header for the request will be automatically set to ``application/json``.
           Defaults to None.
@@ -62,9 +62,9 @@ class Network(LibraryComponent):
         Here's an example of using Robot Framework dictionary variables and extended variable syntax to
         do assertions on the response object:
 
-        | &{res}=          |  HTTP                    |  /api/endpoint |
-        | Should Be Equal  |  ${res.status}           |  200           |
-        | Should Be Equal  |  ${res.body.some_field}  |  some value    |
+        | &{res}=             HTTP                       /api/endpoint
+        | Should Be Equal     ${res.status}              200
+        | Should Be Equal     ${res.body.some_field}     some value
 
         """
         if headers is None:

@@ -15,6 +15,20 @@ Move In Circle
     Mouse Move    400    0
     Mouse Move    0    0
 
+Draggable Test
+    [Tags]    Not-Implemented
+    ${x}=    Get Boundingbox    \#draggable    x
+    ${y}=    Get Boundingbox    \#draggable    y
+    # evaluate end coordinates
+    ${xnew}    Evaluate    ${x}+400
+    ${ynew}    Evaluate    ${y}+400
+    Mouse Button    down    ${x}    ${y}
+    Mouse Button    up    ${xnew}    ${ynew}
+    # just do a random move to make sure the element is not stuck to mouse any more
+    Mouse Move    0    0
+    Get Text    \#dragX    ==    400
+    Get Text    \#dragY    ==    400
+
 Click Count
     ${x}=    Get Boundingbox    \#clickWithOptions    x
     ${y}=    Get Boundingbox    \#clickWithOptions    y

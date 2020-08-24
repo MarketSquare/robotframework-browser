@@ -6,7 +6,7 @@ Suite Teardown    Close Browser
 *** Test Cases ***
 Pierce iFrame implicit CSS, xpath and text
     Click    iframe[name="left"] >>> "foo"
-    Get Attribute    \#left >>> a[href="foo.html"]    target    ==    right
+    Get Property    \#left >>> a[href="foo.html"]    target    ==    right
     Get Text    //iframe[@id="right"] >>> p    ==    You're looking at foo.
 
 Pierce iFrame nested selectors

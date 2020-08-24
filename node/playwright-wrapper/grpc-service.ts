@@ -50,7 +50,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         return playwrightState.getBrowserCatalog(callback, this.state);
     }
 
-    async getCookies(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getCookies(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Json>): Promise<void> {
         return cookie.getCookies(callback, this.getActiveContext());
     }
 
@@ -166,6 +166,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         return getters.getBoolProperty(call, callback, this.state);
     }
 
+    async getElementAttribute(
+        call: ServerUnaryCall<Request.ElementProperty>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        return getters.getElementAttribute(call, callback, this.state);
+    }
+
     async getStyle(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.String>,
@@ -173,10 +180,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         return getters.getStyle(call, callback, this.state);
     }
 
-    async getViewportSize(
-        call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
+    async getViewportSize(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Json>): Promise<void> {
         return getters.getViewportSize(call, callback, this.getActivePage());
     }
 
@@ -255,7 +259,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getElements(
         call: ServerUnaryCall<Request.ElementSelector>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return evaluation.getElements(call, callback, this.state);
     }
@@ -282,7 +286,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return evaluation.waitForFunction(call, callback, this.state);
     }

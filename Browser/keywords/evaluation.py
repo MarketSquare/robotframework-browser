@@ -47,7 +47,7 @@ class Evaluation(LibraryComponent):
 
         ``width`` <str> Sets the width of the higlight border. Defaults to 2px.
 
-        ``style`` <solid|dotted|double|dashed> Sets the style of the border. Defaults to dotted.
+        ``style`` < ``solid`` | ``dotted`` | ``double`` | ``dashed`` > Sets the style of the border. Defaults to dotted.
 
         ``color`` <str> Sets the color of the border. Valid colors i.e. are:
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``

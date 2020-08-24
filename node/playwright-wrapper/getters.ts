@@ -3,7 +3,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
-import { boolResponse, intResponse, stringResponse } from './response-util';
+import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
 import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -64,7 +64,7 @@ export async function getDomProperty(
     state: PlaywrightState,
 ) {
     const content = await getProperty(call, callback, state);
-    callback(null, stringResponse(content, ''));
+    callback(null, stringResponse(JSON.stringify(content), 'Property received successfully.'));
 }
 
 export async function getBoolProperty(
@@ -99,6 +99,33 @@ async function getProperty<T>(
     }
 }
 
+export async function getElementAttribute(
+    call: ServerUnaryCall<Request.ElementProperty>,
+    callback: sendUnaryData<Response.String>,
+    state: PlaywrightState,
+) {
+    const content = await getAttributeValue(call, callback, state);
+    callback(null, stringResponse(JSON.stringify(content), 'Property received successfully.'));
+}
+
+async function getAttributeValue<T>(
+    call: ServerUnaryCall<Request.ElementProperty>,
+    callback: sendUnaryData<T>,
+    state: PlaywrightState,
+) {
+    const selector = call.request.getSelector();
+    const element = await waitUntilElementExists(state, callback, selector);
+    try {
+        const attributeName = call.request.getProperty();
+        const attribute = await element.getAttribute(attributeName);
+        logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
+        return attribute;
+    } catch (e) {
+        logger.error(e);
+        callback(e, null);
+    }
+}
+
 export async function getStyle(
     call: ServerUnaryCall<Request.ElementSelector>,
     callback: sendUnaryData<Response.String>,
@@ -123,11 +150,11 @@ export async function getStyle(
 
 export async function getViewportSize(
     call: ServerUnaryCall<Request.Empty>,
-    callback: sendUnaryData<Response.String>,
+    callback: sendUnaryData<Response.Json>,
     page?: Page,
 ): Promise<void> {
     const result = await invokeOnPage(page, callback, 'viewportSize');
-    callback(null, stringResponse(JSON.stringify(result), ''));
+    callback(null, jsonResponse(JSON.stringify(result), 'View port size received sucesfully from page.'));
 }
 
 export async function getBoundingBox(
@@ -152,5 +179,5 @@ export async function getPageSource(
 ): Promise<void> {
     const result = await invokeOnPage(page, callback, 'content');
     logger.info(result);
-    callback(null, stringResponse(JSON.stringify(result), ''));
+    callback(null, stringResponse(JSON.stringify(result), 'Page source obtained succesfully.'));
 }

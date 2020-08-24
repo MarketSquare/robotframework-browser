@@ -54,8 +54,8 @@ message Request {
   }
 
   message ElementProperty {
-    string property = 1;
-    string selector = 2;
+    string selector = 1;
+    string property = 2;
   }
 
   message TypeText {
@@ -170,10 +170,12 @@ message Response {
   message Empty {
     string log = 1;
   }
+
   message String {
     string log = 1;
     string body = 2;
   }
+
   message Bool {
     string log = 1;
     bool body = 2;
@@ -188,6 +190,11 @@ message Response {
     repeated Types.SelectEntry entry = 1;
   }
 
+  message Json {
+    string log = 1;
+    string json = 2;
+  }
+
   message JavascriptExecutionResult {
     string log = 1;
     string result = 2;
@@ -197,7 +204,7 @@ message Response {
 service  Playwright {
   /* Cookie messages */
   rpc AddCookie(Request.Json) returns (Response.Empty);
-  rpc GetCookies(Request.Empty) returns (Response.String);
+  rpc GetCookies(Request.Empty) returns (Response.Json);
   rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
   /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
@@ -221,10 +228,12 @@ service  Playwright {
   rpc ClearText(Request.ClearText) returns (Response.Empty);
   /* Gets the DOM property 'property' of selector specified element */
   rpc GetDomProperty(Request.ElementProperty) returns (Response.String);
+  /* Gets the XML attribute 'attribute' of selector specified element */
+  rpc GetElementAttribute(Request.ElementProperty) returns (Response.String);
   /* Gets the boolean DOM property 'property' of selector specified element */
   rpc GetBoolProperty(Request.ElementProperty) returns (Response.Bool);
   /* Wraps playwrights page.textContent, returns textcontent of element by selector */
-  rpc GetViewportSize(Request.Empty) returns (Response.String);
+  rpc GetViewportSize(Request.Empty) returns (Response.Json);
   /* Returns current playwright page url*/
   rpc GetUrl(Request.Empty) returns (Response.String);
   /* Gets pages HTML code */
@@ -248,7 +257,7 @@ service  Playwright {
   /* Returns a reference to a Playwirght element handle.*/
   rpc GetElement(Request.ElementSelector) returns (Response.String);
   /* Returns references to multiple Playwirght element handles.*/
-  rpc GetElements(Request.ElementSelector) returns (Response.String);
+  rpc GetElements(Request.ElementSelector) returns (Response.Json);
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */
@@ -264,7 +273,7 @@ service  Playwright {
   /* Waits for element be in a specific state*/
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Executes javascript on the active page */
-  rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.String);
+  rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);

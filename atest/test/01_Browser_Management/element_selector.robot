@@ -7,13 +7,13 @@ Test Setup        New Page    ${FORM_URL}
 *** Test Cases ***
 Get Element
     ${ref}=    Get Element    select[name="preferred_channel"]
-    ${option_value}=    Get Attribute    ${ref} >> option    value
+    ${option_value}=    Get Property    ${ref} >> option    value
     Should Be Equal    ${option_value}    email
 
 Get Element With Nonmatching child selector
     ${ref}=    Get Element    select[name="preferred_channel"]
     Run Keyword And Expect Error    Could not find element with selector `.notamatch` within timeout.
-    ...    Get Attribute    ${ref}>> .notamatch    value
+    ...    Get Property    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
     Run Keyword And Expect Error    No element handle found with id `1234-4321`.
@@ -24,7 +24,7 @@ Using Invalid Element Reference Fails
 Get Element From Frame
     [Setup]    New Page    ${FRAMES_URL}
     ${ref}=    Get Element    body >> [src="left.html"] >>> body
-    Get Attribute    ${ref} >> //input[@name="searchbutton"]    value    ==    Search
+    Get Property    ${ref} >> //input[@name="searchbutton"]    value    ==    Search
 
 Using Element Handle directly as selector
     New Page    ${LOGIN_URL}
@@ -35,7 +35,7 @@ Using Element Handle directly as selector
 Get Elements when only 1 match
     ${refs}=    Get Elements    select[name="preferred_channel"]
     ${elem}=    Get From List    ${refs}    0
-    ${option_value}=    Get Attribute    ${elem} >> option    value
+    ${option_value}=    Get Property    ${elem} >> option    value
     Should Be Equal    ${option_value}    email
 
 Get Elements Include Hidden
