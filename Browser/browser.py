@@ -592,7 +592,7 @@ class Browser(DynamicCore):
             catalog_before_suite = self._execution_stack.pop()
             self._prune_execution_stack(catalog_before_suite)
 
-    def _prune_execution_stack(self, catalog_before):
+    def _prune_execution_stack(self, catalog_before: dict) -> None:
         # WIP CODE BEGINS
         catalog_after = self.get_browser_catalog()
         ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]

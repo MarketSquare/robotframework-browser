@@ -30,11 +30,13 @@ New Browser does not open a page
 New Browser does not create a context
     New Browser
     # Use Switch context to test that no context exists here
-    Run Keyword And Expect Error    *No context*    Switch Context    CURRENT
+    ${no_context_id}    Switch Context    CURRENT
+    Should Be Equal    ${no_context_id}    NO CONTEXT OPEN
 
 New Context does not open a page
     New Context
-    Run Keyword And Expect Error    *No page*    Switch Page    CURRENT
+    ${no_page_id}    Switch Page    CURRENT
+    Should Be Equal    ${no_page_id}    NO PAGE OPEN
 
 Open Browser opens everything
     Open Browser    url=${FORM_URL}
@@ -104,18 +106,10 @@ New Page can New Context and browser
     New Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
 
-Focus Next Page on popup
-    Open Browser and assert Login Page    chromium
-    Auto Activate Pages
-    Click    button#pops_up
-    # FIXME: Workaround, this need is caused by eventhandlers laziness
-    Sleep    1s
-    Wait For Elements State    "Popped Up!"
-
 Switch Page after popup
     Open Browser and assert Login Page    chromium
     Click    button#pops_up
-    ${previous}    Switch Page    NEW
+    ${previous}=    Switch Page    NEW
     Wait For Elements State    "Popped Up!"
     Switch Page    ${previous}
     Wait For Elements State    button#pops_up

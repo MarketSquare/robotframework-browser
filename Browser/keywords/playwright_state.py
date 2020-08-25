@@ -333,13 +333,6 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl", "EventHandler"])
-    def auto_activate_pages(self):
-        """Toggles automatically changing active page to latest opened page."""
-        with self.playwright.grpc_channel() as stub:
-            response = stub.AutoActivatePages(Request().Empty())
-            logger.info(response.log)
-
     @keyword(tags=["BrowserControl"])
     def switch_browser(self, id: str):
         """Switches the currently active Browser to another open Browser.
@@ -359,11 +352,13 @@ class PlaywrightState(LibraryComponent):
 
         ``id`` <str> Id of the context to be changed to. Randomly generated UUID. **Required**
 
-        ``browser`` < ``CURRENT`` | ``NEW`` | ``ALL`` |str> Switch context in specified browser. If value is not "CURRENT"
+        ``browser`` < ``CURRENT`` | ``ALL`` |str> Switch context in specified browser. If value is not "CURRENT"
         it should be an int referencing the id of the browser where to switch context.
         If ALL is passed, the contexts of the browser will be closed.
         """
         with self.playwright.grpc_channel() as stub:
+            if browser == "ALL":
+                raise NotImplementedError
             self._correct_browser(browser)
             response = stub.SwitchContext(Request().Index(index=id))
             logger.info(response.log)
@@ -375,17 +370,22 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the previous page.
         Newly opened pages get appended to the end of the list.
 
-        ``id`` <str> Id of the page to be changed to. Randomly generated UUID. **Required**
+        ``id`` < ``CURRENT`` | ``NEW `` | str> Id of the page to be changed to. Randomly generated UUID. **Required**
 
-        ``context`` < ``CURRENT`` | ``NEW`` | ``ALL`` |str> Switch page in specified context. If value is not "CURRENT"
+        ``context`` < ``CURRENT`` | ``ALL`` |str> Switch page in specified context. If value is not "CURRENT"
         it should be an int referencing the id of the context where to switch page.
         If ALL is passed, the pages of all contexts switch.
 
-        ``browser`` < ``CURRENT`` | ``NEW `` | ``ALL`` |str> Switch page in specified browser. If value is not "CURRENT"
+        ``browser`` < ``CURRENT`` | ``ALL`` |str> Switch page in specified browser. If value is not "CURRENT"
         it should be an int referencing the id of the browser where to switch page.
         If ALL is passed, the page of all browsers depending on the context switch.
         """
         with self.playwright.grpc_channel() as stub:
+            if context == "ALL":
+                raise NotImplementedError
+            if browser == "ALL":
+                raise NotImplementedError
+
             self._correct_browser(browser)
             self._correct_context(context)
             response = stub.SwitchPage(Request().Index(index=id))

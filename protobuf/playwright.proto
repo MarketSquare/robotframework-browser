@@ -305,7 +305,6 @@ service  Playwright {
   rpc SetOffline(Request.Bool) returns (Response.Empty);
 
   /* Playwright State handling keywords */
-  rpc AutoActivatePages(Request.Empty) returns (Response.Empty);
   rpc SwitchPage(Request.Index) returns (Response.String);
   rpc SwitchContext(Request.Index) returns (Response.String);
   rpc SwitchBrowser(Request.Index) returns (Response.String);
