@@ -76,7 +76,7 @@ export async function waitUntilNetworkIsIdle(
 
 export async function waitForDownload(
     call: ServerUnaryCall<pb.Request.FilePath>,
-    callback: sendUnaryData<pb.Response.String>,
+    callback: sendUnaryData<pb.Response.Json>,
     page?: Page,
 ) {
     const saveAs = call.request.getPath();
@@ -86,5 +86,5 @@ export async function waitForDownload(
         await downloadObject.saveAs(saveAs);
     }
     const path = await downloadObject.path();
-    callback(null, stringResponse(JSON.stringify(path), 'Download done successfully to.'));
+    callback(null, jsonResponse(JSON.stringify(path), 'Download done successfully to.'));
 }

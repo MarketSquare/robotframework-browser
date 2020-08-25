@@ -293,7 +293,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async waitForDownload(
         call: ServerUnaryCall<Request.FilePath>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return network.waitForDownload(call, callback, this.getActivePage());
     }

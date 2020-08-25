@@ -146,10 +146,10 @@ class Waiter(LibraryComponent):
             if not saveAs:
                 response = stub.WaitForDownload(Request().FilePath())
                 logger.debug(response.log)
-                return json.loads(response.body)
+                return json.loads(response.json)
             else:
                 p = Path(saveAs)
                 p.resolve()
                 response = stub.WaitForDownload(Request().FilePath(path=str(p)))
                 logger.debug(response.log)
-                return json.loads(response.body)
+                return json.loads(response.json)

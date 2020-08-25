@@ -94,7 +94,7 @@ class Network(LibraryComponent):
             )
             logger.debug(response.log)
             # Add format response back here
-            return response.json if method == "Response" else response.body
+            return response.body if method == "Request" else response.json
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_for_request(self, matcher: str = "", timeout: str = ""):
