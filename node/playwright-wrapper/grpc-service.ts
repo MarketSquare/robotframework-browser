@@ -117,7 +117,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getBoundingBox(
         call: ServerUnaryCall<Request.ElementSelector>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return getters.getBoundingBox(call, callback, this.state);
     }
