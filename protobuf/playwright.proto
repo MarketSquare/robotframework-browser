@@ -87,7 +87,7 @@ message Request {
     float timeout = 1;
   }
   message Index {
-    int32 index = 1;
+    string index = 1;
   }
 
   message StyleTag {
@@ -306,12 +306,12 @@ service  Playwright {
 
   /* Playwright State handling keywords */
   rpc AutoActivatePages(Request.Empty) returns (Response.Empty);
-  rpc SwitchPage(Request.Index) returns (Response.Int);
-  rpc SwitchContext(Request.Index) returns (Response.Int);
-  rpc SwitchBrowser(Request.Index) returns (Response.Int);
-  rpc NewPage(Request.Url) returns (Response.Int);
-  rpc NewContext(Request.Context) returns (Response.Int);
-  rpc NewBrowser(Request.Browser) returns (Response.Int);
+  rpc SwitchPage(Request.Index) returns (Response.String);
+  rpc SwitchContext(Request.Index) returns (Response.String);
+  rpc SwitchBrowser(Request.Index) returns (Response.String);
+  rpc NewPage(Request.Url) returns (Response.String);
+  rpc NewContext(Request.Context) returns (Response.String);
+  rpc NewBrowser(Request.Browser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.Empty);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
