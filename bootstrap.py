@@ -11,7 +11,7 @@ venv_dir = Path(".") / ".venv"
 if not platform.platform().startswith("Windows"):
     venv_python = venv_dir / "bin" / "python"
 else:
-    venv_python = venv_dir / "python.exe"
+    venv_python = venv_dir / "Scripts" / "python.exe"
 src_dir = Path(".") / "Browser"
 
 if not venv_dir.exists():

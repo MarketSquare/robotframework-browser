@@ -128,7 +128,7 @@ async function getAttributeValue<T>(
 
 export async function getStyle(
     call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.String>,
+    callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
 ): Promise<void> {
     const selector = call.request.getSelector();
@@ -144,7 +144,7 @@ export async function getStyle(
         }
         return JSON.stringify(mapped);
     });
-    const response = stringResponse(result, 'Style get succesfully.');
+    const response = jsonResponse(result, 'Style get succesfully.');
     callback(null, response);
 }
 
