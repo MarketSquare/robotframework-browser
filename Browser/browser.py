@@ -16,11 +16,12 @@ from .keywords import (
     Network,
     PlaywrightState,
     Promises,
+    RunOnFailureKeywords,
     Waiter,
     WebAppState,
 )
 from .playwright import Playwright
-from .utils import AutoClosingLevel, logger
+from .utils import AutoClosingLevel, is_falsy, is_same_keyword, logger
 from .version import VERSION
 
 
@@ -511,10 +512,11 @@ class Browser(DynamicCore):
 
     def __init__(
         self,
-        timeout="10s",
+        timeout: str = "10s",
         enable_playwright_debug: bool = False,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
-        retry_assertions_for="1s",
+        retry_assertions_for: str = "1s",
+        run_on_failure: str = "Take Screenshot",
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -538,17 +540,22 @@ class Browser(DynamicCore):
         self.retry_assertions_for = retry_assertions_for
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
+        self._running_on_failure_keyword = False
+        self.run_on_failure_keyword = (
+            None if is_falsy(run_on_failure) else run_on_failure
+        )
         self._unresolved_promises: Set[Future] = set()
         self._playwright_state = PlaywrightState(self)
         libraries = [
+            self._playwright_state,
             Control(self),
             Cookie(self),
             Devices(self),
             Evaluation(self),
             Interaction(self),
             Getters(self),
-            self._playwright_state,
             Network(self),
+            RunOnFailureKeywords(self),
             Promises(self),
             Waiter(self),
             WebAppState(self),
@@ -659,16 +666,23 @@ class Browser(DynamicCore):
 
         Only works during testing since this uses robot's outputdir for output.
         """
-        self.screenshot_on_failure(BuiltIn().get_variable_value("${TEST NAME}"))
-
-    def screenshot_on_failure(self, test_name):
+        if self._running_on_failure_keyword or not self.run_on_failure_keyword:
+            return
         try:
-            path = self.failure_screenshot_path(test_name)
-            self.take_screenshot(path)
+            self._running_on_failure_keyword = True
+            if is_same_keyword(self.run_on_failure_keyword, "Take Screenshot"):
+                self.take_screenshot(self._failure_screenshot_path())
+            else:
+                BuiltIn().run_keyword(self.run_on_failure_keyword)
         except Exception as err:
-            logger.info(f"Was unable to take page screenshot after failure:\n{err}")
+            logger.warn(
+                f"Keyword '{self.run_on_failure_keyword}' could not be run on failure:\n{err}"
+            )
+        finally:
+            self._running_on_failure_keyword = False
 
-    def failure_screenshot_path(self, test_name):
+    def _failure_screenshot_path(self):
+        test_name = BuiltIn().get_variable_value("${TEST NAME}")
         return os.path.join(
             BuiltIn().get_variable_value("${OUTPUTDIR}"),
             test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT_{index}",

@@ -3,15 +3,17 @@ Resource          imports.resource
 Test Setup        New Page    ${LOGIN_URL}
 
 *** Variables ***
-${FailureScreenshot}=    ${OUTPUT_DIR}${/}Test_screenshotting_failing_test_FAILURE_SCREENSHOT_1.png
+${FailureScreenshot}=    ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
 ${TestScreenshot}=    ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
-Test screenshotting failing test
+Register Keyword To Run On Failure
     [Teardown]    Remove File    ${FailureScreenshot}
     Type Text    css=input#username_field    username
+    ${prev}=    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error    *`username` should be `not_username`    Get TextField Value    css=input#username_field    ==    not_username
     Should Exist    ${FailureScreenshot}
+    Register Keyword To Run On Failure    ${prev}
 
 Test screenshotting by using keyword
     [Teardown]    Remove File    ${TestScreenshot}.png

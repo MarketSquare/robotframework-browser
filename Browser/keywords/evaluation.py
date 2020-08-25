@@ -28,7 +28,8 @@ class Evaluation(LibraryComponent):
                 Request().JavascriptCode(script=function, selector=selector)
             )
             logger.info(response.log)
-            return json.loads(response.result)
+            if response.result:
+                return json.loads(response.result)
 
     @keyword(tags=["PageContent"])
     def highlight_elements(
