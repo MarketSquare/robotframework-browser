@@ -3,7 +3,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, intResponse, stringResponse } from './response-util';
+import { emptyWithLog, stringResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -77,6 +77,16 @@ const contextToCatalog = async (context: IndexedContext) => {
         pages: await Promise.all([...context.children.values()].map(pageToCatalog)),
     };
 };
+const browserToCatalog = async (activeBrowser: string, browser: BrowserState) => {
+    return {
+        activeBrowser: browser.id === activeBrowser,
+        activeContext: browser.context?.id,
+        activePage: browser.page?.id,
+        id: browser.id,
+        type: browser.name,
+        contexts: await Promise.all([...browser.children.values()].map(contextToCatalog)),
+    };
+};
 
 export class PlaywrightState {
     constructor() {
@@ -129,11 +139,9 @@ export class PlaywrightState {
 
     public async getCatalog() {
         return Promise.all(
-            this.browserStack.map(async (browser) => {
-                return {
-                    browser: browser.getCatalog(),
-                    active: this.activeBrowser === browser,
-                };
+            this.browserStack.map((browser) => {
+                const activeId = lastItem(this.browserStack)?.id;
+                return browserToCatalog(activeId || 'NO ACTIVE BROWSER', browser);
             }),
         );
     }
@@ -171,11 +179,15 @@ export class PlaywrightState {
 }
 
 interface Stacked<T> {
-    stack: T[];
+    stack: (Uuid | undefined)[];
+    children: Map<Uuid, T>;
 }
 
-const stackFrom = <T>(stacked: Stacked<T>) => stacked.stack;
-const lastOfStack = <T>(t: Stacked<T>) => lastItem(stackFrom(t));
+const lastOfChildren = <T>(t: Stacked<T>): T | undefined => {
+    const id = lastItem(t.stack);
+    if (id) return t.children.get(id);
+    else return undefined;
+};
 
 interface IndexedStruct<T> {
     type: string;
@@ -201,6 +213,7 @@ function push<T>(struct: IndexedStruct<Indexed<T>>, elem: Indexed<T> | undefined
         logger.info(`Changed active ${struct.type}`);
     } else {
         logger.info(`Set active ${struct.type} to undefined`);
+        struct.stack.push(undefined);
     }
 }
 
@@ -214,7 +227,7 @@ class IndexedContext implements IndexedStruct<IndexedPage> {
     constructor(
         public value: BrowserContext,
         public id: Uuid,
-        public stack: (Uuid | undefined)[],
+        public stack: Uuid[],
         public children: Map<Uuid, IndexedPage>,
         public options?: Record<string, unknown>,
     ) {}
@@ -239,7 +252,7 @@ export class BrowserState implements IndexedStruct<IndexedContext> {
     }
     browser: Browser;
     children: Map<Uuid, IndexedContext>;
-    stack: Uuid[];
+    stack: (Uuid | undefined)[];
     name?: string;
     id: Uuid;
 
@@ -260,15 +273,19 @@ export class BrowserState implements IndexedStruct<IndexedContext> {
     }
 
     get context(): IndexedContext | undefined {
-        return lastOfStack(this);
+        return lastOfChildren(this);
     }
 
     async closeActivePage() {
-        await closeRecent(this.context);
+        const currentContext = this.context;
+        if (!currentContext) return undefined;
+        else await closeRecent(currentContext);
     }
 
     get page(): IndexedPage | undefined {
-        return lastOfStack(this.context);
+        const currentContext = this.context;
+        if (!currentContext) return undefined;
+        return lastOfChildren(currentContext);
     }
 
     setActivePage(newPage: IndexedPage | undefined) {
@@ -278,15 +295,6 @@ export class BrowserState implements IndexedStruct<IndexedContext> {
     public async closeContext(): Promise<void> {
         const id = this.stack.pop();
         await this.children.get(id!)!.value.close();
-    }
-    public async getCatalog() {
-        return {
-            type: this.name,
-            id: this.id,
-            contexts: await Promise.all([...this.children.values()].map(contextToCatalog)),
-            activePage: this.page?.id,
-            activeContext: this.context?.id,
-        };
     }
 }
 
@@ -441,7 +449,7 @@ async function _switchContext(id: string, browserState: BrowserState) {
         push(browserState, context);
         return;
     } else {
-        const mapped = await browserState.getCatalog();
+        const mapped = await browserToCatalog(browserState.id, browserState);
 
         const message = `No context for id ${id}. Open contexts: ${mapped}`;
         throw new Error(message);
