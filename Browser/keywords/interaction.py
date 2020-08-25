@@ -9,6 +9,8 @@ from ..generated.playwright_pb2 import Request
 from ..utils import logger
 from ..utils.data_types import (
     AlertAction,
+    BoundingBox,
+    Coordinates,
     KeyAction,
     KeyboardInputAction,
     KeyboardModifier,
@@ -423,6 +425,24 @@ class Interaction(LibraryComponent):
                 Request().MouseButtonOptions(action=action.name, json=json.dumps(body))
             )
             logger.debug(response.log)
+
+    @keyword(tags=["VirtualMouse", "PageContent"])
+    def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
+        """
+        """
+        from_bbox = self.library.get_boundingbox(selector_from)
+        from_xy = self._center_of_boundingbox(from_bbox)
+        to_bbox = self.library.get_boundingbox(selector_to)
+        to_xy = self._center_of_boundingbox(to_bbox)
+        self.mouse_button(MouseButtonAction.down, **from_xy)
+        self.mouse_button(MouseButtonAction.up, **to_xy)
+
+    @staticmethod
+    def _center_of_boundingbox(boundingbox: BoundingBox) -> Coordinates:
+        center = Coordinates()
+        center["x"] = boundingbox["x"] + (boundingbox["width"] / 2)
+        center["y"] = boundingbox["y"] + (boundingbox["height"] / 2)
+        return center
 
     @keyword(tags=["VirtualMouse", "PageContent"])
     def mouse_move(self, x: float, y: float, steps: int = 1):

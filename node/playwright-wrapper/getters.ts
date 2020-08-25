@@ -165,7 +165,7 @@ export async function getBoundingBox(
     const selector = call.request.getSelector();
     const elem = await determineElement(state, selector, callback);
     if (!elem) {
-        callback(new Error(`No element matching ${elem} found`), null);
+        callback(new Error(`No element matching ${selector} found`), null);
         return;
     }
     const boundingBox = await elem.boundingBox();
