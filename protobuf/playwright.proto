@@ -279,7 +279,7 @@ service  Playwright {
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
-  rpc GetStyle(Request.ElementSelector) returns (Response.String);
+  rpc GetStyle(Request.ElementSelector) returns (Response.Json);
   /* Gets elements x, y coordinates and width, height as json object */ 
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.String);
   /* Makes a `fetch` request in the browser */

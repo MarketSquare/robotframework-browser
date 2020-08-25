@@ -175,7 +175,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getStyle(
         call: ServerUnaryCall<Request.ElementSelector>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return getters.getStyle(call, callback, this.state);
     }
