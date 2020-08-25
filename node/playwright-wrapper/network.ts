@@ -2,11 +2,11 @@ import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { emptyWithLog, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
 export async function httpRequest(
     call: ServerUnaryCall<pb.Request.HttpRequest>,
-    callback: sendUnaryData<pb.Response.String>,
+    callback: sendUnaryData<pb.Response.Json>,
     page?: Page,
 ) {
     const opts: { [k: string]: any } = {
@@ -36,7 +36,7 @@ export async function httpRequest(
                 });
             });
         }, opts);
-        callback(null, stringResponse(JSON.stringify(response), 'Request performed succesfully.'));
+        callback(null, jsonResponse(JSON.stringify(response), 'Request performed succesfully.'));
     } catch (e) {
         callback(e, null);
     }

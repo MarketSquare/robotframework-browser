@@ -80,7 +80,7 @@ class Network(LibraryComponent):
                 )
             )
             logger.debug(response.log)
-            return _format_response(json.loads(response.body))
+            return _format_response(json.loads(response.json))
 
     def _wait_for_http(self, method: Literal["Request", "Response"], matcher, timeout):
         with self.playwright.grpc_channel() as stub:
