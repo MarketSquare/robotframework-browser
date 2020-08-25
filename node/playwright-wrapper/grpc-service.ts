@@ -339,7 +339,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async httpRequest(
         call: ServerUnaryCall<Request.HttpRequest>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return network.httpRequest(call, callback, this.getActivePage());
     }
