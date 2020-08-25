@@ -1,3 +1,5 @@
+from typing import Union
+
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
@@ -6,7 +8,9 @@ from ..utils import is_falsy, logger
 
 class RunOnFailureKeywords(LibraryComponent):
     @keyword
-    def register_keyword_to_run_on_failure(self, keyword):
+    def register_keyword_to_run_on_failure(
+        self, keyword: Union[None, str]
+    ) -> Union[None, str]:
         """Sets the keyword to execute, when a Browser keyword fails.
 
         ``keyword`` is the name of a keyword that will be executed if a
