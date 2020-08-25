@@ -285,7 +285,7 @@ service  Playwright {
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
-  rpc WaitForResponse(Request.HttpCapture) returns (Response.String);
+  rpc WaitForResponse(Request.HttpCapture) returns (Response.Json);
   rpc WaitForDownload(Request.FilePath) returns (Response.String);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
 

@@ -277,7 +277,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     async waitForRequest(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
         return network.waitForRequest(call, callback, this.getActivePage());
     }
-    async waitForResponse(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
+    async waitForResponse(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.Json>) {
         return network.waitForResponse(call, callback, this.getActivePage());
     }
     async waitUntilNetworkIsIdle(call: ServerUnaryCall<Request.Timeout>, callback: sendUnaryData<Response.Empty>) {

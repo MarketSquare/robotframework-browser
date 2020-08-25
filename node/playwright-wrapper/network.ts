@@ -44,14 +44,14 @@ export async function httpRequest(
 
 export async function waitForResponse(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
-    callback: sendUnaryData<pb.Response.String>,
+    callback: sendUnaryData<pb.Response.Json>,
     page?: Page,
 ) {
     const urlOrPredicate = call.request.getUrlorpredicate();
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, { timeout: timeout });
     const body = await result.json();
-    callback(null, stringResponse(body, ''));
+    callback(null, jsonResponse(body, ''));
 }
 export async function waitForRequest(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
