@@ -572,6 +572,7 @@ class Browser(DynamicCore):
         if self._auto_closing_level == AutoClosingLevel.TEST:
             self._execution_stack.append(self.get_browser_catalog())
 
+    """
     def _end_test(self, name, attrs):
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
@@ -586,6 +587,7 @@ class Browser(DynamicCore):
             self._prune_execution_stack(catalog_before_suite)
 
     def _prune_execution_stack(self, catalog_before):
+        logger.debug("Pruning execution stack")
         # WIP CODE BEGINS
         catalog_after = self.get_browser_catalog()
         ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
@@ -609,6 +611,7 @@ class Browser(DynamicCore):
         ]
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
+            logger.debug(f"Pruning page {page_id} in context {ctx_id}")
             self._playwright_state.switch_context(ctx_id)
             self._playwright_state.switch_page(page_id)
             self._playwright_state.close_page()
@@ -620,7 +623,9 @@ class Browser(DynamicCore):
                 if not new_ctx_ids and activeContext is not None:
                     self._playwright_state.switch_context(activeContext)
                     if not (activePage, activeContext) in new_page_ids:
+                        logger.debug(f"Setting active page back to {activePage}")
                         self._playwright_state.switch_page(activePage)
+        """
 
     def run_keyword(self, name, args, kwargs=None):
         try:

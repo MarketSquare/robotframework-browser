@@ -62,9 +62,10 @@ async function _newPage(context: BrowserContext): Promise<IndexedPage> {
 
 const pageToCatalog = async (page: IndexedPage) => {
     const { id, value } = page;
+    const title = await value.title();
     return {
         type: 'page',
-        title: await value.title(),
+        title: title,
         url: value.url(),
         id: id,
     };
@@ -134,6 +135,7 @@ export class PlaywrightState {
         for (const b of browsers) {
             await b.close();
         }
+        this.elementHandles = new Map();
         this.browserStack = [];
     }
 
@@ -219,7 +221,8 @@ function push<T>(struct: IndexedStruct<Indexed<T>>, elem: Indexed<T> | undefined
 
 async function closeRecent<T extends Closeable>(struct: IndexedStruct<T>) {
     const id = struct.stack.pop();
-    await struct.children.get(id!)!.value.close();
+    const t = struct.children.get(id || "")?.value
+    if (t) await t.close();
 }
 
 class IndexedContext implements IndexedStruct<IndexedPage> {
@@ -293,8 +296,7 @@ export class BrowserState implements IndexedStruct<IndexedContext> {
     }
 
     public async closeContext(): Promise<void> {
-        const id = this.stack.pop();
-        await this.children.get(id!)!.value.close();
+        closeRecent(this)
     }
 }
 
