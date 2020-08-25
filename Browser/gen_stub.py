@@ -25,7 +25,8 @@ def get_type_string_from_type(argument_type: type) -> str:
     if hasattr(argument_type, "__name__"):
         return argument_type.__name__
     else:
-        return str(argument_type.__repr__()).lstrip("typing.")
+        arg_type_str = str(argument_type.__repr__()).lstrip("typing.")
+        return arg_type_str.replace("NoneType", "None")
 
 
 def get_type_sting_from_argument(argument_string: str, argument_types: dict) -> str:
