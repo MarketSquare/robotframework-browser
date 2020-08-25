@@ -588,13 +588,19 @@ class Browser(DynamicCore):
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
-            catalog_before_test = self._execution_stack.pop()
-            self._prune_execution_stack(catalog_before_test)
+            try:
+                catalog_before_test = self._execution_stack.pop()
+                self._prune_execution_stack(catalog_before_test)
+            except AssertionError as e:
+                logger.console(f"Test Case: {name}, End Test: {e}")
 
     def _end_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
-            catalog_before_suite = self._execution_stack.pop()
-            self._prune_execution_stack(catalog_before_suite)
+            try:
+                catalog_before_suite = self._execution_stack.pop()
+                self._prune_execution_stack(catalog_before_suite)
+            except AssertionError as e:
+                logger.warn(f"Test Suite: {name}, End Suite: {e}")
 
     def _prune_execution_stack(self, catalog_before):
         # WIP CODE BEGINS
