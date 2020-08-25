@@ -194,13 +194,17 @@ class PlaywrightState(LibraryComponent):
 
         ``handleSIGHUP`` <bool> Close the browser process on SIGHUP. Defaults to True.
 
-        ``timeout`` <int> Maximum time in milliseconds to wait for the browser instance to start. Defaults to 30000 (30 seconds). Pass 0 to disable timeout.
+        ``timeout`` <int> Maximum time in milliseconds to wait for the browser instance to start.
+        Defaults to 30000 (30 seconds). Pass 0 to disable timeout.
 
-        ``env`` <Dict<str, str|int|bool>> Specify environment variables that will be visible to the browser. Defaults to None.
+        ``env`` <Dict<str, str|int|bool>> Specify environment variables that will
+        be visible to the browser. Defaults to None.
 
-        ``devtools`` <bool> Chromium-only Whether to auto-open a Developer Tools panel for each tab. If this option is true, the headless option will be set false.
+        ``devtools`` <bool> Chromium-only Whether to auto-open a Developer Tools panel for each tab.
+        If this option is true, the headless option will be set false.
 
-        ``slowMo`` <int> Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay.
+        ``slowMo`` <int> Slows down Playwright operations by the specified amount of milliseconds.
+        Useful so that you can see what is going on. Defaults to no delay.
         """
         params = locals_to_params(locals())
         if timeout:
@@ -221,7 +225,6 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def new_context(
         self,
-        hideRfBrowser: bool = False,
         acceptDownloads: bool = False,
         ignoreHTTPSErrors: bool = False,
         bypassCSP: bool = False,
@@ -239,6 +242,7 @@ class PlaywrightState(LibraryComponent):
         offline: bool = False,
         httpCredentials: Optional[Dict] = None,
         colorScheme: Optional[ColorScheme] = None,
+        hideRfBrowser: bool = False,
     ):
         """Create a new BrowserContext with specified options.
 
@@ -272,7 +276,7 @@ class PlaywrightState(LibraryComponent):
         Defaults to True.
 
         ``timezoneId`` <str> Changes the timezone of the context.
-        See [https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt | ICU’s metaZones.txt]
+        See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt | ICU’s metaZones.txt]
         for a list of supported timezone IDs.
 
         ``geolocation`` <dict> Sets the geolocation. No location is set be default.
@@ -286,7 +290,8 @@ class PlaywrightState(LibraryComponent):
         as well as number and date formatting rules.
 
         ``permissions`` <list<str>> A list of permissions to grant to all pages in this context.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options | grantPermissions] for more details.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options | grantPermissions]
+        for more details.
 
         ``extraHTTPHeaders`` <dict[str, str]> A dictionary containing additional HTTP headers
         to be sent with every request. All header values must be strings.
@@ -315,7 +320,7 @@ class PlaywrightState(LibraryComponent):
         logger.info(options)
         with self.playwright.grpc_channel() as stub:
             response = stub.NewContext(
-                Request().Context(hideRfBrowser=hideRfBrowser, rawOptions=options)
+                Request().Context(rawOptions=options, hideRfBrowser=hideRfBrowser)
             )
             logger.info(response.log)
             return response.body
