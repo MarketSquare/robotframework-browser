@@ -535,6 +535,10 @@ class Browser(DynamicCore):
           This timeout starts counting from the first failure.
           Global ``timeout`` will still be in effect.
           This allows stopping execution faster to assertion failure when element is found fast.
+        - ``run_on_failure`` <str>
+          Sets the keyword to execute in case of a failing Browser keyword.
+          It can be the name of any keyword that does not have any mandatory argument.
+          If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value.
         """
         self.timeout = timeout
         self.retry_assertions_for = retry_assertions_for

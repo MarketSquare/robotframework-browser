@@ -374,19 +374,20 @@ class Interaction(LibraryComponent):
         clickCount: int = 1,
         delay: int = 0,
     ):
-        """ Click, hold a mouse button down or release it. Moving the mouse between holding down
-        and releasing it for example is possible.
+        """ Click, hold a mouse button down or release it.
 
-            ``action`` < ``click`` | ``up`` | ``down`` > Determines if it is a mouseclick, holding down a key or releasing it.
+        Moving the mouse between holding down and releasing it for example is possible with `Mouse Move`.
 
-            ``x`` <int> and ``y`` <int> Coordinates for a click only. Defaults to None.
-            **Required** if action is a click.
+        ``action`` < ``click`` | ``up`` | ``down`` > Determines if it is a mouseclick, holding down a key or releasing it.
 
-            ``button`` < ``left``| ``right`` | ``middle`` > Defaults to ``left`` if invalid.
+        ``x`` <int> and ``y`` <int> Coordinates for a click only. Defaults to None.
+        **Required** if action is a click.
 
-            ``clickCount`` <int> Deterine how often shall be clicked. Defaults to 1.
+        ``button`` < ``left``| ``right`` | ``middle`` > Defaults to ``left`` if invalid.
 
-            ``delay`` <int> Delay in ms between the mousedown and mouseup event. Can only be set if the action is click.
+        ``clickCount`` <int> Deterine how often shall be clicked. Defaults to 1.
+
+        ``delay`` <int> Delay in ms between the mousedown and mouseup event. Can only be set if the action is click.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {}
@@ -428,14 +429,53 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["VirtualMouse", "PageContent"])
     def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
-        """
+        """Executes a Drag&Drop operation from the element selected by ``selector_from``
+        to the element selected by ``selector_to``.
+
+        First it moves the mouse to the start-point,
+        then presses the left mouse button,
+        then moves to the end-point in specified number of steps,
+        then releases the mouse button.
+
+        Start- and end-point are defined by the center of the elements boundingbox.
+
+        ``selector_from``: <float> identifies the element, which center is the start-point. **Required**
+
+        ``selector_to``: <float> identifies the element, which center is the end-point. **Required**
+
+        ``steps``: <int> defines how many intermediate mouse move events are sent.
         """
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
         to_bbox = self.library.get_boundingbox(selector_to)
         to_xy = self._center_of_boundingbox(to_bbox)
         self.mouse_button(MouseButtonAction.down, **from_xy)
-        self.mouse_button(MouseButtonAction.up, **to_xy)
+        self.mouse_move(**to_xy, steps=steps)
+        self.mouse_button(MouseButtonAction.up)
+
+    @keyword(tags=["VirtualMouse", "PageContent"])
+    def drag_and_drop_by_coordinates(
+        self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1
+    ):
+        """Executes a Drag&Drop operation from a coordinate to another coordinate.
+
+        First it moves the mouse to the start-point,
+        then presses the left mouse button,
+        then moves to the end-point in specified number of steps,
+        then releases the mouse button.
+
+        Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
+        the top left corner of the pages viewport.
+
+        ``from_x`` & ``from_y``: <float> identify the the start-point. **Required**
+
+        ``to_x`` & ``to_y``: <float> identify the the end-point. **Required**
+
+        ``steps``: <int> defines how many intermediate mouse move events are sent.
+        """
+        self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
+        self.mouse_move(x=to_x, y=to_y, steps=steps)
+        self.mouse_button(MouseButtonAction.up)
 
     @staticmethod
     def _center_of_boundingbox(boundingbox: BoundingBox) -> Coordinates:
