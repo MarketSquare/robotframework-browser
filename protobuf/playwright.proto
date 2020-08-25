@@ -39,8 +39,8 @@ message Request {
   }
 
   message Context {
-    bool hideRfBrowser = 1;
-    string rawOptions = 2;
+    string rawOptions = 1;
+    bool hideRfBrowser = 2;
   }
 
   message Url {
