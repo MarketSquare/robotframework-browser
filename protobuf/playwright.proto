@@ -281,7 +281,7 @@ service  Playwright {
   /* Gets an elements computed style */
   rpc GetStyle(Request.ElementSelector) returns (Response.Json);
   /* Gets elements x, y coordinates and width, height as json object */ 
-  rpc GetBoundingBox(Request.ElementSelector) returns (Response.String);
+  rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.String);
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);

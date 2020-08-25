@@ -159,7 +159,7 @@ export async function getViewportSize(
 
 export async function getBoundingBox(
     call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.String>,
+    callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
 ): Promise<void> {
     const selector = call.request.getSelector();
@@ -169,7 +169,7 @@ export async function getBoundingBox(
         return;
     }
     const boundingBox = await elem.boundingBox();
-    callback(null, stringResponse(JSON.stringify(boundingBox), ''));
+    callback(null, jsonResponse(JSON.stringify(boundingBox), ''));
 }
 
 export async function getPageSource(
