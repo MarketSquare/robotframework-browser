@@ -2,6 +2,9 @@
 Resource          imports.resource
 Test Setup        New Page    ${LOGIN_URL}
 
+*** Variables ***
+${Center_Func}=    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
+
 *** Test Cases ***
 Click With coordinates
     ${x}=    Get Boundingbox    \#login_button    x
@@ -27,6 +30,26 @@ Draggable Test
     Mouse Move    0    0
     Get Text    \#dragX    ==    400
     Get Text    \#dragY    ==    400
+
+Drag and Drop
+    Drag And Drop    id=draggable    id=clickWithOptions
+    ${obj_center}=    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
+    ${dest_center}=    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
+    Should Be True    ${obj_center}[x] - ${dest_center}[x] < 1 or ${obj_center}[x] - ${dest_center}[x] > -1
+    Should Be True    ${obj_center}[y] - ${dest_center}[y] < 1 or ${obj_center}[y] - ${dest_center}[y] > -1
+
+Drag and Drop with coordinates
+    ${obj_center}=    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
+    ${dest_center}=    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
+    Drag And Drop By Coordinates
+    ...    from_x=${obj_center}[x]    from_y=${obj_center}[y]
+    ...    to_x=${dest_center}[x]    to_y=${dest_center}[y]    steps=200
+    ${obj_center}=    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
+    ${x_diff}=    Evaluate    ${obj_center}[x] - ${dest_center}[x]
+    ${y_diff}=    Evaluate    ${obj_center}[y] - ${dest_center}[y]
+    Log    X-Diff: ${x_diff}, Y-Diff: ${y_diff}
+    Should Be True    ${x_diff} < 1 or ${x_diff} > -1
+    Should Be True    ${y_diff} < 1 or ${y_diff} > -1
 
 Click Count
     ${x}=    Get Boundingbox    \#clickWithOptions    x

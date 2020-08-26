@@ -565,7 +565,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(Request().ElementSelector(selector=selector))
-            parsed = json.loads(response.body)
+            parsed = json.loads(response.json)
 
             if key == "ALL":
                 return dict_verify_assertion(
@@ -613,7 +613,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
-            parsed = json.loads(response.body)
+            parsed = json.loads(response.json)
             logger.debug(parsed)
             if key == BoundingBoxFields.ALL:
                 return int_dict_verify_assertion(

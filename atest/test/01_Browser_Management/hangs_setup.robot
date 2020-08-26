@@ -1,5 +1,5 @@
 *** Settings ***
-Library           Browser    timeout=1ms
+Library           Browser    timeout=1ms    run_on_failure=None
 Resource          imports.resource
 Suite Setup       Open Browser To Login Page
 Suite Teardown    Close Browser

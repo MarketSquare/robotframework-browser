@@ -2,6 +2,20 @@ from enum import Enum, auto
 
 from typing_extensions import TypedDict
 
+BoundingBox = TypedDict(
+    "BoundingBox",
+    {"x": float, "y": float, "width": float, "height": float},
+    total=False,
+)
+
+Coordinates = TypedDict("Coordinates", {"x": float, "y": float}, total=False)
+
+MouseOptionsDict = TypedDict(
+    "MouseOptionsDict", {"x": float, "y": float, "options": dict}, total=False
+)
+
+ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
+
 
 class AlertAction(Enum):
     accept = auto()
@@ -68,12 +82,6 @@ class SupportedBrowsers(Enum):
 
 
 ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
-
-ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
-
-MouseOptionsDict = TypedDict(
-    "MouseOptionsDict", {"x": float, "y": float, "options": dict}, total=False
-)
 
 
 class ViewportFields(Enum):

@@ -91,7 +91,7 @@ class Cookie(LibraryComponent):
 
         ``path`` <str> Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
 
-        ``expires`` <str> Given expiry for the cookie. Can be of date format or unix time.supports
+        ``expires`` <str> Given expiry for the cookie. Can be of date format or unix time. Supports
         the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
         library or an epoch timestamp.
         - example: 2027-09-28 16:21:35

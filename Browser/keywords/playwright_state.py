@@ -25,13 +25,13 @@ class PlaywrightState(LibraryComponent):
         if browser == "ALL":
             raise ValueError
         if browser != "CURRENT":
-            self.switch_browser(int(browser))
+            self.switch_browser(browser)
 
     def _correct_context(self, context: str):
         if context == "ALL":
             raise ValueError
         if context != "CURRENT":
-            self.switch_context(int(context))
+            self.switch_context(context)
 
     @keyword(tags=["BrowserControl"])
     def open_browser(
@@ -68,7 +68,7 @@ class PlaywrightState(LibraryComponent):
         Closes all context and pages belonging to this browser.
 
         ``browser`` < ``CURRENT`` | ``ALL`` |str> If value is not ``CURRENT``
-        it should be an int referencing the id of the browser to be closed.
+        it should be a string referencing the id of the browser to be closed.
         If ``ALL`` is provided `Close All Browsers` is executed.
         """
         with self.playwright.grpc_channel() as stub:
@@ -76,7 +76,7 @@ class PlaywrightState(LibraryComponent):
                 self.close_all_browsers()
                 return
             if browser != "CURRENT":
-                self.switch_browser(int(browser))
+                self.switch_browser(browser)
 
             response = stub.CloseBrowser(Request.Empty())
             logger.info(response.log)
@@ -97,7 +97,7 @@ class PlaywrightState(LibraryComponent):
         is passed, all contexts of the specified browser are closed. Defaults to CURRENT.
 
         ``browser`` < ``CURRENT`` | ``ALL`` |str> Close context in specified browser. If value is not "CURRENT"
-        it should be an int referencing the id of the browser where to close context.
+        it should be a string referencing the id of the browser where to close context.
         If ALL is passed, all contexts of the browser will be closed.
         """
         with self.playwright.grpc_channel() as stub:
@@ -105,7 +105,7 @@ class PlaywrightState(LibraryComponent):
             if context == "ALL":
                 return NotImplementedError()
             if context != "CURRENT":
-                self.switch_context(int(context))
+                self.switch_context(context)
 
             response = stub.CloseContext(Request().Empty())
             logger.info(response.log)
@@ -119,7 +119,7 @@ class PlaywrightState(LibraryComponent):
         Activated page is set to first active page.
 
         ``page`` < ``CURRENT`` | ``ALL`` |str> Id of the page to close. If value is not "CURRENT"
-        it should be an int referencing the id of the context where to close page.
+        it should be a string referencing the id of the context where to close page.
         If ``ALL`` is passed, all pages of the given context are closed. Defaults to CURRENT.
 
         ``context`` < ``CURRENT`` | ``ALL`` |str> Id of the context that belongs to the page to be closed.
@@ -136,7 +136,7 @@ class PlaywrightState(LibraryComponent):
             if page == "ALL":
                 return NotImplementedError()
             if page != "CURRENT":
-                self.switch_page(int(page))
+                self.switch_page(page)
 
             response = stub.ClosePage(Request().Empty())
             logger.info(response.log)
@@ -194,13 +194,17 @@ class PlaywrightState(LibraryComponent):
 
         ``handleSIGHUP`` <bool> Close the browser process on SIGHUP. Defaults to True.
 
-        ``timeout`` <int> Maximum time in milliseconds to wait for the browser instance to start. Defaults to 30000 (30 seconds). Pass 0 to disable timeout.
+        ``timeout`` <int> Maximum time in milliseconds to wait for the browser instance to start.
+        Defaults to 30000 (30 seconds). Pass 0 to disable timeout.
 
-        ``env`` <Dict<str, str|int|bool>> Specify environment variables that will be visible to the browser. Defaults to None.
+        ``env`` <Dict<str, str|int|bool>> Specify environment variables that will
+        be visible to the browser. Defaults to None.
 
-        ``devtools`` <bool> Chromium-only Whether to auto-open a Developer Tools panel for each tab. If this option is true, the headless option will be set false.
+        ``devtools`` <bool> Chromium-only Whether to auto-open a Developer Tools panel for each tab.
+        If this option is true, the headless option will be set false.
 
-        ``slowMo`` <int> Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay.
+        ``slowMo`` <int> Slows down Playwright operations by the specified amount of milliseconds.
+        Useful so that you can see what is going on. Defaults to no delay.
         """
         params = locals_to_params(locals())
         if timeout:
@@ -221,7 +225,6 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["BrowserControl"])
     def new_context(
         self,
-        hideRfBrowser: bool = False,
         acceptDownloads: bool = False,
         ignoreHTTPSErrors: bool = False,
         bypassCSP: bool = False,
@@ -239,6 +242,7 @@ class PlaywrightState(LibraryComponent):
         offline: bool = False,
         httpCredentials: Optional[Dict] = None,
         colorScheme: Optional[ColorScheme] = None,
+        hideRfBrowser: bool = False,
     ):
         """Create a new BrowserContext with specified options.
 
@@ -272,7 +276,7 @@ class PlaywrightState(LibraryComponent):
         Defaults to True.
 
         ``timezoneId`` <str> Changes the timezone of the context.
-        See [https://source.chromium.org/chromium/chromium/deps/icu.git/+/faee8bc70570192d82d2978a71e2a615788597d1:source/data/misc/metaZones.txt | ICU’s metaZones.txt]
+        See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt | ICU’s metaZones.txt]
         for a list of supported timezone IDs.
 
         ``geolocation`` <dict> Sets the geolocation. No location is set be default.
@@ -286,7 +290,8 @@ class PlaywrightState(LibraryComponent):
         as well as number and date formatting rules.
 
         ``permissions`` <list<str>> A list of permissions to grant to all pages in this context.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options | grantPermissions] for more details.
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options | grantPermissions]
+        for more details.
 
         ``extraHTTPHeaders`` <dict[str, str]> A dictionary containing additional HTTP headers
         to be sent with every request. All header values must be strings.
@@ -315,7 +320,7 @@ class PlaywrightState(LibraryComponent):
         logger.info(options)
         with self.playwright.grpc_channel() as stub:
             response = stub.NewContext(
-                Request().Context(hideRfBrowser=hideRfBrowser, rawOptions=options)
+                Request().Context(rawOptions=options, hideRfBrowser=hideRfBrowser)
             )
             logger.info(response.log)
             return response.body
@@ -333,51 +338,44 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl", "EventHandler"])
-    def auto_activate_pages(self):
-        """Toggles automatically changing active page to latest opened page."""
-        with self.playwright.grpc_channel() as stub:
-            response = stub.AutoActivatePages(Request().Empty())
-            logger.info(response.log)
-
     @keyword(tags=["BrowserControl"])
-    def switch_browser(self, index: int):
+    def switch_browser(self, id: str):
         """Switches the currently active Browser to another open Browser.
             Returns a stable identifier for the previous browser.
 
-            ``index`` <int> Index id of the browser to be changed to. Starting at 0. **Required**
+            ``id`` <str> Id of the browser to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.SwitchBrowser(Request().Index(index=index))
+            response = stub.SwitchBrowser(Request().Index(index=id))
             logger.info(response.log)
             return response.body
 
     @keyword(tags=["BrowserControl"])
-    def switch_context(self, index: int, browser: str = "CURRENT"):
+    def switch_context(self, id: str, browser: str = "CURRENT"):
         """ Switches the active BrowserContext to another open context.
         Returns a stable identifier for the previous context.
 
-        ``index`` <int> Index id of the context to be changed to. Starting at 0. **Required**
+        ``id`` <str> Id of the context to be changed to. Randomly generated UUID. **Required**
 
         ``browser`` < ``CURRENT`` | ``ALL`` |str> Switch context in specified browser. If value is not "CURRENT"
         it should be an int referencing the id of the browser where to switch context.
         If ALL is passed, the contexts of the browser will be closed.
         """
         with self.playwright.grpc_channel() as stub:
+            if browser == "ALL":
+                raise NotImplementedError
             self._correct_browser(browser)
-            response = stub.SwitchContext(Request().Index(index=index))
+            response = stub.SwitchContext(Request().Index(index=id))
             logger.info(response.log)
             return response.body
 
     @keyword(tags=["BrowserControl"])
-    def switch_page(
-        self, index: int, context: str = "CURRENT", browser: str = "CURRENT"
-    ):
-        """Switches the active browser page to another open page by ``index``.
+    def switch_page(self, id: str, context: str = "CURRENT", browser: str = "CURRENT"):
+        """Switches the active browser page to another open page by ``id``.
         Returns a stable identifier for the previous page.
         Newly opened pages get appended to the end of the list.
 
-        ``index`` <int> Index id of the page to be changed to. Starting at 0. **Required**
+        ``id`` < ``CURRENT`` | ``NEW `` | str> Id of the page to be changed to. Randomly generated UUID. **Required**
 
         ``context`` < ``CURRENT`` | ``ALL`` |str> Switch page in specified context. If value is not "CURRENT"
         it should be an int referencing the id of the context where to switch page.
@@ -388,8 +386,13 @@ class PlaywrightState(LibraryComponent):
         If ALL is passed, the page of all browsers depending on the context switch.
         """
         with self.playwright.grpc_channel() as stub:
+            if context == "ALL":
+                raise NotImplementedError
+            if browser == "ALL":
+                raise NotImplementedError
+
             self._correct_browser(browser)
             self._correct_context(context)
-            response = stub.SwitchPage(Request().Index(index=index))
+            response = stub.SwitchPage(Request().Index(index=id))
             logger.info(response.log)
             return response.body

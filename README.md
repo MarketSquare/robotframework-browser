@@ -64,7 +64,7 @@ Get Property    ${ref}    innerText    ==    abc
 ### Asynchronously waiting for HTTP requests and responses
 ```RobotFramework
 # The button with id `delayed_request` fires a delayed request. We use a promise to capture it.
-{promise}=    Promise To    Wait For Response    matcher=    timeout=3s
+${promise}=    Promise To    Wait For Response    matcher=    timeout=3s
 Click    \#delayed_request
 ${body}=    Wait For    ${promise}
 ```

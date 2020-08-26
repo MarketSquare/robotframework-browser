@@ -128,7 +128,7 @@ async function getAttributeValue<T>(
 
 export async function getStyle(
     call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.String>,
+    callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
 ): Promise<void> {
     const selector = call.request.getSelector();
@@ -144,7 +144,7 @@ export async function getStyle(
         }
         return JSON.stringify(mapped);
     });
-    const response = stringResponse(result, 'Style get succesfully.');
+    const response = jsonResponse(result, 'Style get succesfully.');
     callback(null, response);
 }
 
@@ -159,17 +159,17 @@ export async function getViewportSize(
 
 export async function getBoundingBox(
     call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.String>,
+    callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
 ): Promise<void> {
     const selector = call.request.getSelector();
     const elem = await determineElement(state, selector, callback);
     if (!elem) {
-        callback(new Error(`No element matching ${elem} found`), null);
+        callback(new Error(`No element matching ${selector} found`), null);
         return;
     }
     const boundingBox = await elem.boundingBox();
-    callback(null, stringResponse(JSON.stringify(boundingBox), ''));
+    callback(null, jsonResponse(JSON.stringify(boundingBox), ''));
 }
 
 export async function getPageSource(

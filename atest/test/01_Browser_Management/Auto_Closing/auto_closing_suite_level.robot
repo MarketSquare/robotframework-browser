@@ -1,5 +1,5 @@
 *** Settings ***
-Library           Browser    auto_closing_level=SUITE
+Library           Browser    auto_closing_level=SUITE    run_on_failure=None
 Resource          ../imports.resource
 Suite Setup       New Page    ${ERROR_URL}
 

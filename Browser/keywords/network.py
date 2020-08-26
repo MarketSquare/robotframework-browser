@@ -80,7 +80,7 @@ class Network(LibraryComponent):
                 )
             )
             logger.debug(response.log)
-            return _format_response(json.loads(response.body))
+            return _format_response(json.loads(response.json))
 
     def _wait_for_http(self, method: Literal["Request", "Response"], matcher, timeout):
         with self.playwright.grpc_channel() as stub:
@@ -94,7 +94,7 @@ class Network(LibraryComponent):
             )
             logger.debug(response.log)
             # Add format response back here
-            return response.body
+            return response.body if method == "Request" else response.json
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_for_request(self, matcher: str = "", timeout: str = ""):

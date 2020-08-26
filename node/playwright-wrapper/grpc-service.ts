@@ -65,34 +65,27 @@ export class PlaywrightServer implements IPlaywrightServer {
         return cookie.deleteAllCookies(callback, this.getActiveContext());
     }
 
-    async autoActivatePages(
-        call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        return playwrightState.autoActivatePages(call, callback, this.getActiveBrowser(callback));
-    }
-
-    async switchPage(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Int>): Promise<void> {
+    async switchPage(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.String>): Promise<void> {
         return playwrightState.switchPage(call, callback, this.state.getActiveBrowser(callback));
     }
 
-    async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Int>): Promise<void> {
+    async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.String>): Promise<void> {
         return playwrightState.switchContext(call, callback, this.state.getActiveBrowser(callback));
     }
 
-    async switchBrowser(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.Int>): Promise<void> {
+    async switchBrowser(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.String>): Promise<void> {
         return playwrightState.switchBrowser(call, callback, this.state);
     }
 
-    async newPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.Int>): Promise<void> {
+    async newPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.String>): Promise<void> {
         return playwrightState.newPage(call, callback, this.state);
     }
 
-    async newContext(call: ServerUnaryCall<Request.Context>, callback: sendUnaryData<Response.Int>): Promise<void> {
+    async newContext(call: ServerUnaryCall<Request.Context>, callback: sendUnaryData<Response.String>): Promise<void> {
         return playwrightState.newContext(call, callback, this.state);
     }
 
-    async newBrowser(call: ServerUnaryCall<Request.Browser>, callback: sendUnaryData<Response.Int>): Promise<void> {
+    async newBrowser(call: ServerUnaryCall<Request.Browser>, callback: sendUnaryData<Response.String>): Promise<void> {
         return playwrightState.newBrowser(call, callback, this.state);
     }
 
@@ -117,7 +110,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getBoundingBox(
         call: ServerUnaryCall<Request.ElementSelector>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return getters.getBoundingBox(call, callback, this.state);
     }
@@ -175,7 +168,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getStyle(
         call: ServerUnaryCall<Request.ElementSelector>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return getters.getStyle(call, callback, this.state);
     }
@@ -277,7 +270,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     async waitForRequest(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
         return network.waitForRequest(call, callback, this.getActivePage());
     }
-    async waitForResponse(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.String>) {
+    async waitForResponse(call: ServerUnaryCall<Request.HttpCapture>, callback: sendUnaryData<Response.Json>) {
         return network.waitForResponse(call, callback, this.getActivePage());
     }
     async waitUntilNetworkIsIdle(call: ServerUnaryCall<Request.Timeout>, callback: sendUnaryData<Response.Empty>) {
@@ -293,7 +286,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async waitForDownload(
         call: ServerUnaryCall<Request.FilePath>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return network.waitForDownload(call, callback, this.getActivePage());
     }
@@ -339,7 +332,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async httpRequest(
         call: ServerUnaryCall<Request.HttpRequest>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return network.httpRequest(call, callback, this.getActivePage());
     }

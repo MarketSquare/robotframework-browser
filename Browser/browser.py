@@ -535,6 +535,10 @@ class Browser(DynamicCore):
           This timeout starts counting from the first failure.
           Global ``timeout`` will still be in effect.
           This allows stopping execution faster to assertion failure when element is found fast.
+        - ``run_on_failure`` <str>
+          Sets the keyword to execute in case of a failing Browser keyword.
+          It can be the name of any keyword that does not have any mandatory argument.
+          If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value.
         """
         self.timeout = timeout
         self.retry_assertions_for = retry_assertions_for
@@ -584,15 +588,21 @@ class Browser(DynamicCore):
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
-            catalog_before_test = self._execution_stack.pop()
-            self._prune_execution_stack(catalog_before_test)
+            try:
+                catalog_before_test = self._execution_stack.pop()
+                self._prune_execution_stack(catalog_before_test)
+            except AssertionError as e:
+                logger.console(f"Test Case: {name}, End Test: {e}")
 
     def _end_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
-            catalog_before_suite = self._execution_stack.pop()
-            self._prune_execution_stack(catalog_before_suite)
+            try:
+                catalog_before_suite = self._execution_stack.pop()
+                self._prune_execution_stack(catalog_before_suite)
+            except AssertionError as e:
+                logger.warn(f"Test Suite: {name}, End Suite: {e}")
 
-    def _prune_execution_stack(self, catalog_before):
+    def _prune_execution_stack(self, catalog_before: dict) -> None:
         # WIP CODE BEGINS
         catalog_after = self.get_browser_catalog()
         ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]

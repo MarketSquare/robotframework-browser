@@ -1,5 +1,5 @@
 *** Variables ***
-${SERVER_PORT}
+${SERVER_PORT}    7272
 ${SERVER}         localhost:${SERVER_PORT}
 ${BROWSER}        chromium
 ${DELAY}          0

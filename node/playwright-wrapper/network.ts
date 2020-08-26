@@ -2,11 +2,11 @@ import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { emptyWithLog, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
 export async function httpRequest(
     call: ServerUnaryCall<pb.Request.HttpRequest>,
-    callback: sendUnaryData<pb.Response.String>,
+    callback: sendUnaryData<pb.Response.Json>,
     page?: Page,
 ) {
     const opts: { [k: string]: any } = {
@@ -36,7 +36,7 @@ export async function httpRequest(
                 });
             });
         }, opts);
-        callback(null, stringResponse(JSON.stringify(response), 'Request performed succesfully.'));
+        callback(null, jsonResponse(JSON.stringify(response), 'Request performed succesfully.'));
     } catch (e) {
         callback(e, null);
     }
@@ -44,14 +44,14 @@ export async function httpRequest(
 
 export async function waitForResponse(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
-    callback: sendUnaryData<pb.Response.String>,
+    callback: sendUnaryData<pb.Response.Json>,
     page?: Page,
 ) {
     const urlOrPredicate = call.request.getUrlorpredicate();
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, { timeout: timeout });
     const body = await result.json();
-    callback(null, stringResponse(body, ''));
+    callback(null, jsonResponse(body, ''));
 }
 export async function waitForRequest(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
@@ -76,7 +76,7 @@ export async function waitUntilNetworkIsIdle(
 
 export async function waitForDownload(
     call: ServerUnaryCall<pb.Request.FilePath>,
-    callback: sendUnaryData<pb.Response.String>,
+    callback: sendUnaryData<pb.Response.Json>,
     page?: Page,
 ) {
     const saveAs = call.request.getPath();
@@ -86,5 +86,5 @@ export async function waitForDownload(
         await downloadObject.saveAs(saveAs);
     }
     const path = await downloadObject.path();
-    callback(null, stringResponse(JSON.stringify(path), 'Download done successfully to.'));
+    callback(null, jsonResponse(JSON.stringify(path), 'Download done successfully to.'));
 }
