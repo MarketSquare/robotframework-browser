@@ -160,3 +160,19 @@ Browser indices are unique
     Close Browser
     ${second}=    New Browser
     Should Not Be Equal    ${first}    ${second}
+
+Close All Contexts
+    New Context
+    New Context
+    New Context
+    Close Context    ALL
+    ${current}=    Switch Context    CURRENT
+    Should Be Equal    ${current}    NO CONTEXT OPEN
+
+Close All Pages
+    New Page
+    New Page
+    New Page
+    Close Page    ALL
+    ${current}=    Switch Page    CURRENT
+    Should Be Equal    ${current}    NO PAGE OPEN
