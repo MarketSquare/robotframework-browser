@@ -373,7 +373,7 @@ class Interaction(LibraryComponent):
             if log_response:
                 logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent", "EventHandler"])
+    @keyword(tags=["Setter", "PageContent"])
     def upload_file(self, path: str):
         """ Upload file from ``path`` into next file chooser dialog on page.
 
@@ -391,7 +391,7 @@ class Interaction(LibraryComponent):
             response = stub.UploadFile(Request().FilePath(path=str(p)))
             logger.debug(response.log)
 
-    @keyword(tags=["PageContent", "EventHandler"])
+    @keyword(tags=["PageContent"])
     def handle_alert(self, action: AlertAction, prompt_input: str = ""):
         """ Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
@@ -410,7 +410,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["VirtualMouse", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def mouse_button(
         self,
         action: MouseButtonAction,
@@ -473,7 +473,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["VirtualMouse", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
@@ -499,7 +499,7 @@ class Interaction(LibraryComponent):
         self.mouse_move(**to_xy, steps=steps)
         self.mouse_button(MouseButtonAction.up)
 
-    @keyword(tags=["VirtualMouse", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def drag_and_drop_by_coordinates(
         self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1
     ):
@@ -530,7 +530,7 @@ class Interaction(LibraryComponent):
         center["y"] = boundingbox["y"] + (boundingbox["height"] / 2)
         return center
 
-    @keyword(tags=["VirtualMouse", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def mouse_move(self, x: float, y: float, steps: int = 1):
         """ Instead of selectors command mouse with coordinates.
             The Click commands will leave the virtual mouse on the specified coordinates.
@@ -546,7 +546,7 @@ class Interaction(LibraryComponent):
             response = stub.MouseMove(Request().Json(body=json.dumps(body)))
             logger.debug(response.log)
 
-    @keyword(tags=["VirtualKeyboard", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def keyboard_key(self, action: KeyAction, key: str):
         """ Press a keyboard key on the virtual keyboard or set a key up or down.
 
@@ -580,7 +580,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["VirtualKeyboard", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
         """ Input text into page with virtual keyboard.
 

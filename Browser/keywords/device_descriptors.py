@@ -8,7 +8,7 @@ from ..utils import logger
 
 
 class Devices(LibraryComponent):
-    @keyword(tags=["DeviceDescriptor"])
+    @keyword(tags=["Getter", "BrowserControl"])
     def get_devices(self):
         """ Returns a dict of all playwright device descriptors.
 
@@ -20,7 +20,7 @@ class Devices(LibraryComponent):
             logger.debug(response.log)
             return json.loads(response.body)
 
-    @keyword(tags=["DeviceDescriptor"])
+    @keyword(tags=["Getter", "BrowserControl"])
     def get_device(self, name: str):
         """ Get a single device decriptor with name exactly matching name.
 
