@@ -148,8 +148,8 @@ message Request {
     string name = 1;
   }
 
-  message AlertAction {
-    string alertAction = 1;
+  message DialogAction {
+    string action = 1;
     string promptInput = 2;  
   }
 
@@ -286,23 +286,24 @@ service  Playwright {
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
   rpc WaitForResponse(Request.HttpCapture) returns (Response.Json);
-  rpc WaitForDownload(Request.FilePath) returns (Response.Json);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
 
   rpc GetDevice(Request.Device) returns (Response.String);
   rpc GetDevices(Request.Empty) returns (Response.String);
-
-  rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
 
   rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);
   rpc MouseMove(Request.Json) returns (Response.Empty);
 
   rpc KeyboardKey(Request.KeyboardKeypress) returns (Response.Empty);
   rpc KeyboardInput(Request.KeyboardInputOptions) returns (Response.Empty);
-
-  rpc UploadFile(Request.FilePath) returns (Response.Empty);
-
+  
   rpc SetOffline(Request.Bool) returns (Response.Empty);
+
+  /* Playwright event handling keywords */
+  rpc HandleFutureDialogs(Request.DialogAction) returns (Response.Empty);
+  rpc HandleFutureUpload(Request.FilePath) returns (Response.Empty);
+  rpc WaitForDownload(Request.FilePath) returns (Response.Json);
+
 
   /* Playwright State handling keywords */
   rpc SwitchPage(Request.Index) returns (Response.String);

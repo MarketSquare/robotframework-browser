@@ -1,10 +1,10 @@
-import { Dialog, FileChooser, Page } from 'playwright';
+import { Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog } from './response-util';
-import { invokeOnKeyboard, invokeOnMouse, invokeOnPage, invokePlaywrightMethod } from './playwirght-invoke';
+import { invokeOnKeyboard, invokeOnMouse, invokePlaywrightMethod } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -149,32 +149,6 @@ export async function uncheckCheckbox(
     const selector = call.request.getSelector();
     await invokePlaywrightMethod(state, callback, 'uncheck', selector);
     callback(null, emptyWithLog('Unchecked checkbox: ' + selector));
-}
-
-export async function uploadFile(
-    call: ServerUnaryCall<Request.FilePath>,
-    callback: sendUnaryData<Response.Empty>,
-    page?: Page,
-) {
-    const path = call.request.getPath();
-    const fn = async (fileChooser: FileChooser) => await fileChooser.setFiles(path);
-    await invokeOnPage(page, callback, 'on', 'filechooser', fn);
-    callback(null, emptyWithLog('Succesfully uploaded file'));
-}
-
-export async function handleAlert(
-    call: ServerUnaryCall<Request.AlertAction>,
-    callback: sendUnaryData<Response.Empty>,
-    page?: Page,
-) {
-    const alertAction = call.request.getAlertaction() as 'accept' | 'dismiss';
-    const promptInput = call.request.getPromptinput();
-    const fn = async (dialog: Dialog) => {
-        if (promptInput) await dialog[alertAction](promptInput);
-        else await dialog[alertAction]();
-    };
-    await invokeOnPage(page, callback, 'on', 'dialog', fn);
-    callback(null, emptyWithLog('Set event handler for next alert'));
 }
 
 export async function mouseButton(

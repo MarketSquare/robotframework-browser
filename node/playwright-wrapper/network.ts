@@ -73,18 +73,3 @@ export async function waitUntilNetworkIsIdle(
     await invokeOnPage(page, callback, 'waitForLoadState', 'networkidle', { timeout: timeout });
     callback(null, emptyWithLog('Network is idle'));
 }
-
-export async function waitForDownload(
-    call: ServerUnaryCall<pb.Request.FilePath>,
-    callback: sendUnaryData<pb.Response.Json>,
-    page?: Page,
-) {
-    const saveAs = call.request.getPath();
-    const downloadObject = await invokeOnPage(page, callback, 'waitForEvent', 'download');
-
-    if (saveAs) {
-        await downloadObject.saveAs(saveAs);
-    }
-    const path = await downloadObject.path();
-    callback(null, jsonResponse(JSON.stringify(path), 'Download done successfully to.'));
-}

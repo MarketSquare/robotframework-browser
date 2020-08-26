@@ -6,26 +6,28 @@ from robotlibcore import keyword  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.data_types import AlertAction
+from ..utils.data_types import DialogAction
 
 
 class EventHandling(LibraryComponent):
     @keyword(tags=["PageContent", "EventHandler"])
-    def handle_future_dialogs(self, action: AlertAction, prompt_input: str = ""):
+    def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
         """ Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
 
-            ``action`` < ``acceppt`` | ``dismiss`` > How to handle the alert. **Required**
+            ``action`` < ``accept`` | ``dismiss`` | ``ignore`` > How to handle the alert. **Required**
+
+            ``ignore`` will clear any existing alert handlers.
 
             ``prompt_input`` <str> The value to enter into prompt. Only valid if
             ``action`` equals accept. Defaults to empty string.
         """
 
         with self.playwright.grpc_channel() as stub:
-            if prompt_input and action is not AlertAction.accept:
+            if prompt_input and action is not DialogAction.accept:
                 raise ValueError("prompt_input is only valid if action is 'accept'")
-            response = stub.HandleAlert(
-                Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
+            response = stub.HandleFutureDialogs(
+                Request().DialogAction(action=action.name, promptInput=prompt_input)
             )
             logger.debug(response.log)
 
@@ -44,7 +46,7 @@ class EventHandling(LibraryComponent):
         p = Path(path)
         p.resolve(strict=True)
         with self.playwright.grpc_channel() as stub:
-            response = stub.UploadFile(Request().FilePath(path=str(p)))
+            response = stub.HandleFutureUpload(Request().FilePath(path=str(p)))
             logger.debug(response.log)
 
     @keyword(tags=["Wait", "EventHandler"])

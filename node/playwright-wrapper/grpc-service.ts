@@ -4,6 +4,7 @@ import * as browserControl from './browser-control';
 import * as cookie from './cookie';
 import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
+import * as eventHandling from './event-handling';
 import * as getters from './getters';
 import * as interaction from './interaction';
 import * as network from './network';
@@ -288,7 +289,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.FilePath>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
-        return network.waitForDownload(call, callback, this.getActivePage());
+        return eventHandling.waitForDownload(call, callback, this.getActivePage());
     }
 
     async executeJavascript(
@@ -344,15 +345,18 @@ export class PlaywrightServer implements IPlaywrightServer {
         return deviceDescriptors.getDevices(callback);
     }
 
-    async uploadFile(call: ServerUnaryCall<Request.FilePath>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return interaction.uploadFile(call, callback, this.getActivePage());
-    }
-
-    async handleAlert(
-        call: ServerUnaryCall<Request.AlertAction>,
+    async handleFutureUpload(
+        call: ServerUnaryCall<Request.FilePath>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.handleAlert(call, callback, this.getActivePage());
+        return eventHandling.handleFutureUpload(call, callback, this.getActivePage());
+    }
+
+    async handleFutureDialogs(
+        call: ServerUnaryCall<Request.DialogAction>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return eventHandling.handleFutureDialogs(call, callback, this.getActivePage());
     }
 
     async mouseMove(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {
