@@ -222,6 +222,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         return interaction.clickWithOptions(call, callback, this.state);
     }
 
+    async hover(
+        call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.hover(call, callback, this.state);
+    }
+
     async focus(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Empty>,

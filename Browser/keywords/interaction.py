@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from robotlibcore import keyword  # type: ignore
 
@@ -164,10 +164,60 @@ class Interaction(LibraryComponent):
         button: MouseButton = MouseButton.left,
         click_count: int = 1,
         delay: Optional[str] = None,
-        position_x: Optional[int] = None,
-        position_y: Optional[int] = None,
+        position_x: Optional[float] = None,
+        position_y: Optional[float] = None,
         force: bool = False,
         noWaitAfter: bool = False,
+        *modifiers: KeyboardModifier,
+    ):
+        """Moves the virtual mouse with multiple options on the element found by ``selector``.
+
+        This method hovers over an element matching ``selector`` by performing the following steps:
+        - Find an element match matching ``selector``. If there is none, wait until a matching element is attached to the DOM.
+        - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
+        - Scroll the element into view if needed.
+        - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
+
+        ``selector`` <str> Selector element to click. **Required**
+
+        ``position_x`` & ``position_y`` <float> A point to click relative to the
+        top-left corner of element padding box.
+        If not specified, clicks to some visible point of the element.
+
+        ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+
+        ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
+        Modifier keys to press. Ensures that only these modifiers are pressed
+        during the click, and then restores current modifiers back.
+        If not specified, currently pressed modifiers are used.
+        """
+        with self.playwright.grpc_channel() as stub:
+            options = {"button": button.name, "clickCount": click_count, "force": force}
+            if delay:
+                options["delay"] = timestr_to_millisecs(delay)
+            if position_x and position_y:
+                positions: Dict[str, object] = {"x": position_x, "y": position_y}
+                options["position"] = positions
+            if modifiers:
+                options["modifiers"] = [m.name for m in modifiers]
+            if noWaitAfter:
+                options["noWaitAfter"] = noWaitAfter
+            options_json = json.dumps(options)
+            logger.debug(f"Click Options are: {options_json}")
+            response = stub.ClickWithOptions(
+                Request().ElementSelectorWithOptions(
+                    selector=selector, options=options_json
+                )
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=["Setter", "PageContent"])
+    def hover(
+        self,
+        selector: str,
+        position_x: Optional[float] = None,
+        position_y: Optional[float] = None,
+        force: bool = False,
         *modifiers: KeyboardModifier,
     ):
         """Simulates mouse click with multiple options on the element found by ``selector``.
@@ -206,19 +256,15 @@ class Interaction(LibraryComponent):
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options = {"button": button.name, "clickCount": click_count, "force": force}
-            if delay:
-                options["delay"] = timestr_to_millisecs(delay)
+            options: Dict[str, Any] = {"force": force}
             if position_x and position_y:
                 positions: Dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
-            if noWaitAfter:
-                options["noWaitAfter"] = noWaitAfter
             options_json = json.dumps(options)
-            logger.debug(f"Click Options are: {options_json}")
-            response = stub.ClickWithOptions(
+            logger.debug(f"Hover Options are: {options_json}")
+            response = stub.Hover(
                 Request().ElementSelectorWithOptions(
                     selector=selector, options=options_json
                 )
