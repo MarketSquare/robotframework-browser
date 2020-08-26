@@ -31,8 +31,6 @@ Highlight Element on page
     Get Element Count    .robotframework-browser-highlight    ==    0
     Highlight Elements    .pure-button    duration=200ms
     Get Element Count    .robotframework-browser-highlight    ==    5
-    Sleep    100ms
-    Get Element Count    .robotframework-browser-highlight    ==    5
     Sleep    400ms
     Get Element Count    .robotframework-browser-highlight    ==    0
 
@@ -50,4 +48,5 @@ Highlight Element with style
     Sleep    100ms
 
 Page state
-    Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
+    [Tags]    Not-Implemented
+    #Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123

@@ -121,6 +121,17 @@ export async function clickWithOptions(
     callback(null, emptyWithLog(`Clicked element: '${selector}' With options: '${options}'`));
 }
 
+export async function hover(
+    call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
+    callback: sendUnaryData<Response.Empty>,
+    state: PlaywrightState,
+) {
+    const selector = call.request.getSelector();
+    const options = call.request.getOptions();
+    await invokePlaywrightMethod(state, callback, 'hover', selector, JSON.parse(options));
+    callback(null, emptyWithLog(`Hovered element: '${selector}' With options: '${options}'`));
+}
+
 export async function focus(
     call: ServerUnaryCall<Request.ElementSelector>,
     callback: sendUnaryData<Response.Empty>,

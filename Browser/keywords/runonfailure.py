@@ -7,7 +7,7 @@ from ..utils import is_falsy, logger
 
 
 class RunOnFailureKeywords(LibraryComponent):
-    @keyword
+    @keyword(tags=["Config"])
     def register_keyword_to_run_on_failure(
         self, keyword: Union[None, str]
     ) -> Union[None, str]:

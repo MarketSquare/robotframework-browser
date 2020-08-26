@@ -24,7 +24,7 @@ from ..utils.data_types import (
 
 
 class Getters(LibraryComponent):
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
     def get_url(
         self,
@@ -45,7 +45,8 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "URL "
             )
 
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    # @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    # Not published as keyword due to missing of good docs.
     @with_assertion_polling
     def get_page_state(
         self,
@@ -72,7 +73,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "State "
             )
 
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
     def get_page_source(
         self,
@@ -432,52 +433,6 @@ class Getters(LibraryComponent):
                 f"Element count for selector `{selector}` is",
             )
 
-    @keyword(tags=["Getter", "BrowserControl"])
-    def get_browser_catalog(self):
-        """ Returns all browsers, open contexts in them and open pages in these contexts.
-
-            The data is parsed into a python list containing data representing the open Objects.
-
-            On the root level the data contains a list of open browsers.
-
-            Browser: ``{type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
-
-            Context: ``{type: 'context', 'id': int, pages: List[Page]}``
-
-            Page: ``{type: 'page', 'id': int, title: str, url: str}``
-
-            Sample:
-            | [{
-            |     "type": "firefox",
-            |     "id": 0,
-            |     "contexts": [{
-            |         "type": "context",
-            |         "id": 0,
-            |         "pages": [{
-            |             "type": "page",
-            |             "title": "prefilled_email_form.html",
-            |             "url": "http://localhost:7272/prefilled_email_form.html",
-            |             "id": "0"
-            |         }]
-            |     }, {
-            |         "type": "context",
-            |         "id": 1,
-            |         "pages": [{
-            |             "type": "page",
-            |             "title": "Login Page",
-            |             "url": "http://localhost:7272/dist/",
-            |             "id": "0"
-            |         }]
-            |     }]
-            | }]
-
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetBrowserCatalog(Request().Empty())
-            parsed = json.loads(response.body)
-            logger.info(json.dumps(parsed))
-            return parsed
-
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
     @with_assertion_polling
     def get_viewport_size(
@@ -521,7 +476,7 @@ class Getters(LibraryComponent):
                     f"{key} is ",
                 )
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=["Getter", "PageContent"])
     def get_element(self, selector: str):
         """Returns a reference to a Playwright element handle.
 
@@ -534,7 +489,7 @@ class Getters(LibraryComponent):
             response = stub.GetElement(Request().ElementSelector(selector=selector))
             return response.body
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=["Getter", "PageContent"])
     def get_elements(self, selector: str):
         """Returns a reference to playwright element handle for all matched elements by ``selector``.
 
@@ -544,7 +499,7 @@ class Getters(LibraryComponent):
             response = stub.GetElements(Request().ElementSelector(selector=selector))
             return json.loads(response.json)
 
-    @keyword(tags=["Getter", "Assertion"])
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
     def get_style(
         self,
@@ -582,7 +537,7 @@ class Getters(LibraryComponent):
                     f"Style value for {key} is ",
                 )
 
-    @keyword(tags=["Getter", "Assertion"])
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_boundingbox(
         self,
         selector: str,

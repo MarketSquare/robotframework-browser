@@ -32,7 +32,7 @@ def _format_response(response: Dict):
 
 
 class Network(LibraryComponent):
-    @keyword(tags=["HTTP", "BrowserControl"])
+    @keyword(tags=["HTTP"])
     def http(
         self,
         url: str,

@@ -268,12 +268,15 @@ service  Playwright {
   rpc Download(Request.Url) returns (Response.String);
   /* Clicks element specified by selector and options */
   rpc ClickWithOptions(Request.ElementSelectorWithOptions) returns (Response.Empty);
+  /* Hovers an element specified by selector and options */
+  rpc Hover(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */
   rpc Focus(Request.ElementSelector) returns (Response.Empty);
   /* Waits for element be in a specific state*/
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty);
-  /* Executes javascript on the active page */
+  /* Executes javascript on the active page and retries until the expression is true */
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
+  /* Executes javascript on the active page */
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);

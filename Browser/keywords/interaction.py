@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from robotlibcore import keyword  # type: ignore
 
@@ -164,10 +164,60 @@ class Interaction(LibraryComponent):
         button: MouseButton = MouseButton.left,
         click_count: int = 1,
         delay: Optional[str] = None,
-        position_x: Optional[int] = None,
-        position_y: Optional[int] = None,
+        position_x: Optional[float] = None,
+        position_y: Optional[float] = None,
         force: bool = False,
         noWaitAfter: bool = False,
+        *modifiers: KeyboardModifier,
+    ):
+        """Moves the virtual mouse with multiple options on the element found by ``selector``.
+
+        This method hovers over an element matching ``selector`` by performing the following steps:
+        - Find an element match matching ``selector``. If there is none, wait until a matching element is attached to the DOM.
+        - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
+        - Scroll the element into view if needed.
+        - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
+
+        ``selector`` <str> Selector element to click. **Required**
+
+        ``position_x`` & ``position_y`` <float> A point to click relative to the
+        top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
+        If not specified, clicks to some visible point of the element.
+
+        ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+
+        ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
+        Modifier keys to press. Ensures that only these modifiers are pressed
+        during the click, and then restores current modifiers back.
+        If not specified, currently pressed modifiers are used.
+        """
+        with self.playwright.grpc_channel() as stub:
+            options = {"button": button.name, "clickCount": click_count, "force": force}
+            if delay:
+                options["delay"] = timestr_to_millisecs(delay)
+            if position_x and position_y:
+                positions: Dict[str, object] = {"x": position_x, "y": position_y}
+                options["position"] = positions
+            if modifiers:
+                options["modifiers"] = [m.name for m in modifiers]
+            if noWaitAfter:
+                options["noWaitAfter"] = noWaitAfter
+            options_json = json.dumps(options)
+            logger.debug(f"Click Options are: {options_json}")
+            response = stub.ClickWithOptions(
+                Request().ElementSelectorWithOptions(
+                    selector=selector, options=options_json
+                )
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=["Setter", "PageContent"])
+    def hover(
+        self,
+        selector: str,
+        position_x: Optional[float] = None,
+        position_y: Optional[float] = None,
+        force: bool = False,
         *modifiers: KeyboardModifier,
     ):
         """Simulates mouse click with multiple options on the element found by ``selector``.
@@ -189,7 +239,7 @@ class Interaction(LibraryComponent):
         Defaults to 0.
 
         ``position_x`` & ``position_y`` <int> A point to click relative to the
-        top-left corner of element padding box.
+        top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
         If not specified, clicks to some visible point of the element.
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
@@ -206,19 +256,15 @@ class Interaction(LibraryComponent):
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options = {"button": button.name, "clickCount": click_count, "force": force}
-            if delay:
-                options["delay"] = timestr_to_millisecs(delay)
+            options: Dict[str, Any] = {"force": force}
             if position_x and position_y:
                 positions: Dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
-            if noWaitAfter:
-                options["noWaitAfter"] = noWaitAfter
             options_json = json.dumps(options)
-            logger.debug(f"Click Options are: {options_json}")
-            response = stub.ClickWithOptions(
+            logger.debug(f"Hover Options are: {options_json}")
+            response = stub.Hover(
                 Request().ElementSelectorWithOptions(
                     selector=selector, options=options_json
                 )
@@ -327,7 +373,7 @@ class Interaction(LibraryComponent):
             if log_response:
                 logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent", "EventHandler"])
+    @keyword(tags=["Setter", "PageContent"])
     def upload_file(self, path: str):
         """ Upload file from ``path`` into next file chooser dialog on page.
 
@@ -345,7 +391,7 @@ class Interaction(LibraryComponent):
             response = stub.UploadFile(Request().FilePath(path=str(p)))
             logger.debug(response.log)
 
-    @keyword(tags=["PageContent", "EventHandler"])
+    @keyword(tags=["PageContent"])
     def handle_alert(self, action: AlertAction, prompt_input: str = ""):
         """ Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
@@ -364,7 +410,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["VirtualMouse", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def mouse_button(
         self,
         action: MouseButtonAction,
@@ -427,7 +473,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["VirtualMouse", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
@@ -453,7 +499,7 @@ class Interaction(LibraryComponent):
         self.mouse_move(**to_xy, steps=steps)
         self.mouse_button(MouseButtonAction.up)
 
-    @keyword(tags=["VirtualMouse", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def drag_and_drop_by_coordinates(
         self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1
     ):
@@ -484,7 +530,7 @@ class Interaction(LibraryComponent):
         center["y"] = boundingbox["y"] + (boundingbox["height"] / 2)
         return center
 
-    @keyword(tags=["VirtualMouse", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def mouse_move(self, x: float, y: float, steps: int = 1):
         """ Instead of selectors command mouse with coordinates.
             The Click commands will leave the virtual mouse on the specified coordinates.
@@ -500,7 +546,7 @@ class Interaction(LibraryComponent):
             response = stub.MouseMove(Request().Json(body=json.dumps(body)))
             logger.debug(response.log)
 
-    @keyword(tags=["VirtualKeyboard", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def keyboard_key(self, action: KeyAction, key: str):
         """ Press a keyboard key on the virtual keyboard or set a key up or down.
 
@@ -534,7 +580,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["VirtualKeyboard", "PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
         """ Input text into page with virtual keyboard.
 
