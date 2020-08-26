@@ -40,6 +40,7 @@ async function _newBrowserContext(
     hideRfBrowser?: boolean,
 ): Promise<IndexedContext> {
     const context = await browser.newContext(options);
+
     if (!hideRfBrowser) {
         await context.addInitScript(function () {
             window.__SET_RFBROWSER_STATE__ = function (state: any) {
@@ -49,8 +50,12 @@ async function _newBrowserContext(
         });
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
-    const id = uuidv4();
-    return { id: id, c: context, pageStack: [], options: options };
+    const c = { id: uuidv4(), c: context, pageStack: [] as IndexedPage[], options: options };
+    c.c.on('page', (page) => {
+        const newPage = { id: uuidv4(), p: page };
+        c.pageStack.unshift(newPage);
+    });
+    return c;
 }
 
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
@@ -335,9 +340,6 @@ export async function newContext(
         const options = JSON.parse(call.request.getRawoptions());
         const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser);
         browserState.pushContext(context);
-        context.c.on('page', (page) => {
-            context.pageStack.unshift({ id: uuidv4(), p: page });
-        });
 
         const response = stringResponse(context.id, 'New context opened');
         response.setLog('Succesfully created context with options: ' + JSON.stringify(options));
@@ -427,10 +429,11 @@ export async function switchPage(
         callback(null, stringResponse(previous, 'Active page id'));
         return;
     } else if (id === 'NEW') {
+        const previous = browserState.page?.id || 'NO PAGE OPEN';
         const latest = context.pageStack[0];
         exists(latest, callback, 'Tried to activate latest page but no pages were open in context.');
         await browserState.activatePage(latest);
-        callback(null, stringResponse(`Activated new page ${latest.id}`, 'Activated new page'));
+        callback(null, stringResponse(previous, `Activated new page ${latest}`));
         return;
     }
 

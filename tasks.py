@@ -178,7 +178,7 @@ def atest_failed(c):
 
 def _run_robot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
-    pabot_args = ["--pabotlib", "--verbose"]
+    pabot_args = ["--pabotlib"]
     default_args = [
         "--exclude",
         "Not-Implemented",

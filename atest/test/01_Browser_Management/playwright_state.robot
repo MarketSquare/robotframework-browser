@@ -109,6 +109,7 @@ New Page can New Context and browser
 Switch Page after popup
     Open Browser and assert Login Page    chromium
     Click    button#pops_up
+    Sleep    1s
     ${previous}=    Switch Page    NEW
     Wait For Elements State    "Popped Up!"
     Switch Page    ${previous}
