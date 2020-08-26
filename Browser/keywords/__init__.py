@@ -2,6 +2,7 @@ from .browser_control import Control
 from .cookie import Cookie
 from .device_descriptors import Devices
 from .evaluation import Evaluation
+from .event_handling import EventHandling
 from .getters import Getters
 from .interaction import Interaction
 from .network import Network
@@ -16,6 +17,7 @@ __all__ = [
     "Cookie",
     "Devices",
     "Getters",
+    "EventHandling",
     "Evaluation",
     "Interaction",
     "Network",

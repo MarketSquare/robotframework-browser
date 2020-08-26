@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 from typing import Dict
 
 from robotlibcore import keyword  # type: ignore
@@ -124,32 +123,3 @@ class Waiter(LibraryComponent):
             )
             logger.debug(response.json)
             logger.info(response.log)
-
-    @keyword(tags=["Wait"])
-    def wait_for_download(self, saveAs: str = ""):
-        """ Waits for next download event on page. Returns file path to downloaded file.
-
-            To enable downloads context's ``acceptDownloads`` needs to be true.
-
-            With default filepath downloaded files are deleted when Context the download happened in is closed.
-
-            ``saveAs`` <str> Filename to save as. File will also temporarily be saved in playwright context's default download location.
-
-            Example usage:
-            | New Context      acceptDownloads=True
-            | New Page         ${LOGIN_URL}
-            | ${dl_promise}    Promise To  Wait For Download
-            | Click            \\#file_download
-            | ${file_path}=    Wait For  ${dl_promise}
-        """
-        with self.playwright.grpc_channel() as stub:
-            if not saveAs:
-                response = stub.WaitForDownload(Request().FilePath())
-                logger.debug(response.log)
-                return json.loads(response.json)
-            else:
-                p = Path(saveAs)
-                p.resolve()
-                response = stub.WaitForDownload(Request().FilePath(path=str(p)))
-                logger.debug(response.log)
-                return json.loads(response.json)
