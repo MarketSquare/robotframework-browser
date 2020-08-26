@@ -45,7 +45,8 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "URL "
             )
 
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    # @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    # Not published as keyword due to missing of good docs.
     @with_assertion_polling
     def get_page_state(
         self,
