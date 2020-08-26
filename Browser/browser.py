@@ -602,7 +602,7 @@ class Browser(DynamicCore):
             except AssertionError as e:
                 logger.warn(f"Test Suite: {name}, End Suite: {e}")
 
-    def _prune_execution_stack(self, catalog_before):
+    def _prune_execution_stack(self, catalog_before: dict) -> None:
         # WIP CODE BEGINS
         catalog_after = self.get_browser_catalog()
         ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
