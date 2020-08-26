@@ -9,7 +9,8 @@ message Request {
   }
 
   message FilePath {
-    string path = 1;
+    string when = 1;
+    string path = 2;
   }
 
   message Json {
@@ -149,8 +150,13 @@ message Request {
   }
 
   message DialogAction {
-    string action = 1;
-    string promptInput = 2;  
+    string when = 1;
+    string action = 2;
+    string promptInput = 3;
+  }
+
+  message GetDialog {
+    string field = 1;
   }
 
   message Bool {
@@ -282,6 +288,7 @@ service  Playwright {
   rpc GetStyle(Request.ElementSelector) returns (Response.Json);
   /* Gets elements x, y coordinates and width, height as json object */ 
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
+  rpc GetDialog(Request.GetDialog) returns (Response.String);
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
@@ -300,8 +307,8 @@ service  Playwright {
   rpc SetOffline(Request.Bool) returns (Response.Empty);
 
   /* Playwright event handling keywords */
-  rpc HandleFutureDialogs(Request.DialogAction) returns (Response.Empty);
-  rpc HandleFutureUpload(Request.FilePath) returns (Response.Empty);
+  rpc HandleDialog(Request.DialogAction) returns (Response.Empty);
+  rpc HandleUpload(Request.FilePath) returns (Response.Empty);
   rpc WaitForDownload(Request.FilePath) returns (Response.Json);
 
 

@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from robotlibcore import keyword  # type: ignore
+from typing_extensions import Literal
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -10,6 +11,23 @@ from ..utils.data_types import DialogAction
 
 
 class EventHandling(LibraryComponent):
+    @keyword(tags=["PageContent", "EventHandler"])
+    def handle_current_dialog(self, action: DialogAction, prompt_input: str = ""):
+        pass
+
+    def _handle_filechooser(self, when: Literal["current", "future"], path: str):
+        p = Path(path)
+        p.resolve(strict=True)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.HandleFutureUpload(
+                Request().FilePath(when=when, path=str(p))
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=["PageContent", "EventHandler"])
+    def handle_current_filechooser(self, path: str):
+        self._handle_filechooser("current", path)
+
     @keyword(tags=["PageContent", "EventHandler"])
     def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
         """ Handle next dialog on page with ``action``. Dialog can be any of alert,
@@ -43,11 +61,7 @@ class EventHandling(LibraryComponent):
         | Click          \\#file_chooser
 
         """
-        p = Path(path)
-        p.resolve(strict=True)
-        with self.playwright.grpc_channel() as stub:
-            response = stub.HandleFutureUpload(Request().FilePath(path=str(p)))
-            logger.debug(response.log)
+        self._handle_filechooser("future", path)
 
     @keyword(tags=["Wait", "EventHandler"])
     def wait_for_download(self, saveAs: str = ""):

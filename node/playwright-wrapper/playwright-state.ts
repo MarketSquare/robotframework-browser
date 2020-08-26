@@ -1,4 +1,15 @@
-import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
+import {
+    Browser,
+    BrowserContext,
+    Dialog,
+    Download,
+    ElementHandle,
+    FileChooser,
+    Page,
+    chromium,
+    firefox,
+    webkit,
+} from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -52,8 +63,11 @@ async function _newBrowserContext(
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const c = { id: uuidv4(), c: context, pageStack: [] as IndexedPage[], options: options };
     c.c.on('page', (page) => {
-        const newPage = { id: uuidv4(), p: page };
+        const newPage = new IndexedPage(page, uuidv4());
         c.pageStack.unshift(newPage);
+        page.on('dialog', (dialog) => (newPage.latestDialog = dialog));
+        page.on('download', (download) => (newPage.latestDownload = download));
+        page.on('filechooser', (filechooser) => (newPage.latestFilechooser = filechooser));
     });
     return c;
 }
@@ -159,7 +173,11 @@ export class PlaywrightState {
     };
 
     public getActivePage = (): Page | undefined => {
-        return this.activeBrowser?.page?.p;
+        return this.getActiveIndexedPage()?.p;
+    };
+
+    public getActiveIndexedPage = (): IndexedPage | undefined => {
+        return this.activeBrowser?.page;
     };
 
     public addElement(id: string, handle: ElementHandle): void {
@@ -185,10 +203,15 @@ type IndexedContext = {
     options?: Record<string, unknown>;
 };
 
-type IndexedPage = {
-    p: Page;
-    id: Uuid;
-};
+export class IndexedPage {
+    constructor(
+        public p: Page,
+        public id: Uuid,
+        public latestDialog?: undefined | Dialog,
+        public latestDownload?: undefined | Download,
+        public latestFilechooser?: undefined | FileChooser,
+    ) {}
+}
 
 type Uuid = string;
 

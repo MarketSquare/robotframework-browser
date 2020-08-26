@@ -1,10 +1,16 @@
 import { ElementHandle, Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { PlaywrightState } from './playwright-state';
+import { IndexedPage, PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import {
+    determineElement,
+    exists,
+    invokeOnPage,
+    invokePlaywrightMethod,
+    waitUntilElementExists,
+} from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -180,4 +186,16 @@ export async function getPageSource(
     const result = await invokeOnPage(page, callback, 'content');
     logger.info(result);
     callback(null, stringResponse(JSON.stringify(result), 'Page source obtained succesfully.'));
+}
+
+export async function getDialog(
+    call: ServerUnaryCall<Request.GetDialog>,
+    callback: sendUnaryData<Response.String>,
+    page?: IndexedPage,
+): Promise<void> {
+    const field = call.request.getField() as 'message' | 'type';
+    const latestDialog = page?.latestDialog;
+    exists(latestDialog, callback, 'No dialog open');
+    const response = stringResponse(latestDialog[field](), 'Retrieved dialog field');
+    callback(null, response);
 }

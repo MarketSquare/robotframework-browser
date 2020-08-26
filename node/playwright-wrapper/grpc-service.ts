@@ -1,4 +1,4 @@
-import { Server, ServerUnaryCall, sendUnaryData } from 'grpc';
+import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import * as browserControl from './browser-control';
 import * as cookie from './cookie';
@@ -25,6 +25,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.state.getActiveBrowser(callback);
     private getActiveContext = () => this.state.getActiveContext();
     private getActivePage = () => this.state.getActivePage();
+    private getActiveIndexedPage = () => this.state.getActiveIndexedPage();
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return playwrightState.closeBrowser(callback, this.state);
@@ -341,22 +342,23 @@ export class PlaywrightServer implements IPlaywrightServer {
     async getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.String>): Promise<void> {
         return deviceDescriptors.getDevice(call, callback);
     }
+
     async getDevices(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         return deviceDescriptors.getDevices(callback);
     }
 
-    async handleFutureUpload(
+    async handleUpload(
         call: ServerUnaryCall<Request.FilePath>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return eventHandling.handleFutureUpload(call, callback, this.getActivePage());
+        return eventHandling.handleUpload(call, callback, this.getActiveIndexedPage());
     }
 
-    async handleFutureDialogs(
+    async handleDialog(
         call: ServerUnaryCall<Request.DialogAction>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return eventHandling.handleFutureDialogs(call, callback, this.getActivePage());
+        return eventHandling.handleDialog(call, callback, this.getActiveIndexedPage());
     }
 
     async mouseMove(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {
@@ -386,5 +388,9 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async setOffline(call: ServerUnaryCall<Request.Bool>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return browserControl.setOffline(call, callback, this.getActiveContext());
+    }
+
+    async getDialog(call: ServerUnaryCall<Request.GetDialog>, callback: sendUnaryData<Response.String>): Promise<void> {
+        return getters.getDialog(call, callback, this.getActiveIndexedPage());
     }
 }

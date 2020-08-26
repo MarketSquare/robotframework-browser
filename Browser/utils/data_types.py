@@ -23,6 +23,11 @@ class DialogAction(Enum):
     ignore = auto()
 
 
+class DialogField(Enum):
+    type = auto()
+    message = auto()
+
+
 class CookieType(Enum):
     dictionary = auto()
     dict = dictionary

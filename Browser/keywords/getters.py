@@ -18,6 +18,7 @@ from ..utils import logger
 from ..utils.data_types import (
     AssertionOperator,
     BoundingBoxFields,
+    DialogField,
     SelectAttribute,
     ViewportFields,
 )
@@ -627,3 +628,7 @@ class Getters(LibraryComponent):
                     assertion_expected,
                     f"{key} is ",
                 )
+
+    @keyword
+    def get_dialog(self, field: DialogField):
+        pass
