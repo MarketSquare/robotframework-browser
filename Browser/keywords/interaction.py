@@ -181,7 +181,7 @@ class Interaction(LibraryComponent):
         ``selector`` <str> Selector element to click. **Required**
 
         ``position_x`` & ``position_y`` <float> A point to click relative to the
-        top-left corner of element padding box.
+        top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
         If not specified, clicks to some visible point of the element.
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
@@ -239,7 +239,7 @@ class Interaction(LibraryComponent):
         Defaults to 0.
 
         ``position_x`` & ``position_y`` <int> A point to click relative to the
-        top-left corner of element padding box.
+        top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
         If not specified, clicks to some visible point of the element.
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
