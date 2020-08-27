@@ -292,8 +292,8 @@ service  Playwright {
   rpc WaitForDownload(Request.FilePath) returns (Response.Json);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
 
-  rpc GetDevice(Request.Device) returns (Response.String);
-  rpc GetDevices(Request.Empty) returns (Response.String);
+  rpc GetDevice(Request.Device) returns (Response.Json);
+  rpc GetDevices(Request.Empty) returns (Response.Json);
 
   rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
 

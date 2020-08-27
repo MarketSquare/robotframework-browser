@@ -344,10 +344,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         return network.httpRequest(call, callback, this.getActivePage());
     }
 
-    async getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.Json>): Promise<void> {
         return deviceDescriptors.getDevice(call, callback);
     }
-    async getDevices(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getDevices(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Json>): Promise<void> {
         return deviceDescriptors.getDevices(callback);
     }
 
