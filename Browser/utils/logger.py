@@ -21,3 +21,7 @@ def warn(msg: Any, html=False):
 
 def error(msg: Any, html=False):
     logger.error(msg, html)
+
+
+def console(msg: Any):
+    logger.console(msg)
