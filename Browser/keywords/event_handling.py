@@ -11,25 +11,26 @@ from ..utils.data_types import DialogAction, FutureDialogAction
 
 class EventHandling(LibraryComponent):
     @keyword(tags=["Setter", "PageContent"])
-    def choose_files(self, path: str):
-        """ Upload file from ``path`` into next or current file chooser dialog on page.
+    def choose_file(self, selector: str, path: str):
+        """ Upload file from ``path`` into the file input field ``selector``.
 
         ``path`` <str> Path to file to be uploaded.
 
         Example use:
 
-        | Upload File    ${CURDIR}/test_upload_file
-        | Click          \\#file_chooser
+        | Choose File     \\#file_chooser      ${CURDIR}/test_upload_file
 
         """
         p = Path(path)
         p.resolve(strict=True)
         with self.playwright.grpc_channel() as stub:
-            response = stub.HandleFutureUpload(Request().FilePath(path=str(p)))
+            response = stub.HandleUpload(
+                Request().FilePath(selector=selector, path=str(p))
+            )
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
-    def handle_dialog(
+    # @keyword(tags=["Setter", "PageContent"])
+    def _handle_dialog(
         self, action: DialogAction, prompt_input: str = "",
     ):
         """ Handle current or new dialog on page with ``action``. Dialog can be any of alert,
@@ -63,7 +64,7 @@ class EventHandling(LibraryComponent):
             ``action`` equals accept. Defaults to empty string.
             """
         with self.playwright.grpc_channel() as stub:
-            if prompt_input and action is not DialogAction.accept:
+            if prompt_input and action is not FutureDialogAction.accept:
                 raise ValueError("prompt_input is only valid if action is 'accept'")
             response = stub.HandleFutureDialogs(
                 Request().DialogAction(action=action.name, promptInput=prompt_input)

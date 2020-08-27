@@ -9,19 +9,17 @@ ${custom_dl_path}    ${CURDIR}/download_file
 *** Test Cases ***
 Upload File
     New Page    ${LOGIN_URL}
-    Handle Future Upload    ${CURDIR}/test_upload_file
-    Click    \#file_chooser
+    Choose File    \#file_chooser    ${CURDIR}/test_upload_file
     Get Text    \#upload_result    ==    test_upload_file
 
 Upload File with different name
     New Page    ${LOGIN_URL}
-    Handle Future Upload    ${CURDIR}/invalid_test_upload_file
-    Click    \#file_chooser
+    Choose File    \#file_chooser    ${CURDIR}/invalid_test_upload_file
     Get Text    \#upload_result    ==    wrong_upload_filename
 
 Invalid Upload Path
     [Tags]    No-Windows-Support
-    Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Handle Future Upload    NonExistentFile
+    Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Choose File    \#file_chooser    NonExistentFile
 
 Wait For Download
     New Context    acceptDownloads=True

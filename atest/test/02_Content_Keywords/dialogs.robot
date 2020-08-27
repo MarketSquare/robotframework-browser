@@ -4,18 +4,18 @@ Test Setup        New Page    ${LOGIN_URL}
 Test Teardown     Close Page
 
 *** Test Cases ***
-Dismiss Alert
-    Click    \#alerts
-    Handle Dialog    action=dismiss
+Dismiss Future Alert
+    Handle Future Dialogs    action=dismiss
+    Click    selector=\#alerts
 
-Accept Alert
-    Click    \#alerts
-    Handle Dialog    action=accept
+Accept Future Alert
+    Handle Future Dialogs    action=accept
+    Click    selector=\#alerts
 
 Clicking Through Alert Fails
     Run Keyword And Expect Error    Could not find element with selector `#alerts` within timeout.    Click    \#alerts
 
-Promptinput works
+Future promptinput works
     Handle Future Dialogs    action=accept    prompt_input=Some Input String
     Click    \#prompts
     Get Text    \#prompt_result    ==    Some Input String
@@ -28,11 +28,16 @@ Handle Future Dialogs handles many dialogs
     New Page    ${LOGIN_URL}
     Click    \#alerts
     Get Dialog    ==    None
-    New Context
-    New Page    ${LOGIN_URL}
     Click    \#alerts
     Get Dialog    ==    None
     Fail
+
+Handle Future Dialogs can be disabled
+    Handle Future Dialogs    accept
+    New Page    ${LOGIN_URL}
+    Click    \#alerts
+    Handle Future Dialogs    ignore
+    Run Keyword And Expect Error    Could not find element with selector `#alerts` within timeout.    Click    \#alerts
 
 Get Dialog asserts content
     Get Dialog

@@ -351,7 +351,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.FilePath>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return eventHandling.handleUpload(call, callback, this.getActiveIndexedPage());
+        return eventHandling.handleUpload(call, callback, this.getActivePage());
     }
 
     async handleDialog(
@@ -365,7 +365,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.DialogAction>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return eventHandling.handleFutureDialogs(call, callback, this.state);
+        return eventHandling.handleFutureDialogs(call, callback, this.getActivePage());
     }
 
     async mouseMove(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {

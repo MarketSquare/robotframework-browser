@@ -66,10 +66,13 @@ async function _newBrowserContext(
     c.c.on('page', (page) => {
         const newPage = new IndexedPage(page, uuidv4());
         c.pageStack.unshift(newPage);
-        page.on('dialog', (dialog) => (newPage.latestDialog = dialog));
-        page.on('dialog', playwrightState.dialogHandler);
-        page.on('download', (download) => (newPage.latestDownload = download));
-        page.on('filechooser', (filechooser) => (newPage.latestFilechooser = filechooser));
+        /* 
+        page.on('dialog', (dialog) => {
+            newPage.latestDialog = dialog;
+            window.__SET_RFBROWSER_STATE__(dialog);
+        });
+        page.on('dialog', (dialog) => playwrightState.getDialogHandler()(dialog));
+        page.on('download', (download) => (newPage.latestDownload = download)); */
     });
     return c;
 }
@@ -88,6 +91,7 @@ export class PlaywrightState {
         };
     }
     public dialogHandler: (dialog: Dialog) => Promise<void>;
+    public getDialogHandler = () => this.dialogHandler;
     private browserStack: BrowserState[];
     get activeBrowser() {
         return lastItem(this.browserStack);

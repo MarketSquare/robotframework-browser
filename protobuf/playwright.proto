@@ -9,7 +9,8 @@ message Request {
   }
 
   message FilePath {
-    string path = 1;
+    string selector = 1;
+    string path = 2;
   }
 
   message Json {
@@ -310,7 +311,6 @@ service  Playwright {
   rpc HandleFutureDialogs(Request.DialogAction) returns (Response.Empty);
   rpc HandleUpload(Request.FilePath) returns (Response.Empty);
   rpc WaitForDownload(Request.FilePath) returns (Response.Json);
-
 
   /* Playwright State handling keywords */
   rpc SwitchPage(Request.Index) returns (Response.String);
