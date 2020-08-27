@@ -52,7 +52,8 @@ async function _newBrowserContext(
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
     const c = { id: uuidv4(), c: context, pageStack: [] as IndexedPage[], options: options };
     c.c.on('page', (page) => {
-        const newPage = { id: uuidv4(), p: page };
+        const timestamp = new Date().getTime() / 1000;
+        const newPage = { id: uuidv4(), p: page, timestamp: timestamp };
         c.pageStack.unshift(newPage);
     });
     return c;
@@ -60,7 +61,8 @@ async function _newBrowserContext(
 
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
     const newPage = await context.newPage();
-    return { id: uuidv4(), p: newPage };
+    const timestamp = new Date().getTime() / 1000;
+    return { id: uuidv4(), p: newPage, timestamp: timestamp };
 }
 
 export class PlaywrightState {
@@ -119,6 +121,7 @@ export class PlaywrightState {
                 title: await page.p.title(),
                 url: page.p.url(),
                 id: page.id,
+                timestamp: page.timestamp,
             };
         };
 
@@ -188,6 +191,7 @@ type IndexedContext = {
 type IndexedPage = {
     p: Page;
     id: Uuid;
+    timestamp: number;
 };
 
 type Uuid = string;
@@ -370,7 +374,7 @@ export async function newBrowser(
     }
 }
 
-async function _switchPage(id: Uuid, browserState: BrowserState, waitForPage: boolean) {
+async function _switchPage(id: Uuid, browserState: BrowserState) {
     const context = browserState.context?.c;
     if (!context) throw new Error('Tried to switch page, no open context');
     const pages = browserState.context?.pageStack;
@@ -379,22 +383,11 @@ async function _switchPage(id: Uuid, browserState: BrowserState, waitForPage: bo
     if (page) {
         await browserState.activatePage(page);
         return;
-    } else if (waitForPage) {
-        try {
-            logger.info('Started waiting for a page to pop up');
-            const page = await context.waitForEvent('page');
-            await browserState.activatePage({ id: id, p: page });
-            return;
-        } catch (pwError) {
-            logger.info('Wait was not fulfilled');
-            logger.error(pwError);
-            const mapped = pages?.map((page) => page.p.url()).join(',');
-            const message = `No page for id ${id}. Open pages: ${mapped}`;
-            const error = new Error(message);
-            throw error;
-        }
     } else {
-        throw new Error(`Couldn't switch page`);
+        const mapped = pages?.map((page) => `{ id: ${page.id}, url: ${page.p.url()} }`).join(',');
+        const message = `No page for id ${id}. Open pages: ${mapped}`;
+        const error = new Error(message);
+        throw error;
     }
 }
 
@@ -438,7 +431,7 @@ export async function switchPage(
     }
 
     const previous = browserState.page?.id || '';
-    await _switchPage(id, browserState, true).catch((error) => callback(error, null));
+    await _switchPage(id, browserState).catch((error) => callback(error, null));
     const response = stringResponse(previous, 'Succesfully changed active page');
     callback(null, response);
 }
@@ -458,7 +451,7 @@ export async function switchContext(
     }
 
     await _switchContext(id, browserState).catch((error) => callback(error, null));
-    await _switchPage(browserState.page?.id || '', browserState, false).catch((error) => {
+    await _switchPage(browserState.page?.id || '', browserState).catch((error) => {
         logger.error(error);
     });
     const response = stringResponse(previous, 'Succesfully changed active context');
