@@ -631,4 +631,4 @@ class Getters(LibraryComponent):
 
     @keyword
     def get_dialog(self, field: DialogField):
-        pass
+        raise NotImplementedError

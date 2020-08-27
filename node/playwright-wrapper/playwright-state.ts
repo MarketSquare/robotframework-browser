@@ -47,6 +47,7 @@ async function _newBrowser(
 
 async function _newBrowserContext(
     browser: Browser,
+    playwrightState: PlaywrightState,
     options?: Record<string, unknown>,
     hideRfBrowser?: boolean,
 ): Promise<IndexedContext> {
@@ -66,6 +67,7 @@ async function _newBrowserContext(
         const newPage = new IndexedPage(page, uuidv4());
         c.pageStack.unshift(newPage);
         page.on('dialog', (dialog) => (newPage.latestDialog = dialog));
+        page.on('dialog', playwrightState.dialogHandler);
         page.on('download', (download) => (newPage.latestDownload = download));
         page.on('filechooser', (filechooser) => (newPage.latestFilechooser = filechooser));
     });
@@ -81,7 +83,11 @@ export class PlaywrightState {
     constructor() {
         this.browserStack = [];
         this.elementHandles = new Map();
+        this.dialogHandler = async (dialog) => {
+            dialog;
+        };
     }
+    public dialogHandler: (dialog: Dialog) => Promise<void>;
     private browserStack: BrowserState[];
     get activeBrowser() {
         return lastItem(this.browserStack);
@@ -236,12 +242,12 @@ export class BrowserState {
         await this.browser.close();
     }
 
-    public async getOrCreateActiveContext(): Promise<IndexedContext> {
+    public async getOrCreateActiveContext(playwrightState: PlaywrightState): Promise<IndexedContext> {
         if (this.context) {
             return this.context;
         } else {
             const browser = this.browser;
-            const context = await _newBrowserContext(browser);
+            const context = await _newBrowserContext(browser, playwrightState);
             this.pushContext(context);
             return context;
         }
@@ -341,7 +347,7 @@ export async function newPage(
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
-    const context = await browserState.getOrCreateActiveContext();
+    const context = await browserState.getOrCreateActiveContext(openBrowsers);
 
     const page = await _newPage(context.c);
     browserState.pushPage(page);
@@ -361,7 +367,7 @@ export async function newContext(
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser);
+        const context = await _newBrowserContext(browserState.browser, openBrowsers, options, hideRfBrowser);
         browserState.pushContext(context);
 
         const response = stringResponse(context.id, 'New context opened');

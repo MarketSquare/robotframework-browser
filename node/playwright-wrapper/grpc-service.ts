@@ -361,6 +361,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         return eventHandling.handleDialog(call, callback, this.getActiveIndexedPage());
     }
 
+    async handleFutureDialogs(
+        call: ServerUnaryCall<Request.DialogAction>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return eventHandling.handleFutureDialogs(call, callback, this.state);
+    }
+
     async mouseMove(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return interaction.mouseMove(call, callback, this.getActivePage());
     }

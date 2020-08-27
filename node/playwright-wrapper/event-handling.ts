@@ -2,7 +2,7 @@ import { Dialog, FileChooser, Page } from 'playwright';
 import { Request, Response } from './generated/playwright_pb';
 import { Server, ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { IndexedPage } from './playwright-state';
+import { IndexedPage, PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
 
@@ -26,30 +26,25 @@ export async function handleUpload(
     callback: sendUnaryData<Response.Empty>,
     page?: IndexedPage,
 ) {
-    const when = call.request.getWhen() as 'current' | 'future';
-    if (when === 'future') return handleFutureUpload(call, callback);
-    else if (when === 'current') return handleCurrentUpload(call, callback);
+    const path = call.request.getPath();
+
+    const currentFileChooser = page?.latestFilechooser;
+    if (currentFileChooser) {
+        const path = call.request.getPath();
+        await currentFileChooser.setFiles(path);
+        callback(null, emptyWithLog('Succesfully uploaded file'));
+    } else {
+        const fn = async (fileChooser: FileChooser) => await fileChooser.setFiles(path);
+        await invokeOnPage(page?.p, callback, 'waitForEvent', 'filechooser', fn);
+        callback(null, emptyWithLog('Succesfully uploaded file'));
+    }
 }
 
-async function handleFutureUpload(
-    call: ServerUnaryCall<Request.FilePath>,
-    callback: sendUnaryData<Response.Empty>,
-    page?: IndexedPage,
-) {
-    const path = call.request.getPath();
-    const fn = async (fileChooser: FileChooser) => await fileChooser.setFiles(path);
-    await invokeOnPage(page?.p, callback, 'on', 'filechooser', fn);
-    callback(null, emptyWithLog('Succesfully uploaded file'));
-}
-
-async function handleCurrentUpload(
-    call: ServerUnaryCall<Request.FilePath>,
-    callback: sendUnaryData<Response.Empty>,
-    page?: IndexedPage,
-) {
-    const path = call.request.getPath();
-    await page?.latestFilechooser?.setFiles(path);
-    callback(null, emptyWithLog('Succesfully uploaded file'));
+function actOnDialog(action: 'accept' | 'dismiss', promptInput?: string) {
+    return async (dialog: Dialog) => {
+        if (promptInput) await dialog[action](promptInput);
+        else await dialog[action]();
+    };
 }
 
 export async function handleDialog(
@@ -57,35 +52,36 @@ export async function handleDialog(
     callback: sendUnaryData<Response.Empty>,
     page?: IndexedPage,
 ) {
-    const when = call.request.getWhen() as 'current' | 'future';
-    if (when === 'future') return handleFutureDialogs(call, callback);
-    else if (when === 'current') return handleCurrentDialog(call, callback);
+    const action = call.request.getAction() as 'accept' | 'dismiss' | 'ignore';
+    const promptInput = call.request.getPromptinput();
+
+    if (action === 'ignore') {
+        callback(null, emptyWithLog('cleared dialog handlers'));
+        return;
+    }
+
+    const currentDialog = page?.latestDialog;
+    if (currentDialog) {
+        await actOnDialog(action, promptInput)(currentDialog);
+        callback(null, emptyWithLog('Handled dialog'));
+    } else {
+        await invokeOnPage(page?.p, callback, 'waitForEvent', 'dialog', actOnDialog(action, promptInput));
+        callback(null, emptyWithLog('Handled dialog'));
+    }
 }
 
-async function handleCurrentDialog(
+export async function handleFutureDialogs(
     call: ServerUnaryCall<Request.DialogAction>,
     callback: sendUnaryData<Response.Empty>,
-    page?: IndexedPage,
-) {
-    callback(new Error('Behaviour not implemented yet'), null);
-    return;
-}
-
-async function handleFutureDialogs(
-    call: ServerUnaryCall<Request.DialogAction>,
-    callback: sendUnaryData<Response.Empty>,
-    page?: Page,
+    state: PlaywrightState,
 ) {
     const action = call.request.getAction() as 'accept' | 'dismiss' | 'ignore';
     const promptInput = call.request.getPromptinput();
+
     if (action === 'ignore') {
-        // clear the old event handlers here
+        callback(null, emptyWithLog('cleared dialog handlers'));
         return;
+    } else {
+        state.dialogHandler = actOnDialog(action, promptInput);
     }
-    const fn = async (dialog: Dialog) => {
-        if (promptInput) await dialog[action](promptInput);
-        else await dialog[action]();
-    };
-    await invokeOnPage(page, callback, 'on', 'dialog', fn);
-    callback(null, emptyWithLog('Set event handler for future alerts'));
 }

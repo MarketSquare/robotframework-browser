@@ -9,8 +9,7 @@ message Request {
   }
 
   message FilePath {
-    string when = 1;
-    string path = 2;
+    string path = 1;
   }
 
   message Json {
@@ -150,9 +149,9 @@ message Request {
   }
 
   message DialogAction {
-    string when = 1;
-    string action = 2;
-    string promptInput = 3;
+    string action = 1;
+    string promptInput = 2;
+    string amount = 3;
   }
 
   message GetDialog {
@@ -308,6 +307,7 @@ service  Playwright {
 
   /* Playwright event handling keywords */
   rpc HandleDialog(Request.DialogAction) returns (Response.Empty);
+  rpc HandleFutureDialogs(Request.DialogAction) returns (Response.Empty);
   rpc HandleUpload(Request.FilePath) returns (Response.Empty);
   rpc WaitForDownload(Request.FilePath) returns (Response.Json);
 

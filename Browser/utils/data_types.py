@@ -20,6 +20,11 @@ ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": in
 class DialogAction(Enum):
     accept = auto()
     dismiss = auto()
+
+
+class FutureDialogAction(Enum):
+    accept = auto()
+    dismiss = auto()
     ignore = auto()
 
 
