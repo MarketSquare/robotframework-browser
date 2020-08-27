@@ -18,7 +18,7 @@ class Devices(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevices(Request().Empty())
             logger.debug(response.log)
-            return json.loads(response.body)
+            return json.loads(response.json)
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_device(self, name: str):
@@ -43,4 +43,4 @@ class Devices(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevice(Request().Device(name=name))
             logger.debug(response.log)
-            return json.loads(response.body)
+            return json.loads(response.json)
