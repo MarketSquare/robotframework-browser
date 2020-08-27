@@ -9,8 +9,7 @@ from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Control(LibraryComponent):
-    """Keywords to do things on the current browser page and modify the page
-    """
+    """Keywords to do things on the current browser page and modify the page"""
 
     @keyword(tags=["Setter", "BrowserControl"])
     def go_forward(self):
@@ -129,7 +128,7 @@ class Control(LibraryComponent):
 
     @keyword(tags=["Setter", "BrowserControl"])
     def set_offline(self, offline: bool = True):
-        """ Toggles current Context's offline emulation.
+        """Toggles current Context's offline emulation.
 
         ``offline`` <bool> Toggles the offline mode. Set to False to switch back
         to online mode. Defaults to True.

@@ -144,7 +144,10 @@ def map_list(selected: List):
 
 
 def list_verify_assertion(
-    value: List, operator: Optional[AssertionOperator], expected: List, message="",
+    value: List,
+    operator: Optional[AssertionOperator],
+    expected: List,
+    message="",
 ):
     if operator:
         if operator not in SequenceOperators:

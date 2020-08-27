@@ -89,7 +89,8 @@ class Network(LibraryComponent):
             function = getattr(stub, f"WaitFor{method}")
             response = function(
                 Request().HttpCapture(
-                    urlOrPredicate=matcher, timeout=timestr_to_millisecs(timeout),
+                    urlOrPredicate=matcher,
+                    timeout=timestr_to_millisecs(timeout),
                 )
             )
             logger.debug(response.log)
@@ -98,7 +99,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_for_request(self, matcher: str = "", timeout: str = ""):
-        """ Waits for request matching matcher to be made.
+        """Waits for request matching matcher to be made.
 
         ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
@@ -110,7 +111,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_for_response(self, matcher: str = "", timeout: str = ""):
-        """ Waits for response matching matcher and returns python dict with contents.
+        """Waits for response matching matcher and returns python dict with contents.
 
         ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
@@ -122,7 +123,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_until_network_is_idle(self, timeout: str = ""):
-        """ Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
+        """Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
 
         Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
 
