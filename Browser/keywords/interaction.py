@@ -138,7 +138,7 @@ class Interaction(LibraryComponent):
         supported input keys.
         [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
 
-        Example: 
+        Example:
 
         | # Keyword       Selector                    *Keys
         | Press Keys      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
@@ -375,7 +375,7 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def upload_file(self, path: str):
-        """ Upload file from ``path`` into next file chooser dialog on page.
+        """Upload file from ``path`` into next file chooser dialog on page.
 
         ``path`` <str> Path to file to be uploaded.
 
@@ -393,7 +393,7 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["PageContent"])
     def handle_alert(self, action: AlertAction, prompt_input: str = ""):
-        """ Handle next dialog on page with ``action``. Dialog can be any of alert,
+        """Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
 
             ``action`` < ``acceppt`` | ``dismiss`` > How to handle the alert. **Required**
@@ -420,7 +420,7 @@ class Interaction(LibraryComponent):
         clickCount: int = 1,
         delay: int = 0,
     ):
-        """ Click, hold a mouse button down or release it.
+        """Click, hold a mouse button down or release it.
 
         Moving the mouse between holding down and releasing it for example is possible with `Mouse Move`.
 
@@ -532,13 +532,13 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def mouse_move(self, x: float, y: float, steps: int = 1):
-        """ Instead of selectors command mouse with coordinates.
-            The Click commands will leave the virtual mouse on the specified coordinates.
+        """Instead of selectors command mouse with coordinates.
+        The Click commands will leave the virtual mouse on the specified coordinates.
 
-            ``x`` <float> ``y`` <float> are absolute coordinates starting at the top left
-            of the page.
+        ``x`` <float> ``y`` <float> are absolute coordinates starting at the top left
+        of the page.
 
-            ``steps`` <int> Number of intermediate steps for the mouse event.
+        ``steps`` <int> Number of intermediate steps for the mouse event.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
@@ -548,7 +548,7 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def keyboard_key(self, action: KeyAction, key: str):
-        """ Press a keyboard key on the virtual keyboard or set a key up or down.
+        """Press a keyboard key on the virtual keyboard or set a key up or down.
 
         ``action`` < ``up`` | ``down`` | ``press`` > Determine whether the key should be released,
         hold or pressed. ``down`` or ``up`` are useful for combinations i.e. with Shift.
@@ -582,19 +582,19 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
-        """ Input text into page with virtual keyboard.
+        """Input text into page with virtual keyboard.
 
-            ``action`` < ``insertText`` | ``type`` > **Required**
+        ``action`` < ``insertText`` | ``type`` > **Required**
 
-                - ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
+            - ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
 
-                - ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
+            - ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
 
-            ``input`` <str> The inputstring to be typed. No special keys possible. **Required**
+        ``input`` <str> The inputstring to be typed. No special keys possible. **Required**
 
-            Note: To press a special key, like Control or ArrowDown, use keyboard.press.
-            Modifier keys DO NOT effect these methods. For testing modifier effects use single key
-            presses with ``Keyboard Key  press``
+        Note: To press a special key, like Control or ArrowDown, use keyboard.press.
+        Modifier keys DO NOT effect these methods. For testing modifier effects use single key
+        presses with ``Keyboard Key  press``
 
         """
         with self.playwright.grpc_channel() as stub:

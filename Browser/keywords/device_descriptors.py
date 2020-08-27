@@ -10,10 +10,10 @@ from ..utils import logger
 class Devices(LibraryComponent):
     @keyword(tags=["Getter", "BrowserControl"])
     def get_devices(self):
-        """ Returns a dict of all playwright device descriptors.
+        """Returns a dict of all playwright device descriptors.
 
-            See Playwright's [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
-            for a formatted list.
+        See Playwright's [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
+        for a formatted list.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevices(Request().Empty())
@@ -22,23 +22,23 @@ class Devices(LibraryComponent):
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_device(self, name: str):
-        """ Get a single device decriptor with name exactly matching name.
+        """Get a single device decriptor with name exactly matching name.
 
-            ``name`` <str> Given name of the requested device. See Playwright's
-            [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
-            for a formatted list. **Required**
+        ``name`` <str> Given name of the requested device. See Playwright's
+        [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
+        for a formatted list. **Required**
 
-            Allows a concise syntax to set website testing values to exact matches of specific
-            mobile devices.
+        Allows a concise syntax to set website testing values to exact matches of specific
+        mobile devices.
 
-            Use by passing to a context. After creating a context with devicedescriptor,
-            before using ensure your active page is on that context.
-            Usage:
+        Use by passing to a context. After creating a context with devicedescriptor,
+        before using ensure your active page is on that context.
+        Usage:
 
-            | ${device}=          Get Device       iPhone X
-            | New Context         &{device}
-            | New Page
-            | Get Viewport Size   # returns { "width": 375, "height": 812 }
+        | ${device}=          Get Device       iPhone X
+        | New Context         &{device}
+        | New Page
+        | Get Viewport Size   # returns { "width": 375, "height": 812 }
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevice(Request().Device(name=name))

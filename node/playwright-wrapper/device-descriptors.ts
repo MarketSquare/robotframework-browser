@@ -3,7 +3,7 @@ import { devices } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { Request, Response } from './generated/playwright_pb';
-import { jsonResponse} from './response-util';
+import { jsonResponse } from './response-util';
 
 export async function getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.Json>) {
     const name = call.request.getName();

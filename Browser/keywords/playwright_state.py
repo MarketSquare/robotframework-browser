@@ -16,8 +16,7 @@ from ..utils import (
 
 
 class PlaywrightState(LibraryComponent):
-    """Keywords to manage Playwright side Browsers, Contexts and Pages.
-    """
+    """Keywords to manage Playwright side Browsers, Contexts and Pages."""
 
     """ Helpers for Switch_ and Close_ keywords """
 
@@ -328,9 +327,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["Setter", "BrowserControl"])
     def new_page(self, url: Optional[str] = None):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
-            Returns a stable identifier for the created page.
+        Returns a stable identifier for the created page.
 
-            ``url`` <str> If specified it will open the new page to the specified URL.
+        ``url`` <str> If specified it will open the new page to the specified URL.
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -340,42 +339,42 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=["Getter", "BrowserControl"])
     def get_browser_catalog(self):
-        """ Returns all browsers, open contexts in them and open pages in these contexts.
+        """Returns all browsers, open contexts in them and open pages in these contexts.
 
-            The data is parsed into a python list containing data representing the open Objects.
+        The data is parsed into a python list containing data representing the open Objects.
 
-            On the root level the data contains a list of open browsers.
+        On the root level the data contains a list of open browsers.
 
-            Browser: ``{type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
+        Browser: ``{type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
 
-            Context: ``{type: 'context', 'id': int, pages: List[Page]}``
+        Context: ``{type: 'context', 'id': int, pages: List[Page]}``
 
-            Page: ``{type: 'page', 'id': int, title: str, url: str}``
+        Page: ``{type: 'page', 'id': int, title: str, url: str}``
 
-            Sample:
-            | [{
-            |     "type": "firefox",
-            |     "id": 0,
-            |     "contexts": [{
-            |         "type": "context",
-            |         "id": 0,
-            |         "pages": [{
-            |             "type": "page",
-            |             "title": "prefilled_email_form.html",
-            |             "url": "http://localhost:7272/prefilled_email_form.html",
-            |             "id": "0"
-            |         }]
-            |     }, {
-            |         "type": "context",
-            |         "id": 1,
-            |         "pages": [{
-            |             "type": "page",
-            |             "title": "Login Page",
-            |             "url": "http://localhost:7272/dist/",
-            |             "id": "0"
-            |         }]
-            |     }]
-            | }]
+        Sample:
+        | [{
+        |     "type": "firefox",
+        |     "id": 0,
+        |     "contexts": [{
+        |         "type": "context",
+        |         "id": 0,
+        |         "pages": [{
+        |             "type": "page",
+        |             "title": "prefilled_email_form.html",
+        |             "url": "http://localhost:7272/prefilled_email_form.html",
+        |             "id": "0"
+        |         }]
+        |     }, {
+        |         "type": "context",
+        |         "id": 1,
+        |         "pages": [{
+        |             "type": "page",
+        |             "title": "Login Page",
+        |             "url": "http://localhost:7272/dist/",
+        |             "id": "0"
+        |         }]
+        |     }]
+        | }]
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -387,9 +386,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["Setter", "BrowserControl"])
     def switch_browser(self, id: str):
         """Switches the currently active Browser to another open Browser.
-            Returns a stable identifier for the previous browser.
+        Returns a stable identifier for the previous browser.
 
-            ``id`` <str> Id of the browser to be changed to. Starting at 0. **Required**
+        ``id`` <str> Id of the browser to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=id))
@@ -398,7 +397,7 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=["Setter", "BrowserControl"])
     def switch_context(self, id: str, browser: str = "CURRENT"):
-        """ Switches the active BrowserContext to another open context.
+        """Switches the active BrowserContext to another open context.
         Returns a stable identifier for the previous context.
 
         ``id`` <str> Id of the context to be changed to. Randomly generated UUID. **Required**
