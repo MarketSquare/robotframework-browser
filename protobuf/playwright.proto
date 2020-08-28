@@ -1,3 +1,17 @@
+/* Copyright 2020-     Robot Framework Foundation */
+
+/* Licensed under the Apache License, Version 2.0 (the "License"); */
+/* you may not use this file except in compliance with the License. */
+/* You may obtain a copy of the License at */
+
+/*     http://www.apache.org/licenses/LICENSE-2.0 */
+
+/* Unless required by applicable law or agreed to in writing, software */
+/* distributed under the License is distributed on an "AS IS" BASIS, */
+/* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. */
+/* See the License for the specific language governing permissions and */
+/* limitations under the License. */
+
 syntax = "proto3";
 
 message Request {
@@ -268,12 +282,15 @@ service  Playwright {
   rpc Download(Request.Url) returns (Response.String);
   /* Clicks element specified by selector and options */
   rpc ClickWithOptions(Request.ElementSelectorWithOptions) returns (Response.Empty);
+  /* Hovers an element specified by selector and options */
+  rpc Hover(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */
   rpc Focus(Request.ElementSelector) returns (Response.Empty);
   /* Waits for element be in a specific state*/
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty);
-  /* Executes javascript on the active page */
+  /* Executes javascript on the active page and retries until the expression is true */
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
+  /* Executes javascript on the active page */
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
@@ -289,8 +306,8 @@ service  Playwright {
   rpc WaitForDownload(Request.FilePath) returns (Response.Json);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
 
-  rpc GetDevice(Request.Device) returns (Response.String);
-  rpc GetDevices(Request.Empty) returns (Response.String);
+  rpc GetDevice(Request.Device) returns (Response.Json);
+  rpc GetDevices(Request.Empty) returns (Response.Json);
 
   rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
 
@@ -315,5 +332,5 @@ service  Playwright {
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
   rpc ClosePage(Request.Empty) returns (Response.Empty);
-  rpc GetBrowserCatalog(Request.Empty) returns (Response.String);
+  rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
 }

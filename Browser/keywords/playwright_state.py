@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from typing import Dict, List, Optional
 
@@ -17,8 +31,7 @@ from ..utils import (
 
 
 class PlaywrightState(LibraryComponent):
-    """Keywords to manage Playwright side Browsers, Contexts and Pages.
-    """
+    """Keywords to manage Playwright side Browsers, Contexts and Pages."""
 
     """ Helpers for Switch_ and Close_ keywords """
 
@@ -34,7 +47,7 @@ class PlaywrightState(LibraryComponent):
         if context != "CURRENT":
             self.switch_context(context)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def open_browser(
         self,
         url: Optional[str] = None,
@@ -63,7 +76,7 @@ class PlaywrightState(LibraryComponent):
         self.new_context()
         self.new_page(url)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def close_browser(self, browser: str = "CURRENT"):
         """Closes the current browser. Activated browser is set to first active browser.
         Closes all context and pages belonging to this browser.
@@ -82,14 +95,14 @@ class PlaywrightState(LibraryComponent):
             response = stub.CloseBrowser(Request.Empty())
             logger.info(response.log)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def close_all_browsers(self):
         """Closes all open browsers, contexts and pages."""
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseAllBrowsers(Request().Empty())
             logger.info(response.log)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
         """Closes a Context. Activated context is set to first active context.
         Closes pages belonging to this context.
@@ -116,7 +129,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.CloseContext(Request().Empty())
             logger.info(response.log)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def close_page(
         self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
     ):
@@ -155,7 +168,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.ClosePage(Request().Empty())
             logger.info(response.log)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def new_browser(
         self,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
@@ -236,7 +249,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def new_context(
         self,
         acceptDownloads: bool = False,
@@ -339,12 +352,12 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def new_page(self, url: Optional[str] = None):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
-            Returns a stable identifier for the created page.
+        Returns a stable identifier for the created page.
 
-            ``url`` <str> If specified it will open the new page to the specified URL.
+        ``url`` <str> If specified it will open the new page to the specified URL.
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -352,21 +365,102 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Getter", "BrowserControl"])
+    def get_browser_catalog(self):
+        """Returns all browsers, open contexts in them and open pages in these contexts.
+
+        The data is parsed into a python list containing data representing the open Objects.
+
+        On the root level the data contains a list of open browsers.
+
+        Browser: ``{type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
+
+        Context: ``{type: 'context', 'id': int, pages: List[Page]}``
+
+        Page: ``{type: 'page', 'id': int, title: str, url: str}``
+
+        Sample:
+        |[
+        |    {
+        |	'type': 'firefox',
+        |	'id': '24a6a2f7-a3bf-4986-b276-f42c95736479',
+        |	'contexts': [
+        |	    {
+        |		'type': 'context',
+        |		'id': 'b575c86e-704f-41a2-badc-d0570b4eae6d',
+        |		'activePage': '329c9495-1b5e-46bf-b6b3-e26c04bd2a94',
+        |		'pages': [
+        |		    {
+        |			'type': 'page',
+        |			'title': 'GitHub - MarketSquare/robotframework-browser: Robot Framework Browser library powered by Playwright.',
+        |			'url': 'https://github.com/MarketSquare/robotframework-browser',
+        |			'id': '329c9495-1b5e-46bf-b6b3-e26c04bd2a94',
+        |			'timestamp': 1598599555.769}]
+        |	    },
+        |	    {
+        |		'type': 'context',
+        |		'id': 'de4ad34b-a37d-4b49-96ff-326a71848235',
+        |		'activePage': '2ea4ff40-46b9-4bd7-b1a3-3081510ddc71',
+        |		'pages': [
+        |		    {
+        |			'type': 'page',
+        |			'title': 'RoboCon 2020',
+        |			'url': 'https://robocon.io/',
+        |			'id': '2ea4ff40-46b9-4bd7-b1a3-3081510ddc71',
+        |			'timestamp': 1598599571.156
+        |		    }
+        |		]
+        |	    }
+        |	],
+        |	'activeContext': 'de4ad34b-a37d-4b49-96ff-326a71848235',
+        |	'activeBrowser': False
+        |    },
+        |    {
+        |	'type': 'chromium',
+        |	'id': '703ec6a5-bdd4-4cc5-a738-f38bda5748a8',
+        |	'contexts': [
+        |	    {
+        |		'type': 'context',
+        |		'id': '900fa323-0514-46a3-a24d-75a2c60e5f9e',
+        |		'activePage': '911ab0d0-abcd-4dde-9cea-e775aa217427',
+        |		'pages': [
+        |		    {
+        |			'type': 'page',
+        |			'title': 'RoboCon 2020',
+        |			'url': 'https://robocon.io/',
+        |			'id': '911ab0d0-abcd-4dde-9cea-e775aa217427',
+        |			'timestamp': 1598599591.854
+        |		    }
+        |		]
+        |	    }
+        |	],
+        |	'activeContext': '900fa323-0514-46a3-a24d-75a2c60e5f9e',
+        |	'activeBrowser': True
+        |    }
+        |]
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetBrowserCatalog(Request().Empty())
+            parsed = json.loads(response.json)
+            logger.info(json.dumps(parsed))
+            return parsed
+
+    @keyword(tags=["Setter", "BrowserControl"])
     def switch_browser(self, id: str):
         """Switches the currently active Browser to another open Browser.
-            Returns a stable identifier for the previous browser.
+        Returns a stable identifier for the previous browser.
 
-            ``id`` <str> Id of the browser to be changed to. Starting at 0. **Required**
+        ``id`` <str> Id of the browser to be changed to. Starting at 0. **Required**
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=id))
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def switch_context(self, id: str, browser: str = "CURRENT"):
-        """ Switches the active BrowserContext to another open context.
+        """Switches the active BrowserContext to another open context.
         Returns a stable identifier for the previous context.
 
         ``id`` <str> Id of the context to be changed to. Randomly generated UUID. **Required**
@@ -382,7 +476,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def switch_page(self, id: str, context: str = "CURRENT", browser: str = "CURRENT"):
         """Switches the active browser page to another open page by ``id``.
         Returns a stable identifier for the previous page.

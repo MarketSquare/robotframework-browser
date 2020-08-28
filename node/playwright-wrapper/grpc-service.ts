@@ -1,3 +1,17 @@
+// Copyright 2020-     Robot Framework Foundation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import { Server, ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import * as browserControl from './browser-control';
@@ -45,7 +59,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getBrowserCatalog(
         call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return playwrightState.getBrowserCatalog(callback, this.state);
     }
@@ -222,6 +236,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         return interaction.clickWithOptions(call, callback, this.state);
     }
 
+    async hover(
+        call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        return interaction.hover(call, callback, this.state);
+    }
+
     async focus(
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Empty>,
@@ -337,10 +358,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         return network.httpRequest(call, callback, this.getActivePage());
     }
 
-    async getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.Json>): Promise<void> {
         return deviceDescriptors.getDevice(call, callback);
     }
-    async getDevices(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async getDevices(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Json>): Promise<void> {
         return deviceDescriptors.getDevices(callback);
     }
 

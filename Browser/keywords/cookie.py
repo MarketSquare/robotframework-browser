@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from datetime import datetime
 from typing import List, Optional, Union
@@ -66,7 +80,7 @@ class Cookie(LibraryComponent):
                 dot_dict[key] = cookie[key]
         return dot_dict
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def add_cookie(
         self,
         name: str,
@@ -91,7 +105,7 @@ class Cookie(LibraryComponent):
 
         ``path`` <str> Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
 
-        ``expires`` <str> Given expiry for the cookie. Can be of date format or unix time.supports
+        ``expires`` <str> Given expiry for the cookie. Can be of date format or unix time. Supports
         the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
         library or an epoch timestamp.
         - example: 2027-09-28 16:21:35
@@ -123,7 +137,7 @@ class Cookie(LibraryComponent):
         except ValueError:
             return int(convert_date(expiry, result_format="epoch"))
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def delete_all_cookies(self):
         """Deletes all cookies from the currently active browser context."""
         with self.playwright.grpc_channel() as stub:
@@ -146,7 +160,7 @@ class Cookie(LibraryComponent):
         )
         logger.warn("Cookie monster ate all cookies!!")
 
-    @keyword(tags=["Getter", "PageContent"])
+    @keyword(tags=["Getter", "BrowserControl"])
     def get_cookie(
         self, cookie: str, return_type: CookieType = CookieType.dictionary
     ) -> Union[DotDict, str]:

@@ -166,6 +166,17 @@ def atest(c):
 
 
 @task(clean_atest)
+def atest_robot(c):
+    os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
+    command = f"robot --exclude Not-Implemented --loglevel DEBUG --outputdir {str(atest_output)}"
+    if platform.platform().startswith("Windows"):
+        command += " --exclude No-Windows-Support"
+    command += " atest/test"
+    print(command)
+    c.run(command)
+
+
+@task(clean_atest)
 def atest_global_pythonpath(c):
     _run_robot()
 

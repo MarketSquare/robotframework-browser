@@ -51,6 +51,14 @@ Drag and Drop with coordinates
     Should Be True    ${x_diff} < 1 or ${x_diff} > -1
     Should Be True    ${y_diff} < 1 or ${y_diff} > -1
 
+Hover and Drop to Hover
+    Hover    id=draggable    10    10
+    Mouse Button    down
+    Hover    id=draggable    30    40
+    Mouse Button    up
+    Get Text    \#dragX    ==    20
+    Get Text    \#dragY    ==    30
+
 Click Count
     ${x}=    Get Boundingbox    \#clickWithOptions    x
     ${y}=    Get Boundingbox    \#clickWithOptions    y

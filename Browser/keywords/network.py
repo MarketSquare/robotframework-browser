@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from typing import Dict, Optional
 
@@ -32,7 +46,7 @@ def _format_response(response: Dict):
 
 
 class Network(LibraryComponent):
-    @keyword(tags=["HTTP", "BrowserControl"])
+    @keyword(tags=["HTTP"])
     def http(
         self,
         url: str,
@@ -98,7 +112,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_for_request(self, matcher: str = "", timeout: str = ""):
-        """ Waits for request matching matcher to be made.
+        """Waits for request matching matcher to be made.
 
         ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
@@ -110,7 +124,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_for_response(self, matcher: str = "", timeout: str = ""):
-        """ Waits for response matching matcher and returns python dict with contents.
+        """Waits for response matching matcher and returns python dict with contents.
 
         ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
@@ -122,7 +136,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=["Wait", "HTTP"])
     def wait_until_network_is_idle(self, timeout: str = ""):
-        """ Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
+        """Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
 
         Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
 

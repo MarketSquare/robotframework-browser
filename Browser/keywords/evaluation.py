@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from typing import Any
 
@@ -10,7 +24,7 @@ from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Evaluation(LibraryComponent):
-    @keyword(name="Execute JavaScript", tags=["Setter", "PageContent", "WebAppState"])
+    @keyword(name="Execute JavaScript", tags=["Setter", "Getter", "PageContent"])
     def execute_javascript(self, function: str, selector: str = "") -> Any:
         """Executes given javascript on the page.
 
@@ -31,7 +45,7 @@ class Evaluation(LibraryComponent):
             if response.result:
                 return json.loads(response.result)
 
-    @keyword(tags=["PageContent"])
+    @keyword(tags=["Setter", "PageContent"])
     def highlight_elements(
         self,
         selector: str,
@@ -66,7 +80,17 @@ class Evaluation(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "PageContent"])
+    def add_style_tag(self, content: str):
+        """Adds a <style type="text/css"> tag with the content.
+
+        ``content`` <str> Raw CSS content to be injected into frame. **Required**
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.AddStyleTag(Request().StyleTag(content=content))
+            logger.info(response.log)
+
+    @keyword(tags=["Page Content"])
     def download(self, url: str):
         """
         Download given url content and return downloaded file path

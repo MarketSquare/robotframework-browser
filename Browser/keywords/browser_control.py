@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from pathlib import Path
 
 from robotlibcore import keyword  # type: ignore
@@ -9,24 +23,23 @@ from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Control(LibraryComponent):
-    """Keywords to do things on the current browser page and modify the page
-    """
+    """Keywords to do things on the current browser page and modify the page"""
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def go_forward(self):
         """Navigates to the next page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoForward(Request.Empty())
             logger.info(response.log)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def go_back(self):
         """Navigates to the previous page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoBack(Request.Empty())
             logger.info(response.log)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def go_to(self, url: str):
         """Navigates to the given ``url``.
 
@@ -51,7 +64,7 @@ class Control(LibraryComponent):
             if not path.with_suffix(".png").is_file():
                 return path
 
-    @keyword
+    @keyword(tags=["PageContent"])
     def take_screenshot(self, filename: str = "", selector: str = ""):
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
@@ -75,7 +88,7 @@ class Control(LibraryComponent):
             )
             return response.body
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "Config"])
     def set_browser_timeout(self, timeout: str) -> str:
         """Sets the timeout used by most input and getter keywords.
 
@@ -91,7 +104,7 @@ class Control(LibraryComponent):
             logger.info(response.log)
         return old_timeout
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "Config"])
     def set_retry_assertions_for(self, timeout: str) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
@@ -103,17 +116,7 @@ class Control(LibraryComponent):
         self.retry_assertions_for = timeout
         return old_retry_assertions_for
 
-    @keyword(tags=["PageContent"])
-    def add_style_tag(self, content: str):
-        """Adds a <style type="text/css"> tag with the content.
-
-        ``content`` <str> Raw CSS content to be injected into frame. **Required**
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.AddStyleTag(Request().StyleTag(content=content))
-            logger.info(response.log)
-
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def set_viewport_size(self, width: int, height: int):
         """Sets current Pages viewport size to specified dimensions.
 
@@ -137,9 +140,9 @@ class Control(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(tags=["BrowserControl"])
+    @keyword(tags=["Setter", "BrowserControl"])
     def set_offline(self, offline: bool = True):
-        """ Toggles current Context's offline emulation.
+        """Toggles current Context's offline emulation.
 
         ``offline`` <bool> Toggles the offline mode. Set to False to switch back
         to online mode. Defaults to True.

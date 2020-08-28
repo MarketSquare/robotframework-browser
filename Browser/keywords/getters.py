@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from typing import Any, List, Optional, Union
 
@@ -24,7 +38,7 @@ from ..utils.data_types import (
 
 
 class Getters(LibraryComponent):
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
     def get_url(
         self,
@@ -45,7 +59,8 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "URL "
             )
 
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    # @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    # Not published as keyword due to missing of good docs.
     @with_assertion_polling
     def get_page_state(
         self,
@@ -72,7 +87,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "State "
             )
 
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
     def get_page_source(
         self,
@@ -432,52 +447,6 @@ class Getters(LibraryComponent):
                 f"Element count for selector `{selector}` is",
             )
 
-    @keyword(tags=["Getter", "BrowserControl"])
-    def get_browser_catalog(self):
-        """ Returns all browsers, open contexts in them and open pages in these contexts.
-
-            The data is parsed into a python list containing data representing the open Objects.
-
-            On the root level the data contains a list of open browsers.
-
-            Browser: ``{type: Literal['chromium', 'firefox', 'webkit'], 'id': string, contexts: List[Context]}``
-
-            Context: ``{type: 'context', 'id': string, pages: List[Page]}``
-
-            Page: ``{type: 'page', 'id': string, title: str, url: str}``
-
-            Sample:
-            | [{
-            |     "type": "firefox",
-            |     "id": 0,
-            |     "contexts": [{
-            |         "type": "context",
-            |         "id": 0,
-            |         "pages": [{
-            |             "type": "page",
-            |             "title": "prefilled_email_form.html",
-            |             "url": "http://localhost:7272/prefilled_email_form.html",
-            |             "id": "0"
-            |         }]
-            |     }, {
-            |         "type": "context",
-            |         "id": 1,
-            |         "pages": [{
-            |             "type": "page",
-            |             "title": "Login Page",
-            |             "url": "http://localhost:7272/dist/",
-            |             "id": "0"
-            |         }]
-            |     }]
-            | }]
-
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetBrowserCatalog(Request().Empty())
-            parsed = json.loads(response.body)
-            logger.info(json.dumps(parsed))
-            return parsed
-
     @keyword(tags=["Getter", "Assertion", "BrowserControl"])
     @with_assertion_polling
     def get_viewport_size(
@@ -521,7 +490,7 @@ class Getters(LibraryComponent):
                     f"{key} is ",
                 )
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=["Getter", "PageContent"])
     def get_element(self, selector: str):
         """Returns a reference to a Playwright element handle.
 
@@ -534,7 +503,7 @@ class Getters(LibraryComponent):
             response = stub.GetElement(Request().ElementSelector(selector=selector))
             return response.body
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=["Getter", "PageContent"])
     def get_elements(self, selector: str):
         """Returns a reference to playwright element handle for all matched elements by ``selector``.
 
@@ -544,7 +513,7 @@ class Getters(LibraryComponent):
             response = stub.GetElements(Request().ElementSelector(selector=selector))
             return json.loads(response.json)
 
-    @keyword(tags=["Getter", "Assertion"])
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
     def get_style(
         self,
@@ -582,7 +551,7 @@ class Getters(LibraryComponent):
                     f"Style value for {key} is ",
                 )
 
-    @keyword(tags=["Getter", "Assertion"])
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
     def get_boundingbox(
         self,
         selector: str,
@@ -590,26 +559,26 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
-        """ Gets elements size and location as an object {x: float, y: float, width: float, height: float}.
+        """Gets elements size and location as an object {x: float, y: float, width: float, height: float}.
 
-            ``selector`` <str> Selector from which shall be retrieved. **Required**
+        ``selector`` <str> Selector from which shall be retrieved. **Required**
 
-            ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
-            If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
-            otherwise it will just return the single value selected by the key.
-            Note: If a single value is retrieved, an assertion does *not* need a ``validate``
-            combined with a cast of ``value``.
+        ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
+        otherwise it will just return the single value selected by the key.
+        Note: If a single value is retrieved, an assertion does *not* need a ``validate``
+        combined with a cast of ``value``.
 
-            See `Assertions` for further details for the assertion arguments. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
 
-            Example use:
-            | ${bounding_box}=    Get BoundingBox    id=element                 # unfiltered
-            | Log                 ${bounding_box}                               # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
-            | ${x}=               Get BoundingBox    id=element    x            # filtered
-            | Log                 X: ${x}                                       # X: 559.09375
-            | # Assertions:
-            | Get BoundingBox     id=element         width         >    180
-            | Get BoundingBox     id=element         ALL           validate    value['x'] > value['y']*2
+        Example use:
+        | ${bounding_box}=    Get BoundingBox    id=element                 # unfiltered
+        | Log                 ${bounding_box}                               # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
+        | ${x}=               Get BoundingBox    id=element    x            # filtered
+        | Log                 X: ${x}                                       # X: 559.09375
+        | # Assertions:
+        | Get BoundingBox     id=element         width         >    180
+        | Get BoundingBox     id=element         ALL           validate    value['x'] > value['y']*2
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
