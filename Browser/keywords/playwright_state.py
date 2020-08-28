@@ -393,7 +393,7 @@ class PlaywrightState(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBrowserCatalog(Request().Empty())
-            parsed = json.loads(response.body)
+            parsed = json.loads(response.json)
             logger.info(json.dumps(parsed))
             return parsed
 

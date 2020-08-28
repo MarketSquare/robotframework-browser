@@ -59,7 +59,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async getBrowserCatalog(
         call: ServerUnaryCall<Request.Empty>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         return playwrightState.getBrowserCatalog(callback, this.state);
     }

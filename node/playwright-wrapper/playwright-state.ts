@@ -17,7 +17,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -489,10 +489,9 @@ export async function switchBrowser(
 }
 
 export async function getBrowserCatalog(
-    callback: sendUnaryData<Response.String>,
+    callback: sendUnaryData<Response.Json>,
     openBrowsers: PlaywrightState,
 ): Promise<void> {
-    const response = new Response.String();
-    response.setBody(JSON.stringify(await openBrowsers.getCatalog()));
+    const response = jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
     callback(null, response);
 }
