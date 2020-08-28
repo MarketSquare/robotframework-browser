@@ -65,7 +65,11 @@ class Control(LibraryComponent):
                 return path
 
     @keyword(tags=["PageContent"])
-    def take_screenshot(self, filename: str = "", selector: str = ""):
+    def take_screenshot(
+        self,
+        filename: str = "robotframework-browser-screenshot-{index}",
+        selector: str = "",
+    ):
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
         ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output directory by default.
