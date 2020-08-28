@@ -31,7 +31,7 @@ MouseOptionsDict = TypedDict(
 ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
 
 
-class AlertAction(Enum):
+class DialogAction(Enum):
     accept = auto()
     dismiss = auto()
 

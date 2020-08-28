@@ -22,9 +22,9 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
 from ..utils.data_types import (
-    AlertAction,
     BoundingBox,
     Coordinates,
+    DialogAction,
     KeyAction,
     KeyboardInputAction,
     KeyboardModifier,
@@ -417,7 +417,7 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=["PageContent"])
-    def handle_alert(self, action: AlertAction, prompt_input: str = ""):
+    def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
         """Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
 
@@ -428,7 +428,7 @@ class Interaction(LibraryComponent):
         """
 
         with self.playwright.grpc_channel() as stub:
-            if prompt_input and action is not AlertAction.accept:
+            if prompt_input and action is not DialogAction.accept:
                 raise ValueError("prompt_input is only valid if action is 'accept'")
             response = stub.HandleAlert(
                 Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
