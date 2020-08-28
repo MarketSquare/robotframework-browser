@@ -1,15 +1,19 @@
 import os
+import subprocess
+import sys
 from pathlib import Path
 import platform
 import re
 import shutil
 
 from invoke import task, Exit
+from robot import rebot_cli
 
 try:
     from pabot import pabot
     import pytest
     from robot.libdoc import libdoc
+    import robotstatuschecker
 except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
@@ -161,7 +165,10 @@ def clean_atest(c):
 @task(clean_atest)
 def atest(c):
     _run_robot(
-        ["--pythonpath", ".",]
+        [
+            "--pythonpath",
+            ".",
+        ]
     )
 
 
@@ -189,20 +196,29 @@ def atest_failed(c):
 
 def _run_robot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
-    pabot_args = ["--pabotlib", "--verbose"]
+    pabot_args = [sys.executable, "-m", "pabot.pabot", "--pabotlib", "--verbose"]
     default_args = [
         "--exclude",
         "Not-Implemented",
         "--loglevel",
         "DEBUG",
+        "--report",
+        "NONE",
+        "--log",
+        "NONE",
         "--outputdir",
         str(atest_output),
     ]
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "No-Windows-Support"])
     default_args.append("atest/test")
-
-    pabot.main(pabot_args + (extra_args or []) + default_args)
+    process = subprocess.Popen(pabot_args + (extra_args or []) + default_args)
+    process.wait(600)
+    output_xml = str(atest_output / "output.xml")
+    print(f"Process {output_xml}")
+    robotstatuschecker.process_output(output_xml, verbose=False)
+    rebot_cli(["--outputdir", str(atest_output), output_xml])
+    print("DONE")
 
 
 @task
