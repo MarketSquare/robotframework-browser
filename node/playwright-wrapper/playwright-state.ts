@@ -3,7 +3,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse } from './response-util';
+import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
