@@ -214,7 +214,12 @@ class Interaction(LibraryComponent):
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options = {"button": button.name, "clickCount": clickCount, "force": force, "noWaitAfter": noWaitAfter}
+            options = {
+                "button": button.name,
+                "clickCount": clickCount,
+                "force": force,
+                "noWaitAfter": noWaitAfter,
+            }
             if delay:
                 options["delay"] = timestr_to_millisecs(delay)
             if position_x and position_y:

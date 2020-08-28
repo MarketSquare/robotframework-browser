@@ -133,7 +133,9 @@ class Waiter(LibraryComponent):
             options_json = json.dumps(options)
             response = stub.WaitForFunction(
                 Request().WaitForFunctionOptions(
-                    script=function, selector=selector, options=options_json,
+                    script=function,
+                    selector=selector,
+                    options=options_json,
                 )
             )
             logger.debug(response.json)

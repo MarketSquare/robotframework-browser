@@ -8,7 +8,7 @@ Click Count
     Get Text    \#click_count    ==    10
 
 Click Count with Delay
-    Click With Options    \#clickWithOptions    delay=100ms   clickCount=2
+    Click With Options    \#clickWithOptions    delay=100ms    clickCount=2
     Get Text    \#click_count    ==    2
 
 Delay Click
