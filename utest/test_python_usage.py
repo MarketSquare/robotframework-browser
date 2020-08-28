@@ -19,7 +19,7 @@ def browser(monkeypatch):
 
     browser = Browser.Browser()
     yield browser
-    browser.close_all_browsers()
+    browser.close_browser("ALL")
     browser._close
 
 

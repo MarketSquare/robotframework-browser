@@ -413,10 +413,7 @@ async function _switchContext(id: Uuid, browserState: BrowserState) {
         browserState.pushContext(context);
         return;
     } else {
-        const mapped = contexts
-            ?.map((context) => context.c.pages())
-            .reduce((acc, val) => acc.concat(val), [])
-            .map((p) => p.url());
+        const mapped = contexts.map((context) => context.id);
 
         const message = `No context for id ${id}. Open contexts: ${mapped}`;
         throw new Error(message);
@@ -434,7 +431,7 @@ export async function switchPage(
     const id = call.request.getIndex();
     if (id === 'CURRENT') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
-        callback(null, stringResponse(previous, 'Active page id'));
+        callback(null, stringResponse(previous, 'Returned active page id'));
         return;
     } else if (id === 'NEW') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
@@ -460,9 +457,11 @@ export async function switchContext(
     const previous = browserState.context?.id || '';
 
     if (id === 'CURRENT') {
-        const previous = browserState.page?.id || 'NO CONTEXT OPEN';
-        callback(null, stringResponse(previous, 'Active context id'));
-        return;
+        if (!previous) {
+            return callback(null, stringResponse('NO CONTEXT OPEN', 'Returned info that no contexts are open'));
+        } else {
+            return callback(null, stringResponse(previous, 'Returned active context id'));
+        }
     }
 
     await _switchContext(id, browserState).catch((error) => callback(error, null));
