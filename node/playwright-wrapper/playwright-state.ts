@@ -343,8 +343,7 @@ export async function newPage(
     browserState.pushPage(page);
     const url = call.request.getUrl() || 'about:blank';
     await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
-    const response = stringResponse(page.id, 'New page opeened.');
-    response.setLog('Succesfully initialized new page object and opened url: ' + url);
+    const response = stringResponse(page.id, 'Succesfully initialized new page object and opened url: ' + url);
     callback(null, response);
 }
 
@@ -360,8 +359,10 @@ export async function newContext(
         const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser);
         browserState.pushContext(context);
 
-        const response = stringResponse(context.id, 'New context opened');
-        response.setLog('Succesfully created context with options: ' + JSON.stringify(options));
+        const response = stringResponse(
+            context.id,
+            'Succesfully created context with options: ' + JSON.stringify(options),
+        );
         callback(null, response);
     } catch (error) {
         callback(error, null);
@@ -381,8 +382,10 @@ export async function newBrowser(
         const options = JSON.parse(call.request.getRawoptions());
         const [browser, name] = await _newBrowser(browserType, headless, options);
         const browserState = openBrowsers.addBrowser(name, browser);
-        const response = stringResponse(browserState.id, 'New browser opened, with options: ' + options);
-        response.setLog('Succesfully created browser with options: ' + JSON.stringify(options));
+        const response = stringResponse(
+            browserState.id,
+            'Succesfully created browser with options: ' + JSON.stringify(options),
+        );
         callback(null, response);
     } catch (error) {
         callback(error, null);
