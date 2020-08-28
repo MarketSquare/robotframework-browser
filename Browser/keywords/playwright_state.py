@@ -440,4 +440,4 @@ class PlaywrightState(LibraryComponent):
             self._correct_context(context)
             response = stub.SwitchPage(Request().Index(index=id))
             logger.info(response.log)
-            return response.json
+            return response.body
