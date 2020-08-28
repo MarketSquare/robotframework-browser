@@ -438,7 +438,7 @@ export async function switchPage(
         const latest = context.pageStack[0];
         exists(latest, callback, 'Tried to activate latest page but no pages were open in context.');
         await browserState.activatePage(latest);
-        callback(null, stringResponse(previous, `Activated new page ${latest}`));
+        callback(null, stringResponse(previous, `Activated new page ${latest.id}`));
         return;
     }
 
