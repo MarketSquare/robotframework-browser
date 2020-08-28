@@ -366,29 +366,64 @@ class PlaywrightState(LibraryComponent):
         Page: ``{type: 'page', 'id': int, title: str, url: str}``
 
         Sample:
-        | [{
-        |     "type": "firefox",
-        |     "id": 0,
-        |     "contexts": [{
-        |         "type": "context",
-        |         "id": 0,
-        |         "pages": [{
-        |             "type": "page",
-        |             "title": "prefilled_email_form.html",
-        |             "url": "http://localhost:7272/prefilled_email_form.html",
-        |             "id": "0"
-        |         }]
-        |     }, {
-        |         "type": "context",
-        |         "id": 1,
-        |         "pages": [{
-        |             "type": "page",
-        |             "title": "Login Page",
-        |             "url": "http://localhost:7272/dist/",
-        |             "id": "0"
-        |         }]
-        |     }]
-        | }]
+        |[
+        |    {
+        |	'type': 'firefox',
+        |	'id': '24a6a2f7-a3bf-4986-b276-f42c95736479',
+        |	'contexts': [
+        |	    {
+        |		'type': 'context',
+        |		'id': 'b575c86e-704f-41a2-badc-d0570b4eae6d',
+        |		'activePage': '329c9495-1b5e-46bf-b6b3-e26c04bd2a94',
+        |		'pages': [
+        |		    {
+        |			'type': 'page',
+        |			'title': 'GitHub - MarketSquare/robotframework-browser: Robot Framework Browser library powered by Playwright.',
+        |			'url': 'https://github.com/MarketSquare/robotframework-browser',
+        |			'id': '329c9495-1b5e-46bf-b6b3-e26c04bd2a94',
+        |			'timestamp': 1598599555.769}]
+        |	    },
+        |	    {
+        |		'type': 'context',
+        |		'id': 'de4ad34b-a37d-4b49-96ff-326a71848235',
+        |		'activePage': '2ea4ff40-46b9-4bd7-b1a3-3081510ddc71',
+        |		'pages': [
+        |		    {
+        |			'type': 'page',
+        |			'title': 'RoboCon 2020',
+        |			'url': 'https://robocon.io/',
+        |			'id': '2ea4ff40-46b9-4bd7-b1a3-3081510ddc71',
+        |			'timestamp': 1598599571.156
+        |		    }
+        |		]
+        |	    }
+        |	],
+        |	'activeContext': 'de4ad34b-a37d-4b49-96ff-326a71848235',
+        |	'activeBrowser': False
+        |    },
+        |    {
+        |	'type': 'chromium',
+        |	'id': '703ec6a5-bdd4-4cc5-a738-f38bda5748a8',
+        |	'contexts': [
+        |	    {
+        |		'type': 'context',
+        |		'id': '900fa323-0514-46a3-a24d-75a2c60e5f9e',
+        |		'activePage': '911ab0d0-abcd-4dde-9cea-e775aa217427',
+        |		'pages': [
+        |		    {
+        |			'type': 'page',
+        |			'title': 'RoboCon 2020',
+        |			'url': 'https://robocon.io/',
+        |			'id': '911ab0d0-abcd-4dde-9cea-e775aa217427',
+        |			'timestamp': 1598599591.854
+        |		    }
+        |		]
+        |	    }
+        |	],
+        |	'activeContext': '900fa323-0514-46a3-a24d-75a2c60e5f9e',
+        |	'activeBrowser': True
+        |    }
+        |]
 
         """
         with self.playwright.grpc_channel() as stub:

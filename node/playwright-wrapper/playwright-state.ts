@@ -140,9 +140,11 @@ export class PlaywrightState {
         };
 
         const contextToContents = async (context: IndexedContext) => {
+            const activePage = lastItem(context.pageStack)?.id;
             return {
                 type: 'context',
                 id: context?.id,
+                activePage: activePage,
                 pages: await Promise.all(context.pageStack.map(pageToContents)),
             };
         };
@@ -153,7 +155,6 @@ export class PlaywrightState {
                     type: browser.name,
                     id: browser.id,
                     contexts: await Promise.all(browser.contextStack.map(contextToContents)),
-                    activePage: browser.page?.id,
                     activeContext: browser.context?.id,
                     activeBrowser: this.activeBrowser === browser,
                 };
