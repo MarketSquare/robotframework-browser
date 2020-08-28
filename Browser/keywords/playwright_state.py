@@ -359,72 +359,60 @@ class PlaywrightState(LibraryComponent):
 
         On the root level the data contains a list of open browsers.
 
-        Browser: ``{type: Literal['chromium', 'firefox', 'webkit'], 'id': int, contexts: List[Context]}``
-
-        Context: ``{type: 'context', 'id': int, pages: List[Page]}``
-
-        Page: ``{type: 'page', 'id': int, title: str, url: str}``
-
         Sample:
-        |[
-        |    {
-        |	'type': 'firefox',
-        |	'id': '24a6a2f7-a3bf-4986-b276-f42c95736479',
-        |	'contexts': [
-        |	    {
-        |		'type': 'context',
-        |		'id': 'b575c86e-704f-41a2-badc-d0570b4eae6d',
-        |		'activePage': '329c9495-1b5e-46bf-b6b3-e26c04bd2a94',
-        |		'pages': [
-        |		    {
-        |			'type': 'page',
-        |			'title': 'GitHub - MarketSquare/robotframework-browser: Robot Framework Browser library powered by Playwright.',
-        |			'url': 'https://github.com/MarketSquare/robotframework-browser',
-        |			'id': '329c9495-1b5e-46bf-b6b3-e26c04bd2a94',
-        |			'timestamp': 1598599555.769}]
-        |	    },
-        |	    {
-        |		'type': 'context',
-        |		'id': 'de4ad34b-a37d-4b49-96ff-326a71848235',
-        |		'activePage': '2ea4ff40-46b9-4bd7-b1a3-3081510ddc71',
-        |		'pages': [
-        |		    {
-        |			'type': 'page',
-        |			'title': 'RoboCon 2020',
-        |			'url': 'https://robocon.io/',
-        |			'id': '2ea4ff40-46b9-4bd7-b1a3-3081510ddc71',
-        |			'timestamp': 1598599571.156
-        |		    }
-        |		]
-        |	    }
-        |	],
-        |	'activeContext': 'de4ad34b-a37d-4b49-96ff-326a71848235',
-        |	'activeBrowser': False
-        |    },
-        |    {
-        |	'type': 'chromium',
-        |	'id': '703ec6a5-bdd4-4cc5-a738-f38bda5748a8',
-        |	'contexts': [
-        |	    {
-        |		'type': 'context',
-        |		'id': '900fa323-0514-46a3-a24d-75a2c60e5f9e',
-        |		'activePage': '911ab0d0-abcd-4dde-9cea-e775aa217427',
-        |		'pages': [
-        |		    {
-        |			'type': 'page',
-        |			'title': 'RoboCon 2020',
-        |			'url': 'https://robocon.io/',
-        |			'id': '911ab0d0-abcd-4dde-9cea-e775aa217427',
-        |			'timestamp': 1598599591.854
-        |		    }
-        |		]
-        |	    }
-        |	],
-        |	'activeContext': '900fa323-0514-46a3-a24d-75a2c60e5f9e',
-        |	'activeBrowser': True
-        |    }
-        |]
-
+        | [
+        |   {
+        |     "type": "chromium",
+        |     "id": "96207191-8147-44e7-b9ac-5e04f2709c1d",
+        |     "contexts": [
+        |       {
+        |         "type": "context",
+        |         "id": "525d8e5b-3c4e-4baa-bfd4-dfdbc6e86089",
+        |         "activePage": "f90c97b8-eaaf-47f2-98b2-ccefd3450f12",
+        |         "pages": [
+        |           {
+        |             "type": "page",
+        |             "title": "Robocorp",
+        |             "url": "https://robocorp.com/",
+        |             "id": "7ac15782-22d2-48b4-8591-ff17663fa737",
+        |             "timestamp": 1598607713.858
+        |           },
+        |           {
+        |             "type": "page",
+        |             "title": "Home - Reaktor",
+        |             "url": "https://www.reaktor.com/",
+        |             "id": "f90c97b8-eaaf-47f2-98b2-ccefd3450f12",
+        |             "timestamp": 1598607714.702
+        |           }
+        |         ]
+        |       }
+        |     ],
+        |     "activeContext": "525d8e5b-3c4e-4baa-bfd4-dfdbc6e86089",
+        |     "activeBrowser": false
+        |   },
+        |   {
+        |     "type": "firefox",
+        |     "id": "ad99abac-17a9-472b-ac7f-d6352630834e",
+        |     "contexts": [
+        |       {
+        |         "type": "context",
+        |         "id": "bc64f1ba-5e76-46dd-9735-4bd344afb9c0",
+        |         "activePage": "8baf2991-5eaf-444d-a318-8045f914e96a",
+        |         "pages": [
+        |           {
+        |             "type": "page",
+        |             "title": "Software-Qualit\u00e4tssicherung und Softwaretest",
+        |             "url": "https://www.imbus.de/",
+        |             "id": "8baf2991-5eaf-444d-a318-8045f914e96a",
+        |             "timestamp": 1598607716.828
+        |           }
+        |         ]
+        |       }
+        |     ],
+        |     "activeContext": "bc64f1ba-5e76-46dd-9735-4bd344afb9c0",
+        |     "activeBrowser": true
+        |   }
+        | ]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBrowserCatalog(Request().Empty())

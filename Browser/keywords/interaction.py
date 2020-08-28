@@ -176,7 +176,7 @@ class Interaction(LibraryComponent):
         self,
         selector: str,
         button: MouseButton = MouseButton.left,
-        click_count: int = 1,
+        clickCount: int = 1,
         delay: Optional[str] = None,
         position_x: Optional[float] = None,
         position_y: Optional[float] = None,
@@ -194,6 +194,14 @@ class Interaction(LibraryComponent):
 
         ``selector`` <str> Selector element to click. **Required**
 
+        ``button`` < ``left`` | ``middle`` |  ``right``> The button that shall be used for clicking.
+
+        ``clickCount`` <int> How many time shall be clicked.
+
+        ``delay`` <robot time str> Time to wait between mousedown and mouseup and next click.
+
+        *Caution: be aware that if the delal leats to a total time that exceets the timeout, the keyword fails*
+
         ``position_x`` & ``position_y`` <float> A point to click relative to the
         top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
         If not specified, clicks to some visible point of the element.
@@ -206,7 +214,7 @@ class Interaction(LibraryComponent):
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options = {"button": button.name, "clickCount": click_count, "force": force}
+            options = {"button": button.name, "clickCount": clickCount, "force": force, "noWaitAfter": noWaitAfter}
             if delay:
                 options["delay"] = timestr_to_millisecs(delay)
             if position_x and position_y:
@@ -214,8 +222,6 @@ class Interaction(LibraryComponent):
                 options["position"] = positions
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
-            if noWaitAfter:
-                options["noWaitAfter"] = noWaitAfter
             options_json = json.dumps(options)
             logger.debug(f"Click Options are: {options_json}")
             response = stub.ClickWithOptions(
@@ -249,7 +255,7 @@ class Interaction(LibraryComponent):
 
         ``click_count`` <int> Defaults to 1.
 
-        ``delay`` <robot time> Time to wait between mousedown and mouseup in milliseconds.
+        ``delay`` <robot time str> Time to wait between mousedown and mouseup.
         Defaults to 0.
 
         ``position_x`` & ``position_y`` <int> A point to click relative to the

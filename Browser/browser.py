@@ -606,7 +606,7 @@ class Browser(DynamicCore):
                 catalog_before_test = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_test)
             except AssertionError as e:
-                logger.console(f"Test Case: {name}, End Test: {e}")
+                logger.warn(f"Test Case: {name}, End Test: {e}")
 
     def _end_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
