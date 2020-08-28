@@ -23,6 +23,7 @@ from ..utils import (
     ColorScheme,
     SupportedBrowsers,
     ViewportDimensions,
+    find_by_id,
     locals_to_params,
     logger,
     timestr_to_millisecs,
@@ -80,13 +81,14 @@ class PlaywrightState(LibraryComponent):
         """Closes the current browser. Activated browser is set to first active browser.
         Closes all context and pages belonging to this browser.
 
-        ``browser`` < ``CURRENT`` | ``ALL`` |str> If value is not ``CURRENT``
+        ``browser`` < ``CURRENT`` | ``ALL`` | str > If value is not ``CURRENT``
         it should be a string referencing the id of the browser to be closed.
         If ``ALL`` is provided `Close All Browsers` is executed.
         """
         with self.playwright.grpc_channel() as stub:
             if browser == "ALL":
-                self.close_all_browsers()
+                response = stub.CloseAllBrowsers(Request().Empty())
+                logger.info(response.log)
                 return
             if browser != "CURRENT":
                 self.switch_browser(browser)
@@ -95,64 +97,107 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=["Setter", "BrowserControl"])
-    def close_all_browsers(self):
-        """Closes all open browsers, contexts and pages."""
-        with self.playwright.grpc_channel() as stub:
-            response = stub.CloseAllBrowsers(Request().Empty())
-            logger.info(response.log)
-
-    @keyword(tags=["Setter", "BrowserControl"])
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
         """Closes a Context. Activated context is set to first active context.
         Closes pages belonging to this context.
 
-        ``context`` < ``CURRENT`` | ``ALL`` |str> Close context with specified id. If ``ALL``
+        ``context`` < ``CURRENT`` | ``ALL`` | str > Close context with specified id. If ``ALL``
         is passed, all contexts of the specified browser are closed. Defaults to CURRENT.
 
-        ``browser`` < ``CURRENT`` | ``ALL`` |str> Close context in specified browser. If value is not "CURRENT"
+        ``browser`` < ``CURRENT`` | ``ALL`` | str > Close context in specified browser. If value is not "CURRENT"
         it should be a string referencing the id of the browser where to close context.
-        If ALL is passed, all contexts of the browser will be closed.
+        TODO: Does this make any sense? If ALL is passed, all contexts of the browser will be closed.
         """
         with self.playwright.grpc_channel() as stub:
-            self._correct_browser(browser)
-            if context == "ALL":
-                return NotImplementedError()
-            if context != "CURRENT":
-                self.switch_context(context)
+            catalog = self.library.get_browser_catalog()
 
-            response = stub.CloseContext(Request().Empty())
-            logger.info(response.log)
+            if browser == "ALL":
+                browser_ids = [b["id"] for b in catalog]
+            elif browser == "CURRENT":
+                browser_ids = [self.switch_browser("CURRENT")]
+            else:
+                browser_ids = [browser]
+
+            browsers = [find_by_id(b_id, catalog) for b_id in browser_ids]
+
+            for b in browsers:
+                if b["id"] == "NO BROWSER OPEN":
+                    return
+                self.switch_browser(b["id"])
+                contexts = b["contexts"]
+                if context != "ALL":
+                    if context == "CURRENT":
+                        current_ctx = self.switch_context("CURRENT")
+                        contexts = [find_by_id(current_ctx, contexts)]
+                    else:
+                        contexts = [find_by_id(context, contexts)]
+                for c in contexts:
+                    self.switch_context(c["id"])
+                    if c["id"] == "NO CONTEXT OPEN":
+                        return
+
+                    response = stub.CloseContext(Request().Empty())
+                    logger.info(response.log)
 
     @keyword(tags=["Setter", "BrowserControl"])
     def close_page(
         self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
     ):
-        # Add to page if ALL is implemented: If ALL is passed, all pages of the context will be closed.
         """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three.
         Activated page is set to first active page.
 
-        ``page`` < ``CURRENT`` | ``ALL`` |str> Id of the page to close. If value is not "CURRENT"
+        ``page`` < ``CURRENT`` | ``ALL`` | str > Id of the page to close. If value is not "CURRENT"
         it should be a string referencing the id of the context where to close page.
         If ``ALL`` is passed, all pages of the given context are closed. Defaults to CURRENT.
 
-        ``context`` < ``CURRENT`` | ``ALL`` |str> Id of the context that belongs to the page to be closed.
+        ``context`` < ``CURRENT`` | ``ALL`` | str > Id of the context that belongs to the page to be closed.
         If ``ALL`` is passed, the requested pages of all contexts are closed. Defaults to CURRENT.
 
-        ``browser`` < ``CURRENT`` | ``ALL`` |str> Id of the browser that belongs to the page to be closed.
+        ``browser`` < ``CURRENT`` | ``ALL`` | str > Id of the browser that belongs to the page to be closed.
         If ``ALL`` is passed, the requested pages depending of the context of all browsers are closed.
         Defaults to CURRENT.
         """
         with self.playwright.grpc_channel() as stub:
-            self._correct_browser(browser)
-            self._correct_context(context)
+            catalog = self.library.get_browser_catalog()
 
-            if page == "ALL":
-                return NotImplementedError()
-            if page != "CURRENT":
-                self.switch_page(page)
+            if browser == "ALL":
+                browser_ids = [b["id"] for b in catalog]
+            elif browser == "CURRENT":
+                current_browser = self.switch_browser("CURRENT")
+                browser_ids = [current_browser]
+                if current_browser == "NO BROWSER OPEN":
+                    return
+            else:
+                browser_ids = [browser]
 
-            response = stub.ClosePage(Request().Empty())
-            logger.info(response.log)
+            browsers = [find_by_id(b_id, catalog) for b_id in browser_ids]
+
+            for b in browsers:
+                self.switch_browser(b["id"])
+                contexts = b["contexts"]
+                if context != "ALL":
+                    if context == "CURRENT":
+                        current_ctx = self.switch_context("CURRENT")
+                        if current_ctx == "NO CONTEXT OPEN":
+                            return
+                        contexts = [find_by_id(current_ctx, contexts)]
+                    else:
+                        contexts = [find_by_id(context, contexts)]
+                for c in contexts:
+
+                    self.switch_context(c["id"])
+                    if page == "ALL":
+                        page_ids = [p["id"] for p in c["pages"]]
+                    else:
+                        page_ids = [page]
+
+                    for p in page_ids:
+                        if p == "NO PAGE OPEN":
+                            return
+                        if page != "CURRENT":
+                            self.switch_page(p)
+                        response = stub.ClosePage(Request().Empty())
+                        logger.info(response.log)
 
     @keyword(tags=["Setter", "BrowserControl"])
     def new_browser(
@@ -439,13 +484,10 @@ class PlaywrightState(LibraryComponent):
 
         ``id`` <str> Id of the context to be changed to. Randomly generated UUID. **Required**
 
-        ``browser`` < ``CURRENT`` | ``ALL`` |str> Switch context in specified browser. If value is not "CURRENT"
-        it should be an int referencing the id of the browser where to switch context.
-        If ALL is passed, the contexts of the browser will be closed.
+        ``browser`` < ``CURRENT`` | str> Switch context in specified browser. If value is not "CURRENT"
+        it should be an the id of the browser where to switch context.
         """
         with self.playwright.grpc_channel() as stub:
-            if browser == "ALL":
-                raise NotImplementedError
             self._correct_browser(browser)
             response = stub.SwitchContext(Request().Index(index=id))
             logger.info(response.log)
@@ -459,13 +501,11 @@ class PlaywrightState(LibraryComponent):
 
         ``id`` < ``CURRENT`` | ``NEW `` | str> Id of the page to be changed to. Randomly generated UUID. **Required**
 
-        ``context`` < ``CURRENT`` | ``ALL`` |str> Switch page in specified context. If value is not "CURRENT"
+        ``context`` < ``CURRENT`` | str> Switch page in specified context. If value is not "CURRENT"
         it should be an int referencing the id of the context where to switch page.
-        If ALL is passed, the pages of all contexts switch.
 
-        ``browser`` < ``CURRENT`` | ``ALL`` |str> Switch page in specified browser. If value is not "CURRENT"
+        ``browser`` < ``CURRENT`` | str> Switch page in specified browser. If value is not "CURRENT"
         it should be an int referencing the id of the browser where to switch page.
-        If ALL is passed, the page of all browsers depending on the context switch.
         """
         with self.playwright.grpc_channel() as stub:
             if context == "ALL":

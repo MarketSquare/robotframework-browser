@@ -640,11 +640,9 @@ class Browser(DynamicCore):
         ]
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
-            # self._playwright_state.switch_context(ctx_id)
-            # self._playwright_state.switch_page(page_id)
-            # self._playwright_state.close_page()
             self._playwright_state.close_page(page_id, ctx_id)
         # try to set active page and context back to right place.
+        # Not needed now that active page and context are just stack heads
         """ for browser in catalog_after:
             if browser["activeBrowser"]:
                 activeContext = browser.get("activeContext", None)

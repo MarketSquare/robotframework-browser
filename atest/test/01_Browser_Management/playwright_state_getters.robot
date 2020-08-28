@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Teardown     Close All Browsers
+Test Teardown     Close Browser    ALL
 
 *** Test Cases ***
 Get Multiple Browsers

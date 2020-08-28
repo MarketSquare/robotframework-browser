@@ -4,7 +4,7 @@ Test Setup        Open Browser To Form Page
 
 *** Test Cases ***
 Cookies From Closed Context
-    Close All Browsers
+    Close Browser    ALL
     Run Keyword And Expect Error
     ...    Tried to do playwright action 'cookies', but no open context.
     ...    Get Cookies
@@ -31,7 +31,7 @@ Add Cookie Without Url, Path and Domain
 
 Add Cookie Should Fail If Context Is Not Open
     ${url} =    Get Url
-    Close All Browsers
+    Close Browser    ALL
     Run Keyword And Expect Error
     ...    Tried to do playwright action 'addCookies', but no open context.
     ...    Add Cookie    Foo    Bar    url=${url}
@@ -145,7 +145,7 @@ Delete All Cookies
     Should Be Empty    ${cookies}
 
 Delete All Cookies From Closed Context
-    Close All Browsers
+    Close Browser    ALL
     Run Keyword And Expect Error
     ...    Tried to do playwright action 'clearCookies', but no open context.
     ...    Delete All Cookies
