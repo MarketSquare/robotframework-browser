@@ -12,33 +12,36 @@ Register Keyword To Run On Failure
     Type Text    css=input#username_field    username
     ${prev}=    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error    *`username` should be `not_username`    Get TextField Value    css=input#username_field    ==    not_username
-    Should Exist    ${FailureScreenshot}
+    File Should Exist    ${FailureScreenshot}
     Register Keyword To Run On Failure    ${prev}
 
-screenshotting By Using Keyword
+Screenshotting By Using Keyword
     [Teardown]    Remove File    ${TestScreenshot}.png
     Take Screenshot    ${TestScreenshot}
-    Should Exist    ${TestScreenshot}.png
+    File Should Exist    ${TestScreenshot}.png
 
 Element Screenshotting
     [Teardown]    Remove File    ${TestScreenshot}.png
     Take Screenshot    ${TestScreenshot}    selector=\#username_field
-    Should Exist    ${TestScreenshot}.png
+    File Should Exist    ${TestScreenshot}.png
 
-ElementHandle screenshotting
+ElementHandle Screenshotting
     [Teardown]    Remove File    ${TestScreenshot}.png
     ${ref}=    Get Element    \#username_field
     Take screenshot    ${TestScreenshot}    ${ref}
-    Should Exist    ${TestScreenshot}.png
+    File Should Exist    ${TestScreenshot}.png
 
-Screenshotting without path
-    ${path}=    Take Screenshot
-    Should Exist    ${path}
-    Remove File    ${path}
+Screenshotting Without Path
+    [Teardown]    Remove Files    ${path1}    ${path2}
+    ${path1}=    Take Screenshot
+    File Should Exist    ${path1}
+    ${path2}=    Take Screenshot
+    File Should Exist    ${path2}
+    Should Not Be Equal    ${path1}    ${path2}
 
-Screenshot filename incrementation
+Screenshot Filename Incrementation
     [Teardown]    Remove File    ${TestScreenshot}_*.png
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
-    Should Exist    ${TestScreenshot}_1.png
-    Should Exist    ${TestScreenshot}_2.png
+    File Should Exist    ${TestScreenshot}_1.png
+    File Should Exist    ${TestScreenshot}_2.png
