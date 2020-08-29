@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
@@ -106,7 +107,7 @@ input.switch:checked + .slider::before {
 .tags {
     width: 10%;
 }
-.doc {
+.kwdoc {
     width: 60%;
 }
 td.kw a {
@@ -331,6 +332,8 @@ a {
     font-size: 1.1em;
     letter-spacing: 0.05em;
     background: #f4f4f4;
+    overflow: scroll;
+    max-width: 45vw;
 }
 .doc code {
     padding: 0 0.2em;
@@ -917,7 +920,7 @@ libdoc = {"all_tags":["Assertion","BrowserControl","Config","Getter","HTTP","Pag
     <table border="1" class="keywords">
         <tr>
             <th class="args">Arguments</th>
-            <th class="doc">Documentation</th>
+            <th class="kwdoc doc">Documentation</th>
         </tr>
         {{each inits}}
         <tr class="kw-row">
@@ -926,7 +929,7 @@ libdoc = {"all_tags":["Assertion","BrowserControl","Config","Getter","HTTP","Pag
               <span>${$value}</span>{{if $index < args.length-1}},<br>{{/if}}
             {{/each}}
             </td>
-            <td class="doc">{{html $value.doc}}</td>
+            <td class="kwdoc doc">{{html $value.doc}}</td>
         </tr>
         {{/each}}
     </table>
@@ -988,7 +991,7 @@ libdoc = {"all_tags":["Assertion","BrowserControl","Config","Getter","HTTP","Pag
             {{if libdoc.contains_tags}}
             <th class="tags">Tags</th>
             {{/if}}
-            <th class="doc">Documentation</th>
+            <th class="kwdoc doc">Documentation</th>
         </tr>
         {{each keywords}}
             {{tmpl($value) 'keyword-template'}}
@@ -1015,7 +1018,7 @@ libdoc = {"all_tags":["Assertion","BrowserControl","Config","Getter","HTTP","Pag
             {{/each}}
         </td>
         {{/if}}
-        <td class="doc">{{html doc}}</td>
+        <td class="kwdoc doc">{{html doc}}</td>
     </tr>
 </script>
 
