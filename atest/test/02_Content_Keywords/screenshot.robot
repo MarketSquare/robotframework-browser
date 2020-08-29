@@ -32,6 +32,7 @@ ElementHandle Screenshotting
     File Should Exist    ${TestScreenshot}.png
 
 Screenshotting Without Path
+    [Setup]    Remove File    ${OUTPUT_DIR}/*.png
     [Teardown]    Remove Files    ${path1}    ${path2}
     ${path1}=    Take Screenshot
     File Should Exist    ${path1}
@@ -40,6 +41,9 @@ Screenshotting Without Path
     Should Not Be Equal    ${path1}    ${path2}
 
 Screenshot Filename Incrementation
+    [Documentation]
+    ...    LOG 2:3    Saved screenshot in <a href='test_screenshot_1.png'>test_screenshot_1.png</a>
+    ...    LOG 3:3    Saved screenshot in <a href='test_screenshot_2.png'>test_screenshot_2.png</a>
     [Teardown]    Remove File    ${TestScreenshot}_*.png
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
