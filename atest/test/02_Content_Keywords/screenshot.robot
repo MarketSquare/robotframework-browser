@@ -15,29 +15,29 @@ Register Keyword To Run On Failure
     Should Exist    ${FailureScreenshot}
     Register Keyword To Run On Failure    ${prev}
 
-Test screenshotting by using keyword
+screenshotting By Using Keyword
     [Teardown]    Remove File    ${TestScreenshot}.png
     Take Screenshot    ${TestScreenshot}
     Should Exist    ${TestScreenshot}.png
 
-Test Element Screenshotting
+Element Screenshotting
     [Teardown]    Remove File    ${TestScreenshot}.png
     Take Screenshot    ${TestScreenshot}    selector=\#username_field
     Should Exist    ${TestScreenshot}.png
 
-Test ElementHandle screenshotting
+ElementHandle screenshotting
     [Teardown]    Remove File    ${TestScreenshot}.png
     ${ref}=    Get Element    \#username_field
     Take screenshot    ${TestScreenshot}    ${ref}
     Should Exist    ${TestScreenshot}.png
 
-Test screenshotting without path
+Screenshotting without path
     ${path}=    Take Screenshot
     Should Exist    ${path}
     Remove File    ${path}
 
-Test screenshot filename incrementation
-    [Teardown]    Remove Screenshot Files
+Screenshot filename incrementation
+    [Teardown]    Remove File    ${TestScreenshot}_*.png
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
     Should Exist    ${TestScreenshot}_1.png
