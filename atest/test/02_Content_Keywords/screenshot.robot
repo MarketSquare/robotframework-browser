@@ -49,11 +49,13 @@ Screenshot Filename Incrementation
 Embed ScreenShot To log.html File
     [Documentation]
     ...    LOG 2:3    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
-    Take screenshot    EMBED
+    ${path} =    Take screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
+    Should Be Equal    ${path}    EMBED
 
 Embed Element Picture To log.html File
     [Documentation]
     ...    LOG 2:3    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
-    Take screenshot    EMbeD    selector=\#username_field
+    ${path} =    Take screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
+    Should Be Equal    ${path}    EMBED
