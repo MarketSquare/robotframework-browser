@@ -42,8 +42,8 @@ Screenshotting Without Path
 
 Screenshot Filename Incrementation
     [Documentation]
-    ...    LOG 2:3    Saved screenshot in <a href='test_screenshot_1.png'>test_screenshot_1.png</a>
-    ...    LOG 3:3    Saved screenshot in <a href='test_screenshot_2.png'>test_screenshot_2.png</a>
+    ...    LOG 2:4    Saved screenshot in <a href='test_screenshot_1.png'>test_screenshot_1.png</a>
+    ...    LOG 3:4    Saved screenshot in <a href='test_screenshot_2.png'>test_screenshot_2.png</a>
     [Teardown]    Remove File    ${TestScreenshot}_*.png
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
@@ -52,14 +52,14 @@ Screenshot Filename Incrementation
 
 Embed ScreenShot To log.html File
     [Documentation]
-    ...    LOG 2:3    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 2:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
     ${path} =    Take screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
     Should Be Equal    ${path}    EMBED
 
 Embed Element Picture To log.html File
     [Documentation]
-    ...    LOG 2:3    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 2:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
     ${path} =    Take screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
