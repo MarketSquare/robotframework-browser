@@ -81,43 +81,49 @@ class Control(LibraryComponent):
         ``selector`` <str> Take a screenshot of the element matched by selector.
         If not provided take a screenshot of current viewport.
         """
-        string_path_no_extension = str(self._get_screenshot_path(filename))
-        if filename.upper() != "EMBED":
-            logger.debug(f"Taking screenshot into ${filename}")
-        else:
+        if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
+        else:
+            logger.debug(f"Taking screenshot into {filename}")
+        file_path = self._take_screenshot(filename, selector)
+        if self._is_embed(filename):
+            return self._emmed_to_log(file_path)
+        logger.info(
+            f"Saved screenshot in <a href='file://{file_path}''>{file_path}</a>",
+            html=True,
+        )
+        return file_path
+
+    def _emmed_to_log(self, file_path):
+        png = Path(file_path)
+        with png.open("rb") as png_file:
+            encoded_string = base64.b64encode(png_file.read())
+        # log statement is copied from:
+        # https://github.com/robotframework/SeleniumLibrary/blob/master/src/SeleniumLibrary/keywords/screenshot.py
+        logger.info(
+            '</td></tr><tr><td colspan="3">'
+            '<img alt="screenshot" class="robot-seleniumlibrary-screenshot" '
+            f'src="data:image/png;base64,{encoded_string.decode()}" width="900px">',
+            html=True,
+        )
+        try:
+            png.unlink()
+        except Exception:
+            logger.warn(f"Could not remove {png}")
+        return "EMBED"
+
+    def _take_screenshot(self, filename: str, selector: str) -> str:
+        string_path_no_extension = str(self._get_screenshot_path(filename))
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
                     path=string_path_no_extension, selector=selector
                 )
             )
-        if filename.upper() != "EMBED":
-            logger.info(
-                f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",
-                html=True,
-            )
-            return response.body
-        png = Path(response.body)
-        with png.open("rb") as png_file:
-            encoded_string = base64.b64encode(png_file.read())
-            self._embed_to_log_as_base64(encoded_string, 900)
-        try:
-            png.unlink()
-        except Exception:
-            logger.warn(f"Could not remove {png}")
+        return response.body
 
-    # Copied from:
-    # https://github.com/robotframework/SeleniumLibrary/blob/master/src/SeleniumLibrary/keywords/screenshot.py
-    def _embed_to_log_as_base64(self, screenshot_as_base64, width):
-        # base64 image is shown as on its own row and thus previous row is closed on
-        # purpose. Depending on Robot's log structure is a bit risky.
-        logger.info(
-            '</td></tr><tr><td colspan="3">'
-            '<img alt="screenshot" class="robot-seleniumlibrary-screenshot" '
-            f'src="data:image/png;base64,{screenshot_as_base64.decode()}" width="{width}px">',
-            html=True,
-        )
+    def _is_embed(self, filename: str) -> bool:
+        return True if filename.upper() == "EMBED" else False
 
     @keyword(tags=["Setter", "Config"])
     def set_browser_timeout(self, timeout: str) -> str:
