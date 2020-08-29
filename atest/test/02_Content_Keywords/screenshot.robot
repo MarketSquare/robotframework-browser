@@ -45,3 +45,15 @@ Screenshot Filename Incrementation
     Take Screenshot    ${TestScreenshot}_{index}
     File Should Exist    ${TestScreenshot}_1.png
     File Should Exist    ${TestScreenshot}_2.png
+
+Embed ScreenShot To log.html File
+    [Documentation]
+    ...    LOG 2:3    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    Take screenshot    EMBED
+    Should Not Exist    ${OUTPUT_DIR}/EMBED*
+
+Embed Element Picture To log.html File
+    [Documentation]
+    ...    LOG 2:3    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    Take screenshot    EMbeD    selector=\#username_field
+    Should Not Exist    ${OUTPUT_DIR}/EM??D*
