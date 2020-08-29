@@ -125,6 +125,7 @@ class Control(LibraryComponent):
                     path=string_path_no_extension, selector=selector
                 )
             )
+        logger.debug(response.log)
         return response.body
 
     def _is_embed(self, filename: str) -> bool:
