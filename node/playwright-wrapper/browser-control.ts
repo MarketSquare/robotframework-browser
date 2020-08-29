@@ -50,11 +50,11 @@ export async function takeScreenshot(
     const selector = call.request.getSelector();
     if (selector) {
         const elem = await determineElement(state, selector, callback);
-        exists(elem, callback, `Tried to capture element screenshot, element '${selector}' wasn't found`);
+        exists(elem, callback, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
         await elem.screenshot({ path: path });
     } else {
         const page = state.getActivePage();
-        exists(page, callback, 'Tried to take screenshot, no page was open');
+        exists(page, callback, 'Tried to take screenshot, but no page was open.');
         await invokeOnPage(page, callback, 'screenshot', { path: path });
     }
     const message = 'Screenshot succesfully captured to: ' + path;

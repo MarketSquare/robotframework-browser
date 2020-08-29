@@ -21,9 +21,15 @@ Screenshotting By Using Keyword
     File Should Exist    ${TestScreenshot}.png
 
 Element Screenshotting
-    [Teardown]    Remove File    ${TestScreenshot}.png
-    Take Screenshot    ${TestScreenshot}    selector=\#username_field
-    File Should Exist    ${TestScreenshot}.png
+    [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
+    Take Screenshot    selector=\#username_field
+    File Should Exist    ${OUTPUT_DIR}/robotframework-browser-screenshot-1.png
+
+If Element Not Found Screenshot Should Fail
+    [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
+    Run Keyword And Expect Error
+    ...    Tried to capture element screenshot, element '#not_there' wasn't found.
+    ...    Take Screenshot    selector=\#not_there
 
 ElementHandle Screenshotting
     [Teardown]    Remove File    ${TestScreenshot}.png
@@ -63,3 +69,13 @@ Embed Element Picture To log.html File
     ${path} =    Take screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
+
+Element Screenshotting
+    Take screenshot    ${TestScreenshot}    \#username_field
+    File Should Exist    ${TestScreenshot}.png
+
+Screenshot Without Active Page
+    Close Page    ALL
+    Run Keyword And Expect Error
+    ...    Tried to take screenshot, but no page was open.
+    ...    Take Screenshot
