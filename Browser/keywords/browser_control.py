@@ -14,6 +14,7 @@
 import base64
 from pathlib import Path
 
+from robot.utils import get_link_path  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
@@ -84,12 +85,16 @@ class Control(LibraryComponent):
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
         else:
-            logger.debug(f"Taking screenshot into {filename}")
+            logger.debug(f"Using {filename} to take screenshot.")
         file_path = self._take_screenshot(filename, selector)
         if self._is_embed(filename):
             return self._emmed_to_log(file_path)
+        return self._log_image_link(file_path)
+
+    def _log_image_link(self, file_path: str) -> str:
+        relative_path = get_link_path(file_path, self.library.outputdir)
         logger.info(
-            f"Saved screenshot in <a href='file://{file_path}''>{file_path}</a>",
+            f"Saved screenshot in <a href='{relative_path}'>{relative_path}</a>",
             html=True,
         )
         return file_path
