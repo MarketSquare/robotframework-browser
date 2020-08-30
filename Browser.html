@@ -83,32 +83,29 @@ input.switch:checked + .slider::before {
     left: 21px;
 }
 .keywords {
-    border: 1px solid #ccc;
-    border-collapse: collapse;
-    empty-cells: show;
-    margin: 0.3em 0;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin: 0.3em 0;
+  width: 100%;
 }
-.keywords th, .keywords td {
-    border: 1px solid #ccc;
-    padding: 0.2em;
-    vertical-align: top;
-}
-.keywords th {
-    background: #ddd;
-    color: black;
-}
+
 .kw {
-    width: 15%;
+  display: flex;
+  align-items: baseline;
 }
-.args {
-    width: 25%;
+
+h4 {
+  margin-right: 0.5rem;
 }
-.tags {
-    width: 10%;
-}
-.kwdoc {
-    width: 60%;
+
+.kw-row {
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
 }
 td.kw a {
     color: inherit;
@@ -119,6 +116,12 @@ td.kw a {
     font-style: italic;
     padding: 0 0.1em;
 }
+
+.tags {
+  display: flex;
+  align-items: baseline;
+}
+
 .tags a {
     color: inherit;
     text-decoration: none;
@@ -333,7 +336,6 @@ a {
     letter-spacing: 0.05em;
     background: #f4f4f4;
     overflow: scroll;
-    max-width: 45vw;
 }
 .doc code {
     padding: 0 0.2em;
@@ -917,22 +919,20 @@ libdoc = {"all_tags":["Assertion","BrowserControl","Config","Getter","HTTP","Pag
 
 <script type="text/x-jquery-tmpl" id="importing-template">
     <h2 id="Importing">Importing</h2>
-    <table border="1" class="keywords">
-        <tr>
-            <th class="args">Arguments</th>
-            <th class="kwdoc doc">Documentation</th>
-        </tr>
+    <div class="keywords">
         {{each inits}}
-        <tr class="kw-row">
-            <td class="args">
-            {{each args}}
-              <span>${$value}</span>{{if $index < args.length-1}},<br>{{/if}}
-            {{/each}}
-            </td>
-            <td class="kwdoc doc">{{html $value.doc}}</td>
-        </tr>
+        <div class="kw-row">
+          <h4>Arguments</h4>
+          <div class="args">
+          {{each args}}
+          <span>${$value}</span>{{if $index < args.length-1}},<br>{{/if}}
+          {{/each}}
+          </div>
+          <h4>Documentation</h4>
+          <div class="kwdoc doc">{{html $value.doc}}</div>
+        </div>
         {{/each}}
-    </table>
+    </div>
 </script>
 
 <script type="text/x-jquery-tmpl" id="shortcuts-template">
@@ -984,42 +984,38 @@ libdoc = {"all_tags":["Assertion","BrowserControl","Config","Getter","HTTP","Pag
 
 <script type="text/x-jquery-tmpl" id="keywords-template">
     <h2 id="Keywords">Keywords</h2>
-    <table border="1" class="keywords">
-        <tr>
-            <th class="kw">Keyword</th>
-            <th class="args">Arguments</th>
-            {{if libdoc.contains_tags}}
-            <th class="tags">Tags</th>
-            {{/if}}
-            <th class="kwdoc doc">Documentation</th>
-        </tr>
+    <div class="keywords">
         {{each keywords}}
             {{tmpl($value) 'keyword-template'}}
         {{/each}}
-    </table>
+    </div>
 </script>
 
 <script type="text/x-jquery-tmpl" id="keyword-template">
-    <tr class="kw-row {{if matched === false}}no-{{/if}}match">
-        <td class="kw">
+    <div class="kw-row {{if matched === false}}no-{{/if}}match">
+        <div class="kw">
+            <h4>Keyword</h4>
             <a name="${name}" href="#${encodeURIComponent(name)}"
                title="Link to this keyword">${name}</a>
-        </td>
-        <td class="args">
+        </div>
+        <h4>Arguments</h4>
+        <div class="args">
             {{each args}}
             <span>${$value}</span>{{if $index < args.length-1}},<br>{{/if}}
             {{/each}}
-        </td>
+        </div>
         {{if libdoc.contains_tags}}
-        <td class="tags">
+        <div class="tags">
+            <h4>Tags</h4>
             {{each tags}}
             <a href="javascript:tagSearch('${$value}')"
                title="Show keywords with this tag">${$value}</a>{{if $index < tags.length-1}},<br>{{/if}}
             {{/each}}
-        </td>
+        </div>
         {{/if}}
-        <td class="kwdoc doc">{{html doc}}</td>
-    </tr>
+        <h4>Documentation</h4>
+        <div class="kwdoc doc">{{html doc}}</div>
+    </div>
 </script>
 
 
