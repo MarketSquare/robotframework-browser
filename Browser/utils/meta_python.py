@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from enum import Enum
 from typing import Dict, List, TypeVar
 
 
@@ -21,7 +21,11 @@ def locals_to_params(args: Dict) -> Dict:
         if key == "self":
             continue
         if args[key] is not None:
-            copy[key] = args[key]
+            value = args[key]
+            if isinstance(value, Enum):
+                copy[key] = value.name
+            else:
+                copy[key] = value
     return copy
 
 
