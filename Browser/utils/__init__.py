@@ -17,6 +17,7 @@ from .data_types import (
     AssertionOperator,
     AutoClosingLevel,
     ColorScheme,
+    CookieSameSite,
     CookieType,
     ElementState,
     RequestMethod,
