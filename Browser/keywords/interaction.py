@@ -206,6 +206,8 @@ class Interaction(LibraryComponent):
         top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
         If not specified, clicks to some visible point of the element.
 
+        *Caution: even with 0, 0 might click a few pixels off from the corner of the boundingbox. Click uses detection to find the first clickable point.*
+
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
         ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
@@ -222,7 +224,8 @@ class Interaction(LibraryComponent):
             }
             if delay:
                 options["delay"] = timestr_to_millisecs(delay)
-            if position_x and position_y:
+            # Without the != None 0 being falsy causes issues
+            if position_x is not None and position_y is not None:
                 positions: Dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions
             if modifiers:

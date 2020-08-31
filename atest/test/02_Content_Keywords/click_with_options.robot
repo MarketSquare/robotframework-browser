@@ -28,10 +28,10 @@ Left Right and Middle Click
     Get Text    \#mouse_button    ==    left
 
 Click with Coordinates
-    [Tags]    Not-Implemented
-    ${xy}    Get Boundingbox    \#clickWithOptions    x    y
-    ${x}    Evaluate    ${xy}[x]+1
-    ${y}    Evaluate    ${xy}[y]+1
-    Click With Options    \#clickWithOptions    position_x=1    position_y=1
-    Get Text    \#coordinatesX    validate    ${x} < float(value)+1 and ${x} > float(value)-1
-    Get Text    \#coordinatesY    validate    abs(${y} - float(value)) < 1
+    ${xy}    Get Boundingbox    \#clickWithOptions
+    ${x}    Evaluate    "${xy}[x]"
+    ${y}    Evaluate    "${xy}[y]"
+    Click With Options    \#clickWithOptions    position_x=0    position_y=0
+    # Give five pixels of leeway since the elements visual boundingbox might differ from the box used by click
+    Get Text    \#coordinatesX    validate    abs(${x} - float(value)) < 5
+    Get Text    \#coordinatesY    validate    abs(${y} - float(value)) < 5
