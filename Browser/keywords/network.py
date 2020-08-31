@@ -103,8 +103,7 @@ class Network(LibraryComponent):
             function = getattr(stub, f"WaitFor{method}")
             response = function(
                 Request().HttpCapture(
-                    urlOrPredicate=matcher,
-                    timeout=timestr_to_millisecs(timeout),
+                    urlOrPredicate=matcher, timeout=timestr_to_millisecs(timeout),
                 )
             )
             logger.debug(response.log)
