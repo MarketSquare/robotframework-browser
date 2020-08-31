@@ -35,7 +35,7 @@ export async function selectOption(
     if (result.length == 0) {
         logger.info("Couldn't select any options");
         const error = new Error(`No options matched ${matcher}`);
-        callback(error, null);
+        return callback(error, null);
     }
     const response = emptyWithLog(`Selected options ${result} in element ${selector}`);
     callback(null, response);

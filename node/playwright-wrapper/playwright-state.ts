@@ -363,10 +363,9 @@ export async function newContext(
             context.id,
             'Succesfully created context with options: ' + JSON.stringify(options),
         );
-        callback(null, response);
+        return callback(null, response);
     } catch (error) {
-        callback(error, null);
-        return;
+        return callback(error, null);
     }
 }
 
@@ -386,9 +385,9 @@ export async function newBrowser(
             browserState.id,
             'Succesfully created browser with options: ' + JSON.stringify(options),
         );
-        callback(null, response);
+        return callback(null, response);
     } catch (error) {
-        callback(error, null);
+        return callback(error, null);
     }
 }
 
