@@ -22,7 +22,7 @@ from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import CookieType, locals_to_params, logger, CookieSameSite
+from ..utils import CookieSameSite, CookieType, locals_to_params, logger
 
 
 class Cookie(LibraryComponent):
