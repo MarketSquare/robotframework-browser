@@ -89,9 +89,26 @@ input.switch:checked + .slider::before {
   width: 100%;
 }
 
+.kw-overview {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.kw-name:link {
+  text-decoration: none;
+  color: black;
+}
+
+.kw-name:visited {
+  text-decoration: none;
+  color: black;
+}
+
 .kw {
   display: flex;
   align-items: baseline;
+  min-width: 250px
 }
 
 h4 {
@@ -112,6 +129,11 @@ td.kw a {
     text-decoration: none;
     font-weight: bold;
 }
+
+.args {
+  min-width: 200px;
+}
+
 .args span {
     font-style: italic;
     padding: 0 0.1em;
@@ -127,6 +149,7 @@ td.kw a {
     text-decoration: none;
     padding: 0 0.1em;
 }
+
 .footer {
     font-size: 0.9em;
 }
@@ -993,13 +1016,14 @@ libdoc = {"all_tags":["Assertion","BrowserControl","Config","Getter","HTTP","Pag
 
 <script type="text/x-jquery-tmpl" id="keyword-template">
     <div class="kw-row {{if matched === false}}no-{{/if}}match">
+        <div class="kw-overview">
         <div class="kw">
             <h4>Keyword</h4>
-            <a name="${name}" href="#${encodeURIComponent(name)}"
+            <a class="kw-name" name="${name}" href="#${encodeURIComponent(name)}"
                title="Link to this keyword">${name}</a>
         </div>
-        <h4>Arguments</h4>
         <div class="args">
+            <h4>Arguments</h4>
             {{each args}}
             <span>${$value}</span>{{if $index < args.length-1}},<br>{{/if}}
             {{/each}}
@@ -1013,6 +1037,7 @@ libdoc = {"all_tags":["Assertion","BrowserControl","Config","Getter","HTTP","Pag
             {{/each}}
         </div>
         {{/if}}
+        </div>
         <h4>Documentation</h4>
         <div class="kwdoc doc">{{html doc}}</div>
     </div>
