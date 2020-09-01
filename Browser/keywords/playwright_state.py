@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from robotlibcore import keyword  # type: ignore
 
+from ..utils.data_types import AssertionOperator
+from ..assertion_engine import with_assertion_polling, verify_assertion
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -396,8 +398,13 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["Getter", "BrowserControl"])
-    def get_browser_catalog(self):
+    @keyword(tags=["Getter", "BrowserControl", ""])
+    @with_assertion_polling
+    def get_browser_catalog(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ):
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
         The data is parsed into a python list containing data representing the open Objects.
@@ -463,7 +470,9 @@ class PlaywrightState(LibraryComponent):
             response = stub.GetBrowserCatalog(Request().Empty())
             parsed = json.loads(response.json)
             logger.info(json.dumps(parsed))
-            return parsed
+            return verify_assertion(
+                parsed, assertion_operator, assertion_expected, "Browser Catalog "
+            )
 
     @keyword(tags=["Setter", "BrowserControl"])
     def switch_browser(self, id: str):

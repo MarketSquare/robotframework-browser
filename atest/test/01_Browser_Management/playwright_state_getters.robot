@@ -4,16 +4,14 @@ Test Teardown     Close Browser    ALL
 
 *** Test Cases ***
 Get Multiple Browsers
-    [Tags]    Not-Implemented
-    # This is hard to get working with UUID based id's so we're skipping it for now
     New Browser
     New Page    ${FORM_URL}
     New Context
     New Page    ${LOGIN_URL}
     New Browser
     New Page    http://example.com
-    ${browsers}    Get Browser Catalog
-    ${expected}    evaluate    [{"type": "chromium", "id": 0, "contexts": [{"type": "context", "id": 0, "pages": [{"type": "page", "title": "prefilled_email_form.html", "url": "http://${SERVER}/prefilled_email_form.html", "id": 0}]}, {"type": "context", "id": 1, "pages": [{"type": "page", "title": "Login Page", "url": "http://${SERVER}/dist/", "id": 0}]}], "activePage": 0, "activeContext": 1, "activeBrowser": False}, {"type": "chromium", "id": 1, "contexts": [{"type": "context", "id": 0, "pages": [{"type": "page", "title": "Example Domain", "url": "http://example.com/", "id": 0}]}], "activePage": 0, "activeContext": 0, "activeBrowser": True}]
+    ${browsers}    Get Browser Catalog    then   [(b['type'], b['activeBrowser'], [[p['url'] for p in c['pages']] for c in b['contexts']]) for b in value]
+    ${expected}    evaluate    [('chromium', False, [['http://${SERVER}/prefilled_email_form.html'], ['http://${SERVER}/dist/']]), ('chromium', True, [['http://example.com/']])]
     should be equal    ${browsers}    ${expected}
 
 Get Closed Browsers
