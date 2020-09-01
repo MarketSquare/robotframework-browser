@@ -13,12 +13,11 @@
 # limitations under the License.
 
 import json
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from robotlibcore import keyword  # type: ignore
 
-from ..utils.data_types import AssertionOperator
-from ..assertion_engine import with_assertion_polling, verify_assertion
+from ..assertion_engine import verify_assertion, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -30,6 +29,7 @@ from ..utils import (
     logger,
     timestr_to_millisecs,
 )
+from ..utils.data_types import AssertionOperator
 
 
 class PlaywrightState(LibraryComponent):
