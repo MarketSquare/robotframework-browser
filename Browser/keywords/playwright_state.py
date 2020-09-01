@@ -420,53 +420,53 @@ class PlaywrightState(LibraryComponent):
         | [
         |   {
         |     "type": "chromium",
-        |     "id": "96207191-8147-44e7-b9ac-5e04f2709c1d",
+        |     "id": "browser=96207191-8147-44e7-b9ac-5e04f2709c1d",
         |     "contexts": [
         |       {
         |         "type": "context",
-        |         "id": "525d8e5b-3c4e-4baa-bfd4-dfdbc6e86089",
-        |         "activePage": "f90c97b8-eaaf-47f2-98b2-ccefd3450f12",
+        |         "id": "context=525d8e5b-3c4e-4baa-bfd4-dfdbc6e86089",
+        |         "activePage": "page=f90c97b8-eaaf-47f2-98b2-ccefd3450f12",
         |         "pages": [
         |           {
         |             "type": "page",
         |             "title": "Robocorp",
         |             "url": "https://robocorp.com/",
-        |             "id": "7ac15782-22d2-48b4-8591-ff17663fa737",
+        |             "id": "page=7ac15782-22d2-48b4-8591-ff17663fa737",
         |             "timestamp": 1598607713.858
         |           },
         |           {
         |             "type": "page",
         |             "title": "Home - Reaktor",
         |             "url": "https://www.reaktor.com/",
-        |             "id": "f90c97b8-eaaf-47f2-98b2-ccefd3450f12",
+        |             "id": "page=f90c97b8-eaaf-47f2-98b2-ccefd3450f12",
         |             "timestamp": 1598607714.702
         |           }
         |         ]
         |       }
         |     ],
-        |     "activeContext": "525d8e5b-3c4e-4baa-bfd4-dfdbc6e86089",
+        |     "activeContext": "context=525d8e5b-3c4e-4baa-bfd4-dfdbc6e86089",
         |     "activeBrowser": false
         |   },
         |   {
         |     "type": "firefox",
-        |     "id": "ad99abac-17a9-472b-ac7f-d6352630834e",
+        |     "id": "browser=ad99abac-17a9-472b-ac7f-d6352630834e",
         |     "contexts": [
         |       {
         |         "type": "context",
-        |         "id": "bc64f1ba-5e76-46dd-9735-4bd344afb9c0",
-        |         "activePage": "8baf2991-5eaf-444d-a318-8045f914e96a",
+        |         "id": "context=bc64f1ba-5e76-46dd-9735-4bd344afb9c0",
+        |         "activePage": "page=8baf2991-5eaf-444d-a318-8045f914e96a",
         |         "pages": [
         |           {
         |             "type": "page",
         |             "title": "Software-Qualit\u00e4tssicherung und Softwaretest",
         |             "url": "https://www.imbus.de/",
-        |             "id": "8baf2991-5eaf-444d-a318-8045f914e96a",
+        |             "id": "page=8baf2991-5eaf-444d-a318-8045f914e96a",
         |             "timestamp": 1598607716.828
         |           }
         |         ]
         |       }
         |     ],
-        |     "activeContext": "bc64f1ba-5e76-46dd-9735-4bd344afb9c0",
+        |     "activeContext": "context=bc64f1ba-5e76-46dd-9735-4bd344afb9c0",
         |     "activeBrowser": true
         |   }
         | ]
