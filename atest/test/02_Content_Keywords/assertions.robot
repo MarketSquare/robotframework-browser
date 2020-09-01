@@ -7,7 +7,6 @@ Equal
     Get Title    ==    Login Page
     Get Title    equal    Login Page
     Get Title    should be    Login Page
-    Get Title    sHouLd BE    Login Page
 
 InEqual
     Get Title    !=    Cool Page
