@@ -411,6 +411,11 @@ class PlaywrightState(LibraryComponent):
 
         On the root level the data contains a list of open browsers.
 
+        Data can be manipulated also with ``assertion_operator`` for example to find
+        a specific id based on index or page title with ``then`` operator.
+
+        Return value can also be asserted against expected value.
+
         Sample:
         | [
         |   {
