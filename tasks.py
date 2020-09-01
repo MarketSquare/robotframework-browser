@@ -165,10 +165,7 @@ def clean_atest(c):
 @task(clean_atest)
 def atest(c):
     _run_robot(
-        [
-            "--pythonpath",
-            ".",
-        ]
+        ["--pythonpath", ".",]
     )
 
 
@@ -320,7 +317,7 @@ def release(c):
 def version(c, version):
     from Browser.version import VERSION
 
-    os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}")
+    os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}.html")
     if not version:
         print("Give version with inv version <version>")
     py_version_file = root_dir / "Browser" / "version.py"
