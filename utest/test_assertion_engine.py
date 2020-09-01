@@ -1,5 +1,9 @@
 import pytest
-from Browser.assertion_engine import verify_assertion, AssertionOperator, with_assertion_polling
+from Browser.assertion_engine import (
+    verify_assertion,
+    AssertionOperator,
+    with_assertion_polling,
+)
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
@@ -29,13 +33,13 @@ class FakeBrowser:
 
     @with_assertion_polling
     def is_three(self, value):
-        verify_assertion(value, AssertionOperator['=='], 3)
+        verify_assertion(value, AssertionOperator["=="], 3)
 
     @with_assertion_polling
     def second_run_success(self):
         current = self.counter
         self.counter += 1
-        verify_assertion(current, AssertionOperator['=='], 2)
+        verify_assertion(current, AssertionOperator["=="], 2)
 
 
 def test_with_assertions_polling():

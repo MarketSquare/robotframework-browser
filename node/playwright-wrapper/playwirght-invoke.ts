@@ -34,6 +34,7 @@ export async function waitUntilElementExists<T>(
             await context.waitForSelector(elementSelector, { state: 'attached' });
         } catch (e) {
             callback(getErrorDetails(e, selector, 'waitForSelector'), null);
+            throw e;
         }
     }
     const element = await context.$(elementSelector);
@@ -47,7 +48,7 @@ async function invokeFunction<T>(callback: sendUnaryData<T>, method: any, ...arg
         return await method(...Object.values(args));
     } catch (e) {
         logger.error(`Error invoking Playwright action '${method}': ${e}`);
-        callback(e, null);
+        return callback(e, null);
     }
 }
 

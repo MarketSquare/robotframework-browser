@@ -13,10 +13,11 @@
 # limitations under the License.
 
 import json
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from robotlibcore import keyword  # type: ignore
 
+from ..assertion_engine import verify_assertion, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -29,6 +30,7 @@ from ..utils import (
     logger,
     timestr_to_millisecs,
 )
+from ..utils.data_types import AssertionOperator
 
 
 class PlaywrightState(LibraryComponent):
@@ -397,13 +399,23 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["Getter", "BrowserControl"])
-    def get_browser_catalog(self):
+    @keyword(tags=["Getter", "BrowserControl", ""])
+    @with_assertion_polling
+    def get_browser_catalog(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ):
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
         The data is parsed into a python list containing data representing the open Objects.
 
         On the root level the data contains a list of open browsers.
+
+        Data can be manipulated also with ``assertion_operator`` for example to find
+        a specific id based on index or page title with ``then`` operator.
+
+        Return value can also be asserted against expected value.
 
         Sample:
         | [
@@ -464,7 +476,9 @@ class PlaywrightState(LibraryComponent):
             response = stub.GetBrowserCatalog(Request().Empty())
             parsed = json.loads(response.json)
             logger.info(json.dumps(parsed))
-            return parsed
+            return verify_assertion(
+                parsed, assertion_operator, assertion_expected, "Browser Catalog "
+            )
 
     @keyword(tags=["Setter", "BrowserControl"])
     def switch_browser(self, id: str):

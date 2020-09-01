@@ -22,7 +22,7 @@ from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import CookieType, locals_to_params, logger
+from ..utils import CookieSameSite, CookieType, locals_to_params, logger
 
 
 class Cookie(LibraryComponent):
@@ -91,7 +91,7 @@ class Cookie(LibraryComponent):
         expires: Optional[str] = None,
         httpOnly: Optional[bool] = None,
         secure: Optional[bool] = None,
-        sameSite: Optional[str] = None,
+        sameSite: Optional[CookieSameSite] = None,
     ):
         """Adds a cookie to currently active browser context.
 

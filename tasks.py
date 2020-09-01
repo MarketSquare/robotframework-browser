@@ -1,15 +1,19 @@
 import os
+import subprocess
+import sys
 from pathlib import Path
 import platform
 import re
 import shutil
 
 from invoke import task, Exit
+from robot import rebot_cli
 
 try:
     from pabot import pabot
     import pytest
     from robot.libdoc import libdoc
+    import robotstatuschecker
 except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
@@ -123,7 +127,7 @@ def node_build(c):
         print("no changes in .ts files, skipping node build")
 
 
-@task(protobuf, node_build)
+@task(deps, protobuf, node_build)
 def build(c):
     c.run("python -m Browser.gen_stub")
 
@@ -189,20 +193,29 @@ def atest_failed(c):
 
 def _run_robot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
-    pabot_args = ["--pabotlib", "--verbose"]
+    pabot_args = [sys.executable, "-m", "pabot.pabot", "--pabotlib", "--verbose"]
     default_args = [
         "--exclude",
         "Not-Implemented",
         "--loglevel",
         "DEBUG",
+        "--report",
+        "NONE",
+        "--log",
+        "NONE",
         "--outputdir",
         str(atest_output),
     ]
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "No-Windows-Support"])
     default_args.append("atest/test")
-
-    pabot.main(pabot_args + (extra_args or []) + default_args)
+    process = subprocess.Popen(pabot_args + (extra_args or []) + default_args)
+    process.wait(600)
+    output_xml = str(atest_output / "output.xml")
+    print(f"Process {output_xml}")
+    robotstatuschecker.process_output(output_xml, verbose=False)
+    rebot_cli(["--outputdir", str(atest_output), output_xml])
+    print("DONE")
 
 
 @task
@@ -304,7 +317,7 @@ def release(c):
 def version(c, version):
     from Browser.version import VERSION
 
-    os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}")
+    os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}.html")
     if not version:
         print("Give version with inv version <version>")
     py_version_file = root_dir / "Browser" / "version.py"

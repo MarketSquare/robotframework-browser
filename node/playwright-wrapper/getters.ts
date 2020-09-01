@@ -109,7 +109,7 @@ async function getProperty<T>(
         return content;
     } catch (e) {
         logger.error(e);
-        callback(e, null);
+        return callback(e, null);
     }
 }
 
@@ -136,7 +136,7 @@ async function getAttributeValue<T>(
         return attribute;
     } catch (e) {
         logger.error(e);
-        callback(e, null);
+        return callback(e, null);
     }
 }
 

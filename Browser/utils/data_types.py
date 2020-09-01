@@ -47,6 +47,11 @@ class CookieType(Enum):
     str = string
 
 
+CookieSameSite = Enum(
+    "CookieSameSite", {"Strict": "Strict", "Lax": "Lax", "None": "None"}
+)
+
+
 class RequestMethod(Enum):
     HEAD = auto()
     GET = auto()

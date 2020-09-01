@@ -64,10 +64,10 @@ async function _newBrowserContext(
         });
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
-    const c = { id: uuidv4(), c: context, pageStack: [] as IndexedPage[], options: options };
+    const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options };
     c.c.on('page', (page) => {
         const timestamp = new Date().getTime() / 1000;
-        const newPage = { id: uuidv4(), p: page, timestamp: timestamp };
+        const newPage = { id: `page=${uuidv4()}`, p: page, timestamp: timestamp };
         c.pageStack.unshift(newPage);
     });
     return c;
@@ -76,7 +76,7 @@ async function _newBrowserContext(
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
     const newPage = await context.newPage();
     const timestamp = new Date().getTime() / 1000;
-    return { id: uuidv4(), p: newPage, timestamp: timestamp };
+    return { id: `page=${uuidv4()}`, p: newPage, timestamp: timestamp };
 }
 
 export class PlaywrightState {
@@ -220,7 +220,7 @@ export class BrowserState {
         this.name = name;
         this.browser = browser;
         this._contextStack = [];
-        this.id = uuidv4();
+        this.id = `browser=${uuidv4()}`;
     }
     private _contextStack: IndexedContext[];
     browser: Browser;
@@ -343,8 +343,7 @@ export async function newPage(
     browserState.pushPage(page);
     const url = call.request.getUrl() || 'about:blank';
     await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
-    const response = stringResponse(page.id, 'New page opeened.');
-    response.setLog('Succesfully initialized new page object and opened url: ' + url);
+    const response = stringResponse(page.id, 'Succesfully initialized new page object and opened url: ' + url);
     callback(null, response);
 }
 
@@ -360,12 +359,13 @@ export async function newContext(
         const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser);
         browserState.pushContext(context);
 
-        const response = stringResponse(context.id, 'New context opened');
-        response.setLog('Succesfully created context with options: ' + JSON.stringify(options));
-        callback(null, response);
+        const response = stringResponse(
+            context.id,
+            'Succesfully created context with options: ' + JSON.stringify(options),
+        );
+        return callback(null, response);
     } catch (error) {
-        callback(error, null);
-        return;
+        return callback(error, null);
     }
 }
 
@@ -381,11 +381,13 @@ export async function newBrowser(
         const options = JSON.parse(call.request.getRawoptions());
         const [browser, name] = await _newBrowser(browserType, headless, options);
         const browserState = openBrowsers.addBrowser(name, browser);
-        const response = stringResponse(browserState.id, 'New browser opened, with options: ' + options);
-        response.setLog('Succesfully created browser with options: ' + JSON.stringify(options));
-        callback(null, response);
+        const response = stringResponse(
+            browserState.id,
+            'Succesfully created browser with options: ' + JSON.stringify(options),
+        );
+        return callback(null, response);
     } catch (error) {
-        callback(error, null);
+        return callback(error, null);
     }
 }
 
@@ -438,7 +440,7 @@ export async function switchPage(
         const latest = context.pageStack[0];
         exists(latest, callback, 'Tried to activate latest page but no pages were open in context.');
         await browserState.activatePage(latest);
-        callback(null, stringResponse(previous, `Activated new page ${latest}`));
+        callback(null, stringResponse(previous, `Activated new page ${latest.id}`));
         return;
     }
 

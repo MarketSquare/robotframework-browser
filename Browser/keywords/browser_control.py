@@ -11,9 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import base64
 from pathlib import Path
 
+from robot.utils import get_link_path  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
@@ -72,25 +73,63 @@ class Control(LibraryComponent):
     ):
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
-        ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output directory by default.
-        String ``{index}`` in path will be replaced with a rolling number. Use this to not override filenames.
+        ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output
+        directory by default. String ``{index}`` in path will be replaced with a rolling number. Use this to not
+        override filenames. If filename equals to EMBED (case insensitive), then screenshot is embedded as
+        Base64 image to the log.html. The image is saved temporally to the disk and warning is displayed
+        if removing the temporary file fails.
 
         ``selector`` <str> Take a screenshot of the element matched by selector.
         If not provided take a screenshot of current viewport.
         """
+        if self._is_embed(filename):
+            logger.debug("Embedding image to log.html.")
+        else:
+            logger.debug(f"Using {filename} to take screenshot.")
+        file_path = self._take_screenshot(filename, selector)
+        if self._is_embed(filename):
+            return self._emmed_to_log(file_path)
+        return self._log_image_link(file_path)
+
+    def _log_image_link(self, file_path: str) -> str:
+        relative_path = get_link_path(file_path, self.library.outputdir)
+        logger.info(
+            f"Saved screenshot in <a href='{relative_path}'>{relative_path}</a>",
+            html=True,
+        )
+        return file_path
+
+    def _emmed_to_log(self, file_path):
+        png = Path(file_path)
+        with png.open("rb") as png_file:
+            encoded_string = base64.b64encode(png_file.read())
+        # log statement is copied from:
+        # https://github.com/robotframework/SeleniumLibrary/blob/master/src/SeleniumLibrary/keywords/screenshot.py
+        logger.info(
+            '</td></tr><tr><td colspan="3">'
+            '<img alt="screenshot" class="robot-seleniumlibrary-screenshot" '
+            f'src="data:image/png;base64,{encoded_string.decode()}" width="900px">',
+            html=True,
+        )
+        try:
+            png.unlink()
+        except Exception:
+            logger.warn(f"Could not remove {png}")
+        return "EMBED"
+
+    def _take_screenshot(self, filename: str, selector: str) -> str:
         string_path_no_extension = str(self._get_screenshot_path(filename))
-        logger.debug(f"Taking screenshot into ${filename}")
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
                     path=string_path_no_extension, selector=selector
                 )
             )
-            logger.info(
-                f"Saved screenshot in <a href='file://{response.body}''>{response.body}</a>",
-                html=True,
-            )
-            return response.body
+        logger.debug(response.log)
+        return response.body
+
+    def _is_embed(self, filename: str) -> bool:
+        return True if filename.upper() == "EMBED" else False
 
     @keyword(tags=["Setter", "Config"])
     def set_browser_timeout(self, timeout: str) -> str:
