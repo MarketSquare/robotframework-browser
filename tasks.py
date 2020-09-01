@@ -127,7 +127,7 @@ def node_build(c):
         print("no changes in .ts files, skipping node build")
 
 
-@task(protobuf, node_build)
+@task(deps, protobuf, node_build)
 def build(c):
     c.run("python -m Browser.gen_stub")
 
