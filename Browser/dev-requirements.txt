@@ -1,14 +1,14 @@
 invoke >= 1.4.1
-pytest >= 5.4.3
+pytest >= 6.0.1
 pytest-watch >= 4.2.0
 black >= 19.10b0
 mypy >= 0.782
 mypy-protobuf >= 1.23
 flake8 >= 3.8.3
-robotframework >= 3.2.1
-isort >= 5.2.2
-wheel>=0.34.2
-robotframework-pabot >= 1.8.1
+robotframework >= 3.2.2
+isort >= 5.4.2
+wheel>=0.35.1
+robotframework-pabot >= 1.9.0
 twine >= 3.2.0
 robotstatuschecker >= 1.4
 
