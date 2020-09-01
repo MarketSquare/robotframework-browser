@@ -458,7 +458,8 @@ class PlaywrightState(LibraryComponent):
         |     "activeContext": "bc64f1ba-5e76-46dd-9735-4bd344afb9c0",
         |     "activeBrowser": true
         |   }
-        | ]        """
+        | ]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBrowserCatalog(Request().Empty())
             parsed = json.loads(response.json)
@@ -638,9 +639,6 @@ class PlaywrightState(LibraryComponent):
         self, selection_type: SelectionType, context_item: dict
     ):
         if selection_type == SelectionType.ACTIVE:
-            raise NotImplementedError(
-                "Here is a Bug. Congrats you found it..."
-            )  # FixMe: this activePage is at the wrong place
             return context_item["activePage"]
         else:
             return [page["id"] for page in context_item["pages"]]
