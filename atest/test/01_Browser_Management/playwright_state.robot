@@ -93,12 +93,12 @@ Switch Browser
     Get Title    matches    (?i)login
 
 Browser, Context and Page UUIDs
-    ${browser}=   New Browser
-    ${context}=   New Context
-    ${page}=      New Page
-    Should Start With	${browser}  browser=
-    Should Start With	${context}  context=
-    Should Start With	${page}  page=
+    ${browser}=    New Browser
+    ${context}=    New Context
+    ${page}=    New Page
+    Should Start With    ${browser}    browser=
+    Should Start With    ${context}    context=
+    Should Start With    ${page}    page=
     [Teardown]    Close Browser
 
 Switch Context
