@@ -78,7 +78,7 @@ There are 3 different interfaces that the library is targeting to use in browser
 2. Internals of a webapp: State, Cookies, Storage, Methods.
 3. Requests & Responses: Interface between a browser and servers.
 
-Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.TypeScriptlang.org/) and [Playwright](https://playwright.dev/)
+Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.typescriptlang.org/) and [Playwright](https://playwright.dev/)
 
 ## Contributing
 
