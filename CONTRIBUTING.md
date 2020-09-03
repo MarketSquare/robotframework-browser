@@ -80,7 +80,7 @@ There are 3 different interfaces that the library is targeting to use in browser
 
 Python Library <--> [gRPC](https://grpc.io/) <---> [TypeScript](https://www.TypeScriptlang.org/) and [Playwright](https://playwright.dev/)
 
-# Contributing
+## Contributing
 
 When contributing to this repository, please first discuss the change you wish to make via issue,
 email, or any other method with the owners of this repository before making a change.
