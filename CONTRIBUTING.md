@@ -18,7 +18,7 @@ Install Python, nodejs and yarn.
 - https://nodejs.org/
 - https://classic.yarnpkg.com/en/docs/install
 
-N.B. The minimum Python version is 3.8.
+N.B. The minimum Python version is 3.7.
 
 Run `python bootstrap.py` to create a virtual environment with correct dependencies.
 After that, make sure to activate the virtual env before running other development commands.
