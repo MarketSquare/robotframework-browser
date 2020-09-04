@@ -142,7 +142,9 @@ class Getters(LibraryComponent):
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
-        return self.get_property(selector, "innerText", assertion_operator, assertion_expected)
+        return self.get_property(
+            selector, "innerText", assertion_operator, assertion_expected
+        )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
