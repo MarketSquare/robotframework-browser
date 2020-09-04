@@ -12,6 +12,7 @@ ${FORM_URL}       ${ROOT_URL}/prefilled_email_form.html
 ${DIALOGS_URL}    ${ROOT_URL}/dialogs.html
 ${ELEMENT_STATE_URL}    ${ROOT_URL}/enabled_disabled_fields_form.html
 ${FRAMES_URL}     ${ROOT_URL}/frames/iframes.html
+${DEEP_FRAMES_URL}   ${ROOT_URL}/frames/deep/a.html
 ${WELCOME_URL}    ${ROOT_URL}/welcome.html
 ${ERROR_URL}      ${ROOT_URL}/error.html
 ${WAIT_URL}       ${ROOT_URL}/waitfor.html
