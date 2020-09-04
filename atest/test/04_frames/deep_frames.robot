@@ -11,7 +11,7 @@ Second level
     Get Text    id=b >>> id=bb    ==    B HTML
 
 Third level
-    ${style}=   Get Style   id=b >>> id=c >>> id=cc  width
+    ${style}=    Get Style    id=b >>> id=c >>> id=cc    width
     Get Text    id=b >>> id=c >>> id=cc    ==    This is c
 
 Third level from second
