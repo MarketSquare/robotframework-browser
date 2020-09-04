@@ -130,7 +130,6 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
-    @with_assertion_polling
     def get_text(
         self,
         selector: str,
@@ -143,12 +142,7 @@ class Getters(LibraryComponent):
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
-        return verify_assertion(
-            self.get_property(selector, "innerText"),
-            assertion_operator,
-            assertion_expected,
-            f"Text {selector}",
-        )
+        return self.get_property(selector, "innerText", assertion_operator, assertion_expected)
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
@@ -185,7 +179,7 @@ class Getters(LibraryComponent):
             else:
                 raise AttributeError(f"Property '{property}' not found!")
             return verify_assertion(
-                value, assertion_operator, assertion_expected, f"Property {selector}"
+                value, assertion_operator, assertion_expected, f"Property {property}"
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
