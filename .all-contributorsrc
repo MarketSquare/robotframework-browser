@@ -175,6 +175,16 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "adrianyorke",
+      "name": "Adrian Yorke",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/30093433?v=4",
+      "profile": "https://github.com/adrianyorke",
+      "contributions": [
+        "doc",
+        "review"
+      ]
     }
   ],
   "contributorsPerLine": 7,
