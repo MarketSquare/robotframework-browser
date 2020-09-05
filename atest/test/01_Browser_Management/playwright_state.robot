@@ -194,5 +194,6 @@ Closing Page/Contex/Browser Multiple Times Should Not Cause Errors
     Close Context
     Close Context
     Close Browser
+    Close Browser
     ${catalog} =    Get Browser Catalog
     Log    ${catalog}

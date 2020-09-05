@@ -301,7 +301,7 @@ export async function closeBrowser(callback: sendUnaryData<Response.Empty>, open
     const id = openBrowsers.activeBrowser;
     const currentBrowser = openBrowsers.activeBrowser;
     if (currentBrowser === undefined) {
-        callback(new Error(`Tried to close Browser ${id}, was already closed.`), null);
+        callback(null, emptyWithLog('No browser open, doing nothing'));
         return;
     }
     await currentBrowser.close();
