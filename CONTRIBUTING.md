@@ -62,7 +62,7 @@ Docker container builds a clean install package. This can be used to check that 
 3. Check that you have permissions to release on Github and PyPi
 4. Run `inv <new_version>` to update the version information to both Python and Node components.
 5. Use `inv release` to create and release artifacts and upload to PyPi
-6. Create Github release
+6. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
 
 ## Code style
 Python code style is enforced with flake8 and black. These are executed in a
