@@ -108,38 +108,41 @@ class PlaywrightState(LibraryComponent):
 
         ``browser`` < ``CURRENT`` | ``ALL`` | str > Close context in specified browser. If value is not "CURRENT"
         it should be a string referencing the id of the browser where to close context.
-        TODO: Does this make any sense? If ALL is passed, all contexts of the browser will be closed.
         """
+        for browser_instance in self._get_browser_instances(browser):
+            if browser_instance["id"] == "NO BROWSER OPEN":
+                logger.info("No browsers open. can not closing context.")
+                return
+            self.switch_browser(browser_instance["id"])
+            contexts = self._get_context(context, browser_instance["contexts"])
+            self._close_context(contexts)
+
+    def _close_context(self, contexts):
         with self.playwright.grpc_channel() as stub:
-            catalog = self.library.get_browser_catalog()
-
-            if browser == "ALL":
-                browser_ids = [b["id"] for b in catalog]
-            elif browser == "CURRENT":
-                browser_ids = [self.switch_browser("CURRENT")]
-            else:
-                browser_ids = [browser]
-
-            browsers = [find_by_id(b_id, catalog) for b_id in browser_ids]
-
-            for b in browsers:
-                if b["id"] == "NO BROWSER OPEN":
+            for context in contexts:
+                self.switch_context(context["id"])
+                if context["id"] == "NO CONTEXT OPEN":
                     return
-                self.switch_browser(b["id"])
-                contexts = b["contexts"]
-                if context != "ALL":
-                    if context == "CURRENT":
-                        current_ctx = self.switch_context("CURRENT")
-                        contexts = [find_by_id(current_ctx, contexts)]
-                    else:
-                        contexts = [find_by_id(context, contexts)]
-                for c in contexts:
-                    self.switch_context(c["id"])
-                    if c["id"] == "NO CONTEXT OPEN":
-                        return
+                response = stub.CloseContext(Request().Empty())
+                logger.info(response.log)
 
-                    response = stub.CloseContext(Request().Empty())
-                    logger.info(response.log)
+    def _get_context(self, context, contexts):
+        if context == "ALL":
+            return contexts
+        if context == "CURRENT":
+            current_ctx = self.switch_context("CURRENT")
+            return [find_by_id(current_ctx, contexts)]
+        return [find_by_id(context, contexts)]
+
+    def _get_browser_instances(self, browser):
+        catalog = self.get_browser_catalog()
+        if browser == "ALL":
+            browser_ids = [browser_instance["id"] for browser_instance in catalog]
+        elif browser == "CURRENT":
+            browser_ids = [self.switch_browser("CURRENT")]
+        else:
+            browser_ids = [browser]
+        return [find_by_id(browser_id, catalog) for browser_id in browser_ids]
 
     @keyword(tags=["Setter", "BrowserControl"])
     def close_page(
