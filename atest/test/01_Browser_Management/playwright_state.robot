@@ -185,3 +185,14 @@ Close All Pages
     Close Page    ALL
     ${current}=    Switch Page    CURRENT
     Should Be Equal    ${current}    NO PAGE OPEN
+
+Closing Page/Contex/Browser Multiple Times Should Not Cause Errors
+    New Context
+    New Page
+    Close Page
+    Close Page
+    Close Context
+    Close Context
+    Close Browser
+    ${catalog} =    Get Browser Catalog
+    Log    ${catalog}
