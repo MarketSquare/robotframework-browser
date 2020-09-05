@@ -121,8 +121,6 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             for context in contexts:
                 self.switch_context(context["id"])
-                if context["id"] == "NO CONTEXT OPEN":
-                    return
                 response = stub.CloseContext(Request().Empty())
                 logger.info(response.log)
 
@@ -131,7 +129,11 @@ class PlaywrightState(LibraryComponent):
             return contexts
         if context == "CURRENT":
             current_ctx = self.switch_context("CURRENT")
-            return [find_by_id(current_ctx, contexts)]
+            try:
+                return [find_by_id(current_ctx, contexts)]
+            except StopIteration:
+                logger.info("No open context found.")
+                return []
         return [find_by_id(context, contexts)]
 
     def _get_browser_instances(self, browser):

@@ -37,7 +37,6 @@ def find_by_id(_id: str, item_list: List[Dict[str, T]]) -> Dict[str, T]:
     from ..utils import logger
 
     def filter_fn(item):
-        # logger.info(item)
         return item["id"] == _id
 
     try:
