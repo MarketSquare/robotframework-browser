@@ -404,4 +404,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     async setOffline(call: ServerUnaryCall<Request.Bool>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return browserControl.setOffline(call, callback, this.getActiveContext());
     }
+
+    async reload(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return browserControl.reload(call, callback, this.getActivePage());
+    }
 }

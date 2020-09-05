@@ -193,3 +193,10 @@ class Control(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SetOffline(Request().Bool(value=offline))
             logger.info(response.log)
+
+    @keyword(tags=["Setter", "BrowserControl"])
+    def reload(self):
+        """Reloads current active page."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.Reload(Request().Empty())
+            logger.info(response.log)
