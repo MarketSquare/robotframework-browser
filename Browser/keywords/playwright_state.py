@@ -130,7 +130,7 @@ class PlaywrightState(LibraryComponent):
         if context == "CURRENT":
             current_ctx = self.switch_context("CURRENT")
             try:
-                return [find_by_id(current_ctx, contexts)]
+                return [find_by_id(current_ctx, contexts, log_error=False)]
             except StopIteration:
                 logger.info("No open context found.")
                 return []

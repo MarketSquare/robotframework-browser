@@ -195,5 +195,13 @@ Closing Page/Contex/Browser Multiple Times Should Not Cause Errors
     Close Context
     Close Browser
     Close Browser
-    ${catalog} =    Get Browser Catalog
-    Log    ${catalog}
+
+Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
+    New Context
+    New Page
+    Close Page    ALL
+    Close Page    ALL
+    Close Context    ALL    ALL
+    Close Context    ALL    ALL
+    Close Browser    ALL
+    Close Browser    ALL
