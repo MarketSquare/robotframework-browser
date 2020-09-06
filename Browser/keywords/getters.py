@@ -370,7 +370,10 @@ class Getters(LibraryComponent):
                 expected = [int(exp) for exp in expected]
 
             return list_verify_assertion(
-                selected, assertion_operator, expected, "Selected Options:",
+                selected,
+                assertion_operator,
+                expected,
+                "Selected Options:",
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
