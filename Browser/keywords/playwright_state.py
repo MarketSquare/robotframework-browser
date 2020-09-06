@@ -514,17 +514,18 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=["Setter", "BrowserControl"])
     def switch_page(self, id: str, context: str = "CURRENT", browser: str = "CURRENT"):
-        """Switches the active browser page to another open page by ``id``.
-        Returns a stable identifier for the previous page.
-        Newly opened pages get appended to the end of the list.
+        """Switches the active browser page to another open page by ``id`` or ``NEW``.
+        Returns a stable identifier ``id`` for the previous page.
 
-        ``id`` < ``CURRENT`` | ``NEW `` | str> Id of the page to be changed to. Randomly generated UUID. **Required**
+        ``id`` < ``CURRENT`` | ``NEW `` | str> Id of the page to be changed to or
+        ``NEW`` for last opened page. With ``CURRENT`` you can get the ``id`` of the "CURRENT" page
+        **Required**
 
         ``context`` < ``CURRENT`` | str> Switch page in specified context. If value is not "CURRENT"
-        it should be an int referencing the id of the context where to switch page.
+        it should be the id of the context where to switch page.
 
         ``browser`` < ``CURRENT`` | str> Switch page in specified browser. If value is not "CURRENT"
-        it should be an int referencing the id of the browser where to switch page.
+        it should be the id of the browser where to switch page.
         """
         with self.playwright.grpc_channel() as stub:
             if context == "ALL":

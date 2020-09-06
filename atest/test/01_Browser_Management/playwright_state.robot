@@ -124,6 +124,13 @@ Switch Page after popup
     Switch Page    ${previous}
     Wait For Elements State    button#pops_up
 
+Switch New Page does not change page when current is new
+    New Page    ${LOGIN_URL}
+    New Page    ${FORM_URL}
+    Get Title    ==    prefilled_email_form.html
+    Switch Page  NEW
+    Get Title    ==    prefilled_email_form.html
+
 Set Viewport Size
     New Page
     ${size}    Get Viewport Size
