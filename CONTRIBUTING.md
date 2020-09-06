@@ -60,9 +60,11 @@ Docker container builds a clean install package. This can be used to check that 
 1. Ensure generated code and types are up to date with `inv build`
 2. Ensure tests and linting pass on CI
 3. Check that you have permissions to release on Github and PyPi
-4. Run `inv <new_version>` to update the version information to both Python and Node components.
+4. Run `inv version <new_version>` to update the version information to both Python and Node components.
 5. Use `inv release` to create and release artifacts and upload to PyPi
 6. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
+7. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
+8. Announce new release, at least in Slack and user group mailing list. 
 
 ## Code style
 Python code style is enforced with flake8 and black. These are executed in a
