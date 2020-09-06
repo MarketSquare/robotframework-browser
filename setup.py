@@ -34,7 +34,7 @@ setup_kwargs = {
     "entry_points": {"console_scripts": ["rfbrowser=Browser.entry:run"]},
     "python_requires": ">=3.7,<4.0",
     "classifiers": [
-        "Development Status :: 1 - Planning",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",

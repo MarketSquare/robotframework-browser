@@ -149,9 +149,13 @@ async function determineContextAndSelector<T>(
     const page = state.getActivePage();
     exists(page, callback, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
-        const { frameSelector, elementSelector } = splitFrameAndElementSelector(selector);
-        const frame = await findFrame(page, frameSelector, callback);
-        return { elementSelector, context: frame };
+        let selectors = splitFrameAndElementSelector(selector);
+        let frame = await findFrame(page, selectors.frameSelector, callback);
+        while (isFramePiercingSelector(selectors.elementSelector)) {
+            selectors = splitFrameAndElementSelector(selectors.elementSelector);
+            frame = await findFrame(frame, selectors.frameSelector, callback);
+        }
+        return { elementSelector: selectors.elementSelector, context: frame };
     } else if (isElementHandleSelector(selector)) {
         const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector, callback);
 
@@ -206,10 +210,10 @@ function isElementHandleSelector(selector: string) {
 }
 
 function splitFrameAndElementSelector(selector: string) {
-    const parts = selector.split('>>>');
+    const [first, ...rest] = selector.split(' >>> ');
     return {
-        frameSelector: parts[0].trim(),
-        elementSelector: parts[1].trim(),
+        frameSelector: first.trim(),
+        elementSelector: rest.join(' >>> ').trim(),
     };
 }
 
@@ -243,8 +247,8 @@ function splitElementHandleAndElementSelector<T>(
     throw 'Never executes?';
 }
 
-async function findFrame<T>(page: Page, frameSelector: string, callback: sendUnaryData<T>): Promise<Frame> {
-    const contentFrame = await (await page.$(frameSelector))?.contentFrame();
+async function findFrame<T>(parent: Page | Frame, frameSelector: string, callback: sendUnaryData<T>): Promise<Frame> {
+    const contentFrame = await (await parent.$(frameSelector))?.contentFrame();
     exists(contentFrame, callback, `Could not find frame with selector ${frameSelector}`);
     return contentFrame;
 }

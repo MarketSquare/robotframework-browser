@@ -92,3 +92,12 @@ export async function setOffline(
     await context.setOffline(offline);
     callback(null, emptyWithLog(`Set context to ${offline}`));
 }
+
+export async function reload(
+    call: ServerUnaryCall<Request.Empty>,
+    callback: sendUnaryData<Response.Empty>,
+    page?: Page,
+) {
+    await invokeOnPage(page, callback, 'reload');
+    callback(null, emptyWithLog('Reloaded page'));
+}

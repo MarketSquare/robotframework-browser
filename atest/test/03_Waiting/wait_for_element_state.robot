@@ -78,13 +78,13 @@ Wait For Elements State to hide with Promise
     Select Options By    \#dropdown    value    hidden    # Now it is visible
     ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms
-    Sleep    200 ms    reson=to check that the promise keeps beeing active
+    Sleep    200 ms    reason=to check that the promise keeps beeing active
     ${start}=    Evaluate    time.time()
     Click with Options    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
     Wait for    ${promise}
     ${end}=    Evaluate    time.time()
-    Should Be True    ($end - $start) < 0.7
+    Should Be True    ($end - $start) < 1.0
 
 Wait For Elements State to hide fails with Promise
     Select Options By    \#dropdown    value    hidden    # Now it is visible

@@ -13,6 +13,10 @@ Open Browser To Frame Page
     New Browser  ${BROWSER}  headless=${HEADLESS}
     New Page  ${FRAMES_URL}
 
+Open Browser To Deep Frame Page
+    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Page  ${DEEP_FRAMES_URL}
+
 Open Browser To Form Page
     New Browser  ${BROWSER}  headless=${HEADLESS}
     New Page  ${FORM_URL}
