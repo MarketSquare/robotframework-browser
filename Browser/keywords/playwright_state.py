@@ -22,6 +22,7 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     ColorScheme,
+    SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
     find_by_id,
@@ -528,9 +529,9 @@ class PlaywrightState(LibraryComponent):
         it should be the id of the browser where to switch page.
         """
         with self.playwright.grpc_channel() as stub:
-            if context == "ALL":
+            if context.upper() == "ALL":
                 raise NotImplementedError
-            if browser == "ALL":
+            if browser.upper() == "ALL":
                 raise NotImplementedError
 
             self._correct_browser(browser)
@@ -538,3 +539,140 @@ class PlaywrightState(LibraryComponent):
             response = stub.SwitchPage(Request().Index(index=id))
             logger.info(response.log)
             return response.body
+
+    @keyword(tags=["Getter", "BrowserControl"])
+    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL):
+        """Returns a list of ids from open browsers.
+
+
+        ``browser`` < ``ALL`` | ``ACTIVE`` | ``CURRENT`` > Defaults to ``ALL``
+        - ``ALL`` Returns all ids as a list.
+        - ``ACTIVE`` or ``CURRENT`` Returns the id of the currently active browser as list.
+
+        The ACTIVE browser is a synonym for the CURRENT Browser.
+        """
+        if browser == SelectionType.ACTIVE:
+            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            if "id" in browser_item:
+                return [browser_item["id"]]
+        else:
+            return [browser["id"] for browser in self.get_browser_catalog()]
+        return []
+
+    @keyword(tags=["Getter", "BrowserControl"])
+    def get_context_ids(
+        self,
+        context: SelectionType = SelectionType.ALL,
+        browser: SelectionType = SelectionType.ALL,
+    ):
+        """Returns a list of context ids based on the browser selection.
+
+
+        ``context`` < ``ALL`` | ``ACTIVE`` > Defaults to ``ALL``
+        - ``ALL`` Returns all context ids as a list.
+        - ``ACTIVE`` Returns the id of the active context as a list.
+
+        ``browser`` < ``ALL`` | ``ACTIVE`` > Defaults to ``ALL``
+        - ``ALL`` context ids from all open browsers shall be fetched.
+        - ``ACTIVE`` only context ids from the active browser shall be fetched.
+
+        The ACTIVE context of the ACTIVE Browser is the ``Current`` Context.
+        """
+        if browser == SelectionType.ACTIVE:
+            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            if context == SelectionType.ACTIVE:
+                if "activeContext" in browser_item:
+                    return [browser_item["activeContext"]]
+            else:
+                if "contexts" in browser_item:
+                    return [context["id"] for context in browser_item["contexts"]]
+        else:
+            if context == SelectionType.ACTIVE:
+                context_ids = list()
+                for browser_item in self.get_browser_catalog():
+                    if "activeContext" in browser_item:
+                        context_ids.append(browser_item["activeContext"])
+                return context_ids
+            else:
+                context_ids = list()
+                for browser_item in self.get_browser_catalog():
+                    for context_item in browser_item["contexts"]:
+                        context_ids.append(context_item["id"])
+                return context_ids
+        return []
+
+    @keyword(tags=["Getter", "BrowserControl"])
+    def get_page_ids(
+        self,
+        page: SelectionType = SelectionType.ALL,
+        context: SelectionType = SelectionType.ALL,
+        browser: SelectionType = SelectionType.ALL,
+    ):
+        """Returns a list of page ids based on the context and browser selection.
+
+
+        ``page`` < ``ALL`` | ``ACTIVE`` >
+        - ``ALL`` Returns all page ids as a list.
+        - ``ACTIVE`` Returns the id of the active page as a list.
+
+        ``context`` < ``ALL`` | ``ACTIVE`` >
+        - ``ALL`` page ids from all contexts shall be fetched.
+        - ``ACTIVE`` only page ids from the active context shall be fetched.
+
+        ``browser`` < ``ALL`` | ``ACTIVE`` >
+        - ``ALL`` page ids from all open browsers shall be fetched.
+        - ``ACTIVE`` only page ids from the active browser shall be fetched.
+
+        The ACTIVE page of the ACTIVE context of the ACTIVE Browser is the ``Current`` Page.
+        """
+        if browser == SelectionType.ACTIVE:
+            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            if "contexts" in browser_item:
+                if context == SelectionType.ACTIVE:
+                    return self._get_page_ids_from_context_list(
+                        page, self._get_active_context_item(browser_item)
+                    )
+                else:
+                    return self._get_page_ids_from_context_list(
+                        page, browser_item["contexts"]
+                    )
+        else:
+            context_list = list()
+            for browser_item in self.get_browser_catalog():
+                if "contexts" in browser_item:
+                    if context == SelectionType.ACTIVE:
+                        context_list.extend(self._get_active_context_item(browser_item))
+                    else:
+                        context_list.extend(browser_item["contexts"])
+            return self._get_page_ids_from_context_list(page, context_list)
+        return []
+
+    @staticmethod
+    def _get_page_ids_from_context_list(
+        page_selection_type: SelectionType, context_list
+    ):
+        page_ids = list()
+        for context_item in context_list:
+            if page_selection_type == SelectionType.ACTIVE:
+                if "activePage" in context_item:
+                    page_ids.append(context_item["activePage"])
+            else:
+                page_ids.extend([page["id"] for page in context_item["pages"]])
+        return page_ids
+
+    @staticmethod
+    def _get_active_browser_item(browser_catalog):
+        for browser in browser_catalog:
+            if browser["activeBrowser"]:
+                return browser
+        return {}
+
+    @staticmethod
+    def _get_active_context_item(browser_item):
+        for context in browser_item["contexts"]:
+            if (
+                "activeContext" in browser_item
+                and browser_item["activeContext"] == context["id"]
+            ):
+                return [context]
+        return []

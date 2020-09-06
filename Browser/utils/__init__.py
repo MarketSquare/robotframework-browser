@@ -21,6 +21,8 @@ from .data_types import (
     CookieType,
     ElementState,
     RequestMethod,
+    SelectAttribute,
+    SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
 )
