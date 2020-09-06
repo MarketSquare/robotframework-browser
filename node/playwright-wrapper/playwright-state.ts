@@ -437,7 +437,12 @@ export async function switchPage(
         return;
     } else if (id === 'NEW') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
-        const latest = context.pageStack[0];
+        const latest = context.pageStack.reduce((acc, val) => {
+            if (acc === undefined || acc.timestamp < val.timestamp) {
+                return val;
+            }
+            return acc;
+        });
         exists(latest, callback, 'Tried to activate latest page but no pages were open in context.');
         await browserState.activatePage(latest);
         callback(null, stringResponse(previous, `Activated new page ${latest.id}`));
