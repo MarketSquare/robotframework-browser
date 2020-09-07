@@ -8,53 +8,53 @@ ${TestScreenshot}=    ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
 Register Keyword To Run On Failure
-    [Teardown]    Remove File    ${FailureScreenshot}
     Type Text    css=input#username_field    username
     ${prev}=    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error    *`username` should be `not_username`    Get TextField Value    css=input#username_field    ==    not_username
     File Should Exist    ${FailureScreenshot}
     Register Keyword To Run On Failure    ${prev}
+    [Teardown]    Remove File    ${FailureScreenshot}
 
 Screenshotting By Using Keyword
-    [Teardown]    Remove File    ${TestScreenshot}.png
     Take Screenshot    ${TestScreenshot}
     File Should Exist    ${TestScreenshot}.png
+    [Teardown]    Remove File    ${TestScreenshot}.png
 
 Element Screenshotting
-    [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
     Take Screenshot    selector=\#username_field
     File Should Exist    ${OUTPUT_DIR}/robotframework-browser-screenshot-1.png
+    [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
 If Element Not Found Screenshot Should Fail
-    [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
     Run Keyword And Expect Error
     ...    Tried to capture element screenshot, element '#not_there' wasn't found.
     ...    Take Screenshot    selector=\#not_there
+    [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
 ElementHandle Screenshotting
-    [Teardown]    Remove File    ${TestScreenshot}.png
     ${ref}=    Get Element    \#username_field
     Take screenshot    ${TestScreenshot}    ${ref}
     File Should Exist    ${TestScreenshot}.png
+    [Teardown]    Remove File    ${TestScreenshot}.png
 
 Screenshotting Without Path
-    [Setup]    Remove File    ${OUTPUT_DIR}/*.png
-    [Teardown]    Remove Files    ${path1}    ${path2}
+    Remove File    ${OUTPUT_DIR}/*.png
     ${path1}=    Take Screenshot
     File Should Exist    ${path1}
     ${path2}=    Take Screenshot
     File Should Exist    ${path2}
     Should Not Be Equal    ${path1}    ${path2}
+    [Teardown]    Remove Files    ${path1}    ${path2}
 
 Screenshot Filename Incrementation
     [Documentation]
     ...    LOG 2:4    Saved screenshot in <a href='test_screenshot_1.png'>test_screenshot_1.png</a>
     ...    LOG 3:4    Saved screenshot in <a href='test_screenshot_2.png'>test_screenshot_2.png</a>
-    [Teardown]    Remove File    ${TestScreenshot}_*.png
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
     File Should Exist    ${TestScreenshot}_1.png
     File Should Exist    ${TestScreenshot}_2.png
+    [Teardown]    Remove File    ${TestScreenshot}_*.png
 
 Embed ScreenShot To log.html File
     [Documentation]

@@ -46,6 +46,10 @@ Wait For Download with custom path
 
 *** Keywords ***
 Set Library Timeout
+    ${open_browsers}=    Get Browser Ids
+    Run Keyword If    $open_browsers == []    New Browser    ${BROWSER}    headless=${HEADLESS}
+    ${current_contexts}=    Get Context Ids    Active    Active
+    Run Keyword If    $current_contexts == []    New Context
     ${timeout} =    Set Browser Timeout    2 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
