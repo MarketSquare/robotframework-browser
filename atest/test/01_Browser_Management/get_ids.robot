@@ -27,6 +27,7 @@ Get Page IDs
 
 *** Keywords ***
 Create Browser Catalog State
+    Close Browser    ALL
     ${Browser1}=    New Browser
     ${Context1.1}=    New Context
     ${Page1.1.1}=    New Page
