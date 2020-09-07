@@ -20,7 +20,7 @@ install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
 setup_kwargs = {
     "name": "robotframework-browser",
     "version": VERSION,
-    "description": "",
+    "description": "Robot Framework Browser library powered by Playwright. Aiming for speed, reliability and visibility.",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
     "author": "MarketSquare - Robot Framework community",
