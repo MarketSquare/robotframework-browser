@@ -42,7 +42,7 @@ import Browser
 browser = Browser.Browser()
 browser.new_page("https://playwright.dev")
 assert browser.get_text("h1") == '🎭 Playwright'
-browser.close_all_browsers()
+browser.close_browser()
 ```
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
