@@ -185,6 +185,15 @@
         "doc",
         "review"
       ]
+    },
+    {
+      "login": "wangzimeiyingtao",
+      "name": "Nanakawa",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/70925596?v=4",
+      "profile": "https://github.com/wangzimeiyingtao",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
