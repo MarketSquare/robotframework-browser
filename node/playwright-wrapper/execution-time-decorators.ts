@@ -14,8 +14,9 @@
 
 import * as pino from 'pino';
 
-const logger = pino.default(pino.destination('./execution-times.log'));
-logger.level = 'trace';
+const executionTimesOutputfile = process.env.EXEC_TIMES;
+const logger = pino.default(pino.destination(executionTimesOutputfile));
+logger.level = executionTimesOutputfile ? 'trace' : 'silent';
 
 // Idea and async_timer method from https://github.com/norbornen/execution-time-decorator/
 // eslint-disable-next-line @typescript-eslint/ban-types
