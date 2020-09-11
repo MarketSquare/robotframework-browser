@@ -309,6 +309,7 @@ class PlaywrightState(LibraryComponent):
         httpCredentials: Optional[Dict] = None,
         colorScheme: Optional[ColorScheme] = None,
         hideRfBrowser: bool = False,
+        defaultBrowserType: Optional[str] = None,
     ):
         """Create a new BrowserContext with specified options.
 

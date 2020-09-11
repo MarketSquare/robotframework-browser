@@ -11,7 +11,8 @@ ${device_json}=
 ...               "viewport": { "width": 375, "height": 812 },
 ...               "deviceScaleFactor": 3,
 ...               "isMobile": true,
-...               "hasTouch": true
+...               "hasTouch": true,
+...               "defaultBrowserType": "webkit"
 ...               }""")
 
 *** Test Cases ***
