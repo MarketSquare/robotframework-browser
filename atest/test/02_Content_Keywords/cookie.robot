@@ -26,7 +26,7 @@ Get Cookies With String Type
 
 Add Cookie Without Url, Path and Domain
     Run Keyword And Expect Error
-    ...    Cookie should have a url or a domain/path pair
+    ...    browserContext.addCookies: Cookie should have a url or a domain/path pair
     ...    Add Cookie    Foo    Bar
 
 Add Cookie Should Fail If Context Is Not Open
@@ -57,7 +57,7 @@ Add Cookie With URL And Domain Should Fail
     ${url} =    Get Url
     ${parsed_url} =    common.Parse Url    ${url}
     Run Keyword And Expect Error
-    ...    Cookie should have either url or domain
+    ...    browserContext.addCookies: Cookie should have either url or domain
     ...    Add Cookie
     ...    Foo
     ...    Bar

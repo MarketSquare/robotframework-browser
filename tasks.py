@@ -165,7 +165,9 @@ def clean_atest(c):
 @task(clean_atest)
 def atest(c):
     _run_robot(
-        ["--pythonpath", ".",]
+        ["--pythonpath", ".",
+         "--suite", "cookie"
+         ]
     )
 
 
