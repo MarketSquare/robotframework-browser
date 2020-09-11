@@ -4,7 +4,7 @@ Test Setup        New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Wait For Fails if no success
-    Run Keyword And Expect Error    STARTS: page.waitForEvent: Timeout 100ms exceeded.    Wait For Request    /api/get/json    timeout=100ms
+    Run Keyword And Expect Error    STARTS:    Timeout while waiting for event "request"    Wait For Request    /api/get/json    timeout=100ms
 
 Wait For Request synchronous
     Click    \#delayed_request
