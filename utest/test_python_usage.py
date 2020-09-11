@@ -20,7 +20,6 @@ def browser(monkeypatch):
     browser = Browser.Browser()
     yield browser
     browser.close_browser("ALL")
-    browser._close
 
 
 def test_open_page_get_text(application_server, browser):
