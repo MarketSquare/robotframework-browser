@@ -7,7 +7,7 @@ mypy-protobuf >= 1.23
 flake8 >= 3.8.3
 isort >= 5.4.2
 wheel>=0.35.1
-robotframework-pabot >= 1.9.0
+robotframework-pabot >= 1.10.0
 twine >= 3.2.0
 robotstatuschecker >= 1.4
 
