@@ -193,7 +193,7 @@ def atest_failed(c):
 
 def _run_robot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
-    pabot_args = [sys.executable, "-m", "pabot.pabot", "--pabotlib", "--verbose"]
+    pabot_args = [sys.executable, "-m", "pabot.pabot", "--pabotlib"]
     default_args = [
         "--exclude",
         "Not-Implemented",
@@ -287,7 +287,7 @@ def docker_test(c):
 	    -v $(pwd)/node/:/app/node/ \
 	    --workdir /app \
 	    rfbrowser \
-	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --verbose --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /app/atest/output /app/atest/test"
+	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /app/atest/output /app/atest/test"
           """
     )
 
