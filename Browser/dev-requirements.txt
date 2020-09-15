@@ -10,7 +10,7 @@ wheel>=0.35.1
 robotframework-pabot >= 1.10.0
 twine >= 3.2.0
 robotstatuschecker >= 1.4
-
+rellu >= 0.7
 # Include normal dependencies from requirements.txt. Makes it possible to use
 # requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
 -r requirements.txt
