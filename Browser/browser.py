@@ -36,7 +36,7 @@ from .keywords import (
 )
 from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, logger
-from .version import VERSION
+from .version import __version__ as VERSION
 
 
 class Browser(DynamicCore):

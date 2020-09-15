@@ -12,6 +12,7 @@ from robot import rebot_cli
 try:
     from pabot import pabot
     import pytest
+    from rellu import ReleaseNotesGenerator, Version
     from robot.libdoc import libdoc
     import robotstatuschecker
 except ModuleNotFoundError:
@@ -29,6 +30,40 @@ node_dir = root_dir / "node"
 node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
+
+RELEASE_NOTES_PATH = Path('docs/releasenotes/Browser-{version}.rst')
+RELEASE_NOTES_TITLE = 'Browser library {version}'
+REPOSITORY = 'MarketSquare/robotframework-browser'
+VERSION_PATH = Path('Browser/version.py')
+RELEASE_NOTES_INTRO = '''
+Browser_ is a web testing library for `Robot Framework`_ that utilizes
+the Playwright_ tool internally. Browser library {version} is a new release with
+**UPDATE** enhancements and bug fixes. **ADD more intro stuff...**
+**REMOVE this section with final releases or otherwise if release notes contain
+all issues.**
+All issues targeted for Browser library {version.milestone} can be found
+from the `issue tracker`_.
+**REMOVE ``--pre`` from the next command with final releases.**
+If you have pip_ installed, just run
+::
+   pip install --pre --upgrade robotframework-browser
+   rfbrowser init
+to install the latest available release or use
+::
+   pip install robotframework-browser=={version}
+   rfbrowser init
+to install exactly this version. Alternatively you can download the source
+distribution from PyPI_ and install it manually.
+Browser library {version} was released on {date}. Browser supports
+Python **ADD VERSIONS**, Playwright **ADD VERSIONS** and
+Robot Framework **ADD VERSIONS**.
+.. _Robot Framework: http://robotframework.org
+.. _Browser: https://github.com/MarketSquare/robotframework-browser
+.. _Selenium: https://github.com/microsoft/playwright
+.. _pip: http://pip-installer.org
+.. _PyPI: https://pypi.python.org/pypi/robotframework-browser
+.. _issue tracker: https://github.com/MarketSquare/robotframework-browser/milestones%3A{version.milestone}
+'''
 
 
 @task
@@ -268,7 +303,7 @@ def docker_builder(c):
 
 @task
 def docker_stable_image(c):
-    from Browser import VERSION
+    from Browser.version import __version__ as VERSION
 
     c.run(
         f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file atest/docker/Dockerfile.latest_release ."
@@ -308,6 +343,33 @@ def package(c):
     c.run("python setup.py sdist bdist_wheel")
 
 
+@task
+def release_notes(c, version=None, username=None, password=None, write=False):
+    """Generates release notes based on issues in the issue tracker.
+
+    Args:
+        version:  Generate release notes for this version. If not given,
+                  generated them for the current version.
+        username: GitHub username.
+        password: GitHub password.
+        write:    When set to True, write release notes to a file overwriting
+                  possible existing file. Otherwise just print them to the
+                  terminal.
+    Username and password can also be specified using ``GITHUB_USERNAME`` and
+    ``GITHUB_PASSWORD`` environment variable, respectively. If they aren't
+    specified at all, communication with GitHub is anonymous and typically
+    pretty slow.
+    """
+    pattern = '__version__ = "(.*)"'
+    if write and not RELEASE_NOTES_PATH.parent.is_dir():
+        RELEASE_NOTES_PATH.parent.mkdir(parents=True)
+    version = Version(version, VERSION_PATH, pattern)
+    file = RELEASE_NOTES_PATH if write else sys.stdout
+    generator = ReleaseNotesGenerator(REPOSITORY, RELEASE_NOTES_TITLE,
+                                      RELEASE_NOTES_INTRO)
+    generator.generate(version, username, password, file)
+
+
 @task(package)
 def release(c):
     c.run("python -m twine upload --repository pypi dist/*")
@@ -315,7 +377,7 @@ def release(c):
 
 @task(docs)
 def version(c, version):
-    from Browser.version import VERSION
+    from Browser.version import __version__ as VERSION
 
     os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}.html")
     if not version:

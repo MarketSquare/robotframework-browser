@@ -57,14 +57,63 @@ Docker container builds a clean install package. This can be used to check that 
 3. See results in `atest/output`
 
 ## Releasing
-1. Ensure generated code and types are up to date with `inv build`
-2. Ensure tests and linting pass on CI
-3. Check that you have permissions to release on Github and PyPi
-4. Run `inv version <new_version>` to update the version information to both Python and Node components.
-5. Use `inv release` to create and release artifacts and upload to PyPi
-6. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
-7. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
-8. Announce new release, at least in Slack, [Forum](https://forum.robotframework.org/t/browser-library-releases/685) and user group mailing list. 
+
+### Prerequisite
+1. Ensure tests and linting pass on CI
+1. Check that you have permissions to release on Github and PyPi
+
+### Install dependencies
+Ensure generated code and types are up to date with `inv build`
+
+### Set version number
+Run `inv version <new_version>` to update the version information to both Python and Node components.
+Version number should match to the milestone to the [issue tracker](https://github.com/MarketSquare/robotframework-browser/milestones)
+
+### Generate release notes
+Set GitHub user information into shell variables to ease copy-pasting the following command:
+```
+GITHUB_USERNAME=<username>
+GITHUB_PASSWORD=<password>
+$VERSION=<version>
+```
+
+Generate a template for the release notes:
+```
+invoke release-notes -w -v $VERSION -u $GITHUB_USERNAME -p $GITHUB_PASSWORD
+```
+
+When generating release notes for a preview release like 3.0.2rc1, the list of issues is only going to
+contain issues with that label (e.g. `rc1`) or with a label of an earlier preview release (e.g. `alpha1`, `beta2`).
+
+Fill the missing details in the generated release notes template.
+
+Make sure that issues have correct information:
+* All issues should have type (bug, enhancement or task) and priority set. Notice that issues with the task type are
+automatically excluded from the release notes.
+* Issue priorities should be consistent.
+* Issue titles should be informative. Consistency is good here too, but no need to overdo it.
+
+If information needs to be added or edited, its better to edit it in the issue tracker than in the generated release
+notes. This allows re-generating the list of issues later if more issues are added.
+
+Add, commit and push:
+```
+docs/releasenotes/Browser-{version}.rst
+git add docs/releasenotes/Browser-$VERSION.rst
+git commit -m "Release notes for $VERSION" docs/releasenotes/Browser-$VERSION.rst
+git push
+```
+Update later if necessary. Writing release notes is typically the biggest task when generating releases, and getting
+everything done in one go is often impossible.
+
+### Create release
+1. Use `inv release` to create and release artifacts and upload to PyPi
+1. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
+1. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
+
+### Announce release
+1. Announce new release, at least in Slack, [Forum](https://forum.robotframework.org/t/browser-library-releases/685) and user group mailing list.
+1. Change version to dev `inv version <new_version>` example if release version is 1.4.0, then next version could be: `inv version 1.5.0-dev`
 
 ## Code style
 Python code style is enforced with flake8 and black. These are executed in a
