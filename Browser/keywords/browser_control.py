@@ -88,7 +88,7 @@ class Control(LibraryComponent):
             logger.debug(f"Using {filename} to take screenshot.")
         file_path = self._take_screenshot(filename, selector)
         if self._is_embed(filename):
-            return self._emmed_to_log(file_path)
+            return self._embed_to_log(file_path)
         return self._log_image_link(file_path)
 
     def _log_image_link(self, file_path: str) -> str:
@@ -99,7 +99,7 @@ class Control(LibraryComponent):
         )
         return file_path
 
-    def _emmed_to_log(self, file_path):
+    def _embed_to_log(self, file_path):
         png = Path(file_path)
         with png.open("rb") as png_file:
             encoded_string = base64.b64encode(png_file.read())
