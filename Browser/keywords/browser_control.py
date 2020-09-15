@@ -94,7 +94,8 @@ class Control(LibraryComponent):
     def _log_image_link(self, file_path: str) -> str:
         relative_path = get_link_path(file_path, self.library.outputdir)
         logger.info(
-            f"Saved screenshot in <a href='{relative_path}'>{relative_path}</a>",
+            '</td></tr><tr><td colspan="3">'
+            f'<a href="{relative_path}"><img src="{relative_path}" width="800px"></a>',
             html=True,
         )
         return file_path
