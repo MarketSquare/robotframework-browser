@@ -48,8 +48,8 @@ Screenshotting Without Path
 
 Screenshot Filename Incrementation
     [Documentation]
-    ...    LOG 2:4    Saved screenshot in <a href='test_screenshot_1.png'>test_screenshot_1.png</a>
-    ...    LOG 3:4    Saved screenshot in <a href='test_screenshot_2.png'>test_screenshot_2.png</a>
+    ...    LOG 2:4    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png"><img src="test_screenshot_1.png" width="800px"></a>
+    ...    LOG 3:4    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png"><img src="test_screenshot_2.png" width="800px"></a>
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
     File Should Exist    ${TestScreenshot}_1.png
