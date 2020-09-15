@@ -24,7 +24,7 @@ from .utils.data_types import (
     SupportedBrowsers,
     ViewportDimensions,
 )
-from .version import VERSION
+from .version import __version__ as VERSION
 
 __version__ = VERSION
 __all__ = [
