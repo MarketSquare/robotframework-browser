@@ -383,8 +383,8 @@ def version(c, version):
     if not version:
         print("Give version with inv version <version>")
     py_version_file = root_dir / "Browser" / "version.py"
-    py_version_matcher = re.compile("VERSION = .*")
-    _replace_version(py_version_file, py_version_matcher, f'VERSION = "{version}"')
+    py_version_matcher = re.compile("__version__ = .*")
+    _replace_version(py_version_file, py_version_matcher, f'__version__ = "{version}"')
     node_version_file = root_dir / "package.json"
     node_version_matcher = re.compile('"version": ".*"')
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
