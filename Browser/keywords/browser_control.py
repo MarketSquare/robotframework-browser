@@ -82,6 +82,9 @@ class Control(LibraryComponent):
 
         ``selector`` <str> Take a screenshot of the element matched by selector.
         If not provided take a screenshot of current viewport.
+
+        ``fullPage`` <bool> When True, takes a screenshot of the full scrollable page,
+        instead of the currently visible viewport. Defaults to False.
         """
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
