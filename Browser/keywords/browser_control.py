@@ -70,6 +70,7 @@ class Control(LibraryComponent):
         self,
         filename: str = "robotframework-browser-screenshot-{index}",
         selector: str = "",
+        fullPage: bool = False,
     ):
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
@@ -86,7 +87,7 @@ class Control(LibraryComponent):
             logger.debug("Embedding image to log.html.")
         else:
             logger.debug(f"Using {filename} to take screenshot.")
-        file_path = self._take_screenshot(filename, selector)
+        file_path = self._take_screenshot(filename, selector, fullPage)
         if self._is_embed(filename):
             return self._embed_to_log(file_path)
         return self._log_image_link(file_path)
@@ -118,12 +119,12 @@ class Control(LibraryComponent):
             logger.warn(f"Could not remove {png}")
         return "EMBED"
 
-    def _take_screenshot(self, filename: str, selector: str) -> str:
+    def _take_screenshot(self, filename: str, selector: str, fullPage: bool) -> str:
         string_path_no_extension = str(self._get_screenshot_path(filename))
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
-                    path=string_path_no_extension, selector=selector
+                    path=string_path_no_extension, selector=selector, fullPage=fullPage
                 )
             )
         logger.debug(response.log)

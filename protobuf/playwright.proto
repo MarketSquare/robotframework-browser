@@ -20,6 +20,7 @@ message Request {
   message ScreenshotOptions {
     string path = 1;
     string selector = 2;
+    bool fullPage = 3;
   }
 
   message FilePath {
