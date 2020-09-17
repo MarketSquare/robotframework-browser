@@ -194,6 +194,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "emanlove",
+      "name": "Ed Manlove",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/993527?v=4",
+      "profile": "https://github.com/emanlove",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
