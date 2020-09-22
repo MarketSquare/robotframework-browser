@@ -5,9 +5,6 @@ import sys
 
 sys.path.append("Browser")
 
-from Browser import VERSION  # noqa
-
-
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
@@ -19,7 +16,7 @@ install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
 
 setup_kwargs = {
     "name": "robotframework-browser",
-    "version": VERSION,
+    "version": "1.3.0",
     "description": "Robot Framework Browser library powered by Playwright. Aiming for speed, reliability and visibility.",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
