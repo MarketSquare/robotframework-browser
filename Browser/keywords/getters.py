@@ -508,9 +508,16 @@ class Getters(LibraryComponent):
 
         ``selector`` <str> Selector from which shall be retrieved. **Required**
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetElements(Request().ElementSelector(selector=selector))
-            return json.loads(response.json)
+        try:
+            with self.playwright.grpc_channel() as stub:
+                response = stub.GetElements(
+                    Request().ElementSelector(selector=selector)
+                )
+                return json.loads(response.json)
+        except AssertionError as error:
+            if "Could not find element with" in str(error):
+                return []
+            raise error
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
