@@ -82,9 +82,6 @@ Generate a template for the release notes:
 invoke release-notes -w -v $VERSION -u $GITHUB_USERNAME -p $GITHUB_PASSWORD
 ```
 
-When generating release notes for a preview release like 3.0.2rc1, the list of issues is only going to
-contain issues with that label (e.g. `rc1`) or with a label of an earlier preview release (e.g. `alpha1`, `beta2`).
-
 Fill the missing details in the generated release notes template.
 
 Make sure that issues have correct information:
