@@ -227,6 +227,7 @@ class PlaywrightState(LibraryComponent):
         slowMo: str = "0 seconds",
     ):
         """Create a new playwright Browser with specified options.
+        See `Browser, Context and Page` for more information about Browser and related concepts.
 
         Returns a stable identifier for the created browser.
 
@@ -313,6 +314,7 @@ class PlaywrightState(LibraryComponent):
         defaultBrowserType: Optional[str] = None,
     ):
         """Create a new BrowserContext with specified options.
+        See `Browser, Context and Page` for more information about BrowserContext.
 
         Returns a stable identifier for the created context
         that can be used in `Switch Context`.
@@ -396,6 +398,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["Setter", "BrowserControl"])
     def new_page(self, url: Optional[str] = None):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
+        See `Browser, Context and Page` for more information about Page concept.
         Returns a stable identifier for the created page.
 
         When a `New Page` is called without an open browser, `New Browser`
