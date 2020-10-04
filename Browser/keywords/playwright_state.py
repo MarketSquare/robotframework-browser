@@ -57,7 +57,8 @@ class PlaywrightState(LibraryComponent):
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = False,
     ):
-        """Opens a new browser instance.
+        """Opens a new browser instance. Use this keyword for quick experiments or debugging sessions.
+        Use `New Page` directly instead of `Open Browser` for production and automated execution.
 
         Creates a new browser, context and page with specified settings.
             Only supports some of the settings Create _ Keywords do
@@ -380,7 +381,7 @@ class PlaywrightState(LibraryComponent):
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext]
         for a list of supported options.
 
-        If there's no open Browser will open one. Does not create pages.
+        If there's no open Browser this keyword will open one. Does not create pages.
         """
         params = locals_to_params(locals())
         options = json.dumps(params, default=str)
@@ -396,6 +397,9 @@ class PlaywrightState(LibraryComponent):
     def new_page(self, url: Optional[str] = None):
         """Open a new Page. A Page is the Playwright equivalent to a tab.
         Returns a stable identifier for the created page.
+
+        When a `New Page` is called without an open browser, `New Browser`
+        and `New Context` are executed with default values first.
 
         ``url`` <str> If specified it will open the new page to the specified URL.
 

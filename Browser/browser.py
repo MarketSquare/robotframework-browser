@@ -126,7 +126,7 @@ class Browser(DynamicCore):
     There are shortcuts to open new pages together with new browsers but the offer less control.
 
     The `Open Browser` keyword opens a new browser, a new context and a new page.
-    This keyword is usefull for quick experiments or debugging sessions.
+    This keyword is useful for quick experiments or debugging sessions.
 
     When a `New Page` is called without an open browser, `New Browser`
     and `New Context` are executed with default values first.
