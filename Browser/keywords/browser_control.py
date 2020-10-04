@@ -81,6 +81,7 @@ class Control(LibraryComponent):
         if removing the temporary file fails.
 
         ``selector`` <str> Take a screenshot of the element matched by selector.
+        See the `Finding elements` section for details about the selectors.
         If not provided take a screenshot of current viewport.
 
         ``fullPage`` <bool> When True, takes a screenshot of the full scrollable page,

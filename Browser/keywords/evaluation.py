@@ -34,6 +34,7 @@ class Evaluation(LibraryComponent):
         ``selector`` <str> Selector to resolve and pass to the JavaScript function. This will be the first
         argument the function receives. If given a selector a function is necessary, with an argument
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
+        See the `Finding elements` section for details about the selectors.
 
         [https://github.com/MarketSquare/robotframework-browser/tree/master/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
         """
@@ -57,6 +58,7 @@ class Evaluation(LibraryComponent):
         """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment.
 
         ``selector`` <str> Selectors which shall be highlighted. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``duration`` <str> Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
 

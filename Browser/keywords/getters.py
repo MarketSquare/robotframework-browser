@@ -137,6 +137,7 @@ class Getters(LibraryComponent):
         assertion_expected: Any = None,
     ):
         """Returns text attribute of the element found by ``selector``.
+        See the `Finding elements` section for details about the selectors.
 
         Optionally asserts that the text matches the specified assertion.
 
@@ -161,6 +162,7 @@ class Getters(LibraryComponent):
         assertion.
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``property`` <str> Requested property name. **Required**
 
@@ -199,6 +201,7 @@ class Getters(LibraryComponent):
         assertion.
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``attribute`` <str> Requested attribute name. **Required**
 
@@ -245,6 +248,7 @@ class Getters(LibraryComponent):
         Optionally asserts that these match the specified assertion.
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
@@ -275,6 +279,7 @@ class Getters(LibraryComponent):
         Optionally asserts that the value matches the specified assertion.
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
@@ -306,6 +311,7 @@ class Getters(LibraryComponent):
         Optionally asserts that the value matches the specified assertion.
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
@@ -330,6 +336,7 @@ class Getters(LibraryComponent):
         Optionally asserts that these match the specified assertion.
 
         ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``option_attribute`` <SelectAttribute.label> Which attribute shall be returned/verified.
         Allowed values are ``< ``value`` | ``label`` | ``text`` | ``index`` >``. Defaults to label.
@@ -386,7 +393,8 @@ class Getters(LibraryComponent):
     ):
         """Returns the state of the checkbox found by ``selector``.
 
-        ``selector`` <str> Selector which shall be examined
+        ``selector`` <str> Selector which shall be examined.
+        See the `Finding elements` section for details about the selectors.
 
         Optionally asserts that the state matches the specified assertion.
 
@@ -429,6 +437,7 @@ class Getters(LibraryComponent):
         Optionally asserts that the count matches the specified assertion.
 
         ``selector`` <str> Selector which shall be counted.
+        See the `Finding elements` section for details about the selectors.
 
         ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
 
@@ -495,8 +504,8 @@ class Getters(LibraryComponent):
 
         The reference can be used in subsequent selectors.
 
-        ``selector`` <str> Selector from which shall be retrieved.
-        See `library introduction` for more details on the selector syntax. **Required**
+        ``selector`` <str> Selector from which shall be retrieved **Required**.
+        See the `Finding elements` section for details about the selectors.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(Request().ElementSelector(selector=selector))
@@ -507,6 +516,7 @@ class Getters(LibraryComponent):
         """Returns a reference to playwright element handle for all matched elements by ``selector``.
 
         ``selector`` <str> Selector from which shall be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
         """
         try:
             with self.playwright.grpc_channel() as stub:
@@ -533,6 +543,7 @@ class Getters(LibraryComponent):
         Optionally matches with any sequence assertion operator.
 
         ``selector`` <str> Selector from which the style shall be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``key`` <str> Key of the requested CSS property. Retrieves "ALL" styles by default.
 
@@ -568,6 +579,7 @@ class Getters(LibraryComponent):
         """Gets elements size and location as an object {x: float, y: float, width: float, height: float}.
 
         ``selector`` <str> Selector from which shall be retrieved. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
         If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,

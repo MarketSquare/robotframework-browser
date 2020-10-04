@@ -40,6 +40,7 @@ class Waiter(LibraryComponent):
         If the selector doesn't satisfy the condition within the timeout the keyword will FAIL.
 
         ``selector`` <str> Selector of the corresponding object. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``state`` Defaults to visible. Possible states are:
         - ``attached``: to be present in DOM.
@@ -113,6 +114,7 @@ class Waiter(LibraryComponent):
         ``selector`` <str> Selector to resolve and pass to the JavaScript function. This will be the first
         argument the function receives. If given a selector a function is necessary, with an argument
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
+        See the `Finding elements` section for details about the selectors.
 
         ``polling`` <str> Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
         Any other value for polling will be parsed as a robot framework time for interval between polls.

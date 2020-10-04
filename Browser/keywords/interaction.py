@@ -47,6 +47,7 @@ class Interaction(LibraryComponent):
         character in the text.
 
         ``selector`` <str> Selector of the text field. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``text`` <str> Text for the text field. **Required**
 
@@ -75,6 +76,7 @@ class Interaction(LibraryComponent):
         you can pass an empty string as ``text`` to clear the input field.
 
         ``selector`` <str> Selector of the text field. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``text`` <str> Text for the text field. **Required**
 
@@ -87,6 +89,7 @@ class Interaction(LibraryComponent):
         """Clears the text field found by ``selector``.
 
         ``selector`` <str> Selector of the text field. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
@@ -106,6 +109,7 @@ class Interaction(LibraryComponent):
         text to be written into the text field.
 
         ``selector`` <str> Selector of the text field. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``secret`` <str> Secret text for the text field. **Required**
 
@@ -129,6 +133,7 @@ class Interaction(LibraryComponent):
         text to be written into the text field.
 
         ``selector`` <str> Selector of the text field. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``secret`` <str> Secret text for the text field. **Required**
 
@@ -141,6 +146,7 @@ class Interaction(LibraryComponent):
         """Types the given key combination into element found by ``selector``.
 
         ``selector`` <str> Selector of the text field. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         Supports values like "a, b" which will be automatically typed.
         .
@@ -166,6 +172,7 @@ class Interaction(LibraryComponent):
         """Clicks the element found by ``selector``.
 
         ``selector`` <str> Selector of the element to click. **Required**
+        See the `Finding elements` section for details about the selectors.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Click(Request().ElementSelector(selector=selector))
@@ -193,6 +200,7 @@ class Interaction(LibraryComponent):
         - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
 
         ``selector`` <str> Selector element to click. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``button`` < ``left`` | ``middle`` |  ``right``> The button that shall be used for clicking.
 
@@ -258,6 +266,7 @@ class Interaction(LibraryComponent):
         - Wait for initiated navigations to either succeed or fail, unless ``noWaitAfter`` option is set.
 
         ``selector`` <str> Selector element to click. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         ``button`` < ``left`` | ``right`` | ``middle`` > Defaults to ``left`` if invalid.
 
@@ -304,6 +313,7 @@ class Interaction(LibraryComponent):
         """Moves focus on to the element found by ``selector``.
 
         ``selector`` <str> Selector of the element. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         If there's no element matching selector, the method waits until a
         matching element appears in the DOM. Timeouts after 10 seconds.
@@ -317,6 +327,7 @@ class Interaction(LibraryComponent):
         """Checks the checkbox or selects radio button found by ``selector``.
 
         ``selector`` <str> Selector of the checkbox. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         Does nothing if the element is already checked/selected.
         """
@@ -329,6 +340,7 @@ class Interaction(LibraryComponent):
         """Unchecks the checkbox found by ``selector``.
 
         ``selector`` <str> Selector of the checkbox. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         Does nothing if the element is not checked/selected.
         """
@@ -343,6 +355,7 @@ class Interaction(LibraryComponent):
         """Selects options from select element found by ``selector``.
 
         ``selector`` <str> Selector of the select tag. **Required**
+        See the `Finding elements` section for details about the selectors.
 
         Matches based on the chosen attribute with list of ``values``.
         Possible attributes to match options by:
@@ -372,6 +385,7 @@ class Interaction(LibraryComponent):
         """Deselects all options from select element found by ``selector``.
 
         ``selector`` <str> Selector of the select tag. **Required**
+        See the `Finding elements` section for details about the selectors.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(Request().ElementSelector(selector=selector))
@@ -505,6 +519,7 @@ class Interaction(LibraryComponent):
     def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
+        See the `Finding elements` section for details about the selectors.
 
         First it moves the mouse to the start-point,
         then presses the left mouse button,
