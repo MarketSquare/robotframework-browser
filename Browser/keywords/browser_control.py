@@ -71,7 +71,7 @@ class Control(LibraryComponent):
         filename: str = "robotframework-browser-screenshot-{index}",
         selector: str = "",
         fullPage: bool = False,
-    ):
+    ) -> str:
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
         ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output
@@ -105,7 +105,7 @@ class Control(LibraryComponent):
         )
         return file_path
 
-    def _embed_to_log(self, file_path):
+    def _embed_to_log(self, file_path) -> str:
         png = Path(file_path)
         with png.open("rb") as png_file:
             encoded_string = base64.b64encode(png_file.read())

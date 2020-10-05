@@ -26,7 +26,7 @@ class Promises(LibraryComponent):
         self._executor = ThreadPoolExecutor(max_workers=256)
 
     @keyword(tags=["Wait"])
-    def promise_to(self, kw: str, *args):
+    def promise_to(self, kw: str, *args) -> Future:
         """
         Wrap a Browser library keyword and make it a promise.
         Returns that promise and executes the keyword on background.

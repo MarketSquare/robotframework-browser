@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from typing import Dict
 
 from robotlibcore import keyword  # type: ignore
 
@@ -23,7 +24,7 @@ from ..utils import logger
 
 class Devices(LibraryComponent):
     @keyword(tags=["Getter", "BrowserControl"])
-    def get_devices(self):
+    def get_devices(self) -> Dict:
         """Returns a dict of all playwright device descriptors.
 
         See Playwright's [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
@@ -35,7 +36,7 @@ class Devices(LibraryComponent):
             return json.loads(response.json)
 
     @keyword(tags=["Getter", "BrowserControl"])
-    def get_device(self, name: str):
+    def get_device(self, name: str) -> Dict:
         """Get a single device decriptor with name exactly matching name.
 
         ``name`` <str> Given name of the requested device. See Playwright's

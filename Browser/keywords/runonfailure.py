@@ -19,7 +19,7 @@
 # Copyright 2020-     Robot Framework Foundation
 
 
-from typing import Union
+from typing import Optional
 
 from robotlibcore import keyword  # type: ignore
 
@@ -30,8 +30,8 @@ from ..utils import is_falsy, logger
 class RunOnFailureKeywords(LibraryComponent):
     @keyword(tags=["Config"])
     def register_keyword_to_run_on_failure(
-        self, keyword: Union[None, str]
-    ) -> Union[None, str]:
+        self, keyword: Optional[str]
+    ) -> Optional[str]:
         """Sets the keyword to execute, when a Browser keyword fails.
 
         ``keyword`` is the name of a keyword that will be executed if a
