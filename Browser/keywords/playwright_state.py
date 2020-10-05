@@ -515,7 +515,9 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=["Setter", "BrowserControl"])
-    def switch_page(self, id: str, context: str = "CURRENT", browser: str = "CURRENT") -> str:
+    def switch_page(
+        self, id: str, context: str = "CURRENT", browser: str = "CURRENT"
+    ) -> str:
         """Switches the active browser page to another open page by ``id`` or ``NEW``.
         Returns a stable identifier ``id`` for the previous page.
 

@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import json
+from typing import Dict
 
 from robotlibcore import keyword  # type: ignore
-from typing import Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request

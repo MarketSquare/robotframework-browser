@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
 from robotlibcore import keyword  # type: ignore
 from typing_extensions import Literal
