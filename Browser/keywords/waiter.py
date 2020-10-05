@@ -142,7 +142,7 @@ class Waiter(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=["Wait", "BrowserControl"])
-    def wait_for_download(self, saveAs: str = ""):
+    def wait_for_download(self, saveAs: str = "") -> str:
         """Waits for next download event on page. Returns file path to downloaded file.
 
         To enable downloads context's ``acceptDownloads`` needs to be true.

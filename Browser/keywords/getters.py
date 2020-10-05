@@ -44,7 +44,7 @@ class Getters(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ) -> str:
+    ) -> Any:
         """Returns the current URL.
 
         Optionally asserts that it matches the specified assertion.
@@ -66,7 +66,7 @@ class Getters(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ) -> object:
+    ) -> Any:
         """Returns page model state object as a dictionary.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
@@ -93,7 +93,7 @@ class Getters(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ) -> str:
+    ) -> Any:
         """Gets pages HTML source as a string.
 
         Optionally does a string assertion.
@@ -114,7 +114,7 @@ class Getters(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Any:
         """Returns the title of the current page.
 
         Optionally asserts that it matches the specified assertion.
@@ -135,7 +135,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Any:
         """Returns text attribute of the element found by ``selector``.
 
         Optionally asserts that the text matches the specified assertion.
@@ -154,7 +154,7 @@ class Getters(LibraryComponent):
         property: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
         Optionally asserts that the property value matches the specified
@@ -192,7 +192,7 @@ class Getters(LibraryComponent):
         attribute: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
         Optionally asserts that the attribute value matches the specified
@@ -239,7 +239,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
-    ):
+    ) -> Any:
         """Returns all HTML attribute names of an element as a list.
 
         Optionally asserts that these match the specified assertion.
@@ -269,7 +269,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
-    ):
+    ) -> Any:
         """Returns all classes of an element as a list.
 
         Optionally asserts that the value matches the specified assertion.
@@ -300,7 +300,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Any:
         """Returns value of the textfield found by ``selector``.
 
         Optionally asserts that the value matches the specified assertion.
@@ -324,7 +324,7 @@ class Getters(LibraryComponent):
         option_attribute: SelectAttribute = SelectAttribute.label,
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
-    ):
+    ) -> Any:
         """Returns the specified attribute of selected options of the ``select`` element.
 
         Optionally asserts that these match the specified assertion.
@@ -382,8 +382,8 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        expected_state: str = "Unchecked",
-    ):
+        expected_state: Union[str, bool] = "Unchecked",
+    ) -> bool:
         """Returns the state of the checkbox found by ``selector``.
 
         ``selector`` <str> Selector which shall be examined
@@ -423,7 +423,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         expected_value: Union[int, str] = 0,
-    ):
+    ) -> Any:
         """Returns the count of elements found with ``selector``.
 
         Optionally asserts that the count matches the specified assertion.
@@ -453,7 +453,7 @@ class Getters(LibraryComponent):
         key: ViewportFields = ViewportFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Any:
         """Returns the current viewport dimensions.
 
         Optionally asserts that the count matches the specified assertion.
@@ -490,7 +490,7 @@ class Getters(LibraryComponent):
                 )
 
     @keyword(tags=["Getter", "PageContent"])
-    def get_element(self, selector: str):
+    def get_element(self, selector: str) -> str:
         """Returns a reference to a Playwright element handle.
 
         The reference can be used in subsequent selectors.
@@ -503,7 +503,7 @@ class Getters(LibraryComponent):
             return response.body
 
     @keyword(tags=["Getter", "PageContent"])
-    def get_elements(self, selector: str):
+    def get_elements(self, selector: str) -> List[str]:
         """Returns a reference to playwright element handle for all matched elements by ``selector``.
 
         ``selector`` <str> Selector from which shall be retrieved. **Required**
@@ -527,7 +527,7 @@ class Getters(LibraryComponent):
         key: str = "ALL",
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Any:
         """Gets the computed style properties of the element selected by ``selector``.
 
         Optionally matches with any sequence assertion operator.
@@ -564,7 +564,7 @@ class Getters(LibraryComponent):
         key: BoundingBoxFields = BoundingBoxFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Any:
         """Gets elements size and location as an object {x: float, y: float, width: float, height: float}.
 
         ``selector`` <str> Selector from which shall be retrieved. **Required**

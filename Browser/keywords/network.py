@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from robotlibcore import keyword  # type: ignore
 from typing_extensions import Literal
@@ -53,7 +53,7 @@ class Network(LibraryComponent):
         method: RequestMethod = RequestMethod.GET,
         body: Optional[str] = None,
         headers: Optional[dict] = None,
-    ):
+    ) -> Any:
 
         """Performs an HTTP request in the current browser context
 
@@ -112,7 +112,7 @@ class Network(LibraryComponent):
             return response.body if method == "Request" else response.json
 
     @keyword(tags=["Wait", "HTTP"])
-    def wait_for_request(self, matcher: str = "", timeout: str = ""):
+    def wait_for_request(self, matcher: str = "", timeout: str = "") -> Any:
         """Waits for request matching matcher to be made.
 
         ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
@@ -124,7 +124,7 @@ class Network(LibraryComponent):
         return self._wait_for_http("Request", matcher, timeout)
 
     @keyword(tags=["Wait", "HTTP"])
-    def wait_for_response(self, matcher: str = "", timeout: str = ""):
+    def wait_for_response(self, matcher: str = "", timeout: str = "") -> Any:
         """Waits for response matching matcher and returns python dict with contents.
 
         ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.

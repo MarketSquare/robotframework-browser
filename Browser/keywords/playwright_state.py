@@ -224,7 +224,7 @@ class PlaywrightState(LibraryComponent):
         env: Optional[Dict] = None,
         devtools: bool = False,
         slowMo: str = "0 seconds",
-    ):
+    ) -> str:
         """Create a new playwright Browser with specified options.
 
         Returns a stable identifier for the created browser.
@@ -310,7 +310,7 @@ class PlaywrightState(LibraryComponent):
         colorScheme: Optional[ColorScheme] = None,
         hideRfBrowser: bool = False,
         defaultBrowserType: Optional[str] = None,
-    ):
+    ) -> str:
         """Create a new BrowserContext with specified options.
 
         Returns a stable identifier for the created context
@@ -393,7 +393,7 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=["Setter", "BrowserControl"])
-    def new_page(self, url: Optional[str] = None):
+    def new_page(self, url: Optional[str] = None) -> str:
         """Open a new Page. A Page is the Playwright equivalent to a tab.
         Returns a stable identifier for the created page.
 
@@ -411,7 +411,7 @@ class PlaywrightState(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
-    ):
+    ) -> Dict:
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
         The data is parsed into a python list containing data representing the open Objects.
@@ -487,7 +487,7 @@ class PlaywrightState(LibraryComponent):
             )
 
     @keyword(tags=["Setter", "BrowserControl"])
-    def switch_browser(self, id: str):
+    def switch_browser(self, id: str) -> str:
         """Switches the currently active Browser to another open Browser.
         Returns a stable identifier for the previous browser.
 
@@ -499,7 +499,7 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=["Setter", "BrowserControl"])
-    def switch_context(self, id: str, browser: str = "CURRENT"):
+    def switch_context(self, id: str, browser: str = "CURRENT") -> str:
         """Switches the active BrowserContext to another open context.
         Returns a stable identifier for the previous context.
 
@@ -515,7 +515,7 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=["Setter", "BrowserControl"])
-    def switch_page(self, id: str, context: str = "CURRENT", browser: str = "CURRENT"):
+    def switch_page(self, id: str, context: str = "CURRENT", browser: str = "CURRENT") -> str:
         """Switches the active browser page to another open page by ``id`` or ``NEW``.
         Returns a stable identifier ``id`` for the previous page.
 
@@ -542,7 +542,7 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=["Getter", "BrowserControl"])
-    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL):
+    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> List:
         """Returns a list of ids from open browsers.
 
 
@@ -565,7 +565,7 @@ class PlaywrightState(LibraryComponent):
         self,
         context: SelectionType = SelectionType.ALL,
         browser: SelectionType = SelectionType.ALL,
-    ):
+    ) -> List:
         """Returns a list of context ids based on the browser selection.
 
 
@@ -608,7 +608,7 @@ class PlaywrightState(LibraryComponent):
         page: SelectionType = SelectionType.ALL,
         context: SelectionType = SelectionType.ALL,
         browser: SelectionType = SelectionType.ALL,
-    ):
+    ) -> List:
         """Returns a list of page ids based on the context and browser selection.
 
 

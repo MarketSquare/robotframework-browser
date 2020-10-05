@@ -91,7 +91,7 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=["Page Content"])
-    def download(self, url: str):
+    def download(self, url: str) -> str:
         """
         Download given url content and return downloaded file path
         """
