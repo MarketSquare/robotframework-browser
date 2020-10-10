@@ -22,8 +22,8 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     exec_scroll_function,
-    get_rel_scroll_coordinates,
     get_abs_scroll_coordinates,
+    get_rel_scroll_coordinates,
     logger,
     timestr_to_millisecs,
 )
@@ -37,8 +37,8 @@ from ..utils.data_types import (
     MouseButton,
     MouseButtonAction,
     MouseOptionsDict,
-    SelectAttribute,
     ScrollBehavior,
+    SelectAttribute,
 )
 
 
