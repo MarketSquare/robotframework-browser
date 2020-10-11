@@ -523,6 +523,7 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
     _auto_closing_level: AutoClosingLevel
+    _pause_on_failure = False
 
     def __init__(
         self,
@@ -559,6 +560,7 @@ class Browser(DynamicCore):
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
         self._running_on_failure_keyword = False
+        self._pause_on_failure = False
         self.run_on_failure_keyword = (
             None if is_falsy(run_on_failure) else run_on_failure
         )
@@ -658,6 +660,8 @@ class Browser(DynamicCore):
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except AssertionError as e:
             self.keyword_error()
+            if self._pause_on_failure:
+                input("Press Enter to continue...")
             raise e
 
     def start_keyword(self, name, attrs):
