@@ -78,7 +78,6 @@ class PlaywrightState(LibraryComponent):
 
         ``pauseOnFailure`` <bool> Stop execution when failure detected and leave browser open. Defaults to True.
         """
-
         self.new_browser(browser, headless=headless)
         self.new_context()
         self.new_page(url)
