@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            .parent {
+                overflow: scroll;
+                width: 200px;
+                height: 200px;
+            }
+            .child {
+                display: flex;
+                justify-content: space-between;
+                width: 1200px;
+                height: 1200px;
+            }
+            .component-1 {
+                align-self: start;
+                background: green;
+            }
+            .component-2 {
+                align-self: center;
+                background: blue;
+            }
+            .component-3 {
+                background: cyan;
+            }
+        </style>
+    </head>
+    <body>
+        <h3>Last pressed: <span id="pressed">NONE</span></h3>
+        <div class="parent">
+            <div class="child">
+                <div class="component-1" onclick="document.getElementById('pressed').innerText='Component 1'">Component 1</div>
+                <div class="component-2" onclick="document.getElementById('pressed').innerText='Component 2'">Component 2</div>
+                <div class="component-3" onclick="document.getElementById('pressed').innerText='Component 3'">Component 3</div>
+            </div>
+        </div>
+    </body>
+</html>
