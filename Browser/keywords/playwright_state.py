@@ -78,6 +78,7 @@ class PlaywrightState(LibraryComponent):
 
         ``pauseOnFailure`` <bool> Stop execution when failure detected and leave browser open. Defaults to True.
         """
+        logger.warn("Open Browser is for quick experimentation and debugging only. Use New Page for production.")
         self.new_browser(browser, headless=headless)
         self.new_context()
         self.new_page(url)

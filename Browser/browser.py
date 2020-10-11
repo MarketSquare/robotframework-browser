@@ -662,6 +662,7 @@ class Browser(DynamicCore):
         except AssertionError as e:
             self.keyword_error()
             if self._pause_on_failure:
+                sys.__stdout__.write(f"\n[ FAIL ] {e}")
                 sys.__stdout__.write(
                     "\n[Paused on failure] Press Enter to continue..\n"
                 )
