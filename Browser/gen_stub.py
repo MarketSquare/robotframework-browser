@@ -71,10 +71,8 @@ def keyword_line(keyword_arguments, keyword_types, method_name):
             if arg_type_str:
                 if default_value is None:
                     arg_type_str = f"Optional[{arg_type_str}]"
-                if arg_type_str == "str":
-                    default_value = f"'{default_value}'"
                 arg_str = arg_str + f": {arg_type_str}"
-            elif isinstance(default_value, str):
+            if isinstance(default_value, str):
                 default_value = f"'{default_value}'"
             arg_str = arg_str + f" = {default_value}"
         else:
