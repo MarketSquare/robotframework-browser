@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import os
-import sys
 import re
+import sys
 from concurrent.futures._base import Future
 from typing import List, Set
 
@@ -662,7 +662,9 @@ class Browser(DynamicCore):
         except AssertionError as e:
             self.keyword_error()
             if self._pause_on_failure:
-                sys.__stdout__.write("\n[Paused on failure] Press Enter to continue..\n")
+                sys.__stdout__.write(
+                    "\n[Paused on failure] Press Enter to continue..\n"
+                )
                 sys.__stdout__.flush()
                 input()
             raise e
