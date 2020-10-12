@@ -109,7 +109,7 @@ class PlaywrightState(LibraryComponent):
 
             response = stub.CloseBrowser(Request.Empty())
             closed_browser_id = response.body
-            self.library._pause_on_failure.remove(closed_browser_id)
+            self.library._pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
 
     @keyword(tags=["Setter", "BrowserControl"])
