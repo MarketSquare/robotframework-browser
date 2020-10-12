@@ -100,8 +100,9 @@ git add docs/releasenotes/Browser-$VERSION.rst
 git commit -m "Release notes for $VERSION" docs/releasenotes/Browser-$VERSION.rst
 git push
 ```
-Update later if necessary. Writing release notes is typically the biggest task when generating releases, and getting
-everything done in one go is often impossible.
+Update later if necessary.
+
+Also update Browser libdoc.
 
 ### Create release
 1. Use `inv release` to create and release artifacts and upload to PyPi
