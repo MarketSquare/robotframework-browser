@@ -43,7 +43,7 @@ def get_type_string_from_type(argument_type: type) -> str:
         return arg_type_str.replace("NoneType", "None")
 
 
-def get_type_sting_from_argument(argument_string: str, argument_types: dict) -> str:
+def get_type_string_from_argument(argument_string: str, argument_types: dict) -> str:
     agrument_name = argument_string.lstrip("*")
     if agrument_name in argument_types:
         return get_type_string_from_type(argument_types[agrument_name])
@@ -67,19 +67,17 @@ def keyword_line(keyword_arguments, keyword_types, method_name):
         if isinstance(argument, tuple):
             arg_str = argument[0]
             default_value = argument[1]
-            arg_type_str = get_type_sting_from_argument(arg_str, keyword_types)
+            arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
             if arg_type_str:
                 if default_value is None:
                     arg_type_str = f"Optional[{arg_type_str}]"
-                if isinstance(default_value, str):
-                    default_value = f"'{default_value}'"
                 arg_str = arg_str + f": {arg_type_str}"
-            elif isinstance(default_value, str):
+            if isinstance(default_value, str):
                 default_value = f"'{default_value}'"
             arg_str = arg_str + f" = {default_value}"
         else:
             arg_str = argument
-            arg_type_str = get_type_sting_from_argument(arg_str, keyword_types)
+            arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
             if arg_type_str:
                 arg_str = arg_str + f": {arg_type_str}"
         arguments_list.append(arg_str)

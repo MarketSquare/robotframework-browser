@@ -56,6 +56,7 @@ class PlaywrightState(LibraryComponent):
         url: Optional[str] = None,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = False,
+        pause_on_failure: bool = True,
     ):
         """Opens a new browser instance. Use this keyword for quick experiments or debugging sessions.
         Use `New Page` directly instead of `Open Browser` for production and automated execution.
@@ -74,11 +75,16 @@ class PlaywrightState(LibraryComponent):
         | webkit          | [https://webkit.org/|webkit]                         |
 
         ``headless`` <bool> If set to False, a GUI is provided otherwise it is hidden. Defaults to False.
-        """
 
+        ``pause_on_failure`` <bool> Stop execution when failure detected and leave browser open. Defaults to True.
+        """
+        logger.warn(
+            "Open Browser is for quick experimentation and debugging only. Use New Page for production."
+        )
         self.new_browser(browser, headless=headless)
         self.new_context()
         self.new_page(url)
+        self.library._pause_on_failure = pause_on_failure
 
     @keyword(tags=["Setter", "BrowserControl"])
     def close_browser(self, browser: str = "CURRENT"):
