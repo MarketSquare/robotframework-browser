@@ -110,9 +110,20 @@ class SupportedBrowsers(Enum):
 ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
 
 
-class ViewportFields(Enum):
+ScrollBehavior = Enum("ScrollBehavior", ["auto", "smooth"])
+
+
+class SizeFields(Enum):
     width = auto()
     height = auto()
+    ALL = auto()
+
+
+class AreaFields(Enum):
+    top = auto()
+    left = auto()
+    bottom = auto()
+    right = auto()
     ALL = auto()
 
 

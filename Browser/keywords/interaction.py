@@ -20,7 +20,13 @@ from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
+from ..utils import (
+    exec_scroll_function,
+    get_abs_scroll_coordinates,
+    get_rel_scroll_coordinates,
+    logger,
+    timestr_to_millisecs,
+)
 from ..utils.data_types import (
     BoundingBox,
     Coordinates,
@@ -31,9 +37,9 @@ from ..utils.data_types import (
     MouseButton,
     MouseButtonAction,
     MouseOptionsDict,
+    ScrollBehavior,
     SelectAttribute,
 )
-from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Interaction(LibraryComponent):
@@ -206,15 +212,15 @@ class Interaction(LibraryComponent):
 
         ``clickCount`` <int> How many time shall be clicked.
 
-        ``delay`` <robot time str> Time to wait between mousedown and mouseup and next click.
+        ``delay`` <robot time str> Time to wait between mouse-down and mouse-up and next click.
 
-        *Caution: be aware that if the delal leats to a total time that exceets the timeout, the keyword fails*
+        *Caution: be aware that if the delay leads to a total time that exceeds the timeout, the keyword fails*
 
         ``position_x`` & ``position_y`` <float> A point to click relative to the
-        top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
+        top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
         If not specified, clicks to some visible point of the element.
 
-        *Caution: even with 0, 0 might click a few pixels off from the corner of the boundingbox. Click uses detection to find the first clickable point.*
+        *Caution: even with 0, 0 might click a few pixels off from the corner of the bounding-box. Click uses detection to find the first clickable point.*
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
@@ -263,7 +269,7 @@ class Interaction(LibraryComponent):
         - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
         - Use `Mouse Button` to click in the center of the element, or the specified position.
-        - Wait for initiated navigations to either succeed or fail, unless ``noWaitAfter`` option is set.
+        - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
 
         ``selector`` <str> Selector element to click. **Required**
         See the `Finding elements` section for details about the selectors.
@@ -272,17 +278,17 @@ class Interaction(LibraryComponent):
 
         ``click_count`` <int> Defaults to 1.
 
-        ``delay`` <robot time str> Time to wait between mousedown and mouseup.
+        ``delay`` <robot time str> Time to wait between mouse-down and mouse-up.
         Defaults to 0.
 
         ``position_x`` & ``position_y`` <int> A point to click relative to the
-        top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
+        top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
         If not specified, clicks to some visible point of the element.
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
-        ``noWaitAfter`` <bool> Actions that initiate navigations are waiting for
-        these navigations to happen and for pages to start loading.
+        ``noWaitAfter`` <bool> Actions that initiate navigation, are waiting for
+        these navigation to happen and for pages to start loading.
         You can opt out of waiting via setting this flag.
         You would only need this option in the exceptional cases such as navigating
         to inaccessible pages. Defaults to ``False``.
@@ -321,6 +327,97 @@ class Interaction(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(Request().ElementSelector(selector=selector))
             logger.debug(response.log)
+
+    @keyword(tags=["Setter", "PageContent"])
+    def scroll_to(
+        self,
+        selector: Optional[str] = None,
+        vertical: str = "top",
+        horizontal: str = "left",
+        behavior: ScrollBehavior = ScrollBehavior.auto,
+    ):
+        """Scrolls an element or the page to an absolute position based on given coordinates.
+
+        ``selector`` <str> Selector of the element. If the selector is ``${None}`` or ``${Empty}``
+        the page itself is scrolled.
+        See the `Finding elements` section for details about the selectors.
+
+        ``vertical`` <str> defines where to scroll vertically.
+        It can be a positive number, like ``300``.
+        It can be a percentage value of the absolute scrollable size, like ``50%``.
+        It can be a string defining that top or the bottom of the scroll area. < ``top`` | ``bottom`` >
+        _Be aware that some pages do lazy loading and load more content once you scroll down._
+        Bottom defines the current known bottom coordinate.
+
+        ``horizontal`` <str> defines where to scroll horizontally.
+        Works same as vertical but defines < ``left`` | ``right`` > as start and end.
+
+        ``behavior`` <str> defines whether the scroll happens directly or it scrolls smoothly.
+        < ``auto`` | ``smooth`` >
+        """
+        scroll_size = self.library.get_scroll_size(selector)
+        scroll_width = scroll_size["width"]
+        scroll_height = scroll_size["height"]
+        client_size = self.library.get_client_size(selector)
+        client_width = client_size["width"]
+        client_height = client_size["height"]
+        vertical_px = get_abs_scroll_coordinates(
+            vertical, scroll_height - client_height, "top", "bottom"
+        )
+        horizontal_px = get_abs_scroll_coordinates(
+            horizontal, scroll_width - client_width, "left", "right"
+        )
+        exec_scroll_function(
+            self,
+            f'scrollTo({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
+            selector,
+        )
+
+    @keyword(tags=["Setter", "PageContent"])
+    def scroll_by(
+        self,
+        selector: Optional[str] = None,
+        vertical: str = "height",
+        horizontal: str = "0",
+        behavior: ScrollBehavior = ScrollBehavior.auto,
+    ):
+        """Scrolls an element or the page relative from current position by the given values.
+
+        ``selector`` <str> Selector of the element. If the selector is ``${None}`` or ``${Empty}``
+        the page itself is scrolled.
+        See the `Finding elements` section for details about the selectors.
+
+        ``vertical`` <str> defines how far and in which direction to scroll vertically.
+        It can be a positive or negative number. Positive scrolls down, like ``50``, negative scrolls up, like ``-50``.
+        It can be a percentage value of the absolute scrollable size, like ``9.95%`` or negative like ``-10%``.
+        It can be the string ``height`` to defining to scroll exactly one visible height down or up with ``-height``.
+        _Be aware that some pages do lazy loading and load more content once you scroll down._
+        The percentage of the current scrollable height is used and may change.
+
+        ``horizontal`` <str> defines where to scroll horizontally.
+        Works same as vertical but defines positive values for right and negative values for left.
+        ``width`` defines to scroll exactly one visible range to the right.
+
+        ``behavior`` <str> defines whether the scroll happens directly or it scrolls smoothly.
+        < ``auto`` | ``smooth`` >
+        """
+        scroll_size = self.library.get_scroll_size(selector)
+        scroll_width = scroll_size["width"]
+        scroll_height = scroll_size["height"]
+        client_size = self.library.get_client_size(selector)
+        client_width = client_size["width"]
+        client_height = client_size["height"]
+        vertical_px = get_rel_scroll_coordinates(
+            vertical, scroll_height - client_height, client_height, "height"
+        )
+        horizontal_px = get_rel_scroll_coordinates(
+            horizontal, scroll_width - client_width, client_width, "width"
+        )
+        exec_scroll_function(
+            self,
+            f'scrollBy({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
+            selector,
+        )
 
     @keyword(tags=["Setter", "PageContent"])
     def check_checkbox(self, selector: str):

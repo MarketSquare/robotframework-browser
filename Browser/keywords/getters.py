@@ -28,12 +28,13 @@ from ..assertion_engine import (
 )
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
+from ..utils import exec_scroll_function, logger
 from ..utils.data_types import (
+    AreaFields,
     AssertionOperator,
     BoundingBoxFields,
     SelectAttribute,
-    ViewportFields,
+    SizeFields,
 )
 
 
@@ -389,7 +390,7 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        expected_state: Union[str, bool] = "Unchecked",
+        expected_state: Union[bool, str] = "Unchecked",
     ) -> bool:
         """Returns the state of the checkbox found by ``selector``.
 
@@ -459,7 +460,7 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_viewport_size(
         self,
-        key: ViewportFields = ViewportFields.ALL,
+        key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> Any:
@@ -485,7 +486,7 @@ class Getters(LibraryComponent):
             logger.info(response.log)
             parsed = json.loads(response.json)
             logger.debug(parsed)
-            if key == ViewportFields.ALL:
+            if key == SizeFields.ALL:
                 return int_dict_verify_assertion(
                     parsed, assertion_operator, assertion_expected, "Viewport size is"
                 )
@@ -568,7 +569,7 @@ class Getters(LibraryComponent):
                     f"Style value for {key} is ",
                 )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(name="Get BoundingBox", tags=["Getter", "Assertion", "PageContent"])
     def get_boundingbox(
         self,
         selector: str,
@@ -576,7 +577,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> Any:
-        """Gets elements size and location as an object {x: float, y: float, width: float, height: float}.
+        """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
         ``selector`` <str> Selector from which shall be retrieved. **Required**
         See the `Finding elements` section for details about the selectors.
@@ -612,5 +613,143 @@ class Getters(LibraryComponent):
                     parsed[key.name],
                     assertion_operator,
                     assertion_expected,
-                    f"{key} is ",
+                    f"BoundingBox {key.name} is ",
                 )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    def get_scroll_size(
+        self,
+        selector: Optional[str] = None,
+        key: SizeFields = SizeFields.ALL,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ) -> Any:
+        """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
+
+        ``selector`` <str> Optional selector from which shall be retrieved.
+        If no selector is given the scroll size of the page itself is used.
+        See the `Finding elements` section for details about the selectors.
+
+        ``key`` < ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        If keys is set to ``ALL``(default) it will return the scroll size as dictionary,
+        otherwise it will just return the single value selected by the key.
+
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        See `Get BoundingBox` for more similar examples.
+
+        Example use:
+        | ${height}=         Get Scroll Size    height                          # filtered page by height
+        | Log                Width: ${height}                                   # Height: 58425
+        | ${scroll_size}=    Get Scroll Size    id=keyword-shortcuts-container  # unfiltered element
+        | Log                ${scroll_size}                                     # {'width': 253, 'height': 3036}
+        """
+        scroll_size = dict()
+        scroll_size["width"] = exec_scroll_function(self, "scrollWidth", selector)
+        scroll_size["height"] = exec_scroll_function(self, "scrollHeight", selector)
+        if key == SizeFields.ALL:
+            return int_dict_verify_assertion(
+                scroll_size,
+                assertion_operator,
+                assertion_expected,
+                "Scroll size is",
+            )
+        else:
+            logger.info(f"Value of '{key}'': {scroll_size[key.name]}")
+            return float_str_verify_assertion(
+                scroll_size[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"Scroll {key.name} is ",
+            )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    def get_scroll_position(
+        self,
+        selector: Optional[str] = None,
+        key: AreaFields = AreaFields.ALL,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ) -> Any:
+        """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
+
+        It describes the rectangle which is visible of the scrollable content of that element.
+        all values are measured from position {top: 0, left: 0}.
+
+        ``top`` uses js function scrollTop, ``left`` uses scrollLeft and
+        ``bottom`` and ``right`` are calculated with the client size.
+
+        ``selector`` <str> Optional selector from which shall be retrieved.
+        If no selector is given the client size of the page itself is used (``document.scrollingElement``).
+        See the `Finding elements` section for details about the selectors.
+
+        ``key`` < ``top`` | ``left`` | ``bottom`` | ``right`` | ``ALL`` > Optionally filters the returned values.
+        If keys is set to ``ALL``(default) it will return the scroll position as dictionary,
+        otherwise it will just return the single value selected by the key.
+
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        See `Get BoundingBox` or `Get Scroll Size` for examples.
+        """
+        scroll_position = dict()
+        scroll_position["top"] = exec_scroll_function(self, "scrollTop", selector)
+        scroll_position["left"] = exec_scroll_function(self, "scrollLeft", selector)
+        client_size = self.get_client_size(selector)
+        scroll_position["bottom"] = scroll_position["top"] + client_size["height"]
+        scroll_position["right"] = scroll_position["left"] + client_size["width"]
+        if key == AreaFields.ALL:
+            return int_dict_verify_assertion(
+                scroll_position,
+                assertion_operator,
+                assertion_expected,
+                "Scroll position is",
+            )
+        else:
+            logger.info(f"Value of '{key}'': {scroll_position[key.name]}")
+            return float_str_verify_assertion(
+                scroll_position[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"Scroll position {key.name} is ",
+            )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    def get_client_size(
+        self,
+        selector: Optional[str] = None,
+        key: SizeFields = SizeFields.ALL,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+    ) -> Any:
+        """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
+
+        ``selector`` <str> Optional selector from which shall be retrieved.
+        If no selector is given the client size of the page itself is used (``document.scrollingElement``).
+        See the `Finding elements` section for details about the selectors.
+
+        ``key`` < ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        If keys is set to ``ALL``(default) it will return the scroll size as dictionary,
+        otherwise it will just return the single value selected by the key.
+
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        See `Get BoundingBox` or `Get Scroll Size` for examples.
+        """
+        client_size = dict()
+        client_size["width"] = exec_scroll_function(self, "clientWidth", selector)
+        client_size["height"] = exec_scroll_function(self, "clientHeight", selector)
+        if key == SizeFields.ALL:
+            return int_dict_verify_assertion(
+                client_size,
+                assertion_operator,
+                assertion_expected,
+                "Client size is",
+            )
+        else:
+            logger.info(f"Value of '{key}'': {client_size[key.name]}")
+            return float_str_verify_assertion(
+                client_size[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"Client {key.name} is ",
+            )
