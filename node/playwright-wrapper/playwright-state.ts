@@ -422,14 +422,14 @@ async function _switchContext(id: Uuid, browserState: BrowserState) {
 }
 
 export async function switchPage(
-    call: ServerUnaryCall<Request.Index>,
+    call: ServerUnaryCall<Request.IdWithTimeout>,
     callback: sendUnaryData<Response.String>,
     browserState?: BrowserState,
 ) {
     exists(browserState, callback, "Tried to switch Page but browser wasn't open");
     const context = browserState.context;
     exists(context, callback, 'Tried to switch Page but no context was open');
-    const id = call.request.getIndex();
+    const id = call.request.getId();
     if (id === 'CURRENT') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
         callback(null, stringResponse(previous, 'Returned active page id'));
@@ -437,7 +437,7 @@ export async function switchPage(
     } else if (id === 'NEW') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
         const previousTime = browserState.page?.timestamp || 0;
-        const latest = await findLatestPageAfter(previousTime, 10000.0, context);
+        const latest = await findLatestPageAfter(previousTime, call.request.getTimeout(), context);
         exists(latest, callback, 'Tried to activate a new page but no new pages were detected in context.');
         await browserState.activatePage(latest);
         callback(null, stringResponse(previous, `Activated new page ${latest.id}`));

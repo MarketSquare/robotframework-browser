@@ -105,6 +105,11 @@ message Request {
     string index = 1;
   }
 
+  message IdWithTimeout {
+    string id = 1;
+    float timeout = 2;
+  }
+
   message StyleTag {
     string content = 1;
   }
@@ -324,7 +329,7 @@ service  Playwright {
   rpc Reload(Request.Empty) returns (Response.Empty);
 
   /* Playwright State handling keywords */
-  rpc SwitchPage(Request.Index) returns (Response.String);
+  rpc SwitchPage(Request.IdWithTimeout) returns (Response.String);
   rpc SwitchContext(Request.Index) returns (Response.String);
   rpc SwitchBrowser(Request.Index) returns (Response.String);
   rpc NewPage(Request.Url) returns (Response.String);

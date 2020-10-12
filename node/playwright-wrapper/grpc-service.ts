@@ -79,7 +79,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         return cookie.deleteAllCookies(callback, this.getActiveContext());
     }
 
-    async switchPage(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.String>): Promise<void> {
+    async switchPage(call: ServerUnaryCall<Request.IdWithTimeout>, callback: sendUnaryData<Response.String>): Promise<void> {
         return playwrightState.switchPage(call, callback, this.state.getActiveBrowser(callback));
     }
 

@@ -564,7 +564,8 @@ class PlaywrightState(LibraryComponent):
 
             self._correct_browser(browser)
             self._correct_context(context)
-            response = stub.SwitchPage(Request().Index(index=id))
+            timeout = timestr_to_millisecs(self.timeout)
+            response = stub.SwitchPage(Request().IdWithTimeout(id=id, timeout=timeout))
             logger.info(response.log)
             return response.body
 
