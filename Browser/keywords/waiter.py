@@ -13,14 +13,15 @@
 # limitations under the License.
 
 import json
+from datetime import timedelta
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, Union
 
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import ElementState, logger, timestr_to_millisecs
+from ..utils import ElementState, logger
 
 
 class Waiter(LibraryComponent):
@@ -29,7 +30,7 @@ class Waiter(LibraryComponent):
         self,
         selector: str,
         state: ElementState = ElementState.visible,
-        timeout: str = "",
+        timeout: Optional[timedelta] = None,
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
@@ -85,8 +86,7 @@ class Waiter(LibraryComponent):
             ]:
                 options: Dict[str, object] = {"state": state.name}
                 if timeout:
-                    timeout_ms = timestr_to_millisecs(timeout)
-                    options["timeout"] = timeout_ms
+                    options["timeout"] = self.get_timeout(timeout)
                 options_json = json.dumps(options)
                 response = stub.WaitForElementsState(
                     Request().ElementSelectorWithOptions(
@@ -102,8 +102,8 @@ class Waiter(LibraryComponent):
         self,
         function: str,
         selector: str = "",
-        polling: str = "raf",
-        timeout: str = "",
+        polling: Union[str, timedelta] = "raf",
+        timeout: Optional[timedelta] = None,
     ):
         """Polls JavaScript expression or function in browser until it returns a
         (JavaScript) truthy value.
@@ -129,9 +129,9 @@ class Waiter(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
             if polling != "raf":
-                options["polling"] = timestr_to_millisecs(polling)
+                options["polling"] = self.convert_timeout(polling)  # type: ignore
             if timeout:
-                options["timeout"] = timestr_to_millisecs(timeout)
+                options["timeout"] = self.convert_timeout(timeout)  # type: ignore
             options_json = json.dumps(options)
             response = stub.WaitForFunction(
                 Request().WaitForFunctionOptions(

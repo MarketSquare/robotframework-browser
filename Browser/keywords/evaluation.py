@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from datetime import timedelta
 from typing import Any
 
 from robotlibcore import keyword  # type: ignore
@@ -20,7 +21,6 @@ from robotlibcore import keyword  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Evaluation(LibraryComponent):
@@ -50,7 +50,7 @@ class Evaluation(LibraryComponent):
     def highlight_elements(
         self,
         selector: str,
-        duration: str = "5s",
+        duration: timedelta = timedelta(seconds=5),
         width: str = "2px",
         style: str = "dotted",
         color: str = "blue",
@@ -70,11 +70,10 @@ class Evaluation(LibraryComponent):
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``
         """
         with self.playwright.grpc_channel() as stub:
-            duration_ms = timestr_to_millisecs(duration)
             response = stub.HighlightElements(
                 Request().ElementSelectorWithDuration(
                     selector=selector,
-                    duration=duration_ms,
+                    duration=int(self.convert_timeout(duration)),
                     width=width,
                     style=style,
                     color=color,

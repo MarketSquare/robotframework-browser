@@ -38,14 +38,14 @@ Set Browser Timeout Should Return Old Value
     New Context
     ${old} =    Set Browser Timeout    1 min
     ${new} =    Set Browser Timeout    ${old}
-    Should Be Equal    ${new}    1 min
+    Should Be Equal    ${new}    1 minute
 
 Set Browser Timeout Should Fail With Invalid Value And Not Change Existing Value
     New Context
     Run Keyword And Expect Error
-    ...    ValueError: cannot convert float NaN to integer
+    ...    ValueError: Argument 'timeout' got value 'NaN' that cannot be converted to timedelta*
     ...    Set Browser Timeout    NaN
     ${old} =    Set Browser Timeout    1 min
     ${new} =    Set Browser Timeout    ${old}
     Should Not Be Equal    ${old}    Nan
-    Should Be Equal    ${new}    1 min
+    Should Be Equal    ${new}    1 minute

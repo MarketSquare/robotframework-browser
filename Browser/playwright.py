@@ -31,7 +31,7 @@ from .base import LibraryComponent
 if TYPE_CHECKING:
     from .browser import Browser
 
-from .utils import find_free_port, logger, timestr_to_millisecs
+from .utils import find_free_port, logger
 
 
 class Playwright(LibraryComponent):
@@ -41,6 +41,7 @@ class Playwright(LibraryComponent):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
         self.ensure_node_dependencies()
+        self.port = None
 
     @property
     def outputdir(self):
@@ -86,7 +87,7 @@ class Playwright(LibraryComponent):
         port = str(find_free_port())
         env = dict(os.environ)
         env["PORT"] = port
-        env["TIMEOUT"] = str(timestr_to_millisecs(self.timeout))
+        env["TIMEOUT"] = str(self.timeout)
         env["EXEC_TIMES"] = os.path.join(self.outputdir, "execution-time-log.pino")
         if self.enable_playwright_debug:
             env["DEBUG"] = "pw:api"
