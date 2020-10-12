@@ -437,13 +437,9 @@ export async function switchPage(
         return;
     } else if (id === 'NEW') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
-        const latest = context.pageStack.reduce((acc, val) => {
-            if (acc === undefined || acc.timestamp < val.timestamp) {
-                return val;
-            }
-            return acc;
-        });
-        exists(latest, callback, 'Tried to activate latest page but no pages were open in context.');
+        const previousTime = browserState.page?.timestamp || 0;
+        const latest = await findLatestPageAfter(previousTime, 10000.0, context);
+        exists(latest, callback, 'Tried to activate a new page but no new pages were detected in context.');
         await browserState.activatePage(latest);
         callback(null, stringResponse(previous, `Activated new page ${latest.id}`));
         return;
@@ -453,6 +449,23 @@ export async function switchPage(
     await _switchPage(id, browserState).catch((error) => callback(error, null));
     const response = stringResponse(previous, 'Succesfully changed active page');
     callback(null, response);
+}
+
+async function findLatestPageAfter(timestamp: Number, timeout: number, context: IndexedContext): Promise<IndexedPage | null> {
+    if (timeout < 0) {
+        return null;
+    }
+    const latest = context.pageStack.reduce((acc, val) => {
+        if (acc === undefined || acc.timestamp < val.timestamp) {
+            return val;
+        }
+        return acc;
+    });
+    if (!latest || (timestamp && latest.timestamp <= timestamp)) {
+        await new Promise((resolve) => setTimeout(resolve, Math.min(15, timeout)));
+        return findLatestPageAfter(timestamp, timeout - 15, context);
+    }
+    return latest;
 }
 
 export async function switchContext(
