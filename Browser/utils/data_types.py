@@ -158,6 +158,16 @@ class ElementState(Enum):
     unchecked = auto()
 
 
+class ElementStateKey(Enum):
+    attached = auto()
+    visible = auto()
+    disabled = auto()
+    readonly = auto()
+    selected = auto()
+    focused = auto()
+    checked = auto()
+
+
 AssertionOperator = Enum(
     "AssertionOperator",
     {
