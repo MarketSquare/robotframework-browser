@@ -60,6 +60,7 @@ class PlaywrightState(LibraryComponent):
     ):
         """Opens a new browser instance. Use this keyword for quick experiments or debugging sessions.
         Use `New Page` directly instead of `Open Browser` for production and automated execution.
+        See `Browser, Context and Page` for more information about Browser and related concepts.
 
         Creates a new browser, context and page with specified settings.
             Only supports some of the settings Create _ Keywords do
@@ -90,6 +91,7 @@ class PlaywrightState(LibraryComponent):
     def close_browser(self, browser: str = "CURRENT"):
         """Closes the current browser. Activated browser is set to first active browser.
         Closes all context and pages belonging to this browser.
+        See `Browser, Context and Page` for more information about Browser and related concepts.
 
         ``browser`` < ``CURRENT`` | ``ALL`` | str > If value is not ``CURRENT``
         it should be a string referencing the id of the browser to be closed.
@@ -110,6 +112,7 @@ class PlaywrightState(LibraryComponent):
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
         """Closes a Context. Activated context is set to first active context.
         Closes pages belonging to this context.
+        See `Browser, Context and Page` for more information about Context and related concepts.
 
         ``context`` < ``CURRENT`` | ``ALL`` | str > Close context with specified id. If ``ALL``
         is passed, all contexts of the specified browser are closed. Defaults to CURRENT.
@@ -160,6 +163,7 @@ class PlaywrightState(LibraryComponent):
     ):
         """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three.
         Activated page is set to first active page.
+        See `Browser, Context and Page` for more information about Page and related concepts.
 
         ``page`` < ``CURRENT`` | ``ALL`` | str > Id of the page to close. If value is not "CURRENT"
         it should be a string referencing the id of the context where to close page.
@@ -426,6 +430,7 @@ class PlaywrightState(LibraryComponent):
         assertion_expected: Any = None,
     ) -> Dict:
         """Returns all browsers, open contexts in them and open pages in these contexts.
+        See `Browser, Context and Page` for more information about these concepts.
 
         The data is parsed into a python list containing data representing the open Objects.
 
@@ -503,6 +508,7 @@ class PlaywrightState(LibraryComponent):
     def switch_browser(self, id: str) -> str:
         """Switches the currently active Browser to another open Browser.
         Returns a stable identifier for the previous browser.
+        See `Browser, Context and Page` for more information about Browser and related concepts.
 
         ``id`` <str> Id of the browser to be changed to. Starting at 0. **Required**
         """
@@ -515,6 +521,7 @@ class PlaywrightState(LibraryComponent):
     def switch_context(self, id: str, browser: str = "CURRENT") -> str:
         """Switches the active BrowserContext to another open context.
         Returns a stable identifier for the previous context.
+        See `Browser, Context and Page` for more information about Context and related concepts.
 
         ``id`` <str> Id of the context to be changed to. Randomly generated UUID. **Required**
 
@@ -533,6 +540,7 @@ class PlaywrightState(LibraryComponent):
     ) -> str:
         """Switches the active browser page to another open page by ``id`` or ``NEW``.
         Returns a stable identifier ``id`` for the previous page.
+        See `Browser, Context and Page` for more information about Page and related concepts.
 
         ``id`` < ``CURRENT`` | ``NEW `` | str> Id of the page to be changed to or
         ``NEW`` for last opened page. With ``CURRENT`` you can get the ``id`` of the "CURRENT" page
@@ -559,6 +567,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=["Getter", "BrowserControl"])
     def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> List:
         """Returns a list of ids from open browsers.
+        See `Browser, Context and Page` for more information about Browser and related concepts.
 
 
         ``browser`` < ``ALL`` | ``ACTIVE`` | ``CURRENT`` > Defaults to ``ALL``
@@ -582,6 +591,7 @@ class PlaywrightState(LibraryComponent):
         browser: SelectionType = SelectionType.ALL,
     ) -> List:
         """Returns a list of context ids based on the browser selection.
+        See `Browser, Context and Page` for more information about Context and related concepts.
 
 
         ``context`` < ``ALL`` | ``ACTIVE`` > Defaults to ``ALL``
@@ -625,6 +635,7 @@ class PlaywrightState(LibraryComponent):
         browser: SelectionType = SelectionType.ALL,
     ) -> List:
         """Returns a list of page ids based on the context and browser selection.
+        See `Browser, Context and Page` for more information about Page and related concepts.
 
 
         ``page`` < ``ALL`` | ``ACTIVE`` >
