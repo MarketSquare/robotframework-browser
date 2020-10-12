@@ -105,7 +105,7 @@ export async function waitForFunction(
 
     // TODO: This might behave weirdly if element selector points to a different page
     const result = await invokeOnPage(state.getActivePage(), 'waitForFunction', script, elem, options);
-    return jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Fcuntion completed succesfully.');
+    return jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Function completed succesfully.');
 }
 
 export async function addStyleTag(request: Request.StyleTag, page?: Page): Promise<Response.Empty> {

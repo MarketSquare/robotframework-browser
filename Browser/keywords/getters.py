@@ -33,6 +33,7 @@ from ..utils.data_types import (
     AreaFields,
     AssertionOperator,
     BoundingBoxFields,
+    ElementStateKey,
     SelectAttribute,
     SizeFields,
 )
@@ -752,4 +753,76 @@ class Getters(LibraryComponent):
                 assertion_operator,
                 assertion_expected,
                 f"Client {key.name} is ",
+            )
+
+    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    def get_element_state(
+        self,
+        selector: str,
+        state: ElementStateKey = ElementStateKey.visible,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: bool = True,
+    ):
+        """Get the given state from the element found by ``selector``.
+
+        If the selector does satisfy the expected state it will return ``True`` otherwise ``False``.
+
+        ``selector`` <str> Selector of the corresponding object. **Required**
+        See the `Finding elements` section for details about the selectors.
+
+        ``state`` Defaults to visible. Possible states are:
+        - ``attached``: to be present in DOM.
+        - ``visible``: to have non-empty bounding box and no visibility:hidden.
+        - ``disabled``: to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
+        - ``readonly``: to be ``readOnly``. Can be used on <input> and <textarea>.
+        - ``selected``: to be ``selected``. Can be used on <option>.
+        - ``focused``: to be the ``activeElement``.
+        - ``checked``: to be ``checked``. Can be used on <input>.
+
+        Note that element must be attached to DOM to be able to fetch the state of ``readonly``, ``selectec`` and ``checked``.
+        The other states are false if the requested element is not attached.
+
+        Note that element without any content or with display:none has an empty bounding box
+        and is not considered visible.
+        """
+        funct = {
+            ElementStateKey.disabled: "e => e.disabled",
+            ElementStateKey.readonly: "e => e.readOnly",
+            ElementStateKey.selected: "e => e.selected",
+            ElementStateKey.focused: "e => document.activeElement === e",
+            ElementStateKey.checked: "e => e.checked",
+        }
+        states = [
+            ElementStateKey.attached,
+            ElementStateKey.visible,
+        ]
+
+        with self.playwright.grpc_channel() as stub:
+            try:
+                if state in states:
+                    stub.WaitForElementsState(
+                        Request().ElementSelectorWithOptions(
+                            selector=selector,
+                            options=json.dumps({"state": state.name, "timeout": 100}),
+                        )
+                    )
+                else:
+                    stub.WaitForFunction(
+                        Request().WaitForFunctionOptions(
+                            script=funct[state],
+                            selector=selector,
+                            options=json.dumps({"timeout": 100}),
+                        )
+                    )
+                result = True
+            except Exception as e:
+                if "Timeout 100ms exceeded." in e.args[0].details:
+                    result = False
+                else:
+                    raise e
+            return bool_verify_assertion(
+                result,
+                assertion_operator,
+                assertion_expected,
+                f"State '{state.name}' of '{selector}' is",
             )
