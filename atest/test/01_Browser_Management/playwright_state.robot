@@ -118,18 +118,19 @@ New Page can New Context and browser
 Switch Page after popup
     Open Browser and assert Login Page    chromium
     Click    button#pops_up
-    Sleep    1s
     ${previous}=    Switch Page    NEW
     Wait For Elements State    "Popped Up!"
     Switch Page    ${previous}
     Wait For Elements State    button#pops_up
 
-Switch New Page does not change page when current is new
+Switch New Page fails when no new pages
     New Page    ${LOGIN_URL}
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    Switch Page    NEW
+    ${timeout}=  Set Browser Timeout   0.1s
+    Run Keyword And Expect Error   Tried to activate a new page but no new pages were detected in context.  Switch Page    NEW
     Get Title    ==    prefilled_email_form.html
+    [Teardown]  Set Browser Timeout   ${timeout}
 
 Set Viewport Size
     New Page
