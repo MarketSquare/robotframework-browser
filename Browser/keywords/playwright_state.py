@@ -82,10 +82,10 @@ class PlaywrightState(LibraryComponent):
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
         )
-        self.new_browser(browser, headless=headless)
+        browser_id = self.new_browser(browser, headless=headless)
         self.new_context()
         self.new_page(url)
-        self.library._pause_on_failure = pause_on_failure
+        self.library._pause_on_failure.add(browser_id)
 
     @keyword(tags=["Setter", "BrowserControl"])
     def close_browser(self, browser: str = "CURRENT"):
@@ -100,12 +100,15 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             if browser == "ALL":
                 response = stub.CloseAllBrowsers(Request().Empty())
+                self.library._pause_on_failure.clear()
                 logger.info(response.log)
                 return
             if browser != "CURRENT":
                 self.switch_browser(browser)
 
             response = stub.CloseBrowser(Request.Empty())
+            closed_browser_id = response.body
+            self.library._pause_on_failure.remove(closed_browser_id)
             logger.info(response.log)
 
     @keyword(tags=["Setter", "BrowserControl"])

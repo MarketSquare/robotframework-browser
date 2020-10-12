@@ -297,16 +297,15 @@ export class BrowserState {
     }
 }
 
-export async function closeBrowser(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
-    const id = openBrowsers.activeBrowser;
+export async function closeBrowser(callback: sendUnaryData<Response.String>, openBrowsers: PlaywrightState) {
     const currentBrowser = openBrowsers.activeBrowser;
     if (currentBrowser === undefined) {
-        callback(null, emptyWithLog('No browser open, doing nothing'));
+        callback(null, stringResponse('no-browser', 'No browser open, doing nothing'));
         return;
     }
     await currentBrowser.close();
     openBrowsers.popBrowser();
-    callback(null, emptyWithLog('Closed browser'));
+    callback(null, stringResponse(currentBrowser.id, 'Closed browser'));
 }
 
 export async function closeAllBrowsers(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {

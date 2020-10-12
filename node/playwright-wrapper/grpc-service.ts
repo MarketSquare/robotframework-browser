@@ -39,7 +39,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     private getActiveContext = () => this.state.getActiveContext();
     private getActivePage = () => this.state.getActivePage();
 
-    async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+    async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
         return playwrightState.closeBrowser(callback, this.state);
     }
     async closeAllBrowsers(
