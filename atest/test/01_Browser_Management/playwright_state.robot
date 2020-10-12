@@ -127,10 +127,10 @@ Switch New Page fails when no new pages
     New Page    ${LOGIN_URL}
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    ${timeout}=  Set Browser Timeout   0.1s
-    Run Keyword And Expect Error   Tried to activate a new page but no new pages were detected in context.  Switch Page    NEW
+    ${timeout}=    Set Browser Timeout    0.1s
+    Run Keyword And Expect Error    Tried to activate a new page but no new pages were detected in context.    Switch Page    NEW
     Get Title    ==    prefilled_email_form.html
-    [Teardown]  Set Browser Timeout   ${timeout}
+    [Teardown]    Set Browser Timeout    ${timeout}
 
 Set Viewport Size
     New Page
