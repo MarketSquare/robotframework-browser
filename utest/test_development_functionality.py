@@ -4,7 +4,7 @@ from Browser.keywords.playwright_state import PlaywrightState
 def test_pause_on_failure():
     def whole_lib():
         pass
-    whole_lib._pause_on_failure = False
+    whole_lib._pause_on_failure = set()
     whole_lib.playwright = whole_lib
     browser = PlaywrightState(whole_lib)
 
