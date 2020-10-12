@@ -198,10 +198,16 @@ def clean_atest(c):
 
 
 @task(clean_atest)
-def atest(c):
-    _run_robot(
-        ["--pythonpath", ".",]
-    )
+def atest(c, suite=None):
+    """Runs Robot Framework acceptance tests.
+
+    Args:
+        suite: Select which suite to run.
+    """
+    args = ["--pythonpath", ".",]
+    if suite:
+        args.extend(["--suite", suite])
+    _run_robot(args)
 
 
 @task(clean_atest)
