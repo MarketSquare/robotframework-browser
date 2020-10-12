@@ -16,9 +16,11 @@ import os
 import re
 import sys
 from concurrent.futures._base import Future
-from typing import List, Set
+from datetime import timedelta
+from typing import List, Set, Union
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
+from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .keywords import (
@@ -526,10 +528,10 @@ class Browser(DynamicCore):
 
     def __init__(
         self,
-        timeout: str = "10s",
+        timeout: timedelta = timedelta(seconds=10),
         enable_playwright_debug: bool = False,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
-        retry_assertions_for: str = "1s",
+        retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot",
     ):
         """Browser library can be taken into use with optional arguments:
@@ -554,8 +556,8 @@ class Browser(DynamicCore):
           It can be the name of any keyword that does not have any mandatory argument.
           If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value.
         """
-        self.timeout = timeout
-        self.retry_assertions_for = retry_assertions_for
+        self.timeout = self.convert_timeout(timeout)
+        self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[object] = []
         self._running_on_failure_keyword = False
@@ -719,3 +721,16 @@ class Browser(DynamicCore):
             BuiltIn().get_variable_value("${OUTPUTDIR}"),
             test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT_{index}",
         ).replace("\\", "\\\\")
+
+    def get_timeout(self, timeout: Union[timedelta, None]) -> float:
+        if timeout is None:
+            return self.timeout
+        return self.convert_timeout(timeout)
+
+    def convert_timeout(self, timeout: Union[timedelta, float]) -> float:
+        if isinstance(timeout, timedelta):
+            return timeout.total_seconds() * 1000
+        return timestr_to_secs(timeout) * 1000
+
+    def millisecs_to_timestr(self, timeout: float) -> str:
+        return secs_to_timestr(timeout / 1000)

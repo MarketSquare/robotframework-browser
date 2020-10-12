@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from datetime import timedelta
 from typing import Any, Dict, Optional
 
 from robotlibcore import keyword  # type: ignore
@@ -22,7 +23,6 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
 from ..utils.data_types import RequestMethod
-from ..utils.time_conversion import timestr_to_millisecs
 
 
 def _get_headers(body: str, headers: Dict):
@@ -104,7 +104,7 @@ class Network(LibraryComponent):
             response = function(
                 Request().HttpCapture(
                     urlOrPredicate=matcher,
-                    timeout=timestr_to_millisecs(timeout),
+                    timeout=self.get_timeout(timeout),
                 )
             )
             logger.debug(response.log)
@@ -136,7 +136,7 @@ class Network(LibraryComponent):
         return self._wait_for_http("Response", matcher, timeout)
 
     @keyword(tags=["Wait", "HTTP"])
-    def wait_until_network_is_idle(self, timeout: str = ""):
+    def wait_until_network_is_idle(self, timeout: Optional[timedelta] = None):
         """Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
 
         Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
@@ -145,9 +145,7 @@ class Network(LibraryComponent):
 
         """
         with self.playwright.grpc_channel() as stub:
-            if not timeout:
-                timeout = self.library.playwright.timeout
             response = stub.WaitUntilNetworkIsIdle(
-                Request().Timeout(timeout=timestr_to_millisecs(timeout))
+                Request().Timeout(timeout=self.get_timeout(timeout))
             )
             logger.debug(response.log)

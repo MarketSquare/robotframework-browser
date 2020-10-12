@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
 from robotlibcore import keyword  # type: ignore
@@ -28,7 +29,6 @@ from ..utils import (
     find_by_id,
     locals_to_params,
     logger,
-    timestr_to_millisecs,
 )
 from ..utils.data_types import AssertionOperator
 
@@ -235,11 +235,12 @@ class PlaywrightState(LibraryComponent):
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
         handleSIGHUP: bool = True,
-        timeout: str = "30 seconds",
+        timeout: timedelta = timedelta(seconds=30),
         env: Optional[Dict] = None,
         devtools: bool = False,
-        slowMo: str = "0 seconds",
+        slowMo: timedelta = timedelta(seconds=0),
     ) -> str:
+
         """Create a new playwright Browser with specified options.
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
@@ -290,9 +291,8 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         if timeout:
-            params["timeout"] = timestr_to_millisecs(timeout)
-        if slowMo:
-            params["slowMo"] = timestr_to_millisecs(slowMo)
+            params["timeout"] = self.convert_timeout(timeout)
+        params["slowMo"] = self.convert_timeout(slowMo)
         options = json.dumps(params, default=str)
         logger.info(options)
 
@@ -568,8 +568,9 @@ class PlaywrightState(LibraryComponent):
 
             self._correct_browser(browser)
             self._correct_context(context)
-            timeout = timestr_to_millisecs(self.timeout)
-            response = stub.SwitchPage(Request().IdWithTimeout(id=id, timeout=timeout))
+            response = stub.SwitchPage(
+                Request().IdWithTimeout(id=id, timeout=self.timeout)
+            )
             logger.info(response.log)
             return response.body
 

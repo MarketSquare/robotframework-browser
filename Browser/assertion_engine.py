@@ -90,8 +90,8 @@ def verify_assertion(
 @wrapt.decorator
 def with_assertion_polling(wrapped, instance, args, kwargs):
     start = time.time()
-    timeout = timestr_to_secs(instance.timeout)
-    retry_assertions_until = timestr_to_secs(instance.retry_assertions_for)
+    timeout = timestr_to_secs(instance.timeout / 1000)
+    retry_assertions_until = timestr_to_secs(instance.retry_assertions_for / 1000)
     retries_start: Optional[float] = None
     tries = 1
     try:

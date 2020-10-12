@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from concurrent.futures._base import Future
-from typing import TYPE_CHECKING, Set
+from datetime import timedelta
+from typing import TYPE_CHECKING, Set, Union
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -32,19 +33,19 @@ class LibraryComponent:
         return self.library.playwright
 
     @property
-    def timeout(self) -> str:
+    def timeout(self) -> float:
         return self.library.timeout
 
     @timeout.setter
-    def timeout(self, value: str):
+    def timeout(self, value: float):
         self.library.timeout = value
 
     @property
-    def retry_assertions_for(self) -> str:
+    def retry_assertions_for(self) -> float:
         return self.library.retry_assertions_for
 
     @retry_assertions_for.setter
-    def retry_assertions_for(self, value: str):
+    def retry_assertions_for(self, value: float):
         self.library.retry_assertions_for = value
 
     @property
@@ -54,3 +55,12 @@ class LibraryComponent:
     @unresolved_promises.setter
     def unresolved_promises(self, value: Set[Future]):
         self.library._unresolved_promises = value
+
+    def get_timeout(self, timeout: Union[timedelta, None]) -> float:
+        return self.library.get_timeout(timeout)
+
+    def convert_timeout(self, timeout: Union[timedelta, float]) -> float:
+        return self.library.convert_timeout(timeout)
+
+    def millisecs_to_timestr(self, timeout: float) -> str:
+        return self.library.millisecs_to_timestr(timeout)

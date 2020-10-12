@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -25,7 +26,6 @@ from ..utils import (
     get_abs_scroll_coordinates,
     get_rel_scroll_coordinates,
     logger,
-    timestr_to_millisecs,
 )
 from ..utils.data_types import (
     BoundingBox,
@@ -45,7 +45,11 @@ from ..utils.data_types import (
 class Interaction(LibraryComponent):
     @keyword(tags=["Setter", "PageContent"])
     def type_text(
-        self, selector: str, text: str, delay: str = "0 ms", clear: bool = True
+        self,
+        selector: str,
+        text: str,
+        delay: timedelta = timedelta(seconds=0),
+        clear: bool = True,
     ):
         """Types the given ``text`` into the text field found by ``selector``.
 
@@ -107,7 +111,11 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def type_secret(
-        self, selector: str, secret: str, delay: str = "0 ms", clear: bool = True
+        self,
+        selector: str,
+        secret: str,
+        delay: timedelta = timedelta(seconds=0),
+        clear: bool = True,
     ):
         """Types the given ``secret`` into the text field found by ``selector``.
 
@@ -190,7 +198,7 @@ class Interaction(LibraryComponent):
         selector: str,
         button: MouseButton = MouseButton.left,
         clickCount: int = 1,
-        delay: Optional[str] = None,
+        delay: Optional[timedelta] = None,
         position_x: Optional[float] = None,
         position_y: Optional[float] = None,
         force: bool = False,
@@ -237,7 +245,7 @@ class Interaction(LibraryComponent):
                 "noWaitAfter": noWaitAfter,
             }
             if delay:
-                options["delay"] = timestr_to_millisecs(delay)
+                options["delay"] = self.get_timeout(delay)
             # Without the != None 0 being falsy causes issues
             if position_x is not None and position_y is not None:
                 positions: Dict[str, object] = {"x": position_x, "y": position_y}
@@ -498,12 +506,12 @@ class Interaction(LibraryComponent):
         self,
         selector: str,
         text: str,
-        delay: str = "0 ms",
+        delay: timedelta = timedelta(microseconds=0),
         clear: bool = True,
         log_response: bool = True,
     ):
         with self.playwright.grpc_channel() as stub:
-            delay_ms = timestr_to_millisecs(delay)
+            delay_ms = self.get_timeout(delay)
             response = stub.TypeText(
                 Request().TypeText(
                     selector=selector, text=text, delay=int(delay_ms), clear=clear

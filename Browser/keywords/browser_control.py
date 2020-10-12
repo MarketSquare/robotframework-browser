@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import base64
+from datetime import timedelta
 from pathlib import Path
 
 from robot.utils import get_link_path  # type: ignore
@@ -20,7 +21,6 @@ from robotlibcore import keyword  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
-from ..utils.time_conversion import timestr_to_millisecs
 
 
 class Control(LibraryComponent):
@@ -138,31 +138,30 @@ class Control(LibraryComponent):
         return True if filename.upper() == "EMBED" else False
 
     @keyword(tags=["Setter", "Config"])
-    def set_browser_timeout(self, timeout: str) -> str:
+    def set_browser_timeout(self, timeout: timedelta) -> str:
         """Sets the timeout used by most input and getter keywords.
 
         ``timeout`` <str> Timeout of it is for current playwright context. **Required**
 
         Returns the previous value of the timeout.
         """
-        parsed_timeout = timestr_to_millisecs(timeout)
-        old_timeout = self.timeout
-        self.timeout = timeout
+        old_timeout = self.millisecs_to_timestr(self.timeout)
+        self.timeout = self.convert_timeout(timeout)
         with self.playwright.grpc_channel() as stub:
-            response = stub.SetTimeout(Request().Timeout(timeout=parsed_timeout))
+            response = stub.SetTimeout(Request().Timeout(timeout=self.timeout))
             logger.info(response.log)
         return old_timeout
 
     @keyword(tags=["Setter", "Config"])
-    def set_retry_assertions_for(self, timeout: str) -> str:
+    def set_retry_assertions_for(self, timeout: timedelta) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
         ``timeout`` <str>
 
         Returns the previous value of the retry_assertions_until.
         """
-        old_retry_assertions_for = self.retry_assertions_for
-        self.retry_assertions_for = timeout
+        old_retry_assertions_for = self.millisecs_to_timestr(self.retry_assertions_for)
+        self.retry_assertions_for = self.convert_timeout(timeout)
         return old_retry_assertions_for
 
     @keyword(tags=["Setter", "BrowserControl"])
