@@ -547,7 +547,11 @@ class PlaywrightState(LibraryComponent):
         See `Browser, Context and Page` for more information about Page and related concepts.
 
         ``id`` < ``CURRENT`` | ``NEW `` | str> Id of the page to be changed to or
-        ``NEW`` for last opened page. With ``CURRENT`` you can get the ``id`` of the "CURRENT" page
+
+        ``NEW`` for a page opened after the current page. This may timeout if no new pages
+        exists before library timeout. See `Set Browser Timeout` for how to change the timeout.
+
+        With ``CURRENT`` you can get the ``id`` of the "CURRENT" page
         **Required**
 
         ``context`` < ``CURRENT`` | str> Switch page in specified context. If value is not "CURRENT"
