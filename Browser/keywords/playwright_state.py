@@ -85,7 +85,8 @@ class PlaywrightState(LibraryComponent):
         browser_id = self.new_browser(browser, headless=headless)
         self.new_context()
         self.new_page(url)
-        self.library._pause_on_failure.add(browser_id)
+        if pause_on_failure:
+            self.library._pause_on_failure.add(browser_id)
 
     @keyword(tags=["Setter", "BrowserControl"])
     def close_browser(self, browser: str = "CURRENT"):
