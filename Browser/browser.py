@@ -92,11 +92,11 @@ class Browser(DynamicCore):
 
     == Contexts ==
 
-    A *context* corresponds to several independent incognito browsers in Chrome
-    that do not share cookies, sessions or profile settings.
-    Compared to Selenium, these do *not* require their own browser process!
-    Therefore, to get a clean environment the tests shall just close the current
-    context and open a new context.
+    A *context* corresponds to set of independent incognito pages in a browser
+    that share cookies, sessions or profile settings. Pages in two separate
+    contexts do not share cookies, sessions or profile settings.
+    Compared to Selenium, these do *not* require their own browser process.
+    To get a clean environment a test can just open a new context.
     Due to this new independent browser sessions can be opened with
     Robot Framework Browser about 10 times faster than with Selenium by
     just opening a `New Context` within the opened browser.
@@ -113,7 +113,7 @@ class Browser(DynamicCore):
 
     == Pages ==
 
-    A *page* does contain the content of the loaded web site.
+    A *page* does contain the content of the loaded web site and has a browsing history.
     Pages and browser tabs are the same.
 
     Typical usage could be:
@@ -123,8 +123,6 @@ class Browser(DynamicCore):
     |     New Context    viewport={'width': 1920, 'height': 1080}
     |     New Page       https://marketsquare.github.io/robotframework-browser/Browser.html
     |     Get Title      ==    Browser
-
-    There are shortcuts to open new pages together with new browsers but the offer less control.
 
     The `Open Browser` keyword opens a new browser, a new context and a new page.
     This keyword is useful for quick experiments or debugging sessions.
@@ -137,8 +135,8 @@ class Browser(DynamicCore):
     the test. The browser process remains open and will be closed at the end of
     execution.
 
-    Each Browser, Context and Page has a unique ID with which they can be adressed.
-    A full catalog of what is open can be recieved by `Get Browser Catalog` as dictionary.
+    Each Browser, Context and Page has a unique ID with which they can be addressed.
+    A full catalog of what is open can be received by `Get Browser Catalog` as dictionary.
 
 
 
