@@ -451,7 +451,11 @@ export async function switchPage(
     callback(null, response);
 }
 
-async function findLatestPageAfter(timestamp: Number, timeout: number, context: IndexedContext): Promise<IndexedPage | null> {
+async function findLatestPageAfter(
+    timestamp: number,
+    timeout: number,
+    context: IndexedContext,
+): Promise<IndexedPage | null> {
     if (timeout < 0) {
         return null;
     }
