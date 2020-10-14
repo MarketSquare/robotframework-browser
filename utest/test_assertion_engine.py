@@ -27,9 +27,9 @@ def test_contains():
 
 
 class FakeBrowser:
-    timeout = "0.1s"
+    timeout = 100
     counter = 1
-    retry_assertions_for = "0.03s"
+    retry_assertions_for = 30
 
     @with_assertion_polling
     def is_three(self, value):
@@ -52,7 +52,7 @@ def test_with_assertions_polling():
 
 def test_without_assertions_polling():
     fb = FakeBrowser()
-    fb.retry_assertions_for = "0s"
+    fb.retry_assertions_for = 0
     fb.is_three(3)
     with pytest.raises(AssertionError):
         fb.is_three(2)

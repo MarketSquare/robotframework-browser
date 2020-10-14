@@ -19,7 +19,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, cast
 
 import wrapt  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
-from robot.utils import timestr_to_secs  # type: ignore
 
 from .utils import AssertionOperator, is_truthy, logger
 
@@ -90,8 +89,8 @@ def verify_assertion(
 @wrapt.decorator
 def with_assertion_polling(wrapped, instance, args, kwargs):
     start = time.time()
-    timeout = timestr_to_secs(instance.timeout / 1000)
-    retry_assertions_until = timestr_to_secs(instance.retry_assertions_for / 1000)
+    timeout = instance.timeout / 1000
+    retry_assertions_until = instance.retry_assertions_for / 1000
     retries_start: Optional[float] = None
     tries = 1
     try:
