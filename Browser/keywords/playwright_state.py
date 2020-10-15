@@ -326,6 +326,8 @@ class PlaywrightState(LibraryComponent):
         colorScheme: Optional[ColorScheme] = None,
         hideRfBrowser: bool = False,
         defaultBrowserType: Optional[str] = None,
+        videosPath: Optional[str] = None,
+        videoSize: Optional[Dict[str, int]] = None
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
