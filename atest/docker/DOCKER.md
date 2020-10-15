@@ -16,9 +16,9 @@ docker run --rm \
   -v $(pwd)/atest/test/:/test \
     docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:1.0.0 \
       bash -c "robot --outputdir /test/output /test"
-      ```
+```
 
-      `docker run -v` is used to mount the directory containing tests on the supervising machine. In this example robot output will also be output inside the test directory
+`docker run -v` is used to mount the directory containing tests on the supervising machine. In this example robot output will also be output inside the test directory
 
 
 When testing with chrome we recommend downloading a copy of `chrome.json` security settings and using the following docker run flags ```--ipc=host --security-opt seccomp=chrome.json``` for best compatibility. [Explanations and the chrome.json can be found here](https://github.com/microsoft/playwright/tree/master/docs/docker#run-the-image)
