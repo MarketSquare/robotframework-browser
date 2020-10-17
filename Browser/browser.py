@@ -593,21 +593,30 @@ class Browser(DynamicCore):
         try:
             self.playwright.close()
         except ConnectionError as e:
-            logger.warn(f"Browser closing problem: {e}")
+            logger.warn(f"Browser library closing problem: {e}")
 
     def _start_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
-            self._execution_stack.append(self.get_browser_catalog())
+            try:
+                self._execution_stack.append(self.get_browser_catalog())
+            except ConnectionError as e:
+                logger.debug(f"Browser._start_suite connection problem: {e}")
 
     def _start_test(self, name, attrs):
         if self._auto_closing_level == AutoClosingLevel.TEST:
-            self._execution_stack.append(self.get_browser_catalog())
+            try:
+                self._execution_stack.append(self.get_browser_catalog())
+            except ConnectionError as e:
+                logger.debug(f"Browser._start_test connection problem: {e}")
 
     def _end_test(self, name, attrs):
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
+            if len(self._execution_stack) == 0:
+                logger.debug(f"Browser._end_test empty execution stack")
+                return
             try:
                 catalog_before_test = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_test)
@@ -618,6 +627,9 @@ class Browser(DynamicCore):
 
     def _end_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
+            if len(self._execution_stack) == 0:
+                logger.debug(f"Browser._end_suite empty execution stack")
+                return
             try:
                 catalog_before_suite = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_suite)
