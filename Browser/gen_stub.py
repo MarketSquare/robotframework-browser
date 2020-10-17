@@ -109,6 +109,14 @@ from .utils.data_types import *
 
 
 class Browser:
+    timeout: Any = ...
+"""
+
+pyi_non_kw_methods = """\
+    def get_timeout(self, timeout: Union[timedelta, None]) -> float: ...
+    def convert_timeout(self, timeout: Union[timedelta, float]) -> float: ...
+    def millisecs_to_timestr(self, timeout: float)  -> str: ...
+
 """
 
 init_method = KeywordBuilder.build(br.__init__)
@@ -120,3 +128,4 @@ with open("Browser/__init__.pyi", "w") as stub_file:
         )
     )
     stub_file.writelines(function_list)
+    stub_file.write(pyi_non_kw_methods)
