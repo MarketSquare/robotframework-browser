@@ -590,7 +590,10 @@ class Browser(DynamicCore):
         return BuiltIn().get_variable_value("${OUTPUTDIR}")
 
     def _close(self):
-        self.playwright.close()
+        try:
+            self.playwright.close()
+        except ConnectionError as e:
+            logger.warn(f"Browser closing problem: {e}")
 
     def _start_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
@@ -610,6 +613,8 @@ class Browser(DynamicCore):
                 self._prune_execution_stack(catalog_before_test)
             except AssertionError as e:
                 logger.warn(f"Test Case: {name}, End Test: {e}")
+            except ConnectionError as e:
+                logger.debug(f"Browser._end_test connection problem: {e}")
 
     def _end_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
@@ -618,6 +623,8 @@ class Browser(DynamicCore):
                 self._prune_execution_stack(catalog_before_suite)
             except AssertionError as e:
                 logger.warn(f"Test Suite: {name}, End Suite: {e}")
+            except ConnectionError as e:
+                logger.debug(f"Browser._end_suite connection problem: {e}")
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
         # WIP CODE BEGINS
