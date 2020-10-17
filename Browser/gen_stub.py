@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from datetime import timedelta
 from typing import Any
 
 from robotlibcore import KeywordBuilder  # type: ignore
@@ -71,10 +71,12 @@ def keyword_line(keyword_arguments, keyword_types, method_name):
             if arg_type_str:
                 if default_value is None:
                     arg_type_str = f"Optional[{arg_type_str}]"
-                arg_str = arg_str + f": {arg_type_str}"
+                arg_str = f"{arg_str}: {arg_type_str}"
             if isinstance(default_value, str):
                 default_value = f"'{default_value}'"
-            arg_str = arg_str + f" = {default_value}"
+            if isinstance(default_value, timedelta):
+                default_value = f"timedelta(seconds={default_value.total_seconds()})"
+            arg_str = f"{arg_str} = {default_value}"
         else:
             arg_str = argument
             arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
@@ -91,7 +93,10 @@ br: Any = Browser.Browser()
 function_list = get_function_list_from_keywords(br.get_keyword_names())
 
 
-pyi_boilerplate = """from concurrent.futures import Future
+pyi_boilerplate = """\
+import datetime
+from concurrent.futures import Future
+from datetime import timedelta
 from typing import (
     Any,
     Dict,
