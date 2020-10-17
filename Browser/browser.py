@@ -615,7 +615,7 @@ class Browser(DynamicCore):
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
             if len(self._execution_stack) == 0:
-                logger.debug(f"Browser._end_test empty execution stack")
+                logger.debug("Browser._end_test empty execution stack")
                 return
             try:
                 catalog_before_test = self._execution_stack.pop()
@@ -628,7 +628,7 @@ class Browser(DynamicCore):
     def _end_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
-                logger.debug(f"Browser._end_suite empty execution stack")
+                logger.debug("Browser._end_suite empty execution stack")
                 return
             try:
                 catalog_before_suite = self._execution_stack.pop()
