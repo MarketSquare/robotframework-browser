@@ -41,15 +41,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r Browser/requirements.txt
         pip install -r Browser/dev-requirements.txt
+    - name: Build Protos and check with tsc
+      run: |
+        inv build
     - name: Check types with mypy
       run: |
         mypy --config-file Browser/mypy.ini Browser
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser
-    - name: Build Protos and check with tsc
-      run: |
-        inv build
     - name: Start xvfb
       run: |
         export DISPLAY=:99.0
