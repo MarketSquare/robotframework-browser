@@ -1,6 +1,5 @@
 *** Settings ***
 Resource          imports.resource
-Library           Collections
 Suite Setup       Create Browser Catalog State
 Suite Teardown    Close Browser    ALL
 

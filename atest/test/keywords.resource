@@ -3,6 +3,7 @@ Resource          variables.resource
 Library           Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}    run_on_failure=None
 Library           OperatingSystem
 Library           DateTime
+Library           Collections
 Library           ../library/common.py
 
 *** Keywords ***
