@@ -400,6 +400,15 @@ class PlaywrightState(LibraryComponent):
         If there's no open Browser this keyword will open one. Does not create pages.
         """
         params = locals_to_params(locals())
+        if "geolocation" in params:
+            location = params["geolocation"]
+            latitude = location["latitude"]
+            location["latitude"] = float(latitude)
+            longitude = location["longitude"]
+            location["longitude"] = float(longitude)
+            accuracy = location.get("accuracy")
+            if accuracy:
+                location["accuracy"] = float(accuracy)
         options = json.dumps(params, default=str)
         logger.info(options)
         with self.playwright.grpc_channel() as stub:
