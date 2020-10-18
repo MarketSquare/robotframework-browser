@@ -194,8 +194,7 @@ class Interaction(LibraryComponent):
         noWaitAfter: bool = False,
         *modifiers: KeyboardModifier,
     ):
-        """*DEPRECATED* Use `Click` instead.
-        """
+        """*DEPRECATED* Use `Click` instead."""
         self.click(
             selector,
             button,
@@ -221,32 +220,36 @@ class Interaction(LibraryComponent):
         noWaitAfter: bool = False,
         *modifiers: KeyboardModifier,
     ):
-        """Moves the virtual mouse with multiple options on the element found by ``selector``.
+        """Simulates mouse click on the element found by ``selector``.
 
-        This method hovers over an element matching ``selector`` by performing the following steps:
-        - Find an element match matching ``selector``. If there is none, wait until a matching element is attached to the DOM.
+        This keyword clicks an element matching ``selector`` by performing the following steps:
+        - Find an element matches selector. If there is none, wait until a matching element is attached to the DOM.
         - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
-        - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
+        - Use `Mouse Button` to click in the center of the element, or the specified position.
+        - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
 
         ``selector`` <str> Selector element to click. **Required**
         See the `Finding elements` section for details about the selectors.
 
-        ``button`` < ``left`` | ``middle`` |  ``right``> The button that shall be used for clicking.
+        ``button`` < ``left`` | ``right`` | ``middle`` > Defaults to ``left`` if invalid.
 
-        ``clickCount`` <int> How many time shall be clicked.
+        ``click_count`` <int> Defaults to 1.
 
-        ``delay`` <robot time str> Time to wait between mouse-down and mouse-up and next click.
-
-        *Caution: be aware that if the delay leads to a total time that exceeds the timeout, the keyword fails*
+        ``delay`` <robot time str> Time to wait between mouse-down and mouse-up.
+        Defaults to 0.
 
         ``position_x`` & ``position_y`` <float> A point to click relative to the
         top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
         If not specified, clicks to some visible point of the element.
 
-        *Caution: even with 0, 0 might click a few pixels off from the corner of the bounding-box. Click uses detection to find the first clickable point.*
-
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+
+        ``noWaitAfter`` <bool> Actions that initiate navigation, are waiting for
+        these navigation to happen and for pages to start loading.
+        You can opt out of waiting via setting this flag.
+        You would only need this option in the exceptional cases such as navigating
+        to inaccessible pages. Defaults to ``False``.
 
         ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
         Modifier keys to press. Ensures that only these modifiers are pressed
@@ -286,36 +289,32 @@ class Interaction(LibraryComponent):
         force: bool = False,
         *modifiers: KeyboardModifier,
     ):
-        """Simulates mouse click with multiple options on the element found by ``selector``.
+        """Moves the virtual mouse with multiple options on the element found by ``selector``.
 
-        This keyword clicks an element matching ``selector`` by performing the following steps:
-        - Find an element matches selector. If there is none, wait until a matching element is attached to the DOM.
+        This method hovers over an element matching ``selector`` by performing the following steps:
+        - Find an element match matching ``selector``. If there is none, wait until a matching element is attached to the DOM.
         - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
-        - Use `Mouse Button` to click in the center of the element, or the specified position.
-        - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
+        - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
 
         ``selector`` <str> Selector element to click. **Required**
         See the `Finding elements` section for details about the selectors.
 
-        ``button`` < ``left`` | ``right`` | ``middle`` > Defaults to ``left`` if invalid.
+        ``button`` < ``left`` | ``middle`` |  ``right``> The button that shall be used for clicking.
 
-        ``click_count`` <int> Defaults to 1.
+        ``clickCount`` <int> How many time shall be clicked.
 
-        ``delay`` <robot time str> Time to wait between mouse-down and mouse-up.
-        Defaults to 0.
+        ``delay`` <robot time str> Time to wait between mouse-down and mouse-up and next click.
 
-        ``position_x`` & ``position_y`` <int> A point to click relative to the
+        *Caution: be aware that if the delay leads to a total time that exceeds the timeout, the keyword fails*
+
+        ``position_x`` & ``position_y`` <float> A point to click relative to the
         top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
         If not specified, clicks to some visible point of the element.
 
-        ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+        *Caution: even with 0, 0 might click a few pixels off from the corner of the bounding-box. Click uses detection to find the first clickable point.*
 
-        ``noWaitAfter`` <bool> Actions that initiate navigation, are waiting for
-        these navigation to happen and for pages to start loading.
-        You can opt out of waiting via setting this flag.
-        You would only need this option in the exceptional cases such as navigating
-        to inaccessible pages. Defaults to ``False``.
+        ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
         ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
         Modifier keys to press. Ensures that only these modifiers are pressed
