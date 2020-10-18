@@ -102,3 +102,13 @@ export async function reload(
     await invokeOnPage(page, callback, 'reload');
     callback(null, emptyWithLog('Reloaded page'));
 }
+
+export async function setGeolocation(
+    call: ServerUnaryCall<Request.Json>,
+    callback: sendUnaryData<Response.Empty>,
+    context?: BrowserContext,
+) {
+    const geolocation = JSON.parse(call.request.getBody());
+    await context?.setGeolocation(geolocation);
+    callback(null, emptyWithLog('Geolocation set to: ' + JSON.stringify(geolocation)));
+}

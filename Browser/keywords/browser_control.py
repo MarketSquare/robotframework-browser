@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import base64
+import json
 from datetime import timedelta
 from pathlib import Path
+from typing import Optional
 
 from robot.utils import get_link_path  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -197,6 +199,23 @@ class Control(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetOffline(Request().Bool(value=offline))
+            logger.info(response.log)
+
+    @keyword(tags=["Setter", "BrowserControl"])
+    def set_geolocation(
+        self, latitude: float, longitude: float, accuracy: Optional[float] = None
+    ):
+        """Updated the correct Context's geolocation.
+
+        Latitude can be between -90 and 90 and longitude can be between -180 and 180.
+        """
+        geolocation_dict = {"latitude": latitude, "longitude": longitude}
+        if accuracy:
+            geolocation_dict["accuracy"] = accuracy
+        geolocation = json.dumps(geolocation_dict)
+        logger.info(geolocation)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetGeolocation(Request().Json(body=geolocation))
             logger.info(response.log)
 
     @keyword(tags=["Setter", "BrowserControl"])
