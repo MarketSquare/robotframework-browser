@@ -408,6 +408,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         return browserControl.setOffline(call, callback, this.getActiveContext());
     }
 
+    async setGeolocation(call: ServerUnaryCall<Request.Json>, callback: sendUnaryData<Response.Empty>): Promise<void> {
+        return browserControl.setGeolocation(call, callback, this.getActiveContext());
+    }
+
     async reload(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
         return browserControl.reload(call, callback, this.getActivePage());
     }
