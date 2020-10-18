@@ -226,17 +226,10 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async click(
-        call: ServerUnaryCall<Request.ElementSelector>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        return interaction.click(call, callback, this.state);
-    }
-
-    async clickWithOptions(
         call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.clickWithOptions(call, callback, this.state);
+        return interaction.click(call, callback, this.state);
     }
 
     async hover(

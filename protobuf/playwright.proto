@@ -258,8 +258,6 @@ service  Playwright {
   rpc GetUrl(Request.Empty) returns (Response.String);
   /* Gets pages HTML code */
   rpc GetPageSource(Request.Empty) returns (Response.String);
-  /* Clicks element specified by selector */
-  rpc Click(Request.ElementSelector) returns (Response.Empty);
   /* Inputs a list of keypresses to element specified by selector */
   rpc Press(Request.PressKeys) returns (Response.Empty);
   /* Gets the Select element specified by selector and returns the contents */
@@ -287,7 +285,7 @@ service  Playwright {
   /* Download url content */
   rpc Download(Request.Url) returns (Response.String);
   /* Clicks element specified by selector and options */
-  rpc ClickWithOptions(Request.ElementSelectorWithOptions) returns (Response.Empty);
+  rpc Click(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Hovers an element specified by selector and options */
   rpc Hover(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */

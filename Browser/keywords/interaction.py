@@ -182,18 +182,37 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
-    def click(self, selector: str):
+    def click_with_options(
+        self,
+        selector: str,
+        button: MouseButton = MouseButton.left,
+        clickCount: int = 1,
+        delay: Optional[timedelta] = None,
+        position_x: Optional[float] = None,
+        position_y: Optional[float] = None,
+        force: bool = False,
+        noWaitAfter: bool = False,
+        *modifiers: KeyboardModifier,
+    ):
         """Clicks the element found by ``selector``.
 
         ``selector`` <str> Selector of the element to click. **Required**
         See the `Finding elements` section for details about the selectors.
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.Click(Request().ElementSelector(selector=selector))
-            logger.debug(response.log)
+        self.click(
+            selector,
+            button,
+            clickCount,
+            delay,
+            position_x,
+            position_y,
+            force,
+            noWaitAfter,
+            *modifiers,
+        )
 
     @keyword(tags=["Setter", "PageContent"])
-    def click_with_options(
+    def click(
         self,
         selector: str,
         button: MouseButton = MouseButton.left,
@@ -253,8 +272,8 @@ class Interaction(LibraryComponent):
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
             options_json = json.dumps(options)
-            logger.debug(f"Click Options are: {options_json}")
-            response = stub.ClickWithOptions(
+            logger.debug(f"Click options are: {options_json}")
+            response = stub.Click(
                 Request().ElementSelectorWithOptions(
                     selector=selector, options=options_json
                 )

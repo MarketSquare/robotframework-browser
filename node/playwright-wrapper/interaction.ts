@@ -115,16 +115,6 @@ export async function press(
 }
 
 export async function click(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Empty>,
-    state: PlaywrightState,
-) {
-    const selector = call.request.getSelector();
-    await invokePlaywrightMethod(state, callback, 'click', selector);
-    callback(null, emptyWithLog('Clicked element: ' + selector));
-}
-
-export async function clickWithOptions(
     call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
     callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
@@ -132,7 +122,7 @@ export async function clickWithOptions(
     const selector = call.request.getSelector();
     const options = call.request.getOptions();
     await invokePlaywrightMethod(state, callback, 'click', selector, JSON.parse(options));
-    callback(null, emptyWithLog(`Clicked element: '${selector}' With options: '${options}'`));
+    callback(null, emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`));
 }
 
 export async function hover(
