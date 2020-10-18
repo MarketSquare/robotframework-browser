@@ -194,10 +194,7 @@ class Interaction(LibraryComponent):
         noWaitAfter: bool = False,
         *modifiers: KeyboardModifier,
     ):
-        """Clicks the element found by ``selector``.
-
-        ``selector`` <str> Selector of the element to click. **Required**
-        See the `Finding elements` section for details about the selectors.
+        """*DEPRECATED* Use `Click` instead.
         """
         self.click(
             selector,
