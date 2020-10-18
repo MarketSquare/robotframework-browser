@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<script>
+    function myLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showLocation);
+        } else {
+            var location_element = document.getElementById("my_location");
+            location_element.innerHTML = "Geolocation is not supported.";
+        }
+    }
+
+    function showLocation(position) {
+        var location_element = document.getElementById("my_location");
+
+        var lat = document.createElement("p");
+        lat.setAttribute("id", "latitudeValue");
+        var lat_node = document.createTextNode("Latitude: " + position.coords.latitude);
+        lat.appendChild(lat_node);
+        location_element.appendChild(lat);
+
+        var long = document.createElement("p");
+        long.setAttribute("id", "longitudeValue");
+        var long_node = document.createTextNode("Longitude: " + position.coords.longitude);
+        long.appendChild(long_node);
+        location_element.appendChild(long);
+    }
+</script>
+<head>
+    <meta charset="UTF-8">
+    <title>Geolocation test page</title>
+</head>
+<body>
+<p>Click button to access geolocation.</p>
+<button id="button_location" onclick="myLocation()">Get location</button>
+<p id="my_location"></p>
+</body>
+</html>
