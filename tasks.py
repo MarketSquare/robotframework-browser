@@ -92,6 +92,10 @@ def clean(c):
 
 @task
 def protobuf(c):
+    """Compile grpc protobuf files.
+
+    Compiles for Python and node.
+    """
     if not python_protobuf_dir.exists():
         python_protobuf_dir.mkdir()
         (python_protobuf_dir / "__init__.py").touch()
