@@ -18,6 +18,7 @@ import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
+
 export async function httpRequest(
     call: ServerUnaryCall<pb.Request.HttpRequest>,
     callback: sendUnaryData<pb.Response.Json>,
@@ -61,11 +62,11 @@ export async function waitForResponse(
     callback: sendUnaryData<pb.Response.Json>,
     page?: Page,
 ) {
-    const urlOrPredicate = call.request.getUrlorpredicate();
+    const urlOrPredicate = new RegExp(`.*${call.request.getUrlorpredicate()}`);
     const timeout = call.request.getTimeout();
     const result = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, { timeout: timeout });
     const body = await result.json();
-    callback(null, jsonResponse(body, ''));
+    callback(null, jsonResponse(JSON.stringify(body), ''));
 }
 export async function waitForRequest(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
