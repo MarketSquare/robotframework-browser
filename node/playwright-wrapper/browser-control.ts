@@ -108,7 +108,11 @@ export async function setGeolocation(
     callback: sendUnaryData<Response.Empty>,
     context?: BrowserContext,
 ) {
-    const geolocation = JSON.parse(call.request.getBody());
-    await context?.setGeolocation(geolocation);
-    callback(null, emptyWithLog('Geolocation set to: ' + JSON.stringify(geolocation)));
+    try {
+        const geolocation = JSON.parse(call.request.getBody());
+        await context?.setGeolocation(geolocation);
+        callback(null, emptyWithLog('Geolocation set to: ' + JSON.stringify(geolocation)));
+    } catch (error) {
+        callback(error, null);
+    }
 }
