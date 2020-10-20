@@ -42,8 +42,6 @@ Robot Framework **ADD VERSIONS**.
 Most important enhancements
 ===========================
 
-**EXPLAIN** or remove these.
-
 - Errors in end_test and end_suite caused by auto closing (`#380`_)
 - Wait for request and response matchers (regexp at least) do not seem to work (`#230`_)
 - Update geolocation keyword (`#226`_)
@@ -51,8 +49,6 @@ Most important enhancements
 
 Deprecated features
 ===================
-
-**EXPLAIN** or remove these.
 
 - Replace Click with Click With Options (`#424`_)
 
