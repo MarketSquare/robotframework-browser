@@ -42,15 +42,26 @@ Robot Framework **ADD VERSIONS**.
 Most important enhancements
 ===========================
 
-- Errors in end_test and end_suite caused by auto closing (`#380`_)
-- Wait for request and response matchers (regexp at least) do not seem to work (`#230`_)
-- Update geolocation keyword (`#226`_)
-- Replace Click with Click With Options (`#424`_)
+Errors in end_test and end_suite caused by auto closing (`#380`_)
+-----------------------------------------------------------------
+There is still possibility of errors, but errors should not anymore
+cause problems in the test execution flow.
+
+Wait for request and response matchers (regexp at least) do not seem to work (`#230`_)
+--------------------------------------------------------------------------------------
+Matchers should work better.
+
+Update geolocation keyword (`#226`_)
+------------------------------------
+Now it is possible to set geolocation also with Set Geolocation keyword.
 
 Deprecated features
 ===================
 
-- Replace Click with Click With Options (`#424`_)
+Replace Click with Click With Options (`#424`_)
+-----------------------------------------------
+Features of Click With Options are merged to Click keyword
+and Click With Options will be removed in next major release.
 
 Full list of fixes and enhancements
 ===================================
