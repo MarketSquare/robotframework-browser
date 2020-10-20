@@ -64,9 +64,23 @@ export async function waitForResponse(
 ) {
     const urlOrPredicate = new RegExp(`.*${call.request.getUrlorpredicate()}`);
     const timeout = call.request.getTimeout();
-    const result = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, { timeout: timeout });
-    const body = await result.json();
-    callback(null, jsonResponse(JSON.stringify(body), ''));
+    const data = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, {
+        timeout: timeout,
+    });
+    callback(
+        null,
+        jsonResponse(
+            JSON.stringify({
+                status: data.status(),
+                body: await data.text(),
+                headers: JSON.stringify(data.headers()),
+                statusText: data.statusText(),
+                url: data.url(),
+                ok: data.ok(),
+            }),
+            '',
+        ),
+    );
 }
 export async function waitForRequest(
     call: ServerUnaryCall<pb.Request.HttpCapture>,
