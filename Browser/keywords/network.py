@@ -34,15 +34,21 @@ def _get_headers(body: str, headers: Dict):
 
 
 def _format_response(response: Dict):
-    headers = json.loads(response["headers"])
-    response["headers"] = headers
-    if "content-type" in headers and "application/json" in headers["content-type"]:
-        try:
-            response["body"] = json.loads(response["body"])
-        except json.decoder.JSONDecodeError:
-            pass
+    _jsonize_content(response, "body")
+    if "request" in response:
+        request = response["request"]
+        _jsonize_content(request, "postData")
     logger.info(response)
     return response
+
+def _jsonize_content(data, bodykey):
+    headers = json.loads(data["headers"])
+    data["headers"] = headers
+    if "content-type" in headers and "application/json" in headers["content-type"]:
+        try:
+            data[bodykey] = json.loads(data[bodykey])
+        except json.decoder.JSONDecodeError:
+            pass
 
 
 class Network(LibraryComponent):
@@ -136,6 +142,14 @@ class Network(LibraryComponent):
 
         ``timeout`` <str> Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
 
+        The response is a Python dictionary with following attributes:
+          - ``status`` <int> The status code of the response.
+          - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR.
+          - ``body`` <dict> | <str> The response body. If the body can be parsed as a JSON obejct,
+          it will be returned as Python dictionary, otherwise it is returned as a string.
+          - ``headers`` <dict> A dictionary containing all response headers.
+          - ``ok`` <bool> Whether the request was successfull, i.e. the ``status`` is range 200-299.
+          - ``request`` <dict> containing ``method`` <str>, ``headers`` <dict> and ``postData`` <dict> | <str>
         """
         return self._wait_for_http("Response", matcher, timeout)
 

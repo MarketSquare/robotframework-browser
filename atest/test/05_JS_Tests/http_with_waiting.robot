@@ -10,6 +10,7 @@ GET with waiting json response
     Should be equal    ${content}[body]    ${response}[body]
     Should be equal    ${content}[status]    ${response}[status]
     Should be equal    ${content}[url]    ${response}[url]
+    Should be equal    ${content}[request][method]    GET
 
 POST with waiting json response
     ${promise}=    Promise To    Wait For Response    matcher=/api/post    timeout=3s
@@ -18,6 +19,8 @@ POST with waiting json response
     Should be equal    ${content}[body]    ${response}[body]
     Should be equal    ${content}[status]    ${response}[status]
     Should be equal    ${content}[url]    ${response}[url]
+    Should be equal    ${content}[request][method]    POST
+    Should be equal    ${content}[request][postData][name]    George
 
 GET with text response
     ${promise}=    Promise To    Wait For Response    matcher=/api/get/text    timeout=3s
@@ -26,3 +29,4 @@ GET with text response
     Should be equal    ${content}[body]    ${response}[body]
     Should be equal    ${content}[status]    ${response}[status]
     Should be equal    ${content}[url]    ${response}[url]
+    Should be equal    ${content}[request][method]    GET

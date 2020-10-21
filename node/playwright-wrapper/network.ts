@@ -77,6 +77,11 @@ export async function waitForResponse(
                 statusText: data.statusText(),
                 url: data.url(),
                 ok: data.ok(),
+                request: {
+                    headers: JSON.stringify(data.request().headers()),
+                    method: data.request().method(),
+                    postData: data.request().postData(),
+                },
             }),
             '',
         ),
