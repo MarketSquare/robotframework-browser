@@ -41,6 +41,7 @@ def _format_response(response: Dict):
     logger.info(response)
     return response
 
+
 def _jsonize_content(data, bodykey):
     headers = json.loads(data["headers"])
     data["headers"] = headers
