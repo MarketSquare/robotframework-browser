@@ -63,8 +63,9 @@ async function _newBrowserContext(
             };
         });
     }
-    context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
-    const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options };
+    const timeout = parseFloat(process.env.TIMEOUT || '10000');
+    context.setDefaultTimeout(timeout);
+    const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options, timeout };
     c.c.on('page', (page) => {
         const timestamp = new Date().getTime() / 1000;
         const newPage = { id: `page=${uuidv4()}`, p: page, timestamp: timestamp };
@@ -201,6 +202,7 @@ type IndexedContext = {
     id: Uuid;
     pageStack: IndexedPage[];
     options?: Record<string, unknown>;
+    timeout: number;
 };
 
 type IndexedPage = {
@@ -341,7 +343,7 @@ export async function newPage(
     const page = await _newPage(context.c);
     browserState.pushPage(page);
     const url = call.request.getUrl() || 'about:blank';
-    await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
+    await invokeOnPage(page.p, callback, 'goto', url, { timeout: context.timeout });
     const response = stringResponse(page.id, 'Succesfully initialized new page object and opened url: ' + url);
     callback(null, response);
 }

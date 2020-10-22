@@ -137,7 +137,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async setTimeout(call: ServerUnaryCall<Request.Timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return browserControl.setTimeout(call, callback, this.getActiveBrowser(callback)?.context?.c);
+        return browserControl.setTimeout(call, callback, this.getActiveBrowser(callback));
     }
 
     async getTitle(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {

@@ -15,7 +15,7 @@
 import { BrowserContext, Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
-import { PlaywrightState } from './playwright-state';
+import { BrowserState, PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { determineElement, exists, invokeOnPage } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
@@ -65,11 +65,13 @@ export async function takeScreenshot(
 export function setTimeout(
     call: ServerUnaryCall<Request.Timeout>,
     callback: sendUnaryData<Response.Empty>,
-    context?: BrowserContext,
+    state: BrowserState,
 ) {
+    const context = state.context;
     exists(context, callback, 'Tried to set timeout, no open context');
     const timeout = call.request.getTimeout();
-    context.setDefaultTimeout(timeout);
+    context.timeout = timeout;
+    context.c.setDefaultTimeout(timeout);
     callback(null, emptyWithLog(`Set timeout to: ${timeout}`));
 }
 
