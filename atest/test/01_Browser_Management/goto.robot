@@ -22,7 +22,9 @@ Open GoTo GoBack GoForward
 
 Timeouting Go To
     New Context
-    Set Browser Timeout    10ms
+    ${timeout}=  Set Browser Timeout    10ms
     New Page    ${LOGIN_URL}
     Run KeyWord and Expect Error    page.goto: Timeout 10ms exceeded.*    Go To    ${WELCOME_URL}
+    Set Browser Timeout    ${timeout}
+    Sleep  1s
     [Teardown]    Close Browser
