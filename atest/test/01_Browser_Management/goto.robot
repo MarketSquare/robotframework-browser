@@ -19,3 +19,9 @@ Open GoTo GoBack GoForward
     Go Forward
     Get Url    ==    ${ERROR_URL}
     [Teardown]    Close Browser
+
+Timeouting Go To
+    [Setup]    New Page    ${LOGIN_URL}
+    Set Browser Timeout    1ms
+    Run KeyWord and Expect Error    page.goto: Timeout 1ms exceeded.*    Go To    ${WELCOME_URL}
+    [Teardown]    Close Browser
