@@ -22,7 +22,6 @@ Open GoTo GoBack GoForward
 
 Timeouting Go To
     [Setup]    New Page    ${LOGIN_URL}
-    ${previous}=  Set Browser Timeout    1ms
+    ${previous}=    Set Browser Timeout    1ms
     Run KeyWord and Expect Error    page.goto: Timeout 1ms exceeded.*    Go To    ${WELCOME_URL}
-    Set Browser Timeout  ${previous}
     [Teardown]    Close Browser
