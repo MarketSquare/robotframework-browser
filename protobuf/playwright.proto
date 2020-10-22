@@ -231,9 +231,9 @@ service  Playwright {
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty);
   /* Navigate to the next page in history */
-  rpc GoBack(Request.Url) returns (Response.Empty);
+  rpc GoBack(Request.Empty) returns (Response.Empty);
   /* Navigate to the previous page in history. */
-  rpc GoForward(Request.Url) returns (Response.Empty);
+  rpc GoForward(Request.Empty) returns (Response.Empty);
   /* Gets title of currently open Playwright page */
   rpc GetTitle(Request.Empty) returns (Response.String);
   /* Returns the count of elements found with selector */
