@@ -88,7 +88,6 @@ class Playwright(LibraryComponent):
         env = dict(os.environ)
         env["PORT"] = port
         env["TIMEOUT"] = str(self.timeout)
-        env["EXEC_TIMES"] = os.path.join(self.outputdir, "execution-time-log.pino")
         if self.enable_playwright_debug:
             env["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
