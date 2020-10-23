@@ -435,7 +435,9 @@ class PlaywrightState(LibraryComponent):
 
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.NewPage(Request().Url(url=url))
+            response = stub.NewPage(
+                Request().Url(url=url, defaultTimeout=int(self.timeout))
+            )
             logger.info(response.log)
             return response.body
 

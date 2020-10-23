@@ -61,6 +61,7 @@ message Request {
 
   message Url {
     string url= 1;
+    int32 defaultTimeout = 2;
   }
 
   message TextInput {
