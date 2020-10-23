@@ -52,6 +52,7 @@ async function _newBrowserContext(
     browser: Browser,
     options?: Record<string, unknown>,
     hideRfBrowser?: boolean,
+    defaultTimeout?: number,
 ): Promise<IndexedContext> {
     const context = await browser.newContext(options);
 
@@ -63,7 +64,7 @@ async function _newBrowserContext(
             };
         });
     }
-    context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
+    context.setDefaultTimeout(defaultTimeout || 10000);
     const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options };
     c.c.on('page', (page) => {
         const timestamp = new Date().getTime() / 1000;
@@ -355,7 +356,8 @@ export async function newContext(
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
     try {
         const options = JSON.parse(call.request.getRawoptions());
-        const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser);
+        const defaultTimeout = call.request.getDefaulttimeout();
+        const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser, defaultTimeout);
         browserState.pushContext(context);
 
         const response = stringResponse(

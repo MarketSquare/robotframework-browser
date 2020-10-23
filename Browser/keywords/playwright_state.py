@@ -413,7 +413,11 @@ class PlaywrightState(LibraryComponent):
         logger.info(options)
         with self.playwright.grpc_channel() as stub:
             response = stub.NewContext(
-                Request().Context(rawOptions=options, hideRfBrowser=hideRfBrowser)
+                Request().Context(
+                    rawOptions=options,
+                    hideRfBrowser=hideRfBrowser,
+                    defaultTimeout=int(self.timeout),
+                )
             )
             logger.info(response.log)
             return response.body
