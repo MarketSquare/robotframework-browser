@@ -87,7 +87,7 @@ class Playwright(LibraryComponent):
         logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
         port = str(find_free_port())
         env = dict(os.environ)
-        env["TIMEOUT"] = str(self.timeout)
+        # env["TIMEOUT"] = str(self.timeout)
         if self.enable_playwright_debug:
             env["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
