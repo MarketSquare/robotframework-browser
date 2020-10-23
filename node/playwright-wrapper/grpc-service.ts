@@ -25,9 +25,7 @@ import * as playwrightState from './playwright-state';
 import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { class_async_timer } from './execution-time-decorators';
 
-@class_async_timer
 export class PlaywrightServer implements IPlaywrightServer {
     state: PlaywrightState;
 
