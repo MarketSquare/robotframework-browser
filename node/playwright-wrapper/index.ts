@@ -19,9 +19,12 @@ import { Server, ServerCredentials } from 'grpc';
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
+const port = process.argv.slice(2);
+if (Object.keys(port).length == 0) {
+    throw new Error(`No port defined`);
+}
 const server = new Server();
 server.addService<IPlaywrightServer>(PlaywrightService, new PlaywrightServer());
-const port = process.env.PORT || '0';
 server.bind(`localhost:${port}`, ServerCredentials.createInsecure());
 logger.info(`Listening on ${port}`);
 server.start();
