@@ -50,9 +50,9 @@ async function _newBrowser(
 
 async function _newBrowserContext(
     browser: Browser,
+    defaultTimeout: number,
     options?: Record<string, unknown>,
     hideRfBrowser?: boolean,
-    defaultTimeout?: number,
 ): Promise<IndexedContext> {
     const context = await browser.newContext(options);
 
@@ -64,7 +64,7 @@ async function _newBrowserContext(
             };
         });
     }
-    context.setDefaultTimeout(defaultTimeout || 10000);
+    context.setDefaultTimeout(defaultTimeout);
     const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options };
     c.c.on('page', (page) => {
         const timestamp = new Date().getTime() / 1000;
@@ -233,12 +233,12 @@ export class BrowserState {
         await this.browser.close();
     }
 
-    public async getOrCreateActiveContext(): Promise<IndexedContext> {
+    public async getOrCreateActiveContext(defaultTimeout: number): Promise<IndexedContext> {
         if (this.context) {
             return this.context;
         } else {
-            const browser = this.browser;
-            const context = await _newBrowserContext(browser);
+            const activeBrowser = this.browser;
+            const context = await _newBrowserContext(activeBrowser, defaultTimeout);
             this.pushContext(context);
             return context;
         }
@@ -337,7 +337,8 @@ export async function newPage(
     openBrowsers: PlaywrightState,
 ): Promise<void> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
-    const context = await browserState.getOrCreateActiveContext();
+    const defaultTimeout = call.request.getDefaulttimeout();
+    const context = await browserState.getOrCreateActiveContext(defaultTimeout);
 
     const page = await _newPage(context.c);
     browserState.pushPage(page);
@@ -357,7 +358,7 @@ export async function newContext(
     try {
         const options = JSON.parse(call.request.getRawoptions());
         const defaultTimeout = call.request.getDefaulttimeout();
-        const context = await _newBrowserContext(browserState.browser, options, hideRfBrowser, defaultTimeout);
+        const context = await _newBrowserContext(browserState.browser, defaultTimeout, options, hideRfBrowser);
         browserState.pushContext(context);
 
         const response = stringResponse(
