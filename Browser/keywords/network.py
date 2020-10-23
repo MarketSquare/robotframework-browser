@@ -105,8 +105,6 @@ class Network(LibraryComponent):
 
     def _wait_for_http(self, method: Literal["Request", "Response"], matcher, timeout):
         with self.playwright.grpc_channel() as stub:
-            if not timeout:
-                timeout = self.library.playwright.timeout
             function = getattr(stub, f"WaitFor{method}")
             response = function(
                 Request().HttpCapture(
@@ -123,25 +121,29 @@ class Network(LibraryComponent):
             )
 
     @keyword(tags=["Wait", "HTTP"])
-    def wait_for_request(self, matcher: str = "", timeout: str = "") -> Any:
+    def wait_for_request(
+        self, matcher: str = "", timeout: Optional[timedelta] = None
+    ) -> Any:
         """Waits for request matching matcher to be made.
 
         ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout`` <str> Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
+        ``timeout`` <str> Timeout in seconds. Uses default timeout if not set.
 
         """
         return self._wait_for_http("Request", matcher, timeout)
 
     @keyword(tags=["Wait", "HTTP"])
-    def wait_for_response(self, matcher: str = "", timeout: str = "") -> Any:
+    def wait_for_response(
+        self, matcher: str = "", timeout: Optional[timedelta] = None
+    ) -> Any:
         """Waits for response matching matcher and returns python dict with contents.
 
         ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout`` <str> Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
+        ``timeout`` <str> Timeout in seconds. Uses default timeout if not set.
 
         The response is a Python dictionary with following attributes:
           - ``status`` <int> The status code of the response.
