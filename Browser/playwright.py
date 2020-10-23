@@ -81,8 +81,9 @@ class Playwright(LibraryComponent):
         )
 
     def start_playwright(self):
-        workdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wrapper")
-        playwright_script = os.path.join(workdir, "index.js")
+        current_dir = Path(__file__).parent
+        workdir = current_dir / "wrapper"
+        playwright_script = workdir / "index.js"
         logfile = open(os.path.join(self.outputdir, "playwright-log.txt"), "w")
         port = str(find_free_port())
         env = dict(os.environ)
@@ -93,7 +94,7 @@ class Playwright(LibraryComponent):
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
         return Popen(
-            ["node", playwright_script],
+            ["node", str(playwright_script)],
             shell=False,
             cwd=workdir,
             env=env,
