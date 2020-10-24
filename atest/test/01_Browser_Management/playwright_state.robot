@@ -85,6 +85,8 @@ Switch Browser
     New Page Login
     ${first_url}    Get Url
     ${second_browser}    New Browser    firefox
+    New Context
+    ${timeout}=    Set Browser Timeout    10s
     New Page Form
     ${second_url}    Get Url
     ${before_switch}    Switch Browser    ${first_browser}
