@@ -1,5 +1,5 @@
 *** Settings ***
-Library           Browser    timeout=1ms    run_on_failure=None
+Library           Browser    run_on_failure=None
 Resource          imports.resource
 Suite Setup       New Browser
 Suite Teardown    Close Browser
@@ -10,6 +10,7 @@ ${ErrorMessage}=    page.goto: Timeout 1ms exceeded.
 *** Test Cases ***
 Test GoTo With Short Default Timeout
     New Page
+    Set Browser Timeout    1ms
     Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 
@@ -28,6 +29,8 @@ Test Overriding With Short
     Wait For Elements State    //h1    visible    timeout=2 s
 
 Test assertion timeouts
+    New Context
+    Set Browser Timeout    10 s
     New Page    ${LOGIN_URL}
     ${old} =    Set retry assertions for    0s
     Run Keyword And Expect Error    *    Get title    ==    Wrong title
