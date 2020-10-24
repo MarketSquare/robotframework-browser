@@ -47,6 +47,12 @@ app.delete('/api/delete', (req, res) => {
     res.send();
 });
 
+app.get('/slowpage.html', (req, res) => {
+    setTimeout(() => {
+        res.send('<html lang="en"><head><title>Slow page</title></head><body>HELLO</body></html>');
+    }, 11000);
+});
+
 app.use(express.static(path.join(__dirname, '..')));
 app.use(express.static(path.join(__dirname, '..', 'static')));
 
