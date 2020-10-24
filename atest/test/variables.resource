@@ -19,5 +19,5 @@ ${ERROR_URL}      ${ROOT_URL}/error.html
 ${WAIT_URL}       ${ROOT_URL}/waitfor.html
 ${GEOLOCATION_URL}     ${ROOT_URL}/geolocation.html
 ${DEFAULT_TEST_TIMEOUT}    30 seconds
-${PLAYWRIGHT_TIMEOUT}    1 second
+${PLAYWRIGHT_TIMEOUT}    3 second
 ${SLOW_PAGE}      ${ROOT_URL}/slowpage.html
