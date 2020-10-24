@@ -26,7 +26,8 @@ export async function goTo(
     page?: Page,
 ): Promise<void> {
     const url = call.request.getUrl();
-    await invokeOnPage(page, callback, 'goto', url);
+    const timeout = call.request.getDefaulttimeout();
+    await invokeOnPage(page, callback, 'goto', url, { timeout: timeout });
     callback(null, emptyWithLog(`Succesfully opened URL ${url}`));
 }
 

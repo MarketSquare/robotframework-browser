@@ -26,3 +26,8 @@ Timeouting Go To
     Run KeyWord and Expect Error    page.goto: Timeout 10ms exceeded.*    Go To    ${WELCOME_URL}
     Set Browser Timeout    ${timeout}
     [Teardown]    Close Browser
+
+Timeouting Go To With Custom timeout
+    New Page    ${LOGIN_URL}
+    Run KeyWord and Expect Error    page.goto: Timeout 10ms exceeded.*    Go To    ${WELCOME_URL}    10 ms
+    [Teardown]    Close Browser
