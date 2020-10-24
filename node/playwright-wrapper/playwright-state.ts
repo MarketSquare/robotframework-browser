@@ -343,9 +343,14 @@ export async function newPage(
     const page = await _newPage(context.c);
     browserState.pushPage(page);
     const url = call.request.getUrl() || 'about:blank';
-    await invokeOnPage(page.p, callback, 'goto', url, { timeout: 10000 });
-    const response = stringResponse(page.id, 'Succesfully initialized new page object and opened url: ' + url);
-    callback(null, response);
+    try {
+        await page.p.goto(url);
+        const response = stringResponse(page.id, 'Succesfully initialized new page object and opened url: ' + url);
+        callback(null, response);
+    } catch (e) {
+        browserState.popPage();
+        callback(e, null);
+    }
 }
 
 export async function newContext(
