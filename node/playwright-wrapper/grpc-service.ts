@@ -310,7 +310,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.WaitForFunctionOptions>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
-        return evaluation.waitForFunction(call, callback, this.state);
+        try {
+            const result = await evaluation.waitForFunction(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async waitForDownload(

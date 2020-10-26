@@ -30,7 +30,7 @@ export async function selectOption(
 ) {
     const selector = call.request.getSelector();
     const matcher = JSON.parse(call.request.getMatcherjson());
-    const result = await invokePlaywrightMethod(state, callback, 'selectOption', selector, matcher);
+    const result = await invokePlaywrightMethod(state, 'selectOption', selector, matcher);
 
     if (result.length == 0) {
         logger.info("Couldn't select any options");
@@ -47,7 +47,7 @@ export async function deSelectOption(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    await invokePlaywrightMethod(state, callback, 'selectOption', selector, []);
+    await invokePlaywrightMethod(state, 'selectOption', selector, []);
     callback(null, emptyWithLog(`Deselected options in element ${selector}`));
 }
 
@@ -60,7 +60,7 @@ export async function inputText(
     const selector = call.request.getSelector();
     const type = call.request.getType();
     const methodName = type ? 'type' : 'fill';
-    await invokePlaywrightMethod(state, callback, methodName, selector, inputText);
+    await invokePlaywrightMethod(state, methodName, selector, inputText);
     callback(null, emptyWithLog('Input text: ' + inputText));
 }
 
@@ -74,9 +74,9 @@ export async function typeText(
     const delay = call.request.getDelay();
     const clear = call.request.getClear();
     if (clear) {
-        await invokePlaywrightMethod(state, callback, 'fill', selector, '');
+        await invokePlaywrightMethod(state, 'fill', selector, '');
     }
-    await invokePlaywrightMethod(state, callback, 'type', selector, text, { delay: delay });
+    await invokePlaywrightMethod(state, 'type', selector, text, { delay: delay });
     callback(null, emptyWithLog('Typed text: ' + text));
 }
 
@@ -87,7 +87,7 @@ export async function fillText(
 ) {
     const selector = call.request.getSelector();
     const text = call.request.getText();
-    await invokePlaywrightMethod(state, callback, 'fill', selector, text);
+    await invokePlaywrightMethod(state, 'fill', selector, text);
     callback(null, emptyWithLog('Fill text: ' + text));
 }
 
@@ -97,7 +97,7 @@ export async function clearText(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    await invokePlaywrightMethod(state, callback, 'fill', selector, '');
+    await invokePlaywrightMethod(state, 'fill', selector, '');
     callback(null, emptyWithLog('Text field cleared.'));
 }
 
@@ -109,7 +109,7 @@ export async function press(
     const selector = call.request.getSelector();
     const keyList = call.request.getKeyList();
     for (const i of keyList) {
-        await invokePlaywrightMethod(state, callback, 'press', selector, i);
+        await invokePlaywrightMethod(state, 'press', selector, i);
     }
     callback(null, emptyWithLog('Pressed keys: ' + keyList));
 }
@@ -121,7 +121,7 @@ export async function click(
 ) {
     const selector = call.request.getSelector();
     const options = call.request.getOptions();
-    await invokePlaywrightMethod(state, callback, 'click', selector, JSON.parse(options));
+    await invokePlaywrightMethod(state, 'click', selector, JSON.parse(options));
     callback(null, emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`));
 }
 
@@ -132,7 +132,7 @@ export async function hover(
 ) {
     const selector = call.request.getSelector();
     const options = call.request.getOptions();
-    await invokePlaywrightMethod(state, callback, 'hover', selector, JSON.parse(options));
+    await invokePlaywrightMethod(state, 'hover', selector, JSON.parse(options));
     callback(null, emptyWithLog(`Hovered element: '${selector}' With options: '${options}'`));
 }
 
@@ -142,7 +142,7 @@ export async function focus(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    await invokePlaywrightMethod(state, callback, 'focus', selector);
+    await invokePlaywrightMethod(state, 'focus', selector);
     callback(null, emptyWithLog('Focused element: ' + selector));
 }
 
@@ -152,7 +152,7 @@ export async function checkCheckbox(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    await invokePlaywrightMethod(state, callback, 'check', selector);
+    await invokePlaywrightMethod(state, 'check', selector);
     callback(null, emptyWithLog('Checked checkbox: ' + selector));
 }
 
@@ -162,7 +162,7 @@ export async function uncheckCheckbox(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    await invokePlaywrightMethod(state, callback, 'uncheck', selector);
+    await invokePlaywrightMethod(state, 'uncheck', selector);
     callback(null, emptyWithLog('Unchecked checkbox: ' + selector));
 }
 
