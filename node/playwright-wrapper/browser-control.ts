@@ -27,18 +27,30 @@ export async function goTo(
 ): Promise<void> {
     const url = call.request.getUrl();
     const timeout = call.request.getDefaulttimeout();
-    await invokeOnPage(page, 'goto', url, { timeout: timeout });
-    callback(null, emptyWithLog(`Succesfully opened URL ${url}`));
+    try {
+        await invokeOnPage(page, 'goto', url, { timeout: timeout });
+        callback(null, emptyWithLog(`Succesfully opened URL ${url}`));
+    } catch (e) {
+        callback(e, null);
+    }
 }
 
 export async function goBack(callback: sendUnaryData<Response.Empty>, page?: Page): Promise<void> {
-    await invokeOnPage(page, 'goBack');
-    callback(null, emptyWithLog('Did Go Back'));
+    try {
+        await invokeOnPage(page, 'goBack');
+        callback(null, emptyWithLog('Did Go Back'));
+    } catch (e) {
+        callback(e, null);
+    }
 }
 
 export async function goForward(callback: sendUnaryData<Response.Empty>, page?: Page): Promise<void> {
-    await invokeOnPage(page, 'goForward');
-    callback(null, emptyWithLog('Did Go Forward'));
+    try {
+        await invokeOnPage(page, 'goForward');
+        callback(null, emptyWithLog('Did Go Forward'));
+    } catch (e) {
+        callback(e, null);
+    }
 }
 
 export async function takeScreenshot(

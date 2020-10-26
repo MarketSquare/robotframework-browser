@@ -81,7 +81,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.IdWithTimeout>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return playwrightState.switchPage(call, callback, this.state.getActiveBrowser(callback));
+        try {
+            const response = await playwrightState.switchPage(call, this.state.getActiveBrowser(callback));
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.String>): Promise<void> {
