@@ -52,11 +52,11 @@ export async function takeScreenshot(
     const selector = call.request.getSelector();
     if (selector) {
         const elem = await determineElement(state, selector, callback);
-        exists(elem, callback, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
+        exists(elem, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
         await elem.screenshot({ path: path });
     } else {
         const page = state.getActivePage();
-        exists(page, callback, 'Tried to take screenshot, but no page was open.');
+        exists(page, 'Tried to take screenshot, but no page was open.');
         await invokeOnPage(page, callback, 'screenshot', { path: path, fullPage });
     }
     const message = 'Screenshot succesfully captured to: ' + path;
@@ -68,7 +68,7 @@ export function setTimeout(
     callback: sendUnaryData<Response.Empty>,
     context?: BrowserContext,
 ) {
-    exists(context, callback, 'Tried to set timeout, no open context');
+    exists(context, 'Tried to set timeout, no open context');
     const timeout = call.request.getTimeout();
     context.setDefaultTimeout(timeout);
     callback(null, emptyWithLog(`Set timeout to: ${timeout}`));
@@ -89,7 +89,7 @@ export async function setOffline(
     callback: sendUnaryData<Response.Empty>,
     context?: BrowserContext,
 ) {
-    exists(context, callback, 'Tried to toggle context to offline, no open context');
+    exists(context, 'Tried to toggle context to offline, no open context');
     const offline = call.request.getValue();
     await context.setOffline(offline);
     callback(null, emptyWithLog(`Set context to ${offline}`));
