@@ -79,7 +79,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
-        return playwrightState.getBrowserCatalog(callback, this.state);
+        try {
+            const result = await playwrightState.getBrowserCatalog(this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getCookies(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Json>): Promise<void> {

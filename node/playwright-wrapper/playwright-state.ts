@@ -508,10 +508,6 @@ export async function switchBrowser(
     callback(null, response);
 }
 
-export async function getBrowserCatalog(
-    callback: sendUnaryData<Response.Json>,
-    openBrowsers: PlaywrightState,
-): Promise<void> {
-    const response = jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
-    callback(null, response);
+export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<Response.Json> {
+    return jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
 }
