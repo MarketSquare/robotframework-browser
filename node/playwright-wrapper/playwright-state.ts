@@ -90,23 +90,20 @@ export class PlaywrightState {
         return lastItem(this.browserStack);
     }
     elementHandles: Map<string, ElementHandle>;
-    public getActiveBrowser = <T>(callback: sendUnaryData<T>): BrowserState => {
+    public getActiveBrowser = (): BrowserState => {
         const currentBrowser = this.activeBrowser;
         if (currentBrowser === undefined) {
-            const error = new Error('Browser has been closed.');
-            callback(error, null);
-            throw error;
-        } else {
-            return currentBrowser;
+            throw new Error('Browser has been closed.');
         }
+        return currentBrowser;
     };
 
-    public switchTo = <T>(id: Uuid, callback: sendUnaryData<T>): BrowserState => {
+    public switchTo = (id: Uuid): BrowserState => {
         const browser = this.browserStack.find((b) => b.id === id);
         exists(browser, `No browser for id '${id}'`);
         this.browserStack = this.browserStack.filter((b) => b.id !== id);
         this.browserStack.push(browser);
-        return this.getActiveBrowser(callback);
+        return this.getActiveBrowser();
     };
 
     public async getOrCreateActiveBrowser(): Promise<BrowserState> {
@@ -298,37 +295,33 @@ export class BrowserState {
     }
 }
 
-export async function closeBrowser(callback: sendUnaryData<Response.String>, openBrowsers: PlaywrightState) {
+export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Response.String> {
     const currentBrowser = openBrowsers.activeBrowser;
     if (currentBrowser === undefined) {
-        callback(null, stringResponse('no-browser', 'No browser open, doing nothing'));
-        return;
+        return stringResponse('no-browser', 'No browser open, doing nothing');
     }
     await currentBrowser.close();
     openBrowsers.popBrowser();
-    callback(null, stringResponse(currentBrowser.id, 'Closed browser'));
+    return stringResponse(currentBrowser.id, 'Closed browser');
 }
 
-export async function closeAllBrowsers(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState) {
+export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<Response.Empty> {
     await openBrowsers.closeAll();
-    callback(null, emptyWithLog('Closed all browsers'));
+    return emptyWithLog('Closed all browsers');
 }
 
-export async function closeContext(
-    callback: sendUnaryData<Response.Empty>,
-    openBrowsers: PlaywrightState,
-): Promise<void> {
-    const activeBrowser = openBrowsers.getActiveBrowser(callback);
+export async function closeContext(openBrowsers: PlaywrightState): Promise<Response.Empty> {
+    const activeBrowser = openBrowsers.getActiveBrowser();
     await openBrowsers.getActiveContext()?.close();
     activeBrowser.popContext();
-    callback(null, emptyWithLog('Succesfully closed Context'));
+    return emptyWithLog('Succesfully closed Context');
 }
 
-export async function closePage(callback: sendUnaryData<Response.Empty>, openBrowsers: PlaywrightState): Promise<void> {
-    const activeBrowser = openBrowsers.getActiveBrowser(callback);
+export async function closePage(openBrowsers: PlaywrightState): Promise<Response.Empty> {
+    const activeBrowser = openBrowsers.getActiveBrowser();
     await openBrowsers.getActivePage()?.close();
     activeBrowser.popPage();
-    callback(null, emptyWithLog('Succesfully closed Page'));
+    return emptyWithLog('Succesfully closed Page');
 }
 
 export async function newPage(
@@ -510,7 +503,7 @@ export async function switchBrowser(
         callback(null, stringResponse(previous?.id || 'NO BROWSER OPEN', 'Active context id'));
         return;
     }
-    openBrowsers.switchTo(id, callback);
+    openBrowsers.switchTo(id);
     const response = stringResponse(previous?.id || '', 'Succesfully changed active browser');
     callback(null, response);
 }

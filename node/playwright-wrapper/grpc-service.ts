@@ -33,26 +33,46 @@ export class PlaywrightServer implements IPlaywrightServer {
         this.state = new PlaywrightState();
     }
 
-    private getActiveBrowser = <T>(callback: sendUnaryData<T>) => this.state.getActiveBrowser(callback);
+    private getActiveBrowser = () => this.state.getActiveBrowser();
     private getActiveContext = () => this.state.getActiveContext();
     private getActivePage = () => this.state.getActivePage();
 
     async closeBrowser(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
-        return playwrightState.closeBrowser(callback, this.state);
+        try {
+            const result = await playwrightState.closeBrowser(this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
     async closeAllBrowsers(
         call: ServerUnaryCall<Request.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return playwrightState.closeAllBrowsers(callback, this.state);
+        try {
+            const result = await playwrightState.closeAllBrowsers(this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async closeContext(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return playwrightState.closeContext(callback, this.state);
+        try {
+            const result = await playwrightState.closeContext(this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async closePage(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return playwrightState.closePage(callback, this.state);
+        try {
+            const result = await playwrightState.closePage(this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getBrowserCatalog(
@@ -82,7 +102,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         try {
-            const response = await playwrightState.switchPage(call, this.state.getActiveBrowser(callback));
+            const response = await playwrightState.switchPage(call, this.state.getActiveBrowser());
             callback(null, response);
         } catch (e) {
             callback(e, null);
@@ -90,7 +110,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async switchContext(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.String>): Promise<void> {
-        return playwrightState.switchContext(call, callback, this.state.getActiveBrowser(callback));
+        return playwrightState.switchContext(call, callback, this.state.getActiveBrowser());
     }
 
     async switchBrowser(call: ServerUnaryCall<Request.Index>, callback: sendUnaryData<Response.String>): Promise<void> {
@@ -140,7 +160,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async setTimeout(call: ServerUnaryCall<Request.Timeout>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return browserControl.setTimeout(call, callback, this.getActiveBrowser(callback)?.context?.c);
+        return browserControl.setTimeout(call, callback, this.getActiveBrowser()?.context?.c);
     }
 
     async getTitle(call: ServerUnaryCall<Request.Empty>, callback: sendUnaryData<Response.String>): Promise<void> {
