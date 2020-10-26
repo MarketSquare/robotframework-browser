@@ -38,12 +38,12 @@ export async function waitUntilElementExists<T>(
         }
     }
     const element = await context.$(elementSelector);
-    exists(element, callback, `Could not find element with selector \`${elementSelector}\` within timeout.`);
+    exists(element, `Could not find element with selector \`${elementSelector}\` within timeout.`);
     return element;
 }
 
 async function invokeFunction<T>(callback: sendUnaryData<T>, method: any, ...args: any[]) {
-    exists(method, callback, `Bind failure with '${method}'`);
+    exists(method, `Bind failure with '${method}'`);
     try {
         return await method(...Object.values(args));
     } catch (e) {
@@ -58,7 +58,7 @@ export async function invokeOnMouse<T>(
     methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
     args: Record<any, any>,
 ) {
-    exists(page, callback, `Tried to execute mouse action '${methodName}' but no open page`);
+    exists(page, `Tried to execute mouse action '${methodName}' but no open page`);
     logger.info(`Invoking mouse action ${methodName} with params ${JSON.stringify(args)}`);
     const fn: any = page?.mouse[methodName].bind(page.mouse);
     return await invokeFunction(callback, fn, ...Object.values(args));
@@ -70,7 +70,7 @@ export async function invokeOnKeyboard<T>(
     methodName: 'down' | 'up' | 'press' | 'insertText' | 'type',
     ...args: any[]
 ) {
-    exists(page, callback, `Tried to execute keyboard action '${methodName}' but no open page`);
+    exists(page, `Tried to execute keyboard action '${methodName}' but no open page`);
     logger.info(`Invoking keyboard action ${methodName} with params ${JSON.stringify(args)}`);
     const fn: any = page?.keyboard[methodName].bind(page.keyboard);
     return await invokeFunction(callback, fn, ...args);
@@ -82,7 +82,7 @@ export async function invokeOnPage<T>(
     methodName: string,
     ...args: any[]
 ) {
-    exists(page, callback, `Tried to do playwright action '${methodName}', but no open page.`);
+    exists(page, `Tried to do playwright action '${methodName}', but no open page.`);
     const fn: any = (page as { [key: string]: any })[methodName].bind(page);
     return await invokeFunction(callback, fn, ...args);
 }
@@ -93,7 +93,7 @@ export async function invokeOnContext<T>(
     methodName: string,
     ...args: any[]
 ) {
-    exists(context, callback, `Tried to do playwright action '${methodName}', but no open context.`);
+    exists(context, `Tried to do playwright action '${methodName}', but no open context.`);
     try {
         const fn: any = (context as { [key: string]: any })[methodName].bind(context);
         return await fn(...args);
@@ -147,7 +147,7 @@ async function determineContextAndSelector<T>(
     callback: sendUnaryData<T>,
 ): Promise<{ elementSelector: string | undefined; context: ElementHandle | Frame | Page }> {
     const page = state.getActivePage();
-    exists(page, callback, `Tried to do playwright action, but no open page.`);
+    exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
         let selectors = splitFrameAndElementSelector(selector);
         let frame = await findFrame(page, selectors.frameSelector, callback);
@@ -180,7 +180,7 @@ export async function determineElement<T>(
     callback: sendUnaryData<T>,
 ): Promise<ElementHandle | null> {
     const page = state.getActivePage();
-    exists(page, callback, `Tried to do playwright action, but no open page.`);
+    exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
         const { frameSelector, elementSelector } = splitFrameAndElementSelector(selector);
         const frame = await findFrame(page, frameSelector, callback);
@@ -249,7 +249,7 @@ function splitElementHandleAndElementSelector<T>(
 
 async function findFrame<T>(parent: Page | Frame, frameSelector: string, callback: sendUnaryData<T>): Promise<Frame> {
     const contentFrame = await (await parent.$(frameSelector))?.contentFrame();
-    exists(contentFrame, callback, `Could not find frame with selector ${frameSelector}`);
+    exists(contentFrame, `Could not find frame with selector ${frameSelector}`);
     return contentFrame;
 }
 
@@ -257,9 +257,9 @@ async function findFrame<T>(parent: Page | Frame, frameSelector: string, callbac
 /*
  * If obj is not trueish call callback with new Error containing message
  */
-export function exists<T1, T2>(obj: T1, callback: sendUnaryData<T2>, message: string): asserts obj is NonNullable<T1> {
+export function exists<T1, T2>(obj: T1, message: string): asserts obj is NonNullable<T1> {
     if (!obj) {
-        callback(new Error(message), null);
+        throw new Error(message);
     }
 }
 

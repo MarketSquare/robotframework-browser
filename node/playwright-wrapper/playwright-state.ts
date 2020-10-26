@@ -103,7 +103,7 @@ export class PlaywrightState {
 
     public switchTo = <T>(id: Uuid, callback: sendUnaryData<T>): BrowserState => {
         const browser = this.browserStack.find((b) => b.id === id);
-        exists(browser, callback, `No browser for id '${id}'`);
+        exists(browser, `No browser for id '${id}'`);
         this.browserStack = this.browserStack.filter((b) => b.id !== id);
         this.browserStack.push(browser);
         return this.getActiveBrowser(callback);
@@ -434,9 +434,9 @@ export async function switchPage(
     callback: sendUnaryData<Response.String>,
     browserState?: BrowserState,
 ) {
-    exists(browserState, callback, "Tried to switch Page but browser wasn't open");
+    exists(browserState, "Tried to switch Page but browser wasn't open");
     const context = browserState.context;
-    exists(context, callback, 'Tried to switch Page but no context was open');
+    exists(context, 'Tried to switch Page but no context was open');
     const id = call.request.getId();
     if (id === 'CURRENT') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
@@ -446,7 +446,7 @@ export async function switchPage(
         const previous = browserState.page?.id || 'NO PAGE OPEN';
         const previousTime = browserState.page?.timestamp || 0;
         const latest = await findLatestPageAfter(previousTime, call.request.getTimeout(), context);
-        exists(latest, callback, 'Tried to activate a new page but no new pages were detected in context.');
+        exists(latest, 'Tried to activate a new page but no new pages were detected in context.');
         await browserState.activatePage(latest);
         callback(null, stringResponse(previous, `Activated new page ${latest.id}`));
         return;
