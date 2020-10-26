@@ -24,12 +24,12 @@ import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
-    const title = await invokeOnPage(page, callback, 'title');
+    const title = await invokeOnPage(page, 'title');
     callback(null, stringResponse(title, 'Active page title is: ' + title));
 }
 
 export async function getUrl(callback: sendUnaryData<Response.String>, page?: Page) {
-    const url = await invokeOnPage(page, callback, 'url');
+    const url = await invokeOnPage(page, 'url');
     callback(null, stringResponse(url, url));
 }
 
@@ -167,7 +167,7 @@ export async function getViewportSize(
     callback: sendUnaryData<Response.Json>,
     page?: Page,
 ): Promise<void> {
-    const result = await invokeOnPage(page, callback, 'viewportSize');
+    const result = await invokeOnPage(page, 'viewportSize');
     callback(null, jsonResponse(JSON.stringify(result), 'View port size received sucesfully from page.'));
 }
 
@@ -191,7 +191,7 @@ export async function getPageSource(
     callback: sendUnaryData<Response.String>,
     page?: Page,
 ): Promise<void> {
-    const result = await invokeOnPage(page, callback, 'content');
+    const result = await invokeOnPage(page, 'content');
     logger.info(result);
     callback(null, stringResponse(JSON.stringify(result), 'Page source obtained succesfully.'));
 }

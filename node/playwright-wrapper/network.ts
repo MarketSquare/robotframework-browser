@@ -64,7 +64,7 @@ export async function waitForResponse(
 ) {
     const urlOrPredicate = new RegExp(`.*${call.request.getUrlorpredicate()}`);
     const timeout = call.request.getTimeout();
-    const data = await invokeOnPage(page, callback, 'waitForResponse', urlOrPredicate, {
+    const data = await invokeOnPage(page, 'waitForResponse', urlOrPredicate, {
         timeout: timeout,
     });
     callback(
@@ -94,7 +94,7 @@ export async function waitForRequest(
 ) {
     const urlOrPredicate = call.request.getUrlorpredicate();
     const timeout = call.request.getTimeout();
-    const result = await invokeOnPage(page, callback, 'waitForRequest', urlOrPredicate, { timeout: timeout });
+    const result = await invokeOnPage(page, 'waitForRequest', urlOrPredicate, { timeout: timeout });
     callback(null, stringResponse(result.url(), 'Requested compeleted withing timeout.'));
 }
 
@@ -104,7 +104,7 @@ export async function waitUntilNetworkIsIdle(
     page?: Page,
 ) {
     const timeout = call.request.getTimeout();
-    await invokeOnPage(page, callback, 'waitForLoadState', 'networkidle', { timeout: timeout });
+    await invokeOnPage(page, 'waitForLoadState', 'networkidle', { timeout: timeout });
     callback(null, emptyWithLog('Network is idle'));
 }
 
@@ -114,7 +114,7 @@ export async function waitForDownload(
     page?: Page,
 ) {
     const saveAs = call.request.getPath();
-    const downloadObject = await invokeOnPage(page, callback, 'waitForEvent', 'download');
+    const downloadObject = await invokeOnPage(page, 'waitForEvent', 'download');
 
     if (saveAs) {
         await downloadObject.saveAs(saveAs);
