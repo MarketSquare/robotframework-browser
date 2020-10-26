@@ -35,13 +35,18 @@ interface CookieData {
 }
 
 export async function getCookies(callback: sendUnaryData<Response.Json>, context?: BrowserContext) {
-    const allCookies = await invokeOnContext(context, callback, 'cookies');
-    logger.info({ 'Cookies: ': allCookies });
-    const cookieName = [];
-    for (const cookie of allCookies as Array<Cookie>) {
-        cookieName.push(cookie.name);
+    try {
+        const allCookies = await invokeOnContext(context, 'cookies');
+        logger.info({ 'Cookies: ': allCookies });
+        const cookieName = [];
+        for (const cookie of allCookies as Array<Cookie>) {
+            cookieName.push(cookie.name);
+        }
+        callback(null, jsonResponse(JSON.stringify(allCookies), cookieName.toString()));
+    } catch (e) {
+        logger.info(`Error invoking Playwright action 'cookies': ${e}`);
+        callback(e, null);
     }
-    callback(null, jsonResponse(JSON.stringify(allCookies), cookieName.toString()));
 }
 
 export async function addCookie(
@@ -49,13 +54,23 @@ export async function addCookie(
     callback: sendUnaryData<Response.Empty>,
     context?: BrowserContext,
 ) {
-    const cookie: CookieData = JSON.parse(call.request.getBody());
-    logger.info({ 'Cookie data: ': call.request.getBody() });
-    await invokeOnContext(context, callback, 'addCookies', [cookie]);
-    callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
+    try {
+        const cookie: CookieData = JSON.parse(call.request.getBody());
+        logger.info({ 'Cookie data: ': call.request.getBody() });
+        await invokeOnContext(context, 'addCookies', [cookie]);
+        callback(null, emptyWithLog('Cookie "' + cookie.name + '" added.'));
+    } catch (e) {
+        logger.info(`Error invoking Playwright action 'addCookies': ${e}`);
+        callback(e, null);
+    }
 }
 
 export async function deleteAllCookies(callback: sendUnaryData<Response.Empty>, context?: BrowserContext) {
-    await invokeOnContext(context, callback, 'clearCookies');
-    callback(null, emptyWithLog('All cookies deleted.'));
+    try {
+        await invokeOnContext(context, 'clearCookies');
+        callback(null, emptyWithLog('All cookies deleted.'));
+    } catch (e) {
+        logger.info(`Error invoking Playwright action 'clearCookies': ${e}`);
+        callback(e, null);
+    }
 }

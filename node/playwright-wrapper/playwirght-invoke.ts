@@ -73,20 +73,10 @@ export async function invokeOnPage<T>(page: Page | undefined, methodName: string
     return await fn(...Object.values(args));
 }
 
-export async function invokeOnContext<T>(
-    context: BrowserContext | undefined,
-    callback: sendUnaryData<T>,
-    methodName: string,
-    ...args: any[]
-) {
+export async function invokeOnContext<T>(context: BrowserContext | undefined, methodName: string, ...args: any[]) {
     exists(context, `Tried to do playwright action '${methodName}', but no open context.`);
-    try {
-        const fn: any = (context as { [key: string]: any })[methodName].bind(context);
-        return await fn(...args);
-    } catch (e) {
-        logger.info(`Error invoking Playwright action '${methodName}': ${e}`);
-        callback(e, null);
-    }
+    const fn: any = (context as { [key: string]: any })[methodName].bind(context);
+    return await fn(...args);
 }
 
 /**
