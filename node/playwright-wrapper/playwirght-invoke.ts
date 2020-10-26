@@ -44,7 +44,6 @@ export async function waitUntilElementExists<T>(
 
 export async function invokeOnMouse<T>(
     page: Page | undefined,
-    callback: sendUnaryData<T>,
     methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
     args: Record<any, any>,
 ) {
@@ -57,7 +56,6 @@ export async function invokeOnMouse<T>(
 
 export async function invokeOnKeyboard<T>(
     page: Page | undefined,
-    callback: sendUnaryData<T>,
     methodName: 'down' | 'up' | 'press' | 'insertText' | 'type',
     ...args: any[]
 ) {
@@ -68,12 +66,7 @@ export async function invokeOnKeyboard<T>(
     return await fn(...Object.values(args));
 }
 
-export async function invokeOnPage<T>(
-    page: Page | undefined,
-    callback: sendUnaryData<T>,
-    methodName: string,
-    ...args: any[]
-) {
+export async function invokeOnPage<T>(page: Page | undefined, methodName: string, ...args: any[]) {
     exists(page, `Tried to do playwright action '${methodName}', but no open page.`);
     const fn: any = (page as { [key: string]: any })[methodName].bind(page);
     exists(fn, `Bind failure with '${fn}'`);

@@ -27,17 +27,17 @@ export async function goTo(
 ): Promise<void> {
     const url = call.request.getUrl();
     const timeout = call.request.getDefaulttimeout();
-    await invokeOnPage(page, callback, 'goto', url, { timeout: timeout });
+    await invokeOnPage(page, 'goto', url, { timeout: timeout });
     callback(null, emptyWithLog(`Succesfully opened URL ${url}`));
 }
 
 export async function goBack(callback: sendUnaryData<Response.Empty>, page?: Page): Promise<void> {
-    await invokeOnPage(page, callback, 'goBack');
+    await invokeOnPage(page, 'goBack');
     callback(null, emptyWithLog('Did Go Back'));
 }
 
 export async function goForward(callback: sendUnaryData<Response.Empty>, page?: Page): Promise<void> {
-    await invokeOnPage(page, callback, 'goForward');
+    await invokeOnPage(page, 'goForward');
     callback(null, emptyWithLog('Did Go Forward'));
 }
 
@@ -57,7 +57,7 @@ export async function takeScreenshot(
     } else {
         const page = state.getActivePage();
         exists(page, 'Tried to take screenshot, but no page was open.');
-        await invokeOnPage(page, callback, 'screenshot', { path: path, fullPage });
+        await invokeOnPage(page, 'screenshot', { path: path, fullPage });
     }
     const message = 'Screenshot succesfully captured to: ' + path;
     callback(null, stringResponse(path, message));
@@ -80,7 +80,7 @@ export async function setViewportSize(
     page?: Page,
 ) {
     const size = { width: call.request.getWidth(), height: call.request.getHeight() };
-    await invokeOnPage(page, callback, 'setViewportSize', size);
+    await invokeOnPage(page, 'setViewportSize', size);
     callback(null, emptyWithLog(`Set viewport size to: ${size}`));
 }
 
@@ -100,7 +100,7 @@ export async function reload(
     callback: sendUnaryData<Response.Empty>,
     page?: Page,
 ) {
-    await invokeOnPage(page, callback, 'reload');
+    await invokeOnPage(page, 'reload');
     callback(null, emptyWithLog('Reloaded page'));
 }
 

@@ -80,12 +80,12 @@ export async function executeJavascript(
         script = eval(script);
     }
 
-    const result = await invokeOnPage(state.getActivePage(), callback, 'evaluate', script, elem);
+    const result = await invokeOnPage(state.getActivePage(), 'evaluate', script, elem);
     callback(null, jsResponse(result, 'JavaScript executed successfully.'));
 }
 
 export async function getPageState(callback: sendUnaryData<Response.JavascriptExecutionResult>, page?: Page) {
-    const result = await invokeOnPage(page, callback, 'evaluate', () => window.__RFBROWSER__);
+    const result = await invokeOnPage(page, 'evaluate', () => window.__RFBROWSER__);
     callback(null, jsResponse(result, 'Page state evaluated successfully.'));
 }
 
@@ -117,7 +117,7 @@ export async function waitForFunction(
     }
 
     // TODO: This might behave weirdly if element selector points to a different page
-    const result = await invokeOnPage(state.getActivePage(), callback, 'waitForFunction', script, elem, options);
+    const result = await invokeOnPage(state.getActivePage(), 'waitForFunction', script, elem, options);
     callback(null, jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Fcuntion completed succesfully.'));
 }
 
@@ -127,7 +127,7 @@ export async function addStyleTag(
     page?: Page,
 ) {
     const content = call.request.getContent();
-    await invokeOnPage(page, callback, 'addStyleTag', { content: content });
+    await invokeOnPage(page, 'addStyleTag', { content: content });
     callback(null, emptyWithLog('added Style: ' + content));
 }
 

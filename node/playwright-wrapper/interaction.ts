@@ -173,7 +173,7 @@ export async function uploadFile(
 ) {
     const path = call.request.getPath();
     const fn = async (fileChooser: FileChooser) => await fileChooser.setFiles(path);
-    await invokeOnPage(page, callback, 'on', 'filechooser', fn);
+    await invokeOnPage(page, 'on', 'filechooser', fn);
     callback(null, emptyWithLog('Succesfully uploaded file'));
 }
 
@@ -188,7 +188,7 @@ export async function handleAlert(
         if (promptInput) await dialog[alertAction](promptInput);
         else await dialog[alertAction]();
     };
-    await invokeOnPage(page, callback, 'on', 'dialog', fn);
+    await invokeOnPage(page, 'on', 'dialog', fn);
     callback(null, emptyWithLog('Set event handler for next alert'));
 }
 
@@ -199,7 +199,7 @@ export async function mouseButton(
 ): Promise<void> {
     const action = call.request.getAction() as 'click' | 'up' | 'down';
     const params = JSON.parse(call.request.getJson());
-    await invokeOnMouse(page, callback, action, params);
+    await invokeOnMouse(page, action, params);
     callback(null, emptyWithLog(`Succesfully executed ${action}`));
 }
 
@@ -209,7 +209,7 @@ export async function mouseMove(
     page?: Page,
 ): Promise<void> {
     const params = JSON.parse(call.request.getBody());
-    await invokeOnMouse(page, callback, 'move', params);
+    await invokeOnMouse(page, 'move', params);
     callback(null, emptyWithLog(`Succesfully moved mouse to ${params.x}, ${params.y}`));
 }
 export async function keyboardKey(
@@ -219,7 +219,7 @@ export async function keyboardKey(
 ): Promise<void> {
     const action = call.request.getAction() as 'down' | 'up' | 'press';
     const key = call.request.getKey();
-    await invokeOnKeyboard(page, callback, action, key);
+    await invokeOnKeyboard(page, action, key);
     callback(null, emptyWithLog(`Succesfully did ${action} for ${key}`));
 }
 
@@ -232,6 +232,6 @@ export async function keyboardInput(
     const delay = call.request.getDelay();
     const input = call.request.getInput();
 
-    await invokeOnKeyboard(page, callback, action, input, { delay: delay });
+    await invokeOnKeyboard(page, action, input, { delay: delay });
     callback(null, emptyWithLog(`Succesfully did virtual keyboard action ${action} with input ${input}`));
 }
