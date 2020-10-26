@@ -49,7 +49,7 @@ export async function getSelectContent(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    await waitUntilElementExists(state, callback, selector);
+    await waitUntilElementExists(state, selector);
 
     type Value = [string, string, boolean];
     const content: Value[] = await invokePlaywrightMethod(
@@ -100,7 +100,7 @@ async function getProperty<T>(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    const element = await waitUntilElementExists(state, callback, selector);
+    const element = await waitUntilElementExists(state, selector);
     try {
         const propertyName = call.request.getProperty();
         const property = await element.getProperty(propertyName);
@@ -128,7 +128,7 @@ async function getAttributeValue<T>(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    const element = await waitUntilElementExists(state, callback, selector);
+    const element = await waitUntilElementExists(state, selector);
     try {
         const attributeName = call.request.getProperty();
         const attribute = await element.getAttribute(attributeName);
