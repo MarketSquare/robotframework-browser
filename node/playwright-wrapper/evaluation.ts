@@ -40,11 +40,15 @@ export async function getElement(
     callback: sendUnaryData<Response.String>,
     state: PlaywrightState,
 ) {
-    await waitUntilElementExists(state, call.request.getSelector());
-    const handle = await invokePlaywrightMethod(state, callback, '$', call.request.getSelector());
-    const id = uuidv4();
-    state.addElement(id, handle);
-    callback(null, stringResponse(`element=${id}`, 'Element found successfully.'));
+    try {
+        await waitUntilElementExists(state, call.request.getSelector());
+        const handle = await invokePlaywrightMethod(state, '$', call.request.getSelector());
+        const id = uuidv4();
+        state.addElement(id, handle);
+        callback(null, stringResponse(`element=${id}`, 'Element found successfully.'));
+    } catch (e) {
+        callback(e, null);
+    }
 }
 
 /** Resolve a list of elementHandles, create global UUIDs for them, and store the
@@ -56,15 +60,19 @@ export async function getElements(
     callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
 ) {
-    await waitUntilElementExists(state, call.request.getSelector());
-    const handles: ElementHandle[] = await invokePlaywrightMethod(state, callback, '$$', call.request.getSelector());
+    try {
+        await waitUntilElementExists(state, call.request.getSelector());
+        const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', call.request.getSelector());
 
-    const response: string[] = handles.map((handle) => {
-        const id = uuidv4();
-        state.addElement(id, handle);
-        return `element=${id}`;
-    });
-    callback(null, jsonResponse(JSON.stringify(response), 'Elements found succesfully.'));
+        const response: string[] = handles.map((handle) => {
+            const id = uuidv4();
+            state.addElement(id, handle);
+            return `element=${id}`;
+        });
+        callback(null, jsonResponse(JSON.stringify(response), 'Elements found succesfully.'));
+    } catch (e) {
+        callback(e, null);
+    }
 }
 
 export async function executeJavascript(
@@ -72,16 +80,19 @@ export async function executeJavascript(
     callback: sendUnaryData<Response.JavascriptExecutionResult>,
     state: PlaywrightState,
 ) {
-    const selector = call.request.getSelector();
-    let script = call.request.getScript();
-    let elem;
-    if (selector) {
-        elem = await determineElement(state, selector, callback);
-        script = eval(script);
+    try {
+        const selector = call.request.getSelector();
+        let script = call.request.getScript();
+        let elem;
+        if (selector) {
+            elem = await determineElement(state, selector);
+            script = eval(script);
+        }
+        const result = await invokeOnPage(state.getActivePage(), 'evaluate', script, elem);
+        callback(null, jsResponse(result, 'JavaScript executed successfully.'));
+    } catch (e) {
+        callback(e, null);
     }
-
-    const result = await invokeOnPage(state.getActivePage(), 'evaluate', script, elem);
-    callback(null, jsResponse(result, 'JavaScript executed successfully.'));
 }
 
 export async function getPageState(callback: sendUnaryData<Response.JavascriptExecutionResult>, page?: Page) {
@@ -94,17 +105,20 @@ export async function waitForElementState(
     callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
 ) {
-    const selector = call.request.getSelector();
-    const options = JSON.parse(call.request.getOptions());
-    await invokePlaywrightMethod(state, callback, 'waitForSelector', selector, options);
-    callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
+    try {
+        const selector = call.request.getSelector();
+        const options = JSON.parse(call.request.getOptions());
+        await invokePlaywrightMethod(state, 'waitForSelector', selector, options);
+        callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
+    } catch (e) {
+        callback(e, null);
+    }
 }
 
 export async function waitForFunction(
     call: ServerUnaryCall<Request.WaitForFunctionOptions>,
-    callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
-): Promise<void> {
+): Promise<Response.Json> {
     let script = call.request.getScript();
     const selector = call.request.getSelector();
     const options = JSON.parse(call.request.getOptions());
@@ -112,13 +126,13 @@ export async function waitForFunction(
 
     let elem;
     if (selector) {
-        elem = await determineElement(state, selector, callback);
+        elem = await determineElement(state, selector);
         script = eval(script);
     }
 
     // TODO: This might behave weirdly if element selector points to a different page
     const result = await invokeOnPage(state.getActivePage(), 'waitForFunction', script, elem, options);
-    callback(null, jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Fcuntion completed succesfully.'));
+    return jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Fcuntion completed succesfully.');
 }
 
 export async function addStyleTag(
@@ -159,7 +173,7 @@ export async function highlightElements(
             }, options.dur);
         });
     };
-    await invokePlaywrightMethod(state, callback, '$$eval', selector, highlighter, {
+    await invokePlaywrightMethod(state, '$$eval', selector, highlighter, {
         dur: duration,
         wdt: width,
         stl: style,

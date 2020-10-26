@@ -63,7 +63,7 @@ export async function takeScreenshot(
     const fullPage = call.request.getFullpage();
     const selector = call.request.getSelector();
     if (selector) {
-        const elem = await determineElement(state, selector, callback);
+        const elem = await determineElement(state, selector);
         exists(elem, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
         await elem.screenshot({ path: path });
     } else {

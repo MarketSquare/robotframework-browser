@@ -39,7 +39,7 @@ export async function getElementCount(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    const response: Array<ElementHandle> = await invokePlaywrightMethod(state, callback, '$$', selector);
+    const response: Array<ElementHandle> = await invokePlaywrightMethod(state, '$$', selector);
     callback(null, intResponse(response.length, 'Found ' + response.length + 'element(s).'));
 }
 
@@ -52,12 +52,8 @@ export async function getSelectContent(
     await waitUntilElementExists(state, selector);
 
     type Value = [string, string, boolean];
-    const content: Value[] = await invokePlaywrightMethod(
-        state,
-        callback,
-        '$$eval',
-        selector + ' option',
-        (elements: any) => (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
+    const content: Value[] = await invokePlaywrightMethod(state, '$$eval', selector + ' option', (elements: any) =>
+        (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
     );
 
     const response = new Response.Select();
@@ -148,7 +144,7 @@ export async function getStyle(
     const selector = call.request.getSelector();
 
     logger.info('Getting css of element on page');
-    const result = await invokePlaywrightMethod(state, callback, '$eval', selector, function (element: Element) {
+    const result = await invokePlaywrightMethod(state, '$eval', selector, function (element: Element) {
         const rawStyle = window.getComputedStyle(element);
         const mapped: Record<string, string> = {};
         // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
@@ -177,7 +173,7 @@ export async function getBoundingBox(
     state: PlaywrightState,
 ): Promise<void> {
     const selector = call.request.getSelector();
-    const elem = await determineElement(state, selector, callback);
+    const elem = await determineElement(state, selector);
     if (!elem) {
         callback(new Error(`No element matching ${selector} found`), null);
         return;

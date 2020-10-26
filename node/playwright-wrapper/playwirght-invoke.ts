@@ -79,32 +79,24 @@ export async function invokeOnContext<T>(context: BrowserContext | undefined, me
  * elementHandle, and invoke the method on it.
  *
  * @param state A reference to current PlaywrightState object.
- * @param callback GRPC callback to make response.
  * @param methodName Which Playwright method to invoke. The method should take selector as an argument.
  * @param selector Selector of the element to operate on,
  *  or a frame piercing selector in format `<frame selector> >>> <element selector>
- * @param args Additional args to the Playwirght method.
  */
 
 export async function invokePlaywrightMethod<T>(
     state: PlaywrightState,
-    callback: sendUnaryData<T>,
     methodName: string,
     selector: string,
     ...args: any[]
 ) {
     type strDict = { [key: string]: any };
-    try {
-        const { elementSelector, context } = await determineContextAndSelector(state, selector);
-        if (elementSelector) {
-            const fn = (context as strDict)[methodName].bind(context);
-            return await fn(elementSelector, ...args);
-        } else {
-            return await (context as strDict)[methodName](...args);
-        }
-    } catch (e) {
-        callback(getErrorDetails(e, selector, methodName), null);
-        throw e;
+    const { elementSelector, context } = await determineContextAndSelector(state, selector);
+    if (elementSelector) {
+        const fn = (context as strDict)[methodName].bind(context);
+        return await fn(elementSelector, ...args);
+    } else {
+        return await (context as strDict)[methodName](...args);
     }
 }
 
@@ -132,11 +124,7 @@ async function determineContextAndSelector<T>(
     }
 }
 
-export async function determineElement<T>(
-    state: PlaywrightState,
-    selector: string,
-    callback: sendUnaryData<T>,
-): Promise<ElementHandle | null> {
+export async function determineElement<T>(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
     const page = state.getActivePage();
     exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
@@ -145,15 +133,10 @@ export async function determineElement<T>(
         return await frame.$(elementSelector);
     } else if (isElementHandleSelector(selector)) {
         const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector);
-        try {
-            const elem = state.getElement(elementHandleId);
-            if (subSelector) {
-                return await elem.$(subSelector);
-            } else return elem;
-        } catch (e) {
-            callback(e, null);
-            return null;
-        }
+        const elem = state.getElement(elementHandleId);
+        if (subSelector) {
+            return await elem.$(subSelector);
+        } else return elem;
     } else {
         return await page.$(selector);
     }
