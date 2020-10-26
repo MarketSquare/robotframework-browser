@@ -20,22 +20,13 @@ import { PlaywrightState } from './playwright-state';
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function waitUntilElementExists<T>(
-    state: PlaywrightState,
-    callback: sendUnaryData<T>,
-    selector: string,
-): Promise<ElementHandle> {
+export async function waitUntilElementExists<T>(state: PlaywrightState, selector: string): Promise<ElementHandle> {
     const { elementSelector, context } = await determineContextAndSelector(state, selector);
     if (elementSelector === undefined) {
         // This type cast is safe because elementSelector is only undefined when an ElementHandle gets returned
         return context as ElementHandle;
     } else if ('waitForSelector' in context) {
-        try {
-            await context.waitForSelector(elementSelector, { state: 'attached' });
-        } catch (e) {
-            callback(getErrorDetails(e, selector, 'waitForSelector'), null);
-            throw e;
-        }
+        await context.waitForSelector(elementSelector, { state: 'attached' });
     }
     const element = await context.$(elementSelector);
     exists(element, `Could not find element with selector \`${elementSelector}\` within timeout.`);

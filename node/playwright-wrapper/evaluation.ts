@@ -40,7 +40,7 @@ export async function getElement(
     callback: sendUnaryData<Response.String>,
     state: PlaywrightState,
 ) {
-    await waitUntilElementExists(state, callback, call.request.getSelector());
+    await waitUntilElementExists(state, call.request.getSelector());
     const handle = await invokePlaywrightMethod(state, callback, '$', call.request.getSelector());
     const id = uuidv4();
     state.addElement(id, handle);
@@ -56,7 +56,7 @@ export async function getElements(
     callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
 ) {
-    await waitUntilElementExists(state, callback, call.request.getSelector());
+    await waitUntilElementExists(state, call.request.getSelector());
     const handles: ElementHandle[] = await invokePlaywrightMethod(state, callback, '$$', call.request.getSelector());
 
     const response: string[] = handles.map((handle) => {
