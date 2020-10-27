@@ -526,7 +526,7 @@ class Getters(LibraryComponent):
                 )
                 return json.loads(response.json)
         except AssertionError as error:
-            if "Could not find element with" in str(error):
+            if "page.waitForSelector: Timeout" in str(error):
                 return []
             raise error
 
