@@ -354,7 +354,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
-        return evaluation.getElements(call, callback, this.state);
+        try {
+            const result = await evaluation.getElements(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async addStyleTag(call: ServerUnaryCall<Request.StyleTag>, callback: sendUnaryData<Response.Empty>): Promise<void> {

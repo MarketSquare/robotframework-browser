@@ -57,22 +57,17 @@ export async function getElement(
  */
 export async function getElements(
     call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Json>,
     state: PlaywrightState,
-) {
-    try {
-        await waitUntilElementExists(state, call.request.getSelector());
-        const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', call.request.getSelector());
+): Promise<Response.Json> {
+    await waitUntilElementExists(state, call.request.getSelector());
+    const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', call.request.getSelector());
 
-        const response: string[] = handles.map((handle) => {
-            const id = uuidv4();
-            state.addElement(id, handle);
-            return `element=${id}`;
-        });
-        callback(null, jsonResponse(JSON.stringify(response), 'Elements found succesfully.'));
-    } catch (e) {
-        callback(e, null);
-    }
+    const response: string[] = handles.map((handle) => {
+        const id = uuidv4();
+        state.addElement(id, handle);
+        return `element=${id}`;
+    });
+    return jsonResponse(JSON.stringify(response), 'Elements found successfully.');
 }
 
 export async function executeJavascript(

@@ -96,10 +96,7 @@ export async function clearText(
     return emptyWithLog('Text field cleared.');
 }
 
-export async function press(
-    call: ServerUnaryCall<Request.PressKeys>,
-    state: PlaywrightState,
-): Promise<Response.Empty> {
+export async function press(call: ServerUnaryCall<Request.PressKeys>, state: PlaywrightState): Promise<Response.Empty> {
     const selector = call.request.getSelector();
     const keyList = call.request.getKeyList();
     for (const i of keyList) {
