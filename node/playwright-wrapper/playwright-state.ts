@@ -314,14 +314,14 @@ export async function closeContext(openBrowsers: PlaywrightState): Promise<Respo
     const activeBrowser = openBrowsers.getActiveBrowser();
     await openBrowsers.getActiveContext()?.close();
     activeBrowser.popContext();
-    return emptyWithLog('Succesfully closed Context');
+    return emptyWithLog('Successfully closed Context');
 }
 
 export async function closePage(openBrowsers: PlaywrightState): Promise<Response.Empty> {
     const activeBrowser = openBrowsers.getActiveBrowser();
     await openBrowsers.getActivePage()?.close();
     activeBrowser.popPage();
-    return emptyWithLog('Succesfully closed Page');
+    return emptyWithLog('Successfully closed Page');
 }
 
 export async function newPage(
@@ -359,7 +359,7 @@ export async function newContext(
 
         const response = stringResponse(
             context.id,
-            'Succesfully created context with options: ' + JSON.stringify(options),
+            'Successfully created context with options: ' + JSON.stringify(options),
         );
         return callback(null, response);
     } catch (error) {
@@ -381,7 +381,7 @@ export async function newBrowser(
         const browserState = openBrowsers.addBrowser(name, browser);
         const response = stringResponse(
             browserState.id,
-            'Succesfully created browser with options: ' + JSON.stringify(options),
+            'Successfully created browser with options: ' + JSON.stringify(options),
         );
         return callback(null, response);
     } catch (error) {
@@ -442,7 +442,7 @@ export async function switchPage(
 
     const previous = browserState.page?.id || '';
     await _switchPage(id, browserState);
-    return stringResponse(previous, 'Succesfully changed active page');
+    return stringResponse(previous, 'Successfully changed active page');
 }
 
 async function findLatestPageAfter(
@@ -486,7 +486,7 @@ export async function switchContext(
     await _switchPage(browserState.page?.id || '', browserState).catch((error) => {
         logger.error(error);
     });
-    const response = stringResponse(previous, 'Succesfully changed active context');
+    const response = stringResponse(previous, 'Successfully changed active context');
     callback(null, response);
 }
 
@@ -502,7 +502,7 @@ export async function switchBrowser(
         return;
     }
     openBrowsers.switchTo(id);
-    const response = stringResponse(previous?.id || '', 'Succesfully changed active browser');
+    const response = stringResponse(previous?.id || '', 'Successfully changed active browser');
     callback(null, response);
 }
 
