@@ -155,7 +155,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ScreenshotOptions>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return browserControl.takeScreenshot(call, callback, this.state);
+        try {
+            const response = await browserControl.takeScreenshot(call, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getBoundingBox(
@@ -199,7 +204,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementProperty>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return getters.getDomProperty(call, callback, this.state);
+        try {
+            const response = await getters.getDomProperty(call, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getBoolProperty(
@@ -243,15 +253,30 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async typeText(call: ServerUnaryCall<Request.TypeText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return interaction.typeText(call, callback, this.state);
+        try {
+            const result = await interaction.typeText(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async fillText(call: ServerUnaryCall<Request.FillText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return interaction.fillText(call, callback, this.state);
+        try {
+            const result = await interaction.fillText(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async clearText(call: ServerUnaryCall<Request.ClearText>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return interaction.clearText(call, callback, this.state);
+        try {
+            const result = await interaction.clearText(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async press(call: ServerUnaryCall<Request.PressKeys>, callback: sendUnaryData<Response.Empty>): Promise<void> {
