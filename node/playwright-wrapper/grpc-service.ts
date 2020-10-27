@@ -123,7 +123,12 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async newPage(call: ServerUnaryCall<Request.Url>, callback: sendUnaryData<Response.String>): Promise<void> {
-        return playwrightState.newPage(call, callback, this.state);
+        try {
+            const response = await playwrightState.newPage(call, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async newContext(call: ServerUnaryCall<Request.Context>, callback: sendUnaryData<Response.String>): Promise<void> {
