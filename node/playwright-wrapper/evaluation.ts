@@ -97,17 +97,12 @@ export async function getPageState(callback: sendUnaryData<Response.JavascriptEx
 
 export async function waitForElementState(
     call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
-    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
-) {
-    try {
-        const selector = call.request.getSelector();
-        const options = JSON.parse(call.request.getOptions());
-        await invokePlaywrightMethod(state, 'waitForSelector', selector, options);
-        callback(null, emptyWithLog('Wait for Element with selector: ' + selector));
-    } catch (e) {
-        callback(e, null);
-    }
+): Promise<Response.Empty> {
+    const selector = call.request.getSelector();
+    const options = JSON.parse(call.request.getOptions());
+    await invokePlaywrightMethod(state, 'waitForSelector', selector, options);
+    return emptyWithLog('Wait for Element with selector: ' + selector);
 }
 
 export async function waitForFunction(
