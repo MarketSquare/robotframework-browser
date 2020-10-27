@@ -370,7 +370,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return evaluation.waitForElementState(call, callback, this.state);
+        try {
+            const result = await evaluation.waitForElementState(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
     async waitForRequest(
         call: ServerUnaryCall<Request.HttpCapture>,
