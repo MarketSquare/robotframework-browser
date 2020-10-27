@@ -45,9 +45,8 @@ export async function getElementCount(
 
 export async function getSelectContent(
     call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Select>,
     state: PlaywrightState,
-) {
+): Promise<Response.Select> {
     const selector = call.request.getSelector();
     await waitUntilElementExists(state, selector);
 
@@ -65,7 +64,7 @@ export async function getSelectContent(
         entry.setSelected(selected);
         response.addEntry(entry);
     });
-    callback(null, response);
+    return response;
 }
 
 export async function getDomProperty(
@@ -78,15 +77,11 @@ export async function getDomProperty(
 
 export async function getBoolProperty(
     call: ServerUnaryCall<Request.ElementProperty>,
-    callback: sendUnaryData<Response.Bool>,
     state: PlaywrightState,
-) {
+): Promise<Response.Bool> {
     const selector = call.request.getSelector();
     const content = await getProperty(call, state);
-    callback(
-        null,
-        boolResponse(content || false, 'Retrieved dom property for element ' + selector + ' containing ' + content),
-    );
+    return boolResponse(content || false, 'Retrieved dom property for element ' + selector + ' containing ' + content);
 }
 
 async function getProperty<T>(call: ServerUnaryCall<Request.ElementProperty>, state: PlaywrightState) {

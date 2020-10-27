@@ -25,9 +25,8 @@ const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function selectOption(
     call: ServerUnaryCall<Request.SelectElementSelector>,
-    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
-) {
+): Promise<Response.Empty> {
     const selector = call.request.getSelector();
     const matcher = JSON.parse(call.request.getMatcherjson());
     const result = await invokePlaywrightMethod(state, 'selectOption', selector, matcher);
@@ -37,8 +36,7 @@ export async function selectOption(
         const error = new Error(`No options matched ${matcher}`);
         return callback(error, null);
     }
-    const response = emptyWithLog(`Selected options ${result} in element ${selector}`);
-    callback(null, response);
+    return emptyWithLog(`Selected options ${result} in element ${selector}`);
 }
 
 export async function deSelectOption(
@@ -100,15 +98,14 @@ export async function clearText(
 
 export async function press(
     call: ServerUnaryCall<Request.PressKeys>,
-    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
-) {
+): Promise<Response.Empty> {
     const selector = call.request.getSelector();
     const keyList = call.request.getKeyList();
     for (const i of keyList) {
         await invokePlaywrightMethod(state, 'press', selector, i);
     }
-    callback(null, emptyWithLog('Pressed keys: ' + keyList));
+    return emptyWithLog('Pressed keys: ' + keyList);
 }
 
 export async function click(
