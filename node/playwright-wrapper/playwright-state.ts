@@ -326,9 +326,8 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
 
 export async function newPage(
     call: ServerUnaryCall<Request.Url>,
-    callback: sendUnaryData<Response.String>,
     openBrowsers: PlaywrightState,
-): Promise<void> {
+): Promise<Response.String> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
     const defaultTimeout = call.request.getDefaulttimeout();
     const context = await browserState.getOrCreateActiveContext(defaultTimeout);
@@ -338,11 +337,10 @@ export async function newPage(
     const url = call.request.getUrl() || 'about:blank';
     try {
         await page.p.goto(url);
-        const response = stringResponse(page.id, 'Succesfully initialized new page object and opened url: ' + url);
-        callback(null, response);
+        return stringResponse(page.id, 'Successfully initialized new page object and opened url: ' + url);
     } catch (e) {
         browserState.popPage();
-        callback(e, null);
+        throw e;
     }
 }
 
