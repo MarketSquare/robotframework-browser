@@ -197,7 +197,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementSelector>,
         callback: sendUnaryData<Response.Select>,
     ): Promise<void> {
-        return getters.getSelectContent(call, callback, this.state);
+        try {
+            const response = await getters.getSelectContent(call, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getDomProperty(
@@ -216,7 +221,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.ElementProperty>,
         callback: sendUnaryData<Response.Bool>,
     ): Promise<void> {
-        return getters.getBoolProperty(call, callback, this.state);
+        try {
+            const response = await getters.getBoolProperty(call, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getElementAttribute(
@@ -241,7 +251,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.SelectElementSelector>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.selectOption(call, callback, this.state);
+        try {
+            const result = await interaction.selectOption(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async deselectOption(call: ServerUnaryCall<Request.ElementSelector>, callback: sendUnaryData<Response.Empty>) {
@@ -280,7 +295,12 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async press(call: ServerUnaryCall<Request.PressKeys>, callback: sendUnaryData<Response.Empty>): Promise<void> {
-        return interaction.press(call, callback, this.state);
+        try {
+            const result = await interaction.press(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async click(
