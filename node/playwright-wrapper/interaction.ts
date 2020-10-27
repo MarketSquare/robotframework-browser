@@ -66,9 +66,8 @@ export async function inputText(
 
 export async function typeText(
     call: ServerUnaryCall<Request.TypeText>,
-    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
-) {
+): Promise<Response.Empty> {
     const selector = call.request.getSelector();
     const text = call.request.getText();
     const delay = call.request.getDelay();
@@ -77,28 +76,26 @@ export async function typeText(
         await invokePlaywrightMethod(state, 'fill', selector, '');
     }
     await invokePlaywrightMethod(state, 'type', selector, text, { delay: delay });
-    callback(null, emptyWithLog('Typed text: ' + text));
+    return emptyWithLog('Typed text: ' + text);
 }
 
 export async function fillText(
     call: ServerUnaryCall<Request.FillText>,
-    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
-) {
+): Promise<Response.Empty> {
     const selector = call.request.getSelector();
     const text = call.request.getText();
     await invokePlaywrightMethod(state, 'fill', selector, text);
-    callback(null, emptyWithLog('Fill text: ' + text));
+    return emptyWithLog('Fill text: ' + text);
 }
 
 export async function clearText(
     call: ServerUnaryCall<Request.ClearText>,
-    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
-) {
+): Promise<Response.Empty> {
     const selector = call.request.getSelector();
     await invokePlaywrightMethod(state, 'fill', selector, '');
-    callback(null, emptyWithLog('Text field cleared.'));
+    return emptyWithLog('Text field cleared.');
 }
 
 export async function press(

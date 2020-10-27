@@ -55,9 +55,8 @@ export async function goForward(callback: sendUnaryData<Response.Empty>, page?: 
 
 export async function takeScreenshot(
     call: ServerUnaryCall<Request.ScreenshotOptions>,
-    callback: sendUnaryData<Response.String>,
     state: PlaywrightState,
-) {
+): Promise<Response.String> {
     // Add the file extension here because the image type is defined by playwrights defaults
     const path = call.request.getPath() + '.png';
     const fullPage = call.request.getFullpage();
@@ -72,7 +71,7 @@ export async function takeScreenshot(
         await invokeOnPage(page, 'screenshot', { path: path, fullPage });
     }
     const message = 'Screenshot succesfully captured to: ' + path;
-    callback(null, stringResponse(path, message));
+    return stringResponse(path, message);
 }
 
 export function setTimeout(

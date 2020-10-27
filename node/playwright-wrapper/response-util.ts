@@ -20,7 +20,7 @@ export function emptyWithLog(text: string): Response.Empty {
     return response;
 }
 
-export function stringResponse(body: string, logMessage: string) {
+export function stringResponse(body: string, logMessage: string): Response.String {
     const response = new Response.String();
     response.setBody(body);
     response.setLog(logMessage);

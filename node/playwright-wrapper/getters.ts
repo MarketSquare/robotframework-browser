@@ -70,11 +70,10 @@ export async function getSelectContent(
 
 export async function getDomProperty(
     call: ServerUnaryCall<Request.ElementProperty>,
-    callback: sendUnaryData<Response.String>,
     state: PlaywrightState,
-) {
-    const content = await getProperty(call, callback, state);
-    callback(null, stringResponse(JSON.stringify(content), 'Property received successfully.'));
+): Promise<Response.String> {
+    const content = await getProperty(call, state);
+    return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
 export async function getBoolProperty(
@@ -83,18 +82,14 @@ export async function getBoolProperty(
     state: PlaywrightState,
 ) {
     const selector = call.request.getSelector();
-    const content = await getProperty(call, callback, state);
+    const content = await getProperty(call, state);
     callback(
         null,
         boolResponse(content || false, 'Retrieved dom property for element ' + selector + ' containing ' + content),
     );
 }
 
-async function getProperty<T>(
-    call: ServerUnaryCall<Request.ElementProperty>,
-    callback: sendUnaryData<T>,
-    state: PlaywrightState,
-) {
+async function getProperty<T>(call: ServerUnaryCall<Request.ElementProperty>, state: PlaywrightState) {
     const selector = call.request.getSelector();
     const element = await waitUntilElementExists(state, selector);
     try {
@@ -105,7 +100,7 @@ async function getProperty<T>(
         return content;
     } catch (e) {
         logger.error(e);
-        return callback(e, null);
+        throw e;
     }
 }
 
