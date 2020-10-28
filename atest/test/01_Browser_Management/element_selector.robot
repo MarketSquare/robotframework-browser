@@ -11,7 +11,7 @@ Get Element
 
 Get Element With Nonmatching child selector
     ${ref}=    Get Element    select[name="preferred_channel"]
-    Run Keyword And Expect Error    Could not find element with selector `*.notamatch` within timeout.
+    Run Keyword And Expect Error    *Timeout 3000ms exceeded.*waiting for selector ".notamatch"*
     ...    Get Property    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
