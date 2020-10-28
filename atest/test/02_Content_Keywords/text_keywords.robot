@@ -11,7 +11,7 @@ Type Text with Clearing
 
 Type Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Type Text    notamatch    text
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Type Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Clear Text
@@ -24,7 +24,7 @@ Clear Text
 
 Clear Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Clear Text    notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Clear Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill with css selector
@@ -33,7 +33,7 @@ Fill with css selector
 
 Fill Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Text    notamatch    text
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill Secret
@@ -46,7 +46,7 @@ Type Secret
 
 Fill Secret With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Fill Secret    notamatch    secret
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Secret    notamatch    secret
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Type Text with Delay

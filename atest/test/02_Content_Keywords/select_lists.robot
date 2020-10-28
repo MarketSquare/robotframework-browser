@@ -48,7 +48,7 @@ Select Options By text
 
 Select Options By With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Select Options By    notamatch    label    Label
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Select Options By    notamatch    label    Label
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Deselect Options Implicitly
@@ -60,7 +60,7 @@ Deselect Options Explicitly
 
 Deselect Options With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Deselect Options    notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Deselect Options    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 *** Keywords ***
