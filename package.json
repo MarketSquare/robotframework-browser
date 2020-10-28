@@ -38,6 +38,7 @@
     "@types/uuid": "^8.3.0",
     "google-protobuf": "3.13.0",
     "grpc": "^1.24.3",
+    "@grpc/grpc-js": "^1.1.7",
     "playwright": "^1.5.1",
     "uuid": "^8.3.1"
   },
