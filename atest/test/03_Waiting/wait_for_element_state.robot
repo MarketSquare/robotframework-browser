@@ -89,7 +89,7 @@ Wait For Elements State to hide with Promise
 Wait For Elements State to hide fails with Promise
     Select Options By    \#dropdown    value    hidden    # Now it is visible
     ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    200ms
-    Run Keyword and Expect Error    Could not find element with selector `\#victim` within timeout.    Wait for    ${promise}
+    Run Keyword and Expect Error    *Timeout 200ms exceeded.*waiting for selector "#victim" to be hidden*    Wait for    ${promise}
 
 Wait For Elements State to hide with Promise and wait for all promises
     Select Options By    \#dropdown    value    hidden    # Now it is visible

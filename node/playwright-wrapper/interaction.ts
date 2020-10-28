@@ -40,12 +40,11 @@ export async function selectOption(
 
 export async function deSelectOption(
     call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Empty>,
     state: PlaywrightState,
-) {
+): Promise<Response.Empty> {
     const selector = call.request.getSelector();
     await invokePlaywrightMethod(state, 'selectOption', selector, []);
-    callback(null, emptyWithLog(`Deselected options in element ${selector}`));
+    return emptyWithLog(`Deselected options in element ${selector}`);
 }
 
 export async function inputText(
