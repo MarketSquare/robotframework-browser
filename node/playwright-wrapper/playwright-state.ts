@@ -324,10 +324,7 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
     return emptyWithLog('Successfully closed Page');
 }
 
-export async function newPage(
-    request: Request.Url,
-    openBrowsers: PlaywrightState,
-): Promise<Response.String> {
+export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.String> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
     const defaultTimeout = request.getDefaulttimeout();
     const context = await browserState.getOrCreateActiveContext(defaultTimeout);
@@ -344,10 +341,7 @@ export async function newPage(
     }
 }
 
-export async function newContext(
-    request: Request.Context,
-    openBrowsers: PlaywrightState,
-): Promise<Response.String> {
+export async function newContext(request: Request.Context, openBrowsers: PlaywrightState): Promise<Response.String> {
     const hideRfBrowser = request.getHiderfbrowser();
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
     const options = JSON.parse(request.getRawoptions());
@@ -355,25 +349,16 @@ export async function newContext(
     const context = await _newBrowserContext(browserState.browser, defaultTimeout, options, hideRfBrowser);
     browserState.pushContext(context);
 
-    return stringResponse(
-        context.id,
-        'Successfully created context with options: ' + JSON.stringify(options),
-    );
+    return stringResponse(context.id, 'Successfully created context with options: ' + JSON.stringify(options));
 }
 
-export async function newBrowser(
-    request: Request.Browser,
-    openBrowsers: PlaywrightState,
-): Promise<Response.String> {
+export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
     const browserType = request.getBrowser();
     const headless = request.getHeadless();
     const options = JSON.parse(request.getRawoptions());
     const [browser, name] = await _newBrowser(browserType, headless, options);
     const browserState = openBrowsers.addBrowser(name, browser);
-    return stringResponse(
-        browserState.id,
-        'Successfully created browser with options: ' + JSON.stringify(options),
-    );
+    return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
 }
 
 async function _switchPage(id: Uuid, browserState: BrowserState) {
@@ -453,10 +438,7 @@ async function findLatestPageAfter(
     return latest;
 }
 
-export async function switchContext(
-    request: Request.Index,
-    browserState: BrowserState,
-): Promise<Response.String> {
+export async function switchContext(request: Request.Index, browserState: BrowserState): Promise<Response.String> {
     const id = request.getIndex();
     const previous = browserState.context?.id || '';
 
@@ -473,10 +455,7 @@ export async function switchContext(
     return stringResponse(previous, 'Successfully changed active context');
 }
 
-export async function switchBrowser(
-    request: Request.Index,
-    openBrowsers: PlaywrightState,
-): Promise<Response.String> {
+export async function switchBrowser(request: Request.Index, openBrowsers: PlaywrightState): Promise<Response.String> {
     const id = request.getIndex();
     const previous = openBrowsers.activeBrowser;
     if (id === 'CURRENT') {

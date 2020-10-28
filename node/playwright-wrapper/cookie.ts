@@ -44,10 +44,7 @@ export async function getCookies(context?: BrowserContext): Promise<Response.Jso
     return jsonResponse(JSON.stringify(allCookies), cookieName.toString());
 }
 
-export async function addCookie(
-    request: Request.Json,
-    context?: BrowserContext,
-): Promise<Response.Empty> {
+export async function addCookie(request: Request.Json, context?: BrowserContext): Promise<Response.Empty> {
     const cookie: CookieData = JSON.parse(request.getBody());
     logger.info({ 'Cookie data: ': request.getBody() });
     await invokeOnContext(context, 'addCookies', [cookie]);
