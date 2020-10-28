@@ -31,7 +31,7 @@ Get Selected Options
 
 Get Selected Options With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Selected Options    notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Selected Options    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Option By label
