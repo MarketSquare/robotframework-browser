@@ -22,7 +22,7 @@ Get Text Assert Validate
 
 Get Text With Nonmatching Selector
     [Setup]    Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Text    notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Property and Assert
@@ -42,7 +42,7 @@ Get Property and Then .. (Closure)
 
 Get Property With Nonmatching Selector
     [Setup]    Set Browser Timeout    50ms
-    Run Keyword And Expect Error    Could not find element with selector `notamatch` within timeout.    Get Property    notamatch    attributeName
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Property    notamatch    attributeName
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute
