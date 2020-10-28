@@ -21,36 +21,23 @@ import { determineElement, exists, invokeOnPage } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
 
 export async function goTo(
-    call: ServerUnaryCall<Request.Url>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.Url,
     page?: Page,
-): Promise<void> {
-    const url = call.request.getUrl();
-    const timeout = call.request.getDefaulttimeout();
-    try {
-        await invokeOnPage(page, 'goto', url, { timeout: timeout });
-        callback(null, emptyWithLog(`Succesfully opened URL ${url}`));
-    } catch (e) {
-        callback(e, null);
-    }
+): Promise<Response.Empty> {
+    const url = request.getUrl();
+    const timeout = request.getDefaulttimeout();
+    await invokeOnPage(page, 'goto', url, { timeout: timeout });
+    return emptyWithLog(`Succesfully opened URL ${url}`);
 }
 
-export async function goBack(callback: sendUnaryData<Response.Empty>, page?: Page): Promise<void> {
-    try {
-        await invokeOnPage(page, 'goBack');
-        callback(null, emptyWithLog('Did Go Back'));
-    } catch (e) {
-        callback(e, null);
-    }
+export async function goBack(page?: Page): Promise<Response.Empty> {
+    await invokeOnPage(page, 'goBack');
+    return emptyWithLog('Did Go Back');
 }
 
-export async function goForward(callback: sendUnaryData<Response.Empty>, page?: Page): Promise<void> {
-    try {
-        await invokeOnPage(page, 'goForward');
-        callback(null, emptyWithLog('Did Go Forward'));
-    } catch (e) {
-        callback(e, null);
-    }
+export async function goForward(page?: Page): Promise<Response.Empty> {
+    await invokeOnPage(page, 'goForward');
+    return emptyWithLog('Did Go Forward');
 }
 
 export async function takeScreenshot(
