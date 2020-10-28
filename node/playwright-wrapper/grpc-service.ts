@@ -260,7 +260,12 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async deselectOption(call: ServerUnaryCall<Request.ElementSelector>, callback: sendUnaryData<Response.Empty>) {
-        return interaction.deSelectOption(call, callback, this.state);
+        try {
+            const result = await interaction.deSelectOption(call, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async inputText(call: ServerUnaryCall<Request.TextInput>, callback: sendUnaryData<Response.Empty>): Promise<void> {
