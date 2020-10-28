@@ -20,10 +20,7 @@ import { Request, Response } from './generated/playwright_pb';
 import { determineElement, exists, invokeOnPage } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
 
-export async function goTo(
-    request: Request.Url,
-    page?: Page,
-): Promise<Response.Empty> {
+export async function goTo(request: Request.Url, page?: Page): Promise<Response.Empty> {
     const url = request.getUrl();
     const timeout = request.getDefaulttimeout();
     await invokeOnPage(page, 'goto', url, { timeout: timeout });

@@ -157,10 +157,7 @@ export async function getViewportSize(
     callback(null, jsonResponse(JSON.stringify(result), 'View port size received sucesfully from page.'));
 }
 
-export async function getBoundingBox(
-    request: Request.ElementSelector,
-    state: PlaywrightState,
-): Promise<Response.Json> {
+export async function getBoundingBox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const selector = request.getSelector();
     const elem = await determineElement(state, selector);
     if (!elem) {
@@ -171,11 +168,9 @@ export async function getBoundingBox(
 }
 
 export async function getPageSource(
-    call: ServerUnaryCall<Request.Empty>,
-    callback: sendUnaryData<Response.String>,
     page?: Page,
-): Promise<void> {
+): Promise<Response.String> {
     const result = await invokeOnPage(page, 'content');
     logger.info(result);
-    callback(null, stringResponse(JSON.stringify(result), 'Page source obtained succesfully.'));
+    return stringResponse(JSON.stringify(result), 'Page source obtained succesfully.');
 }
