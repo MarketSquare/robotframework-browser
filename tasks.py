@@ -138,7 +138,7 @@ def _node_protobuf_gen(c):
     c.run(
         f"yarn run grpc_tools_node_protoc \
 		--js_out=import_style=commonjs,binary:{node_protobuf_dir} \
-		--grpc_out={node_protobuf_dir} \
+		--grpc_out=grpc_js:{node_protobuf_dir} \
 		--plugin=protoc-gen-grpc={protoc_plugin} \
 		-I ./protobuf \
 		protobuf/*.proto"
