@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
+import { ServerUnaryCall, sendUnaryData } from '@grpc/grpc-js';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -325,16 +325,16 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
 }
 
 export async function newPage(
-    call: ServerUnaryCall<Request.Url>,
+    request: Request.Url,
     openBrowsers: PlaywrightState,
 ): Promise<Response.String> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
-    const defaultTimeout = call.request.getDefaulttimeout();
+    const defaultTimeout = request.getDefaulttimeout();
     const context = await browserState.getOrCreateActiveContext(defaultTimeout);
 
     const page = await _newPage(context.c);
     browserState.pushPage(page);
-    const url = call.request.getUrl() || 'about:blank';
+    const url = request.getUrl() || 'about:blank';
     try {
         await page.p.goto(url);
         return stringResponse(page.id, 'Successfully initialized new page object and opened url: ' + url);
@@ -345,48 +345,35 @@ export async function newPage(
 }
 
 export async function newContext(
-    call: ServerUnaryCall<Request.Context>,
-    callback: sendUnaryData<Response.String>,
+    request: Request.Context,
     openBrowsers: PlaywrightState,
-): Promise<void> {
-    const hideRfBrowser = call.request.getHiderfbrowser();
+): Promise<Response.String> {
+    const hideRfBrowser = request.getHiderfbrowser();
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
-    try {
-        const options = JSON.parse(call.request.getRawoptions());
-        const defaultTimeout = call.request.getDefaulttimeout();
-        const context = await _newBrowserContext(browserState.browser, defaultTimeout, options, hideRfBrowser);
-        browserState.pushContext(context);
+    const options = JSON.parse(request.getRawoptions());
+    const defaultTimeout = request.getDefaulttimeout();
+    const context = await _newBrowserContext(browserState.browser, defaultTimeout, options, hideRfBrowser);
+    browserState.pushContext(context);
 
-        const response = stringResponse(
-            context.id,
-            'Successfully created context with options: ' + JSON.stringify(options),
-        );
-        return callback(null, response);
-    } catch (error) {
-        return callback(error, null);
-    }
+    return stringResponse(
+        context.id,
+        'Successfully created context with options: ' + JSON.stringify(options),
+    );
 }
 
 export async function newBrowser(
-    call: ServerUnaryCall<Request.Browser>,
-    callback: sendUnaryData<Response.String>,
+    request: Request.Browser,
     openBrowsers: PlaywrightState,
-): Promise<void> {
-    const browserType = call.request.getBrowser();
-    const headless = call.request.getHeadless();
-
-    try {
-        const options = JSON.parse(call.request.getRawoptions());
-        const [browser, name] = await _newBrowser(browserType, headless, options);
-        const browserState = openBrowsers.addBrowser(name, browser);
-        const response = stringResponse(
-            browserState.id,
-            'Successfully created browser with options: ' + JSON.stringify(options),
-        );
-        return callback(null, response);
-    } catch (error) {
-        return callback(error, null);
-    }
+): Promise<Response.String> {
+    const browserType = request.getBrowser();
+    const headless = request.getHeadless();
+    const options = JSON.parse(request.getRawoptions());
+    const [browser, name] = await _newBrowser(browserType, headless, options);
+    const browserState = openBrowsers.addBrowser(name, browser);
+    return stringResponse(
+        browserState.id,
+        'Successfully created browser with options: ' + JSON.stringify(options),
+    );
 }
 
 async function _switchPage(id: Uuid, browserState: BrowserState) {
@@ -421,20 +408,20 @@ async function _switchContext(id: Uuid, browserState: BrowserState) {
 }
 
 export async function switchPage(
-    call: ServerUnaryCall<Request.IdWithTimeout>,
+    request: Request.IdWithTimeout,
     browserState?: BrowserState,
 ): Promise<Response.String> {
     exists(browserState, "Tried to switch Page but browser wasn't open");
     const context = browserState.context;
     exists(context, 'Tried to switch Page but no context was open');
-    const id = call.request.getId();
+    const id = request.getId();
     if (id === 'CURRENT') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
         return stringResponse(previous, 'Returned active page id');
     } else if (id === 'NEW') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
         const previousTime = browserState.page?.timestamp || 0;
-        const latest = await findLatestPageAfter(previousTime, call.request.getTimeout(), context);
+        const latest = await findLatestPageAfter(previousTime, request.getTimeout(), context);
         exists(latest, 'Tried to activate a new page but no new pages were detected in context.');
         await browserState.activatePage(latest);
         return stringResponse(previous, `Activated new page ${latest.id}`);
@@ -467,43 +454,36 @@ async function findLatestPageAfter(
 }
 
 export async function switchContext(
-    call: ServerUnaryCall<Request.Index>,
-    callback: sendUnaryData<Response.String>,
+    request: Request.Index,
     browserState: BrowserState,
-): Promise<void> {
-    const id = call.request.getIndex();
+): Promise<Response.String> {
+    const id = request.getIndex();
     const previous = browserState.context?.id || '';
 
     if (id === 'CURRENT') {
         if (!previous) {
-            return callback(null, stringResponse('NO CONTEXT OPEN', 'Returned info that no contexts are open'));
+            return stringResponse('NO CONTEXT OPEN', 'Returned info that no contexts are open');
         } else {
-            return callback(null, stringResponse(previous, 'Returned active context id'));
+            return stringResponse(previous, 'Returned active context id');
         }
     }
 
-    await _switchContext(id, browserState).catch((error) => callback(error, null));
-    await _switchPage(browserState.page?.id || '', browserState).catch((error) => {
-        logger.error(error);
-    });
-    const response = stringResponse(previous, 'Successfully changed active context');
-    callback(null, response);
+    await _switchContext(id, browserState);
+    await _switchPage(browserState.page?.id || '', browserState);
+    return stringResponse(previous, 'Successfully changed active context');
 }
 
 export async function switchBrowser(
-    call: ServerUnaryCall<Request.Index>,
-    callback: sendUnaryData<Response.String>,
+    request: Request.Index,
     openBrowsers: PlaywrightState,
-): Promise<void> {
-    const id = call.request.getIndex();
+): Promise<Response.String> {
+    const id = request.getIndex();
     const previous = openBrowsers.activeBrowser;
     if (id === 'CURRENT') {
-        callback(null, stringResponse(previous?.id || 'NO BROWSER OPEN', 'Active context id'));
-        return;
+        return stringResponse(previous?.id || 'NO BROWSER OPEN', 'Active context id');
     }
     openBrowsers.switchTo(id);
-    const response = stringResponse(previous?.id || '', 'Successfully changed active browser');
-    callback(null, response);
+    return stringResponse(previous?.id || '', 'Successfully changed active browser');
 }
 
 export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<Response.Json> {
