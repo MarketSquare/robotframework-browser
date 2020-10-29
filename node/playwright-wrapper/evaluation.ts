@@ -60,28 +60,23 @@ export async function getElements(request: Request.ElementSelector, state: Playw
 }
 
 export async function executeJavascript(
-    call: ServerUnaryCall<Request.JavascriptCode>,
-    callback: sendUnaryData<Response.JavascriptExecutionResult>,
+    request: Request.JavascriptCode,
     state: PlaywrightState,
-) {
-    try {
-        const selector = call.request.getSelector();
-        let script = call.request.getScript();
-        let elem;
-        if (selector) {
-            elem = await determineElement(state, selector);
-            script = eval(script);
-        }
-        const result = await invokeOnPage(state.getActivePage(), 'evaluate', script, elem);
-        callback(null, jsResponse(result, 'JavaScript executed successfully.'));
-    } catch (e) {
-        callback(e, null);
+): Promise<Response.JavascriptExecutionResult> {
+    const selector = request.getSelector();
+    let script = request.getScript();
+    let elem;
+    if (selector) {
+        elem = await determineElement(state, selector);
+        script = eval(script);
     }
+    const result = await invokeOnPage(state.getActivePage(), 'evaluate', script, elem);
+    return jsResponse(result, 'JavaScript executed successfully.');
 }
 
-export async function getPageState(callback: sendUnaryData<Response.JavascriptExecutionResult>, page?: Page) {
+export async function getPageState(page?: Page): Promise<Response.JavascriptExecutionResult> {
     const result = await invokeOnPage(page, 'evaluate', () => window.__RFBROWSER__);
-    callback(null, jsResponse(result, 'Page state evaluated successfully.'));
+    return jsResponse(result, 'Page state evaluated successfully.');
 }
 
 export async function waitForElementState(
@@ -95,13 +90,13 @@ export async function waitForElementState(
 }
 
 export async function waitForFunction(
-    call: ServerUnaryCall<Request.WaitForFunctionOptions>,
+    request: Request.WaitForFunctionOptions,
     state: PlaywrightState,
 ): Promise<Response.Json> {
-    let script = call.request.getScript();
-    const selector = call.request.getSelector();
-    const options = JSON.parse(call.request.getOptions());
-    logger.info(`unparsed args: ${script}, ${call.request.getSelector()}, ${call.request.getOptions()}`);
+    let script = request.getScript();
+    const selector = request.getSelector();
+    const options = JSON.parse(request.getOptions());
+    logger.info(`unparsed args: ${script}, ${request.getSelector()}, ${request.getOptions()}`);
 
     let elem;
     if (selector) {
@@ -121,15 +116,14 @@ export async function addStyleTag(request: Request.StyleTag, page?: Page): Promi
 }
 
 export async function highlightElements(
-    call: ServerUnaryCall<Request.ElementSelectorWithDuration>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.ElementSelectorWithDuration,
     state: PlaywrightState,
-) {
-    const selector = call.request.getSelector();
-    const duration = call.request.getDuration();
-    const width = call.request.getWidth();
-    const style = call.request.getStyle();
-    const color = call.request.getColor();
+): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const duration = request.getDuration();
+    const width = request.getWidth();
+    const style = request.getStyle();
+    const color = request.getColor();
     const highlighter = (elements: Array<Element>, options: any) => {
         elements.forEach((e: Element) => {
             const d = document.createElement('div');
@@ -154,34 +148,29 @@ export async function highlightElements(
         stl: style,
         clr: color,
     });
-    callback(null, emptyWithLog(`Highlighted elements for ${duration}.`));
+    return emptyWithLog(`Highlighted elements for ${duration}.`);
 }
 
 export async function download(
-    call: ServerUnaryCall<Request.Url>,
-    callback: sendUnaryData<Response.String>,
+    request: Request.Url,
     state: PlaywrightState,
-) {
+): Promise<Response.String> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
-        callback(Error('Download requires an active browser'), stringResponse('', 'No browser is active'));
-        return;
+        throw new Error('Download requires an active browser');
     }
     const context = browserState.context;
     if (context === undefined) {
-        callback(Error('Download requires an active context'), stringResponse('', 'No context is active'));
-        return;
+        throw new Error('Download requires an active context');
     }
     if (!(context.options?.acceptDownloads ?? false)) {
-        callback(Error('Context acceptDownloads is false'), stringResponse('', 'Context does not allow downloads'));
-        return;
+        throw new Error('Context acceptDownloads is false');
     }
     const page = state.getActivePage();
     if (page === undefined) {
-        callback(Error('Download requires an active page'), stringResponse('', 'No page is active'));
-        return;
+        throw new Error('Download requires an active page');
     }
-    const urlString = call.request.getUrl();
+    const urlString = request.getUrl();
     const script = (urlString: string) => {
         return fetch(urlString)
             .then((resp) => {
@@ -202,5 +191,5 @@ export async function download(
     const downloadStarted = page.waitForEvent('download');
     await page.evaluate(script, urlString);
     const path = await (await downloadStarted).path();
-    callback(null, stringResponse(path || '', 'Url content downloaded to a file'));
+    return stringResponse(path || '', 'Url content downloaded to a file');
 }

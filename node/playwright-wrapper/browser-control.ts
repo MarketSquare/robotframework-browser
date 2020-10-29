@@ -57,7 +57,7 @@ export async function takeScreenshot(
     return stringResponse(path, message);
 }
 
-export function setTimeout(request: Request.Timeout, context?: BrowserContext): Promise<Response.Empty> {
+export async function setTimeout(request: Request.Timeout, context?: BrowserContext): Promise<Response.Empty> {
     exists(context, 'Tried to set timeout, no open context');
     const timeout = request.getTimeout();
     context.setDefaultTimeout(timeout);
@@ -65,45 +65,36 @@ export function setTimeout(request: Request.Timeout, context?: BrowserContext): 
 }
 
 export async function setViewportSize(
-    call: ServerUnaryCall<Request.Viewport>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.Viewport,
     page?: Page,
-) {
-    const size = { width: call.request.getWidth(), height: call.request.getHeight() };
+): Promise<Response.Empty> {
+    const size = { width: request.getWidth(), height: request.getHeight() };
     await invokeOnPage(page, 'setViewportSize', size);
-    callback(null, emptyWithLog(`Set viewport size to: ${size}`));
+    return emptyWithLog(`Set viewport size to: ${size}`);
 }
 
 export async function setOffline(
-    call: ServerUnaryCall<Request.Bool>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.Bool,
     context?: BrowserContext,
-) {
+): Promise<Response.Empty> {
     exists(context, 'Tried to toggle context to offline, no open context');
-    const offline = call.request.getValue();
+    const offline = request.getValue();
     await context.setOffline(offline);
-    callback(null, emptyWithLog(`Set context to ${offline}`));
+    return emptyWithLog(`Set context to ${offline}`);
 }
 
 export async function reload(
-    call: ServerUnaryCall<Request.Empty>,
-    callback: sendUnaryData<Response.Empty>,
     page?: Page,
-) {
+): Promise<Response.Empty> {
     await invokeOnPage(page, 'reload');
-    callback(null, emptyWithLog('Reloaded page'));
+    return emptyWithLog('Reloaded page');
 }
 
 export async function setGeolocation(
-    call: ServerUnaryCall<Request.Json>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.Json,
     context?: BrowserContext,
-) {
-    try {
-        const geolocation = JSON.parse(call.request.getBody());
-        await context?.setGeolocation(geolocation);
-        callback(null, emptyWithLog('Geolocation set to: ' + JSON.stringify(geolocation)));
-    } catch (error) {
-        callback(error, null);
-    }
+): Promise<Response.Empty> {
+    const geolocation = JSON.parse(request.getBody());
+    await context?.setGeolocation(geolocation);
+    return emptyWithLog('Geolocation set to: ' + JSON.stringify(geolocation));
 }

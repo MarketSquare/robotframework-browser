@@ -14,18 +14,16 @@
 
 import { devices } from 'playwright';
 
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
-
 import { Request, Response } from './generated/playwright_pb';
 import { jsonResponse } from './response-util';
 
-export async function getDevice(call: ServerUnaryCall<Request.Device>, callback: sendUnaryData<Response.Json>) {
-    const name = call.request.getName();
+export function getDevice(request: Request.Device): Response.Json {
+    const name = request.getName();
     const device = devices[name];
-    if (!device) callback(new Error(`No device named ${name}`), null);
-    callback(null, jsonResponse(JSON.stringify(device), ''));
+    if (!device) throw new Error(`No device named ${name}`);
+    return jsonResponse(JSON.stringify(device), '');
 }
 
-export async function getDevices(callback: sendUnaryData<Response.Json>) {
-    callback(null, jsonResponse(JSON.stringify(devices), ''));
+export function getDevices(): Response.Json {
+    return jsonResponse(JSON.stringify(devices), '');
 }
