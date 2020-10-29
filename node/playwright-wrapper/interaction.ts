@@ -130,20 +130,14 @@ export async function uncheckCheckbox(
     return emptyWithLog('Unchecked checkbox: ' + selector);
 }
 
-export async function uploadFile(
-    request: Request.FilePath,
-    page?: Page,
-): Promise<Response.Empty> {
+export async function uploadFile(request: Request.FilePath, page?: Page): Promise<Response.Empty> {
     const path = request.getPath();
     const fn = async (fileChooser: FileChooser) => await fileChooser.setFiles(path);
     await invokeOnPage(page, 'on', 'filechooser', fn);
     return emptyWithLog('Succesfully uploaded file');
 }
 
-export async function handleAlert(
-    request: Request.AlertAction,
-    page?: Page,
-): Promise<Response.Empty> {
+export async function handleAlert(request: Request.AlertAction, page?: Page): Promise<Response.Empty> {
     const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
     const promptInput = request.getPromptinput();
     const fn = async (dialog: Dialog) => {
@@ -154,38 +148,26 @@ export async function handleAlert(
     return emptyWithLog('Set event handler for next alert');
 }
 
-export async function mouseButton(
-    request: Request.MouseButtonOptions,
-    page?: Page,
-): Promise<Response.Empty> {
+export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'click' | 'up' | 'down';
     const params = JSON.parse(request.getJson());
     await invokeOnMouse(page, action, params);
     return emptyWithLog(`Succesfully executed ${action}`);
 }
 
-export async function mouseMove(
-    request: Request.Json,
-    page?: Page,
-): Promise<Response.Empty> {
+export async function mouseMove(request: Request.Json, page?: Page): Promise<Response.Empty> {
     const params = JSON.parse(request.getBody());
     await invokeOnMouse(page, 'move', params);
     return emptyWithLog(`Succesfully moved mouse to ${params.x}, ${params.y}`);
 }
-export async function keyboardKey(
-    request: Request.KeyboardKeypress,
-    page?: Page,
-): Promise<Response.Empty> {
+export async function keyboardKey(request: Request.KeyboardKeypress, page?: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'down' | 'up' | 'press';
     const key = request.getKey();
     await invokeOnKeyboard(page, action, key);
     return emptyWithLog(`Succesfully did ${action} for ${key}`);
 }
 
-export async function keyboardInput(
-    request: Request.KeyboardInputOptions,
-    page?: Page,
-): Promise<Response.Empty> {
+export async function keyboardInput(request: Request.KeyboardInputOptions, page?: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'insertText' | 'type';
     const delay = request.getDelay();
     const input = request.getInput();

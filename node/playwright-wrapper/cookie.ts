@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { BrowserContext, Cookie } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse } from './response-util';

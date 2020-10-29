@@ -18,10 +18,7 @@ import { Page } from 'playwright';
 import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
 
-export async function httpRequest(
-    request: pb.Request.HttpRequest,
-    page?: Page,
-): Promise<pb.Response.Json> {
+export async function httpRequest(request: pb.Request.HttpRequest, page?: Page): Promise<pb.Response.Json> {
     const opts: { [k: string]: any } = {
         method: request.getMethod(),
         url: request.getUrl(),
@@ -87,10 +84,7 @@ export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page?:
     return emptyWithLog('Network is idle');
 }
 
-export async function waitForDownload(
-    request: pb.Request.FilePath,
-    page?: Page,
-): Promise<pb.Response.Json> {
+export async function waitForDownload(request: pb.Request.FilePath, page?: Page): Promise<pb.Response.Json> {
     const saveAs = request.getPath();
     const downloadObject = await invokeOnPage(page, 'waitForEvent', 'download');
 

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { ElementHandle, Page } from 'playwright';
-import { Server, ServerUnaryCall, sendUnaryData } from 'grpc';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -151,10 +150,7 @@ export async function highlightElements(
     return emptyWithLog(`Highlighted elements for ${duration}.`);
 }
 
-export async function download(
-    request: Request.Url,
-    state: PlaywrightState,
-): Promise<Response.String> {
+export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.String> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { BrowserContext, ElementHandle, Frame, Page, errors } from 'playwright';
-import { Metadata, sendUnaryData, status } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 
@@ -192,21 +191,4 @@ export function exists<T1, T2>(obj: T1, message: string): asserts obj is NonNull
     if (!obj) {
         throw new Error(message);
     }
-}
-
-function getErrorDetails(e: Error, selector: string, methodName: string) {
-    const errorMetadata = new Metadata();
-    if (e instanceof errors.TimeoutError) {
-        errorMetadata.add('reason', `Could not find element with selector \`${selector}\` within timeout.`);
-    }
-    if (e.message.match(/DOMException: .* is not a valid selector/)) {
-        errorMetadata.add('reason', `Invalid selector \`${selector}\`.`);
-    }
-    return {
-        code: status.INVALID_ARGUMENT,
-        name: e.name,
-        message: '',
-        details: `Error invoking Playwright action ${methodName}:\n${e.toString()}`,
-        metadata: errorMetadata,
-    };
 }
