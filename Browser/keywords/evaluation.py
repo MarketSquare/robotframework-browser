@@ -28,10 +28,10 @@ class Evaluation(LibraryComponent):
     def execute_javascript(self, function: str, selector: str = "") -> Any:
         """Executes given javascript on the page.
 
-        ``function`` <str> A valid javascript function or a javascript function body. For example
-        ``() => true`` and ``true`` will behave similarly. **Required**
+        ``function`` A valid javascript function or a javascript function body. For example
+        ``() => true`` and ``true`` will behave similarly.
 
-        ``selector`` <str> Selector to resolve and pass to the JavaScript function. This will be the first
+        ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
         argument the function receives. If given a selector a function is necessary, with an argument
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
@@ -57,16 +57,16 @@ class Evaluation(LibraryComponent):
     ):
         """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment.
 
-        ``selector`` <str> Selectors which shall be highlighted. **Required**
+        ``selector`` Selectors which shall be highlighted.
         See the `Finding elements` section for details about the selectors.
 
-        ``duration`` <str> Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
+        ``duration`` Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
 
-        ``width`` <str> Sets the width of the higlight border. Defaults to 2px.
+        ``width`` Sets the width of the higlight border. Defaults to 2px.
 
-        ``style`` < ``solid`` | ``dotted`` | ``double`` | ``dashed`` > Sets the style of the border. Defaults to dotted.
+        ``style`` Sets the style of the border. Defaults to dotted.
 
-        ``color`` <str> Sets the color of the border. Valid colors i.e. are:
+        ``color`` Sets the color of the border. Valid colors i.e. are:
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``
         """
         with self.playwright.grpc_channel() as stub:
@@ -85,7 +85,7 @@ class Evaluation(LibraryComponent):
     def add_style_tag(self, content: str):
         """Adds a <style type="text/css"> tag with the content.
 
-        ``content`` <str> Raw CSS content to be injected into frame. **Required**
+        ``content`` Raw CSS content to be injected into frame.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))

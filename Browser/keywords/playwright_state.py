@@ -65,9 +65,9 @@ class PlaywrightState(LibraryComponent):
         Creates a new browser, context and page with specified settings.
             Only supports some of the settings Create _ Keywords do
 
-        ``url`` <str> Navigates to URL if provided. Defaults to None.
+        ``url`` Navigates to URL if provided. Defaults to None.
 
-        ``browser`` < ``firefox`` | ``chromium`` | ``webkit`` > Specifies which browser to use. The
+        ``browser`` Specifies which browser to use. The
         supported browsers are listed in the table below. The browser names
         are case-sensitive.
         |   = Value =     |        = Name(s) =                                   |
@@ -75,9 +75,9 @@ class PlaywrightState(LibraryComponent):
         | chromium        | [https://www.chromium.org/Home|Chromium]             |
         | webkit          | [https://webkit.org/|webkit]                         |
 
-        ``headless`` <bool> If set to False, a GUI is provided otherwise it is hidden. Defaults to False.
+        ``headless`` If set to False, a GUI is provided otherwise it is hidden. Defaults to False.
 
-        ``pause_on_failure`` <bool> Stop execution when failure detected and leave browser open. Defaults to True.
+        ``pause_on_failure`` Stop execution when failure detected and leave browser open. Defaults to True.
         """
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
@@ -246,47 +246,47 @@ class PlaywrightState(LibraryComponent):
 
         Returns a stable identifier for the created browser.
 
-        ``browser`` <chromium|firefox|webkit> Opens the specified browser. Defaults to chromium.
+        ``browser`` Opens the specified browser. Defaults to chromium.
 
-        ``headless`` <bool> Set to False if you want a GUI. Defaults to False.
+        ``headless`` Set to False if you want a GUI. Defaults to False.
 
-        ``executablePath`` <str> Path to a browser executable to run instead of the bundled one.
+        ``executablePath`` Path to a browser executable to run instead of the bundled one.
         If executablePath is a relative path, then it is resolved relative to current working
         directory. Note that Playwright only works with the bundled Chromium, Firefox or
         WebKit, use at your own risk. Defaults to None.
 
-        ``args`` <List<str>> Additional arguments to pass to the browser instance. The list of
+        ``args`` Additional arguments to pass to the browser instance. The list of
         Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/ | here].
         Defaults to None.
 
-        ``ignoreDefaultArgs`` <List<str>> If an array is given, then filters out the given default arguments.
+        ``ignoreDefaultArgs`` If an array is given, then filters out the given default arguments.
         Defaults to None.
 
-        ``proxy`` <Dict> Network proxy settings.
+        ``proxy`` Network proxy settings.
         - server <string> Proxy to be used for all requests. HTTP and SOCKS proxies are supported, for example ``http://myproxy.com:3128`` or ``socks5://myproxy.com:3128``. Short form ``myproxy.com:3128`` is considered an HTTP proxy.
         - bypass <string> Optional coma-separated domains to bypass proxy, for example ``".com, chromium.org, .domain.com"``.
         - username <string> Optional username to use if HTTP proxy requires authentication.
         - password <string> Optional password to use if HTTP proxy requires authentication.
 
-        ``downloadsPath`` <str> If specified, accepted downloads are downloaded into this folder.
+        ``downloadsPath`` If specified, accepted downloads are downloaded into this folder.
         Otherwise, temporary folder is created and is deleted when browser is closed.
 
-        ``handleSIGINT`` <bool> Close the browser process on Ctrl-C. Defaults to True.
+        ``handleSIGINT`` Close the browser process on Ctrl-C. Defaults to True.
 
-        ``handleSIGTERM`` <bool> Close the browser process on SIGTERM. Defaults to True.
+        ``handleSIGTERM`` Close the browser process on SIGTERM. Defaults to True.
 
-        ``handleSIGHUP`` <bool> Close the browser process on SIGHUP. Defaults to True.
+        ``handleSIGHUP`` Close the browser process on SIGHUP. Defaults to True.
 
-        ``timeout`` <int> Maximum time in milliseconds to wait for the browser instance to start.
+        ``timeout`` Maximum time in milliseconds to wait for the browser instance to start.
         Defaults to 30000 (30 seconds). Pass 0 to disable timeout.
 
         ``env`` <Dict<str, str|int|bool>> Specify environment variables that will
         be visible to the browser. Defaults to None.
 
-        ``devtools`` <bool> Chromium-only Whether to auto-open a Developer Tools panel for each tab.
+        ``devtools`` Chromium-only Whether to auto-open a Developer Tools panel for each tab.
         If this option is true, the headless option will be set false.
 
-        ``slowMo`` <int> Slows down Playwright operations by the specified amount of milliseconds.
+        ``slowMo`` Slows down Playwright operations by the specified amount of milliseconds.
         Useful so that you can see what is going on. Defaults to no delay.
         """
         params = locals_to_params(locals())
@@ -333,61 +333,61 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the created context
         that can be used in `Switch Context`.
 
-        ``acceptDownloads`` <bool> Whether to automatically downloadall the attachments.
+        ``acceptDownloads`` Whether to automatically downloadall the attachments.
         Defaults to False where all the downloads are canceled.
 
-        ``ignoreHTTPSErrors`` <bool> Whether to ignore HTTPS errors during navigation.
+        ``ignoreHTTPSErrors`` Whether to ignore HTTPS errors during navigation.
         Defaults to False.
 
-        ``bypassCSP`` <bool> Toggles bypassing page's Content-Security-Policy. Defaults to False.
+        ``bypassCSP`` Toggles bypassing page's Content-Security-Policy. Defaults to False.
 
-        ``viewport`` <dict> Sets a consistent viewport for each page.
+        ``viewport`` Sets a consistent viewport for each page.
         Defaults to an ``{'width': 1280, 'height': 720}`` viewport.
         Value of ``viewport`` can be a dict or a string
         representation of a dictionary.
 
-        ``userAgent`` <str> Specific user agent to use in this context.
+        ``userAgent`` Specific user agent to use in this context.
 
-        ``deviceScaleFactor`` <float> Specify device scale factor
+        ``deviceScaleFactor`` Specify device scale factor
         (can be thought of as dpr). Defaults to 1.
 
-        ``isMobile`` <bool> Whether the meta viewport tag is taken into account
+        ``isMobile`` Whether the meta viewport tag is taken into account
         and touch events are enabled. Defaults to False. Not supported in Firefox.
 
-        ``hasTouch`` <bool> Specifies if viewport supports touch events. Defaults to False.
+        ``hasTouch`` Specifies if viewport supports touch events. Defaults to False.
 
-        ``javaScriptEnabled`` <bool> Whether or not to enable JavaScript in the context.
+        ``javaScriptEnabled`` Whether or not to enable JavaScript in the context.
         Defaults to True.
 
-        ``timezoneId`` <str> Changes the timezone of the context.
+        ``timezoneId`` Changes the timezone of the context.
         See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt | ICU’s metaZones.txt]
         for a list of supported timezone IDs.
 
-        ``geolocation`` <dict> Sets the geolocation. No location is set be default.
-        - ``latitude`` <number> Latitude between -90 and 90. **Required**
-        - ``longitude`` <number> Longitude between -180 and 180. **Required**
+        ``geolocation`` Sets the geolocation. No location is set be default.
+        - ``latitude`` <number> Latitude between -90 and 90.
+        - ``longitude`` <number> Longitude between -180 and 180.
         - ``accuracy`` Optional <number> Non-negative accuracy value. Defaults to 0.
         Example usage: ``{'latitude': 59.95, 'longitude': 30.31667}``
 
-        ``locale`` <str> Specify user locale, for example ``en-GB``, ``de-DE``, etc.
+        ``locale`` Specify user locale, for example ``en-GB``, ``de-DE``, etc.
         Locale will affect ``navigator.language`` value, ``Accept-Language`` request header value
         as well as number and date formatting rules.
 
-        ``permissions`` <list<str>> A list of permissions to grant to all pages in this context.
+        ``permissions`` A list of permissions to grant to all pages in this context.
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options | grantPermissions]
         for more details.
 
-        ``extraHTTPHeaders`` <dict[str, str]> A dictionary containing additional HTTP headers
+        ``extraHTTPHeaders`` A dictionary containing additional HTTP headers
         to be sent with every request. All header values must be strings.
 
-        ``offline`` <bool> Whether to emulate network being offline. Defaults to False.
+        ``offline`` Whether to emulate network being offline. Defaults to False.
 
-        ``httpCredentials`` <Dict<str, str>> Credentials for HTTP authentication.
+        ``httpCredentials`` Credentials for HTTP authentication.
         - example: ``{'username': 'admin', 'password': '123456'}``
-        - ``username`` <str>
-        - ``password`` <str>
+        - ``username``
+        - ``password``
 
-        ``colorScheme`` <dark|light|no-preference> Emulates 'prefers-colors-scheme'
+        ``colorScheme`` Emulates 'prefers-colors-scheme'
         media feature, supported values are 'light', 'dark', 'no-preference'.
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
         for more details. Defaults to ``light``.
@@ -431,7 +431,7 @@ class PlaywrightState(LibraryComponent):
         When a `New Page` is called without an open browser, `New Browser`
         and `New Context` are executed with default values first.
 
-        ``url`` <str> If specified it will open the new page to the specified URL.
+        ``url`` If specified it will open the new page to the specified URL.
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -529,7 +529,7 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the previous browser.
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
-        ``id`` <str> Id of the browser to be changed to. Starting at 0. **Required**
+        ``id`` Id of the browser to be changed to. Starting at 0.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=id))
@@ -542,7 +542,7 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the previous context.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
-        ``id`` <str> Id of the context to be changed to. Randomly generated UUID. **Required**
+        ``id`` Id of the context to be changed to. Randomly generated UUID.
 
         ``browser`` < ``CURRENT`` | str> Switch context in specified browser. If value is not "CURRENT"
         it should be an the id of the browser where to switch context.
@@ -567,7 +567,7 @@ class PlaywrightState(LibraryComponent):
         exists before library timeout. See `Set Browser Timeout` for how to change the timeout.
 
         With ``CURRENT`` you can get the ``id`` of the "CURRENT" page
-        **Required**
+
 
         ``context`` < ``CURRENT`` | str> Switch page in specified context. If value is not "CURRENT"
         it should be the id of the context where to switch page.
@@ -595,7 +595,7 @@ class PlaywrightState(LibraryComponent):
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
 
-        ``browser`` < ``ALL`` | ``ACTIVE`` | ``CURRENT`` > Defaults to ``ALL``
+        ``browser`` Defaults to ``ALL``
         - ``ALL`` Returns all ids as a list.
         - ``ACTIVE`` or ``CURRENT`` Returns the id of the currently active browser as list.
 
@@ -619,11 +619,11 @@ class PlaywrightState(LibraryComponent):
         See `Browser, Context and Page` for more information about Context and related concepts.
 
 
-        ``context`` < ``ALL`` | ``ACTIVE`` > Defaults to ``ALL``
+        ``context`` Defaults to ``ALL``
         - ``ALL`` Returns all context ids as a list.
         - ``ACTIVE`` Returns the id of the active context as a list.
 
-        ``browser`` < ``ALL`` | ``ACTIVE`` > Defaults to ``ALL``
+        ``browser`` Defaults to ``ALL``
         - ``ALL`` context ids from all open browsers shall be fetched.
         - ``ACTIVE`` only context ids from the active browser shall be fetched.
 
@@ -663,15 +663,15 @@ class PlaywrightState(LibraryComponent):
         See `Browser, Context and Page` for more information about Page and related concepts.
 
 
-        ``page`` < ``ALL`` | ``ACTIVE`` >
+        ``page``
         - ``ALL`` Returns all page ids as a list.
         - ``ACTIVE`` Returns the id of the active page as a list.
 
-        ``context`` < ``ALL`` | ``ACTIVE`` >
+        ``context``
         - ``ALL`` page ids from all contexts shall be fetched.
         - ``ACTIVE`` only page ids from the active context shall be fetched.
 
-        ``browser`` < ``ALL`` | ``ACTIVE`` >
+        ``browser``
         - ``ALL`` page ids from all open browsers shall be fetched.
         - ``ACTIVE`` only page ids from the active browser shall be fetched.
 

@@ -46,7 +46,7 @@ class Control(LibraryComponent):
     def go_to(self, url: str, timeout: Optional[timedelta] = None):
         """Navigates to the given ``url``.
 
-        ``url`` <str> URL to be navigated to. **Required**
+        ``url`` <str> URL to be navigated to.
         ``timeout`` <str> time to wait page to load. If not defined
         will use the the library default timeout.
         """
@@ -80,17 +80,17 @@ class Control(LibraryComponent):
     ) -> str:
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
-        ``filename`` <str> Filename into which to save. The file will be saved into the robot framework output
+        ``filename`` Filename into which to save. The file will be saved into the robot framework output
         directory by default. String ``{index}`` in path will be replaced with a rolling number. Use this to not
         override filenames. If filename equals to EMBED (case insensitive), then screenshot is embedded as
         Base64 image to the log.html. The image is saved temporally to the disk and warning is displayed
         if removing the temporary file fails.
 
-        ``selector`` <str> Take a screenshot of the element matched by selector.
+        ``selector`` Take a screenshot of the element matched by selector.
         See the `Finding elements` section for details about the selectors.
         If not provided take a screenshot of current viewport.
 
-        ``fullPage`` <bool> When True, takes a screenshot of the full scrollable page,
+        ``fullPage`` When True, takes a screenshot of the full scrollable page,
         instead of the currently visible viewport. Defaults to False.
         """
         if self._is_embed(filename):
@@ -147,7 +147,7 @@ class Control(LibraryComponent):
     def set_browser_timeout(self, timeout: timedelta) -> str:
         """Sets the timeout used by most input and getter keywords.
 
-        ``timeout`` <str> Timeout of it is for current playwright context. **Required**
+        ``timeout`` Timeout of it is for current playwright context.
 
         Returns the previous value of the timeout.
         """
@@ -162,7 +162,7 @@ class Control(LibraryComponent):
     def set_retry_assertions_for(self, timeout: timedelta) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
-        ``timeout`` <str>
+        ``timeout``
 
         Returns the previous value of the retry_assertions_until.
         """
@@ -184,9 +184,9 @@ class Control(LibraryComponent):
         so you should set the viewport size before navigating to
         the page with `New Context` before opening the page itself.
 
-        ``width`` <int> Sets the width size. **Required**
+        ``width`` Sets the width size.
 
-        ``height`` <int> Sets the heigth size. **Required**
+        ``height`` Sets the heigth size.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetViewportSize(
@@ -198,7 +198,7 @@ class Control(LibraryComponent):
     def set_offline(self, offline: bool = True):
         """Toggles current Context's offline emulation.
 
-        ``offline`` <bool> Toggles the offline mode. Set to False to switch back
+        ``offline`` Toggles the offline mode. Set to False to switch back
         to online mode. Defaults to True.
         """
         with self.playwright.grpc_channel() as stub:

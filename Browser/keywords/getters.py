@@ -163,10 +163,10 @@ class Getters(LibraryComponent):
         Optionally asserts that the property value matches the specified
         assertion.
 
-        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
-        ``property`` <str> Requested property name. **Required**
+        ``property`` Requested property name.
 
         If ``assertion_operator`` is set and property is not found, ``value`` is ``None``
         and Keyword does not fail. See `Get Attribute` for examples.
@@ -202,10 +202,10 @@ class Getters(LibraryComponent):
         Optionally asserts that the attribute value matches the specified
         assertion.
 
-        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
-        ``attribute`` <str> Requested attribute name. **Required**
+        ``attribute`` Requested attribute name.
 
         When a attribute is selected that is not present and no assertion operator is set,
         the keyword fails. If an assertion operator is set and the attribute is not present,
@@ -249,10 +249,10 @@ class Getters(LibraryComponent):
 
         Optionally asserts that these match the specified assertion.
 
-        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
         Available assertions:
         - ``==`` and ``!=`` can work with multiple values
@@ -280,10 +280,10 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the value matches the specified assertion.
 
-        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
         Available assertions:
         - ``==`` and ``!=`` can work with multiple values
@@ -312,7 +312,7 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the value matches the specified assertion.
 
-        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
@@ -337,13 +337,13 @@ class Getters(LibraryComponent):
 
         Optionally asserts that these match the specified assertion.
 
-        ``selector`` <str> Selector from which the info is to be retrieved. **Required**
+        ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
-        ``option_attribute`` <SelectAttribute.label> Which attribute shall be returned/verified.
-        Allowed values are ``< ``value`` | ``label`` | ``text`` | ``index`` >``. Defaults to label.
+        ``option_attribute`` Which attribute shall be returned/verified.
+        Defaults to label.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
         - ``==`` and ``!=`` can work with multiple values
         - ``contains``/``*=`` only accepts one single expected value
@@ -395,17 +395,17 @@ class Getters(LibraryComponent):
     ) -> bool:
         """Returns the state of the checkbox found by ``selector``.
 
-        ``selector`` <str> Selector which shall be examined.
+        ``selector`` Selector which shall be examined.
         See the `Finding elements` section for details about the selectors.
 
         Optionally asserts that the state matches the specified assertion.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
         - ``==`` and ``!=`` and equivalent are allowed on boolean values
         - other operators are not accepted.
 
-        ``expected_state`` <str> boolean value of expected state.
+        ``expected_state`` boolean value of expected state.
         Strings are interpreted as booleans.
         All strings are ``${True}`` except of the
         following `FALSE, NO, OFF, 0, UNCHECKED, NONE, ${EMPTY}``.
@@ -438,12 +438,12 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the count matches the specified assertion.
 
-        ``selector`` <str> Selector which shall be counted.
+        ``selector`` Selector which shall be counted.
         See the `Finding elements` section for details about the selectors.
 
-        ``assertion_operator`` <AssertionOperator> See `Assertions` for further details. Defaults to None.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        ``expected_value`` <str|int> Expected value for the counting
+        ``expected_value`` Expected value for the counting
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
@@ -469,7 +469,7 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the count matches the specified assertion.
 
-        ``key`` < ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        ``key`` Optionally filters the returned values.
         If keys is set to ``ALL``(default) it will return the viewport size as dictionary,
         otherwise it will just return the single value selected by the key.
         Note: If a single value is retrieved, an assertion does *not* need a ``validate``
@@ -506,7 +506,7 @@ class Getters(LibraryComponent):
 
         The reference can be used in subsequent selectors.
 
-        ``selector`` <str> Selector from which shall be retrieved **Required**.
+        ``selector`` Selector from which shall be retrieved .
         See the `Finding elements` section for details about the selectors.
         """
         with self.playwright.grpc_channel() as stub:
@@ -517,7 +517,7 @@ class Getters(LibraryComponent):
     def get_elements(self, selector: str) -> List[str]:
         """Returns a reference to playwright element handle for all matched elements by ``selector``.
 
-        ``selector`` <str> Selector from which shall be retrieved. **Required**
+        ``selector`` Selector from which shall be retrieved.
         See the `Finding elements` section for details about the selectors.
         """
         try:
@@ -544,10 +544,10 @@ class Getters(LibraryComponent):
 
         Optionally matches with any sequence assertion operator.
 
-        ``selector`` <str> Selector from which the style shall be retrieved. **Required**
+        ``selector`` Selector from which the style shall be retrieved.
         See the `Finding elements` section for details about the selectors.
 
-        ``key`` <str> Key of the requested CSS property. Retrieves "ALL" styles by default.
+        ``key`` Key of the requested CSS property. Retrieves "ALL" styles by default.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
@@ -580,10 +580,10 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
-        ``selector`` <str> Selector from which shall be retrieved. **Required**
+        ``selector`` Selector from which shall be retrieved.
         See the `Finding elements` section for details about the selectors.
 
-        ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        ``key`` Optionally filters the returned values.
         If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
         otherwise it will just return the single value selected by the key.
         Note: If a single value is retrieved, an assertion does *not* need a ``validate``
@@ -627,11 +627,11 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
 
-        ``selector`` <str> Optional selector from which shall be retrieved.
+        ``selector`` Optional selector from which shall be retrieved.
         If no selector is given the scroll size of the page itself is used.
         See the `Finding elements` section for details about the selectors.
 
-        ``key`` < ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        ``key`` Optionally filters the returned values.
         If keys is set to ``ALL``(default) it will return the scroll size as dictionary,
         otherwise it will just return the single value selected by the key.
 
@@ -680,11 +680,11 @@ class Getters(LibraryComponent):
         ``top`` uses js function scrollTop, ``left`` uses scrollLeft and
         ``bottom`` and ``right`` are calculated with the client size.
 
-        ``selector`` <str> Optional selector from which shall be retrieved.
+        ``selector`` Optional selector from which shall be retrieved.
         If no selector is given the client size of the page itself is used (``document.scrollingElement``).
         See the `Finding elements` section for details about the selectors.
 
-        ``key`` < ``top`` | ``left`` | ``bottom`` | ``right`` | ``ALL`` > Optionally filters the returned values.
+        ``key`` Optionally filters the returned values.
         If keys is set to ``ALL``(default) it will return the scroll position as dictionary,
         otherwise it will just return the single value selected by the key.
 
@@ -724,11 +724,11 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
-        ``selector`` <str> Optional selector from which shall be retrieved.
+        ``selector`` Optional selector from which shall be retrieved.
         If no selector is given the client size of the page itself is used (``document.scrollingElement``).
         See the `Finding elements` section for details about the selectors.
 
-        ``key`` < ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        ``key`` Optionally filters the returned values.
         If keys is set to ``ALL``(default) it will return the scroll size as dictionary,
         otherwise it will just return the single value selected by the key.
 
@@ -767,7 +767,7 @@ class Getters(LibraryComponent):
 
         If the selector does satisfy the expected state it will return ``True`` otherwise ``False``.
 
-        ``selector`` <str> Selector of the corresponding object. **Required**
+        ``selector`` Selector of the corresponding object.
         See the `Finding elements` section for details about the selectors.
 
         ``state`` Defaults to visible. Possible states are:
@@ -792,26 +792,22 @@ class Getters(LibraryComponent):
             ElementStateKey.focused: "e => document.activeElement === e",
             ElementStateKey.checked: "e => e.checked",
         }
-        states = [
-            ElementStateKey.attached,
-            ElementStateKey.visible,
-        ]
 
         with self.playwright.grpc_channel() as stub:
             try:
-                if state in states:
-                    stub.WaitForElementsState(
-                        Request().ElementSelectorWithOptions(
-                            selector=selector,
-                            options=json.dumps({"state": state.name, "timeout": 100}),
-                        )
-                    )
-                else:
+                if state in funct:
                     stub.WaitForFunction(
                         Request().WaitForFunctionOptions(
                             script=funct[state],
                             selector=selector,
                             options=json.dumps({"timeout": 100}),
+                        )
+                    )
+                else:
+                    stub.WaitForElementsState(
+                        Request().ElementSelectorWithOptions(
+                            selector=selector,
+                            options=json.dumps({"state": state.name, "timeout": 100}),
                         )
                     )
                 result = True
