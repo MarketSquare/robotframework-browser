@@ -182,32 +182,6 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
-    def click_with_options(
-        self,
-        selector: str,
-        button: MouseButton = MouseButton.left,
-        clickCount: int = 1,
-        delay: Optional[timedelta] = None,
-        position_x: Optional[float] = None,
-        position_y: Optional[float] = None,
-        force: bool = False,
-        noWaitAfter: bool = False,
-        *modifiers: KeyboardModifier,
-    ):
-        """*DEPRECATED* Use `Click` instead."""
-        self.click(
-            selector,
-            button,
-            clickCount,
-            delay,
-            position_x,
-            position_y,
-            force,
-            noWaitAfter,
-            *modifiers,
-        )
-
-    @keyword(tags=["Setter", "PageContent"])
     def click(
         self,
         selector: str,
