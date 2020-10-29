@@ -57,55 +57,40 @@ export async function httpRequest(
     }
 }
 
-export async function waitForResponse(
-    call: ServerUnaryCall<pb.Request.HttpCapture>,
-    callback: sendUnaryData<pb.Response.Json>,
-    page?: Page,
-) {
-    const urlOrPredicate = new RegExp(`.*${call.request.getUrlorpredicate()}`);
-    const timeout = call.request.getTimeout();
+export async function waitForResponse(request: pb.Request.HttpCapture, page?: Page): Promise<pb.Response.Json> {
+    const urlOrPredicate = new RegExp(`.*${request.getUrlorpredicate()}`);
+    const timeout = request.getTimeout();
     const data = await invokeOnPage(page, 'waitForResponse', urlOrPredicate, {
         timeout: timeout,
     });
-    callback(
-        null,
-        jsonResponse(
-            JSON.stringify({
-                status: data.status(),
-                body: await data.text(),
-                headers: JSON.stringify(data.headers()),
-                statusText: data.statusText(),
-                url: data.url(),
-                ok: data.ok(),
-                request: {
-                    headers: JSON.stringify(data.request().headers()),
-                    method: data.request().method(),
-                    postData: data.request().postData(),
-                },
-            }),
-            '',
-        ),
+    return jsonResponse(
+        JSON.stringify({
+            status: data.status(),
+            body: await data.text(),
+            headers: JSON.stringify(data.headers()),
+            statusText: data.statusText(),
+            url: data.url(),
+            ok: data.ok(),
+            request: {
+                headers: JSON.stringify(data.request().headers()),
+                method: data.request().method(),
+                postData: data.request().postData(),
+            },
+        }),
+        '',
     );
 }
-export async function waitForRequest(
-    call: ServerUnaryCall<pb.Request.HttpCapture>,
-    callback: sendUnaryData<pb.Response.String>,
-    page?: Page,
-) {
-    const urlOrPredicate = call.request.getUrlorpredicate();
-    const timeout = call.request.getTimeout();
+export async function waitForRequest(request: pb.Request.HttpCapture, page?: Page): Promise<pb.Response.String> {
+    const urlOrPredicate = request.getUrlorpredicate();
+    const timeout = request.getTimeout();
     const result = await invokeOnPage(page, 'waitForRequest', urlOrPredicate, { timeout: timeout });
-    callback(null, stringResponse(result.url(), 'Requested compeleted withing timeout.'));
+    return stringResponse(result.url(), 'Requested compeleted withing timeout.');
 }
 
-export async function waitUntilNetworkIsIdle(
-    call: ServerUnaryCall<pb.Request.Timeout>,
-    callback: sendUnaryData<pb.Response.Empty>,
-    page?: Page,
-) {
-    const timeout = call.request.getTimeout();
+export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page?: Page): Promise<pb.Response.Empty> {
+    const timeout = request.getTimeout();
     await invokeOnPage(page, 'waitForLoadState', 'networkidle', { timeout: timeout });
-    callback(null, emptyWithLog('Network is idle'));
+    return emptyWithLog('Network is idle');
 }
 
 export async function waitForDownload(
