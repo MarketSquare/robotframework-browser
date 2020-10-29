@@ -326,6 +326,8 @@ class PlaywrightState(LibraryComponent):
         colorScheme: Optional[ColorScheme] = None,
         hideRfBrowser: bool = False,
         defaultBrowserType: Optional[str] = None,
+        videosPath: Optional[str] = None,
+        videoSize: Optional[Dict[str, int]] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -392,6 +394,15 @@ class PlaywrightState(LibraryComponent):
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
         for more details. Defaults to ``light``.
 
+        ``videosPath`` <str> Enables video recording for all pages to videosPath
+        folder. If not specified, videos are not recorded.
+        ``videoSize`` <dictionary, int> Specifies dimensions of the automatically recorded
+        video. Can only be used if videosPath is set. If not specified the size will
+        be equal to viewport. If viewport is not configured explicitly the video size
+        defaults to 1280x720. Actual picture of the page will be scaled down if
+        necessary to fit specified size.
+        - Example {"width": 1280, "height": 720}
+
         A BrowserContext is the Playwright object that controls a single browser profile.
         Within a context caches and cookies are shared.
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext]
@@ -409,6 +420,8 @@ class PlaywrightState(LibraryComponent):
             accuracy = location.get("accuracy")
             if accuracy:
                 location["accuracy"] = float(accuracy)
+        if not videosPath:
+            params.pop("videoSize", None)
         options = json.dumps(params, default=str)
         logger.info(options)
         with self.playwright.grpc_channel() as stub:
@@ -439,6 +452,7 @@ class PlaywrightState(LibraryComponent):
                 Request().Url(url=url, defaultTimeout=int(self.timeout))
             )
             logger.info(response.log)
+            logger.info(response.video)
             return response.body
 
     @keyword(tags=["Getter", "BrowserControl", ""])

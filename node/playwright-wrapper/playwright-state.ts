@@ -324,17 +324,23 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
     return emptyWithLog('Successfully closed Page');
 }
 
-export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.String> {
+export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
     const defaultTimeout = request.getDefaulttimeout();
     const context = await browserState.getOrCreateActiveContext(defaultTimeout);
 
     const page = await _newPage(context.c);
+    const videoPath = await page.p.video()?.path();
+    logger.info("Video path: " + videoPath);
     browserState.pushPage(page);
     const url = request.getUrl() || 'about:blank';
     try {
         await page.p.goto(url);
-        return stringResponse(page.id, 'Successfully initialized new page object and opened url: ' + url);
+        const response = new Response.NewPageResponse();
+        response.setBody(page.id);
+        response.setLog(`Successfully initialized new page object and opened url: ${url}`);
+        response.setVideo(`${videoPath}`);
+        return response;
     } catch (e) {
         browserState.popPage();
         throw e;
