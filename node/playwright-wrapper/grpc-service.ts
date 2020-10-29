@@ -36,6 +36,21 @@ export class PlaywrightServer implements IPlaywrightServer {
     private getActiveContext = () => this.state.getActiveContext();
     private getActivePage = () => this.state.getActivePage();
 
+    private wrapping = <T, K>(
+        func: (request: T, state: PlaywrightState) => Promise<K>,
+    ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
+        return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
+            try {
+                const request = call.request;
+                if (request === null) throw Error('No request');
+                const response = await func(request, this.state);
+                callback(null, response);
+            } catch (e) {
+                callback(e, null);
+            }
+        };
+    };
+
     async closeBrowser(
         call: ServerUnaryCall<Request.Empty, Response.String>,
         callback: sendUnaryData<Response.String>,
@@ -260,7 +275,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         try {
-            const response = await browserControl.takeScreenshot(call, this.state);
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await browserControl.takeScreenshot(request, this.state);
             callback(null, response);
         } catch (e) {
             callback(e, null);
@@ -293,34 +310,56 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    // <--- HERE ---> // CONTINUE CALL AND CALLBACKS!
-
     async setTimeout(
         call: ServerUnaryCall<Request.Timeout, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return browserControl.setTimeout(call, callback, this.getActiveBrowser()?.context?.c);
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await browserControl.setTimeout(request, this.getActiveBrowser()?.context?.c);
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getTitle(
         call: ServerUnaryCall<Request.Empty, Response.String>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return getters.getTitle(callback, this.getActivePage());
+        try {
+            const response = await getters.getTitle(this.getActivePage());
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getUrl(
         call: ServerUnaryCall<Request.Empty, Response.String>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return getters.getUrl(callback, this.getActivePage());
+        try {
+            const response = await getters.getUrl(this.getActivePage());
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getElementCount(
         call: ServerUnaryCall<Request.ElementSelector, Response.Int>,
         callback: sendUnaryData<Response.Int>,
     ): Promise<void> {
-        return getters.getElementCount(call, callback, this.state);
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await getters.getElementCount(request, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getSelectContent(
@@ -328,7 +367,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Select>,
     ): Promise<void> {
         try {
-            const response = await getters.getSelectContent(call, this.state);
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await getters.getSelectContent(request, this.state);
             callback(null, response);
         } catch (e) {
             callback(e, null);
@@ -340,7 +381,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         try {
-            const response = await getters.getDomProperty(call, this.state);
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await getters.getDomProperty(request, this.state);
             callback(null, response);
         } catch (e) {
             callback(e, null);
@@ -352,12 +395,16 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Bool>,
     ): Promise<void> {
         try {
-            const response = await getters.getBoolProperty(call, this.state);
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await getters.getBoolProperty(request, this.state);
             callback(null, response);
         } catch (e) {
             callback(e, null);
         }
     }
+
+    // <--- HERE ---> // CONTINUE CALL AND CALLBACKS!
 
     async getElementAttribute(
         call: ServerUnaryCall<Request.ElementProperty, Response.String>,

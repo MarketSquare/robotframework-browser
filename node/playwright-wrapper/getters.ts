@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { ElementHandle, Page } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
@@ -23,31 +22,27 @@ import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElemen
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function getTitle(callback: sendUnaryData<Response.String>, page?: Page) {
+export async function getTitle(page?: Page): Promise<Response.String> {
     const title = await invokeOnPage(page, 'title');
-    callback(null, stringResponse(title, 'Active page title is: ' + title));
+    return stringResponse(title, 'Active page title is: ' + title);
 }
 
-export async function getUrl(callback: sendUnaryData<Response.String>, page?: Page) {
+export async function getUrl(page?: Page): Promise<Response.String> {
     const url = await invokeOnPage(page, 'url');
-    callback(null, stringResponse(url, url));
+    return stringResponse(url, url);
 }
 
-export async function getElementCount(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Int>,
-    state: PlaywrightState,
-) {
-    const selector = call.request.getSelector();
+export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
+    const selector = request.getSelector();
     const response: Array<ElementHandle> = await invokePlaywrightMethod(state, '$$', selector);
-    callback(null, intResponse(response.length, 'Found ' + response.length + 'element(s).'));
+    return intResponse(response.length, 'Found ' + response.length + 'element(s).');
 }
 
 export async function getSelectContent(
-    call: ServerUnaryCall<Request.ElementSelector>,
+    request: Request.ElementSelector,
     state: PlaywrightState,
 ): Promise<Response.Select> {
-    const selector = call.request.getSelector();
+    const selector = request.getSelector();
     await waitUntilElementExists(state, selector);
 
     type Value = [string, string, boolean];
@@ -68,27 +63,27 @@ export async function getSelectContent(
 }
 
 export async function getDomProperty(
-    call: ServerUnaryCall<Request.ElementProperty>,
+    request: Request.ElementProperty,
     state: PlaywrightState,
 ): Promise<Response.String> {
-    const content = await getProperty(call, state);
+    const content = await getProperty(request, state);
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
 export async function getBoolProperty(
-    call: ServerUnaryCall<Request.ElementProperty>,
+    request: Request.ElementProperty,
     state: PlaywrightState,
 ): Promise<Response.Bool> {
-    const selector = call.request.getSelector();
-    const content = await getProperty(call, state);
+    const selector = request.getSelector();
+    const content = await getProperty(request, state);
     return boolResponse(content || false, 'Retrieved dom property for element ' + selector + ' containing ' + content);
 }
 
-async function getProperty<T>(call: ServerUnaryCall<Request.ElementProperty>, state: PlaywrightState) {
-    const selector = call.request.getSelector();
+async function getProperty<T>(request: Request.ElementProperty, state: PlaywrightState) {
+    const selector = request.getSelector();
     const element = await waitUntilElementExists(state, selector);
     try {
-        const propertyName = call.request.getProperty();
+        const propertyName = request.getProperty();
         const property = await element.getProperty(propertyName);
         const content = await property.jsonValue();
         logger.info(`Retrieved dom property for element ${selector} containing ${content}`);
@@ -167,9 +162,7 @@ export async function getBoundingBox(request: Request.ElementSelector, state: Pl
     return jsonResponse(JSON.stringify(boundingBox), '');
 }
 
-export async function getPageSource(
-    page?: Page,
-): Promise<Response.String> {
+export async function getPageSource(page?: Page): Promise<Response.String> {
     const result = await invokeOnPage(page, 'content');
     logger.info(result);
     return stringResponse(JSON.stringify(result), 'Page source obtained succesfully.');
