@@ -36,7 +36,7 @@ class WebAppState(LibraryComponent):
         """
         Get saved data from the local storage.
 
-        ``key`` <str> Named key of the item in the storage. **Required**
+        ``key`` Named key of the item in the storage.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
@@ -57,9 +57,9 @@ class WebAppState(LibraryComponent):
         """
         Save data to the local storage.
 
-        ``key`` <str> The name of the key under which it should be saved. **Required**
+        ``key`` The name of the key under which it should be saved.
 
-        ``value`` <str> The value which shall be saved as a string. **Required**
+        ``value`` The value which shall be saved as a string.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -74,7 +74,7 @@ class WebAppState(LibraryComponent):
         """
         Remove saved data with key from the local storage.
 
-        ``key`` <str> Name of the item which shall be deleted. **Required**
+        ``key`` Name of the item which shall be deleted.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -108,7 +108,7 @@ class WebAppState(LibraryComponent):
         """
         Get saved data from from session storage.
 
-        ``key`` <str> Named key of the item in the storage. **Required**
+        ``key`` Named key of the item in the storage.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
@@ -131,9 +131,9 @@ class WebAppState(LibraryComponent):
         """
         Save data to session storage.
 
-        ``key`` <str> The name of the key under which it should be saved. **Required**
+        ``key`` The name of the key under which it should be saved.
 
-        ``value`` <str> The value which shall be saved as a string. **Required**
+        ``value`` The value which shall be saved as a string.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -148,7 +148,7 @@ class WebAppState(LibraryComponent):
         """
         Remove saved data with key from the session storage.
 
-        ``key`` <str> Name of the item which shall be deleted. **Required**
+        ``key`` Name of the item which shall be deleted.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(

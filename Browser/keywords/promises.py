@@ -31,7 +31,7 @@ class Promises(LibraryComponent):
         Wrap a Browser library keyword and make it a promise.
         Returns that promise and executes the keyword on background.
 
-        ``kw`` <str> Keyword that will work async on background.
+        ``kw`` Keyword that will work async on background.
 
         Example:
         | ${promise}=     Promise To            Wait For Response     matcher=     timeout=3

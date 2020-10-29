@@ -40,7 +40,7 @@ class Waiter(LibraryComponent):
 
         If the selector doesn't satisfy the condition within the timeout the keyword will FAIL.
 
-        ``selector`` <str> Selector of the corresponding object. **Required**
+        ``selector`` Selector of the corresponding object.
         See the `Finding elements` section for details about the selectors.
 
         ``state`` Defaults to visible. Possible states are:
@@ -62,7 +62,7 @@ class Waiter(LibraryComponent):
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
-        ``timeout`` <str> (optional) uses default timeout of 10 seconds if not set.
+        ``timeout`` uses default timeout of 10 seconds if not set.
         """
         funct = {
             ElementState.enabled: "e => !e.disabled",
@@ -108,18 +108,18 @@ class Waiter(LibraryComponent):
         """Polls JavaScript expression or function in browser until it returns a
         (JavaScript) truthy value.
 
-        ``function`` <str> A valid javascript function or a javascript function body. For example
-        ``() => true`` and ``true`` will behave similarly. **Required**
+        ``function`` A valid javascript function or a javascript function body. For example
+        ``() => true`` and ``true`` will behave similarly.
 
-        ``selector`` <str> Selector to resolve and pass to the JavaScript function. This will be the first
+        ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
         argument the function receives. If given a selector a function is necessary, with an argument
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
 
-        ``polling`` <str> Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
+        ``polling`` Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
         Any other value for polling will be parsed as a robot framework time for interval between polls.
 
-        ``timeout`` <str> Uses default timeout of 10 seconds if not set.
+        ``timeout`` Uses default timeout of 10 seconds if not set.
 
         Example usage:
         | ${promise}    Promise To      Wait For Function    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
@@ -151,7 +151,7 @@ class Waiter(LibraryComponent):
 
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 
-        ``saveAs`` <str> Filename to save as. File will also temporarily be saved in playwright context's default download location.
+        ``saveAs`` Filename to save as. File will also temporarily be saved in playwright context's default download location.
 
         Example usage:
         | New Context      acceptDownloads=True

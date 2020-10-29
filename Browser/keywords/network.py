@@ -65,12 +65,12 @@ class Network(LibraryComponent):
         """Performs an HTTP request in the current browser context
 
         Accepts the following arguments:
-          - ``url`` <str> The request url, e.g. ``/api/foo``.
-          - ``method`` < ``GET`` | ``POST`` | ``PUT`` | ``PATCH`` | ``DELETE`` | ``HEAD`` > The HTTP method for the request. Defaults to GET.
-          - ``body`` <str> The request body. GET requests cannot have a body. If the body can be parsed as JSON,
+          - ``url`` The request url, e.g. ``/api/foo``.
+          - ``method`` The HTTP method for the request. Defaults to GET.
+          - ``body`` The request body. GET requests cannot have a body. If the body can be parsed as JSON,
           the ``Content-Type`` header for the request will be automatically set to ``application/json``.
           Defaults to None.
-          - ``headers`` <dict> A dictionary of additional request headers. Defaults to None.
+          - ``headers`` A dictionary of additional request headers. Defaults to None.
 
         The response is a Python dictionary with following attributes:
           - ``status`` <int> The status code of the response.
@@ -126,10 +126,10 @@ class Network(LibraryComponent):
     ) -> Any:
         """Waits for request matching matcher to be made.
 
-        ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
+        ``matcher`` Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout`` <str> Timeout in seconds. Uses default timeout if not set.
+        ``timeout`` Timeout in seconds. Uses default timeout if not set.
 
         """
         return self._wait_for_http("Request", matcher, timeout)
@@ -140,15 +140,15 @@ class Network(LibraryComponent):
     ) -> Any:
         """Waits for response matching matcher and returns python dict with contents.
 
-        ``matcher`` <str> Request URL string, JavaScript regex or JavaScript function to match request by.
+        ``matcher`` Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout`` <str> Timeout in seconds. Uses default timeout if not set.
+        ``timeout`` Timeout in seconds. Uses default timeout if not set.
 
         The response is a Python dictionary with following attributes:
           - ``status`` <int> The status code of the response.
           - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR.
-          - ``body`` <dict> | <str> The response body. If the body can be parsed as a JSON obejct,
+          - ``body`` <dict | str> The response body. If the body can be parsed as a JSON obejct,
           it will be returned as Python dictionary, otherwise it is returned as a string.
           - ``headers`` <dict> A dictionary containing all response headers.
           - ``ok`` <bool> Whether the request was successfull, i.e. the ``status`` is range 200-299.
@@ -162,7 +162,7 @@ class Network(LibraryComponent):
 
         Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
 
-        ``timeout`` <str> Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
+        ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
 
         """
         with self.playwright.grpc_channel() as stub:

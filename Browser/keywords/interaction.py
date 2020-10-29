@@ -56,17 +56,17 @@ class Interaction(LibraryComponent):
         Sends a ``keydown``, ``keypress/input``, and ``keyup`` event for each
         character in the text.
 
-        ``selector`` <str> Selector of the text field. **Required**
+        ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``text`` <str> Text for the text field. **Required**
+        ``text`` Text for the text field.
 
-        ``delay`` <str> Delay between the single key strokes. It may be either a
+        ``delay`` Delay between the single key strokes. It may be either a
         number or a Robot Framework time string. Time strings are fully
         explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
         Example: ``50 ms``
 
-        ``clear`` <bool> Set to false, if the field shall not be cleared before typing.
+        ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
         See `Fill Text` for direct filling of the full text at once.
@@ -85,10 +85,10 @@ class Interaction(LibraryComponent):
         [contenteditable] element, this method throws an error. Note that
         you can pass an empty string as ``text`` to clear the input field.
 
-        ``selector`` <str> Selector of the text field. **Required**
+        ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``text`` <str> Text for the text field. **Required**
+        ``text`` Text for the text field.
 
         See `Type Text` for emulating typing text character by character.
         """
@@ -98,7 +98,7 @@ class Interaction(LibraryComponent):
     def clear_text(self, selector: str):
         """Clears the text field found by ``selector``.
 
-        ``selector`` <str> Selector of the text field. **Required**
+        ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
         See `Type Text` for emulating typing text character by character.
@@ -122,17 +122,17 @@ class Interaction(LibraryComponent):
         The difference to `Type Text` is that this keyword does not log the
         text to be written into the text field.
 
-        ``selector`` <str> Selector of the text field. **Required**
+        ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``secret`` <str> Secret text for the text field. **Required**
+        ``secret`` Secret text for the text field.
 
-        ``delay`` <str> Delay between the single key strokes. It may be either a
+        ``delay`` Delay between the single key strokes. It may be either a
         number or a Robot Framework time string. Time strings are fully
         explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
         Example: ``50 ms``
 
-        ``clear`` <bool> Set to false, if the field shall not be cleared before typing.
+        ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
         See `Type Text` for details.
@@ -146,10 +146,10 @@ class Interaction(LibraryComponent):
         The difference to `Fill Text` is that this keyword does not log the
         text to be written into the text field.
 
-        ``selector`` <str> Selector of the text field. **Required**
+        ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``secret`` <str> Secret text for the text field. **Required**
+        ``secret`` Secret text for the text field.
 
         See `Fill Text` for details.
         """
@@ -159,7 +159,7 @@ class Interaction(LibraryComponent):
     def press_keys(self, selector: str, *keys: str):
         """Types the given key combination into element found by ``selector``.
 
-        ``selector`` <str> Selector of the text field. **Required**
+        ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
         Supports values like "a, b" which will be automatically typed.
@@ -229,29 +229,29 @@ class Interaction(LibraryComponent):
         - Use `Mouse Button` to click in the center of the element, or the specified position.
         - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
 
-        ``selector`` <str> Selector element to click. **Required**
+        ``selector`` Selector element to click.
         See the `Finding elements` section for details about the selectors.
 
-        ``button`` < ``left`` | ``right`` | ``middle`` > Defaults to ``left`` if invalid.
+        ``button`` Defaults to ``left`` if invalid.
 
-        ``click_count`` <int> Defaults to 1.
+        ``click_count`` Defaults to 1.
 
-        ``delay`` <robot time str> Time to wait between mouse-down and mouse-up.
+        ``delay`` Time to wait between mouse-down and mouse-up.
         Defaults to 0.
 
-        ``position_x`` & ``position_y`` <float> A point to click relative to the
+        ``position_x`` & ``position_y`` A point to click relative to the
         top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
         If not specified, clicks to some visible point of the element.
 
-        ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+        ``force`` Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
-        ``noWaitAfter`` <bool> Actions that initiate navigation, are waiting for
+        ``noWaitAfter`` Actions that initiate navigation, are waiting for
         these navigation to happen and for pages to start loading.
         You can opt out of waiting via setting this flag.
         You would only need this option in the exceptional cases such as navigating
         to inaccessible pages. Defaults to ``False``.
 
-        ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
+        ``*modifiers``
         Modifier keys to press. Ensures that only these modifiers are pressed
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
@@ -297,26 +297,26 @@ class Interaction(LibraryComponent):
         - Scroll the element into view if needed.
         - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
 
-        ``selector`` <str> Selector element to click. **Required**
+        ``selector`` Selector element to click.
         See the `Finding elements` section for details about the selectors.
 
-        ``button`` < ``left`` | ``middle`` |  ``right``> The button that shall be used for clicking.
+        ``button`` The button that shall be used for clicking.
 
-        ``clickCount`` <int> How many time shall be clicked.
+        ``clickCount`` How many time shall be clicked.
 
-        ``delay`` <robot time str> Time to wait between mouse-down and mouse-up and next click.
+        ``delay`` Time to wait between mouse-down and mouse-up and next click.
 
         *Caution: be aware that if the delay leads to a total time that exceeds the timeout, the keyword fails*
 
-        ``position_x`` & ``position_y`` <float> A point to click relative to the
+        ``position_x`` & ``position_y`` A point to click relative to the
         top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
         If not specified, clicks to some visible point of the element.
 
         *Caution: even with 0, 0 might click a few pixels off from the corner of the bounding-box. Click uses detection to find the first clickable point.*
 
-        ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+        ``force`` Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
-        ``*modifiers`` < ``Alt`` | ``Control`` | ``Meta`` | ``Shift`` >
+        ``*modifiers``
         Modifier keys to press. Ensures that only these modifiers are pressed
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
@@ -341,7 +341,7 @@ class Interaction(LibraryComponent):
     def focus(self, selector: str):
         """Moves focus on to the element found by ``selector``.
 
-        ``selector`` <str> Selector of the element. **Required**
+        ``selector`` Selector of the element.
         See the `Finding elements` section for details about the selectors.
 
         If there's no element matching selector, the method waits until a
@@ -361,22 +361,21 @@ class Interaction(LibraryComponent):
     ):
         """Scrolls an element or the page to an absolute position based on given coordinates.
 
-        ``selector`` <str> Selector of the element. If the selector is ``${None}`` or ``${Empty}``
+        ``selector`` Selector of the element. If the selector is ``${None}`` or ``${Empty}``
         the page itself is scrolled.
         See the `Finding elements` section for details about the selectors.
 
-        ``vertical`` <str> defines where to scroll vertically.
+        ``vertical`` defines where to scroll vertically.
         It can be a positive number, like ``300``.
         It can be a percentage value of the absolute scrollable size, like ``50%``.
         It can be a string defining that top or the bottom of the scroll area. < ``top`` | ``bottom`` >
         _Be aware that some pages do lazy loading and load more content once you scroll down._
         Bottom defines the current known bottom coordinate.
 
-        ``horizontal`` <str> defines where to scroll horizontally.
+        ``horizontal`` defines where to scroll horizontally.
         Works same as vertical but defines < ``left`` | ``right`` > as start and end.
 
-        ``behavior`` <str> defines whether the scroll happens directly or it scrolls smoothly.
-        < ``auto`` | ``smooth`` >
+        ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
         """
         scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
@@ -406,23 +405,22 @@ class Interaction(LibraryComponent):
     ):
         """Scrolls an element or the page relative from current position by the given values.
 
-        ``selector`` <str> Selector of the element. If the selector is ``${None}`` or ``${Empty}``
+        ``selector`` Selector of the element. If the selector is ``${None}`` or ``${Empty}``
         the page itself is scrolled.
         See the `Finding elements` section for details about the selectors.
 
-        ``vertical`` <str> defines how far and in which direction to scroll vertically.
+        ``vertical`` defines how far and in which direction to scroll vertically.
         It can be a positive or negative number. Positive scrolls down, like ``50``, negative scrolls up, like ``-50``.
         It can be a percentage value of the absolute scrollable size, like ``9.95%`` or negative like ``-10%``.
         It can be the string ``height`` to defining to scroll exactly one visible height down or up with ``-height``.
         _Be aware that some pages do lazy loading and load more content once you scroll down._
         The percentage of the current scrollable height is used and may change.
 
-        ``horizontal`` <str> defines where to scroll horizontally.
+        ``horizontal`` defines where to scroll horizontally.
         Works same as vertical but defines positive values for right and negative values for left.
         ``width`` defines to scroll exactly one visible range to the right.
 
-        ``behavior`` <str> defines whether the scroll happens directly or it scrolls smoothly.
-        < ``auto`` | ``smooth`` >
+        ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
         """
         scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
@@ -446,7 +444,7 @@ class Interaction(LibraryComponent):
     def check_checkbox(self, selector: str):
         """Checks the checkbox or selects radio button found by ``selector``.
 
-        ``selector`` <str> Selector of the checkbox. **Required**
+        ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
 
         Does nothing if the element is already checked/selected.
@@ -459,7 +457,7 @@ class Interaction(LibraryComponent):
     def uncheck_checkbox(self, selector: str):
         """Unchecks the checkbox found by ``selector``.
 
-        ``selector`` <str> Selector of the checkbox. **Required**
+        ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
 
         Does nothing if the element is not checked/selected.
@@ -474,12 +472,12 @@ class Interaction(LibraryComponent):
     def select_options_by(self, selector: str, attribute: SelectAttribute, *values):
         """Selects options from select element found by ``selector``.
 
-        ``selector`` <str> Selector of the select tag. **Required**
+        ``selector`` Selector of the select tag.
         See the `Finding elements` section for details about the selectors.
 
         Matches based on the chosen attribute with list of ``values``.
         Possible attributes to match options by:
-        ``attribute`` < ``value`` | ``label `` | ``text`` | ``index`` >
+        ``attribute``
 
         If no values to select are passed will deselect options in element.
         """
@@ -504,7 +502,7 @@ class Interaction(LibraryComponent):
     def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``.
 
-        ``selector`` <str> Selector of the select tag. **Required**
+        ``selector`` Selector of the select tag.
         See the `Finding elements` section for details about the selectors.
         """
         with self.playwright.grpc_channel() as stub:
@@ -539,7 +537,7 @@ class Interaction(LibraryComponent):
     def upload_file(self, path: str):
         """Upload file from ``path`` into next file chooser dialog on page.
 
-        ``path`` <str> Path to file to be uploaded.
+        ``path`` Path to file to be uploaded.
 
         Example use:
 
@@ -558,9 +556,9 @@ class Interaction(LibraryComponent):
         """Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
 
-            ``action`` < ``acceppt`` | ``dismiss`` > How to handle the alert. **Required**
+            ``action`` How to handle the alert.
 
-            ``prompt_input`` <str> The value to enter into prompt. Only valid if
+            ``prompt_input`` The value to enter into prompt. Only valid if
             ``action`` equals accept. Defaults to empty string.
         """
 
@@ -586,16 +584,16 @@ class Interaction(LibraryComponent):
 
         Moving the mouse between holding down and releasing it for example is possible with `Mouse Move`.
 
-        ``action`` < ``click`` | ``up`` | ``down`` > Determines if it is a mouseclick, holding down a key or releasing it.
+        ``action`` Determines if it is a mouseclick, holding down a key or releasing it.
 
-        ``x`` <int> and ``y`` <int> Coordinates for a click only. Defaults to None.
+        ``x`` and ``y`` Coordinates for a click only. Defaults to None.
         **Required** if action is a click.
 
-        ``button`` < ``left``| ``right`` | ``middle`` > Defaults to ``left`` if invalid.
+        ``button`` Defaults to ``left`` if invalid.
 
-        ``clickCount`` <int> Deterine how often shall be clicked. Defaults to 1.
+        ``clickCount`` Deterine how often shall be clicked. Defaults to 1.
 
-        ``delay`` <int> Delay in ms between the mousedown and mouseup event. Can only be set if the action is click.
+        ``delay`` Delay in ms between the mousedown and mouseup event. Can only be set if the action is click.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {}
@@ -648,11 +646,11 @@ class Interaction(LibraryComponent):
 
         Start- and end-point are defined by the center of the elements boundingbox.
 
-        ``selector_from``: <float> identifies the element, which center is the start-point. **Required**
+        ``selector_from`` identifies the element, which center is the start-point.
 
-        ``selector_to``: <float> identifies the element, which center is the end-point. **Required**
+        ``selector_to`` identifies the element, which center is the end-point.
 
-        ``steps``: <int> defines how many intermediate mouse move events are sent.
+        ``steps`` defines how many intermediate mouse move events are sent.
         """
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
@@ -676,11 +674,11 @@ class Interaction(LibraryComponent):
         Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
         the top left corner of the pages viewport.
 
-        ``from_x`` & ``from_y``: <float> identify the the start-point. **Required**
+        ``from_x`` & ``from_y`` identify the the start-point.
 
-        ``to_x`` & ``to_y``: <float> identify the the end-point. **Required**
+        ``to_x`` & ``to_y`` identify the the end-point.
 
-        ``steps``: <int> defines how many intermediate mouse move events are sent.
+        ``steps`` defines how many intermediate mouse move events are sent.
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
@@ -698,10 +696,10 @@ class Interaction(LibraryComponent):
         """Instead of selectors command mouse with coordinates.
         The Click commands will leave the virtual mouse on the specified coordinates.
 
-        ``x`` <float> ``y`` <float> are absolute coordinates starting at the top left
+        ``x`` ``y`` are absolute coordinates starting at the top left
         of the page.
 
-        ``steps`` <int> Number of intermediate steps for the mouse event.
+        ``steps`` Number of intermediate steps for the mouse event.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
@@ -713,11 +711,11 @@ class Interaction(LibraryComponent):
     def keyboard_key(self, action: KeyAction, key: str):
         """Press a keyboard key on the virtual keyboard or set a key up or down.
 
-        ``action`` < ``up`` | ``down`` | ``press`` > Determine whether the key should be released,
+        ``action`` Determine whether the key should be released,
         hold or pressed. ``down`` or ``up`` are useful for combinations i.e. with Shift.
-        **Required**
 
-        ``key`` <str> The key to be pressed. An example of valid keys are:
+
+        ``key`` The key to be pressed. An example of valid keys are:
 
         ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA``- ``KeyZ``, ``Backquote``, ``Minus``,
         ``Equal``, ``Backslash``, ``Backspace``, ``Tab``, ``Delete``, ``Escape``, ``ArrowDown``,
@@ -747,13 +745,13 @@ class Interaction(LibraryComponent):
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
         """Input text into page with virtual keyboard.
 
-        ``action`` < ``insertText`` | ``type`` > **Required**
+        ``action``
 
             - ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
 
             - ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
 
-        ``input`` <str> The inputstring to be typed. No special keys possible. **Required**
+        ``input`` The inputstring to be typed. No special keys possible.
 
         Note: To press a special key, like Control or ArrowDown, use keyboard.press.
         Modifier keys DO NOT effect these methods. For testing modifier effects use single key

@@ -39,9 +39,9 @@ class Devices(LibraryComponent):
     def get_device(self, name: str) -> Dict:
         """Get a single device decriptor with name exactly matching name.
 
-        ``name`` <str> Given name of the requested device. See Playwright's
+        ``name`` Given name of the requested device. See Playwright's
         [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
-        for a formatted list. **Required**
+        for a formatted list.
 
         Allows a concise syntax to set website testing values to exact matches of specific
         mobile devices.

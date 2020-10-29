@@ -95,26 +95,26 @@ class Cookie(LibraryComponent):
     ):
         """Adds a cookie to currently active browser context.
 
-        ``name`` <str> Name of the cookie. **Required**
+        ``name`` Name of the cookie.
 
-        ``value`` <str> Given value for the cookie. **Required**
+        ``value`` Given value for the cookie.
 
-        ``url`` <str> Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
+        ``url`` Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
 
-        ``domain`` <str> Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
+        ``domain`` Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
 
-        ``path`` <str> Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
+        ``path`` Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
 
-        ``expires`` <str> Given expiry for the cookie. Can be of date format or unix time. Supports
+        ``expires`` Given expiry for the cookie. Can be of date format or unix time. Supports
         the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
         library or an epoch timestamp.
         - example: 2027-09-28 16:21:35
 
-        ``httpOnly`` <bool> Sets the httpOnly token.
+        ``httpOnly`` Sets the httpOnly token.
 
-        ``secure`` <bool> Sets the secure token.
+        ``secure`` Sets the secure token.
 
-        ``samesite`` < ``Strict`` | ``Lax`` | ``None`` > Sets the samesite mode.
+        ``samesite`` Sets the samesite mode.
 
         Example:
         | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
@@ -166,7 +166,7 @@ class Cookie(LibraryComponent):
     ) -> Union[DotDict, str]:
         """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
 
-        ``cookie`` <str> Name of the cookie to be retrieved.
+        ``cookie`` Name of the cookie to be retrieved.
 
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns a of Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary]
