@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { BrowserContext, Page } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
@@ -38,13 +37,13 @@ export async function goForward(page?: Page): Promise<Response.Empty> {
 }
 
 export async function takeScreenshot(
-    call: ServerUnaryCall<Request.ScreenshotOptions>,
+    request: Request.ScreenshotOptions,
     state: PlaywrightState,
 ): Promise<Response.String> {
     // Add the file extension here because the image type is defined by playwrights defaults
-    const path = call.request.getPath() + '.png';
-    const fullPage = call.request.getFullpage();
-    const selector = call.request.getSelector();
+    const path = request.getPath() + '.png';
+    const fullPage = request.getFullpage();
+    const selector = request.getSelector();
     if (selector) {
         const elem = await determineElement(state, selector);
         exists(elem, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
@@ -58,15 +57,11 @@ export async function takeScreenshot(
     return stringResponse(path, message);
 }
 
-export function setTimeout(
-    call: ServerUnaryCall<Request.Timeout>,
-    callback: sendUnaryData<Response.Empty>,
-    context?: BrowserContext,
-) {
+export function setTimeout(request: Request.Timeout, context?: BrowserContext): Promise<Response.Empty> {
     exists(context, 'Tried to set timeout, no open context');
-    const timeout = call.request.getTimeout();
+    const timeout = request.getTimeout();
     context.setDefaultTimeout(timeout);
-    callback(null, emptyWithLog(`Set timeout to: ${timeout}`));
+    return emptyWithLog(`Set timeout to: ${timeout}`);
 }
 
 export async function setViewportSize(
