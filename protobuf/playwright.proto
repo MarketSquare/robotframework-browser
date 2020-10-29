@@ -221,6 +221,12 @@ message Response {
     string log = 1;
     string result = 2;
   }
+
+  message NewPageResponse {
+    string log = 1;
+    string body = 2;
+    string video = 3;
+  }
 }
 
 service  Playwright {
@@ -334,7 +340,7 @@ service  Playwright {
   rpc SwitchPage(Request.IdWithTimeout) returns (Response.String);
   rpc SwitchContext(Request.Index) returns (Response.String);
   rpc SwitchBrowser(Request.Index) returns (Response.String);
-  rpc NewPage(Request.Url) returns (Response.String);
+  rpc NewPage(Request.Url) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.String);
   rpc NewBrowser(Request.Browser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);

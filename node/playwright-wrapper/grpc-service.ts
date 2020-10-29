@@ -192,7 +192,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     async newPage(
         call: ServerUnaryCall<Request.Url, Response.String>,
-        callback: sendUnaryData<Response.String>,
+        callback: sendUnaryData<Response.NewPageResponse>,
     ): Promise<void> {
         try {
             const request = call.request;
