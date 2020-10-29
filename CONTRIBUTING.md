@@ -69,6 +69,20 @@ Ensure generated code and types are up to date with `inv build`
 Run `inv version <new_version>` to update the version information to both Python and Node components.
 Version number should match to the milestone to the [issue tracker](https://github.com/MarketSquare/robotframework-browser/milestones)
 
+```
+git add Browser/version.py
+git add package.json
+git add setup.py
+git commit -m "Updateverstion to: $VERSION"
+```
+
+Invoke command also creates old docs add the doc to the repo:
+```
+git add  docs/versions/Browser-*.html
+git commit -m "Add old docs to repo."
+git push
+```
+
 ### Generate release notes
 Set GitHub user information into shell variables to ease copy-pasting the following command:
 ```
@@ -95,9 +109,8 @@ notes. This allows re-generating the list of issues later if more issues are add
 
 Add, commit and push:
 ```
-docs/releasenotes/Browser-{version}.rst
 git add docs/releasenotes/Browser-$VERSION.rst
-git commit -m "Release notes for $VERSION" docs/releasenotes/Browser-$VERSION.rst
+git commit -m "Release notes for $VERSION"
 git push
 ```
 Update later if necessary.
