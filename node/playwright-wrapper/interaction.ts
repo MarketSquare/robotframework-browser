@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Dialog, FileChooser, Page } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
@@ -132,71 +131,65 @@ export async function uncheckCheckbox(
 }
 
 export async function uploadFile(
-    call: ServerUnaryCall<Request.FilePath>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.FilePath,
     page?: Page,
-) {
-    const path = call.request.getPath();
+): Promise<Response.Empty> {
+    const path = request.getPath();
     const fn = async (fileChooser: FileChooser) => await fileChooser.setFiles(path);
     await invokeOnPage(page, 'on', 'filechooser', fn);
-    callback(null, emptyWithLog('Succesfully uploaded file'));
+    return emptyWithLog('Succesfully uploaded file');
 }
 
 export async function handleAlert(
-    call: ServerUnaryCall<Request.AlertAction>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.AlertAction,
     page?: Page,
-) {
-    const alertAction = call.request.getAlertaction() as 'accept' | 'dismiss';
-    const promptInput = call.request.getPromptinput();
+): Promise<Response.Empty> {
+    const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
+    const promptInput = request.getPromptinput();
     const fn = async (dialog: Dialog) => {
         if (promptInput) await dialog[alertAction](promptInput);
         else await dialog[alertAction]();
     };
     await invokeOnPage(page, 'on', 'dialog', fn);
-    callback(null, emptyWithLog('Set event handler for next alert'));
+    return emptyWithLog('Set event handler for next alert');
 }
 
 export async function mouseButton(
-    call: ServerUnaryCall<Request.MouseButtonOptions>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.MouseButtonOptions,
     page?: Page,
-): Promise<void> {
-    const action = call.request.getAction() as 'click' | 'up' | 'down';
-    const params = JSON.parse(call.request.getJson());
+): Promise<Response.Empty> {
+    const action = request.getAction() as 'click' | 'up' | 'down';
+    const params = JSON.parse(request.getJson());
     await invokeOnMouse(page, action, params);
-    callback(null, emptyWithLog(`Succesfully executed ${action}`));
+    return emptyWithLog(`Succesfully executed ${action}`);
 }
 
 export async function mouseMove(
-    call: ServerUnaryCall<Request.Json>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.Json,
     page?: Page,
-): Promise<void> {
-    const params = JSON.parse(call.request.getBody());
+): Promise<Response.Empty> {
+    const params = JSON.parse(request.getBody());
     await invokeOnMouse(page, 'move', params);
-    callback(null, emptyWithLog(`Succesfully moved mouse to ${params.x}, ${params.y}`));
+    return emptyWithLog(`Succesfully moved mouse to ${params.x}, ${params.y}`);
 }
 export async function keyboardKey(
-    call: ServerUnaryCall<Request.KeyboardKeypress>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.KeyboardKeypress,
     page?: Page,
-): Promise<void> {
-    const action = call.request.getAction() as 'down' | 'up' | 'press';
-    const key = call.request.getKey();
+): Promise<Response.Empty> {
+    const action = request.getAction() as 'down' | 'up' | 'press';
+    const key = request.getKey();
     await invokeOnKeyboard(page, action, key);
-    callback(null, emptyWithLog(`Succesfully did ${action} for ${key}`));
+    return emptyWithLog(`Succesfully did ${action} for ${key}`);
 }
 
 export async function keyboardInput(
-    call: ServerUnaryCall<Request.KeyboardInputOptions>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.KeyboardInputOptions,
     page?: Page,
-): Promise<void> {
-    const action = call.request.getAction() as 'insertText' | 'type';
-    const delay = call.request.getDelay();
-    const input = call.request.getInput();
+): Promise<Response.Empty> {
+    const action = request.getAction() as 'insertText' | 'type';
+    const delay = request.getDelay();
+    const input = request.getInput();
 
     await invokeOnKeyboard(page, action, input, { delay: delay });
-    callback(null, emptyWithLog(`Succesfully did virtual keyboard action ${action} with input ${input}`));
+    return emptyWithLog(`Succesfully did virtual keyboard action ${action} with input ${input}`);
 }

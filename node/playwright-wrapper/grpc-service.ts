@@ -710,13 +710,14 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    // <--- HERE ---> // CONTINUE CALL AND CALLBACKS!
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions, Response.Json>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         try {
-            const result = await evaluation.waitForFunction(call, this.state);
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await evaluation.waitForFunction(request, this.state);
             callback(null, result);
         } catch (e) {
             callback(e, null);
@@ -727,21 +728,40 @@ export class PlaywrightServer implements IPlaywrightServer {
         call: ServerUnaryCall<Request.FilePath, Response.Json>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
-        return network.waitForDownload(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await network.waitForDownload(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async executeJavascript(
         call: ServerUnaryCall<Request.JavascriptCode, Response.JavascriptExecutionResult>,
         callback: sendUnaryData<Response.JavascriptExecutionResult>,
     ): Promise<void> {
-        return evaluation.executeJavascript(call, callback, this.state);
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await evaluation.executeJavascript(request, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getPageState(
         call: ServerUnaryCall<Request.Empty, Response.JavascriptExecutionResult>,
         callback: sendUnaryData<Response.JavascriptExecutionResult>,
     ): Promise<void> {
-        return evaluation.getPageState(callback, this.getActivePage());
+        try {
+            const result = await evaluation.getPageState(this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async health(
@@ -751,110 +771,214 @@ export class PlaywrightServer implements IPlaywrightServer {
         const response = new Response.String();
         response.setBody('OK');
         callback(null, response);
-        return;
     }
 
     async highlightElements(
         call: ServerUnaryCall<Request.ElementSelectorWithDuration, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return evaluation.highlightElements(call, callback, this.state);
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await evaluation.highlightElements(request, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async download(
         call: ServerUnaryCall<Request.Url, Response.String>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
-        return evaluation.download(call, callback, this.state);
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await evaluation.download(request, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async setViewportSize(
         call: ServerUnaryCall<Request.Viewport, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return browserControl.setViewportSize(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await browserControl.setViewportSize(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async httpRequest(
         call: ServerUnaryCall<Request.HttpRequest, Response.Json>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
-        return network.httpRequest(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await network.httpRequest(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async getDevice(
         call: ServerUnaryCall<Request.Device, Response.Json>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
-        return deviceDescriptors.getDevice(call, callback);
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = deviceDescriptors.getDevice(request);
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
     async getDevices(
         call: ServerUnaryCall<Request.Empty, Response.Json>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
-        return deviceDescriptors.getDevices(callback);
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = deviceDescriptors.getDevices();
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async uploadFile(
         call: ServerUnaryCall<Request.FilePath, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.uploadFile(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await interaction.uploadFile(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async handleAlert(
         call: ServerUnaryCall<Request.AlertAction, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.handleAlert(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await interaction.handleAlert(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async mouseMove(
         call: ServerUnaryCall<Request.Json, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.mouseMove(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await interaction.mouseMove(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async mouseButton(
         call: ServerUnaryCall<Request.MouseButtonOptions, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.mouseButton(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await interaction.mouseButton(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async keyboardKey(
         call: ServerUnaryCall<Request.KeyboardKeypress, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.keyboardKey(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await interaction.keyboardKey(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async keyboardInput(
         call: ServerUnaryCall<Request.KeyboardInputOptions, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return interaction.keyboardInput(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await interaction.keyboardInput(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async setOffline(
         call: ServerUnaryCall<Request.Bool, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return browserControl.setOffline(call, callback, this.getActiveContext());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await browserControl.setOffline(request, this.getActiveContext());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async setGeolocation(
         call: ServerUnaryCall<Request.Json, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return browserControl.setGeolocation(call, callback, this.getActiveContext());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await browserControl.setGeolocation(request, this.getActiveContext());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 
     async reload(
         call: ServerUnaryCall<Request.Empty, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        return browserControl.reload(call, callback, this.getActivePage());
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await browserControl.reload(this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(e, null);
+        }
     }
 }

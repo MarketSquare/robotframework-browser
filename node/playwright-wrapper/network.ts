@@ -14,47 +14,41 @@
 
 import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
 import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
 
 export async function httpRequest(
-    call: ServerUnaryCall<pb.Request.HttpRequest>,
-    callback: sendUnaryData<pb.Response.Json>,
+    request: pb.Request.HttpRequest,
     page?: Page,
-) {
+): Promise<pb.Response.Json> {
     const opts: { [k: string]: any } = {
-        method: call.request.getMethod(),
-        url: call.request.getUrl(),
-        headers: JSON.parse(call.request.getHeaders()),
+        method: request.getMethod(),
+        url: request.getUrl(),
+        headers: JSON.parse(request.getHeaders()),
     };
     if (opts.method != 'GET') {
-        opts.body = call.request.getBody();
+        opts.body = request.getBody();
     }
-    try {
-        const response = await page?.evaluate(({ url, method, body, headers }) => {
-            return fetch(url, { method, body, headers }).then((data: Response) => {
-                return data.text().then((body) => {
-                    const headers: { [k: string]: any } = {};
-                    data.headers.forEach((value, name) => (headers[name] = value));
-                    return {
-                        status: data.status,
-                        body: body,
-                        headers: JSON.stringify(headers),
-                        type: data.type,
-                        statusText: data.statusText,
-                        url: data.url,
-                        ok: data.ok,
-                        redirected: data.redirected,
-                    };
-                });
+    const response = await page?.evaluate(({ url, method, body, headers }) => {
+        return fetch(url, { method, body, headers }).then((data: Response) => {
+            return data.text().then((body) => {
+                const headers: { [k: string]: any } = {};
+                data.headers.forEach((value, name) => (headers[name] = value));
+                return {
+                    status: data.status,
+                    body: body,
+                    headers: JSON.stringify(headers),
+                    type: data.type,
+                    statusText: data.statusText,
+                    url: data.url,
+                    ok: data.ok,
+                    redirected: data.redirected,
+                };
             });
-        }, opts);
-        callback(null, jsonResponse(JSON.stringify(response), 'Request performed succesfully.'));
-    } catch (e) {
-        callback(e, null);
-    }
+        });
+    }, opts);
+    return jsonResponse(JSON.stringify(response), 'Request performed succesfully.');
 }
 
 export async function waitForResponse(request: pb.Request.HttpCapture, page?: Page): Promise<pb.Response.Json> {
@@ -94,16 +88,15 @@ export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page?:
 }
 
 export async function waitForDownload(
-    call: ServerUnaryCall<pb.Request.FilePath>,
-    callback: sendUnaryData<pb.Response.Json>,
+    request: pb.Request.FilePath,
     page?: Page,
-) {
-    const saveAs = call.request.getPath();
+): Promise<pb.Response.Json> {
+    const saveAs = request.getPath();
     const downloadObject = await invokeOnPage(page, 'waitForEvent', 'download');
 
     if (saveAs) {
         await downloadObject.saveAs(saveAs);
     }
     const path = await downloadObject.path();
-    callback(null, jsonResponse(JSON.stringify(path), 'Download done successfully to.'));
+    return jsonResponse(JSON.stringify(path), 'Download done successfully to.');
 }
