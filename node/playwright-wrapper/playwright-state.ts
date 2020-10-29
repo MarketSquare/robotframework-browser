@@ -451,7 +451,10 @@ export async function switchContext(request: Request.Index, browserState: Browse
     }
 
     await _switchContext(id, browserState);
-    await _switchPage(browserState.page?.id || '', browserState);
+    const page = browserState.page;
+    if (page !== undefined) {
+        await _switchPage(page.id, browserState);
+    }
     return stringResponse(previous, 'Successfully changed active context');
 }
 
