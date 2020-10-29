@@ -64,36 +64,25 @@ export async function setTimeout(request: Request.Timeout, context?: BrowserCont
     return emptyWithLog(`Set timeout to: ${timeout}`);
 }
 
-export async function setViewportSize(
-    request: Request.Viewport,
-    page?: Page,
-): Promise<Response.Empty> {
+export async function setViewportSize(request: Request.Viewport, page?: Page): Promise<Response.Empty> {
     const size = { width: request.getWidth(), height: request.getHeight() };
     await invokeOnPage(page, 'setViewportSize', size);
     return emptyWithLog(`Set viewport size to: ${size}`);
 }
 
-export async function setOffline(
-    request: Request.Bool,
-    context?: BrowserContext,
-): Promise<Response.Empty> {
+export async function setOffline(request: Request.Bool, context?: BrowserContext): Promise<Response.Empty> {
     exists(context, 'Tried to toggle context to offline, no open context');
     const offline = request.getValue();
     await context.setOffline(offline);
     return emptyWithLog(`Set context to ${offline}`);
 }
 
-export async function reload(
-    page?: Page,
-): Promise<Response.Empty> {
+export async function reload(page?: Page): Promise<Response.Empty> {
     await invokeOnPage(page, 'reload');
     return emptyWithLog('Reloaded page');
 }
 
-export async function setGeolocation(
-    request: Request.Json,
-    context?: BrowserContext,
-): Promise<Response.Empty> {
+export async function setGeolocation(request: Request.Json, context?: BrowserContext): Promise<Response.Empty> {
     const geolocation = JSON.parse(request.getBody());
     await context?.setGeolocation(geolocation);
     return emptyWithLog('Geolocation set to: ' + JSON.stringify(geolocation));
