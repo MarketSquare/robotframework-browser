@@ -95,38 +95,24 @@ async function getProperty<T>(request: Request.ElementProperty, state: Playwrigh
 }
 
 export async function getElementAttribute(
-    call: ServerUnaryCall<Request.ElementProperty>,
-    callback: sendUnaryData<Response.String>,
+    request: Request.ElementProperty,
     state: PlaywrightState,
-) {
-    const content = await getAttributeValue(call, callback, state);
-    callback(null, stringResponse(JSON.stringify(content), 'Property received successfully.'));
+): Promise<Response.String> {
+    const content = await getAttributeValue(request, state);
+    return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
-async function getAttributeValue<T>(
-    call: ServerUnaryCall<Request.ElementProperty>,
-    callback: sendUnaryData<T>,
-    state: PlaywrightState,
-) {
-    const selector = call.request.getSelector();
+async function getAttributeValue(request: Request.ElementProperty, state: PlaywrightState) {
+    const selector = request.getSelector();
     const element = await waitUntilElementExists(state, selector);
-    try {
-        const attributeName = call.request.getProperty();
-        const attribute = await element.getAttribute(attributeName);
-        logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
-        return attribute;
-    } catch (e) {
-        logger.error(e);
-        return callback(e, null);
-    }
+    const attributeName = request.getProperty();
+    const attribute = await element.getAttribute(attributeName);
+    logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
+    return attribute;
 }
 
-export async function getStyle(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Json>,
-    state: PlaywrightState,
-): Promise<void> {
-    const selector = call.request.getSelector();
+export async function getStyle(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
+    const selector = request.getSelector();
 
     logger.info('Getting css of element on page');
     const result = await invokePlaywrightMethod(state, '$eval', selector, function (element: Element) {
@@ -139,17 +125,12 @@ export async function getStyle(
         }
         return JSON.stringify(mapped);
     });
-    const response = jsonResponse(result, 'Style get succesfully.');
-    callback(null, response);
+    return jsonResponse(result, 'Style get succesfully.');
 }
 
-export async function getViewportSize(
-    call: ServerUnaryCall<Request.Empty>,
-    callback: sendUnaryData<Response.Json>,
-    page?: Page,
-): Promise<void> {
+export async function getViewportSize(page?: Page): Promise<Response.Json> {
     const result = await invokeOnPage(page, 'viewportSize');
-    callback(null, jsonResponse(JSON.stringify(result), 'View port size received sucesfully from page.'));
+    return jsonResponse(JSON.stringify(result), 'View port size received sucesfully from page.');
 }
 
 export async function getBoundingBox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {

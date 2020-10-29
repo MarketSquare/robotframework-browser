@@ -35,32 +35,21 @@ declare global {
  * in global state. Enables using special selector syntax `element=<uuid>` in
  * RF keywords.
  */
-export async function getElement(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.String>,
-    state: PlaywrightState,
-) {
-    try {
-        await waitUntilElementExists(state, call.request.getSelector());
-        const handle = await invokePlaywrightMethod(state, '$', call.request.getSelector());
-        const id = uuidv4();
-        state.addElement(id, handle);
-        callback(null, stringResponse(`element=${id}`, 'Element found successfully.'));
-    } catch (e) {
-        callback(e, null);
-    }
+export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
+    await waitUntilElementExists(state, request.getSelector());
+    const handle = await invokePlaywrightMethod(state, '$', request.getSelector());
+    const id = uuidv4();
+    state.addElement(id, handle);
+    return stringResponse(`element=${id}`, 'Element found successfully.');
 }
 
 /** Resolve a list of elementHandles, create global UUIDs for them, and store the
  * references in global state. Enables using special selector syntax `element=<uuid>`
  * in RF keywords.
  */
-export async function getElements(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    state: PlaywrightState,
-): Promise<Response.Json> {
-    await waitUntilElementExists(state, call.request.getSelector());
-    const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', call.request.getSelector());
+export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
+    await waitUntilElementExists(state, request.getSelector());
+    const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', request.getSelector());
 
     const response: string[] = handles.map((handle) => {
         const id = uuidv4();
@@ -96,11 +85,11 @@ export async function getPageState(callback: sendUnaryData<Response.JavascriptEx
 }
 
 export async function waitForElementState(
-    call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
+    request: Request.ElementSelectorWithOptions,
     state: PlaywrightState,
 ): Promise<Response.Empty> {
-    const selector = call.request.getSelector();
-    const options = JSON.parse(call.request.getOptions());
+    const selector = request.getSelector();
+    const options = JSON.parse(request.getOptions());
     await invokePlaywrightMethod(state, 'waitForSelector', selector, options);
     return emptyWithLog('Wait for Element with selector: ' + selector);
 }
@@ -125,14 +114,10 @@ export async function waitForFunction(
     return jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Fcuntion completed succesfully.');
 }
 
-export async function addStyleTag(
-    call: ServerUnaryCall<Request.StyleTag>,
-    callback: sendUnaryData<Response.Empty>,
-    page?: Page,
-) {
-    const content = call.request.getContent();
+export async function addStyleTag(request: Request.StyleTag, page?: Page): Promise<Response.Empty> {
+    const content = request.getContent();
     await invokeOnPage(page, 'addStyleTag', { content: content });
-    callback(null, emptyWithLog('added Style: ' + content));
+    return emptyWithLog('added Style: ' + content);
 }
 
 export async function highlightElements(

@@ -24,11 +24,11 @@ import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function selectOption(
-    call: ServerUnaryCall<Request.SelectElementSelector>,
+    request: Request.SelectElementSelector,
     state: PlaywrightState,
 ): Promise<Response.Empty> {
-    const selector = call.request.getSelector();
-    const matcher = JSON.parse(call.request.getMatcherjson());
+    const selector = request.getSelector();
+    const matcher = JSON.parse(request.getMatcherjson());
     const result = await invokePlaywrightMethod(state, 'selectOption', selector, matcher);
 
     if (result.length == 0) {
@@ -39,35 +39,28 @@ export async function selectOption(
 }
 
 export async function deSelectOption(
-    call: ServerUnaryCall<Request.ElementSelector>,
+    request: Request.ElementSelector,
     state: PlaywrightState,
 ): Promise<Response.Empty> {
-    const selector = call.request.getSelector();
+    const selector = request.getSelector();
     await invokePlaywrightMethod(state, 'selectOption', selector, []);
     return emptyWithLog(`Deselected options in element ${selector}`);
 }
 
-export async function inputText(
-    call: ServerUnaryCall<Request.TextInput>,
-    callback: sendUnaryData<Response.Empty>,
-    state: PlaywrightState,
-) {
-    const inputText = call.request.getInput();
-    const selector = call.request.getSelector();
-    const type = call.request.getType();
+export async function inputText(request: Request.TextInput, state: PlaywrightState): Promise<Response.Empty> {
+    const inputText = request.getInput();
+    const selector = request.getSelector();
+    const type = request.getType();
     const methodName = type ? 'type' : 'fill';
     await invokePlaywrightMethod(state, methodName, selector, inputText);
-    callback(null, emptyWithLog('Input text: ' + inputText));
+    return emptyWithLog('Input text: ' + inputText);
 }
 
-export async function typeText(
-    call: ServerUnaryCall<Request.TypeText>,
-    state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = call.request.getSelector();
-    const text = call.request.getText();
-    const delay = call.request.getDelay();
-    const clear = call.request.getClear();
+export async function typeText(request: Request.TypeText, state: PlaywrightState): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const text = request.getText();
+    const delay = request.getDelay();
+    const clear = request.getClear();
     if (clear) {
         await invokePlaywrightMethod(state, 'fill', selector, '');
     }
@@ -75,28 +68,22 @@ export async function typeText(
     return emptyWithLog('Typed text: ' + text);
 }
 
-export async function fillText(
-    call: ServerUnaryCall<Request.FillText>,
-    state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = call.request.getSelector();
-    const text = call.request.getText();
+export async function fillText(request: Request.FillText, state: PlaywrightState): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const text = request.getText();
     await invokePlaywrightMethod(state, 'fill', selector, text);
     return emptyWithLog('Fill text: ' + text);
 }
 
-export async function clearText(
-    call: ServerUnaryCall<Request.ClearText>,
-    state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = call.request.getSelector();
+export async function clearText(request: Request.ClearText, state: PlaywrightState): Promise<Response.Empty> {
+    const selector = request.getSelector();
     await invokePlaywrightMethod(state, 'fill', selector, '');
     return emptyWithLog('Text field cleared.');
 }
 
-export async function press(call: ServerUnaryCall<Request.PressKeys>, state: PlaywrightState): Promise<Response.Empty> {
-    const selector = call.request.getSelector();
-    const keyList = call.request.getKeyList();
+export async function press(request: Request.PressKeys, state: PlaywrightState): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const keyList = request.getKeyList();
     for (const i of keyList) {
         await invokePlaywrightMethod(state, 'press', selector, i);
     }
@@ -104,54 +91,44 @@ export async function press(call: ServerUnaryCall<Request.PressKeys>, state: Pla
 }
 
 export async function click(
-    call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
+    request: Request.ElementSelectorWithOptions,
     state: PlaywrightState,
 ): Promise<Response.Empty> {
-    const selector = call.request.getSelector();
-    const options = call.request.getOptions();
+    const selector = request.getSelector();
+    const options = request.getOptions();
     await invokePlaywrightMethod(state, 'click', selector, JSON.parse(options));
     return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
 }
 
 export async function hover(
-    call: ServerUnaryCall<Request.ElementSelectorWithOptions>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.ElementSelectorWithOptions,
     state: PlaywrightState,
-) {
-    const selector = call.request.getSelector();
-    const options = call.request.getOptions();
+): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const options = request.getOptions();
     await invokePlaywrightMethod(state, 'hover', selector, JSON.parse(options));
-    callback(null, emptyWithLog(`Hovered element: '${selector}' With options: '${options}'`));
+    return emptyWithLog(`Hovered element: '${selector}' With options: '${options}'`);
 }
 
-export async function focus(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Empty>,
-    state: PlaywrightState,
-) {
-    const selector = call.request.getSelector();
+export async function focus(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
+    const selector = request.getSelector();
     await invokePlaywrightMethod(state, 'focus', selector);
-    callback(null, emptyWithLog('Focused element: ' + selector));
+    return emptyWithLog('Focused element: ' + selector);
 }
 
-export async function checkCheckbox(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Empty>,
-    state: PlaywrightState,
-) {
-    const selector = call.request.getSelector();
+export async function checkCheckbox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
+    const selector = request.getSelector();
     await invokePlaywrightMethod(state, 'check', selector);
-    callback(null, emptyWithLog('Checked checkbox: ' + selector));
+    return emptyWithLog('Checked checkbox: ' + selector);
 }
 
 export async function uncheckCheckbox(
-    call: ServerUnaryCall<Request.ElementSelector>,
-    callback: sendUnaryData<Response.Empty>,
+    request: Request.ElementSelector,
     state: PlaywrightState,
-) {
-    const selector = call.request.getSelector();
+): Promise<Response.Empty> {
+    const selector = request.getSelector();
     await invokePlaywrightMethod(state, 'uncheck', selector);
-    callback(null, emptyWithLog('Unchecked checkbox: ' + selector));
+    return emptyWithLog('Unchecked checkbox: ' + selector);
 }
 
 export async function uploadFile(
