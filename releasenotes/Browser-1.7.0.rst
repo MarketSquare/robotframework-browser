@@ -23,6 +23,7 @@ to install exactly this version. Alternatively you can download the source
 distribution from PyPI_ and install it manually.
 Browser library 1.7.0 was released on Monday October 26, 2020. Browser supports
 Python **>=3.7**, and Robot Framework **>=3.2**.
+
 .. _Robot Framework: http://robotframework.org
 .. _Browser: https://github.com/MarketSquare/robotframework-browser
 .. _Selenium: https://github.com/microsoft/playwright
