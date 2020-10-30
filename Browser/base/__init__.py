@@ -12,4 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from Browser.base.cache import ContextCache  # noqa
 from Browser.base.librarycomponent import LibraryComponent  # noqa
