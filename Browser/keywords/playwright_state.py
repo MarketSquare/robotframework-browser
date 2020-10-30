@@ -16,6 +16,7 @@ import json
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
+from robot.utils import get_link_path
 from robotlibcore import keyword  # type: ignore
 
 from ..assertion_engine import verify_assertion, with_assertion_polling
@@ -475,16 +476,17 @@ class PlaywrightState(LibraryComponent):
         return response.body
 
     def _embed_video(self, video: dict):
-        video_path = video.get("video_path")
-        if not video_path:
+        if not video.get("video_path"):
             logger.debug("Video is not enabled.")
             return
+        relative_path = get_link_path(video.get("video_path"), self.library.outputdir)
         video_size = self.context_cache.get(video["contextUuid"])
         video_width = video_size["width"]
         video_height = video_size["height"]
         logger.info(
             '</td></tr><tr><td colspan="3">'
-            f'<iframe width="{video_width}" height="{video_height}" src="{video_path}" frameborder="0" allowfullscreen></iframe>',
+            f'<iframe width="{video_width}" height="{video_height}" src="{relative_path}" '
+            'frameborder="0" allowfullscreen></iframe></iframe>',
             html=True,
         )
 
