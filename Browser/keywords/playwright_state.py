@@ -432,8 +432,17 @@ class PlaywrightState(LibraryComponent):
                     defaultTimeout=int(self.timeout),
                 )
             )
-            logger.info(response.log)
-            return response.body
+        context_uuid = response.body.split("=")[1]
+        logger.info(response.log)
+        self.context_cache.add(context_uuid, self._get_video_size(params))
+        return response.body
+
+    def _get_video_size(self, params: dict) -> dict:
+        if "videoSize" in params:
+            return params["videoSize"]
+        if "viewport" in params:
+            return params["viewport"]
+        return {"width": 1280, "height": 720}
 
     @keyword(tags=["Setter", "BrowserControl"])
     def new_page(self, url: Optional[str] = None) -> str:
