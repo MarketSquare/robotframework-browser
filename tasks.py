@@ -31,11 +31,11 @@ node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
 
-RELEASE_NOTES_PATH = Path('docs/releasenotes/Browser-{version}.rst')
-RELEASE_NOTES_TITLE = 'Browser library {version}'
-REPOSITORY = 'MarketSquare/robotframework-browser'
-VERSION_PATH = Path('Browser/version.py')
-RELEASE_NOTES_INTRO = '''
+RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
+RELEASE_NOTES_TITLE = "Browser library {version}"
+REPOSITORY = "MarketSquare/robotframework-browser"
+VERSION_PATH = Path("Browser/version.py")
+RELEASE_NOTES_INTRO = """
 Browser_ is a web testing library for `Robot Framework`_ that utilizes
 the Playwright_ tool internally. Browser library {version} is a new release with
 **UPDATE** enhancements and bug fixes.
@@ -60,7 +60,7 @@ Python **>=3.7**, and Robot Framework **>=3.2**.
 .. _pip: http://pip-installer.org
 .. _PyPI: https://pypi.python.org/pypi/robotframework-browser
 .. _issue tracker: https://github.com/MarketSquare/robotframework-browser/milestones%3A{version.milestone}
-'''
+"""
 
 
 @task
@@ -221,7 +221,10 @@ def atest(c, suite=None):
     Args:
         suite: Select which suite to run.
     """
-    args = ["--pythonpath", ".",]
+    args = [
+        "--pythonpath",
+        ".",
+    ]
     if suite:
         args.extend(["--suite", suite])
     _run_robot(args)
@@ -248,14 +251,24 @@ def atest_global_pythonpath(c):
 def atest_failed(c):
     _run_robot(["--rerunfailed", "atest/output/output.xml"])
 
+
 @task()
 def run_tests(c, tests):
     process = subprocess.Popen([sys.executable, "-m", "robot", tests])
     process.wait(600)
 
+
 def _run_robot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
-    pabot_args = [sys.executable, "-m", "pabot.pabot", "--pabotlib"]
+    pabot_args = [
+        sys.executable,
+        "-m",
+        "pabot.pabot",
+        "--pabotlib",
+        "--artifacts",
+        "png,webm",
+        "--artifactsinsubfolders",
+    ]
     default_args = [
         "--exclude",
         "Not-Implemented",
@@ -392,8 +405,9 @@ def release_notes(c, version=None, username=None, password=None, write=False):
         RELEASE_NOTES_PATH.parent.mkdir(parents=True)
     version = Version(version, VERSION_PATH, pattern)
     file = RELEASE_NOTES_PATH if write else sys.stdout
-    generator = ReleaseNotesGenerator(REPOSITORY, RELEASE_NOTES_TITLE,
-                                      RELEASE_NOTES_INTRO)
+    generator = ReleaseNotesGenerator(
+        REPOSITORY, RELEASE_NOTES_TITLE, RELEASE_NOTES_INTRO
+    )
     generator.generate(version, username, password, file)
 
 
