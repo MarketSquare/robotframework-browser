@@ -339,7 +339,8 @@ export async function newPage(request: Request.Url, openBrowsers: PlaywrightStat
         const response = new Response.NewPageResponse();
         response.setBody(page.id);
         response.setLog(`Successfully initialized new page object and opened url: ${url}`);
-        response.setVideo(`${videoPath}`);
+        const video = { video_path: videoPath || null, contextUuid: context.id };
+        response.setVideo(JSON.stringify(video));
         return response;
     } catch (e) {
         browserState.popPage();

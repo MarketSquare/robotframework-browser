@@ -422,6 +422,10 @@ class PlaywrightState(LibraryComponent):
                 location["accuracy"] = float(accuracy)
         if not videosPath:
             params.pop("videoSize", None)
+        if "videoSize" in params:
+            params = self._size_to_number(params, "videoSize")
+        if "viewport" in params:
+            params = self._size_to_number(params, "viewport")
         options = json.dumps(params, default=str)
         logger.info(options)
         with self.playwright.grpc_channel() as stub:
@@ -432,9 +436,8 @@ class PlaywrightState(LibraryComponent):
                     defaultTimeout=int(self.timeout),
                 )
             )
-        context_uuid = response.body.split("=")[1]
         logger.info(response.log)
-        self.context_cache.add(context_uuid, self._get_video_size(params))
+        self.context_cache.add(response.body, self._get_video_size(params))
         return response.body
 
     def _get_video_size(self, params: dict) -> dict:
@@ -443,6 +446,13 @@ class PlaywrightState(LibraryComponent):
         if "viewport" in params:
             return params["viewport"]
         return {"width": 1280, "height": 720}
+
+    def _size_to_number(self, params: dict, argument: str) -> dict:
+        width = int(params[argument]["width"])
+        height = int(params[argument]["height"])
+        params[argument]["width"] = width
+        params[argument]["height"] = height
+        return params
 
     @keyword(tags=["Setter", "BrowserControl"])
     def new_page(self, url: Optional[str] = None) -> str:
@@ -460,9 +470,23 @@ class PlaywrightState(LibraryComponent):
             response = stub.NewPage(
                 Request().Url(url=url, defaultTimeout=int(self.timeout))
             )
-            logger.info(response.log)
-            logger.info(response.video)
-            return response.body
+        logger.info(response.log)
+        self._embed_video(json.loads(response.video))
+        return response.body
+
+    def _embed_video(self, video: dict):
+        video_path = video.get("video_path")
+        if not video_path:
+            logger.debug("Video is not enabled.")
+            return
+        video_size = self.context_cache.get(video["contextUuid"])
+        video_width = video_size["width"]
+        video_height = video_size["height"]
+        logger.info(
+            '</td></tr><tr><td colspan="3">'
+            f'<iframe width="{video_width}" height="{video_height}" src="{video_path}" frameborder="0" allowfullscreen></iframe>',
+            html=True,
+        )
 
     @keyword(tags=["Getter", "BrowserControl", ""])
     @with_assertion_polling
