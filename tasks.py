@@ -182,9 +182,25 @@ def watch(c):
 
 
 @task
-def utest(c):
-    status = pytest.main()
-    raise Exit()
+def utest(c, reporter=None, suite=None):
+    """Run utest.
+
+    Args:
+        reporter: Defines which approval test reporter to use.
+                  Must be full path to the diff program.
+                  For more details see:
+                  https://pypi.org/project/pytest-approvaltests/
+                  https://github.com/approvals/ApprovalTests.Python
+        suite:    Defines which test suite file to run. Same as: pytest path/to/test.py
+                  Must be path to the test suite file
+    """
+    args = ["--showlocals"]
+    if reporter:
+        args.append(f"--approvaltests-add-reporter={reporter}")
+    if suite:
+        args.append(suite)
+    status = pytest.main(args)
+    raise Exit(status)
 
 
 @task
