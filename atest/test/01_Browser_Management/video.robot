@@ -5,7 +5,7 @@ Suite Setup       Video Setup
 *** Test Cases ***
 Create Video
     [Documentation]
-    ...    LOG 2:3    INFO    GLOB:    *iframe width="1280" height="720" src="video*.webm"*
+    ...    LOG 2:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
     New Context    videosPath=${OUTPUT_DIR}/video
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}

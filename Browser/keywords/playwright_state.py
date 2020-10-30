@@ -484,10 +484,11 @@ class PlaywrightState(LibraryComponent):
         video_size = self.context_cache.get(video["contextUuid"])
         video_width = video_size["width"]
         video_height = video_size["height"]
+        video_type = relative_path.split(".")[1]
         logger.info(
             '</td></tr><tr><td colspan="3">'
-            f'<iframe width="{video_width}" height="{video_height}" src="{relative_path}" '
-            'frameborder="0" allowfullscreen></iframe></iframe>',
+            f'<video width="{video_width}" height="{video_height}" controls>'
+            f'<source src="{relative_path}" type="video/{video_type}"></video>',
             html=True,
         )
 
