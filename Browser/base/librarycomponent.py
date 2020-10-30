@@ -56,6 +56,10 @@ class LibraryComponent:
     def unresolved_promises(self, value: Set[Future]):
         self.library._unresolved_promises = value
 
+    @property
+    def context_cache(self):
+        return self.library._context_cache
+
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
 

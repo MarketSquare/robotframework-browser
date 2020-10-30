@@ -23,6 +23,7 @@ from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
+from .base import ContextCache
 from .keywords import (
     Control,
     Cookie,
@@ -525,6 +526,7 @@ class Browser(DynamicCore):
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
     _auto_closing_level: AutoClosingLevel
     _pause_on_failure: Set["Browser"] = set()
+    _context_cache = ContextCache()
 
     def __init__(
         self,

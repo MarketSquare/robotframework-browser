@@ -331,7 +331,7 @@ export async function newPage(request: Request.Url, openBrowsers: PlaywrightStat
 
     const page = await _newPage(context.c);
     const videoPath = await page.p.video()?.path();
-    logger.info("Video path: " + videoPath);
+    logger.info('Video path: ' + videoPath);
     browserState.pushPage(page);
     const url = request.getUrl() || 'about:blank';
     try {
