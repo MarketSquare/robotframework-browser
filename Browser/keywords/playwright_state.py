@@ -16,7 +16,7 @@ import json
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
-from robot.utils import get_link_path
+from robot.utils import get_link_path  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..assertion_engine import verify_assertion, with_assertion_polling
