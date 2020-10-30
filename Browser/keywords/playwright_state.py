@@ -136,6 +136,7 @@ class PlaywrightState(LibraryComponent):
     def _close_context(self, contexts):
         with self.playwright.grpc_channel() as stub:
             for context in contexts:
+                self.context_cache.remove(context["id"])
                 self.switch_context(context["id"])
                 response = stub.CloseContext(Request().Empty())
                 logger.info(response.log)
