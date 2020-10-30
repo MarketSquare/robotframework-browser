@@ -232,6 +232,10 @@ def atest_global_pythonpath(c):
 def atest_failed(c):
     _run_robot(["--rerunfailed", "atest/output/output.xml"])
 
+@task()
+def run_tests(c, tests):
+    process = subprocess.Popen([sys.executable, "-m", "robot", tests])
+    process.wait(600)
 
 def _run_robot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
