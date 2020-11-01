@@ -20,11 +20,15 @@ from .data_types import (
     CookieSameSite,
     CookieType,
     ElementState,
+    GeoLocation,
+    HttpCredentials,
+    Proxy,
     RequestMethod,
     SelectAttribute,
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
+    convert_typed_dict,
 )
 from .js_utilities import (
     exec_scroll_function,

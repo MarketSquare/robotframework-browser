@@ -13,22 +13,99 @@
 # limitations under the License.
 
 from enum import Enum, auto
+from typing import Dict
 
 from typing_extensions import TypedDict
 
-BoundingBox = TypedDict(
-    "BoundingBox",
-    {"x": float, "y": float, "width": float, "height": float},
-    total=False,
-)
 
-Coordinates = TypedDict("Coordinates", {"x": float, "y": float}, total=False)
+def convert_typed_dict(data_type, params: Dict, key: str) -> Dict:
+    if key not in params:
+        return params
+    dictionary = {k.lower(): v for k, v in params[key].items()}
+    struct = data_type.__annotations__
+    typed_dict = data_type()
+    for req_key in data_type.__required_keys__:
+        if req_key.lower() not in dictionary:
+            raise RuntimeError(
+                f"`{dictionary}` cannot be converted to {data_type.__name__}."
+                f"\nThe required key '{req_key}' in not set in given value."
+                f"\nExpected types: {data_type.__annotations__}"
+            )
+        typed_dict[req_key] = struct[req_key](dictionary[req_key.lower()])
+    for opt_key in data_type.__optional_keys__:
+        if opt_key.lower() not in dictionary:
+            continue
+        typed_dict[opt_key] = struct[opt_key](dictionary[opt_key.lower()])
+    params[key] = typed_dict
+    return params
 
-MouseOptionsDict = TypedDict(
-    "MouseOptionsDict", {"x": float, "y": float, "options": dict}, total=False
-)
 
-ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
+class BoundingBox(TypedDict, total=False):
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+class Coordinates(TypedDict, total=False):
+    x: float
+    y: float
+
+
+class MouseOptionsDict(TypedDict, total=False):
+    x: float
+    y: float
+    options: dict
+
+
+class ViewportDimensions(TypedDict):
+    width: int
+    height: int
+
+
+class HttpCredentials(TypedDict):
+    username: str
+    password: str
+
+
+class _GeoCoordinated(TypedDict):
+    longitude: float
+    latitude: float
+
+
+class GeoLocation(_GeoCoordinated, total=False):
+    """Defines the geolocation.
+
+    - ``latitude`` Latitude between -90 and 90.
+    - ``longitude`` Longitude between -180 and 180.
+    - ``accuracy`` *Optional* Non-negative accuracy value. Defaults to 0.
+    Example usage: ``{'latitude': 59.95, 'longitude': 30.31667}``"""
+
+    accuracy: float
+
+
+class _Server(TypedDict):
+    server: str
+
+
+class Proxy(_Server, total=False):
+    """Network proxy settings.
+
+    ``server`` Proxy to be used for all requests. HTTP and SOCKS proxies are supported,
+     for example http://myproxy.com:3128 or socks5://myproxy.com:3128.
+     Short form myproxy.com:3128 is considered an HTTP proxy.
+
+    ``bypass`` *Optional* coma-separated domains to bypass proxy,
+    for example ".com, chromium.org, .domain.com".
+
+    ``username`` *Optional* username to use if HTTP proxy requires authentication.
+
+    ``password`` *Optional* password to use if HTTP proxy requires authentication.
+    """
+
+    bypass: str
+    Username: str
+    password: str
 
 
 class SelectionType(Enum):
