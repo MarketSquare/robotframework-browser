@@ -274,25 +274,14 @@ class Interaction(LibraryComponent):
         ``selector`` Selector element to click.
         See the `Finding elements` section for details about the selectors.
 
-        ``button`` The button that shall be used for clicking.
-
-        ``clickCount`` How many time shall be clicked.
-
-        ``delay`` Time to wait between mouse-down and mouse-up and next click.
-
-        *Caution: be aware that if the delay leads to a total time that exceeds the timeout, the keyword fails*
-
-        ``position_x`` & ``position_y`` A point to click relative to the
-        top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
-        If not specified, clicks to some visible point of the element.
-
-        *Caution: even with 0, 0 might click a few pixels off from the corner of the bounding-box. Click uses detection to find the first clickable point.*
+        ``position_x`` & ``position_y`` A point to hover relative to the top-left corner of element bounding box.
+        If not specified, hovers over some visible point of the element.
+        Only positive values within the bounding-box are allowed.
 
         ``force`` Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
-        ``*modifiers``
-        Modifier keys to press. Ensures that only these modifiers are pressed
-        during the click, and then restores current modifiers back.
+        ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
+        pressed during the hover, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
