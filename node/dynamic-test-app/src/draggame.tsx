@@ -1,5 +1,5 @@
-import Draggable, {DraggableData, DraggableEvent} from 'react-draggable';
-import React, {useState} from 'react';
+import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
+import React, { useState } from 'react';
 
 export function DragGame() {
     const goal = {
@@ -39,7 +39,8 @@ export function DragGame() {
                     </div>
                 </Draggable>
                 <Draggable>
-                    <div className="obstacle"
+                    <div
+                        className="obstacle"
                         style={{
                             width: 200,
                             height: 200,
@@ -48,9 +49,13 @@ export function DragGame() {
                             justifyContent: 'center',
                             alignItems: 'center',
                             position: 'absolute',
-                        }}><span>Obstacle</span></div>
+                        }}
+                    >
+                        <span>Obstacle</span>
+                    </div>
                 </Draggable>
-                <div className="goal"
+                <div
+                    className="goal"
                     style={{
                         ...goal,
                         border: '3px solid black',
@@ -59,7 +64,10 @@ export function DragGame() {
                         alignItems: 'center',
                         position: 'absolute',
                         zIndex: -1,
-                    }}><span>Goal</span></div>
+                    }}
+                >
+                    <span>Goal</span>
+                </div>
             </div>
         </div>
     );
