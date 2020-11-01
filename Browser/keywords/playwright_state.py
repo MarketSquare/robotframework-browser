@@ -24,9 +24,13 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     ColorScheme,
+    GeoLocation,
+    HttpCredentials,
+    Proxy,
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
+    convert_typed_dict,
     find_by_id,
     locals_to_params,
     logger,
@@ -232,7 +236,7 @@ class PlaywrightState(LibraryComponent):
         executablePath: Optional[str] = None,
         args: Optional[List[str]] = None,
         ignoreDefaultArgs: Optional[List[str]] = None,
-        proxy: Optional[Dict] = None,
+        proxy: Optional[Proxy] = None,
         downloadsPath: Optional[str] = None,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
@@ -292,6 +296,7 @@ class PlaywrightState(LibraryComponent):
         Useful so that you can see what is going on. Defaults to no delay.
         """
         params = locals_to_params(locals())
+        params = convert_typed_dict(Proxy, params, "proxy")
         if timeout:
             params["timeout"] = self.convert_timeout(timeout)
         params["slowMo"] = self.convert_timeout(slowMo)
@@ -319,17 +324,18 @@ class PlaywrightState(LibraryComponent):
         hasTouch: bool = False,
         javaScriptEnabled: bool = True,
         timezoneId: Optional[str] = None,
-        geolocation: Optional[Dict] = None,
+        geolocation: Optional[GeoLocation] = None,
         locale: Optional[str] = None,
         permissions: Optional[List[str]] = None,
         extraHTTPHeaders: Optional[Dict[str, str]] = None,
         offline: bool = False,
-        httpCredentials: Optional[Dict] = None,
+        httpCredentials: Optional[HttpCredentials] = None,
         colorScheme: Optional[ColorScheme] = None,
-        hideRfBrowser: bool = False,
-        defaultBrowserType: Optional[str] = None,
+        proxy: Optional[Proxy] = None,
         videosPath: Optional[str] = None,
-        videoSize: Optional[Dict[str, int]] = None,
+        videoSize: Optional[ViewportDimensions] = None,
+        defaultBrowserType: Optional[SupportedBrowsers] = None,
+        hideRfBrowser: bool = False,
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -337,7 +343,7 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the created context
         that can be used in `Switch Context`.
 
-        ``acceptDownloads`` Whether to automatically downloadall the attachments.
+        ``acceptDownloads`` Whether to automatically downloads all the attachments.
         Defaults to False where all the downloads are canceled.
 
         ``ignoreHTTPSErrors`` Whether to ignore HTTPS errors during navigation.
@@ -367,7 +373,7 @@ class PlaywrightState(LibraryComponent):
         See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt | ICU’s metaZones.txt]
         for a list of supported timezone IDs.
 
-        ``geolocation`` Sets the geolocation. No location is set be default.
+        ``geolocation`` Sets the geolocation. No location is set by default.
         - ``latitude`` <number> Latitude between -90 and 90.
         - ``longitude`` <number> Longitude between -180 and 180.
         - ``accuracy`` Optional <number> Non-negative accuracy value. Defaults to 0.
@@ -396,14 +402,29 @@ class PlaywrightState(LibraryComponent):
         See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
         for more details. Defaults to ``light``.
 
-        ``videosPath`` <str> Enables video recording for all pages to videosPath
+        ``proxy`` Network proxy settings to use with this context.
+        Note that browser needs to be launched with the global proxy for this option to work.
+        If all contexts override the proxy, global proxy will be never used and can be any string
+
+        ``videosPath`` Enables video recording for all pages to videosPath
         folder. If not specified, videos are not recorded.
-        ``videoSize`` <dictionary, int> Specifies dimensions of the automatically recorded
+
+        ``videoSize`` Specifies dimensions of the automatically recorded
         video. Can only be used if videosPath is set. If not specified the size will
         be equal to viewport. If viewport is not configured explicitly the video size
         defaults to 1280x720. Actual picture of the page will be scaled down if
         necessary to fit specified size.
         - Example {"width": 1280, "height": 720}
+
+        ``defaultBrowserType`` If no browser is open and `New Context` opens a new browser
+        with defaults, it now uses this setting.
+        Very useful together with `Get Device` keyword:
+
+        Example:
+        | Test an iPhone
+        |     ${device}=    `Get Device`    iPhone X
+        |     `New Context`    &{device}        # unpacking here with &
+        |     `New Page`    http://example.com
 
         A BrowserContext is the Playwright object that controls a single browser profile.
         Within a context caches and cookies are shared.
@@ -413,21 +434,12 @@ class PlaywrightState(LibraryComponent):
         If there's no open Browser this keyword will open one. Does not create pages.
         """
         params = locals_to_params(locals())
-        if "geolocation" in params:
-            location = params["geolocation"]
-            latitude = location["latitude"]
-            location["latitude"] = float(latitude)
-            longitude = location["longitude"]
-            location["longitude"] = float(longitude)
-            accuracy = location.get("accuracy")
-            if accuracy:
-                location["accuracy"] = float(accuracy)
+        params = convert_typed_dict(GeoLocation, params, "geolocation")
+        params = convert_typed_dict(ViewportDimensions, params, "viewport")
+        params = convert_typed_dict(Proxy, params, "proxy")
+        params = convert_typed_dict(ViewportDimensions, params, "videoSize")
         if not videosPath:
             params.pop("videoSize", None)
-        if "videoSize" in params:
-            params = self._size_to_number(params, "videoSize")
-        if "viewport" in params:
-            params = self._size_to_number(params, "viewport")
         options = json.dumps(params, default=str)
         logger.info(options)
         with self.playwright.grpc_channel() as stub:
@@ -448,13 +460,6 @@ class PlaywrightState(LibraryComponent):
         if "viewport" in params:
             return params["viewport"]
         return {"width": 1280, "height": 720}
-
-    def _size_to_number(self, params: dict, argument: str) -> dict:
-        width = int(params[argument]["width"])
-        height = int(params[argument]["height"])
-        params[argument]["width"] = width
-        params[argument]["height"] = height
-        return params
 
     @keyword(tags=["Setter", "BrowserControl"])
     def new_page(self, url: Optional[str] = None) -> str:

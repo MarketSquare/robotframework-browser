@@ -59,6 +59,12 @@ Hover and Drop to Hover
     Get Text    \#dragX    ==    20
     Get Text    \#dragY    ==    30
 
+Drag and Drop with Move Relative
+    Relative DnD    32    64    32    64
+    Relative DnD    0    -64    32    0
+    Relative DnD    -20    0    12    0
+    Relative DnD    -22    -20    -10    -20
+
 Click Count
     ${x}=    Get Boundingbox    \#clickWithOptions    x
     ${y}=    Get Boundingbox    \#clickWithOptions    y
@@ -80,3 +86,13 @@ Left Right and Middle Click
     Get Text    \#mouse_button    ==    middle
     Mouse Button    click    ${x}    ${y}    button=left
     Get Text    \#mouse_button    ==    left
+
+*** Keywords ***
+Relative DnD
+    [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}
+    Hover    id=draggable
+    Mouse Button    down
+    Mouse Move Relative To    id=draggable    ${x}    ${y}    steps=2
+    Mouse Button    up
+    Get Text    \#dragX    ==    ${txt_x}
+    Get Text    \#dragY    ==    ${txt_y}

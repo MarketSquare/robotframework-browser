@@ -33,9 +33,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install ffmpeg on unix-like
+    - name: Install ffmpeg and libgles on unix-like
       run: |
         sudo apt-get install ffmpeg
+        sudo apt-get install libgles2
       if: matrix.os != 'windows-latest'
     - name: Install python dependencies
       run: |

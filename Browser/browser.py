@@ -739,7 +739,7 @@ class Browser(DynamicCore):
     def _failure_screenshot_path(self):
         test_name = BuiltIn().get_variable_value("${TEST NAME}")
         return os.path.join(
-            BuiltIn().get_variable_value("${OUTPUTDIR}"),
+            self.outputdir,
             test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT_{index}",
         ).replace("\\", "\\\\")
 

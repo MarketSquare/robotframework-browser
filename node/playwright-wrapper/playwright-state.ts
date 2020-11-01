@@ -106,10 +106,10 @@ export class PlaywrightState {
         return this.getActiveBrowser();
     };
 
-    public async getOrCreateActiveBrowser(): Promise<BrowserState> {
+    public async getOrCreateActiveBrowser(browserType?: string): Promise<BrowserState> {
         const currentBrowser = this.activeBrowser;
         if (currentBrowser === undefined) {
-            const [newBrowser, name] = await _newBrowser();
+            const [newBrowser, name] = await _newBrowser(browserType);
             const newState = new BrowserState(name, newBrowser);
             this.browserStack.push(newState);
             return newState;
@@ -350,8 +350,8 @@ export async function newPage(request: Request.Url, openBrowsers: PlaywrightStat
 
 export async function newContext(request: Request.Context, openBrowsers: PlaywrightState): Promise<Response.String> {
     const hideRfBrowser = request.getHiderfbrowser();
-    const browserState = await openBrowsers.getOrCreateActiveBrowser();
     const options = JSON.parse(request.getRawoptions());
+    const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType);
     const defaultTimeout = request.getDefaulttimeout();
     const context = await _newBrowserContext(browserState.browser, defaultTimeout, options, hideRfBrowser);
     browserState.pushContext(context);

@@ -274,25 +274,14 @@ class Interaction(LibraryComponent):
         ``selector`` Selector element to click.
         See the `Finding elements` section for details about the selectors.
 
-        ``button`` The button that shall be used for clicking.
-
-        ``clickCount`` How many time shall be clicked.
-
-        ``delay`` Time to wait between mouse-down and mouse-up and next click.
-
-        *Caution: be aware that if the delay leads to a total time that exceeds the timeout, the keyword fails*
-
-        ``position_x`` & ``position_y`` A point to click relative to the
-        top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
-        If not specified, clicks to some visible point of the element.
-
-        *Caution: even with 0, 0 might click a few pixels off from the corner of the bounding-box. Click uses detection to find the first clickable point.*
+        ``position_x`` & ``position_y`` A point to hover relative to the top-left corner of element bounding box.
+        If not specified, hovers over some visible point of the element.
+        Only positive values within the bounding-box are allowed.
 
         ``force`` Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
-        ``*modifiers``
-        Modifier keys to press. Ensures that only these modifiers are pressed
-        during the click, and then restores current modifiers back.
+        ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
+        pressed during the hover, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
@@ -664,6 +653,35 @@ class Interaction(LibraryComponent):
         center["x"] = boundingbox["x"] + (boundingbox["width"] / 2)
         center["y"] = boundingbox["y"] + (boundingbox["height"] / 2)
         return center
+
+    @keyword(tags=["Setter", "PageContent"])
+    def mouse_move_relative_to(
+        self, selector: str, x: float = 0.0, y: float = 0.0, steps: int = 1
+    ):
+        """Moves the mouse cursor relative to the selected element.
+
+        ``x`` ``y`` are relative coordinates to the center of the elements bounding box.
+
+        ``steps`` Number of intermediate steps for the mouse event.
+        This is sometime needed for websites to recognize the movement.
+        """
+        with self.playwright.grpc_channel() as stub:
+            bbox = self.library.get_boundingbox(selector)
+            center = self._center_of_boundingbox(bbox)
+            body: MouseOptionsDict = {
+                "x": center["x"] + x,
+                "y": center["y"] + y,
+                "options": {"steps": steps},
+            }
+            logger.info(
+                f"Moving mouse relative to element center by x: {x}, y: {y} coordinates."
+            )
+            logger.debug(f"Element Center is: {center}")
+            logger.debug(
+                f"Mouse Position is: {{'x': {center['x'] + x}, 'y': {center['y'] + y}}}"
+            )
+            response = stub.MouseMove(Request().Json(body=json.dumps(body)))
+            logger.debug(response.log)
 
     @keyword(tags=["Setter", "PageContent"])
     def mouse_move(self, x: float, y: float, steps: int = 1):
