@@ -26,6 +26,8 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - name: Install libgles2
+      - run: sudo apt-get install libgles2
     - name: Install nodejs dependencies
       run: |
         yarn --frozen-lockfile install
