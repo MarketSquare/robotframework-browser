@@ -334,8 +334,8 @@ class PlaywrightState(LibraryComponent):
         proxy: Optional[Proxy] = None,
         videosPath: Optional[str] = None,
         videoSize: Optional[ViewportDimensions] = None,
+        defaultBrowserType: Optional[SupportedBrowsers] = None,
         hideRfBrowser: bool = False,
-        defaultBrowserType: Optional[str] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -343,7 +343,7 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the created context
         that can be used in `Switch Context`.
 
-        ``acceptDownloads`` Whether to automatically downloadall the attachments.
+        ``acceptDownloads`` Whether to automatically downloads all the attachments.
         Defaults to False where all the downloads are canceled.
 
         ``ignoreHTTPSErrors`` Whether to ignore HTTPS errors during navigation.
@@ -415,6 +415,16 @@ class PlaywrightState(LibraryComponent):
         defaults to 1280x720. Actual picture of the page will be scaled down if
         necessary to fit specified size.
         - Example {"width": 1280, "height": 720}
+
+        ``defaultBrowserType`` If no browser is open and `New Context` opens a new browser
+        with defaults, it now uses this setting.
+        Very useful together with `Get Device` keyword:
+
+        Example:
+        | Test an iPhone
+        |     ${device}=    `Get Device`    iPhone X
+        |     `New Context`    &{device}        # unpacking here with &
+        |     `New Page`    http://example.com
 
         A BrowserContext is the Playwright object that controls a single browser profile.
         Within a context caches and cookies are shared.

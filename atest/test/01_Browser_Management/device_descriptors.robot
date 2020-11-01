@@ -1,8 +1,6 @@
 *** Settings ***
 Library           Browser
 Resource          imports.resource
-Suite Setup       Open Browser To Login Page
-Suite Teardown    Close Browser
 
 *** Variables ***
 ${device_json}=
@@ -33,3 +31,9 @@ Descriptor Properly sets context settings
     New Context    &{device}
     New Page
     Get Viewport Size    ALL    ==    { "width": 375, "height": 812 }
+    Verify Browser Type    webkit
+
+*** Keywords ***
+Verify Browser Type
+    [Arguments]    ${expectedType}
+    Get Browser Catalog    validate    value[0]['type'] == $expectedType
