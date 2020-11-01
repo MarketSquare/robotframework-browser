@@ -565,7 +565,8 @@ class Interaction(LibraryComponent):
                 self.mouse_move(x, y)
             else:
                 logger.info(
-                    "No coordinates where set. Action appears at current position.")
+                    "No coordinates where set. Action appears at current position."
+                )
             if action == MouseButtonAction.click:
                 for i in range(clickCount):
                     self.mouse_button(MouseButtonAction.down, button=button)
@@ -575,12 +576,7 @@ class Interaction(LibraryComponent):
             else:
                 if delay:
                     raise ValueError("Delay is only valid on 'click' action.")
-                body = {
-                    "options": {
-                        "button": button.name,
-                        "clickCount": clickCount
-                    }
-                }
+                body = {"options": {"button": button.name, "clickCount": clickCount}}
             response = stub.MouseButton(
                 Request().MouseButtonOptions(action=action.name, json=json.dumps(body))
             )

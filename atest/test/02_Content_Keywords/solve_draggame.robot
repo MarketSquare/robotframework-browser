@@ -18,8 +18,8 @@ Move Obstacle away and drag and Drop
 
 Test
     [Setup]    New Page
-    FOR    ${i}    IN RANGE     20
-        Go To      ${SHELLGAME_URL}
+    FOR    ${i}    IN RANGE    20
+        Go To    ${SHELLGAME_URL}
         Mouse Move Relative To    id=indicator    -100
         Mouse Button    click
         Get Text    h1    ==    CORRECT :D
