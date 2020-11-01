@@ -215,3 +215,11 @@ Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
     Close Context    ALL    ALL
     Close Browser    ALL
     Close Browser    ALL
+
+New Context with defaultBrowserType ff
+    New Context    defaultBrowserType=firefox
+    Verify Browser Type    firefox
+
+New Context with defaultBrowserType chromium
+    New Context    defaultBrowserType=chromium
+    Verify Browser Type    chromium

@@ -54,3 +54,7 @@ Submit Credentials
 Welcome Page Should Be Open
     Get Url    ==    ${WELCOME_URL}
     Get Title    ==    Welcome Page
+
+Verify Browser Type
+    [Arguments]    ${expectedType}
+    Get Browser Catalog    validate    value[0]['type'] == $expectedType
