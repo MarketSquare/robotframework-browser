@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            width: 100px;
+        }
+
+        #indicator {
+            position: absolute;
+            top: 0;
+            left: 120px;
+        }
+    </style>
+    <title>Shell Game</title>
+</head>
+<body>
+<div>
+    <h1 id="header">Choose the correct button!</h1>
+    <div class="buttons">
+        <button id="first">First</button>
+        <button id="second">Second</button>
+        <button id="third">Third</button>
+        <button id="fourth">Fourth</button>
+        <button id="fifth">Fifth</button>
+    </div>
+    <div id="indicator">&lt- THIS ONE</div>
+</div>
+</body>
+<script>
+function choose(choices) {
+  var index = Math.floor(Math.random() * choices.length);
+  return choices[index];
+}
+let wrongSelected=false;
+const buttons = window.document.getElementsByTagName("button");
+for (var index = 0; index < buttons.length; ++index) {
+    buttons[index].onclick = function() {
+        wrongSelected=true;
+        window.document.getElementById("header").innerText = "WRONG!!!";
+    }
+}
+const correct = choose(buttons);
+correct.onclick = function() {
+    if (!wrongSelected) {
+        window.document.getElementById("header").innerText = "CORRECT :D";
+    }
+}
+const indicator = window.document.getElementById("indicator");
+const rect = correct.getBoundingClientRect();
+console.log(rect);
+indicator.style.top = rect.top+"px";
+</script>
+</html>
