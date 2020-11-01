@@ -8,6 +8,7 @@ ${VALID_USER}     demo
 ${VALID_PASSWORD}    mode
 ${ROOT_URL}       http://${SERVER}
 ${LOGIN_URL}      ${ROOT_URL}/dist/#/
+${DRAGGAME_URL}      ${ROOT_URL}/dist/#/draggame
 ${FORM_URL}       ${ROOT_URL}/prefilled_email_form.html
 ${DIALOGS_URL}    ${ROOT_URL}/dialogs.html
 ${ELEMENT_STATE_URL}    ${ROOT_URL}/enabled_disabled_fields_form.html
