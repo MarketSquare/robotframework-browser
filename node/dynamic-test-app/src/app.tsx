@@ -1,10 +1,7 @@
+import { DragGame } from './draggame';
 import { HashRouter, Route, Switch } from 'react-router-dom';
 import Login from './login';
 import React from 'react';
-
-function DragGame() {
-    return <h2>FooBar!</h2>;
-}
 
 export default function App() {
     return (
