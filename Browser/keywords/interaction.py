@@ -666,6 +666,35 @@ class Interaction(LibraryComponent):
         return center
 
     @keyword(tags=["Setter", "PageContent"])
+    def mouse_move_relative_to(
+        self, selector: str, x: float = 0.0, y: float = 0.0, steps: int = 1
+    ):
+        """Moves the mouse cursor relative to the selected element.
+
+        ``x`` ``y`` are relative coordinates to the center of the elements bounding box.
+
+        ``steps`` Number of intermediate steps for the mouse event.
+        This is sometime needed for websites to recognize the movement.
+        """
+        with self.playwright.grpc_channel() as stub:
+            bbox = self.library.get_boundingbox(selector)
+            center = self._center_of_boundingbox(bbox)
+            body: MouseOptionsDict = {
+                "x": center["x"] + x,
+                "y": center["y"] + y,
+                "options": {"steps": steps},
+            }
+            logger.info(
+                f"Moving mouse relative to element center by x: {x}, y: {y} coordinates."
+            )
+            logger.debug(f"Element Center is: {center}")
+            logger.debug(
+                f"Mouse Position is: {{'x': {center['x'] + x}, 'y': {center['y'] + y}}}"
+            )
+            response = stub.MouseMove(Request().Json(body=json.dumps(body)))
+            logger.debug(response.log)
+
+    @keyword(tags=["Setter", "PageContent"])
     def mouse_move(self, x: float, y: float, steps: int = 1):
         """Instead of selectors command mouse with coordinates.
         The Click commands will leave the virtual mouse on the specified coordinates.

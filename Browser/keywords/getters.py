@@ -603,7 +603,7 @@ class Getters(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
             parsed = json.loads(response.json)
-            logger.debug(parsed)
+            logger.debug(f"BoundingBox: {parsed}")
             if key == BoundingBoxFields.ALL:
                 return int_dict_verify_assertion(
                     parsed, assertion_operator, assertion_expected, "BoundingBox is"
