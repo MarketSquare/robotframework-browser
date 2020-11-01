@@ -7,7 +7,7 @@ Suite Teardown    Close Browser
 *** Test Cases ***
 Results from page
     ${result}=    Execute JavaScript    "hello from page "+location.href
-    should be equal    ${result}    hello from page http://${SERVER}/dist/
+    should be equal    ${result}    hello from page ${LOGIN_URL}
     ${result2}=    Execute JavaScript    1+2+3
     should be equal    ${result2}    ${6}
     ${result3}=    Execute JavaScript    1.3314*3.13432
