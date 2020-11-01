@@ -15,6 +15,7 @@
 import json
 from datetime import timedelta
 from pathlib import Path
+from time import sleep
 from typing import Any, Dict, Optional
 
 from robotlibcore import keyword  # type: ignore
@@ -271,7 +272,7 @@ class Interaction(LibraryComponent):
         - Scroll the element into view if needed.
         - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
 
-        ``selector`` Selector element to click.
+        ``selector`` Selector element to hover.
         See the `Finding elements` section for details about the selectors.
 
         ``position_x`` & ``position_y`` A point to hover relative to the top-left corner of element bounding box.
@@ -543,54 +544,39 @@ class Interaction(LibraryComponent):
         clickCount: int = 1,
         delay: int = 0,
     ):
-        """Click, hold a mouse button down or release it.
+        """Clicks, presses or releases a mouse button.
 
-        Moving the mouse between holding down and releasing it for example is possible with `Mouse Move`.
 
         ``action`` Determines if it is a mouseclick, holding down a key or releasing it.
 
-        ``x`` and ``y`` Coordinates for a click only. Defaults to None.
-        **Required** if action is a click.
+        ``x`` and ``y`` Coordinates to move before.
 
-        ``button`` Defaults to ``left`` if invalid.
+        ``button`` Defaults to ``left``.
 
-        ``clickCount`` Deterine how often shall be clicked. Defaults to 1.
+        ``clickCount`` Determine how often shall be clicked. Defaults to 1.
 
-        ``delay`` Delay in ms between the mousedown and mouseup event. Can only be set if the action is click.
+        ``delay`` Delay in ms between the mousedown and mouseup event.
+        Can only be set if the action is click.
+
+        Moving the mouse between holding down and releasing it, is possible with `Mouse Move`.
         """
         with self.playwright.grpc_channel() as stub:
-            body: MouseOptionsDict = {}
-            if delay and action is not MouseButtonAction.click:
-                raise ValueError("Delay is only valid on 'click' action.")
-            if action == MouseButtonAction.click:
-                body = {}
-                if x and y:
-                    body["x"] = float(x)
-                    body["y"] = float(y)
-                else:
-                    raise ValueError(
-                        f"`Mouse Button    Click` requires that x and y are set! x: {x}, y: {y}"
-                    )
-                body["options"] = {
-                    "button": button.name,
-                    "clickCount": clickCount,
-                    "delay": delay,
-                }
+            if x and y:
+                self.mouse_move(x, y)
             else:
-                if x and y:
-                    self.mouse_move(x, y)
-                else:
-                    logger.info(
-                        f"No coordinates where set. Action will appear at current position. x: {x}, y {y}"
-                    )
-                body = {
-                    "options": {
-                        "button": button.name,
-                        "clickCount": clickCount,
-                        "delay": delay,
-                    }
-                }
-
+                logger.info(
+                    "No coordinates where set. Action appears at current position."
+                )
+            if action == MouseButtonAction.click:
+                for i in range(clickCount):
+                    self.mouse_button(MouseButtonAction.down, button=button)
+                    sleep(delay / 1000)
+                    self.mouse_button(MouseButtonAction.up, button=button)
+                return
+            else:
+                if delay:
+                    raise ValueError("Delay is only valid on 'click' action.")
+                body = {"options": {"button": button.name, "clickCount": clickCount}}
             response = stub.MouseButton(
                 Request().MouseButtonOptions(action=action.name, json=json.dumps(body))
             )

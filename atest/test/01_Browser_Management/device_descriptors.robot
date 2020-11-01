@@ -35,8 +35,3 @@ Descriptor Properly sets context settings
     New Page
     Get Viewport Size    ALL    ==    { "width": 360 , "height": 640 }
     Verify Browser Type    chromium
-
-*** Keywords ***
-Verify Browser Type
-    [Arguments]    ${expectedType}
-    Get Browser Catalog    validate    value[0]['type'] == $expectedType
