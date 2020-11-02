@@ -296,7 +296,7 @@ class PlaywrightState(LibraryComponent):
         Useful so that you can see what is going on. Defaults to no delay.
         """
         params = locals_to_params(locals())
-        params = convert_typed_dict(Proxy, params, "proxy")
+        params = convert_typed_dict(self.new_context.__annotations__, params)
         if timeout:
             params["timeout"] = self.convert_timeout(timeout)
         params["slowMo"] = self.convert_timeout(slowMo)
@@ -434,10 +434,7 @@ class PlaywrightState(LibraryComponent):
         If there's no open Browser this keyword will open one. Does not create pages.
         """
         params = locals_to_params(locals())
-        params = convert_typed_dict(GeoLocation, params, "geolocation")
-        params = convert_typed_dict(ViewportDimensions, params, "viewport")
-        params = convert_typed_dict(Proxy, params, "proxy")
-        params = convert_typed_dict(ViewportDimensions, params, "videoSize")
+        params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)
         options = json.dumps(params, default=str)
