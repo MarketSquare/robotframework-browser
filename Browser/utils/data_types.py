@@ -18,6 +18,10 @@ from typing import Dict, Union
 from typing_extensions import TypedDict
 
 
+class TypedDictDummy(TypedDict):
+    pass
+
+
 def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
     for arg_name, arg_type in function_annotations.items():
         if arg_name not in params or params[arg_name] is None:
@@ -25,11 +29,11 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
         arg_value = params[arg_name]
         if getattr(arg_type, "__origin__", None) is Union:
             for union_type in arg_type.__args__:
-                if arg_value is None or not isinstance(union_type, type(TypedDict)):
+                if arg_value is None or not isinstance(union_type, type(TypedDictDummy)):
                     continue
                 arg_type = union_type
                 break
-        if isinstance(arg_type, type(TypedDict)):
+        if isinstance(arg_type, type(TypedDictDummy)):
             if not isinstance(arg_value, dict):
                 raise TypeError(
                     f"Argument '{arg_name}' expects a dictionary like object but did get '{type(arg_value)} instead.'"
