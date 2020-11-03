@@ -29,7 +29,9 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
         arg_value = params[arg_name]
         if getattr(arg_type, "__origin__", None) is Union:
             for union_type in arg_type.__args__:
-                if arg_value is None or not isinstance(union_type, type(TypedDictDummy)):
+                if arg_value is None or not isinstance(
+                    union_type, type(TypedDictDummy)
+                ):
                     continue
                 arg_type = union_type
                 break
@@ -40,19 +42,19 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
                 )
             lower_case_dict = {k.lower(): v for k, v in arg_value.items()}
             struct = arg_type.__annotations__
-            typed_dict = arg_type()  # type: ignore
+            typed_dict = arg_type()
             for req_key in arg_type.__required_keys__:  # type: ignore
                 if req_key.lower() not in lower_case_dict:
                     raise RuntimeError(
-                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__}."  # type: ignore
+                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__}."
                         f"\nThe required key '{req_key}' in not set in given value."
                         f"\nExpected types: {arg_type.__annotations__}"
                     )
-                typed_dict[req_key] = struct[req_key](lower_case_dict[req_key.lower()])
+                typed_dict[req_key] = struct[req_key](lower_case_dict[req_key.lower()])  # type: ignore
             for opt_key in arg_type.__optional_keys__:  # type: ignore
                 if opt_key.lower() not in lower_case_dict:
                     continue
-                typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])
+                typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])  # type: ignore
             params[arg_name] = typed_dict
     return params
 
