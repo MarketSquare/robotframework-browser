@@ -13,30 +13,49 @@
 # limitations under the License.
 
 from enum import Enum, auto
-from typing import Dict
+from typing import Dict, Union
 
 from typing_extensions import TypedDict
 
 
-def convert_typed_dict(data_type, params: Dict, key: str) -> Dict:
-    if key not in params:
-        return params
-    dictionary = {k.lower(): v for k, v in params[key].items()}
-    struct = data_type.__annotations__
-    typed_dict = data_type()
-    for req_key in data_type.__required_keys__:
-        if req_key.lower() not in dictionary:
-            raise RuntimeError(
-                f"`{dictionary}` cannot be converted to {data_type.__name__}."
-                f"\nThe required key '{req_key}' in not set in given value."
-                f"\nExpected types: {data_type.__annotations__}"
-            )
-        typed_dict[req_key] = struct[req_key](dictionary[req_key.lower()])
-    for opt_key in data_type.__optional_keys__:
-        if opt_key.lower() not in dictionary:
+class TypedDictDummy(TypedDict):
+    pass
+
+
+def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
+    for arg_name, arg_type in function_annotations.items():
+        if arg_name not in params or params[arg_name] is None:
             continue
-        typed_dict[opt_key] = struct[opt_key](dictionary[opt_key.lower()])
-    params[key] = typed_dict
+        arg_value = params[arg_name]
+        if getattr(arg_type, "__origin__", None) is Union:
+            for union_type in arg_type.__args__:
+                if arg_value is None or not isinstance(
+                    union_type, type(TypedDictDummy)
+                ):
+                    continue
+                arg_type = union_type
+                break
+        if isinstance(arg_type, type(TypedDictDummy)):
+            if not isinstance(arg_value, dict):
+                raise TypeError(
+                    f"Argument '{arg_name}' expects a dictionary like object but did get '{type(arg_value)} instead.'"
+                )
+            lower_case_dict = {k.lower(): v for k, v in arg_value.items()}
+            struct = arg_type.__annotations__
+            typed_dict = arg_type()
+            for req_key in arg_type.__required_keys__:  # type: ignore
+                if req_key.lower() not in lower_case_dict:
+                    raise RuntimeError(
+                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__}."
+                        f"\nThe required key '{req_key}' in not set in given value."
+                        f"\nExpected types: {arg_type.__annotations__}"
+                    )
+                typed_dict[req_key] = struct[req_key](lower_case_dict[req_key.lower()])  # type: ignore
+            for opt_key in arg_type.__optional_keys__:  # type: ignore
+                if opt_key.lower() not in lower_case_dict:
+                    continue
+                typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])  # type: ignore
+            params[arg_name] = typed_dict
     return params
 
 
