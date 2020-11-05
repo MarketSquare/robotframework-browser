@@ -14,9 +14,10 @@
 
 import contextlib
 import os
+import sys
 import time
 from pathlib import Path
-from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
+from subprocess import STDOUT, Popen
 from typing import TYPE_CHECKING
 
 import grpc  # type: ignore
@@ -57,16 +58,7 @@ class Playwright(LibraryComponent):
         return process
 
     def ensure_node_dependencies(self):
-        # Checks if node is in PATH, errors if it isn't
-        try:
-            run(["node", "-v"], stdout=DEVNULL, check=True)
-        except (CalledProcessError, FileNotFoundError, PermissionError) as err:
-            raise RuntimeError(
-                "Couldn't execute node. Please ensure you have node.js installed and in PATH. "
-                "See https://nodejs.org/ for instructions. "
-                f"Original error is {err}"
-            )
-
+        """
         rfbrowser_dir = Path(__file__).parent
         installation_dir = rfbrowser_dir / "wrapper"
         # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
@@ -78,20 +70,32 @@ class Playwright(LibraryComponent):
         raise RuntimeError(
             f"Could not find node dependencies in installation directory `{installation_dir}.` "
             "Run `rfbrowser init` to install the dependencies."
-        )
+        )"""
 
     def start_playwright(self):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
-        playwright_script = workdir / "index.js"
+
+        operating_system = sys.platform
+        if operating_system == "windows":
+            playwright_script = workdir / "index-win.exe"
+        elif operating_system == "darwin":
+            playwright_script = workdir / "index-macos"
+        elif operating_system == "linux":
+            playwright_script = workdir / "index-linux"
+        else:
+            raise NotImplementedError("Operating system not supported")
+
         logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
         port = str(find_free_port())
         if self.enable_playwright_debug:
             os.environ["DEBUG"] = "pw:api"
+
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(workdir / "browser_binaries")
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
         return Popen(
-            ["node", str(playwright_script), port],
+            [str(playwright_script), port],
             shell=False,
             cwd=workdir,
             env=os.environ,

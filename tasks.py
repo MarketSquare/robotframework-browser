@@ -158,6 +158,7 @@ def node_build(c):
         node_dir.glob("**/*.ts"), node_timestamp_file
     ) or _sources_changed(node_dir.glob("**/*.tsx"), node_timestamp_file):
         c.run("yarn build")
+        c.run("yarn pkg Browser/wrapper/index.js --public --out-path Browser/wrapper/")
         node_timestamp_file.touch()
     else:
         print("no changes in .ts files, skipping node build")

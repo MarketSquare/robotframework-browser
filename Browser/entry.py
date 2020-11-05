@@ -62,6 +62,9 @@ def rfbrowser_init():
         # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
         # But shell=True breaks our linux CI
         shell = True if platform.platform().startswith("Windows") else False
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(
+            installation_dir / "browser_binaries"
+        )
         subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=shell)
     except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
         print(

@@ -11,6 +11,7 @@ exclude = '''
   | build
   | dist
   | generated
+  | wrapper
   | __init__\.pyi
 )/
 '''
@@ -18,4 +19,4 @@ exclude = '''
 [tool.isort]
 profile = "black"
 src_paths="."
-skip_glob = ["generated", "__init__.pyi"]
+skip_glob = ["generated", "__init__.pyi", "wrapper"]

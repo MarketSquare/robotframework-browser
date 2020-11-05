@@ -1,5 +1,6 @@
 Browser/wrapper/*.js
 Browser/wrapper
+Browser/wrapper.zip
 Browser/generated
 Browser/__init__.pyi
 Browser/**/*.pyc
