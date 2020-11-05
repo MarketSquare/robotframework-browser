@@ -37,12 +37,12 @@ Fill Text With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill Secret
-    Fill Secret    css=input#password_field    password
-    Get TextField Value    css=input#password_field    ==    password
+    Fill Secret    css=input#password_field    password11
+    Get TextField Value    css=input#password_field    ==    password11
 
 Type Secret
-    Type Secret    css=input#password_field    password
-    Get TextField Value    css=input#password_field    ==    password
+    Type Secret    css=input#password_field    password22
+    Get TextField Value    css=input#password_field    ==    password22
 
 Fill Secret With Nonmatching Selector
     Set Browser Timeout    50ms
