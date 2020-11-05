@@ -27,7 +27,7 @@ class Devices(LibraryComponent):
     def get_devices(self) -> Dict:
         """Returns a dict of all playwright device descriptors.
 
-        See Playwright's [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
+        See Playwright's [https://github.com/Microsoft/playwright/blob/master/src/server/deviceDescriptors.ts | deviceDescriptors.ts]
         for a formatted list.
         """
         with self.playwright.grpc_channel() as stub:
@@ -40,7 +40,7 @@ class Devices(LibraryComponent):
         """Get a single device decriptor with name exactly matching name.
 
         ``name`` Given name of the requested device. See Playwright's
-        [https://github.com/Microsoft/playwright/blob/master/src/deviceDescriptors.ts | deviceDescriptors.ts]
+        [https://github.com/Microsoft/playwright/blob/master/src/server/deviceDescriptors.ts | deviceDescriptors.ts]
         for a formatted list.
 
         Allows a concise syntax to set website testing values to exact matches of specific
