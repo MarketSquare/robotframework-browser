@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Test Setup        Go To    ${LOGIN_URL}
 
 *** Test Cases ***
 Type Text with Clearing
