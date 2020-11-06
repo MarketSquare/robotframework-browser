@@ -21,11 +21,9 @@ FALSE_STRINGS = {"FALSE", "NO", "OFF", "0", "UNCHECKED", "NONE", ""}
 def is_truthy(item: Any) -> bool:
     if isinstance(item, bool):
         return item
-    parsed = item.upper()
-    if parsed in FALSE_STRINGS:
-        return False
-    else:
-        return True
+    if isinstance(item, str):
+        return item.upper() not in FALSE_STRINGS
+    return bool(item)
 
 
 def is_falsy(item: Any) -> bool:
