@@ -221,6 +221,13 @@ Get Cookie Should Fail With Invalid return_type
     ...    FOO
     ...    invalid_type
 
+Get Cookie And No Expiry
+    New Browser    chromium    headless=True
+    New Context
+    New Page    about:blank
+    Add Cookie    tidii    kala    http://address.com/to/site
+    Get Cookie    tidii    return_type=dict
+
 *** Keywords ***
 Check Cookie
     [Arguments]    ${cookies}    ${len}    ${name}    ${value}

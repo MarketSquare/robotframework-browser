@@ -75,7 +75,14 @@ class Cookie(LibraryComponent):
         dot_dict = DotDict()
         for key in cookie:
             if key == "expires":
-                dot_dict[key] = datetime.fromtimestamp(cookie[key])
+                # In Windows OS, expires value might be -1 and it causes OSError.
+                try:
+                    dot_dict[key] = datetime.fromtimestamp(cookie[key])
+                except OSError:
+                    logger.warn(
+                        f"Invalid expiry seen in: {cookie}, setting expiry as None"
+                    )
+                    dot_dict[key] = None
             else:
                 dot_dict[key] = cookie[key]
         return dot_dict
