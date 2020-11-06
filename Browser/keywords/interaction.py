@@ -19,6 +19,7 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional
 
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
@@ -115,41 +116,43 @@ class Interaction(LibraryComponent):
     def type_secret(
         self,
         selector: str,
-        environment_variable: str,
+        variable_name: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
     ):
-        """Types the given secret from ``environment_variable`` into the text field
-        found by ``selector``.
+        """Types the given secret from ``variable_name`` into the text field
+         found by ``selector``.
 
-        This keyword does not log secret in Robot Framework logs.
-        If ``enable_playwright_debug`` is enabled in the library
-        import, secret will be always visible as plain text in the playwright debug
-        logs, regardless of the Robot Framework log level.
+         This keyword does not log secret in Robot Framework logs.
+         If ``enable_playwright_debug`` is enabled in the library
+         import, secret will be always visible as plain text in the playwright debug
+         logs, regardless of the Robot Framework log level.
 
-        ``selector`` Selector of the text field.
-        See the `Finding elements` section for details about the selectors.
+         ``selector`` Selector of the text field.
+         See the `Finding elements` section for details about the selectors.
 
-        ``environment_variable`` Environment variable name with % prefix that has
-        the secret text value.
-        for example %PASSWORD will resolve to environment variable PASSWORD.
+        ``variable_name`` Environment variable name with % prefix or a local
+         variable with $ prefix that has the secret text value. This does not
+         use curly brackets to ensure that value is not log by Robot Framework.
+         for example %PASSWORD will resolve to environment variable PASSWORD.
+         and $PASSWORD to ${PASSWORD} from Robot Framework variables.
 
-        ``delay`` Delay between the single key strokes. It may be either a
-        number or a Robot Framework time string. Time strings are fully
-        explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
-        Example: ``50 ms``
+         ``delay`` Delay between the single key strokes. It may be either a
+         number or a Robot Framework time string. Time strings are fully
+         explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
+         Example: ``50 ms``
 
-        ``clear`` Set to false, if the field shall not be cleared before typing.
-        Defaults to true.
+         ``clear`` Set to false, if the field shall not be cleared before typing.
+         Defaults to true.
 
-        See `Type Text` for details.
+         See `Type Text` for details.
         """
-        secret = self._resolve_secret(environment_variable)
+        secret = self._resolve_secret(variable_name)
         self._type_text(selector, secret, delay, clear, log_response=False)
 
     @keyword(tags=["Setter", "PageContent"])
-    def fill_secret(self, selector: str, environment_variable: str):
-        """Fills the given secret from ``environment_variable`` into the
+    def fill_secret(self, selector: str, variable_name: str):
+        """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
 
         This keyword does not log secret in Robot Framework logs.
@@ -160,26 +163,31 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``environment_variable`` Environment variable name with % prefix that
-        has the secret text value.
+        ``variable_name`` Environment variable name with % prefix or a local
+        variable with $ prefix that has the secret text value. This does not
+        use curly brackets to ensure that value is not log by Robot Framework.
         for example %PASSWORD will resolve to environment variable PASSWORD.
+        and $PASSWORD to ${PASSWORD} from Robot Framework variables.
 
         See `Fill Text` for other details.
         """
-        secret = self._resolve_secret(environment_variable)
+        secret = self._resolve_secret(variable_name)
         self._fill_text(selector, secret, log_response=False)
 
-    def _resolve_secret(self, environment_variable: str) -> str:
-        if not environment_variable.startswith("%"):
-            raise ValueError(
-                f"Environment variable '{environment_variable}' must start with % sign"
-            )
-        secret = os.environ.get(environment_variable[1:])
-        if secret is None:
-            raise RuntimeError(
-                f"Environment variable '{environment_variable[1:]}' has no value."
-            )
-        return secret
+    def _resolve_secret(self, variable_name: str) -> str:
+        if len(variable_name) == 0:
+            raise ValueError("variable_name can not be empty")
+        varchar = variable_name[0]
+        if varchar == "%":
+            secret = os.environ.get(variable_name[1:])
+            if secret is None:
+                raise RuntimeError(
+                    f"Environment variable '{variable_name[1:]}' has no value."
+                )
+            return secret
+        if varchar == "$":
+            return BuiltIn().get_variable_value(f"${variable_name[1:]}")
+        raise ValueError(f"variable_name '{variable_name}' must start with % or $ sign")
 
     @keyword(tags=["Setter", "PageContent"])
     def press_keys(self, selector: str, *keys: str):

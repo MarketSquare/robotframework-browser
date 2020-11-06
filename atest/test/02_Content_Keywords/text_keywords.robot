@@ -37,18 +37,34 @@ Fill Text With Nonmatching Selector
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Fill Secret
+Fill Secret env
     Set Environment Variable    FILL_SECRET    password11
     Fill Secret    css=input#password_field    %FILL_SECRET
     Get TextField Value    css=input#password_field    ==    password11
 
+Fill Secret local
+    ${var}=    Set Variable    password123
+    Fill Secret    css=input#password_field    $var
+    Get TextField Value    css=input#password_field    ==    password123
+
 Fill Secret fails when env variable is not set
     Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Fill Secret    css=input#password_field    %NONE_EXISTING_ENV_VARIABLE
 
-Type Secret
+Fill Secret fails when direct value given
+    Run Keyword And Expect Error    ValueError: variable_name 'hushhush' must start with \% or \$ sign    Fill Secret    css=input#password_field    hushhush
+
+Type Secret env
     Set Environment Variable    TYPE_SECRET    password22
     Type Secret    css=input#password_field    %TYPE_SECRET
     Get TextField Value    css=input#password_field    ==    password22
+
+Type Secret fails when direct value given
+    Run Keyword And Expect Error    ValueError: variable_name 'hushhush' must start with \% or \$ sign    Type Secret    css=input#password_field    hushhush
+
+Type Secret local
+    ${var}=    Set Variable    password321
+    Type Secret    css=input#password_field    $var
+    Get TextField Value    css=input#password_field    ==    password321
 
 Type Secret fails when env variable is not set
     Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Type Secret    css=input#password_field    %NONE_EXISTING_ENV_VARIABLE
