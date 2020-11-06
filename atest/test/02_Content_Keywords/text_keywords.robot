@@ -37,37 +37,108 @@ Fill Text With Nonmatching Selector
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Fill Secret env
-    Set Environment Variable    FILL_SECRET    password11
-    Fill Secret    css=input#password_field    %FILL_SECRET
+Fill Secret Direct Value
+    Type Secret    css=input#username_field    Direct Value    200 ms    True
+    Get TextField Value    css=input#username_field    ==    Direct Value
+    Fill Secret    css=input#password_field    Direct Value
+    Get TextField Value    css=input#password_field    ==    Direct Value
+
+Fill Secret placeholder-env-var
+    Set Environment Variable    PH_ENV_VAR    password11
+    Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.2}    ${TRUE}
+    Get TextField Value    css=input#username_field    ==    password11
+    Fill Secret    css=input#password_field    %PH_ENV_VAR
     Get TextField Value    css=input#password_field    ==    password11
 
-Fill Secret local
+Fill Secret robot-env-var
+    Set Environment Variable    WAITTIMER    100 ms
+    Set Environment Variable    ENV_VAR    password12
+    Type Secret    css=input#username_field    %{ENV_VAR}    %{WAITTIMER}    clear=True
+    Get TextField Value    css=input#username_field    ==    password12
+    Fill Secret    css=input#password_field    %{ENV_VAR}
+    Get TextField Value    css=input#password_field    ==    password12
+
+Fill Secret robot-env-var mixed
+    Set Environment Variable    ENV_VAR    password13
+    Type Secret    css=input#username_field    %{ENV_VAR}XXX
+    Get TextField Value    css=input#username_field    ==    password13XXX
+    Fill Secret    css=input#password_field    %{ENV_VAR}XXX
+    Get TextField Value    css=input#password_field    ==    password13XXX
+
+Fill Secret robot-env-var mixed2
+    Set Environment Variable    ENV_VAR    password13
+    Type Secret    css=input#username_field    XXX%{ENV_VAR}XXX
+    Get TextField Value    css=input#username_field    ==    XXXpassword13XXX
+    Fill Secret    css=input#password_field    XXX%{ENV_VAR}XXX
+    Get TextField Value    css=input#password_field    ==    XXXpassword13XXX
+
+Fill Secret placeholder-robot-var
     ${var}=    Set Variable    password123
+    Type Secret    css=input#username_field    $var
+    Get TextField Value    css=input#username_field    ==    password123
     Fill Secret    css=input#password_field    $var
     Get TextField Value    css=input#password_field    ==    password123
 
-Fill Secret fails when env variable is not set
-    Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Fill Secret    css=input#password_field    %NONE_EXISTING_ENV_VARIABLE
+Fill Secret robot var
+    ${var}=    Set Variable    password321
+    Type Secret    css=input#username_field    ${var}
+    Get TextField Value    css=input#username_field    ==    password321
+    Fill Secret    css=input#password_field    ${var}
+    Get TextField Value    css=input#password_field    ==    password321
 
-Fill Secret fails when direct value given
-    Run Keyword And Expect Error    ValueError: variable_name 'hushhush' must start with \% or \$ sign    Fill Secret    css=input#password_field    hushhush
+Fill Secret robot var mixed
+    ${var}=    Set Variable    password321
+    Type Secret    css=input#username_field    ${var}XXX
+    Get TextField Value    css=input#username_field    ==    password321XXX
+    Fill Secret    css=input#password_field    ${var}XXX
+    Get TextField Value    css=input#password_field    ==    password321XXX
+
+Fill Secret robot var mixed2
+    ${var}=    Set Variable    password321
+    Type Secret    css=input#username_field    xxx${var}XXX
+    Get TextField Value    css=input#username_field    ==    xxxpassword321XXX
+    Fill Secret    css=input#password_field    xxx${var}XXX
+    Get TextField Value    css=input#password_field    ==    xxxpassword321XXX
+
+Fill Secret placeholder in robot var
+    Set Global Variable    ${global}    password666
+    ${var}=    Set Variable    $global
+    Type Secret    css=input#username_field    ${var}
+    Get TextField Value    css=input#username_field    ==    password666
+    Fill Secret    css=input#password_field    ${var}
+    Get TextField Value    css=input#password_field    ==    password666
+
+Fill Secret env placeholder in robot var
+    Set Environment Variable    pwd_TWO    ENV_password123
+    ${var}=    Set Variable    %pwd_TWO
+    Type Secret    css=input#username_field    ${var}
+    Get TextField Value    css=input#username_field    ==    ENV_password123
+    Fill Secret    css=input#password_field    ${var}
+    Get TextField Value    css=input#password_field    ==    ENV_password123
+
+Fill Secret with direct $value not resolvable
+    Type Secret    css=input#username_field    $Direct Value
+    Get TextField Value    css=input#username_field    ==    $Direct Value
+    Fill Secret    css=input#password_field    $Direct Value
+    Get TextField Value    css=input#password_field    ==    $Direct Value
+
+Fill Secret fails when variable is not set
+    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret    css=input#username_field    ${NONE_EXISTING_ENV_VARIABLE}
+    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret    css=input#password_field    ${NONE_EXISTING_ENV_VARIABLE}
+
+Fill Secret fails when env variable is not set
+    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret    css=input#username_field    %{NONE_EXISTING_ENV_VARIABLE}
+    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret    css=input#password_field    %{NONE_EXISTING_ENV_VARIABLE}
 
 Type Secret env
     Set Environment Variable    TYPE_SECRET    password22
     Type Secret    css=input#password_field    %TYPE_SECRET
     Get TextField Value    css=input#password_field    ==    password22
 
-Type Secret fails when direct value given
-    Run Keyword And Expect Error    ValueError: variable_name 'hushhush' must start with \% or \$ sign    Type Secret    css=input#password_field    hushhush
-
 Type Secret local
     ${var}=    Set Variable    password321
     Type Secret    css=input#password_field    $var
     Get TextField Value    css=input#password_field    ==    password321
-
-Type Secret fails when env variable is not set
-    Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Type Secret    css=input#password_field    %NONE_EXISTING_ENV_VARIABLE
 
 Fill Secret With Nonmatching Selector
     Set Environment Variable    MY_RFBROWSER_SECRET    secret

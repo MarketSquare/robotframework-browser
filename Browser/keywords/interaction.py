@@ -19,16 +19,19 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional
 
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import (
+from ..utils import (  # run_keyword_variant,
+    convert_time,
     exec_scroll_function,
     get_abs_scroll_coordinates,
     get_rel_scroll_coordinates,
+    get_variable_value,
+    is_truthy,
     logger,
+    replace_variables,
 )
 from ..utils.data_types import (
     BoundingBox,
@@ -43,6 +46,8 @@ from ..utils.data_types import (
     ScrollBehavior,
     SelectAttribute,
 )
+
+NOT_FOUND = object()
 
 
 class Interaction(LibraryComponent):
@@ -74,6 +79,7 @@ class Interaction(LibraryComponent):
 
         See `Fill Text` for direct filling of the full text at once.
         """
+        logger.info(f"Types the text '{text}' in the given field.")
         self._type_text(selector, text, delay, clear)
 
     @keyword(tags=["Setter", "PageContent"])
@@ -95,6 +101,7 @@ class Interaction(LibraryComponent):
 
         See `Type Text` for emulating typing text character by character.
         """
+        logger.info(f"Fills the text '{text}' in the given field.")
         self._fill_text(selector, text)
 
     @keyword(tags=["Setter", "PageContent"])
@@ -112,46 +119,63 @@ class Interaction(LibraryComponent):
             response = stub.ClearText(Request().ClearText(selector=selector))
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(
+        tags=["Setter", "PageContent"],
+        types={"selector": str, "secret": str, "delay": timedelta, "clear": bool},
+    )
+    # @run_keyword_variant(1)
     def type_secret(
         self,
         selector: str,
-        variable_name: str,
+        secret: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
     ):
         """Types the given secret from ``variable_name`` into the text field
-         found by ``selector``.
+        found by ``selector``.
 
-         This keyword does not log secret in Robot Framework logs.
-         If ``enable_playwright_debug`` is enabled in the library
-         import, secret will be always visible as plain text in the playwright debug
-         logs, regardless of the Robot Framework log level.
+        This keyword does not log secret in Robot Framework logs.
+        If ``enable_playwright_debug`` is enabled in the library
+        import, secret will be always visible as plain text in the playwright debug
+        logs, regardless of the Robot Framework log level.
 
-         ``selector`` Selector of the text field.
-         See the `Finding elements` section for details about the selectors.
+        ``selector`` Selector of the text field.
+        See the `Finding elements` section for details about the selectors.
 
-        ``variable_name`` Environment variable name with % prefix or a local
-         variable with $ prefix that has the secret text value. This does not
-         use curly brackets to ensure that value is not log by Robot Framework.
-         for example %PASSWORD will resolve to environment variable PASSWORD.
-         and $PASSWORD to ${PASSWORD} from Robot Framework variables.
+        ``secret`` Environment variable name with % prefix or a local
+        variable with $ prefix that has the secret text value.
+        Variable names can be used with and without curly braces.
 
-         ``delay`` Delay between the single key strokes. It may be either a
-         number or a Robot Framework time string. Time strings are fully
-         explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
-         Example: ``50 ms``
+        Example:
+        ``$Password`` and ``${Password}`` resolve the robot framework variable.
+        ``%ENV_PWD`` and ``%{ENV_PWD}`` resolve to the environment variable ``ENV_PWD``.
 
-         ``clear`` Set to false, if the field shall not be cleared before typing.
-         Defaults to true.
+        ``delay`` Delay between the single key strokes. It may be either a
+        number or a Robot Framework time string. Time strings are fully
+        explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
+        Example: ``50 ms``
 
-         See `Type Text` for details.
+        ``clear`` Set to false, if the field shall not be cleared before typing.
+        Defaults to true.
+
+        See `Type Text` for details.
         """
-        secret = self._resolve_secret(variable_name)
+        if isinstance(delay, str):
+            delay = self._resolve_variable(delay, True)
+        if not isinstance(delay, timedelta):
+            delay = convert_time(delay, result_format="timedelta")
+
+        if isinstance(clear, str):
+            clear = self._resolve_variable(clear, True)
+        if not isinstance(clear, bool):
+            clear = is_truthy(clear)
+
+        secret = self._resolve_variable(secret)
         self._type_text(selector, secret, delay, clear, log_response=False)
 
     @keyword(tags=["Setter", "PageContent"])
-    def fill_secret(self, selector: str, variable_name: str):
+    # @run_keyword_variant(1)
+    def fill_secret(self, selector: str, secret: str):
         """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
 
@@ -163,31 +187,52 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``variable_name`` Environment variable name with % prefix or a local
-        variable with $ prefix that has the secret text value. This does not
-        use curly brackets to ensure that value is not log by Robot Framework.
-        for example %PASSWORD will resolve to environment variable PASSWORD.
-        and $PASSWORD to ${PASSWORD} from Robot Framework variables.
+        ``secret`` Environment variable name with % prefix or a local
+        variable with $ prefix that has the secret text value.
+        Variable names can be used with and without curly braces.
+
+        Example:
+        ``$Password`` and ``${Password}`` resolve the robot framework variable.
+        ``%ENV_PWD`` and ``%{ENV_PWD}`` resolve to the environment variable ``ENV_PWD``.
 
         See `Fill Text` for other details.
         """
-        secret = self._resolve_secret(variable_name)
+        secret = self._resolve_variable(secret)
         self._fill_text(selector, secret, log_response=False)
 
-    def _resolve_secret(self, variable_name: str) -> str:
-        if len(variable_name) == 0:
-            raise ValueError("variable_name can not be empty")
-        varchar = variable_name[0]
-        if varchar == "%":
-            secret = os.environ.get(variable_name[1:])
-            if secret is None:
-                raise RuntimeError(
-                    f"Environment variable '{variable_name[1:]}' has no value."
-                )
-            return secret
-        if varchar == "$":
-            return BuiltIn().get_variable_value(f"${variable_name[1:]}")
-        raise ValueError(f"variable_name '{variable_name}' must start with % or $ sign")
+    def _resolve_variable(
+        self, secret_variable: str, accepts_plain: bool = False
+    ) -> str:
+        self.check_valid_string(secret_variable)
+        replaced_secret = replace_variables(secret_variable)
+        secret = self.replace_placeholder_variables(replaced_secret)
+        self.check_valid_string(secret)
+        if secret == secret_variable and not accepts_plain:
+            logger.warn(
+                "Direct assignment of values is deprecated."
+                "You shall use variables or environment variables instead."
+            )
+        return secret
+
+    def replace_placeholder_variables(self, replaced_secret):
+        if not isinstance(replaced_secret, str) or replaced_secret[:1] not in "$%":
+            return replaced_secret
+        if replaced_secret.startswith("%"):
+            secret = os.environ.get(replaced_secret[1:], NOT_FOUND)
+        else:
+            secret = get_variable_value(replaced_secret, NOT_FOUND)
+        if secret is NOT_FOUND:
+            logger.warn("Given variable could not be resolved.")
+            return replaced_secret
+        return secret
+
+    def check_valid_string(self, secret_variable):
+        if secret_variable is None:
+            raise ValueError("Secret text can not NoneType!")
+        if not isinstance(secret_variable, str):
+            raise ValueError(
+                f"Secret text must be string but was {type(secret_variable)}!"
+            )
 
     @keyword(tags=["Setter", "PageContent"])
     def press_keys(self, selector: str, *keys: str):
