@@ -119,7 +119,8 @@ class Interaction(LibraryComponent):
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
     ):
-        """Types the given secret from ``environment_variable`` into the found by ``selector``.
+        """Types the given secret from ``environment_variable`` into the text field
+        found by ``selector``.
 
         This keyword does not log secret in Robot Framework logs.
         If ``enable_playwright_debug`` is enabled in the library
@@ -145,7 +146,7 @@ class Interaction(LibraryComponent):
         secret = os.environ.get(environment_variable)
         if secret is None:
             raise RuntimeError(
-                f"Environment variable '${environment_variable}' has no value."
+                f"Environment variable '{environment_variable}' has no value."
             )
         self._type_text(selector, secret, delay, clear, log_response=False)
 
@@ -170,7 +171,7 @@ class Interaction(LibraryComponent):
         secret = os.environ.get(environment_variable)
         if secret is None:
             raise RuntimeError(
-                f"Environment variable '${environment_variable}' has no value."
+                f"Environment variable '{environment_variable}' has no value."
             )
         self._fill_text(selector, secret, log_response=False)
 
