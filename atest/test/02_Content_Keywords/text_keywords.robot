@@ -43,7 +43,7 @@ Fill Secret
     Get TextField Value    css=input#password_field    ==    password11
 
 Fill Secret fails when env variable is not set
-    Run Keyword And Expect Error    Environment variable '$NONE_EXISTING_ENV_VARIABLE' has no value.    Fill Secret    css=input#password_field    NONE_EXISTING_ENV_VARIABLE
+    Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Fill Secret    css=input#password_field    NONE_EXISTING_ENV_VARIABLE
 
 Type Secret
     Set Environment Variable    TYPE_SECRET    password22
@@ -51,7 +51,7 @@ Type Secret
     Get TextField Value    css=input#password_field    ==    password22
 
 Type Secret fails when env variable is not set
-    Run Keyword And Expect Error    Environment variable '$NONE_EXISTING_ENV_VARIABLE' has no value.    Type Secret    css=input#password_field    NONE_EXISTING_ENV_VARIABLE
+    Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Type Secret    css=input#password_field    NONE_EXISTING_ENV_VARIABLE
 
 Fill Secret With Nonmatching Selector
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
