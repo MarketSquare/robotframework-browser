@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import os
 from datetime import timedelta
 from pathlib import Path
 from time import sleep
@@ -114,21 +115,22 @@ class Interaction(LibraryComponent):
     def type_secret(
         self,
         selector: str,
-        secret: str,
+        environment_variable: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
     ):
-        """Types the given ``secret`` into the text field found by ``selector``.
+        """Types the given secret from ``environment_variable`` into the found by ``selector``.
 
-        The difference to `Type Text` is that this keyword does not log secret
-        on the INFO level. If ``enable_playwright_debug`` is enabled in the library
+        This keyword does not log secret in Robot Framework logs.
+        If ``enable_playwright_debug`` is enabled in the library
         import, secret will be always visible as plain text in the playwright debug
         logs, regardless of the Robot Framework log level.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``secret`` Secret text for the text field.
+        ``environment_variable`` Environment variable name that has the secret text value.
+        for example password, for a text field.
 
         ``delay`` Delay between the single key strokes. It may be either a
         number or a Robot Framework time string. Time strings are fully
@@ -138,46 +140,38 @@ class Interaction(LibraryComponent):
         ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
-        Notice that if you use the keyword like:
-        | Type Secret    id=password_field    password
-        the password is shown as a normal keyword argument. A way to avoid that is
-        using variables like
-        | Type Secret    id=password_field    ${PASSWORD}
-
-        Please notice that Robot Framework logs all arguments using the TRACE
-        level and tests must not be executed using level below DEBUG if the
-        password should not be logged in any format.
-
         See `Type Text` for details.
         """
+        secret = os.environ.get(environment_variable)
+        if secret is None:
+            raise RuntimeError(
+                f"Environment variable '${environment_variable}' has no value."
+            )
         self._type_text(selector, secret, delay, clear, log_response=False)
 
     @keyword(tags=["Setter", "PageContent"])
-    def fill_secret(self, selector: str, secret: str):
-        """Fills the given ``secret`` into the text field found by ``selector``.
+    def fill_secret(self, selector: str, environment_variable: str):
+        """Fills the given secret from ``environment_variable`` into the
+        text field found by ``selector``.
 
-        The difference to `Fill Text` is that this keyword does not log secret
-        on the INFO level. If ``enable_playwright_debug`` is enabled in the library
+        This keyword does not log secret in Robot Framework logs.
+        If ``enable_playwright_debug`` is enabled in the library
         import, secret will be always visible as plain text in the playwright debug
         logs, regardless of the Robot Framework log level.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``secret`` Secret text. example password, for the text field.
+        ``environment_variable`` Environment variable name that has the secret text value.
+        for example password, for a text field.
 
-        Notice that if you use the keyword like:
-        | Fill Secret    id=password_field    password
-        the password is shown as a normal keyword argument. A way to avoid that is
-        using variables like
-        | Fill Secret    id=password_field    ${PASSWORD}
-
-        Please notice that Robot Framework logs all arguments using the TRACE
-        level and tests must not be executed using level below DEBUG if the
-        password should not be logged in any format.
-
-        See `Fill Text` for details.
+        See `Fill Text` for other details.
         """
+        secret = os.environ.get(environment_variable)
+        if secret is None:
+            raise RuntimeError(
+                f"Environment variable '${environment_variable}' has no value."
+            )
         self._fill_text(selector, secret, log_response=False)
 
     @keyword(tags=["Setter", "PageContent"])
