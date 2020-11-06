@@ -119,7 +119,7 @@ class Interaction(LibraryComponent):
         clear: bool = True,
     ):
         """Types the given ``secret`` into the text field found by ``selector``.
-        
+
         NOTE: Implementation of this keyword will change in 3.0 release.
         Keyword will only read secret value from environment variable and will
         not be backwards compatible.
@@ -159,7 +159,7 @@ class Interaction(LibraryComponent):
     @keyword(tags=["Setter", "PageContent"])
     def fill_secret(self, selector: str, secret: str):
         """Fills the given ``secret`` into the text field found by ``selector``.
-        
+
         NOTE: Implementation of this keyword will change in 3.0 release.
         Keyword will only read secret value from environment variable and will
         not be backwards compatible.
