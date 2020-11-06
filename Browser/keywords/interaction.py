@@ -130,8 +130,9 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``environment_variable`` Environment variable name that has the secret text value.
-        for example password, for a text field.
+        ``environment_variable`` Environment variable name with % prefix that has
+        the secret text value.
+        for example %PASSWORD will resolve to environment variable PASSWORD.
 
         ``delay`` Delay between the single key strokes. It may be either a
         number or a Robot Framework time string. Time strings are fully
@@ -143,11 +144,7 @@ class Interaction(LibraryComponent):
 
         See `Type Text` for details.
         """
-        secret = os.environ.get(environment_variable)
-        if secret is None:
-            raise RuntimeError(
-                f"Environment variable '{environment_variable}' has no value."
-            )
+        secret = self._resolve_secret(environment_variable)
         self._type_text(selector, secret, delay, clear, log_response=False)
 
     @keyword(tags=["Setter", "PageContent"])
@@ -163,17 +160,26 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``environment_variable`` Environment variable name that has the secret text value.
-        for example password, for a text field.
+        ``environment_variable`` Environment variable name with % prefix that
+        has the secret text value.
+        for example %PASSWORD will resolve to environment variable PASSWORD.
 
         See `Fill Text` for other details.
         """
-        secret = os.environ.get(environment_variable)
+        secret = self._resolve_secret(environment_variable)
+        self._fill_text(selector, secret, log_response=False)
+
+    def _resolve_secret(self, environment_variable: str) -> str:
+        if not environment_variable.startswith("%"):
+            raise ValueError(
+                f"Environment variable '{environment_variable}' must start with % sign"
+            )
+        secret = os.environ.get(environment_variable[1:])
         if secret is None:
             raise RuntimeError(
-                f"Environment variable '{environment_variable}' has no value."
+                f"Environment variable '{environment_variable[1:]}' has no value."
             )
-        self._fill_text(selector, secret, log_response=False)
+        return secret
 
     @keyword(tags=["Setter", "PageContent"])
     def press_keys(self, selector: str, *keys: str):

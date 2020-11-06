@@ -39,24 +39,24 @@ Fill Text With Nonmatching Selector
 
 Fill Secret
     Set Environment Variable    FILL_SECRET    password11
-    Fill Secret    css=input#password_field    FILL_SECRET
+    Fill Secret    css=input#password_field    %FILL_SECRET
     Get TextField Value    css=input#password_field    ==    password11
 
 Fill Secret fails when env variable is not set
-    Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Fill Secret    css=input#password_field    NONE_EXISTING_ENV_VARIABLE
+    Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Fill Secret    css=input#password_field    %NONE_EXISTING_ENV_VARIABLE
 
 Type Secret
     Set Environment Variable    TYPE_SECRET    password22
-    Type Secret    css=input#password_field    TYPE_SECRET
+    Type Secret    css=input#password_field    %TYPE_SECRET
     Get TextField Value    css=input#password_field    ==    password22
 
 Type Secret fails when env variable is not set
-    Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Type Secret    css=input#password_field    NONE_EXISTING_ENV_VARIABLE
+    Run Keyword And Expect Error    Environment variable 'NONE_EXISTING_ENV_VARIABLE' has no value.    Type Secret    css=input#password_field    %NONE_EXISTING_ENV_VARIABLE
 
 Fill Secret With Nonmatching Selector
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Secret    notamatch    MY_RFBROWSER_SECRET
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Secret    notamatch    %MY_RFBROWSER_SECRET
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Type Text with Delay
