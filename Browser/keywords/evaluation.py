@@ -16,15 +16,13 @@ import json
 from datetime import timedelta
 from typing import Any
 
-from robotlibcore import keyword  # type: ignore
-
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
+from ..utils import keyword, logger
 
 
 class Evaluation(LibraryComponent):
-    @keyword(name="Execute JavaScript", tags=["Setter", "Getter", "PageContent"])
+    @keyword(name="Execute JavaScript", tags=("Setter", "Getter", "PageContent"))
     def execute_javascript(self, function: str, selector: str = "") -> Any:
         """Executes given javascript on the page.
 
@@ -46,7 +44,7 @@ class Evaluation(LibraryComponent):
             if response.result:
                 return json.loads(response.result)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def highlight_elements(
         self,
         selector: str,
@@ -81,7 +79,7 @@ class Evaluation(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def add_style_tag(self, content: str):
         """Adds a <style type="text/css"> tag with the content.
 
@@ -91,7 +89,7 @@ class Evaluation(LibraryComponent):
             response = stub.AddStyleTag(Request().StyleTag(content=content))
             logger.info(response.log)
 
-    @keyword(tags=["Page Content"])
+    @keyword(tags=("Page Content",))
     def download(self, url: str) -> str:
         """
         Download given url content and return downloaded file path

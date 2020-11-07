@@ -13,7 +13,6 @@
 # limitations under the License.
 
 # flake8: noqa
-from robot.libraries.DateTime import convert_time  # type: ignore
 
 from .data_types import (
     AssertionOperator,
@@ -43,7 +42,6 @@ from .misc import (
     get_normalized_keyword,
     get_variable_value,
     is_same_keyword,
-    replace_variables,
-    run_keyword_variant,
+    keyword,
 )
 from .robot_booleans import is_falsy, is_truthy
