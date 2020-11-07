@@ -15,15 +15,13 @@
 import json
 from typing import Dict
 
-from robotlibcore import keyword  # type: ignore
-
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
+from ..utils import keyword, logger
 
 
 class Devices(LibraryComponent):
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=("Getter", "BrowserControl"))
     def get_devices(self) -> Dict:
         """Returns a dict of all playwright device descriptors.
 
@@ -35,7 +33,7 @@ class Devices(LibraryComponent):
             logger.debug(response.log)
             return json.loads(response.json)
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=("Getter", "BrowserControl"))
     def get_device(self, name: str) -> Dict:
         """Get a single device decriptor with name exactly matching name.
 

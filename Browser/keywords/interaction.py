@@ -19,19 +19,16 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional
 
-from robotlibcore import keyword  # type: ignore
-
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import (  # run_keyword_variant,
-    convert_time,
+from ..utils import (
     exec_scroll_function,
     get_abs_scroll_coordinates,
     get_rel_scroll_coordinates,
     get_variable_value,
-    is_truthy,
+    keyword,
+    locals_to_params,
     logger,
-    replace_variables,
 )
 from ..utils.data_types import (
     BoundingBox,
@@ -51,7 +48,7 @@ NOT_FOUND = object()
 
 
 class Interaction(LibraryComponent):
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def type_text(
         self,
         selector: str,
@@ -82,7 +79,7 @@ class Interaction(LibraryComponent):
         logger.info(f"Types the text '{text}' in the given field.")
         self._type_text(selector, text, delay, clear)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def fill_text(self, selector: str, text: str):
         """Clears and fills the given ``text`` into the text field found by ``selector``.
 
@@ -104,7 +101,7 @@ class Interaction(LibraryComponent):
         logger.info(f"Fills the text '{text}' in the given field.")
         self._fill_text(selector, text)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def clear_text(self, selector: str):
         """Clears the text field found by ``selector``.
 
@@ -119,17 +116,14 @@ class Interaction(LibraryComponent):
             response = stub.ClearText(Request().ClearText(selector=selector))
             logger.debug(response.log)
 
-    @keyword(
-        tags=["Setter", "PageContent"],
-        types={"selector": str, "secret": str, "delay": timedelta, "clear": bool},
-    )
-    # @run_keyword_variant(1)
+    @keyword(tags=("Setter", "PageContent"))
     def type_secret(
         self,
         selector: str,
         secret: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
+        *args,
     ):
         """Types the given secret from ``variable_name`` into the text field
         found by ``selector``.
@@ -160,21 +154,28 @@ class Interaction(LibraryComponent):
 
         See `Type Text` for details.
         """
-        if isinstance(delay, str):
-            delay = self._resolve_variable(delay, True)
-        if not isinstance(delay, timedelta):
-            delay = convert_time(delay, result_format="timedelta")
-
-        if isinstance(clear, str):
-            clear = self._resolve_variable(clear, True)
-        if not isinstance(clear, bool):
-            clear = is_truthy(clear)
-
-        secret = self._resolve_variable(secret)
+        originals = self._get_original_values(locals())
+        secret = self._resolve_secret(secret, originals.get("secret") or secret)
         self._type_text(selector, secret, delay, clear, log_response=False)
 
-    @keyword(tags=["Setter", "PageContent"])
-    # @run_keyword_variant(1)
+    def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
+        originals = locals_to_params(local_args)
+        if not self.library.current_arguments:
+            return originals
+        named_args = False
+        for idx, val in enumerate(self.library.current_arguments):
+            if idx > len(originals):
+                break
+            if "=" in val and not named_args:
+                named_args = val.split("=", 1)[0] in originals
+            if named_args:
+                arg_name, arg_value = val.split("=", 1)
+                originals[arg_name] = arg_value
+            else:
+                originals[list(originals.keys())[idx]] = val
+        return originals
+
+    @keyword(tags=("Setter", "PageContent"))
     def fill_secret(self, selector: str, secret: str):
         """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
@@ -197,44 +198,32 @@ class Interaction(LibraryComponent):
 
         See `Fill Text` for other details.
         """
-        secret = self._resolve_variable(secret)
+        originals = self._get_original_values(locals())
+        secret = self._resolve_secret(secret, originals.get("secret") or secret)
         self._fill_text(selector, secret, log_response=False)
 
-    def _resolve_variable(
-        self, secret_variable: str, accepts_plain: bool = False
-    ) -> str:
-        self.check_valid_string(secret_variable)
-        replaced_secret = replace_variables(secret_variable)
-        secret = self.replace_placeholder_variables(replaced_secret)
-        self.check_valid_string(secret)
-        if secret == secret_variable and not accepts_plain:
+    def _resolve_secret(self, secret_variable: str, original_secret) -> str:
+        secret = self._replace_placeholder_variables(secret_variable)
+        if secret == original_secret:
             logger.warn(
-                "Direct assignment of values is deprecated."
+                "Direct assignment of values as 'secret' is deprecated."
                 "You shall use variables or environment variables instead."
             )
         return secret
 
-    def replace_placeholder_variables(self, replaced_secret):
-        if not isinstance(replaced_secret, str) or replaced_secret[:1] not in "$%":
-            return replaced_secret
-        if replaced_secret.startswith("%"):
-            secret = os.environ.get(replaced_secret[1:], NOT_FOUND)
+    def _replace_placeholder_variables(self, placeholder):
+        if not isinstance(placeholder, str) or placeholder[:1] not in "$%":
+            return placeholder
+        if placeholder.startswith("%"):
+            value = os.environ.get(placeholder[1:], NOT_FOUND)
         else:
-            secret = get_variable_value(replaced_secret, NOT_FOUND)
-        if secret is NOT_FOUND:
-            logger.warn("Given variable could not be resolved.")
-            return replaced_secret
-        return secret
+            value = get_variable_value(placeholder, NOT_FOUND)
+        if value is NOT_FOUND:
+            logger.warn("Given variable placeholder could not be resolved.")
+            return placeholder
+        return value
 
-    def check_valid_string(self, secret_variable):
-        if secret_variable is None:
-            raise ValueError("Secret text can not NoneType!")
-        if not isinstance(secret_variable, str):
-            raise ValueError(
-                f"Secret text must be string but was {type(secret_variable)}!"
-            )
-
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def press_keys(self, selector: str, *keys: str):
         """Types the given key combination into element found by ``selector``.
 
@@ -260,7 +249,7 @@ class Interaction(LibraryComponent):
             response = stub.Press(Request().PressKeys(selector=selector, key=keys))
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def click(
         self,
         selector: str,
@@ -333,7 +322,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def hover(
         self,
         selector: str,
@@ -379,7 +368,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def focus(self, selector: str):
         """Moves focus on to the element found by ``selector``.
 
@@ -393,7 +382,7 @@ class Interaction(LibraryComponent):
             response = stub.Focus(Request().ElementSelector(selector=selector))
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def scroll_to(
         self,
         selector: Optional[str] = None,
@@ -437,7 +426,7 @@ class Interaction(LibraryComponent):
             selector,
         )
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def scroll_by(
         self,
         selector: Optional[str] = None,
@@ -482,7 +471,7 @@ class Interaction(LibraryComponent):
             selector,
         )
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def check_checkbox(self, selector: str):
         """Checks the checkbox or selects radio button found by ``selector``.
 
@@ -495,7 +484,7 @@ class Interaction(LibraryComponent):
             response = stub.CheckCheckbox(Request().ElementSelector(selector=selector))
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def uncheck_checkbox(self, selector: str):
         """Unchecks the checkbox found by ``selector``.
 
@@ -510,7 +499,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def select_options_by(self, selector: str, attribute: SelectAttribute, *values):
         """Selects options from select element found by ``selector``.
 
@@ -540,7 +529,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``.
 
@@ -575,7 +564,7 @@ class Interaction(LibraryComponent):
             if log_response:
                 logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def upload_file(self, path: str):
         """Upload file from ``path`` into next file chooser dialog on page.
 
@@ -593,7 +582,7 @@ class Interaction(LibraryComponent):
             response = stub.UploadFile(Request().FilePath(path=str(p)))
             logger.debug(response.log)
 
-    @keyword(tags=["PageContent"])
+    @keyword(tags=("PageContent",))
     def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
         """Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
@@ -612,7 +601,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def mouse_button(
         self,
         action: MouseButtonAction,
@@ -660,7 +649,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
@@ -687,7 +676,7 @@ class Interaction(LibraryComponent):
         self.mouse_move(**to_xy, steps=steps)
         self.mouse_button(MouseButtonAction.up)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def drag_and_drop_by_coordinates(
         self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1
     ):
@@ -718,7 +707,7 @@ class Interaction(LibraryComponent):
         center["y"] = boundingbox["y"] + (boundingbox["height"] / 2)
         return center
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def mouse_move_relative_to(
         self, selector: str, x: float = 0.0, y: float = 0.0, steps: int = 1
     ):
@@ -747,7 +736,7 @@ class Interaction(LibraryComponent):
             response = stub.MouseMove(Request().Json(body=json.dumps(body)))
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def mouse_move(self, x: float, y: float, steps: int = 1):
         """Instead of selectors command mouse with coordinates.
         The Click commands will leave the virtual mouse on the specified coordinates.
@@ -763,7 +752,7 @@ class Interaction(LibraryComponent):
             response = stub.MouseMove(Request().Json(body=json.dumps(body)))
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def keyboard_key(self, action: KeyAction, key: str):
         """Press a keyboard key on the virtual keyboard or set a key up or down.
 
@@ -797,7 +786,7 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=["Setter", "PageContent"])
+    @keyword(tags=("Setter", "PageContent"))
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
         """Input text into page with virtual keyboard.
 

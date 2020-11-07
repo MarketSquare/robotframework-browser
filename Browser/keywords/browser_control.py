@@ -18,31 +18,30 @@ from pathlib import Path
 from typing import Optional
 
 from robot.utils import get_link_path  # type: ignore
-from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
+from ..utils import keyword, logger
 
 
 class Control(LibraryComponent):
     """Keywords to do things on the current browser page and modify the page"""
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def go_forward(self):
         """Navigates to the next page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoForward(Request.Empty())
             logger.info(response.log)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def go_back(self):
         """Navigates to the previous page in history."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GoBack(Request.Empty())
             logger.info(response.log)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def go_to(self, url: str, timeout: Optional[timedelta] = None):
         """Navigates to the given ``url``.
 
@@ -71,7 +70,7 @@ class Control(LibraryComponent):
             if not path.with_suffix(".png").is_file():
                 return path
 
-    @keyword(tags=["PageContent"])
+    @keyword(tags=("PageContent",))
     def take_screenshot(
         self,
         filename: str = "robotframework-browser-screenshot-{index}",
@@ -143,7 +142,7 @@ class Control(LibraryComponent):
     def _is_embed(self, filename: str) -> bool:
         return True if filename.upper() == "EMBED" else False
 
-    @keyword(tags=["Setter", "Config"])
+    @keyword(tags=("Setter", "Config"))
     def set_browser_timeout(self, timeout: timedelta) -> str:
         """Sets the timeout used by most input and getter keywords.
 
@@ -158,7 +157,7 @@ class Control(LibraryComponent):
             logger.info(response.log)
         return old_timeout
 
-    @keyword(tags=["Setter", "Config"])
+    @keyword(tags=("Setter", "Config"))
     def set_retry_assertions_for(self, timeout: timedelta) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
@@ -170,7 +169,7 @@ class Control(LibraryComponent):
         self.retry_assertions_for = self.convert_timeout(timeout)
         return old_retry_assertions_for
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def set_viewport_size(self, width: int, height: int):
         """Sets current Pages viewport size to specified dimensions.
 
@@ -194,7 +193,7 @@ class Control(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def set_offline(self, offline: bool = True):
         """Toggles current Context's offline emulation.
 
@@ -205,7 +204,7 @@ class Control(LibraryComponent):
             response = stub.SetOffline(Request().Bool(value=offline))
             logger.info(response.log)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def set_geolocation(
         self, latitude: float, longitude: float, accuracy: Optional[float] = None
     ):
@@ -222,7 +221,7 @@ class Control(LibraryComponent):
             response = stub.SetGeolocation(Request().Json(body=geolocation))
             logger.info(response.log)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def reload(self):
         """Reloads current active page."""
         with self.playwright.grpc_channel() as stub:

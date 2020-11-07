@@ -17,7 +17,6 @@ from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
 from robot.utils import get_link_path  # type: ignore
-from robotlibcore import keyword  # type: ignore
 
 from ..assertion_engine import verify_assertion, with_assertion_polling
 from ..base import LibraryComponent
@@ -32,6 +31,7 @@ from ..utils import (
     ViewportDimensions,
     convert_typed_dict,
     find_by_id,
+    keyword,
     locals_to_params,
     logger,
 )
@@ -55,7 +55,7 @@ class PlaywrightState(LibraryComponent):
         if context != "CURRENT":
             self.switch_context(context)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def open_browser(
         self,
         url: Optional[str] = None,
@@ -93,7 +93,7 @@ class PlaywrightState(LibraryComponent):
         if pause_on_failure:
             self.library._pause_on_failure.add(browser_id)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def close_browser(self, browser: str = "CURRENT"):
         """Closes the current browser. Activated browser is set to first active browser.
         Closes all context and pages belonging to this browser.
@@ -117,7 +117,7 @@ class PlaywrightState(LibraryComponent):
             self.library._pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
         """Closes a Context. Activated context is set to first active context.
         Closes pages belonging to this context.
@@ -167,7 +167,7 @@ class PlaywrightState(LibraryComponent):
             browser_ids = [browser]
         return [find_by_id(browser_id, catalog) for browser_id in browser_ids]
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def close_page(
         self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
     ):
@@ -228,7 +228,7 @@ class PlaywrightState(LibraryComponent):
                         response = stub.ClosePage(Request().Empty())
                         logger.info(response.log)
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def new_browser(
         self,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
@@ -311,7 +311,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def new_context(
         self,
         acceptDownloads: bool = False,
@@ -458,7 +458,7 @@ class PlaywrightState(LibraryComponent):
             return params["viewport"]
         return {"width": 1280, "height": 720}
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def new_page(self, url: Optional[str] = None) -> str:
         """Open a new Page. A Page is the Playwright equivalent to a tab.
         See `Browser, Context and Page` for more information about Page concept.
@@ -494,7 +494,7 @@ class PlaywrightState(LibraryComponent):
             html=True,
         )
 
-    @keyword(tags=["Getter", "BrowserControl", ""])
+    @keyword(tags=("Getter", "BrowserControl"))
     @with_assertion_polling
     def get_browser_catalog(
         self,
@@ -576,7 +576,7 @@ class PlaywrightState(LibraryComponent):
                 parsed, assertion_operator, assertion_expected, "Browser Catalog "
             )
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def switch_browser(self, id: str) -> str:
         """Switches the currently active Browser to another open Browser.
         Returns a stable identifier for the previous browser.
@@ -589,7 +589,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def switch_context(self, id: str, browser: str = "CURRENT") -> str:
         """Switches the active BrowserContext to another open context.
         Returns a stable identifier for the previous context.
@@ -606,7 +606,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def switch_page(
         self, id: str, context: str = "CURRENT", browser: str = "CURRENT"
     ) -> str:
@@ -642,7 +642,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=("Getter", "BrowserControl"))
     def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> List:
         """Returns a list of ids from open browsers.
         See `Browser, Context and Page` for more information about Browser and related concepts.
@@ -662,7 +662,7 @@ class PlaywrightState(LibraryComponent):
             return [browser["id"] for browser in self.get_browser_catalog()]
         return []
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=("Getter", "BrowserControl"))
     def get_context_ids(
         self,
         context: SelectionType = SelectionType.ALL,
@@ -705,7 +705,7 @@ class PlaywrightState(LibraryComponent):
                 return context_ids
         return []
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=("Getter", "BrowserControl"))
     def get_page_ids(
         self,
         page: SelectionType = SelectionType.ALL,

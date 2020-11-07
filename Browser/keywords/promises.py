@@ -25,7 +25,7 @@ class Promises(LibraryComponent):
         LibraryComponent.__init__(self, library)
         self._executor = ThreadPoolExecutor(max_workers=256)
 
-    @keyword(tags=["Wait"])
+    @keyword(tags=("Wait",))
     def promise_to(self, kw: str, *args) -> Future:
         """
         Wrap a Browser library keyword and make it a promise.
@@ -51,7 +51,7 @@ class Promises(LibraryComponent):
         self.unresolved_promises.add(promise)
         return promise
 
-    @keyword(tags=["Wait"])
+    @keyword(tags=("Wait",))
     def wait_for(self, *promises: Future):
         """
         Waits for promises to finish and returns results from them.
@@ -70,7 +70,7 @@ class Promises(LibraryComponent):
             return promises[0].result()
         return [promise.result() for promise in promises]
 
-    @keyword(tags=["Wait"])
+    @keyword(tags=("Wait",))
     def wait_for_all_promises(self):
         """
         Waits for all promises to finish.

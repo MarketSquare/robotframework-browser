@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import contextlib
+import inspect
 import socket
+from typing import Any, Tuple
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
-from robot.running import RUN_KW_REGISTER  # type: ignore
 
 get_variable_value = BuiltIn().get_variable_value
-replace_variables = BuiltIn().replace_variables
 
 
 def find_free_port() -> str:
@@ -40,11 +40,14 @@ def get_normalized_keyword(keyword: str) -> str:
     return keyword.lower().replace(" ", "").replace("_", "")
 
 
-def run_keyword_variant(resolve):
-    def decorator(method):
-        RUN_KW_REGISTER.register_run_keyword(
-            "Browser", method.__name__, resolve, deprecation_warning=False
-        )
-        return method
+def keyword(name: Any = None, tags: Tuple = (), types: Tuple = ()):
+    if inspect.isroutine(name):
+        return keyword()(name)
+
+    def decorator(func):
+        func.robot_name = name
+        func.robot_tags = tags
+        func.robot_types = types
+        return func
 
     return decorator
