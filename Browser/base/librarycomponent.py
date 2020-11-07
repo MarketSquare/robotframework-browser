@@ -60,6 +60,10 @@ class LibraryComponent:
     def context_cache(self):
         return self.library._context_cache
 
+    @property
+    def outputdir(self) -> str:
+        return self.library.outputdir
+
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
 
