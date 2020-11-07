@@ -123,7 +123,6 @@ class Interaction(LibraryComponent):
         secret: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
-        *args,
     ):
         """Types the given secret from ``variable_name`` into the text field
         found by ``selector``.
