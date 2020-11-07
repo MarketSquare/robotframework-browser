@@ -56,16 +56,16 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     def _get_screenshot_path(self, filename: str) -> Path:
-        directory = self.library.outputdir
+        directory = self.screenshots_output
         # Filename didn't contain {index}
         if "{index}" not in filename:
-            return Path(directory) / filename
+            return directory / filename
         index = 0
         while True:
             index += 1
             indexed = Path(filename.replace("{index}", str(index)))
             logger.trace(indexed)
-            path = Path(directory) / indexed
+            path = directory / indexed
             # Unique path was found
             if not path.with_suffix(".png").is_file():
                 return path
@@ -79,10 +79,11 @@ class Control(LibraryComponent):
     ) -> str:
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
-        ``filename`` Filename into which to save. The file will be saved into the robot framework output
-        directory by default. String ``{index}`` in path will be replaced with a rolling number. Use this to not
-        override filenames. If filename equals to EMBED (case insensitive), then screenshot is embedded as
-        Base64 image to the log.html. The image is saved temporally to the disk and warning is displayed
+        ``filename`` Filename into which to save. The file will be saved into the robot framework
+         ${OUTPUTDIR}/browser/screenshot directory by default. String ``{index}`` in filename
+         will be replaced with a rolling number. Use this to not override filenames. If filename
+         equals to EMBED (case insensitive), then screenshot is embedded as Base64 image to the
+         log.html. The image is saved temporally to the disk and warning is displayed
         if removing the temporary file fails.
 
         ``selector`` Take a screenshot of the element matched by selector.

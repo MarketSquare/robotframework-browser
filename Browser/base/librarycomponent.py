@@ -14,6 +14,7 @@
 
 from concurrent.futures._base import Future
 from datetime import timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING, Set, Union
 
 if TYPE_CHECKING:
@@ -63,6 +64,18 @@ class LibraryComponent:
     @property
     def outputdir(self) -> str:
         return self.library.outputdir
+
+    @property
+    def browser_output(self):
+        return Path(self.outputdir, "browser")
+
+    @property
+    def screenshots_output(self):
+        return self.browser_output / "screenshot"
+
+    @property
+    def video_output(self):
+        return self.browser_output / "video"
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
