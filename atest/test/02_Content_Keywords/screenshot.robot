@@ -28,15 +28,25 @@ Register KåWä On Failure with unicode " 💩 "
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot2}
 
-Screenshotting By Using Keyword
+Screenshot By Default Filename
+    Take Screenshot
+    File Should Exist    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.png
+    [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/*.png
+
+Screenshotting By Custom Path
     Take Screenshot    ${TestScreenshot}
     File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}.png
 
+Screenshotting By Custom Filename
+    Take Screenshot    TestScreenshot
+    File Should Exist    ${OUTPUT_DIR}/browser/screenshot/TestScreenshot.png
+    [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/TestScreenshot.png
+
 Element Screenshotting
     Take Screenshot    selector=\#username_field
-    File Should Exist    ${OUTPUT_DIR}/robotframework-browser-screenshot-1.png
-    [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
+    File Should Exist    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.png
+    [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/*.png
 
 If Element Not Found Screenshot Should Fail
     Run Keyword And Expect Error
