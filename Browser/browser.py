@@ -14,14 +14,13 @@
 
 import os
 import re
-import sys
 from concurrent.futures._base import Future
 from datetime import timedelta
 from typing import List, Set, Union
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
-from robotlibcore import DynamicCore  # type: ignore
+from robotlibcore import HybridCore  # type: ignore
 
 from .base import ContextCache
 from .keywords import (
@@ -43,7 +42,7 @@ from .utils import AutoClosingLevel, is_falsy, is_same_keyword, logger
 from .version import __version__ as VERSION
 
 
-class Browser(DynamicCore):
+class Browser(HybridCore):
     """Browser library is a browser automation library for Robot Framework.
 
     This is the keyword documentation for Browser library. For information
@@ -585,7 +584,7 @@ class Browser(DynamicCore):
         ]
         self.playwright = Playwright(self, enable_playwright_debug)
         self._auto_closing_level = auto_closing_level
-        DynamicCore.__init__(self, libraries)
+        HybridCore.__init__(self, libraries)
 
     @property
     def outputdir(self) -> str:
@@ -679,20 +678,6 @@ class Browser(DynamicCore):
                     if not (activePage, activeContext) in new_page_ids:
                         self._playwright_state.switch_page(activePage)
         """
-
-    def run_keyword(self, name, args, kwargs=None):
-        try:
-            return DynamicCore.run_keyword(self, name, args, kwargs)
-        except AssertionError as e:
-            self.keyword_error()
-            if self._pause_on_failure:
-                sys.__stdout__.write(f"\n[ FAIL ] {e}")
-                sys.__stdout__.write(
-                    "\n[Paused on failure] Press Enter to continue..\n"
-                )
-                sys.__stdout__.flush()
-                input()
-            raise e
 
     def start_keyword(self, name, attrs):
         """Take screenshot of tests that have failed due to timeout.
