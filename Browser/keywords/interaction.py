@@ -206,7 +206,7 @@ class Interaction(LibraryComponent):
         if secret == original_secret:
             logger.warn(
                 "Direct assignment of values as 'secret' is deprecated."
-                "You shall use variables or environment variables instead."
+                "Use variables or environment variables instead."
             )
         return secret
 
