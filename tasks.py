@@ -254,7 +254,7 @@ def atest_failed(c):
 
 @task()
 def run_tests(c, tests):
-    process = subprocess.Popen([sys.executable, "-m", "robot", tests])
+    process = subprocess.Popen([sys.executable, "-m", "robot", '--loglevel', 'DEBUG', tests])
     process.wait(600)
 
 
