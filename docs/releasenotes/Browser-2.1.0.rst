@@ -10,7 +10,7 @@ Browser_ is a web testing library for `Robot Framework`_ that utilizes
 the Playwright_ tool internally. Browser library 2.1.0 is a new release with
 video support and prevents secrets for leaking in Robot Framework logs. There
 are also several fixes in the release. All issues targeted for Browser
-library v2.1.0 can be foundfrom the `issue tracker`_.
+library v2.1.0 can be found from the `issue tracker`_.
 If you have pip_ installed, just run
 ::
    pip install --upgrade robotframework-browser
