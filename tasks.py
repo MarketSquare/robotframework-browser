@@ -15,6 +15,7 @@ try:
     from rellu import ReleaseNotesGenerator, Version
     from robot.libdoc import libdoc
     import robotstatuschecker
+    import bs4
 except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
@@ -374,7 +375,32 @@ def run_test_app(c):
 
 @task
 def docs(c):
-    libdoc("Browser", str(root_dir / "docs" / "Browser.html"))
+    output = root_dir / "docs" / "Browser.html"
+    libdoc("Browser", str(output))
+    with output.open("r") as file:
+        data = file.read()
+    soup = bs4.BeautifulSoup(data, "html.parser")
+    script_async = soup.new_tag("script", src="https://www.googletagmanager.com/gtag/js?id=UA-106835747-3")
+    script_async.attrs['async'] = None
+    soup.head.append(script_async)
+    script_data = soup.new_tag("script")
+    script_data.string = """
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-106835747-3', {
+            'anonymize_ip': true,
+            'page_path': location.pathname+location.search+location.hash });
+      window.onhashchange = function() {
+            gtag('event', 'HashChange', {
+            'event_category': 'Subsection',
+            'event_label': window.location.hash
+            });
+       }
+    """
+    soup.head.append(script_data)
+    with output.open("w") as file:
+        file.write(str(soup))
 
 
 @task(clean, build, docs)
