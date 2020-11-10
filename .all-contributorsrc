@@ -221,6 +221,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "s-galante",
+      "name": "s-galante",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/4580052?v=4",
+      "profile": "https://github.com/s-galante",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
