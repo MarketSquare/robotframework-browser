@@ -458,8 +458,12 @@ class Browser(DynamicCore):
     The keywords will provide an error message if the assertion fails.
     Assertions will retry until ``timeout`` has expired if they do not pass.
 
-    Be aware that some keywords return strings others return numbers.
-    `Get Text` for example always returns a strings and has to be compared with a string.
+    The assertion ``assertion_expected`` value is not converted by the library and
+    is used as is. Therefore when assertion is made, the ``assertion_expected``
+    argument value and value returned the keyword must have same type. If types
+    are not same, assertion will fail. Example `Get Text` always returns a string
+    and has to be compared with a string, even the returnd value might look like
+    a number.
 
     Other Keywords have other specific types they return.
     `Get Element Count` always returns an integer.
