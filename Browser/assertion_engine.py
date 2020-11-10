@@ -82,7 +82,8 @@ def verify_assertion(
         raise RuntimeError(f"{message} `{operator}` is not a valid assertion operator")
     validator, text = handler
     if not validator(value, expected):
-        raise AssertionError(f"{message} `{value}` {text} `{expected}`")
+        filler = " " if message else ""
+        raise AssertionError(f"{message}{filler}`{value}` {text} `{expected}`")
     return value
 
 

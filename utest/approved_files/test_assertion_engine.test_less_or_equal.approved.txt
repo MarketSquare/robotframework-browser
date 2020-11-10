@@ -1,5 +1,5 @@
 less or equal
 
 0) 2
-1)  `2` should be greater than or equal `3`
+1) `2` should be greater than or equal `3`
 2) 2
