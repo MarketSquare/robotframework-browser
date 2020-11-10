@@ -1,4 +1,4 @@
 Test equals
 
 0) actual
-1)  `actual` should be `unexpected`
+1) `actual` should be `unexpected`

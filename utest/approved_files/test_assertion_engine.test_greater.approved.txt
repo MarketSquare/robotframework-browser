@@ -1,4 +1,4 @@
 Greater
 
 0) 1
-1)  `1` should be less than `0`
+1) `1` should be less than `0`
