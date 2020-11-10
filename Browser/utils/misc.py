@@ -51,3 +51,7 @@ def keyword(name: Any = None, tags: Tuple = (), types: Tuple = ()):
         return func
 
     return decorator
+
+
+def type_converter(argument: Any) -> str:
+    return type(argument).__name__.lower()
