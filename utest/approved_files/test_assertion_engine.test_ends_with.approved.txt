@@ -1,0 +1,6 @@
+ends with
+
+0) Hello Robots
+1)  `Hello Robots` should end with `Hello`
+2) Hel[4,5]?[1-9]+ Robots
+3)  `Hel[4,5]?[1-9]+ Robots` should end with `.*`
