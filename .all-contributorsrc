@@ -212,6 +212,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mawentao119",
+      "name": "charis",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/26617186?v=4",
+      "profile": "https://github.com/mawentao119",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
