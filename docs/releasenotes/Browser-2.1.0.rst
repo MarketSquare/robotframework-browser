@@ -42,7 +42,7 @@ Most important enhancements
 Use Playwright video to allow recording video of the test execution. (`#148`_)
 ------------------------------------------------------------------------------
 Playwright has supported creating video for few releases. Now the library has been
-enhanced to support videa creation in New Context keyword. If video is enabled in
+enhanced to support video creation in New Context keyword. If video is enabled in
 the context, new page will create a video.
 
 Improve library logging when waiting. (`#491`_)
