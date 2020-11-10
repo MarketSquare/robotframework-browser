@@ -94,6 +94,7 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
     retries_start: Optional[float] = None
     tries = 1
     try:
+        logger.stash_this_thread()
         while True:
             try:
                 return wrapped(*args, **kwargs)
@@ -107,7 +108,9 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
                 tries += 1
                 if timeout - elapsed > 0.01:
                     time.sleep(0.01)
+                logger.clear_thread_stash()
     finally:
+        logger.flush_and_delete_thread_stash()
         now = time.time()
         logger.debug(
             f"""Assertion polling statistics:

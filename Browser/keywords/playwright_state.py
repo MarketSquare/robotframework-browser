@@ -482,7 +482,7 @@ class PlaywrightState(LibraryComponent):
         if not video.get("video_path"):
             logger.debug("Video is not enabled.")
             return
-        relative_path = get_link_path(video.get("video_path"), self.library.outputdir)
+        relative_path = get_link_path(video.get("video_path"), self.outputdir)
         video_size = self.context_cache.get(video["contextUuid"])
         video_width = video_size["width"]
         video_height = video_size["height"]

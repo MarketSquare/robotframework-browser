@@ -22,7 +22,6 @@ from typing import TYPE_CHECKING
 
 import grpc  # type: ignore
 from backports.cached_property import cached_property
-from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 
 import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
@@ -43,13 +42,6 @@ class Playwright(LibraryComponent):
         self.enable_playwright_debug = enable_playwright_debug
         self.ensure_node_dependencies()
         self.port = None
-
-    @property
-    def outputdir(self):
-        if EXECUTION_CONTEXTS.current:
-            return BuiltIn().get_variable_value("${OUTPUTDIR}")
-        else:
-            return "."
 
     @cached_property
     def _playwright_process(self) -> Popen:

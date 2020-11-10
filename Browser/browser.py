@@ -588,8 +588,11 @@ class Browser(DynamicCore):
         DynamicCore.__init__(self, libraries)
 
     @property
-    def outputdir(self):
-        return BuiltIn().get_variable_value("${OUTPUTDIR}")
+    def outputdir(self) -> str:
+        if EXECUTION_CONTEXTS.current:
+            return BuiltIn().get_variable_value("${OUTPUTDIR}")
+        else:
+            return "."
 
     def _close(self):
         try:

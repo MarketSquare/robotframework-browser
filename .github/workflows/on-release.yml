@@ -58,6 +58,8 @@ jobs:
         run: |
           yarn --frozen-lockfile install
           python -m pip install --upgrade pip
+          # use pre-release version of RF to have latest docs improvements
+          pip install --pre robotframework==4.0a1
           pip install -r Browser/dev-requirements.txt
           inv build
       - name: Build docs

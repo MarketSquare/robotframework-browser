@@ -103,7 +103,7 @@ class Control(LibraryComponent):
         return self._log_image_link(file_path)
 
     def _log_image_link(self, file_path: str) -> str:
-        relative_path = get_link_path(file_path, self.library.outputdir)
+        relative_path = get_link_path(file_path, self.outputdir)
         logger.info(
             '</td></tr><tr><td colspan="3">'
             f'<a href="{relative_path}"><img src="{relative_path}" width="800px"></a>',

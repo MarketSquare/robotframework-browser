@@ -203,6 +203,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "estimation",
+      "name": "Brian Tsao",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/16793171?v=4",
+      "profile": "https://github.com/estimation",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,

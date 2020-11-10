@@ -120,8 +120,10 @@ class Interaction(LibraryComponent):
     ):
         """Types the given ``secret`` into the text field found by ``selector``.
 
-        The difference to `Type Text` is that this keyword does not log the
-        text to be written into the text field.
+        The difference to `Type Text` is that this keyword does not log secret
+        on the INFO level. If ``enable_playwright_debug`` is enabled in the library
+        import, secret will be always visible as plain text in the playwright debug
+        logs, regardless of the Robot Framework log level.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
@@ -136,6 +138,16 @@ class Interaction(LibraryComponent):
         ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
+        Notice that if you use the keyword like:
+        | Type Secret    id=password_field    password
+        the password is shown as a normal keyword argument. A way to avoid that is
+        using variables like
+        | Type Secret    id=password_field    ${PASSWORD}
+
+        Please notice that Robot Framework logs all arguments using the TRACE
+        level and tests must not be executed using level below DEBUG if the
+        password should not be logged in any format.
+
         See `Type Text` for details.
         """
         self._type_text(selector, secret, delay, clear, log_response=False)
@@ -144,13 +156,25 @@ class Interaction(LibraryComponent):
     def fill_secret(self, selector: str, secret: str):
         """Fills the given ``secret`` into the text field found by ``selector``.
 
-        The difference to `Fill Text` is that this keyword does not log the
-        text to be written into the text field.
+        The difference to `Fill Text` is that this keyword does not log secret
+        on the INFO level. If ``enable_playwright_debug`` is enabled in the library
+        import, secret will be always visible as plain text in the playwright debug
+        logs, regardless of the Robot Framework log level.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``secret`` Secret text for the text field.
+        ``secret`` Secret text. example password, for the text field.
+
+        Notice that if you use the keyword like:
+        | Fill Secret    id=password_field    password
+        the password is shown as a normal keyword argument. A way to avoid that is
+        using variables like
+        | Fill Secret    id=password_field    ${PASSWORD}
+
+        Please notice that Robot Framework logs all arguments using the TRACE
+        level and tests must not be executed using level below DEBUG if the
+        password should not be logged in any format.
 
         See `Fill Text` for details.
         """
