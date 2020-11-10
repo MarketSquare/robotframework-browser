@@ -12,7 +12,8 @@ from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 def test_equals():
     results = [
         _validate_operator(AssertionOperator["=="], "actual", "actual"),
-        _validate_operator(AssertionOperator["=="], "actual", "unexpected")
+        _validate_operator(AssertionOperator["=="], "actual", "unexpected"),
+        _validate_operator(AssertionOperator["=="], 1, "1"),
 
     ]
     verify_all("Test equals", results)

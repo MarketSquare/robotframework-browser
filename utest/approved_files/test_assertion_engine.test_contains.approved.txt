@@ -1,6 +1,6 @@
 Contains
 
 0) actual
-1) `actual` should contain `nope`
+1) 'actual' (str) should contain 'nope' (str)
 2) actual
-3) `actual` should contain `nope`
+3) 'actual' (str) should contain 'nope' (str)

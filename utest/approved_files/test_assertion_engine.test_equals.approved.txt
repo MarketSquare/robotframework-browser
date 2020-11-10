@@ -1,4 +1,5 @@
 Test equals
 
 0) actual
-1) `actual` should be `unexpected`
+1) 'actual' (str) should be 'unexpected' (str)
+2) '1' (int) should be '1' (str)
