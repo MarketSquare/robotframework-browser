@@ -421,8 +421,7 @@ def package(c):
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(
         root_dir / "Browser/wrapper" / "browser_binaries"
     )
-    os.remove("package-lock.json")
-    c.run("npm install -D playwright")
+    c.run("node node_modules/playwright/install.js")
 
     shutil.make_archive(
         f"github-actions-dist/{bin_archive_filename}", "gztar", "Browser/wrapper"
