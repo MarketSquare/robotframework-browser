@@ -43,6 +43,9 @@
     "playwright": "^1.5.1",
     "uuid": "^8.3.1"
   },
+  "bin": {
+    "index": "./Browser/wrapper/index.js"
+  },
   "husky": {
     "hooks": {
       "pre-commit": "echo 'precommit 🔱' && inv lint",

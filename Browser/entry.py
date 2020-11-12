@@ -14,10 +14,17 @@
 
 import os
 import platform
+import shutil
 import subprocess
+import stat
 import sys
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
+
+from clint.textui import progress  # type: ignore
+import requests
+
+from .version import bin_archive_filename, __version__
 
 USAGE = """USAGE
   rf-browser [command]
@@ -39,55 +46,35 @@ def run():
 
 
 def rfbrowser_init():
-    print("Installing node dependencies...")
+    def request_with_progress_bar(url: str, path: Path):
+        r = requests.get(url, stream=True)
+        with open(path, "wb") as f:
+            total_length = int(r.headers.get("content-length"))
+            for chunk in progress.bar(
+                r.iter_content(chunk_size=1024), expected_size=(total_length / 1024) + 1
+            ):
+                if chunk:
+                    f.write(chunk)
+                    f.flush()
+
     installation_dir = Path(__file__).parent / "wrapper"
 
-    if not (installation_dir / "package.json").is_file():
-        print(
-            f"Installation directory `{installation_dir}` does not contain the required package.json "
-            + "\nPrinting contents:"
-        )
-        for root, dirs, files in os.walk(installation_dir):
-            level = root.replace(installation_dir.__str__(), "").count(os.sep)
-            indent = " " * 4 * (level)
-            print("{}{}/".format(indent, os.path.basename(root)))
-            subindent = " " * 4 * (level + 1)
-            for f in files:
-                print("{}{}".format(subindent, f))
-        raise RuntimeError("Could not find robotframework-browser's package.json")
-
-    print("Installing rfbrowser node dependencies at {}".format(installation_dir))
+    print(f"Downloading and extracting rfbrowser data at {installation_dir}")
 
     try:
-        # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
-        # But shell=True breaks our linux CI
-        shell = True if platform.platform().startswith("Windows") else False
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(
-            installation_dir / "browser_binaries"
-        )
-        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=shell)
-    except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
-        print(
-            "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
-            "See https://nodejs.org/ for documentation"
-        )
-        sys.exit(exception)
+        # base_url = "https://github.com/MarketSquare/robotframework-browser/archive/"
+        base_url = f"https://github.com/MarketSquare/robotframework-browser/releases/download/v{__version__}/"
+        url = base_url + bin_archive_filename
+        print(f"Downloading rfbrowser data from {url}")
+        request_with_progress_bar(url, bin_archive_filename)
+        print("Decompressing")
+        # with py7zr.SevenZipFile(bin_archive_filename, "r") as archive:
+        #    archive.extractall(path=str(installation_dir))
+        os.remove(bin_archive_filename)
+        shutil.unpack_archive(bin_archive_filename, installation_dir)
 
-    process = Popen(
-        "npm install --production",
-        shell=True,
-        cwd=installation_dir,
-        stdout=PIPE,
-        stderr=STDOUT,
-    )
+    except Exception as err:
+        raise RuntimeError("Problem installing node dependencies." + f"{err}")
 
-    for line in process.stdout:
-        print(line.decode("utf-8"))
-
-    if process.returncode is not None:
-        raise RuntimeError(
-            "Problem installing node dependencies."
-            + f"Node process returned with exit status {process.returncode}"
-        )
-
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(installation_dir / "browser_binaries")
     print("rfbrowser init completed")

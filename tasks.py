@@ -5,9 +5,12 @@ from pathlib import Path
 import platform
 import re
 import shutil
+from distutils.dir_util import copy_tree
 
 from invoke import task, Exit
 from robot import rebot_cli
+
+from Browser.version import bin_archive_filename
 
 try:
     from pabot import pabot
@@ -159,7 +162,7 @@ def node_build(c):
         node_dir.glob("**/*.ts"), node_timestamp_file
     ) or _sources_changed(node_dir.glob("**/*.tsx"), node_timestamp_file):
         c.run("yarn build")
-        c.run("yarn pkg Browser/wrapper/index.js --public --out-path Browser/wrapper/")
+
         node_timestamp_file.touch()
     else:
         print("no changes in .ts files, skipping node build")
@@ -256,7 +259,9 @@ def atest_failed(c):
 
 @task()
 def run_tests(c, tests):
-    process = subprocess.Popen([sys.executable, "-m", "robot", '--loglevel', 'DEBUG', tests])
+    process = subprocess.Popen(
+        [sys.executable, "-m", "robot", "--loglevel", "DEBUG", tests]
+    )
     process.wait(600)
 
 
@@ -381,8 +386,10 @@ def docs(c):
     with output.open("r") as file:
         data = file.read()
     soup = bs4.BeautifulSoup(data, "html.parser")
-    script_async = soup.new_tag("script", src="https://www.googletagmanager.com/gtag/js?id=UA-106835747-3")
-    script_async.attrs['async'] = None
+    script_async = soup.new_tag(
+        "script", src="https://www.googletagmanager.com/gtag/js?id=UA-106835747-3"
+    )
+    script_async.attrs["async"] = None
     soup.head.append(script_async)
     script_data = soup.new_tag("script")
     script_data.string = """
@@ -407,7 +414,21 @@ def docs(c):
 @task(clean, build, docs)
 def package(c):
     shutil.copy(root_dir / "package.json", root_dir / "Browser" / "wrapper")
+    c.run(
+        "yarn pkg package.json --targets node12-linux,node12-macos,node12-win --public --out-path Browser/wrapper/"
+    )
+    copy_tree("node_modules/playwright/third_party/ffmpeg", "Browser/wrapper")
+    # Let playwright download browsers based on our specified env-var location
+    # c.run("rfbrowser init")
+
+    shutil.make_archive(
+        "github-actions-dist/{bin_archive_filename}", "gztar", "Browser/wrapper"
+    )
     c.run("python setup.py sdist bdist_wheel")
+    # with py7zr.SevenZipFile(
+    #    f"github-actions-dist/{bin_archive_filename}", "w"
+    # ) as archive:
+    #    archive.writeall(str(root_dir / "Browser" / "wrapper"))
 
 
 @task

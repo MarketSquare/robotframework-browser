@@ -34,6 +34,7 @@ lsp
 
 node_modules/
 dist
+github-actions-dist
 build
 pip-wheel-metadata
 tmp
