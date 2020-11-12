@@ -5,3 +5,5 @@ robotframework >=3.2.2
 robotframework-pythonlibcore >=2.1.0
 typing-extensions >= 3.7.4.3
 wrapt >= 1.12.1
+requests==2.24.0
+clint==0.5.1

@@ -24,7 +24,7 @@ from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 from clint.textui import progress  # type: ignore
 import requests
 
-from .version import bin_archive_filename, __version__
+from .version import bin_archive_filename, bin_archive_filename_with_ext, __version__
 
 USAGE = """USAGE
   rf-browser [command]
@@ -64,17 +64,14 @@ def rfbrowser_init():
     try:
         # base_url = "https://github.com/MarketSquare/robotframework-browser/archive/"
         base_url = f"https://github.com/MarketSquare/robotframework-browser/releases/download/v{__version__}/"
-        url = base_url + bin_archive_filename
+        url = base_url + bin_archive_filename_with_ext
         print(f"Downloading rfbrowser data from {url}")
-        request_with_progress_bar(url, bin_archive_filename)
+        request_with_progress_bar(url, bin_archive_filename_with_ext)
         print("Decompressing")
-        # with py7zr.SevenZipFile(bin_archive_filename, "r") as archive:
-        #    archive.extractall(path=str(installation_dir))
-        os.remove(bin_archive_filename)
-        shutil.unpack_archive(bin_archive_filename, installation_dir)
+        shutil.unpack_archive(bin_archive_filename_with_ext, installation_dir)
+        os.remove(bin_archive_filename_with_ext)
 
     except Exception as err:
         raise RuntimeError("Problem installing node dependencies." + f"{err}")
 
-    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(installation_dir / "browser_binaries")
     print("rfbrowser init completed")

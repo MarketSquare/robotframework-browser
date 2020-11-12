@@ -413,22 +413,21 @@ def docs(c):
 
 @task(clean, build, docs)
 def package(c):
-    shutil.copy(root_dir / "package.json", root_dir / "Browser" / "wrapper")
     c.run(
         "yarn pkg package.json --targets node12-linux,node12-macos,node12-win --public --out-path Browser/wrapper/"
     )
     copy_tree("node_modules/playwright/third_party/ffmpeg", "Browser/wrapper")
     # Let playwright download browsers based on our specified env-var location
-    # c.run("rfbrowser init")
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(
+        root_dir / "Browser/wrapper" / "browser_binaries"
+    )
+    os.remove("package-lock.json")
+    c.run("npm install -D playwright")
 
     shutil.make_archive(
-        "github-actions-dist/{bin_archive_filename}", "gztar", "Browser/wrapper"
+        f"github-actions-dist/{bin_archive_filename}", "gztar", "Browser/wrapper"
     )
     c.run("python setup.py sdist bdist_wheel")
-    # with py7zr.SevenZipFile(
-    #    f"github-actions-dist/{bin_archive_filename}", "w"
-    # ) as archive:
-    #    archive.writeall(str(root_dir / "Browser" / "wrapper"))
 
 
 @task
