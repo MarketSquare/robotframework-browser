@@ -122,8 +122,8 @@ class Playwright(LibraryComponent):
         channel = grpc.insecure_channel(f"localhost:{self.port}")
         try:
             yield playwright_pb2_grpc.PlaywrightStub(channel)
-        except Exception as e:
-            raise AssertionError(self.get_reason(e))
+        except Exception as error:
+            raise AssertionError(self.get_reason(error))
         finally:
             channel.close()
 

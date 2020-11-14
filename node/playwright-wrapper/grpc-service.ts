@@ -24,6 +24,7 @@ import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerUnaryCall, sendUnaryData } from '@grpc/grpc-js';
+import { errorResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     state: PlaywrightState;
@@ -46,7 +47,7 @@ export class PlaywrightServer implements IPlaywrightServer {
                 const response = await func(request, this.state);
                 callback(null, response);
             } catch (e) {
-                callback(e, null);
+                callback(errorResponse(e), null);
             }
         };
     };
@@ -59,7 +60,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await playwrightState.closeBrowser(this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
     async closeAllBrowsers(
@@ -70,7 +71,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await playwrightState.closeAllBrowsers(this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -82,7 +83,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await playwrightState.closeContext(this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -94,7 +95,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await playwrightState.closePage(this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -106,7 +107,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await playwrightState.getBrowserCatalog(this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -118,7 +119,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await cookie.getCookies(this.getActiveContext());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -132,7 +133,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await cookie.addCookie(request, this.getActiveContext());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -144,7 +145,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await cookie.deleteAllCookies(this.getActiveContext());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -158,7 +159,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await playwrightState.switchPage(request, this.state.getActiveBrowser());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -172,7 +173,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await playwrightState.switchContext(request, this.state.getActiveBrowser());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -186,7 +187,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await playwrightState.switchBrowser(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -200,7 +201,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await playwrightState.newPage(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -214,7 +215,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await playwrightState.newContext(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -228,7 +229,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await playwrightState.newBrowser(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -242,7 +243,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await browserControl.goTo(request, this.getActivePage());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -254,7 +255,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await browserControl.goBack(this.getActivePage());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -266,7 +267,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await browserControl.goForward(this.getActivePage());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -280,7 +281,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await browserControl.takeScreenshot(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -294,7 +295,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getBoundingBox(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -306,7 +307,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getPageSource(this.getActivePage());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -320,7 +321,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await browserControl.setTimeout(request, this.getActiveBrowser()?.context?.c);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -332,7 +333,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getTitle(this.getActivePage());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -344,7 +345,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getUrl(this.getActivePage());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -358,7 +359,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getElementCount(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -372,7 +373,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getSelectContent(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -386,7 +387,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getDomProperty(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -400,7 +401,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getBoolProperty(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -414,7 +415,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getElementAttribute(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -428,7 +429,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getStyle(request, this.state);
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -440,7 +441,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const response = await getters.getViewportSize(this.getActivePage());
             callback(null, response);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -454,7 +455,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.selectOption(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -468,7 +469,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.deSelectOption(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -482,7 +483,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.inputText(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -496,7 +497,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.typeText(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -510,7 +511,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.fillText(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -524,7 +525,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.clearText(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -538,7 +539,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.press(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -552,7 +553,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.click(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -566,7 +567,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.hover(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -580,7 +581,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.focus(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -594,7 +595,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.checkCheckbox(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -608,7 +609,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.uncheckCheckbox(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -622,7 +623,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.getElement(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -636,7 +637,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.getElements(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -650,7 +651,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.addStyleTag(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -664,7 +665,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.waitForElementState(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -678,7 +679,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await network.waitForRequest(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -692,7 +693,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await network.waitForResponse(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -706,7 +707,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await network.waitUntilNetworkIsIdle(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -720,7 +721,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.waitForFunction(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -734,7 +735,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await network.waitForDownload(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -748,7 +749,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.executeJavascript(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -760,7 +761,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.getPageState(this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -783,7 +784,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.highlightElements(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -797,7 +798,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await evaluation.download(request, this.state);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -811,7 +812,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await browserControl.setViewportSize(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -825,7 +826,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await network.httpRequest(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -839,7 +840,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = deviceDescriptors.getDevice(request);
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
     async getDevices(
@@ -852,7 +853,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = deviceDescriptors.getDevices();
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -866,7 +867,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.uploadFile(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -880,7 +881,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.handleAlert(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -894,7 +895,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.mouseMove(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -908,7 +909,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.mouseButton(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -922,7 +923,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.keyboardKey(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -936,7 +937,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await interaction.keyboardInput(request, this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -950,7 +951,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await browserControl.setOffline(request, this.getActiveContext());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -964,7 +965,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await browserControl.setGeolocation(request, this.getActiveContext());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 
@@ -978,7 +979,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             const result = await browserControl.reload(this.getActivePage());
             callback(null, result);
         } catch (e) {
-            callback(e, null);
+            callback(errorResponse(e), null);
         }
     }
 }
