@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          keywords.resource
+Resource          imports.resource
 
 *** Test Cases ***
 GRPC Message Overflow Should Not Happen Event The Message Exceeds Default Size
@@ -7,7 +7,10 @@ GRPC Message Overflow Should Not Happen Event The Message Exceeds Default Size
     New Context
     New Page    ${ROOT_URL}/enabled_disabled_fields_form.html
     ${timeout} =    Set Browser Timeout    2s
-    Run Keyword And Expect Error
-    ...    TimeoutError: page.waitForSelector: Timeout 2000ms exceeded.${\n}=========================== logs ===========================${\n}waiting for selector "//${aabbcc * 100}*
+    ${msg} =    Run Keyword And Expect Error
+    ...    *
     ...    Get Attribute    //${aabbcc * 1500}    foo    equal    tidii
+    Should Contain    ${msg}    TimeoutError: page.waitForSelector: Timeout 2000ms exceeded.
+    Should Contain    ${msg}    =========================== logs ===========================
+    Should Contain    ${msg}    waiting for selector "//${aabbcc * 100}
     [Teardown]    Set Browser Timeout    ${timeout}
