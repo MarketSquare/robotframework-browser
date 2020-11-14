@@ -122,26 +122,13 @@ class Playwright(LibraryComponent):
         channel = grpc.insecure_channel(f"localhost:{self.port}")
         try:
             yield playwright_pb2_grpc.PlaywrightStub(channel)
+        except grpc.RpcError as error:
+            raise AssertionError(error.details())
         except Exception as error:
-            raise AssertionError(self.get_reason(error))
+            logger.warn(f"Unknown error received: {error}")
+            raise AssertionError(str(error))
         finally:
             channel.close()
-
-    def get_reason(self, err):
-        try:
-            metadata = err.trailing_metadata()
-            for element in metadata:
-                if element.key == "reason":
-                    return element.value
-        except AttributeError:
-            pass
-        try:
-            return err.details()
-        except TypeError:
-            return err.details
-        except AttributeError:
-            pass
-        return str(err)
 
     def close(self):
         logger.debug("Closing all open browsers, contexts and pages in Playwright")

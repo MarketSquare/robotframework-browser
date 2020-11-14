@@ -27,7 +27,9 @@ Get Device
     Should Be Equal    ${device}    ${should_be}
 
 Get Invalid Device Errors
-    Run Keyword And Expect Error    No device named NonExistentDeviceName    Get Device    NonExistentDeviceName
+    Run Keyword And Expect Error
+    ...    Error: No device named NonExistentDeviceName
+    ...    Get Device    NonExistentDeviceName
 
 Descriptor Properly sets context settings
     ${device}=    Get Device    Galaxy S5

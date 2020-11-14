@@ -14,10 +14,10 @@ Set Geolocation
 Set Geolocation Out Of Bounds
     [Setup]    Start Context With Geolocation
     Run Keyword And Expect Error
-    ...    browserContext.setGeolocation: geolocation.latitude: precondition *
+    ...    Error: browserContext.setGeolocation: geolocation.latitude: precondition *
     ...    Set Geolocation    1072    3
     Run Keyword And Expect Error
-    ...    browserContext.setGeolocation: geolocation.longitude: precondition *
+    ...    Error: browserContext.setGeolocation: geolocation.longitude: precondition *
     ...    Set Geolocation    3    765.89
 
 *** Keywords ***

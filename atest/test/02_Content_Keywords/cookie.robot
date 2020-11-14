@@ -6,7 +6,7 @@ Test Setup        Open Browser To Form Page
 Cookies From Closed Context
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Tried to do playwright action 'cookies', but no open context.
+    ...    Error: Tried to do playwright action 'cookies', but no open context.
     ...    Get Cookies
 
 Get Cookies Should Return Empty List When No Cookies Are Available
@@ -26,14 +26,14 @@ Get Cookies With String Type
 
 Add Cookie Without Url, Path and Domain
     Run Keyword And Expect Error
-    ...    browserContext.addCookies: Cookie should have a url or a domain/path pair
+    ...    Error: browserContext.addCookies: Cookie should have a url or a domain/path pair
     ...    Add Cookie    Foo    Bar
 
 Add Cookie Should Fail If Context Is Not Open
     ${url} =    Get Url
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Tried to do playwright action 'addCookies', but no open context.
+    ...    Error: Tried to do playwright action 'addCookies', but no open context.
     ...    Add Cookie    Foo    Bar    url=${url}
 
 Add Cookie With Url
@@ -57,7 +57,7 @@ Add Cookie With URL And Domain Should Fail
     ${url} =    Get Url
     ${parsed_url} =    common.Parse Url    ${url}
     Run Keyword And Expect Error
-    ...    browserContext.addCookies: Cookie should have either url or domain
+    ...    Error: browserContext.addCookies: Cookie should have either url or domain
     ...    Add Cookie
     ...    Foo
     ...    Bar
@@ -147,7 +147,7 @@ Delete All Cookies
 Delete All Cookies From Closed Context
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Tried to do playwright action 'clearCookies', but no open context.
+    ...    Error: Tried to do playwright action 'clearCookies', but no open context.
     ...    Delete All Cookies
 
 Delete All Cookies When Cookies Does Not Exist
