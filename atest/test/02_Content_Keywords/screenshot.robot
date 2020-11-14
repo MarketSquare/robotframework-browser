@@ -72,10 +72,6 @@ Embed Element Picture To log.html File
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
 
-Element Screenshotting
-    Take screenshot    ${TestScreenshot}    \#username_field
-    File Should Exist    ${TestScreenshot}.png
-
 Screenshot Without Active Page
     Close Page    ALL
     Run Keyword And Expect Error
