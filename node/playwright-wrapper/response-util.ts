@@ -56,11 +56,9 @@ export function jsResponse(result: string, logMessage: string) {
 }
 
 export function errorResponse(e: Error) {
-    console.log("============================================================");
-    console.log("Original suppressed error");
-    console.log("============================================================");
-    console.log(e)
-    console.log("============================================================");
-    const errorMessage: string = e.toString().substring(0,5000);
-    return {code: status.DEADLINE_EXCEEDED, message: errorMessage};
+    console.log('================= Original suppressed error =================');
+    console.log(e);
+    console.log('=============================================================');
+    const errorMessage: string = e.toString().substring(0, 5000);
+    return { code: status.DEADLINE_EXCEEDED, message: errorMessage };
 }
