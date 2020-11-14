@@ -12,4 +12,6 @@ Toggling Offline disables connection
 
 Creating Offline Context works
     New Context    offline=True
-    Run Keyword And Expect Error    STARTS:page.goto: net::ERR_INTERNET_DISCONNECTED    New Page    ${LOGIN_URL}
+    Run Keyword And Expect Error
+    ...    STARTS:Error: page.goto: net::ERR_INTERNET_DISCONNECTED
+    ...    New Page    ${LOGIN_URL}

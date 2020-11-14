@@ -29,7 +29,7 @@ Element Screenshotting
 
 If Element Not Found Screenshot Should Fail
     Run Keyword And Expect Error
-    ...    Tried to capture element screenshot, element '#not_there' wasn't found.
+    ...    Error: Tried to capture element screenshot, element '#not_there' wasn't found.
     ...    Take Screenshot    selector=\#not_there
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
@@ -75,5 +75,5 @@ Embed Element Picture To log.html File
 Screenshot Without Active Page
     Close Page    ALL
     Run Keyword And Expect Error
-    ...    Tried to take screenshot, but no page was open.
+    ...    Error: Tried to take screenshot, but no page was open.
     ...    Take Screenshot

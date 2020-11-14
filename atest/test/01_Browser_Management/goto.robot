@@ -3,7 +3,9 @@ Resource          imports.resource
 
 *** Test Cases ***
 No Open Browser Throws
-    Run KeyWord and Expect Error    Tried to do playwright action 'goto', but no open page.    GoTo    "about:blank"
+    Run KeyWord and Expect Error
+    ...    Error: Tried to do playwright action 'goto', but no open page.
+    ...    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
     [Setup]    New Page    ${LOGIN_URL}
@@ -23,11 +25,15 @@ Open GoTo GoBack GoForward
 Timeouting Go To
     New Page    ${LOGIN_URL}
     ${timeout}=    Set Browser Timeout    10ms
-    Run KeyWord and Expect Error    page.goto: Timeout 10ms exceeded.*    Go To    ${WELCOME_URL}
+    Run KeyWord and Expect Error
+    ...    TimeoutError: page.goto: Timeout 10ms exceeded.*
+    ...    Go To    ${WELCOME_URL}
     Set Browser Timeout    ${timeout}
     [Teardown]    Close Browser
 
 Timeouting Go To With Custom timeout
     New Page    ${LOGIN_URL}
-    Run KeyWord and Expect Error    page.goto: Timeout 10ms exceeded.*    Go To    ${WELCOME_URL}    10 ms
+    Run KeyWord and Expect Error
+    ...    TimeoutError: page.goto: Timeout 10ms exceeded.*
+    ...    Go To    ${WELCOME_URL}    10 ms
     [Teardown]    Close Browser

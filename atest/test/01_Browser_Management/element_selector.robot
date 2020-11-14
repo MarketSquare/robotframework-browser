@@ -15,9 +15,11 @@ Get Element With Nonmatching child selector
     ...    Get Property    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
-    Run Keyword And Expect Error    No element handle found with id `1234-4321`.
+    Run Keyword And Expect Error
+    ...    Error: No element handle found with id `1234-4321`.
     ...    Click    element=1234-4321
-    Run Keyword And Expect Error    No element handle found with id `1234-4321`.
+    Run Keyword And Expect Error
+    ...    Error: No element handle found with id `1234-4321`.
     ...    Click    element=1234-4321 >> .css
 
 Get Element From Frame
