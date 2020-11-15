@@ -109,7 +109,7 @@ class Playwright(LibraryComponent):
         )
 
     @contextlib.contextmanager
-    def grpc_channel(self):
+    def grpc_channel(self, original_error=False):
         """Yields a PlayWrightstub on a newly initialized channel
 
         Acts as a context manager, so channel is closed automatically when control returns.
@@ -123,6 +123,8 @@ class Playwright(LibraryComponent):
         try:
             yield playwright_pb2_grpc.PlaywrightStub(channel)
         except grpc.RpcError as error:
+            if original_error:
+                raise error
             raise AssertionError(error.details())
         except Exception as error:
             logger.warn(f"Unknown error received: {error}")

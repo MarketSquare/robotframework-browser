@@ -15,6 +15,8 @@
 import json
 from typing import Any, List, Optional, Union
 
+import grpc  # type: ignore
+
 from ..assertion_engine import (
     bool_verify_assertion,
     dict_verify_assertion,
@@ -519,13 +521,17 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
         """
         try:
-            with self.playwright.grpc_channel() as stub:
+            with self.playwright.grpc_channel(original_error=True) as stub:
                 response = stub.GetElements(
                     Request().ElementSelector(selector=selector)
                 )
                 return json.loads(response.json)
-        except AssertionError as error:
-            if "page.waitForSelector: Timeout" in str(error):
+        except grpc.RpcError as error:
+            logger.info(error)
+            if (
+                error.code() == grpc.StatusCode.DEADLINE_EXCEEDED
+                and error.details().startswith("TimeoutError: page.waitForSelector:")
+            ):
                 return []
             raise error
 
