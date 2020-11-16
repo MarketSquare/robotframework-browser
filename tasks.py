@@ -60,7 +60,7 @@ Python **>=3.7**, and Robot Framework **>=3.2**.
 
 .. _Robot Framework: http://robotframework.org
 .. _Browser: https://github.com/MarketSquare/robotframework-browser
-.. _Selenium: https://github.com/microsoft/playwright
+.. _Playwright: https://github.com/microsoft/playwright
 .. _pip: http://pip-installer.org
 .. _PyPI: https://pypi.python.org/pypi/robotframework-browser
 .. _issue tracker: https://github.com/MarketSquare/robotframework-browser/milestones%3A{version.milestone}

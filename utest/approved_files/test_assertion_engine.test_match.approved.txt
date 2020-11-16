@@ -1,0 +1,11 @@
+match
+
+0) Actual
+1) 'Actual' (str) should match '/(\d)+/' (str)
+2) Actual
+3) 'Actual' (str) should match '/(\d)+/' (str)
+4) Actual
+5) Actual
+multiline
+6) 'Actual
+multiline' (str) should match '/(\d)+/' (str)

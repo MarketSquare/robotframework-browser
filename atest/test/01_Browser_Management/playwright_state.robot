@@ -25,7 +25,8 @@ Open Chrome
 
 New Browser does not open a page
     New Browser
-    Run Keyword And Expect Error    Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN_URL}
+    Run Keyword And Expect Error
+    ...    Error: Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN_URL}
 
 New Browser does not create a context
     New Browser
@@ -130,7 +131,8 @@ Switch New Page fails when no new pages
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     ${timeout}=    Set Browser Timeout    0.1s
-    Run Keyword And Expect Error    Tried to activate a new page but no new pages were detected in context.    Switch Page    NEW
+    Run Keyword And Expect Error
+    ...    Error: Tried to activate a new page but no new pages were detected in context.    Switch Page    NEW
     Get Title    ==    prefilled_email_form.html
     [Teardown]    Set Browser Timeout    ${timeout}
 

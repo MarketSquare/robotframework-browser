@@ -72,7 +72,8 @@ Wait For Elements State unchecked
 Wait For Elements State fails on too short timeout
     Select Options By    \#dropdown    value    unchecked
     Click    \#submit    noWaitAfter=True
-    Run Keyword and Expect Error    STARTS:page.waitForFunction: Timeout 300ms exceeded.    Wait For Elements State    \#victim    unchecked    300ms
+    Run Keyword and Expect Error
+    ...    STARTS:TimeoutError: page.waitForFunction: Timeout 300ms exceeded.    Wait For Elements State    \#victim    unchecked    300ms
 
 Wait For Elements State to hide with Promise
     Select Options By    \#dropdown    value    hidden    # Now it is visible

@@ -20,12 +20,16 @@ Open PDF in another tab and download it
 
 Download without page fails
     New Context    acceptDownloads=${TRUE}
-    Run keyword and expect error    Download requires an active page    Download    ${WELCOME_URL}
+    Run keyword and expect error
+    ...    Error: Download requires an active page
+    ...    Download    ${WELCOME_URL}
 
 Download with no acceptDownloads fails
     New Context    acceptDownloads=${FALSE}
     New Page    ${WELCOME_URL}
-    Run keyword and expect error    Context acceptDownloads is false    Download    ${WELCOME_URL}
+    Run keyword and expect error
+    ...    Error: Context acceptDownloads is false
+    ...    Download    ${WELCOME_URL}
 
 Open html in another tab
     New Page    ${WELCOME_URL}

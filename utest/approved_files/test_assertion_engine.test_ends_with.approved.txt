@@ -1,0 +1,6 @@
+ends with
+
+0) Hello Robots
+1) 'Hello Robots' (str) should end with 'Hello' (str)
+2) Hel[4,5]?[1-9]+ Robots
+3) 'Hel[4,5]?[1-9]+ Robots' (str) should end with '.*' (str)

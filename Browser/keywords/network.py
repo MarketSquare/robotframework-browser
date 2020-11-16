@@ -16,12 +16,11 @@ import json
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
-from robotlibcore import keyword  # type: ignore
 from typing_extensions import Literal
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
+from ..utils import keyword, logger
 from ..utils.data_types import RequestMethod
 
 
@@ -53,7 +52,7 @@ def _jsonize_content(data, bodykey):
 
 
 class Network(LibraryComponent):
-    @keyword(tags=["HTTP"])
+    @keyword(tags=("HTTP",))
     def http(
         self,
         url: str,
@@ -120,7 +119,7 @@ class Network(LibraryComponent):
                 else _format_response(json.loads(response.json))
             )
 
-    @keyword(tags=["Wait", "HTTP"])
+    @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
         self, matcher: str = "", timeout: Optional[timedelta] = None
     ) -> Any:
@@ -134,7 +133,7 @@ class Network(LibraryComponent):
         """
         return self._wait_for_http("Request", matcher, timeout)
 
-    @keyword(tags=["Wait", "HTTP"])
+    @keyword(tags=("Wait", "HTTP"))
     def wait_for_response(
         self, matcher: str = "", timeout: Optional[timedelta] = None
     ) -> Any:
@@ -156,7 +155,7 @@ class Network(LibraryComponent):
         """
         return self._wait_for_http("Response", matcher, timeout)
 
-    @keyword(tags=["Wait", "HTTP"])
+    @keyword(tags=("Wait", "HTTP"))
     def wait_until_network_is_idle(self, timeout: Optional[timedelta] = None):
         """Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
 

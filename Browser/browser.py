@@ -458,8 +458,12 @@ class Browser(DynamicCore):
     The keywords will provide an error message if the assertion fails.
     Assertions will retry until ``timeout`` has expired if they do not pass.
 
-    Be aware that some keywords return strings others return numbers.
-    `Get Text` for example always returns a strings and has to be compared with a string.
+    The assertion ``assertion_expected`` value is not converted by the library and
+    is used as is. Therefore when assertion is made, the ``assertion_expected``
+    argument value and value returned the keyword must have same type. If types
+    are not same, assertion will fail. Example `Get Text` always returns a string
+    and has to be compared with a string, even the returnd value might look like
+    a number.
 
     Other Keywords have other specific types they return.
     `Get Element Count` always returns an integer.
@@ -585,6 +589,7 @@ class Browser(DynamicCore):
         ]
         self.playwright = Playwright(self, enable_playwright_debug)
         self._auto_closing_level = auto_closing_level
+        self.current_arguments = ()
         DynamicCore.__init__(self, libraries)
 
     @property
@@ -709,6 +714,7 @@ class Browser(DynamicCore):
         been closed already. This implementation will take the screenshot
         before the teardown begins to execute.
         """
+        self.current_arguments = tuple(attrs["args"])
         if attrs["type"] == "Teardown":
             timeout_pattern = "Test timeout .* exceeded."
             test = EXECUTION_CONTEXTS.current.test

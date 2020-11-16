@@ -1,0 +1,6 @@
+Type converter
+
+0) nonetype
+1) str
+2) int
+3) bool

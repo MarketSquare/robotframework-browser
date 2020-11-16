@@ -15,7 +15,7 @@
 import json
 from typing import Any, List, Optional, Union
 
-from robotlibcore import keyword  # type: ignore
+import grpc  # type: ignore
 
 from ..assertion_engine import (
     bool_verify_assertion,
@@ -28,7 +28,7 @@ from ..assertion_engine import (
 )
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import exec_scroll_function, logger
+from ..utils import exec_scroll_function, keyword, logger
 from ..utils.data_types import (
     AreaFields,
     AssertionOperator,
@@ -40,7 +40,7 @@ from ..utils.data_types import (
 
 
 class Getters(LibraryComponent):
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_url(
         self,
@@ -61,7 +61,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "URL "
             )
 
-    # @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    # @keyword(tags=("Getter", "Assertion", "BrowserControl"))
     # Not published as keyword due to missing of good docs.
     @with_assertion_polling
     def get_page_state(
@@ -89,7 +89,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "State "
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_page_source(
         self,
@@ -110,7 +110,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "HTML: "
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_title(
         self,
@@ -131,7 +131,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "Title "
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     def get_text(
         self,
         selector: str,
@@ -149,7 +149,7 @@ class Getters(LibraryComponent):
             selector, "innerText", assertion_operator, assertion_expected
         )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_property(
         self,
@@ -188,7 +188,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, f"Property {property}"
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_attribute(
         self,
@@ -237,7 +237,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, f"Attribute {selector}"
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_attribute_names(
         self,
@@ -268,7 +268,7 @@ class Getters(LibraryComponent):
             attribute_names, assertion_operator, expected, "Attribute names"
         )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_classes(
         self,
@@ -300,7 +300,7 @@ class Getters(LibraryComponent):
             f"Classes of {selector}",
         )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_textfield_value(
         self,
@@ -324,7 +324,7 @@ class Getters(LibraryComponent):
             f"Value {selector}",
         )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_selected_options(
         self,
@@ -385,7 +385,7 @@ class Getters(LibraryComponent):
                 "Selected Options:",
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_checkbox_state(
         self,
@@ -426,7 +426,7 @@ class Getters(LibraryComponent):
                 value, assertion_operator, expected_state, f"Checkbox {selector} is"
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_element_count(
         self,
@@ -457,7 +457,7 @@ class Getters(LibraryComponent):
                 f"Element count for selector `{selector}` is",
             )
 
-    @keyword(tags=["Getter", "Assertion", "BrowserControl"])
+    @keyword(tags=("Getter", "Assertion", "BrowserControl"))
     @with_assertion_polling
     def get_viewport_size(
         self,
@@ -500,7 +500,7 @@ class Getters(LibraryComponent):
                     f"{key} is ",
                 )
 
-    @keyword(tags=["Getter", "PageContent"])
+    @keyword(tags=("Getter", "PageContent"))
     def get_element(self, selector: str) -> str:
         """Returns a reference to a Playwright element handle.
 
@@ -513,7 +513,7 @@ class Getters(LibraryComponent):
             response = stub.GetElement(Request().ElementSelector(selector=selector))
             return response.body
 
-    @keyword(tags=["Getter", "PageContent"])
+    @keyword(tags=("Getter", "PageContent"))
     def get_elements(self, selector: str) -> List[str]:
         """Returns a reference to playwright element handle for all matched elements by ``selector``.
 
@@ -521,17 +521,21 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
         """
         try:
-            with self.playwright.grpc_channel() as stub:
+            with self.playwright.grpc_channel(original_error=True) as stub:
                 response = stub.GetElements(
                     Request().ElementSelector(selector=selector)
                 )
                 return json.loads(response.json)
-        except AssertionError as error:
-            if "page.waitForSelector: Timeout" in str(error):
+        except grpc.RpcError as error:
+            logger.info(error)
+            if (
+                error.code() == grpc.StatusCode.DEADLINE_EXCEEDED
+                and error.details().startswith("TimeoutError: page.waitForSelector:")
+            ):
                 return []
             raise error
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_style(
         self,
@@ -570,7 +574,7 @@ class Getters(LibraryComponent):
                     f"Style value for {key} is ",
                 )
 
-    @keyword(name="Get BoundingBox", tags=["Getter", "Assertion", "PageContent"])
+    @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
     def get_boundingbox(
         self,
         selector: str,
@@ -617,7 +621,7 @@ class Getters(LibraryComponent):
                     f"BoundingBox {key.name} is ",
                 )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     def get_scroll_size(
         self,
         selector: Optional[str] = None,
@@ -664,7 +668,7 @@ class Getters(LibraryComponent):
                 f"Scroll {key.name} is ",
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     def get_scroll_position(
         self,
         selector: Optional[str] = None,
@@ -714,7 +718,7 @@ class Getters(LibraryComponent):
                 f"Scroll position {key.name} is ",
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     def get_client_size(
         self,
         selector: Optional[str] = None,
@@ -755,7 +759,7 @@ class Getters(LibraryComponent):
                 f"Client {key.name} is ",
             )
 
-    @keyword(tags=["Getter", "Assertion", "PageContent"])
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
     def get_element_state(
         self,
         selector: str,

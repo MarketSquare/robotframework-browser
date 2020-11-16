@@ -1,0 +1,5 @@
+less or equal
+
+0) 2
+1) '2' (int) should be greater than or equal '3' (int)
+2) 2

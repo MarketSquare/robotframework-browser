@@ -21,14 +21,12 @@
 
 from typing import Optional
 
-from robotlibcore import keyword  # type: ignore
-
 from ..base import LibraryComponent
-from ..utils import is_falsy, logger
+from ..utils import is_falsy, keyword, logger
 
 
 class RunOnFailureKeywords(LibraryComponent):
-    @keyword(tags=["Config"])
+    @keyword(tags=("Config",))
     def register_keyword_to_run_on_failure(
         self, keyword: Optional[str]
     ) -> Optional[str]:

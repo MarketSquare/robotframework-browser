@@ -18,15 +18,14 @@ from typing import List, Optional, Union
 
 from robot.libraries.DateTime import convert_date  # type: ignore
 from robot.utils import DotDict  # type: ignore
-from robotlibcore import keyword  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import CookieSameSite, CookieType, locals_to_params, logger
+from ..utils import CookieSameSite, CookieType, keyword, locals_to_params, logger
 
 
 class Cookie(LibraryComponent):
-    @keyword(tags=["Getter", "PageContent"])
+    @keyword(tags=("Getter", "PageContent"))
     def get_cookies(
         self, return_type: CookieType = CookieType.dictionary
     ) -> Union[List[DotDict], str]:
@@ -87,7 +86,7 @@ class Cookie(LibraryComponent):
                 dot_dict[key] = cookie[key]
         return dot_dict
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def add_cookie(
         self,
         name: str,
@@ -144,7 +143,7 @@ class Cookie(LibraryComponent):
         except ValueError:
             return int(convert_date(expiry, result_format="epoch"))
 
-    @keyword(tags=["Setter", "BrowserControl"])
+    @keyword(tags=("Setter", "BrowserControl"))
     def delete_all_cookies(self):
         """Deletes all cookies from the currently active browser context."""
         with self.playwright.grpc_channel() as stub:
@@ -167,7 +166,7 @@ class Cookie(LibraryComponent):
         )
         logger.warn("Cookie monster ate all cookies!!")
 
-    @keyword(tags=["Getter", "BrowserControl"])
+    @keyword(tags=("Getter", "BrowserControl"))
     def get_cookie(
         self, cookie: str, return_type: CookieType = CookieType.dictionary
     ) -> Union[DotDict, str]:

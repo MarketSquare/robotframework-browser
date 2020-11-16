@@ -15,17 +15,15 @@
 import json
 from typing import Any, Optional
 
-from robotlibcore import keyword  # type: ignore
-
 from ..assertion_engine import verify_assertion, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import logger
+from ..utils import keyword, logger
 from ..utils.data_types import AssertionOperator
 
 
 class WebAppState(LibraryComponent):
-    @keyword(name="localStorage get Item", tags=["PageContent", "Assertion", "Getter"])
+    @keyword(name="localStorage get Item", tags=("PageContent", "Assertion", "Getter"))
     @with_assertion_polling
     def local_storage_get_item(
         self,
@@ -52,7 +50,7 @@ class WebAppState(LibraryComponent):
                 "localStorage ",
             )
 
-    @keyword(name="localStorage set Item", tags=["Setter", "PageContent"])
+    @keyword(name="localStorage set Item", tags=("Setter", "PageContent"))
     def local_storage_set_item(self, key: str, value: str):
         """
         Save data to the local storage.
@@ -69,7 +67,7 @@ class WebAppState(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(name="localStorage remove Item", tags=["Setter", "PageContent"])
+    @keyword(name="localStorage remove Item", tags=("Setter", "PageContent"))
     def local_storage_remove_item(self, key: str):
         """
         Remove saved data with key from the local storage.
@@ -84,7 +82,7 @@ class WebAppState(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(name="localStorage clear", tags=["Setter", "PageContent"])
+    @keyword(name="localStorage clear", tags=("Setter", "PageContent"))
     def local_storage_clear(self):
         """
         Remove all saved data from the local storage.
@@ -96,7 +94,7 @@ class WebAppState(LibraryComponent):
             logger.info(response.log)
 
     @keyword(
-        name="sessionStorage get Item", tags=["PageContent", "Assertion", "Getter"]
+        name="sessionStorage get Item", tags=("PageContent", "Assertion", "Getter")
     )
     @with_assertion_polling
     def session_storage_get_item(
@@ -126,7 +124,7 @@ class WebAppState(LibraryComponent):
                 "sessionStorage ",
             )
 
-    @keyword(name="sessionStorage set Item", tags=["Setter", "PageContent"])
+    @keyword(name="sessionStorage set Item", tags=("Setter", "PageContent"))
     def session_storage_set_item(self, key: str, value: str):
         """
         Save data to session storage.
@@ -143,7 +141,7 @@ class WebAppState(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(name="sessionStorage remove Item", tags=["Setter", "PageContent"])
+    @keyword(name="sessionStorage remove Item", tags=("Setter", "PageContent"))
     def session_storage_remove_item(self, key: str):
         """
         Remove saved data with key from the session storage.
@@ -158,7 +156,7 @@ class WebAppState(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(name="sessionStorage clear", tags=["Setter", "PageContent"])
+    @keyword(name="sessionStorage clear", tags=("Setter", "PageContent"))
     def session_storage_clear(self):
         """
         Remove all saved data from the session storage.

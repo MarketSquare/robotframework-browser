@@ -21,6 +21,7 @@ import wrapt  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
 from .utils import AssertionOperator, is_truthy, logger
+from .utils.misc import type_converter
 
 NumericalOperators = [
     AssertionOperator["=="],
@@ -82,7 +83,10 @@ def verify_assertion(
         raise RuntimeError(f"{message} `{operator}` is not a valid assertion operator")
     validator, text = handler
     if not validator(value, expected):
-        raise AssertionError(f"{message} `{value}` {text} `{expected}`")
+        filler = " " if message else ""
+        raise AssertionError(
+            f"{message}{filler}'{value}' ({type_converter(value)}) {text} '{expected}' ({type_converter(expected)})"
+        )
     return value
 
 

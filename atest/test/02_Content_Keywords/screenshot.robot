@@ -10,7 +10,9 @@ ${TestScreenshot}=    ${OUTPUT_DIR}${/}test_screenshot
 Register Keyword To Run On Failure
     Type Text    css=input#username_field    username
     ${prev}=    Register Keyword To Run On Failure    Take Screenshot
-    Run Keyword And Expect Error    *`username` should be `not_username`    Get TextField Value    css=input#username_field    ==    not_username
+    Run Keyword And Expect Error
+    ...    *'username' (str) should be 'not_username' (str)
+    ...    Get TextField Value    css=input#username_field    ==    not_username
     File Should Exist    ${FailureScreenshot}
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot}
@@ -27,7 +29,7 @@ Element Screenshotting
 
 If Element Not Found Screenshot Should Fail
     Run Keyword And Expect Error
-    ...    Tried to capture element screenshot, element '#not_there' wasn't found.
+    ...    Error: Tried to capture element screenshot, element '#not_there' wasn't found.
     ...    Take Screenshot    selector=\#not_there
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
@@ -70,12 +72,8 @@ Embed Element Picture To log.html File
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
 
-Element Screenshotting
-    Take screenshot    ${TestScreenshot}    \#username_field
-    File Should Exist    ${TestScreenshot}.png
-
 Screenshot Without Active Page
     Close Page    ALL
     Run Keyword And Expect Error
-    ...    Tried to take screenshot, but no page was open.
+    ...    Error: Tried to take screenshot, but no page was open.
     ...    Take Screenshot

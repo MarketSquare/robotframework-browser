@@ -17,15 +17,13 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Dict, Optional, Union
 
-from robotlibcore import keyword  # type: ignore
-
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import ElementState, logger
+from ..utils import ElementState, keyword, logger
 
 
 class Waiter(LibraryComponent):
-    @keyword(tags=["Wait", "PageContent"])
+    @keyword(tags=("Wait", "PageContent"))
     def wait_for_elements_state(
         self,
         selector: str,
@@ -97,7 +95,7 @@ class Waiter(LibraryComponent):
             else:
                 self.wait_for_function(funct[state], selector=selector, timeout=timeout)
 
-    @keyword(tags=["Wait", "PageContent"])
+    @keyword(tags=("Wait", "PageContent"))
     def wait_for_function(
         self,
         function: str,
@@ -143,7 +141,7 @@ class Waiter(LibraryComponent):
             logger.debug(response.json)
             logger.info(response.log)
 
-    @keyword(tags=["Wait", "BrowserControl"])
+    @keyword(tags=("Wait", "BrowserControl"))
     def wait_for_download(self, saveAs: str = "") -> str:
         """Waits for next download event on page. Returns file path to downloaded file.
 

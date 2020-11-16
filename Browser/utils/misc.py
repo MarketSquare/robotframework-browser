@@ -13,7 +13,13 @@
 # limitations under the License.
 
 import contextlib
+import inspect
 import socket
+from typing import Any, Tuple
+
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+
+get_variable_value = BuiltIn().get_variable_value
 
 
 def find_free_port() -> str:
@@ -32,3 +38,20 @@ def is_same_keyword(first: str, second: str) -> bool:
 
 def get_normalized_keyword(keyword: str) -> str:
     return keyword.lower().replace(" ", "").replace("_", "")
+
+
+def keyword(name: Any = None, tags: Tuple = (), types: Tuple = ()):
+    if inspect.isroutine(name):
+        return keyword()(name)
+
+    def decorator(func):
+        func.robot_name = name
+        func.robot_tags = tags
+        func.robot_types = types
+        return func
+
+    return decorator
+
+
+def type_converter(argument: Any) -> str:
+    return type(argument).__name__.lower()

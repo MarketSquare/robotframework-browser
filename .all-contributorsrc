@@ -212,6 +212,33 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mawentao119",
+      "name": "charis",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/26617186?v=4",
+      "profile": "https://github.com/mawentao119",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "s-galante",
+      "name": "s-galante",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/4580052?v=4",
+      "profile": "https://github.com/s-galante",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "simonmeggle",
+      "name": "Simon Meggle",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/1897410?v=4",
+      "profile": "http://www.elabit.de",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -88,7 +88,7 @@ Set GitHub user information into shell variables to ease copy-pasting the follow
 ```
 GITHUB_USERNAME=<username>
 GITHUB_PASSWORD=<password>
-$VERSION=<version>
+VERSION=<version>
 ```
 
 Generate a template for the release notes:

@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import { Response } from './generated/playwright_pb';
+import { errors } from 'playwright';
+import { status } from '@grpc/grpc-js';
 
 export function emptyWithLog(text: string): Response.Empty {
     const response = new Response.Empty();
@@ -52,4 +54,16 @@ export function jsResponse(result: string, logMessage: string) {
     const response = new Response.JavascriptExecutionResult();
     response.setResult(JSON.stringify(result));
     return response;
+}
+
+export function errorResponse(e: Error) {
+    console.log('================= Original suppressed error =================');
+    console.log(e);
+    console.log('=============================================================');
+    const errorMessage: string = e.toString().substring(0, 5000);
+    let errorCode = status.RESOURCE_EXHAUSTED;
+    if (e instanceof errors.TimeoutError) {
+        errorCode = status.DEADLINE_EXCEEDED;
+    }
+    return { code: status.DEADLINE_EXCEEDED, message: errorMessage };
 }
