@@ -256,7 +256,7 @@ class Getters(LibraryComponent):
 
         Available assertions:
         - ``==`` and ``!=`` can work with multiple values
-        - ``contains``/``*=`` only accepts one single expected value
+        - ``contains`` / ``*=`` only accepts one single expected value
 
         Other operators are not allowed.
         """
@@ -287,7 +287,7 @@ class Getters(LibraryComponent):
 
         Available assertions:
         - ``==`` and ``!=`` can work with multiple values
-        - ``contains``/``*=`` only accepts one single expected value
+        - ``contains`` / ``*=`` only accepts one single expected value
 
         Other operators are not allowed.
         """
@@ -346,7 +346,7 @@ class Getters(LibraryComponent):
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
         - ``==`` and ``!=`` can work with multiple values
-        - ``contains``/``*=`` only accepts one single expected value
+        - ``contains`` / ``*=`` only accepts one single expected value
 
         Other operators are not allowed.
 
@@ -470,7 +470,7 @@ class Getters(LibraryComponent):
         Optionally asserts that the count matches the specified assertion.
 
         ``key`` Optionally filters the returned values.
-        If keys is set to ``ALL``(default) it will return the viewport size as dictionary,
+        If keys is set to ``ALL`` (default) it will return the viewport size as dictionary,
         otherwise it will just return the single value selected by the key.
         Note: If a single value is retrieved, an assertion does *not* need a ``validate``
         combined with a cast of ``value``.
@@ -588,7 +588,7 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         ``key`` Optionally filters the returned values.
-        If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
+        If keys is set to ``ALL`` (default) it will return the BoundingBox as Dictionary,
         otherwise it will just return the single value selected by the key.
         Note: If a single value is retrieved, an assertion does *not* need a ``validate``
         combined with a cast of ``value``.
@@ -636,7 +636,7 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         ``key`` Optionally filters the returned values.
-        If keys is set to ``ALL``(default) it will return the scroll size as dictionary,
+        If keys is set to ``ALL`` (default) it will return the scroll size as dictionary,
         otherwise it will just return the single value selected by the key.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
@@ -689,7 +689,7 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         ``key`` Optionally filters the returned values.
-        If keys is set to ``ALL``(default) it will return the scroll position as dictionary,
+        If keys is set to ``ALL`` (default) it will return the scroll position as dictionary,
         otherwise it will just return the single value selected by the key.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
@@ -733,7 +733,7 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         ``key`` Optionally filters the returned values.
-        If keys is set to ``ALL``(default) it will return the scroll size as dictionary,
+        If keys is set to ``ALL`` (default) it will return the scroll size as dictionary,
         otherwise it will just return the single value selected by the key.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
@@ -775,15 +775,15 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         ``state`` Defaults to visible. Possible states are:
-        - ``attached``: to be present in DOM.
-        - ``visible``: to have non-empty bounding box and no visibility:hidden.
-        - ``disabled``: to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
-        - ``readonly``: to be ``readOnly``. Can be used on <input> and <textarea>.
-        - ``selected``: to be ``selected``. Can be used on <option>.
-        - ``focused``: to be the ``activeElement``.
-        - ``checked``: to be ``checked``. Can be used on <input>.
+        - ``attached`` : to be present in DOM.
+        - ``visible`` : to have non-empty bounding box and no visibility:hidden.
+        - ``disabled`` : to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
+        - ``readonly`` : to be ``readOnly``. Can be used on <input> and <textarea>.
+        - ``selected`` : to be ``selected``. Can be used on <option>.
+        - ``focused`` : to be the ``activeElement``.
+        - ``checked`` : to be ``checked`` . Can be used on <input>.
 
-        Note that element must be attached to DOM to be able to fetch the state of ``readonly``, ``selectec`` and ``checked``.
+        Note that element must be attached to DOM to be able to fetch the state of ``readonly`` , ``selectec`` and ``checked``.
         The other states are false if the requested element is not attached.
 
         Note that element without any content or with display:none has an empty bounding box
