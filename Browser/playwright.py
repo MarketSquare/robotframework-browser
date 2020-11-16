@@ -67,6 +67,12 @@ class Playwright(LibraryComponent):
     def start_playwright(self):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
+        logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
+        port = str(find_free_port())
+        if self.enable_playwright_debug:
+            os.environ["DEBUG"] = "pw:api"
+
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(workdir / "browser_binaries")
 
         operating_system = sys.platform
         if operating_system == "windows":
@@ -78,12 +84,6 @@ class Playwright(LibraryComponent):
         else:
             raise NotImplementedError("Operating system not supported")
 
-        logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
-        port = str(find_free_port())
-        if self.enable_playwright_debug:
-            os.environ["DEBUG"] = "pw:api"
-
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(workdir / "browser_binaries")
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
         return Popen(
@@ -96,7 +96,7 @@ class Playwright(LibraryComponent):
         )
 
     def wait_until_server_up(self):
-        for i in range(50):
+        for _ in range(50):
             with grpc.insecure_channel(f"localhost:{self.port}") as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
