@@ -230,6 +230,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "simonmeggle",
+      "name": "Simon Meggle",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/1897410?v=4",
+      "profile": "http://www.elabit.de",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
