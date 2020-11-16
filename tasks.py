@@ -10,8 +10,6 @@ from distutils.dir_util import copy_tree
 from invoke import task, Exit
 from robot import rebot_cli
 
-from Browser.version import bin_archive_filename
-
 try:
     from pabot import pabot
     import pytest
@@ -19,6 +17,8 @@ try:
     from robot.libdoc import libdoc
     import robotstatuschecker
     import bs4
+    from Browser.version import bin_archive_filename
+    from github import Github
 except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
@@ -460,6 +460,14 @@ def release_notes(c, version=None, username=None, password=None, write=False):
 @task(package)
 def release(c):
     c.run("python -m twine upload --repository pypi dist/*")
+
+
+@task
+def push_gh_artifacts(c, release, username, password):
+    gh_client = Github(username, password)
+    repo = gh_client.get_repo("MarketSquare/robotframework-browser")
+    release = repo.get_release(release)
+    release.upload_asset("github-actions-dist/" + version.bin_archive_filename_with_ext)
 
 
 @task(docs)

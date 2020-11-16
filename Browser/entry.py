@@ -13,18 +13,14 @@
 # limitations under the License.
 
 import os
-import platform
 import shutil
-import subprocess
-import stat
 import sys
 from pathlib import Path
-from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
-from clint.textui import progress  # type: ignore
 import requests
+from clint.textui import progress  # type: ignore
 
-from .version import bin_archive_filename, bin_archive_filename_with_ext, __version__
+from .version import __version__, bin_archive_filename_with_ext
 
 USAGE = """USAGE
   rf-browser [command]
@@ -48,8 +44,14 @@ def run():
 def rfbrowser_init():
     def request_with_progress_bar(url: str, path: Path):
         r = requests.get(url, stream=True)
+        if r.status_code == 404:
+            raise RuntimeError(
+                "Problem downloading binary dependencies."
+                f"Artifact {url} was not found on server"
+            )
         with open(path, "wb") as f:
-            total_length = int(r.headers.get("content-length"))
+            header_length = r.headers.get("content-length")
+            total_length = int(header_length) if header_length else 0
             for chunk in progress.bar(
                 r.iter_content(chunk_size=1024), expected_size=(total_length / 1024) + 1
             ):
