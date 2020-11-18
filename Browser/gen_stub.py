@@ -129,8 +129,8 @@ with open("Browser/__init__.pyi", "w") as stub_file:
     # init methods argument types that are contained within higher order types don't get
     # import syntax stripped correctly so we fix them manually here
     init_string = init_string.replace(
-        "Optional[Tuple[Browser.utils.data_types.SupportedBrowsers, str]]",
-        "Optional[Tuple[SupportedBrowsers, str]]",
+        "Dict[Browser.utils.data_types.SupportedBrowsers, str]",
+        "Dict[SupportedBrowsers, str]",
     )
 
     stub_file.write(init_string)

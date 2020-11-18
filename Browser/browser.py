@@ -17,7 +17,7 @@ import re
 import sys
 from concurrent.futures._base import Future
 from datetime import timedelta
-from typing import List, Optional, Set, Tuple, Union
+from typing import Dict, List, Set, Union
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
@@ -542,7 +542,7 @@ class Browser(DynamicCore):
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
         retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot",
-        external_browser_executable: Optional[Tuple[SupportedBrowsers, str]] = None,
+        external_browser_executable: Dict[SupportedBrowsers, str] = {},
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -565,8 +565,8 @@ class Browser(DynamicCore):
           Sets the keyword to execute in case of a failing Browser keyword.
           It can be the name of any keyword that does not have any mandatory argument.
           If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value.
-        - ``external_browser_executable`` <tuple <SupportedBrowsers, Optional<Path>>
-          Name and path to executable of a supported browser.
+        - ``external_browser_executable`` <Dict <SupportedBrowsers, Path>>
+          Dict mapping name of browser to path of executable of a browser.
           Will make opening new browsers of the given type use the set executablePath.
         """
         self.timeout = self.convert_timeout(timeout)
@@ -578,7 +578,9 @@ class Browser(DynamicCore):
         self.run_on_failure_keyword = (
             None if is_falsy(run_on_failure) else run_on_failure
         )
-        self.external_browser_executable = external_browser_executable
+        self.external_browser_executable: Dict[
+            SupportedBrowsers, str
+        ] = external_browser_executable
         self._unresolved_promises: Set[Future] = set()
         self._playwright_state = PlaywrightState(self)
         libraries = [

@@ -300,11 +300,10 @@ class PlaywrightState(LibraryComponent):
         if timeout:
             params["timeout"] = self.convert_timeout(timeout)
         params["slowMo"] = self.convert_timeout(slowMo)
-        if (
-            self.library.external_browser_executable
-            and browser.name == self.library.external_browser_executable[0]
-        ):
-            params["executablePath"] = self.library.external_browser_executable[1]
+
+        browser_path = self.library.external_browser_executable.get(browser)
+        if browser_path:
+            params["executablePath"] = browser_path
 
         options = json.dumps(params, default=str)
         logger.info(options)
