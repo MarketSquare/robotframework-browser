@@ -75,7 +75,7 @@ def rfbrowser_init(skip_browser_install: bool):
         sys.exit(exception)
 
     if skip_browser_install:
-        os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
+        os.putenv("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 
     process = Popen(
         "npm install --production",
@@ -83,7 +83,6 @@ def rfbrowser_init(skip_browser_install: bool):
         cwd=installation_dir,
         stdout=PIPE,
         stderr=STDOUT,
-        env=os.environ,
     )
 
     while process.poll() is None:
