@@ -127,7 +127,7 @@ class Playwright(LibraryComponent):
                 raise error
             raise AssertionError(error.details())
         except Exception as error:
-            logger.warn(f"Unknown error received: {error}")
+            logger.debug(f"Unknown error received: {error}")
             raise AssertionError(str(error))
         finally:
             channel.close()
