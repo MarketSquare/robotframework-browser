@@ -23,6 +23,9 @@ USAGE = """USAGE
   rf-browser [command]
 AVAILABLE COMMANDS
   init  Install required nodejs dependencies
+    OPTIONS:
+        --skip-browsers
+
 """
 
 
@@ -32,13 +35,14 @@ def run():
         sys.exit(1)
     cmd = sys.argv[1]
     if cmd == "init":
-        rfbrowser_init()
+        arg2 = sys.argv[2] if len(sys.argv) >= 3 else ""
+        rfbrowser_init(arg2 == "--skip-browsers")
     else:
         print(f"Invalid command `{cmd}`")
         print(USAGE)
 
 
-def rfbrowser_init():
+def rfbrowser_init(skip_browser_install: bool):
     print("Installing node dependencies...")
     installation_dir = Path(__file__).parent / "wrapper"
 
@@ -70,6 +74,9 @@ def rfbrowser_init():
         )
         sys.exit(exception)
 
+    if skip_browser_install:
+        os.putenv("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
+
     process = Popen(
         "npm install --production",
         shell=True,
@@ -78,10 +85,12 @@ def rfbrowser_init():
         stderr=STDOUT,
     )
 
-    for line in process.stdout:
-        print(line.decode("utf-8"))
+    while process.poll() is None:
+        if process.stdout:
+            output = process.stdout.readline()
+            print(output.decode("utf-8"))
 
-    if process.returncode is not None:
+    if process.returncode != 0:
         raise RuntimeError(
             "Problem installing node dependencies."
             + f"Node process returned with exit status {process.returncode}"

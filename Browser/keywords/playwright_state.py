@@ -300,11 +300,15 @@ class PlaywrightState(LibraryComponent):
         if timeout:
             params["timeout"] = self.convert_timeout(timeout)
         params["slowMo"] = self.convert_timeout(slowMo)
+
+        browser_path = self.library.external_browser_executable.get(browser)
+        if browser_path:
+            params["executablePath"] = browser_path
+
         options = json.dumps(params, default=str)
         logger.info(options)
 
         with self.playwright.grpc_channel() as stub:
-
             response = stub.NewBrowser(
                 Request().Browser(browser=browser.name, rawOptions=options)
             )

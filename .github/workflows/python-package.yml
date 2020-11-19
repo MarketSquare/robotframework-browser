@@ -122,11 +122,11 @@ jobs:
         run: |
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
-      - name: Set node_path env var
+      - name: Needed step for some reason
         run: |
-          echo "::set-env name=NODE_PATH::/usr/lib/node_modules"
+          echo "nothing happening here"
         env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+          blank: ""
       - name: Test on unix-like os
         if: matrix.os != 'windows-latest'
         run: |
