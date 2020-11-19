@@ -39,9 +39,13 @@ Python **>=3.7**, and Robot Framework **>=3.2**.
 Most important enhancements
 ===========================
 
-**EXPLAIN** or remove these.
-
-- Truncate exceptions over grpc (`#468`_)
+Truncate exceptions over grpc (`#468`_)
+---------------------------------------
+If long error messages where generated in the node side
+it could lead to overflow in the grpc side and 
+hide the original error from the users. This is now
+fixed and error messages are now trunkated to 5 000
+characters.
 
 Full list of fixes and enhancements
 ===================================
