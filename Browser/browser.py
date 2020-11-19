@@ -439,7 +439,7 @@ class Browser(DynamicCore):
 
     = Assertions =
 
-    Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
+    Keywords that accept arguments ``assertion_operator`` <`AssertionOperator`> and ``assertion_expected``
     can optionally assert.
     Currently supported assertion operators are:
 
