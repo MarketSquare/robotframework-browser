@@ -42,7 +42,7 @@ def run():
         print(USAGE)
 
 
-def rfbrowser_init(skip_browser_install):
+def rfbrowser_init(skip_browser_install: bool):
     print("Installing node dependencies...")
     installation_dir = Path(__file__).parent / "wrapper"
 
@@ -74,9 +74,8 @@ def rfbrowser_init(skip_browser_install):
         )
         sys.exit(exception)
 
-    env_copy = os.environ.copy()
     if skip_browser_install:
-        env_copy["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
+        os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
 
     process = Popen(
         "npm install --production",
@@ -84,14 +83,13 @@ def rfbrowser_init(skip_browser_install):
         cwd=installation_dir,
         stdout=PIPE,
         stderr=STDOUT,
-        env=env_copy,
+        env=os.environ,
     )
 
-    for line in process.stdout:
-        print(line.decode("utf-8"))
     while process.poll() is None:
-        output = process.stdout.readline()
-        print(output.strip())
+        if process.stdout:
+            output = process.stdout.readline()
+            print(output.decode("utf-8"))
 
     if process.returncode != 0:
         raise RuntimeError(
