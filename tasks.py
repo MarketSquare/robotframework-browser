@@ -463,8 +463,10 @@ def release(c):
 
 
 @task
-def push_gh_artifacts(c, release, username, password):
-    gh_client = Github(username, password)
+def push_gh_artifacts(c, release):
+    # This is set correctly in Github Actions
+    token = os.environ["GITHUB_TOKEN"]
+    gh_client = Github(token)
     repo = gh_client.get_repo("MarketSquare/robotframework-browser")
     release = repo.get_release(release)
     release.upload_asset("github-actions-dist/" + version.bin_archive_filename_with_ext)
