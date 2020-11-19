@@ -23,7 +23,6 @@
     "husky": "^4.2.5",
     "lint-staged": "^10.2.7",
     "pino": "^6.4.1",
-    "playwright": "^1.5.1",
     "prettier": "^2.0.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -40,6 +39,7 @@
     "@grpc/grpc-js": "^1.1.7",
     "@types/uuid": "^8.3.0",
     "google-protobuf": "3.13.0",
+    "playwright": "^1.6.2",
     "uuid": "^8.3.1"
   },
   "husky": {
