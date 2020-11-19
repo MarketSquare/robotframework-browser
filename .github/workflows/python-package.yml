@@ -125,7 +125,7 @@ jobs:
       - name: Set node_path env var
         run: |
           # echo "::set-env name=NODE_PATH::/usr/lib/node_modules"
-          echo "::set-env name=NODE_PATH::/opt/hostedtoolcache/Python/3.8.6/x64/lib/python3.8/site-packages/Browser/wrapper/node_modules"
+          # echo "::set-env name=NODE_PATH::/opt/hostedtoolcache/Python/3.8.6/x64/lib/python3.8/site-packages/Browser/wrapper/node_modules"
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       - name: Test on unix-like os
