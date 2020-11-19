@@ -76,7 +76,7 @@ Full list of fixes and enhancements
     * - `#512`_
       - ---
       - ---
-      - `#510`_ with github-actions node-path setting completely removed
+      - Add option to specify browser path at import time. Add option to not install playwright-bundled browsers
 
 Altogether 5 issues. View on the `issue tracker <https://github.com/MarketSquare/robotframework-browser/issues?q=milestone%3Av2.2.0>`__.
 
