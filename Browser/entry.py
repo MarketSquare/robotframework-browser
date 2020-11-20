@@ -15,6 +15,7 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 USAGE = """USAGE
   rf-browser [command]
@@ -44,7 +45,12 @@ def rfbrowser_init(skip_browser_install: bool):
     try:
         if skip_browser_install:
             os.putenv("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
-        subprocess.run(["python", "-m", "playwright" "install"], capture_output=True)
+
+        installation_dir = Path(__file__).parent / "wrapper"
+        os.putenv(
+            "PLAYWRIGHT_BROWSERS_PATH", str(installation_dir / "browser_binaries")
+        )
+        subprocess.run(["python", "-m", "playwright", "install"], capture_output=True)
 
     except Exception as err:
         raise RuntimeError("Problem installing node dependencies." + f"{err}")

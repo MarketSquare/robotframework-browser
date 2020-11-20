@@ -76,11 +76,11 @@ class Playwright(LibraryComponent):
 
         operating_system = sys.platform
         if operating_system == "windows":
-            playwright_script = workdir / "robotframework-playwright-win.exe"
+            playwright_script = workdir / "robotframework-playwright.exe"
         elif operating_system == "darwin":
-            playwright_script = workdir / "robotframework-playwright-macos"
+            playwright_script = workdir / "robotframework-playwright"
         elif operating_system == "linux":
-            playwright_script = workdir / "robotframework-playwright-linux"
+            playwright_script = workdir / "robotframework-playwright"
         else:
             raise NotImplementedError("Operating system not supported")
 
