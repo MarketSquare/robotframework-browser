@@ -17,7 +17,6 @@ try:
     from robot.libdoc import libdoc
     import robotstatuschecker
     import bs4
-    from Browser.version import bin_archive_filename
     from github import Github
 except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
@@ -413,20 +412,25 @@ def docs(c):
 
 @task(clean, build, docs)
 def package(c):
-    c.run(
-        "yarn pkg package.json --targets node12-linux,node12-macos,node12-win --public --out-path Browser/wrapper/"
-    )
-    copy_tree("node_modules/playwright/third_party/ffmpeg", "Browser/wrapper")
-    # Let playwright download browsers based on our specified env-var location
-    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(
-        root_dir / "Browser/wrapper" / "browser_binaries"
-    )
-    c.run("node node_modules/playwright/install.js")
+    if platform.system() == "Darwin":
+        targets = "node12-macos"
+        plat = "macosx_10_13_x86_64"
+    elif platform.system() == "Windows":
+        targets = "node12-win"
+        plat = "win_amd64"
+    elif platform.system() == "Linux":
+        targets = "node12-linux"
+        plat = "manylinux1_x86_64"
+    else:
+        raise NotImplementedError("Operating system not supported for packaging")
 
-    shutil.make_archive(
-        f"github-actions-dist/{bin_archive_filename}", "gztar", "Browser/wrapper"
+    # copy_tree("node_modules/playwright/third_party/ffmpeg", "Browser/wrapper")
+    # targets = "node12-linux,node12-macos,node12-win"
+    c.run(
+        f"yarn pkg package.json --targets {targets} --public --out-path Browser/wrapper/"
     )
-    c.run("python setup.py sdist bdist_wheel")
+
+    c.run(f"python setup.py sdist bdist_wheel --plat-name={plat}")
 
 
 @task
@@ -460,16 +464,6 @@ def release_notes(c, version=None, username=None, password=None, write=False):
 @task(package)
 def release(c):
     c.run("python -m twine upload --repository pypi dist/*")
-
-
-@task
-def push_gh_artifacts(c, release):
-    # This is set correctly in Github Actions
-    token = os.environ["GITHUB_TOKEN"]
-    gh_client = Github(token)
-    repo = gh_client.get_repo("MarketSquare/robotframework-browser")
-    release = repo.get_release(release)
-    release.upload_asset("github-actions-dist/" + version.bin_archive_filename_with_ext)
 
 
 @task(docs)
