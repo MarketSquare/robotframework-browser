@@ -1,6 +1,6 @@
 {
   "name": "robotframework-playwright",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "main": "index.ts",
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
@@ -23,7 +23,6 @@
     "husky": "^4.2.5",
     "lint-staged": "^10.2.7",
     "pino": "^6.4.1",
-    "playwright": "^1.5.2",
     "prettier": "^2.0.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -41,6 +40,7 @@
     "@types/uuid": "^8.3.0",
     "google-protobuf": "3.13.0",
     "pkg": "^4.4.9",
+    "playwright": "^1.6.2",
     "uuid": "^8.3.1"
   },
   "bin": {

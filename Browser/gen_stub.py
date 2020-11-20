@@ -61,7 +61,7 @@ def get_function_list_from_keywords(keywords):
     return functions
 
 
-def keyword_line(keyword_arguments, keyword_types, method_name):
+def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
     arguments_list = list()
     for argument in keyword_arguments:
         if isinstance(argument, tuple):
@@ -103,6 +103,7 @@ from typing import (
     List,
     Optional,
     Union,
+    Tuple,
 )
 
 from .utils.data_types import *
@@ -122,10 +123,16 @@ pyi_non_kw_methods = """\
 init_method = KeywordBuilder.build(br.__init__)
 with open("Browser/__init__.pyi", "w") as stub_file:
     stub_file.write(pyi_boilerplate)
-    stub_file.write(
-        keyword_line(
-            init_method.argument_specification, init_method.argument_types, "__init__"
-        )
+    init_string = keyword_line(
+        init_method.argument_specification, init_method.argument_types, "__init__"
     )
+    # init methods argument types that are contained within higher order types don't get
+    # import syntax stripped correctly so we fix them manually here
+    init_string = init_string.replace(
+        "Dict[Browser.utils.data_types.SupportedBrowsers, str]",
+        "Dict[SupportedBrowsers, str]",
+    )
+
+    stub_file.write(init_string)
     stub_file.writelines(function_list)
     stub_file.write(pyi_non_kw_methods)

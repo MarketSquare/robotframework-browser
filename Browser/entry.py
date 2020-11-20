@@ -16,6 +16,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from typing import Union
 
 import requests
 from clint.textui import progress  # type: ignore
@@ -26,6 +27,9 @@ USAGE = """USAGE
   rf-browser [command]
 AVAILABLE COMMANDS
   init  Install required nodejs dependencies
+    OPTIONS:
+        --skip-browsers
+
 """
 
 
@@ -35,29 +39,37 @@ def run():
         sys.exit(1)
     cmd = sys.argv[1]
     if cmd == "init":
-        rfbrowser_init()
+        arg2 = sys.argv[2] if len(sys.argv) >= 3 else ""
+        rfbrowser_init(arg2 == "--skip-browsers")
     else:
         print(f"Invalid command `{cmd}`")
         print(USAGE)
 
 
-def rfbrowser_init():
-    def request_with_progress_bar(url: str, path: Path):
-        r = requests.get(url, stream=True)
-        if r.status_code == 404:
-            raise RuntimeError(
-                "Problem downloading binary dependencies."
-                f"Artifact {url} was not found on server"
-            )
-        with open(path, "wb") as f:
-            header_length = r.headers.get("content-length")
-            total_length = int(header_length) if header_length else 0
-            for chunk in progress.bar(
-                r.iter_content(chunk_size=1024), expected_size=(total_length / 1024) + 1
-            ):
-                if chunk:
-                    f.write(chunk)
-                    f.flush()
+def _request_with_progress_bar(url: str, path: Union[str, Path]):
+    r = requests.get(url, stream=True)
+    if r.status_code == 404:
+        raise RuntimeError(
+            "Problem downloading binary dependencies."
+            f"Artifact {url} was not found on server"
+        )
+    with open(path, "wb") as f:
+        header_length = r.headers.get("content-length")
+        total_length = int(header_length) if header_length else 0
+        for chunk in progress.bar(
+            r.iter_content(chunk_size=1024), expected_size=(total_length / 1024) + 1
+        ):
+            if chunk:
+                f.write(chunk)
+                f.flush()
+
+
+def rfbrowser_init(skip_browser_install: bool):
+
+    print("Installing node dependencies...")
+    # FIXME: do something with this
+    if skip_browser_install:
+        os.putenv("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 
     installation_dir = Path(__file__).parent / "wrapper"
 
@@ -68,7 +80,7 @@ def rfbrowser_init():
         base_url = f"https://github.com/MarketSquare/robotframework-browser/releases/download/v{__version__}/"
         url = base_url + bin_archive_filename_with_ext
         print(f"Downloading rfbrowser data from {url}")
-        request_with_progress_bar(url, bin_archive_filename_with_ext)
+        _request_with_progress_bar(url, bin_archive_filename_with_ext)
         print("Decompressing")
         shutil.unpack_archive(bin_archive_filename_with_ext, installation_dir)
         os.remove(bin_archive_filename_with_ext)

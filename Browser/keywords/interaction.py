@@ -761,7 +761,7 @@ class Interaction(LibraryComponent):
 
         ``key`` The key to be pressed. An example of valid keys are:
 
-        ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA``- ``KeyZ``, ``Backquote``, ``Minus``,
+        ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA`` - ``KeyZ``, ``Backquote``, ``Minus``,
         ``Equal``, ``Backslash``, ``Backspace``, ``Tab``, ``Delete``, ``Escape``, ``ArrowDown``,
         ``End``, ``Enter``, ``Home``, ``Insert``, ``PageDown``, ``PageUp``, ``ArrowRight``, ``ArrowUp``
         , etc.
