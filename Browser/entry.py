@@ -20,7 +20,7 @@ from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
 USAGE = """USAGE
-  rf-browser [command]
+  rfbrowser [command]
 AVAILABLE COMMANDS
   init  Install required nodejs dependencies
     OPTIONS:
