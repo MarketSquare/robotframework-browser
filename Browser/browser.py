@@ -17,13 +17,14 @@ import re
 import sys
 from concurrent.futures._base import Future
 from datetime import timedelta
-from typing import Dict, List, Set, Union, Optional
+from typing import Dict, List, Optional, Set, Union
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .base import ContextCache, LibraryComponent
+from .generated.playwright_pb2 import Request
 from .keywords import (
     Control,
     Cookie,
@@ -39,7 +40,7 @@ from .keywords import (
     WebAppState,
 )
 from .playwright import Playwright
-from .utils import AutoClosingLevel, is_falsy, is_same_keyword, logger, keyword
+from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import SupportedBrowsers
@@ -605,9 +606,13 @@ class Browser(DynamicCore):
             libraries.append(self._initialize_jsextension(jsextension))
         DynamicCore.__init__(self, libraries)
 
-    def _initialize_jsextension(self, jsextension:str) -> LibraryComponent:
+    def _initialize_jsextension(self, jsextension: str) -> LibraryComponent:
         component = LibraryComponent(self)
-        setattr(component, "myKeyword", keyword(lambda *args : "Hello"))
+        with self.playwright.grpc_channel() as stub:
+            response = stub.InitializeExtension(
+                Request().FilePath(path=jsextension))
+            for name in response.keywords:
+                setattr(component, name, keyword(lambda *args: "Hello"))
         return component
 
     @property
