@@ -17,13 +17,13 @@ import re
 import sys
 from concurrent.futures._base import Future
 from datetime import timedelta
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Set, Union, Optional
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
-from .base import ContextCache
+from .base import ContextCache, LibraryComponent
 from .keywords import (
     Control,
     Cookie,
@@ -39,7 +39,7 @@ from .keywords import (
     WebAppState,
 )
 from .playwright import Playwright
-from .utils import AutoClosingLevel, is_falsy, is_same_keyword, logger
+from .utils import AutoClosingLevel, is_falsy, is_same_keyword, logger, keyword
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import SupportedBrowsers
@@ -543,6 +543,7 @@ class Browser(DynamicCore):
         retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot",
         external_browser_executable: Dict[SupportedBrowsers, str] = {},
+        jsextension: Optional[str] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -600,7 +601,14 @@ class Browser(DynamicCore):
         self.playwright = Playwright(self, enable_playwright_debug)
         self._auto_closing_level = auto_closing_level
         self.current_arguments = ()
+        if jsextension is not None:
+            libraries.append(self._initialize_jsextension(jsextension))
         DynamicCore.__init__(self, libraries)
+
+    def _initialize_jsextension(self, jsextension:str) -> LibraryComponent:
+        component = LibraryComponent(self)
+        setattr(component, "myKeyword", keyword(lambda *args : "Hello"))
+        return component
 
     @property
     def outputdir(self) -> str:

@@ -256,7 +256,7 @@ def atest_failed(c):
 @task()
 def run_tests(c, tests):
     """
-    Run robot with dev Browser. Parameter [tests] is the parth to tests to run.
+    Run robot with dev Browser. Parameter [tests] is the path to tests to run.
     """
     process = subprocess.Popen([sys.executable, "-m", "robot", '--loglevel', 'DEBUG', tests])
     process.wait(600)
