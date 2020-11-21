@@ -67,3 +67,10 @@ export function errorResponse(e: Error) {
     }
     return { code: status.DEADLINE_EXCEEDED, message: errorMessage };
 }
+
+export function keywordsResponse(keywords: string[], logMessage: string) {
+    const response = new Response.Keywords();
+    response.setKeywordsList(keywords);
+    response.setLog(logMessage);
+    return response;
+}

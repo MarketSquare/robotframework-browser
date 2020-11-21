@@ -17,7 +17,7 @@ import { ServerUnaryCall, sendUnaryData } from '@grpc/grpc-js';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, keywordsResponse, stringResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -26,6 +26,11 @@ const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
+}
+
+export async function initializeExtension(request: Request.FilePath): Promise<Response.Keywords> {
+    const extension = await require(request.getPath());
+    return keywordsResponse(Object.keys(extension), 'ok');
 }
 
 async function _newBrowser(
