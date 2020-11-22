@@ -119,8 +119,9 @@ Also update Browser libdoc.
 
 ### Create release
 1. Use `inv release` to create and release artifacts and upload to PyPi
-1. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
-1. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
+2. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
+3. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
+4. Install package from PyPi and test that it works.
 
 ### Announce release
 1. Announce new release, at least in Slack, [Forum](https://forum.robotframework.org/t/browser-library-releases/685) and user group mailing list.
