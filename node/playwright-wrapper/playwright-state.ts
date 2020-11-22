@@ -29,9 +29,9 @@ function lastItem<T>(array: T[]): T | undefined {
 }
 
 export async function initializeExtension(request: Request.FilePath): Promise<Response.Keywords> {
-    const extension = await import(request.getPath());
+    const extension: unknown = eval('require')(request.getPath());
+    // @ts-ignore
     return keywordsResponse(Object.keys(extension), 'ok');
-    //return keywordsResponse([process.cwd()], "ok");
 }
 
 async function _newBrowser(
