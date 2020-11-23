@@ -71,6 +71,9 @@ os.environ["RFBROWSER_DEVELOPMENT"] = "1"
 def deps(c):
     c.run("pip install -U pip")
     c.run("pip install -r Browser/dev-requirements.txt")
+
+    # Let our inv build step handle downloading of pw browsers
+    os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
     c.run("yarn")
 
 
@@ -178,7 +181,7 @@ def node_build(c):
             f"yarn pkg package.json --targets {targets} --public --out-path Browser/wrapper/"
         )
         print(
-            "Downloading playwright browsers to user's home directory for rfbrowser development"
+            "Downloading playwright browsers to home directory for rfbrowser development"
         )
         c.run("rfbrowser init")
 
