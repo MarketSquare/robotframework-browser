@@ -611,18 +611,20 @@ class Browser(DynamicCore):
         with self.playwright.grpc_channel() as stub:
             response = stub.InitializeExtension(Request().FilePath(path=jsextension))
             for name in response.keywords:
-                kw = keyword(lambda *args: self._call_jskeyword(name, *args))
-                setattr(component, name, kw)
+                setattr(component, name, self._jskeyword_call(name))
         return component
 
-    def _call_jskeyword(self, name: str, *args: str):
-        with self.playwright.grpc_channel() as stub:
-            response = stub.CallExtensionKeyword(Request().KeywordCall(
-                name=name,
-                arguments=args
-            ))
-            logger.info(response.log)
-            return json.loads(response.json)
+    def _jskeyword_call(self, name: str):
+        @keyword
+        def func(*args):
+            with self.playwright.grpc_channel() as stub:
+                response = stub.CallExtensionKeyword(
+                    Request().KeywordCall(name=name, arguments=args)
+                )
+                logger.info(response.log)
+                return json.loads(response.json)
+
+        return func
 
     @property
     def outputdir(self) -> str:
