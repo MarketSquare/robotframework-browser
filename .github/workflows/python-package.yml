@@ -55,8 +55,9 @@ jobs:
     - name: Start xvfb
       run: |
         export DISPLAY=:99.0
-        python -c "import Browser; os.listdir(Browser.__path__[0] + '/wrapper')"
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
+    - name: Check that ffmpeg is copied correctly
+      run: python -c "import Browser; import os; print(os.listdir(Browser.__path__[0] + '/wrapper'))"
     - name: Run pytests
       run: |
        inv utest
@@ -85,7 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.8]
         node-version: [12.x]
     steps:
@@ -128,13 +129,14 @@ jobs:
           echo "nothing happening here"
         env:
           blank: ""
+      - name: Check that ffmpeg is copied correctly
+        run: python -c "import Browser; import os; print(os.listdir(Browser.__path__[0] + '/wrapper'))"
       - name: Test on unix-like os
         if: matrix.os != 'windows-latest'
         run: |
           echo ${{ matrix.os }}
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          python -c "import Browser; os.listdir(Browser.__path__[0] + '/wrapper')"
           xvfb-run --auto-servernum inv atest-global-pythonpath
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os == 'windows-latest' }}
@@ -145,3 +147,14 @@ jobs:
         with:
           name: ${{ matrix.os }} Clean install results
           path: atest/output
+
+    #  - TODO:
+    #    if: ${{ success() }}
+    #    publish wheels if success and release
+    #  - name: upload artifact
+    #    uses: actions/upload-artifact@v2
+    #    with:
+    #      name: browser_wrapper_dist_${{ matrix.os }}
+    #      path: ./dist/robotframework_browser-2.2.0-py3-none-macosx_10_13_x86_64.whl
+    #    if: ${{ matrix.os}} == macos-latest
+
