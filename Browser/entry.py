@@ -58,7 +58,9 @@ def rfbrowser_init(skip_browser_install: bool):
             os.putenv(
                 "PLAYWRIGHT_BROWSERS_PATH", str(installation_dir / "browser_binaries")
             )
-        subprocess.run(["python", "-m", "playwright", "install"], capture_output=True)
+        subprocess.run(
+            [sys.executable, "-m", "playwright", "install"], capture_output=True
+        )
         playwright_path = playwright.__path__[0]  # type: ignore  # mypy issue #1422
         ffmpeg_path = glob.glob(playwright_path + "/driver/ffmpeg-*")[0]
         shutil.copy(ffmpeg_path, installation_dir)
