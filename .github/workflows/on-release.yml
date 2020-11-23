@@ -102,5 +102,6 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: browser_wrapper_dist_${{ matrix.os }}
-          path: ./github-actions-dist/github-actions-dist/browser_wrapper-Darwin-2.1.0.tar.gz
+          path: ./dist/robotframework_browser-2.2.0-py3-none-macosx_10_13_x86_64.whl
+        if: ${{ matrix.os}} == macos-latest
 

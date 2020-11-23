@@ -72,7 +72,8 @@ class Playwright(LibraryComponent):
         if self.enable_playwright_debug:
             os.environ["DEBUG"] = "pw:api"
 
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(workdir / "browser_binaries")
+        if not os.environ.get("RFBROWSER_DEVELOPMENT"):
+            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(workdir / "browser_binaries")
 
         operating_system = sys.platform
         if operating_system == "windows":

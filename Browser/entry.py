@@ -44,12 +44,16 @@ def rfbrowser_init(skip_browser_install: bool):
     print("Downloading and extracting playwright browsers")
     try:
         if skip_browser_install:
+            print("Skipping browser install")
             os.putenv("PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1")
 
         installation_dir = Path(__file__).parent / "wrapper"
-        os.putenv(
-            "PLAYWRIGHT_BROWSERS_PATH", str(installation_dir / "browser_binaries")
-        )
+
+        # We don't want to download browsers to Browser/wrapper in development setup
+        if not os.environ.get("RFBROWSER_DEVELOPMENT"):
+            os.putenv(
+                "PLAYWRIGHT_BROWSERS_PATH", str(installation_dir / "browser_binaries")
+            )
         subprocess.run(["python", "-m", "playwright", "install"], capture_output=True)
 
     except Exception as err:

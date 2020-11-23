@@ -64,6 +64,7 @@ Python **>=3.7**, and Robot Framework **>=3.2**.
 .. _PyPI: https://pypi.python.org/pypi/robotframework-browser
 .. _issue tracker: https://github.com/MarketSquare/robotframework-browser/milestones%3A{version.milestone}
 """
+os.environ["RFBROWSER_DEVELOPMENT"] = "1"
 
 
 @task
@@ -161,6 +162,25 @@ def node_build(c):
         node_dir.glob("**/*.ts"), node_timestamp_file
     ) or _sources_changed(node_dir.glob("**/*.tsx"), node_timestamp_file):
         c.run("yarn build")
+
+        # Old targets string for targeting all platforms
+        # targets = "node12-linux,node12-macos,node12-win"
+        if platform.system() == "Darwin":
+            targets = "node12-macos"
+        elif platform.system() == "Windows":
+            targets = "node12-win"
+        elif platform.system() == "Linux":
+            targets = "node12-linux"
+        else:
+            raise NotImplementedError("Operating system not supported for packaging")
+
+        c.run(
+            f"yarn pkg package.json --targets {targets} --public --out-path Browser/wrapper/"
+        )
+        print(
+            "Downloading playwright browsers to user's home directory for rfbrowser development"
+        )
+        c.run("python -m playwright install")
 
         node_timestamp_file.touch()
     else:
@@ -416,23 +436,13 @@ def docs(c):
 @task(clean, build, docs)
 def package(c):
     if platform.system() == "Darwin":
-        targets = "node12-macos"
         plat = "macosx_10_13_x86_64"
     elif platform.system() == "Windows":
-        targets = "node12-win"
         plat = "win_amd64"
     elif platform.system() == "Linux":
-        targets = "node12-linux"
         plat = "manylinux1_x86_64"
     else:
         raise NotImplementedError("Operating system not supported for packaging")
-
-    # copy_tree("node_modules/playwright/third_party/ffmpeg", "Browser/wrapper")
-    # targets = "node12-linux,node12-macos,node12-win"
-    c.run(
-        f"yarn pkg package.json --targets {targets} --public --out-path Browser/wrapper/"
-    )
-
     c.run(f"python setup.py sdist bdist_wheel --plat-name={plat}")
 
 
