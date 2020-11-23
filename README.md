@@ -18,11 +18,17 @@ See [keyword documentation](https://marketsquare.github.io/robotframework-browse
 
 Only Python 3.7 or newer is supported.
 
+### Using pip
+
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
 3. Install the node dependencies: run `rfbrowser init` in your shell
 
 Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [DOCKER.md](https://github.com/MarketSquare/robotframework-browser/blob/master/atest/docker/DOCKER.md).
+
+### Using conda
+
+`conda install -c conda-forge robotframework-browser`
 
 # Examples
 
@@ -47,7 +53,7 @@ browser.close_browser()
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
 ```RobotFramework
-# Select element containing text "Login" with text selector strategy 
+# Select element containing text "Login" with text selector strategy
 # and select it's parent `input` element with xpath
 Click    "Login" >> xpath=../input
 # Select element with CSS strategy and select button in it with text strategy
