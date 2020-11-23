@@ -55,6 +55,7 @@ jobs:
     - name: Start xvfb
       run: |
         export DISPLAY=:99.0
+        python -c "import Browser; os.listdir(Browser.__path__[0] + '/wrapper')"
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
       run: |
