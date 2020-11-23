@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 import os
 import re
 import sys
@@ -611,8 +611,18 @@ class Browser(DynamicCore):
         with self.playwright.grpc_channel() as stub:
             response = stub.InitializeExtension(Request().FilePath(path=jsextension))
             for name in response.keywords:
-                setattr(component, name, keyword(lambda *args: "Hello"))
+                kw = keyword(lambda *args: self._call_jskeyword(name, *args))
+                setattr(component, name, kw)
         return component
+
+    def _call_jskeyword(self, name: str, *args: str):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CallExtensionKeyword(Request().KeywordCall(
+                name=name,
+                arguments=args
+            ))
+            logger.info(response.log)
+            return json.loads(response.json)
 
     @property
     def outputdir(self) -> str:

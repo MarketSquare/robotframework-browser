@@ -59,7 +59,21 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await playwrightState.initializeExtension(request);
+            const result = await playwrightState.initializeExtension(request, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async callExtensionKeyword(
+        call: ServerUnaryCall<Request.KeywordCall, Response.Json>,
+        callback: sendUnaryData<Response.Json>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await playwrightState.extensionKeywordCall(request, this.state);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
