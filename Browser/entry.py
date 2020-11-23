@@ -65,6 +65,18 @@ def rfbrowser_init(skip_browser_install: bool):
         ffmpeg_path = glob.glob(playwright_path + "/driver/ffmpeg-*")[0]
         shutil.copy(ffmpeg_path, installation_dir)
         shutil.copy(playwright_path + "/driver/ffmpeg.COPYING.GPLv3", installation_dir)
+        dir_string = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import Browser; import os; print(os.listdir(Browser.__path__[0] + '/wrapper'))",
+            ],
+            check=True,
+            capture_output=True,
+            encoding="UTF-8",
+        )
+        if "ffmpeg" not in dir_string.stdout:
+            raise RuntimeError("FFMPEG copy failed")
 
     except Exception as err:
         raise RuntimeError("Problem installing node dependencies." + f"{err}")

@@ -56,8 +56,6 @@ jobs:
       run: |
         export DISPLAY=:99.0
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-    - name: Check that ffmpeg is copied correctly
-      run: python -c "import Browser; import os; print(os.listdir(Browser.__path__[0] + '/wrapper'))"
     - name: Run pytests
       run: |
        inv utest
@@ -129,8 +127,6 @@ jobs:
           echo "nothing happening here"
         env:
           blank: ""
-      - name: Check that ffmpeg is copied correctly
-        run: python -c "import Browser; import os; print(os.listdir(Browser.__path__[0] + '/wrapper'))"
       - name: Test on unix-like os
         if: matrix.os != 'windows-latest'
         run: |
