@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 USAGE = """USAGE
-  rf-browser [command]
+  rfbrowser [command]
 AVAILABLE COMMANDS
   init  Install required nodejs dependencies
     OPTIONS:
