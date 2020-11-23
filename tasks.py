@@ -328,6 +328,7 @@ def lint_python(c):
         (root_dir / "utest").glob("**/*.py")
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
+        print("Running mypy")
         c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
         c.run("black --config Browser/pyproject.toml Browser/")
         c.run("flake8 --config Browser/.flake8 Browser/ utest/")
