@@ -180,7 +180,7 @@ def node_build(c):
         print(
             "Downloading playwright browsers to user's home directory for rfbrowser development"
         )
-        c.run("python -m playwright install")
+        c.run("rfbrowser init")
 
         node_timestamp_file.touch()
     else:
