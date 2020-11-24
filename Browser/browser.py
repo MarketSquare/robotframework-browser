@@ -609,7 +609,8 @@ class Browser(DynamicCore):
     def _initialize_jsextension(self, jsextension: str) -> LibraryComponent:
         component = LibraryComponent(self)
         with self.playwright.grpc_channel() as stub:
-            response = stub.InitializeExtension(Request().FilePath(path=jsextension))
+            response = stub.InitializeExtension(Request().FilePath(
+                path=os.path.abspath(jsextension)))
             for name in response.keywords:
                 setattr(component, name, self._jskeyword_call(name))
         return component
