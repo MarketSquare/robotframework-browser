@@ -183,7 +183,8 @@ def node_build(c):
         print(
             "Downloading playwright browsers to home directory for rfbrowser development"
         )
-        c.run("rfbrowser init")
+        # FIXME: rfbrowser might not be in PATH here
+        c.run("sys.executable Browser/entry.py init")
 
         node_timestamp_file.touch()
     else:

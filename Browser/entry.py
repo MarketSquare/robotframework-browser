@@ -82,3 +82,7 @@ def rfbrowser_init(skip_browser_install: bool):
         raise RuntimeError("Problem installing node dependencies." + f"{err}")
 
     print("rfbrowser init completed")
+
+
+if __name__ == "__main__":
+    run()

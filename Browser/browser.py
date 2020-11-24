@@ -38,7 +38,7 @@ from .keywords import (
     Waiter,
     WebAppState,
 )
-from .playwright import Playwright
+from .playwright_client import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, logger
 
 # Importing this directly from .utils break the stub type checks
