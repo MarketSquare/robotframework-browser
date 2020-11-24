@@ -24,7 +24,7 @@ import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerUnaryCall, sendUnaryData } from '@grpc/grpc-js';
-import { errorResponse } from './response-util';
+import { errorResponse, keywordsResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     state: PlaywrightState;
@@ -51,6 +51,34 @@ export class PlaywrightServer implements IPlaywrightServer {
             }
         };
     };
+
+    async initializeExtension(
+        call: ServerUnaryCall<Request.FilePath, Response.Keywords>,
+        callback: sendUnaryData<Response.Keywords>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await playwrightState.initializeExtension(request, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async callExtensionKeyword(
+        call: ServerUnaryCall<Request.KeywordCall, Response.Json>,
+        callback: sendUnaryData<Response.Json>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await playwrightState.extensionKeywordCall(request, this.state);
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
 
     async closeBrowser(
         call: ServerUnaryCall<Request.Empty, Response.String>,

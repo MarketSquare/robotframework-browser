@@ -17,7 +17,7 @@ import { ServerUnaryCall, sendUnaryData } from '@grpc/grpc-js';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, keywordsResponse, stringResponse } from './response-util';
 import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -26,6 +26,27 @@ const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
+}
+
+export async function initializeExtension(
+    request: Request.FilePath,
+    state: PlaywrightState,
+): Promise<Response.Keywords> {
+    const extension: unknown = eval('require')(request.getPath());
+    state.extension = extension;
+    // @ts-ignore
+    return keywordsResponse(Object.keys(extension), 'ok');
+}
+
+export async function extensionKeywordCall(
+    request: Request.KeywordCall,
+    state: PlaywrightState,
+): Promise<Response.Json> {
+    const methodName = request.getName();
+    const args = request.getArgumentsList();
+    // @ts-ignore
+    const result = await state.extension[methodName](args, state.getActivePage());
+    return jsonResponse(JSON.stringify(result), 'ok');
 }
 
 async function _newBrowser(
@@ -85,6 +106,7 @@ export class PlaywrightState {
         this.browserStack = [];
         this.elementHandles = new Map();
     }
+    extension: unknown;
     private browserStack: BrowserState[];
     get activeBrowser() {
         return lastItem(this.browserStack);
