@@ -2,4 +2,5 @@
 exclude =
    __pycache__,
    generated,
-ignore = E501, W503
+ignore = E501, W503, FI10,FI11,FI12,FI13,FI14,FI15,FI16,FI17, FI58
+require-code = True

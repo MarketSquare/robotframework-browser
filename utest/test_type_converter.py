@@ -1,3 +1,4 @@
+from __future__ import annotations
 from approvaltests import verify_all  # type: ignore
 
 from Browser.utils.misc import type_converter

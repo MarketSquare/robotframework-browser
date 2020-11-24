@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 """ Sorts and prints in descending order by duration function call
