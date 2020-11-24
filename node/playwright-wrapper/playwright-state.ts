@@ -45,7 +45,7 @@ export async function extensionKeywordCall(
     const methodName = request.getName();
     const args = request.getArgumentsList();
     // @ts-ignore
-    const result = await state.extension[methodName](args, state.getActivePage());
+    const result = await state.extension[methodName](state.getActivePage(), args);
     return jsonResponse(JSON.stringify(result), 'ok');
 }
 
