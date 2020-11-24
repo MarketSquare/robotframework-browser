@@ -13,6 +13,7 @@
 # limitations under the License.
 #
 # Derived from https://github.com/robotframework/SeleniumLibrary and modified by Tatu Aalto
+from __future__ import annotations
 
 import re
 from typing import List

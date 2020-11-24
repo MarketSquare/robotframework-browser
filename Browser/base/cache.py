@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class ContextCache:
     def __init__(self):
         self.cache = {}
