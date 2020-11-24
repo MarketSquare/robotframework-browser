@@ -525,6 +525,33 @@ class Browser(DynamicCore):
     Browsers will not be automatically closed. A browser is expensive to create and should be reused.
 
     Automatic closing can be configured or switched off with the ``auto_closing_level`` library parameter.
+
+    = Extending Browser library with a JavaScript module =
+
+    Library can be extended with JavaScript. Module must be in CommonJS dialect. All nodejs based
+    languages can be translated to CommonJS. For example you can use Babel to translate ES6 dialect of JavaScript
+    to CommonJS dialect.
+    This enables extending library without Python with pure JavaScript.
+
+    Exposed functions will get the playwright page object as the first argument. Second argument is list of
+    strings from Robot Framework keyword call.
+
+    == Example module.js ==
+
+    | async function myGoToKeyword(page, args) {
+    |   return await page.goto(args[0]);
+    | }
+    | exports.__esModule = true;
+    | exports.myGoToKeyword = myKeyword;
+
+    == Example Robot Framework side ==
+
+    | *** Settings ***
+    | Library   Browser  jsextension=${CURDIR}/module.js
+    |
+    | *** Test Cases ***
+    | Hello
+    |   myGoToKeyword  https://playwright.dev
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
@@ -570,6 +597,8 @@ class Browser(DynamicCore):
         - ``external_browser_executable`` <Dict <SupportedBrowsers, Path>>
           Dict mapping name of browser to path of executable of a browser.
           Will make opening new browsers of the given type use the set executablePath.
+        - ``jsextension`` <str>
+          Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
         """
         self.timeout = self.convert_timeout(timeout)
         self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
