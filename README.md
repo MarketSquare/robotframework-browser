@@ -52,7 +52,7 @@ async function myGoToKeyword(page, args) {
   return await page.goto(args[0]);
 }
 exports.__esModule = true;
-exports.myGoToKeyword = myKeyword;
+exports.myGoToKeyword = myGoToKeyword;
 ```
 
 ```RobotFramework
