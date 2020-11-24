@@ -44,6 +44,25 @@ browser.new_page("https://playwright.dev")
 assert browser.get_text("h1") == '🎭 Playwright'
 browser.close_browser()
 ```
+
+### and extending with JavaScript
+
+```JavaScript
+async function myGoToKeyword(page, args) {
+  return await page.goto(args[0]);
+}
+exports.__esModule = true;
+exports.myGoToKeyword = myKeyword;
+```
+
+```RobotFramework
+*** Settings ***
+Library   Browser  jsextension=mymodule.js
+
+*** Test Cases ***
+Example Test
+   myGoToKeyword   https://www.robotframework.org
+```
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
 ```RobotFramework
