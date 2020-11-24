@@ -82,6 +82,7 @@ class Playwright(LibraryComponent):
             os.environ["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
         return Popen(
             ["node", str(playwright_script), port],
             shell=False,
