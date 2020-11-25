@@ -61,6 +61,7 @@ Library   Browser  jsextension=mymodule.js
 
 *** Test Cases ***
 Example Test
+   New Page
    myGoToKeyword   https://www.robotframework.org
 ```
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
