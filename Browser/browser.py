@@ -539,7 +539,8 @@ class Browser(DynamicCore):
     == Example module.js ==
 
     | async function myGoToKeyword(page, args) {
-    |   return await page.goto(args[0]);
+    |   await page.goto(args[0]);
+    |   return await page.title();
     | }
     | exports.__esModule = true;
     | exports.myGoToKeyword = myGoToKeyword;
@@ -551,7 +552,9 @@ class Browser(DynamicCore):
     |
     | *** Test Cases ***
     | Hello
-    |   myGoToKeyword  https://playwright.dev
+    |   New Page
+    |   ${title}=  myGoToKeyword  https://playwright.dev
+    |   Should be equal  ${title}  Playwright
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
