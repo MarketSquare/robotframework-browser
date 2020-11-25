@@ -57,7 +57,7 @@ exports.myGoToKeyword = myGoToKeyword;
 
 ```RobotFramework
 *** Settings ***
-Library   Browser  jsextension=mymodule.js
+Library   Browser  jsextension=${CURDIR}/mymodule.js
 
 *** Test Cases ***
 Example Test
