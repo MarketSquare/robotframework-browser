@@ -528,12 +528,12 @@ class Browser(DynamicCore):
 
     = Extending Browser library with a JavaScript module =
 
-    Library can be extended with JavaScript. Module must be in CommonJS dialect. All nodejs based
-    languages can be translated to CommonJS. For example you can use Babel to translate ES6 dialect of JavaScript
-    to CommonJS dialect.
-    This enables extending library without Python with pure JavaScript.
+    Browser library can be extended with JavaScript. Module must be in CommonJS format that Node.js uses.
+    You can translate your ES6 module to Node.js CommonJS style with Babel. Many other languages
+    can be also translated to modules that can be used from Node.js. For example TypeScript, PureScript and
+    ClojureScript just to mention few.
 
-    Exposed functions will get the playwright page object as the first argument. Second argument is list of
+    Exposed functions will get the playwright page object as the first argument. Second argument is a list of
     strings from Robot Framework keyword call.
 
     == Example module.js ==
