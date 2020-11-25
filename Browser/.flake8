@@ -2,4 +2,5 @@
 exclude =
    __pycache__,
    generated,
+	 wrapper
 ignore = E501, W503

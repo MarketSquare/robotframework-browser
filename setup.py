@@ -10,7 +10,15 @@ with open("README.md", encoding="utf-8") as f:
 
 packages = find_packages(exclude=["utest", "atest"])
 
-package_data = {"": ["*"], "Browser": ["wrapper/*", "wrapper/generated/*"]}
+package_data = {
+    "": ["*"],
+    "Browser": [
+        "wrapper/index.js",
+        "wrapper/package.json",
+        "wrapper/package-lock.json",
+        "wrapper/generated/*",
+    ],
+}
 
 install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
 

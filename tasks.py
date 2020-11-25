@@ -68,7 +68,9 @@ Python **>=3.7**, and Robot Framework **>=3.2**.
 def deps(c):
     c.run("pip install -U pip")
     c.run("pip install -r Browser/dev-requirements.txt")
-    c.run("yarn")
+    if os.environ.get("CI"):
+        shutil.rmtree("node_modules")
+    c.run("PLAYWRIGHT_BROWSERS_PATH=0 yarn")
 
 
 @task
@@ -258,7 +260,9 @@ def run_tests(c, tests):
     """
     Run robot with dev Browser. Parameter [tests] is the path to tests to run.
     """
-    process = subprocess.Popen([sys.executable, "-m", "robot", '--loglevel', 'DEBUG', tests])
+    process = subprocess.Popen(
+        [sys.executable, "-m", "robot", "--loglevel", "DEBUG", tests]
+    )
     process.wait(600)
 
 
@@ -383,8 +387,10 @@ def docs(c):
     with output.open("r") as file:
         data = file.read()
     soup = bs4.BeautifulSoup(data, "html.parser")
-    script_async = soup.new_tag("script", src="https://www.googletagmanager.com/gtag/js?id=UA-106835747-3")
-    script_async.attrs['async'] = None
+    script_async = soup.new_tag(
+        "script", src="https://www.googletagmanager.com/gtag/js?id=UA-106835747-3"
+    )
+    script_async.attrs["async"] = None
     soup.head.append(script_async)
     script_data = soup.new_tag("script")
     script_data.string = """

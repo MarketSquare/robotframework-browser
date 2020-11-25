@@ -11,6 +11,7 @@ exclude = '''
   | build
   | dist
   | generated
+	| wrapper
   | __init__\.pyi
 )/
 '''
