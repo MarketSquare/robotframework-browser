@@ -542,7 +542,7 @@ class Browser(DynamicCore):
     |   return await page.goto(args[0]);
     | }
     | exports.__esModule = true;
-    | exports.myGoToKeyword = myKeyword;
+    | exports.myGoToKeyword = myGoToKeyword;
 
     == Example Robot Framework side ==
 
