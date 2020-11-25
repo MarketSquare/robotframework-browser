@@ -68,8 +68,8 @@ Python **>=3.7**, and Robot Framework **>=3.2**.
 def deps(c):
     c.run("pip install -U pip")
     c.run("pip install -r Browser/dev-requirements.txt")
-    # FIXME: temporary, to clear cached version of node_modules
-    shutil.rmtree("node_modules")
+    if os.environ.get("CI"):
+        shutil.rmtree("node_modules")
     c.run("PLAYWRIGHT_BROWSERS_PATH=0 yarn")
 
 
