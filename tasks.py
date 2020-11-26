@@ -70,7 +70,7 @@ def deps(c):
     c.run("pip install -r Browser/dev-requirements.txt")
     if os.environ.get("CI"):
         shutil.rmtree("node_modules")
-    c.run("PLAYWRIGHT_BROWSERS_PATH=0 yarn")
+    c.run("yarn", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
 
 
 @task
