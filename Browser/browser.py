@@ -819,7 +819,8 @@ class Browser(DynamicCore):
         test_name = BuiltIn().get_variable_value("${TEST NAME}")
         return os.path.join(
             self.outputdir,
-            ''.join(c for c in test_name if c in valid_chars).replace(" ", "_") + "_FAILURE_SCREENSHOT_{index}",
+            "".join(c for c in test_name if c in valid_chars).replace(" ", "_")
+            + "_FAILURE_SCREENSHOT_{index}",
         )
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
