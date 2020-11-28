@@ -108,6 +108,10 @@ Get Style and Assert
     Get Style    h1    ALL    *=    align-content
     Get Style    h1    align-content    ==    normal
 
+Get Style with element
+    ${elem}=    Get Element    h1
+    Get Style    ${elem}    align-content    ==    normal
+
 Get Element Size and Assert
     ${expected}=    Evaluate    {'x': 0, 'y': 400, 'width': 40, 'height': 30}
     ${bounding_box}=    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}

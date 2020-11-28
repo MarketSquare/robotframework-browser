@@ -98,6 +98,9 @@ export async function invokePlaywrightMethod<T>(
         if (methodName === '$$eval') {
             return state.getActivePage()?.evaluate(args[0], [context]);
         }
+        if (methodName === '$eval') {
+            return state.getActivePage()?.evaluate(args[0], context);
+        }
         return await (context as strDict)[methodName](...args);
     }
 }
