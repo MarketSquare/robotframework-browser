@@ -95,6 +95,9 @@ export async function invokePlaywrightMethod<T>(
         const fn = (context as strDict)[methodName].bind(context);
         return await fn(elementSelector, ...args);
     } else {
+        if (methodName === '$$eval') {
+            return state.getActivePage()?.evaluate(args[0], [context]);
+        }
         return await (context as strDict)[methodName](...args);
     }
 }

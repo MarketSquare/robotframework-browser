@@ -134,11 +134,11 @@ export async function highlightElements(
             d.style.left = `${rect.left}px`;
             d.style.width = `${rect.width}px`;
             d.style.height = `${rect.height}px`;
-            d.style.border = `${options.wdt} ${options.stl} ${options.clr}`;
+            d.style.border = `${options?.wdt ?? '1px'} ${options?.stl ?? `dotted`} ${options?.clr ?? `blue`}`;
             document.body.appendChild(d);
             setTimeout(() => {
                 d.remove();
-            }, options.dur);
+            }, options?.dur ?? 5000);
         });
     };
     await invokePlaywrightMethod(state, '$$eval', selector, highlighter, {

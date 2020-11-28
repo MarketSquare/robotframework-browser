@@ -47,6 +47,12 @@ Highlight Element with style
     Should Be True    "${style}[border-bottom-color]" == "rgb(255, 0, 255)"
     Sleep    100ms
 
+Highlight Element with element selector
+    New Page    ${LOGIN_URL}
+    ${elem}=    Get Element    input#login_button
+    Highlight Elements    ${elem}
+    Get Element Count    .robotframework-browser-highlight    ==    1
+
 Page state
     [Tags]    Not-Implemented
     #Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
