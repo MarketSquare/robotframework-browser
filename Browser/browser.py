@@ -14,6 +14,7 @@
 import json
 import os
 import re
+import string
 import sys
 from concurrent.futures._base import Future
 from datetime import timedelta
@@ -814,11 +815,12 @@ class Browser(DynamicCore):
             self._running_on_failure_keyword = False
 
     def _failure_screenshot_path(self):
+        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
         test_name = BuiltIn().get_variable_value("${TEST NAME}")
         return os.path.join(
             self.outputdir,
-            test_name.replace(" ", "_") + "_FAILURE_SCREENSHOT_{index}",
-        ).replace("\\", "\\\\")
+            ''.join(c for c in test_name if c in valid_chars).replace(" ", "_") + "_FAILURE_SCREENSHOT_{index}",
+        )
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         if timeout is None:
