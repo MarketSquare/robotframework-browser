@@ -35,6 +35,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install ffmpeg and libgles on unix-like
       run: |
+        sudo apt-get update
         sudo apt-get install ffmpeg
         sudo apt-get install libgles2
       if: matrix.os != 'windows-latest'
