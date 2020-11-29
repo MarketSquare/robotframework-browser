@@ -330,7 +330,7 @@ class Interaction(LibraryComponent):
         force: bool = False,
         *modifiers: KeyboardModifier,
     ):
-        """Moves the virtual mouse with multiple options on the element found by ``selector``.
+        """Moves the virtual mouse and scrolls to the element found by ``selector``.
 
         This method hovers over an element matching ``selector`` by performing the following steps:
         - Find an element match matching ``selector``. If there is none, wait until a matching element is attached to the DOM.
@@ -392,7 +392,7 @@ class Interaction(LibraryComponent):
         """Scrolls an element or the page to an absolute position based on given coordinates.
 
         ``selector`` Selector of the element. If the selector is ``${None}`` or ``${Empty}``
-        the page itself is scrolled.
+        the page itself is scrolled. To ensure an element is in view use `Hover` instead.
         See the `Finding elements` section for details about the selectors.
 
         ``vertical`` defines where to scroll vertically.
@@ -436,7 +436,7 @@ class Interaction(LibraryComponent):
         """Scrolls an element or the page relative from current position by the given values.
 
         ``selector`` Selector of the element. If the selector is ``${None}`` or ``${Empty}``
-        the page itself is scrolled.
+        the page itself is scrolled. To ensure an element is in view use `Hover` instead.
         See the `Finding elements` section for details about the selectors.
 
         ``vertical`` defines how far and in which direction to scroll vertically.
