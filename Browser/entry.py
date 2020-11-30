@@ -40,6 +40,7 @@ def run():
     else:
         print(f"Invalid command `{cmd}`")
         print(USAGE)
+        sys.exit(64)
 
 
 def rfbrowser_init(skip_browser_install: bool):
