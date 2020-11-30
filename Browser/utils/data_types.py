@@ -83,6 +83,23 @@ class ViewportDimensions(TypedDict):
 
 
 class HttpCredentials(TypedDict):
+    """Sets the credentials for http basic-auth.
+
+    Can be defined as robot dictionary or as string literal.
+
+    Example as literal:
+    | `New Context`    httpCredentials={'username': 'admin', 'password': '123456'}
+
+    Example as robot variable
+    | ***** *Variables* *****
+    | &{credentials}=    username=admin    password=123456
+    |
+    | ***** *Keywords* *****
+    | Open Context
+    |    `New Context`    httpCredentials=${credentials}
+
+    """
+
     username: str
     password: str
 
@@ -191,6 +208,23 @@ class KeyboardModifier(Enum):
 
 
 class SelectAttribute(Enum):
+    """Enum that defines the attribute of an <option> element in a <select>-list.
+
+    This defines by what attribute an option is selected/chosen.
+    | <select class="my_drop_down">
+    |   <option value="0: Object">None</option>
+    |   <option value="1: Object">Some</option>
+    |   <option value="2: Object">Other</option>
+    | </select>
+
+    ``value`` of the first option would be ``0: Object``.
+
+    ``label`` / ``text`` both defines the innerText which would be ``None`` for first element.
+
+    ``index`` 0 indexed number of an option. Would be ``0`` for the first element.
+
+    """
+
     value = auto()
     label = auto()
     text = label
@@ -198,12 +232,33 @@ class SelectAttribute(Enum):
 
 
 class SupportedBrowsers(Enum):
+    """Defines which browser shall be started.
+
+    |   =Browser=   | =Browser with this engine=                        |
+    | ``chromium``  | Google Chrome, Microsoft Edge (since 2020), Opera |
+    | ``firefox``   | Mozilla Firefox                                   |
+    | ``webkit``    | Apple Safari, Mail, AppStore on MacOS and iOS     |
+
+    Since [https://github.com/microsoft/playwright|Playwright] comes with a pack of builtin
+    binaries for all browsers, no additional drivers e.g. geckodriver are needed.
+
+    All these browsers that cover more than 85% of the world wide used browsers,
+    can be tested on Windows, Linux and MacOS.
+    Theres is not need for dedicated machines anymore.
+    """
+
     chromium = auto()
     firefox = auto()
     webkit = auto()
 
 
 ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
+ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
+
+        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
+        for more details.
+
+        Used by `New Context`. """
 
 
 ScrollBehavior = Enum("ScrollBehavior", ["auto", "smooth"])
@@ -216,6 +271,14 @@ class SizeFields(Enum):
 
 
 class AreaFields(Enum):
+    """Enumeration that defines which coordinates of an area should be selected.
+
+    Used by `Get Scroll Position`.
+
+    ``ALL`` defines that all fields are selected and a dictionary with all information
+    is returned.
+    """
+
     top = auto()
     left = auto()
     bottom = auto()
@@ -224,6 +287,18 @@ class AreaFields(Enum):
 
 
 class BoundingBoxFields(Enum):
+    """Enumeration that defines which location information of an element should be selected.
+
+    Used by `Get BoundingBox`.
+
+    ``x`` / ``y`` defines the position of the top left corner of an element.
+
+    ``width`` / ``height`` defines the size of an elements bounding box.
+
+    ``ALL`` defines that all fields are selected and a dictionary with all information
+    is returned.
+    """
+
     width = auto()
     height = auto()
     x = auto()
@@ -232,6 +307,15 @@ class BoundingBoxFields(Enum):
 
 
 class AutoClosingLevel(Enum):
+    """Library will close pages and contexts that are created during test execution.
+
+    Pages and contexts created before test in Suite Setup or Suite Teardown will be closed after that suite.
+    This will remove the burden of closing these resources in teardowns.
+    *Browsers will not be automatically closed.* A browser is expensive to create and should be reused.
+    Automatic closing can be configured or switched off with the auto_closing_level library parameter.
+
+    See: `Importing`"""
+
     SUITE = auto()
     TEST = auto()
     MANUAL = auto()
