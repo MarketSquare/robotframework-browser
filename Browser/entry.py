@@ -12,37 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import os
 import platform
 import subprocess
 import sys
+import json
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
-
-USAGE = """USAGE
-  rfbrowser [command]
-AVAILABLE COMMANDS
-  init  Install required nodejs dependencies
-    OPTIONS:
-        --skip-browsers
-
-"""
+from typing import Optional, TextIO
 
 
 def run():
-    if len(sys.argv) < 2:
-        print(USAGE)
-        sys.exit(1)
-    cmd = sys.argv[1]
-    if cmd == "init":
-        arg2 = sys.argv[2] if len(sys.argv) >= 3 else ""
-        rfbrowser_init(arg2 == "--skip-browsers")
-    else:
-        print(f"Invalid command `{cmd}`")
-        print(USAGE)
+    parser = argparse.ArgumentParser(
+        description="Install rfbrowser's nodejs dependencies and browsers with optional options."
+    )
+    parser.add_argument(
+        "init",
+    )
+
+    parser.add_argument(
+        "--skip-browsers",
+        # type=bool,
+        action="store_true",
+        help="skip installing browsers",
+    )
+    parser.add_argument(
+        "--chromium-path", type=str, help="path to custom location of chromium browser"
+    )
+
+    parser.add_argument
+    args = vars(parser.parse_args())
+
+    rfbrowser_init(args.get("skip-browsers"), args.get("chromium_path"))
 
 
-def rfbrowser_init(skip_browser_install: bool):
+def rfbrowser_init(skip_browser_install: Optional[bool], chromium_path: Optional[str]):
     print("Installing node dependencies...")
     installation_dir = Path(__file__).parent / "wrapper"
 
@@ -56,8 +61,8 @@ def rfbrowser_init(skip_browser_install: bool):
             indent = " " * 4 * (level)
             print("{}{}/".format(indent, os.path.basename(root)))
             subindent = " " * 4 * (level + 1)
-            for f in files:
-                print("{}{}".format(subindent, f))
+            for file in files:
+                print("{}{}".format(subindent, file))
         raise RuntimeError("Could not find robotframework-browser's package.json")
 
     print("Installing rfbrowser node dependencies at {}".format(installation_dir))
@@ -97,5 +102,12 @@ def rfbrowser_init(skip_browser_install: bool):
             "Problem installing node dependencies."
             + f"Node process returned with exit status {process.returncode}"
         )
+    settings_file: TextIO
+    with open(installation_dir / "settings.json", "w") as settings_file:
+        settings = {
+            "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": skip_browser_install,
+            "chromium_path": chromium_path,
+        }
+        json.dump(settings, settings_file)
 
     print("rfbrowser init completed")

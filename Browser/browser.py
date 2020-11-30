@@ -603,6 +603,10 @@ class Browser(DynamicCore):
         - ``jsextension`` <str>
           Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
         """
+        settings_path = Path(installation_dir / "settings.json")
+        if settings_path.is_file():
+            with open(settings_path, "r") as f:
+                settings = json.load(f)
         self.timeout = self.convert_timeout(timeout)
         self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
         self.ROBOT_LIBRARY_LISTENER = self
