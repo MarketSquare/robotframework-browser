@@ -41,21 +41,7 @@ class Waiter(LibraryComponent):
         ``selector`` Selector of the corresponding object.
         See the `Finding elements` section for details about the selectors.
 
-        ``state`` Defaults to visible. Possible states are:
-        - ``attached``: to be present in DOM.
-        - ``detached``: to not be present in DOM.
-        - ``visible``: to have non-empty bounding box and no visibility:hidden.
-        - ``hidden``: to be detached from DOM, or have an empty bounding box or visibility:hidden.
-        - ``enabled``: to not be ``disabled``.
-        - ``disabled``: to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
-        - ``editable``: to not be ``readOnly``.
-        - ``readonly``: to be ``readOnly``. Can be used on <input> and <textarea>.
-        - ``selected``: to be ``selected``. Can be used on <option>.
-        - ``deselected``: to not be ``selected``.
-        - ``focused``: to be the ``activeElement``.
-        - ``defocused``: to not be the ``activeElement``.
-        - ``checked``: to be ``checked``. Can be used on <input>.
-        - ``unchecked``: to not be ``checked``.
+        ``state`` See `ElementState` for explaination.
 
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.

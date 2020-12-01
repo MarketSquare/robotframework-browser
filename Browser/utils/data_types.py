@@ -145,6 +145,15 @@ class Proxy(_Server, total=False):
 
 
 class SelectionType(Enum):
+    """Enum that defines if the current id or all ids shall be returned.
+
+    ``ACTIVE`` / ``CURRENT`` defines to return only the id of the currently active
+    instance of a Browser/Context/Page.
+
+    ``ALL`` / ``ANY`` defines to return ids of all instances.
+
+    Used by: `Get Browser IDs` `Get Context IDs` and `Get Page IDs`."""
+
     ACTIVE = auto()
     CURRENT = ACTIVE
     ALL = auto()
@@ -152,11 +161,15 @@ class SelectionType(Enum):
 
 
 class DialogAction(Enum):
+    """Enum that defines how to handle a dialog."""
+
     accept = auto()
     dismiss = auto()
 
 
 class CookieType(Enum):
+    """Enum that defines the Cookie type."""
+
     dictionary = auto()
     dict = dictionary
     string = auto()
@@ -169,6 +182,10 @@ CookieSameSite = Enum(
 
 
 class RequestMethod(Enum):
+    """Enum that defines the request type.
+
+    Used by: `HTTP` ."""
+
     HEAD = auto()
     GET = auto()
     POST = auto()
@@ -178,29 +195,47 @@ class RequestMethod(Enum):
 
 
 class MouseButtonAction(Enum):
+    """Enum that defines which `Mouse Button` action to perform."""
+
     click = auto()
     down = auto()
     up = auto()
 
 
 class MouseButton(Enum):
+    """Enum that defines which mouse button to use.
+
+    Used by: `Click` and `Mouse Button`."""
+
     left = auto()
     middle = auto()
     right = auto()
 
 
 class KeyAction(Enum):
+    """Enum that defines which `Keyboard Key` action to perform."""
+
     down = auto()
     up = auto()
     press = auto()
 
 
 class KeyboardInputAction(Enum):
+    """Enum that defines how `Keyboard Input` adds the text into the page.
+
+    ``insertText`` is mostly similar to pasting of text.
+
+    ``type`` is similar to typing by pressing keys on the keyboard."""
+
     insertText = auto()
     type = auto()
 
 
 class KeyboardModifier(Enum):
+    """Modifier keys to press while doing other actions.
+
+    Modifiers that are pressed during the `Hover` or `Click`."""
+
     Alt = auto()
     Control = auto()
     Meta = auto()
@@ -262,9 +297,20 @@ ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
 
 
 ScrollBehavior = Enum("ScrollBehavior", ["auto", "smooth"])
+ScrollBehavior.__doc__ = """Enum that controls the behavior of scrolling.
+
+``smooth`` """
 
 
 class SizeFields(Enum):
+    """Enum that defines how the returned size is filtered.
+
+    ``ALL`` defines that the size is returned as a dictionary. ``{'width': <float>, 'height': <float>}.``
+
+    ``width`` / ``height`` will return a single float value of the chosen dimension.
+
+    Used by: `Get Viewport Size`, `Get Scroll Size` and `Get Client Size`."""
+
     width = auto()
     height = auto()
     ALL = auto()
@@ -322,6 +368,27 @@ class AutoClosingLevel(Enum):
 
 
 class ElementState(Enum):
+    """Enum that defines the state an element can have.
+
+    The following ``states`` are possible:
+    | =State=        | =Description= |
+    | ``attached``   | to be present in DOM. |
+    | ``detached``   | to not be present in DOM. |
+    | ``visible``    | to have non or empty bounding box and no visibility:hidden. |
+    | ``hidden``     | to be detached from DOM, or have an empty bounding box or visibility:hidden. |
+    | ``enabled``    | to not be ``disabled``. |
+    | ``disabled``   | to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>. |
+    | ``editable``   | to not be ``readOnly``. |
+    | ``readonly``   | to be ``readOnly``. Can be used on <input> and <textarea>. |
+    | ``selected``   | to be ``selected``. Can be used on <option>. |
+    | ``deselected`` | to not be ``selected``. |
+    | ``focused``    | to be the ``activeElement``. |
+    | ``defocused``  | to not be the ``activeElement``. |
+    | ``checked``    | to be ``checked``. Can be used on <input>. |
+    | ``unchecked``  | to not be ``checked``. |
+
+    Used by: `Wait For Elements State`"""
+
     attached = auto()
     detached = auto()
     visible = auto()
@@ -339,6 +406,12 @@ class ElementState(Enum):
 
 
 class ElementStateKey(Enum):
+    """Enum that defines the state an element can have directly.
+
+    See `ElementState` for explaination.
+
+    Used by: `Get Element State`"""
+
     attached = auto()
     visible = auto()
     disabled = auto()
@@ -378,8 +451,8 @@ AssertionOperator = Enum(
     },
 )
 AssertionOperator.__doc__ = """
-    Keywords that accept arguments ``assertion_operator`` <`AssertionOperator`> and ``assertion_expected``
-    can optionally assert.
+    Enum that defines the ``assertion_operator`` <`AssertionOperator`>.
+
     Currently supported assertion operators are:
 
     |      = Operator =   |   = Alternative Operators =       |              = Description =                                         | = Validate Equivalent =              |
@@ -397,7 +470,7 @@ AssertionOperator.__doc__ = """
     | ``evaluate``        |  ``then``                         | When using this operator, the keyword does return the evaluated Python expression. |                        |
 
 
-    The keywords will provide an error message if the assertion fails.
+    The assertion keywords will provide an error message if the assertion fails.
     Assertions will retry until ``timeout`` has expired if they do not pass.
 
     The assertion ``assertion_expected`` value is not converted by the library and

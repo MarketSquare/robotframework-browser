@@ -653,8 +653,8 @@ class PlaywrightState(LibraryComponent):
 
 
         ``browser`` Defaults to ``ALL``
-        - ``ALL`` Returns all ids as a list.
-        - ``ACTIVE`` or ``CURRENT`` Returns the id of the currently active browser as list.
+        - ``ALL`` / ``ANY`` Returns all ids as a list.
+        - ``ACTIVE`` / ``CURRENT`` Returns the id of the currently active browser as list.
 
         The ACTIVE browser is a synonym for the CURRENT Browser.
         """
@@ -675,6 +675,8 @@ class PlaywrightState(LibraryComponent):
         """Returns a list of context ids based on the browser selection.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
+        ``ALL`` and ``ANY`` are synonyms.
+        ``ACTIVE`` and ``CURRENT`` are also synonyms.
 
         ``context`` Defaults to ``ALL``
         - ``ALL`` Returns all context ids as a list.
@@ -719,6 +721,8 @@ class PlaywrightState(LibraryComponent):
         """Returns a list of page ids based on the context and browser selection.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
+        ``ALL`` and ``ANY`` are synonyms.
+        ``ACTIVE`` and ``CURRENT`` are also synonyms.
 
         ``page``
         - ``ALL`` Returns all page ids as a list.
@@ -731,6 +735,15 @@ class PlaywrightState(LibraryComponent):
         ``browser``
         - ``ALL`` page ids from all open browsers shall be fetched.
         - ``ACTIVE`` only page ids from the active browser shall be fetched.
+
+        Example:
+        | Test Case
+        |     `New Page`    http://www.imbus.de
+        |     `New Page`    http://www.reaktor.com
+        |     ${current_page}=   Get Page IDs    ACTIVE    ACTIVE    ACTIVE
+        |     Log                Current page ID is: ${current_page}[0]
+        |     ${all_pages}=      Get Page IDs    CURRENT   CURRENT   ALL
+        |     Log Many           These are all Page IDs    @{all_pages}
 
         The ACTIVE page of the ACTIVE context of the ACTIVE Browser is the ``Current`` Page.
         """
