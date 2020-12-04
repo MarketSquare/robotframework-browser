@@ -205,10 +205,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/pino@^6.3.0":
-  version "6.3.0"
-  resolved "https://registry.yarnpkg.com/@types/pino/-/pino-6.3.0.tgz#a4ad317278eca19becbc87f5ceafebb99d486604"
-  integrity sha512-AuZ32IbQlzW3XY9jA9X8iXkhMTtloKWHz1Ze23ClPx7L8ES69BNGfH308LsU2tHnDCLLCFoZvMn8+1njBx2EKg==
+"@types/pino@^6.3.4":
+  version "6.3.4"
+  resolved "https://registry.yarnpkg.com/@types/pino/-/pino-6.3.4.tgz#f22524c33a7e21f45f5cc7fc2c570ccae0be98fa"
+  integrity sha512-03MpZ/HP6GlG0oo5dcb8NBpI21zNESswTbaA0VB4uuigXfVy+XLmzh39CY6VCAahPMxCPtuqSEdhwGeA3AOYXg==
   dependencies:
     "@types/node" "*"
     "@types/pino-std-serializers" "*"
