@@ -11,7 +11,7 @@ robotframework-pabot >= 1.10.0
 twine >= 3.2.0
 robotstatuschecker >= 1.4
 rellu >= 0.7
-approvaltests == 0.2.7
+approvaltests == 0.2.10
 pytest-mock==3.3.1
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.9.3
