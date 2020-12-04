@@ -60,6 +60,11 @@ def rfbrowser_init(skip_browser_install: bool):
             for f in files:
                 print("{}{}".format(subindent, f))
         raise RuntimeError("Could not find robotframework-browser's package.json")
+    if not os.access(installation_dir, os.W_OK):
+        sys.tracebacklimit = 0
+        raise RuntimeError(
+            f"`rfbrowser init` needs write permissions to {installation_dir}"
+        )
 
     print("Installing rfbrowser node dependencies at {}".format(installation_dir))
 
