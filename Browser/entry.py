@@ -105,3 +105,7 @@ def rfbrowser_init(skip_browser_install: bool):
         )
 
     print("rfbrowser init completed")
+
+
+if __name__ == "__main__":
+    run()

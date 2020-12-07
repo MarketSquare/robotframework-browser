@@ -21,6 +21,7 @@ Only Python 3.7 or newer is supported.
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Install robotframework-browser from the commandline: `pip install robotframework-browser`
 3. Install the node dependencies: run `rfbrowser init` in your shell
+  - if `rfbrowser` is not found, try `python -m Browser.entry init
 
 Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [DOCKER.md](https://github.com/MarketSquare/robotframework-browser/blob/master/atest/docker/DOCKER.md).
 
