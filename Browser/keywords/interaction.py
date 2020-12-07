@@ -297,6 +297,10 @@ class Interaction(LibraryComponent):
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
         """
+        if self.library.presenter_mode:
+            self.hover(selector)
+            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
+            sleep(2)
         with self.playwright.grpc_channel() as stub:
             options = {
                 "button": button.name,
@@ -540,6 +544,10 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     def _fill_text(self, selector: str, text: str, log_response: bool = True):
+        if self.library.presenter_mode:
+            self.hover(selector)
+            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
+            sleep(2)
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(Request().FillText(selector=selector, text=text))
             if log_response:
@@ -553,6 +561,10 @@ class Interaction(LibraryComponent):
         clear: bool = True,
         log_response: bool = True,
     ):
+        if self.library.presenter_mode:
+            self.hover(selector)
+            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
+            sleep(2)
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
             response = stub.TypeText(
