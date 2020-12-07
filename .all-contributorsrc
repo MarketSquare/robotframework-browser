@@ -239,6 +239,15 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "Anna-Gunda",
+      "name": "Anna-Gunda",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/13298792?v=4",
+      "profile": "https://github.com/Anna-Gunda",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
