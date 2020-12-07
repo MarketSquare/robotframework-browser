@@ -16,6 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
         python-version: [3.7, 3.8, 3.9]
@@ -34,12 +35,12 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install ffmpeg and libgles on unix-like
+    - name: Install ffmpeg and libgles on linux
       run: |
         sudo apt-get update
         sudo apt-get install ffmpeg
         sudo apt-get install libgles2
-      if: matrix.os != 'windows-latest'
+      if: matrix.os == 'ubuntu-latest'
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
