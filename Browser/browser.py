@@ -16,6 +16,7 @@ import os
 import re
 import string
 import sys
+import time
 from concurrent.futures._base import Future
 from datetime import timedelta
 from typing import Dict, List, Optional, Set, Union
@@ -589,6 +590,7 @@ class Browser(DynamicCore):
     _auto_closing_level: AutoClosingLevel
     _pause_on_failure: Set["Browser"] = set()
     _context_cache = ContextCache()
+    presenter_mode = False
 
     def __init__(
         self,
@@ -599,6 +601,7 @@ class Browser(DynamicCore):
         run_on_failure: str = "Take Screenshot",
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Optional[str] = None,
+        enable_presenter_mode: bool = False,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -628,6 +631,8 @@ class Browser(DynamicCore):
           chromium and Edge executables all work with recent versions) works.
         - ``jsextension`` <str>
           Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
+        - ``enable_presenter_mode`` <bool>
+          Highlights to interacted components, slowMo and a small pause at the end.
         """
         self.timeout = self.convert_timeout(timeout)
         self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
@@ -662,6 +667,7 @@ class Browser(DynamicCore):
         self.current_arguments = ()
         if jsextension is not None:
             libraries.append(self._initialize_jsextension(jsextension))
+        self.presenter_mode = enable_presenter_mode
         DynamicCore.__init__(self, libraries)
 
     def _initialize_jsextension(self, jsextension: str) -> LibraryComponent:
@@ -721,6 +727,9 @@ class Browser(DynamicCore):
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
+            if self.presenter_mode:
+                logger.debug("Presenter mode: Wait for 5 seconds before pruning pages")
+                time.sleep(5.0)
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_test empty execution stack")
                 return
