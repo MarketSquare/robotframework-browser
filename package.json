@@ -17,7 +17,7 @@
     "eslint-plugin-prettier": "^3.2.0",
     "eslint-plugin-sort-imports-es6-autofix": "^0.5.0",
     "express": "^4.17.1",
-    "grpc-tools": "^1.9.0",
+    "grpc-tools": "^1.10.0",
     "grpc_tools_node_protoc_ts": "^4.0.0",
     "html-webpack-plugin": "^4.5.0",
     "husky": "^4.2.5",
