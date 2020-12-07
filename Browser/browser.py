@@ -672,7 +672,7 @@ class Browser(DynamicCore):
         try:
             self.playwright.close()
         except ConnectionError as e:
-            logger.warn(f"Browser library closing problem: {e}")
+            logger.trace(f"Browser library closing problem: {e}")
 
     def _start_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
@@ -700,7 +700,7 @@ class Browser(DynamicCore):
                 catalog_before_test = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_test)
             except AssertionError as e:
-                logger.warn(f"Test Case: {name}, End Test: {e}")
+                logger.debug(f"Test Case: {name}, End Test: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
@@ -713,7 +713,7 @@ class Browser(DynamicCore):
                 catalog_before_suite = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_suite)
             except AssertionError as e:
-                logger.warn(f"Test Suite: {name}, End Suite: {e}")
+                logger.debug(f"Test Suite: {name}, End Suite: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
