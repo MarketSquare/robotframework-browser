@@ -218,11 +218,12 @@ def clean_atest(c):
 
 
 @task(clean_atest)
-def atest(c, suite=None):
+def atest(c, suite=None, include=None):
     """Runs Robot Framework acceptance tests.
 
     Args:
         suite: Select which suite to run.
+        include: Select test by tag
     """
     args = [
         "--pythonpath",
@@ -230,6 +231,8 @@ def atest(c, suite=None):
     ]
     if suite:
         args.extend(["--suite", suite])
+    if include:
+        args.extend(["--include", include])
     _run_robot(args)
 
 
