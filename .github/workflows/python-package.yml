@@ -55,7 +55,7 @@ jobs:
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser
-    - name: Start xvfb un Linux
+    - name: Start xvfb on Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
         export DISPLAY=:99.0
