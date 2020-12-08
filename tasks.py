@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 import platform
 import re
@@ -8,6 +9,7 @@ import shutil
 
 from invoke import task, Exit
 from robot import rebot_cli
+from robot import __version__ as robot_version
 
 try:
     from pabot import pabot
@@ -32,6 +34,7 @@ node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
 
+ZIP_DIR = os.path.join(root_dir, "zip_results")
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
 RELEASE_NOTES_TITLE = "Browser library {version}"
 REPOSITORY = "MarketSquare/robotframework-browser"
@@ -218,12 +221,13 @@ def clean_atest(c):
 
 
 @task(clean_atest)
-def atest(c, suite=None, include=None):
+def atest(c, suite=None, include=None, zip=None):
     """Runs Robot Framework acceptance tests.
 
     Args:
         suite: Select which suite to run.
         include: Select test by tag
+        zip: Create zip file from output files.
     """
     args = [
         "--pythonpath",
@@ -234,7 +238,26 @@ def atest(c, suite=None, include=None):
     if include:
         args.extend(["--include", include])
     _run_robot(args)
+    if zip:
+        _create_zip()
 
+
+def _create_zip():
+    if os.path.exists(ZIP_DIR):
+        shutil.rmtree(ZIP_DIR)
+    os.mkdir(ZIP_DIR)
+    python_version = platform.python_version()
+    zip_name = f"rf-{robot_version}-python-{python_version}.zip"
+    zip_path = os.path.join(ZIP_DIR, zip_name)
+    print("Zip created in: %s" % zip_path)
+    zip_file = zipfile.ZipFile(zip_path, "w")
+    for root, dirs, files in os.walk(atest_output):
+        for file in files:
+            file_path = os.path.join(root, file)
+            arcname = os.path.join("SeleniumLibrary/atest/result", file)
+            zip_file.write(file_path, arcname)
+    zip_file.close()
+    return zip_path
 
 @task(clean_atest)
 def atest_robot(c):

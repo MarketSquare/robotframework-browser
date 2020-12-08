@@ -66,11 +66,11 @@ jobs:
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-        xvfb-run --auto-servernum inv atest
+        xvfb-run --auto-servernum inv atest  -z true
     - name: Run Robot Framework tests on Windows and Mac
       if: matrix.os != 'ubuntu-latest'
       run: |
-        inv atest
+        inv atest -z true
     - name: Create Distributable Package
       run: |
         inv package
@@ -78,7 +78,7 @@ jobs:
       if: ${{ always() }}
       with:
         name: Test results
-        path: atest/output
+        path: zip_results
     - uses: actions/upload-artifact@v2
       with:
         name: rfbrowser-wheel 
