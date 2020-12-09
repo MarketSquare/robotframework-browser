@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePath
 import platform
 import re
 import shutil
@@ -22,7 +22,7 @@ except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
 root_dir = Path(os.path.dirname(__file__))
-atest_output = root_dir / "atest" / "output"
+ATEST_OUTPUT = root_dir / "atest" / "output"
 dist_dir = root_dir / "dist"
 build_dir = root_dir / "build"
 proto_sources = (root_dir / "protobuf").glob("*.proto")
@@ -34,7 +34,7 @@ node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
 
-ZIP_DIR = os.path.join(root_dir, "zip_results")
+ZIP_DIR = root_dir / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
 RELEASE_NOTES_TITLE = "Browser library {version}"
 REPOSITORY = "MarketSquare/robotframework-browser"
@@ -216,8 +216,10 @@ def utest_watch(c):
 
 @task
 def clean_atest(c):
-    if atest_output.exists():
-        shutil.rmtree(atest_output)
+    if ATEST_OUTPUT.exists():
+        shutil.rmtree(ATEST_OUTPUT)
+    if ZIP_DIR.exists():
+        shutil.rmtree(ZIP_DIR)
 
 
 @task(clean_atest)
@@ -237,9 +239,11 @@ def atest(c, suite=None, include=None, zip=None):
         args.extend(["--suite", suite])
     if include:
         args.extend(["--include", include])
-    _run_robot(args)
+    exit = False if zip else True
+    rc = _run_robot(args, exit)
     if zip:
-        _create_zip()
+        print(f"Zip file created to: {_create_zip()}")
+    sys.exit(rc)
 
 
 def _create_zip():
@@ -248,21 +252,21 @@ def _create_zip():
     os.mkdir(ZIP_DIR)
     python_version = platform.python_version()
     zip_name = f"rf-{robot_version}-python-{python_version}.zip"
-    zip_path = os.path.join(ZIP_DIR, zip_name)
-    print("Zip created in: %s" % zip_path)
+    zip_path = Path(ZIP_DIR, zip_name)
+    print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
-    for root, dirs, files in os.walk(atest_output):
-        for file in files:
-            file_path = os.path.join(root, file)
-            arcname = os.path.join("SeleniumLibrary/atest/result", file)
-            zip_file.write(file_path, arcname)
+    for file in ATEST_OUTPUT.glob("**/*.*"):
+        file = PurePath(file)
+        arc_name = file.relative_to(str(ATEST_OUTPUT))
+        zip_file.write(file, arc_name)
     zip_file.close()
     return zip_path
 
+
 @task(clean_atest)
 def atest_robot(c):
-    os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
-    command = f"robot --exclude Not-Implemented --loglevel DEBUG --outputdir {str(atest_output)}"
+    os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
+    command = f"robot --exclude Not-Implemented --loglevel DEBUG --outputdir {str(ATEST_OUTPUT)}"
     if platform.platform().startswith("Windows"):
         command += " --exclude No-Windows-Support"
     command += " atest/test"
@@ -292,8 +296,8 @@ def run_tests(c, tests):
     process.wait(600)
 
 
-def _run_robot(extra_args=None):
-    os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
+def _run_robot(extra_args=None, exit=True):
+    os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
         sys.executable,
         "-m",
@@ -313,18 +317,19 @@ def _run_robot(extra_args=None):
         "--log",
         "NONE",
         "--outputdir",
-        str(atest_output),
+        str(ATEST_OUTPUT),
     ]
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "No-Windows-Support"])
     default_args.append("atest/test")
     process = subprocess.Popen(pabot_args + (extra_args or []) + default_args)
     process.wait(600)
-    output_xml = str(atest_output / "output.xml")
+    output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml, verbose=False)
-    rebot_cli(["--outputdir", str(atest_output), output_xml])
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=exit)
     print("DONE")
+    return rc
 
 
 @task
