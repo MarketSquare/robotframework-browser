@@ -251,7 +251,7 @@ def _create_zip():
         shutil.rmtree(ZIP_DIR)
     os.mkdir(ZIP_DIR)
     python_version = platform.python_version()
-    zip_name = f"rf-{robot_version}-python-{python_version}.zip"
+    zip_name = f"{sys.platform}-{robot_version}-python-{python_version}.zip"
     zip_path = Path(ZIP_DIR, zip_name)
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
