@@ -11,4 +11,4 @@ jobs:
       - uses: ahmadnassri/action-dependabot-auto-merge@v2
         with:
           target: minor # Can be any of patch, minor, or major
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.DISCUSSION_TOKEN }}
