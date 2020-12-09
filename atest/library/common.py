@@ -22,6 +22,7 @@ def start_test_server():
     root_dir = Path(os.path.dirname(__file__)) / ".." / ".."
     test_app_path = root_dir / "node" / "dynamic-test-app" / "dist" / "server.js"
     print(test_app_path)
+    # TODO: remove str() when Python 3.7 support is dropped.
     process = Popen(
         ["node", str(test_app_path), port],
         stdout=PIPE,
