@@ -23,7 +23,10 @@ def start_test_server():
     test_app_path = root_dir / "node" / "dynamic-test-app" / "dist" / "server.js"
     print(test_app_path)
     process = Popen(
-        ["node", test_app_path, port], stdout=PIPE, stderr=STDOUT, cwd=root_dir
+        ["node", str(test_app_path), port],
+        stdout=PIPE,
+        stderr=STDOUT,
+        cwd=str(root_dir),
     )
     SERVERS[port] = process
     return port
