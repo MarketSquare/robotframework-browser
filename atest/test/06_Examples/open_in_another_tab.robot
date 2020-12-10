@@ -44,5 +44,5 @@ Download works also headless
     New Page    ${WELCOME_URL}
     ${path}=    Download    ${WELCOME_URL}
     ${actual_size}=    get file size    ${path}
-    Should Be True    ${actual_size} < ${500} 
+    Should Be True    ${actual_size} < ${500}
     remove file    ${path}
