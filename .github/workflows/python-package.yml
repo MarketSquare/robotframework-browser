@@ -67,7 +67,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         xvfb-run --auto-servernum inv atest  -z true
-    - name: Run Robot Framework tests on Windows and Mac
+    - name: Run Robot Framework tests on Windows
       if: matrix.os != 'ubuntu-latest'
       run: |
         inv atest -z true
@@ -113,11 +113,13 @@ jobs:
       - name: Unzip demoapp in linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          ls -l
+          ls -l zip_results/demoapp
+          inv demo-app-unzip
       - name: Unzip demoapp in windows
         if: matrix.os == 'windows-latest'
         run: |
-          dir
+          dir zip_results/demoapp
+          inv demo-app-unzip
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
