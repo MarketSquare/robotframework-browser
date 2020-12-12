@@ -111,13 +111,13 @@ jobs:
           name: demoapp
           path: zip_results/demoapp
       - name: Unzip demoapp in linux
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          ls -l
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        ls -l
       - name: Unzip demoapp in windows
-          if: matrix.os == 'windows-latest'
-          run: |
-            dir
+        if: matrix.os == 'windows-latest'
+        run: |
+          dir
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
