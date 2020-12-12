@@ -18,6 +18,7 @@ node/dynamic-test-app/src/*.js
 __pycache__
 robotframework_browser.egg-info/
 .venv
+zip_results
 
 node/.linted
 node/.built

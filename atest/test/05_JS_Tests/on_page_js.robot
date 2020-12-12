@@ -25,9 +25,9 @@ Mutate Element On Page With ElementHandle
     Get Property    ${ref}    innerText    ==    abc
 
 Highlight Element on page
-    Highlight Elements    css=input#login_button    duration=100ms
+    Highlight Elements    css=input#login_button    duration=200ms
     Get Element Count    .robotframework-browser-highlight    ==    1
-    Sleep    100ms
+    Sleep    200ms
     Get Element Count    .robotframework-browser-highlight    ==    0
     Highlight Elements    .pure-button    duration=200ms
     Get Element Count    .robotframework-browser-highlight    ==    5
