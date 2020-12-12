@@ -69,6 +69,21 @@ async function _newBrowser(
     return [browser, browserType];
 }
 
+async function _connectBrowser(browserType: string, url: string): Promise<[Browser, string]> {
+    browserType = browserType || 'chromium';
+    let browser;
+    if (browserType === 'firefox') {
+        browser = await firefox.connect({ wsEndpoint: url });
+    } else if (browserType === 'chromium') {
+        browser = await chromium.connect({ wsEndpoint: url });
+    } else if (browserType === 'webkit') {
+        browser = await webkit.connect({ wsEndpoint: url });
+    } else {
+        throw new Error('unsupported browser');
+    }
+    return [browser, browserType];
+}
+
 async function _newBrowserContext(
     browser: Browser,
     defaultTimeout: number,
@@ -388,6 +403,17 @@ export async function newBrowser(request: Request.Browser, openBrowsers: Playwri
     const [browser, name] = await _newBrowser(browserType, headless, options);
     const browserState = openBrowsers.addBrowser(name, browser);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
+}
+
+export async function connectToBrowser(
+    request: Request.ConnectBrowser,
+    openBrowsers: PlaywrightState,
+): Promise<Response.String> {
+    const browserType = request.getBrowser();
+    const url = request.getUrl();
+    const [browser, name] = await _connectBrowser(browserType, url);
+    const browserState = openBrowsers.addBrowser(name, browser);
+    return stringResponse(browserState.id, 'Successfully connected to browser');
 }
 
 async function _switchPage(id: Uuid, browserState: BrowserState) {

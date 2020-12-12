@@ -261,6 +261,20 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async connectToBrowser(
+        call: ServerUnaryCall<Request.ConnectBrowser, Response.String>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await playwrightState.connectToBrowser(request, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
     async goTo(
         call: ServerUnaryCall<Request.Url, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,

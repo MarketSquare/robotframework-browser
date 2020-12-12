@@ -69,6 +69,11 @@ message Request {
     int32 defaultTimeout = 2;
   }
 
+  message ConnectBrowser {
+    string browser = 1;
+    string url= 2;
+  }
+
   message TextInput {
     string input = 1;
     string selector = 2;
@@ -353,6 +358,7 @@ service  Playwright {
   rpc NewPage(Request.Url) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.String);
   rpc NewBrowser(Request.Browser) returns (Response.String);
+  rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);

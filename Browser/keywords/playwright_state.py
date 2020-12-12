@@ -229,6 +229,17 @@ class PlaywrightState(LibraryComponent):
                         logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
+    def connect_to_browser(
+        self, wsEndpoint: str, browser: SupportedBrowsers = SupportedBrowsers.chromium
+    ):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ConnectToBrowser(
+                Request().ConnectBrowser(url=wsEndpoint, browser=browser.name)
+            )
+            logger.info(response.log)
+            return response.body
+
+    @keyword(tags=("Setter", "BrowserControl"))
     def new_browser(
         self,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
