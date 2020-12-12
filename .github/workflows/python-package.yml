@@ -83,10 +83,13 @@ jobs:
       with:
         name: rfbrowser-wheel 
         path: dist/robotframework_browser-*-py3-none-any.whl
+    - name: Package demoapp
+      run: |
+        inv demo-app
     - uses: actions/upload-artifact@v2
       with:
         name: demoapp
-        path: node/dynamic-test-app
+        path: zip_results
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}

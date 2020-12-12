@@ -21,20 +21,20 @@ try:
 except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
-root_dir = Path(os.path.dirname(__file__))
-ATEST_OUTPUT = root_dir / "atest" / "output"
-dist_dir = root_dir / "dist"
-build_dir = root_dir / "build"
-proto_sources = (root_dir / "protobuf").glob("*.proto")
-python_src_dir = root_dir / "Browser"
+ROOT_DIR = Path(os.path.dirname(__file__))
+ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
+dist_dir = ROOT_DIR / "dist"
+build_dir = ROOT_DIR / "build"
+proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
+python_src_dir = ROOT_DIR / "Browser"
 python_protobuf_dir = python_src_dir / "generated"
-node_protobuf_dir = root_dir / "node" / "playwright-wrapper" / "generated"
-node_dir = root_dir / "node"
+node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
+node_dir = ROOT_DIR / "node"
 node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
 
-ZIP_DIR = root_dir / "zip_results"
+ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
 RELEASE_NOTES_TITLE = "Browser library {version}"
 REPOSITORY = "MarketSquare/robotframework-browser"
@@ -133,13 +133,13 @@ def _python_protobuf_gen(c):
 def _node_protobuf_gen(c):
     plugin_suffix = ".cmd" if platform.platform().startswith("Windows") else ""
     protoc_plugin = (
-        root_dir
-        / "node_modules"
-        / ".bin"
-        / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
+            ROOT_DIR
+            / "node_modules"
+            / ".bin"
+            / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
     )
     protoc_ts_plugin = (
-        root_dir / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
+            ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     )
     c.run(
         f"yarn run grpc_tools_node_protoc \
@@ -242,20 +242,23 @@ def atest(c, suite=None, include=None, zip=None):
     exit = False if zip else True
     rc = _run_robot(args, exit)
     if zip:
-        print(f"Zip file created to: {_create_zip()}")
+        _clean_zip_dir()
+        print(f"Zip file created to: {_create_zip(ATEST_OUTPUT)}")
     sys.exit(rc)
 
 
-def _create_zip():
-    if os.path.exists(ZIP_DIR):
-        shutil.rmtree(ZIP_DIR)
+def _clean_zip_dir():
+    shutil.rmtree(ZIP_DIR)
+
+
+def _create_zip(source: Path):
     os.mkdir(ZIP_DIR)
     python_version = platform.python_version()
     zip_name = f"{sys.platform}-rf-{robot_version}-python-{python_version}.zip"
     zip_path = Path(ZIP_DIR, zip_name)
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
-    for file in ATEST_OUTPUT.glob("**/*.*"):
+    for file in source.glob("**/*.*"):
         file = PurePath(file)
         arc_name = file.relative_to(str(ATEST_OUTPUT))
         zip_file.write(file, arc_name)
@@ -335,7 +338,7 @@ def _run_robot(extra_args=None, exit=True):
 @task
 def lint_python(c):
     all_py_sources = list(python_src_dir.glob("**/*.py")) + list(
-        (root_dir / "utest").glob("**/*.py")
+        (ROOT_DIR / "utest").glob("**/*.py")
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
         c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
@@ -413,7 +416,7 @@ def run_test_app(c):
 
 @task
 def docs(c):
-    output = root_dir / "docs" / "Browser.html"
+    output = ROOT_DIR / "docs" / "Browser.html"
     libdoc("Browser", str(output))
     with output.open("r") as file:
         data = file.read()
@@ -445,7 +448,7 @@ def docs(c):
 
 @task(clean, build, docs)
 def package(c):
-    shutil.copy(root_dir / "package.json", root_dir / "Browser" / "wrapper")
+    shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
     c.run("python setup.py sdist bdist_wheel")
 
 
@@ -489,13 +492,13 @@ def version(c, version):
     os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}.html")
     if not version:
         print("Give version with inv version <version>")
-    py_version_file = root_dir / "Browser" / "version.py"
+    py_version_file = ROOT_DIR / "Browser" / "version.py"
     py_version_matcher = re.compile("__version__ = .*")
     _replace_version(py_version_file, py_version_matcher, f'__version__ = "{version}"')
-    node_version_file = root_dir / "package.json"
+    node_version_file = ROOT_DIR / "package.json"
     node_version_matcher = re.compile('"version": ".*"')
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
-    setup_py_file = root_dir / "setup.py"
+    setup_py_file = ROOT_DIR / "setup.py"
     _replace_version(setup_py_file, node_version_matcher, f'"version": "{version}"')
     # workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
     # workflow_version_matcher = re.compile("VERSION: .*")
@@ -543,3 +546,20 @@ def gh_pages_index(c):
 
     with open("docs/index.html", "w") as f:
         f.write(index_contents)
+
+
+@task
+def demo_app(c):
+    _clean_zip_dir()
+    os.mkdir(ZIP_DIR)
+    zip_name = f"demo-app-{sys.platform}.zip"
+    zip_path = Path(ZIP_DIR, zip_name)
+    demo_app = Path("node", "dynamic-test-app").resolve()
+    print(f"Creating zip  in: {zip_path}")
+    zip_file = zipfile.ZipFile(zip_path, "w")
+    for file in demo_app.glob("**/*.*"):
+        file = PurePath(file)
+        arc_name = file.relative_to(str(ROOT_DIR))
+        zip_file.write(file, arc_name)
+    zip_file.close()
+    return zip_path

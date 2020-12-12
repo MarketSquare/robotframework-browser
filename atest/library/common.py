@@ -20,8 +20,8 @@ def start_test_server():
     port = str(find_free_port())
     # For some reason, we need to have cwd at project root for the server to run properly.
     root_dir = Path(os.path.dirname(__file__)) / ".." / ".."
+    root_dir = root_dir.resolve()
     test_app_path = root_dir / "node" / "dynamic-test-app" / "dist" / "server.js"
-    test_app_path = test_app_path.resolve()
     print(test_app_path)
     # TODO: remove str() when Python 3.7 support is dropped.
     process = Popen(
