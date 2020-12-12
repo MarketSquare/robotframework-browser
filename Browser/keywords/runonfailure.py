@@ -28,7 +28,7 @@ from ..utils import is_falsy, keyword, logger
 class RunOnFailureKeywords(LibraryComponent):
     @keyword(tags=("Config",))
     def register_keyword_to_run_on_failure(
-        self, keyword: Optional[str]
+        self, keyword: Optional[str], *args
     ) -> Optional[str]:
         """Sets the keyword to execute, when a Browser keyword fails.
 
@@ -59,6 +59,9 @@ class RunOnFailureKeywords(LibraryComponent):
         """
         old_keyword = self.library.run_on_failure_keyword
         keyword = None if is_falsy(keyword) else keyword
+        if args:
+            self.library.run_on_failure_args = args
+
         self.library.run_on_failure_keyword = keyword
         logger.info(f"{keyword or 'No keyword'} will be run on failure.")
         return old_keyword

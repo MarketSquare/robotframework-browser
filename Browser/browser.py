@@ -18,7 +18,7 @@ import string
 import sys
 from concurrent.futures._base import Future
 from datetime import timedelta
-from typing import Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
@@ -613,6 +613,7 @@ class Browser(DynamicCore):
         self.run_on_failure_keyword = (
             None if is_falsy(run_on_failure) else run_on_failure
         )
+        self.run_on_failure_args: Any = None
         self.external_browser_executable: Dict[
             SupportedBrowsers, str
         ] = external_browser_executable
@@ -806,7 +807,12 @@ class Browser(DynamicCore):
             if is_same_keyword(self.run_on_failure_keyword, "Take Screenshot"):
                 self.take_screenshot(self._failure_screenshot_path())
             else:
-                BuiltIn().run_keyword(self.run_on_failure_keyword)
+                if self.run_on_failure_args:
+                    BuiltIn().run_keyword(
+                        self.run_on_failure_keyword, self.run_on_failure_args
+                    )
+                else:
+                    BuiltIn().run_keyword(self.run_on_failure_keyword)
         except Exception as err:
             logger.warn(
                 f"Keyword '{self.run_on_failure_keyword}' could not be run on failure:\n{err}"
