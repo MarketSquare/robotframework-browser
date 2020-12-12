@@ -567,12 +567,3 @@ def demo_app(c):
         zip_file.write(file, arc_name)
     zip_file.close()
     return zip_path
-
-@task
-def demo_app_unzip(c):
-    """Unzips demo application in CI from OS specific package."""
-    zip_name = f"demo-app-{sys.platform}.zip"
-    zip_path = ZIP_DIR / "demoapp" / zip_name
-    demo_zip = zipfile.ZipFile(zip_path, "r")
-    demo_zip.extractall()
-    print(f"Unzipped {zip_path}")
