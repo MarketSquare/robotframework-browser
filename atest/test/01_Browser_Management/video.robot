@@ -3,13 +3,25 @@ Resource          imports.resource
 Suite Setup       Video Setup
 
 *** Test Cases ***
-Create Video
+Create Video With Full Path
     [Documentation]
     ...    LOG 2:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
     New Context    videosPath=${OUTPUT_DIR}/video
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Verify Video Files    ${0}    ${1}
+
+Create Video With Relative Path
+    [Documentation]
+    ...    LOG 2:3    INFO    GLOB:    *video width="1280" height="720" controls*src="browser/video/my_video*.webm"*
+    New Context    videosPath=my_video
+    New Page    ${LOGIN_URL}
+    Go To    ${FRAMES_URL}
+    ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
+    Should Be Equal    ${{len(${files})}}    ${0}
+    Close Page
+    ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
+    Should Be Equal    ${{len(${files})}}    ${1}
 
 Create Video With videoSize
     [Documentation]
