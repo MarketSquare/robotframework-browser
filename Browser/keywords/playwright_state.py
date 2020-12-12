@@ -14,6 +14,7 @@
 
 import json
 from datetime import timedelta
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from robot.utils import get_link_path  # type: ignore
@@ -411,7 +412,9 @@ class PlaywrightState(LibraryComponent):
         If all contexts override the proxy, global proxy will be never used and can be any string
 
         ``videosPath`` Enables video recording for all pages to videosPath
-        folder. If not specified, videos are not recorded.
+        folder. If videosPath is not existing folder, videosPath folder is created
+        under ${OUTPUT_DIR}/browser/video/ folder. If videosPath is not specified,
+        videos are not recorded.
 
         ``videoSize`` Specifies dimensions of the automatically recorded
         video. Can only be used if videosPath is set. If not specified the size will
@@ -438,6 +441,7 @@ class PlaywrightState(LibraryComponent):
         If there's no open Browser this keyword will open one. Does not create pages.
         """
         params = locals_to_params(locals())
+        params = self._set_video_path(params)
         params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)
@@ -454,6 +458,15 @@ class PlaywrightState(LibraryComponent):
         logger.info(response.log)
         self.context_cache.add(response.body, self._get_video_size(params))
         return response.body
+
+    def _set_video_path(self, params):
+        video_path = params.get("videosPath")
+        if not video_path:
+            return params
+        if Path(video_path).is_dir():
+            return params
+        params["videosPath"] = self.video_output / video_path
+        return params
 
     def _get_video_size(self, params: dict) -> dict:
         if "videoSize" in params:
