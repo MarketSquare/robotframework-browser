@@ -13,8 +13,7 @@ async function createRemoteBrowser(page, args) {
 }
 
 async function closeRemoteBrowser() {
-    await browserServer.kill();
-    return "OK";
+    return browserServer.kill();
 }
 
 exports.__esModule = true;

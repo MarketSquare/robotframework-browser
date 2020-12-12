@@ -657,6 +657,8 @@ class Browser(DynamicCore):
                     Request().KeywordCall(name=name, arguments=args)
                 )
                 logger.info(response.log)
+                if response.json == "":
+                    return
                 return json.loads(response.json)
 
         return func
