@@ -248,14 +248,16 @@ def atest(c, suite=None, include=None, zip=None):
 
 
 def _clean_zip_dir():
-    shutil.rmtree(ZIP_DIR)
+    if ZIP_DIR.exists():
+        shutil.rmtree(ZIP_DIR)
 
 
 def _create_zip(source: Path):
-    os.mkdir(ZIP_DIR)
+    zip_dir = ZIP_DIR / "output"
+    zip_dir.mkdir(parents=True)
     python_version = platform.python_version()
     zip_name = f"{sys.platform}-rf-{robot_version}-python-{python_version}.zip"
-    zip_path = Path(ZIP_DIR, zip_name)
+    zip_path = zip_dir / zip_name
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
     for file in source.glob("**/*.*"):
@@ -551,9 +553,10 @@ def gh_pages_index(c):
 @task
 def demo_app(c):
     _clean_zip_dir()
-    os.mkdir(ZIP_DIR)
+    zip_dir = ZIP_DIR / "demoapp"
+    zip_dir.mkdir(parents=True)
     zip_name = f"demo-app-{sys.platform}.zip"
-    zip_path = Path(ZIP_DIR, zip_name)
+    zip_path = zip_dir / zip_name
     demo_app = Path("node", "dynamic-test-app").resolve()
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")

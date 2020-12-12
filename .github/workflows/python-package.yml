@@ -78,7 +78,7 @@ jobs:
       if: ${{ always() }}
       with:
         name: Test results
-        path: zip_results
+        path: zip_results/output
     - uses: actions/upload-artifact@v2
       with:
         name: rfbrowser-wheel 
@@ -89,7 +89,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: demoapp
-        path: zip_results
+        path: zip_results/demoapp
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
