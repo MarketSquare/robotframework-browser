@@ -61,6 +61,8 @@ class RunOnFailureKeywords(LibraryComponent):
         keyword = None if is_falsy(keyword) else keyword
         if args:
             self.library.run_on_failure_args = args
+        else:
+            self.library.run_on_failure_args = None
 
         self.library.run_on_failure_keyword = keyword
         logger.info(f"{keyword or 'No keyword'} will be run on failure.")
