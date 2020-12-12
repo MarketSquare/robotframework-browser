@@ -232,6 +232,15 @@ class PlaywrightState(LibraryComponent):
     def connect_to_browser(
         self, wsEndpoint: str, browser: SupportedBrowsers = SupportedBrowsers.chromium
     ):
+        """Connect to a playwright Browser.
+                See `Browser, Context and Page` for more information about Browser and related concepts.
+
+                Returns a stable identifier for the connected browser.
+
+                ``wsEndpoint`` Address to connect to.
+
+                ``browser`` Opens the specified browser. Defaults to chromium.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.ConnectToBrowser(
                 Request().ConnectBrowser(url=wsEndpoint, browser=browser.name)
