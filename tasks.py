@@ -243,7 +243,7 @@ def atest(c, suite=None, include=None, zip=None):
     rc = _run_robot(args, exit)
     if zip:
         _clean_zip_dir()
-        print(f"Zip file created to: {_create_zip(ATEST_OUTPUT)}")
+        print(f"Zip file created to: {_create_zip()}")
     sys.exit(rc)
 
 
@@ -252,7 +252,7 @@ def _clean_zip_dir():
         shutil.rmtree(ZIP_DIR)
 
 
-def _create_zip(source: Path):
+def _create_zip():
     zip_dir = ZIP_DIR / "output"
     zip_dir.mkdir(parents=True)
     python_version = platform.python_version()
@@ -260,7 +260,7 @@ def _create_zip(source: Path):
     zip_path = zip_dir / zip_name
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
-    for file in source.glob("**/*.*"):
+    for file in ATEST_OUTPUT.glob("**/*.*"):
         file = PurePath(file)
         arc_name = file.relative_to(str(ATEST_OUTPUT))
         zip_file.write(file, arc_name)
