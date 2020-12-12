@@ -133,13 +133,13 @@ def _python_protobuf_gen(c):
 def _node_protobuf_gen(c):
     plugin_suffix = ".cmd" if platform.platform().startswith("Windows") else ""
     protoc_plugin = (
-            ROOT_DIR
-            / "node_modules"
-            / ".bin"
-            / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
+        ROOT_DIR
+        / "node_modules"
+        / ".bin"
+        / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
     )
     protoc_ts_plugin = (
-            ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
+        ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     )
     c.run(
         f"yarn run grpc_tools_node_protoc \
