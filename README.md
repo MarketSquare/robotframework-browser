@@ -35,7 +35,7 @@ Library   Browser
 *** Test Cases ***
 Example Test
     New Page    https://playwright.dev
-    Get Text    h1    ==    🎭 Playwright
+    Get Text    h1    contains    Playwright
 ```
 ### and testing with [Python](https://python.org).
 ```python
