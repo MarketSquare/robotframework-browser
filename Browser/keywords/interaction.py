@@ -19,6 +19,7 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional
 
+from ..assertion_engine import verify_assertion
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -41,7 +42,7 @@ from ..utils.data_types import (
     MouseButtonAction,
     MouseOptionsDict,
     ScrollBehavior,
-    SelectAttribute,
+    SelectAttribute, AssertionOperator,
 )
 
 NOT_FOUND = object()
@@ -50,11 +51,11 @@ NOT_FOUND = object()
 class Interaction(LibraryComponent):
     @keyword(tags=("Setter", "PageContent"))
     def type_text(
-        self,
-        selector: str,
-        text: str,
-        delay: timedelta = timedelta(seconds=0),
-        clear: bool = True,
+            self,
+            selector: str,
+            text: str,
+            delay: timedelta = timedelta(seconds=0),
+            clear: bool = True,
     ):
         """Types the given ``text`` into the text field found by ``selector``.
 
@@ -118,11 +119,11 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def type_secret(
-        self,
-        selector: str,
-        secret: str,
-        delay: timedelta = timedelta(seconds=0),
-        clear: bool = True,
+            self,
+            selector: str,
+            secret: str,
+            delay: timedelta = timedelta(seconds=0),
+            clear: bool = True,
     ):
         """Types the given secret from ``variable_name`` into the text field
         found by ``selector``.
@@ -250,16 +251,16 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def click(
-        self,
-        selector: str,
-        button: MouseButton = MouseButton.left,
-        clickCount: int = 1,
-        delay: Optional[timedelta] = None,
-        position_x: Optional[float] = None,
-        position_y: Optional[float] = None,
-        force: bool = False,
-        noWaitAfter: bool = False,
-        *modifiers: KeyboardModifier,
+            self,
+            selector: str,
+            button: MouseButton = MouseButton.left,
+            clickCount: int = 1,
+            delay: Optional[timedelta] = None,
+            position_x: Optional[float] = None,
+            position_y: Optional[float] = None,
+            force: bool = False,
+            noWaitAfter: bool = False,
+            *modifiers: KeyboardModifier,
     ):
         """Simulates mouse click on the element found by ``selector``.
 
@@ -323,12 +324,12 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def hover(
-        self,
-        selector: str,
-        position_x: Optional[float] = None,
-        position_y: Optional[float] = None,
-        force: bool = False,
-        *modifiers: KeyboardModifier,
+            self,
+            selector: str,
+            position_x: Optional[float] = None,
+            position_y: Optional[float] = None,
+            force: bool = False,
+            *modifiers: KeyboardModifier,
     ):
         """Moves the virtual mouse and scrolls to the element found by ``selector``.
 
@@ -383,11 +384,11 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def scroll_to(
-        self,
-        selector: Optional[str] = None,
-        vertical: str = "top",
-        horizontal: str = "left",
-        behavior: ScrollBehavior = ScrollBehavior.auto,
+            self,
+            selector: Optional[str] = None,
+            vertical: str = "top",
+            horizontal: str = "left",
+            behavior: ScrollBehavior = ScrollBehavior.auto,
     ):
         """Scrolls an element or the page to an absolute position based on given coordinates.
 
@@ -427,11 +428,11 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def scroll_by(
-        self,
-        selector: Optional[str] = None,
-        vertical: str = "height",
-        horizontal: str = "0",
-        behavior: ScrollBehavior = ScrollBehavior.auto,
+            self,
+            selector: Optional[str] = None,
+            vertical: str = "height",
+            horizontal: str = "0",
+            behavior: ScrollBehavior = ScrollBehavior.auto,
     ):
         """Scrolls an element or the page relative from current position by the given values.
 
@@ -546,12 +547,12 @@ class Interaction(LibraryComponent):
                 logger.debug(response.log)
 
     def _type_text(
-        self,
-        selector: str,
-        text: str,
-        delay: timedelta = timedelta(microseconds=0),
-        clear: bool = True,
-        log_response: bool = True,
+            self,
+            selector: str,
+            text: str,
+            delay: timedelta = timedelta(microseconds=0),
+            clear: bool = True,
+            log_response: bool = True,
     ):
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
@@ -581,8 +582,14 @@ class Interaction(LibraryComponent):
             response = stub.UploadFile(Request().FilePath(path=str(p)))
             logger.debug(response.log)
 
-    @keyword(tags=("PageContent",))
-    def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
+    @keyword(tags=("Assertion, PageContent",))
+    def handle_future_dialogs(
+            self,
+            action: DialogAction,
+            prompt_input: str = "",
+            assertion_operator: Optional[AssertionOperator] = None,
+            assertion_expected: Any = None,
+    ):
         """Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
 
@@ -590,6 +597,11 @@ class Interaction(LibraryComponent):
 
             ``prompt_input`` The value to enter into prompt. Only valid if
             ``action`` equals accept. Defaults to empty string.
+            
+            Optionally asserts the dialog message.
+
+            See `Assertions` for further details for the assertion arguments. Defaults to None.
+            
         """
 
         with self.playwright.grpc_channel() as stub:
@@ -598,17 +610,21 @@ class Interaction(LibraryComponent):
             response = stub.HandleAlert(
                 Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
             )
+            if assertion_operator is not None:
+                verify_assertion(response.message, AssertionOperator(assertion_operator), assertion_expected,
+                                 "assert dialog message")
+
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
     def mouse_button(
-        self,
-        action: MouseButtonAction,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
-        button: MouseButton = MouseButton.left,
-        clickCount: int = 1,
-        delay: int = 0,
+            self,
+            action: MouseButtonAction,
+            x: Optional[float] = None,
+            y: Optional[float] = None,
+            button: MouseButton = MouseButton.left,
+            clickCount: int = 1,
+            delay: int = 0,
     ):
         """Clicks, presses or releases a mouse button.
 
@@ -677,7 +693,7 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def drag_and_drop_by_coordinates(
-        self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1
+            self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1
     ):
         """Executes a Drag&Drop operation from a coordinate to another coordinate.
 
@@ -708,7 +724,7 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def mouse_move_relative_to(
-        self, selector: str, x: float = 0.0, y: float = 0.0, steps: int = 1
+            self, selector: str, x: float = 0.0, y: float = 0.0, steps: int = 1
     ):
         """Moves the mouse cursor relative to the selected element.
 

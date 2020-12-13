@@ -4,11 +4,33 @@ Test Setup        New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Dismiss Alert
+    [Tags]      dialog
     Handle Future Dialogs    action=dismiss
     Click    \#alerts
 
+Dismiss Alert Check Alert Message
+    [Tags]      dialog
+    Handle Future Dialogs    action=dismiss     assertion_operator=should be     assertion_expected=Am an alert
+    Click    \#alerts
+
+Dismiss Alert Should fail within incorrect dismiss alert message
+    [Tags]      dialog
+    Handle Future Dialogs    action=dismiss     assertion_operator=should not be     assertion_expected=Am not an alert
+    Click    \#alerts
+
 Accept Alert
+    [Tags]      dialog
     Handle Future Dialogs    action=accept
+    Click    \#alerts
+
+Accept Alert Check Alert Message
+    [Tags]      dialog
+    Handle Future Dialogs    action=accept    assertion_operator=should start with    assertion_expected=Am an
+    Click    \#alerts
+
+Accept Alert Check fail with incorrect accept alert Message
+    [Tags]      dialog
+    Handle Future Dialogs    action=accept    assertion_operator=should end with    assertion_expected=an alert
     Click    \#alerts
 
 Clicking Through Alert Fails
