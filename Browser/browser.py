@@ -653,10 +653,11 @@ class Browser(DynamicCore):
         @keyword
         def func(*args):
             with self.playwright.grpc_channel() as stub:
-                response = stub.CallExtensionKeyword(
+                responses = stub.CallExtensionKeyword(
                     Request().KeywordCall(name=name, arguments=args)
                 )
-                logger.info(response.log)
+                for response in responses:
+                    logger.info(response.log)
                 if response.json == "":
                     return
                 return json.loads(response.json)

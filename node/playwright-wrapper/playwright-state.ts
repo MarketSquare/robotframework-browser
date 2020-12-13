@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as playwright from 'playwright';
 import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from '@grpc/grpc-js';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -21,6 +21,7 @@ import { emptyWithLog, jsonResponse, keywordsResponse, stringResponse } from './
 import { exists, invokeOnPage } from './playwirght-invoke';
 
 import * as pino from 'pino';
+import { ServerWritableStream } from '@grpc/grpc-js';
 
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
@@ -40,12 +41,20 @@ export async function initializeExtension(
 
 export async function extensionKeywordCall(
     request: Request.KeywordCall,
+    call: ServerWritableStream<Request.KeywordCall, Response.Json>,
     state: PlaywrightState,
 ): Promise<Response.Json> {
     const methodName = request.getName();
     const args = request.getArgumentsList();
     // @ts-ignore
-    const result = await state.extension[methodName](state.getActivePage(), args);
+    const result = await state.extension[methodName](
+        state.getActivePage(),
+        args,
+        (msg: string) => {
+            call.write(jsonResponse(JSON.stringify(''), msg));
+        },
+        playwright,
+    );
     return jsonResponse(JSON.stringify(result), 'ok');
 }
 

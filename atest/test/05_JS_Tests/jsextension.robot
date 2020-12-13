@@ -17,6 +17,9 @@ Connecting and creating a remote browser
     Get Text    h1    ==    Login Page
     [Teardown]    Close Remote Clean
 
+Crashing keyword
+    Run Keyword And Expect Error    Error: Crash    crashKeyword
+
 *** Keywords ***
 Close Remote Clean
     close browser
