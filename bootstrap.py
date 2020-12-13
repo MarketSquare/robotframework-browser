@@ -2,6 +2,7 @@
 
 Also installs the needed dependencies.
 """
+import os
 import platform
 import subprocess
 from pathlib import Path
@@ -19,7 +20,7 @@ if not venv_dir.exists():
     EnvBuilder(with_pip=True).create(venv_dir)
 
 subprocess.run(
-    [venv_python, "-m", "pip", "install", "-r", str(src_dir / "dev-requirements.txt"),]
+    [str(venv_python), "-m", "pip", "install", "-r", str(src_dir / "dev-requirements.txt"),]
 )
 
 activate_script = (
