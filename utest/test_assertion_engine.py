@@ -12,7 +12,7 @@ from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 def test_equals():
     results = [
         _validate_operator(AssertionOperator["=="], "actual", "actual"),
-        _validate_operator(AssertionOperator["=="], "actual", "unexpected"),
+        _validate_operator(AssertionOperator["=="], "actual", "unexpected", "partial error"),
         _validate_operator(AssertionOperator["=="], 1, "1"),
 
     ]
@@ -22,7 +22,7 @@ def test_equals():
 def test_not_equals():
     results = [
         _validate_operator(AssertionOperator["!="], "actual", "expected"),
-        _validate_operator(AssertionOperator["!="], "actual", "actual"),
+        _validate_operator(AssertionOperator["!="], "actual", "actual", "partial error message"),
     ]
     verify_all("Not equal", results)
 
@@ -30,7 +30,7 @@ def test_not_equals():
 def test_contains():
     results = [
         _validate_operator(AssertionOperator["contains"], "actual", "ctua"),
-        _validate_operator(AssertionOperator["contains"], "actual", "nope"),
+        _validate_operator(AssertionOperator["contains"], "actual", "nope", "custom"),
         _validate_operator(AssertionOperator["*="], "actual", "tual"),
         _validate_operator(AssertionOperator["*="], "actual", "nope"),
     ]
@@ -77,7 +77,7 @@ def test_without_assertions_polling():
 def test_greater():
     results = [
         _validate_operator(AssertionOperator["<"], 1, 2),
-        _validate_operator(AssertionOperator["<"], 1, 0),
+        _validate_operator(AssertionOperator["<"], 1, 0, "custom"),
     ]
     verify_all("Greater", results)
 
@@ -85,7 +85,7 @@ def test_greater():
 def test_less():
     results = [
         _validate_operator(AssertionOperator[">"], 2, 1),
-        _validate_operator(AssertionOperator[">"], 2, 3),
+        _validate_operator(AssertionOperator[">"], 2, 3, "custom"),
     ]
     verify_all("Less", results)
 
@@ -176,9 +176,17 @@ def test_ends_with():
     verify_all("ends with", results)
 
 
-def _validate_operator(operator: AssertionOperator, actual, expected):
+def test_invalid_operator():
+    results = [
+        _validate_operator("foo", "actual", "unexpected", "bar"),
+        _validate_operator("foo", "actual", "unexpected"),
+    ]
+    verify_all("Custom error", results)
+
+
+def _validate_operator(operator: AssertionOperator, actual, expected, message=""):
     try:
-        return verify_assertion(actual, operator, expected)
+        return verify_assertion(actual, operator, expected, message)
     except Exception as error:
         return error
 

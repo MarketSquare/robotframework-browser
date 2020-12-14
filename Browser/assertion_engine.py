@@ -80,7 +80,8 @@ def verify_assertion(
         return cast(T, BuiltIn().evaluate(expected, namespace={"value": value}))
     handler = handlers.get(operator)
     if handler is None:
-        raise RuntimeError(f"{message} `{operator}` is not a valid assertion operator")
+        handler_filler = " " if message else ""
+        raise RuntimeError(f"{message}{handler_filler}`{operator}` is not a valid assertion operator")
     validator, text = handler
     if not validator(value, expected):
         filler = " " if message else ""
