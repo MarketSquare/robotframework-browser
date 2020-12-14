@@ -611,9 +611,8 @@ class Interaction(LibraryComponent):
                 Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
             )
             if assertion_operator is not None:
-                verify_assertion(response.message, AssertionOperator(assertion_operator), assertion_expected,
-                                 "assert dialog message")
-
+                verify_assertion(response.body,
+                                 AssertionOperator(assertion_operator), assertion_expected, "assert dialog message")
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))

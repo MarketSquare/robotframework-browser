@@ -16,7 +16,7 @@ import { Dialog, FileChooser, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog } from './response-util';
+import { emptyWithLog, stringResponse } from './response-util';
 import { invokeOnKeyboard, invokeOnMouse, invokeOnPage, invokePlaywrightMethod } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -137,15 +137,16 @@ export async function uploadFile(request: Request.FilePath, page?: Page): Promis
     return emptyWithLog('Succesfully uploaded file');
 }
 
-export async function handleAlert(request: Request.AlertAction, page?: Page): Promise<Response.Empty> {
+export async function handleAlert(request: Request.AlertAction, page?: Page): Promise<Response.String> {
     const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
     const promptInput = request.getPromptinput();
     const fn = async (dialog: Dialog) => {
         if (promptInput) await dialog[alertAction](promptInput);
         else await dialog[alertAction]();
     };
-    await invokeOnPage(page, 'on', 'dialog', fn);
-    return emptyWithLog('Set event handler for next alert');
+    const dialog = await invokeOnPage(page, 'on', 'dialog', fn);
+    // TODO, expecting dialog but getting page
+    return stringResponse(dialog.message, 'Set event handler for next alert');
 }
 
 export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {
