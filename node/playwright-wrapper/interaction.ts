@@ -144,9 +144,8 @@ export async function handleAlert(request: Request.AlertAction, page?: Page): Pr
         if (promptInput) await dialog[alertAction](promptInput);
         else await dialog[alertAction]();
     };
-    const dialog = await invokeOnPage(page, 'on', 'dialog', fn);
-    // TODO, expecting dialog but getting page
-    return stringResponse(dialog.message, 'Set event handler for next alert');
+    await invokeOnPage(page, 'on', 'dialog', fn);
+    return stringResponse('don't know were to get dialog message from', 'Set event handler for next alert');
 }
 
 export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {
