@@ -1,4 +1,4 @@
 Greater
 
 0) 1
-1) '1' (int) should be less than '0' (int)
+1) custom '1' (int) should be less than '0' (int)
