@@ -534,8 +534,22 @@ class Browser(DynamicCore):
     can be also translated to modules that can be used from Node.js. For example TypeScript, PureScript and
     ClojureScript just to mention few.
 
-    Exposed functions will get the playwright page object as the first argument. Second argument is a list of
-    strings from Robot Framework keyword call.
+    | async function myGoToKeyword(page, args, logger, playwright) {
+    |   logger(args.toString())
+    |   playwright.coolNewFeature()
+    |   return await page.goto(args[0]);
+    | }
+
+    ``page``: [https://github.com/microsoft/playwright/blob/master/docs/api.md#class-page|the playwright Page object].
+
+    ``args``: list of strings from Robot Framework keyword call.
+
+    !! A BIT UNSTABLE AND SUBJECT TO API CHANGES !!
+    ``logger``: callback function that takes strings as arguments and writes them to robot log. Can be called multiple times.
+
+    ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://github.com/microsoft/playwright/blob/master/docs/api.md#playwright-module | API docs]
+
+
 
     == Example module.js ==
 
