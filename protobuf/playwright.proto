@@ -183,6 +183,7 @@ message Request {
   message AlertAction {
     string alertAction = 1;
     string promptInput = 2;  
+	string expectedDialogText = 3;
   }
 
   message Bool {
@@ -338,7 +339,7 @@ service  Playwright {
   rpc GetDevice(Request.Device) returns (Response.Json);
   rpc GetDevices(Request.Empty) returns (Response.Json);
 
-  rpc HandleAlert(Request.AlertAction) returns (Response.String);
+  rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
 
   rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);
   rpc MouseMove(Request.Json) returns (Response.Empty);

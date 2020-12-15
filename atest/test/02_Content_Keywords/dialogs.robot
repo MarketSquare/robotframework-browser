@@ -10,12 +10,12 @@ Dismiss Alert
 
 Dismiss Alert Check Alert Message
     [Tags]      dialog
-    Handle Future Dialogs    action=dismiss     assertion_operator=should be     assertion_expected=Am an alert
+    Handle Future Dialogs    action=dismiss     expected_dialog_text=Am an alert
     Click    \#alerts
 
 Dismiss Alert Should fail within incorrect dismiss alert message
     [Tags]      dialog
-    Handle Future Dialogs    action=dismiss     assertion_operator=should not be     assertion_expected=Am not an alert
+    Handle Future Dialogs    action=dismiss     expected_dialog_text=incorrect alert text
     Click    \#alerts
 
 Accept Alert
@@ -25,12 +25,12 @@ Accept Alert
 
 Accept Alert Check Alert Message
     [Tags]      dialog
-    Handle Future Dialogs    action=accept    assertion_operator=should start with    assertion_expected=Am an
+    Handle Future Dialogs    action=accept    expected_dialog_text=Am an alert
     Click    \#alerts
 
 Accept Alert Check fail with incorrect accept alert Message
     [Tags]      dialog
-    Handle Future Dialogs    action=accept    assertion_operator=should end with    assertion_expected=an alert
+    Handle Future Dialogs    action=accept    expected_dialog_text=incorrect alert text
     Click    \#alerts
 
 Clicking Through Alert Fails

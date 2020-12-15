@@ -588,8 +588,7 @@ class Interaction(LibraryComponent):
         self,
         action: DialogAction,
         prompt_input: str = "",
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        expected_dialog_text: str = None
     ):
         """Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
@@ -598,7 +597,7 @@ class Interaction(LibraryComponent):
 
             ``prompt_input`` The value to enter into prompt. Only valid if
             ``action`` equals accept. Defaults to empty string.
-
+            ``expectedDialogText`` The text expected being on the dialog. Default to no checking
             Optionally asserts the dialog message.
 
             See `Assertions` for further details for the assertion arguments. Defaults to None.
@@ -609,15 +608,8 @@ class Interaction(LibraryComponent):
             if prompt_input and action is not DialogAction.accept:
                 raise ValueError("prompt_input is only valid if action is 'accept'")
             response = stub.HandleAlert(
-                Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
+                Request().AlertAction(alertAction=action.name, promptInput=prompt_input, expectedDialogText=expected_dialog_text)
             )
-            if assertion_operator is not None:
-                verify_assertion(
-                    response.body,
-                    AssertionOperator(assertion_operator),
-                    assertion_expected,
-                    "assert dialog message",
-                )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
