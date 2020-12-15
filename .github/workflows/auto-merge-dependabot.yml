@@ -16,6 +16,7 @@ jobs:
     name: Automerge Dependabot
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
+    needs: test-install
     steps:
       - name: 'Wait for status checks'
         id: waitforstatuschecks
