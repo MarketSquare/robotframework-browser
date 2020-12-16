@@ -11,7 +11,7 @@ from Browser.assertion_engine import (
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
-@pytest.mark.skipif(sys.platform == "win32")
+@pytest.mark.skipif(sys.platform == "win32", reason="Works only in Linux")
 def test_custom_error():
     results = [
         _validate_operator(
