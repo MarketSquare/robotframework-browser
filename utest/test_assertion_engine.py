@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from approvaltests import verify_all  # type: ignore
 
@@ -9,12 +11,9 @@ from Browser.assertion_engine import (
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
-def test_equals():
+@pytest.mark.skipif(sys.platform == "win32")
+def test_custom_error():
     results = [
-        _validate_operator(AssertionOperator["=="], "actual", "actual"),
-        _validate_operator(
-            AssertionOperator["=="], "actual", "unexpected", "partial error"
-        ),
         _validate_operator(
             AssertionOperator["=="],
             "actual",
@@ -28,6 +27,23 @@ def test_equals():
             "åß∂ƒ©˙∆˚¬…æ",
             "partial error",
             "{value} {value_type} custom message {expected} {expected_type}",
+        ),
+        _validate_operator(
+            AssertionOperator["=="],
+            "ääööÅÅ",
+            "åß∂ƒ©˙∆˚¬…æ",
+            "partial error",
+            "{value} custom message {expected}",
+        ),
+    ]
+    verify_all("Test custom error", results)
+
+
+def test_equals():
+    results = [
+        _validate_operator(AssertionOperator["=="], "actual", "actual"),
+        _validate_operator(
+            AssertionOperator["=="], "actual", "unexpected", "partial error"
         ),
         _validate_operator(AssertionOperator["=="], 1, "1"),
     ]
