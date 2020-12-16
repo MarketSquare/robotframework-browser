@@ -72,24 +72,38 @@ T = TypeVar("T")
 
 
 def verify_assertion(
-    value: T, operator: Optional[AssertionOperator], expected: Any, message=""
+    value: T,
+    operator: Optional[AssertionOperator],
+    expected: Any,
+    message="",
+    custom_message="",
 ) -> Any:
     if operator is None:
         return value
     if operator is AssertionOperator["then"]:
         return cast(T, BuiltIn().evaluate(expected, namespace={"value": value}))
     handler = handlers.get(operator)
+    filler = " " if message else ""
     if handler is None:
-        handler_filler = " " if message else ""
         raise RuntimeError(
-            f"{message}{handler_filler}`{operator}` is not a valid assertion operator"
+            f"{message}{filler}`{operator}` is not a valid assertion operator"
         )
     validator, text = handler
     if not validator(value, expected):
-        filler = " " if message else ""
-        raise AssertionError(
-            f"{message}{filler}'{value}' ({type_converter(value)}) {text} '{expected}' ({type_converter(expected)})"
-        )
+        if not custom_message:
+            error_msg = (
+                f"{message}{filler}'{value}' ({type_converter(value)}) "
+                f"{text} '{expected}' ({type_converter(expected)})"
+            )
+        else:
+            error_msg = custom_message.format(
+                value=value,
+                value_type=type_converter(value),
+                expected=expected,
+                expected_type=type_converter(expected),
+            )
+            print(error_msg)
+        raise AssertionError(error_msg)
     return value
 
 
