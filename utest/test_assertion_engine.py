@@ -13,8 +13,14 @@ def test_equals():
     results = [
         _validate_operator(AssertionOperator["=="], "actual", "actual"),
         _validate_operator(AssertionOperator["=="], "actual", "unexpected", "partial error"),
+        _validate_operator(AssertionOperator["=="], "actual", "unexpected", "partial error", "custom message"),
+        _validate_operator(
+            AssertionOperator["=="],
+            "ääööÅÅ",
+            "åß∂ƒ©˙∆˚¬…æ",
+            "partial error",
+            "{value} {value_type} custom message {expected} {expected_type}"),
         _validate_operator(AssertionOperator["=="], 1, "1"),
-
     ]
     verify_all("Test equals", results)
 
@@ -184,9 +190,9 @@ def test_invalid_operator():
     verify_all("Custom error", results)
 
 
-def _validate_operator(operator: AssertionOperator, actual, expected, message=""):
+def _validate_operator(operator: AssertionOperator, actual, expected, message="", custom_message=""):
     try:
-        return verify_assertion(actual, operator, expected, message)
+        return verify_assertion(actual, operator, expected, message, custom_message)
     except Exception as error:
         return error
 

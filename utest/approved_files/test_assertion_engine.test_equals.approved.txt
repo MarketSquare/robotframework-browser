@@ -2,4 +2,6 @@ Test equals
 
 0) actual
 1) partial error 'actual' (str) should be 'unexpected' (str)
-2) '1' (int) should be '1' (str)
+2) custom message
+3) ääööÅÅ str custom message åß∂ƒ©˙∆˚¬…æ str
+4) '1' (int) should be '1' (str)
