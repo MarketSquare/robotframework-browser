@@ -1,0 +1,5 @@
+Test custom error
+
+0) custom message
+1) ääööÅÅ str custom message åß∂ƒ©˙∆˚¬…æ str
+2) ääööÅÅ custom message åß∂ƒ©˙∆˚¬…æ
