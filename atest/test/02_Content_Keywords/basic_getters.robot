@@ -33,8 +33,7 @@ Get Property innerText
     Should Be Equal    ${inner_text}    User Name:
 
 Get Property size
-    Sleep  1
-    ${size}=    Get Property    ${InputUsername}    type
+    [Tags]    Not-Implemented
     Should Be Equal    ${size}    text
     Get Property    ${InputUsername}    type    ==    text
 
