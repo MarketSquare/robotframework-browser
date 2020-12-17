@@ -581,6 +581,7 @@ class Getters(LibraryComponent):
         key: BoundingBoxFields = BoundingBoxFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
@@ -618,7 +619,8 @@ class Getters(LibraryComponent):
                     parsed[key.name],
                     assertion_operator,
                     assertion_expected,
-                    f"BoundingBox {key.name} is ",
+                    f"BoundingBox {key.name} is",
+                    message,
                 )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
