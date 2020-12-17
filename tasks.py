@@ -410,6 +410,23 @@ def docker_test(c):
           """
     )
 
+@task()
+def docker_run_tmp_tests(c):
+    """
+    Run robot with dev Browser from docker against tmp dir.
+    """
+    c.run(
+        """docker run\
+        --rm \
+        --ipc=host\
+        --security-opt seccomp=atest/docker/chrome.json \
+        -v $(pwd)/tmp/:/app/tmp \
+        -v $(pwd)/node/:/app/node/ \
+        --workdir /app \
+        rfbrowser \
+        sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin robot --loglevel debug --outputdir /app/tmp/output /app/tmp/"
+        """
+    )
 
 @task(build)
 def run_test_app(c):

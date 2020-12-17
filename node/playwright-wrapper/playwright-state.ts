@@ -174,9 +174,13 @@ export class PlaywrightState {
 
     public async getCatalog() {
         const pageToContents = async (page: IndexedPage) => {
+            let title = null;
+            try {
+                title = await page.p.title();
+            } catch (e) {}
             return {
                 type: 'page',
-                title: await page.p.title(),
+                title,
                 url: page.p.url(),
                 id: page.id,
                 timestamp: page.timestamp,
