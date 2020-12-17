@@ -33,12 +33,7 @@ Get Property innerText
     Should Be Equal    ${inner_text}    User Name:
 
 Get Property size
-    # FIXME: this should not be expensive enough of a operation to warrant this long timeout
-    # It might be a problem caused by parallel execution in CI, or a real bug
-    ${old_timeout}    Set Browser Timeout    10s
-    ${size}=    Get Property    ${InputUsername}    type
-    Should Be Equal    ${size}    text
-    [Teardown]    Set Browser Timeout    ${old_timeout}
+    Get Property    ${InputUsername}    type    ==    text
 
 Get Property and Then .. (Closure)
     ${text}=    Get Property    h1    innerText    then    value.replace('g', 'k')
