@@ -20,7 +20,7 @@
     "grpc-tools": "^1.10.0",
     "grpc_tools_node_protoc_ts": "^5.0.1",
     "html-webpack-plugin": "^4.5.0",
-    "husky": "^4.2.5",
+    "husky": "^4.3.6",
     "lint-staged": "^10.5.3",
     "pino": "^6.8.0",
     "prettier": "^2.2.1",
