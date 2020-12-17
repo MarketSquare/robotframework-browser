@@ -6,6 +6,7 @@ Library           OperatingSystem
 Open PDF in another tab and download it
     [Setup]    New Browser    headless=${FALSE}    downloadsPath=${EXECDIR}
     New Context    acceptDownloads=${TRUE}
+    Set Browser Timeout    30s
     New Page    ${WELCOME_URL}
     Click    text=Open pdf
     Switch Page    NEW

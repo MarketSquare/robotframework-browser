@@ -167,7 +167,7 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
         throw new Error('Download requires an active page');
     }
     const urlString = request.getUrl();
-    const script = (urlString: string) => {
+    const script = (urlString: string): Promise<string | void> => {
         return fetch(urlString)
             .then((resp) => {
                 return resp.blob();

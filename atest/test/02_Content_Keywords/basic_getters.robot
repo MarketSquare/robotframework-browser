@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Suite Setup       New Page    ${LOGIN_URL}
+Test Setup        New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${UserNameLabel}=    label[for="username_field"]
@@ -33,8 +33,9 @@ Get Property innerText
     Should Be Equal    ${inner_text}    User Name:
 
 Get Property size
-    ${size}=    Get Property    ${InputUsername}    type
+    [Tags]    Not-Implemented
     Should Be Equal    ${size}    text
+    Get Property    ${InputUsername}    type    ==    text
 
 Get Property and Then .. (Closure)
     ${text}=    Get Property    h1    innerText    then    value.replace('g', 'k')
