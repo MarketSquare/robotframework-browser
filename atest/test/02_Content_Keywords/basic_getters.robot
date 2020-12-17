@@ -4,7 +4,7 @@ Test Setup        New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${UserNameLabel}=    label[for="username_field"]
-${InputUsername}=    ${UserNameLabel} >> //../.. >> input
+${InputUsername}=    ${UserNameLabel} >> //.. >> input
 
 *** Test Cases ***
 Get Text
@@ -33,6 +33,7 @@ Get Property innerText
     Should Be Equal    ${inner_text}    User Name:
 
 Get Property size
+    Sleep  1
     ${size}=    Get Property    ${InputUsername}    type
     Should Be Equal    ${size}    text
     Get Property    ${InputUsername}    type    ==    text
