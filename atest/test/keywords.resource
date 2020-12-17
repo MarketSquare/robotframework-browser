@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          variables.resource
-Library           Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}    run_on_failure=None
+Library           Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}
 Library           OperatingSystem
 Library           DateTime
 Library           Collections
