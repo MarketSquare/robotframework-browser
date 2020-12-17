@@ -435,6 +435,7 @@ def run_test_app(c):
 
 @task
 def docs(c):
+    """Generate library keyword documentation."""
     output = ROOT_DIR / "docs" / "Browser.html"
     libdoc("Browser", str(output))
     with output.open("r") as file:
