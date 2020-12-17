@@ -460,8 +460,17 @@ class Browser(DynamicCore):
     | ``evaluate``        |  ``then``                         | When using this operator, the keyword does return the evaluated Python expression. |                        |
 
 
-    The keywords will provide an error message if the assertion fails.
-    Assertions will retry until ``timeout`` has expired if they do not pass.
+    Bu default the keywords will provide an error message if the assertion fails,
+    but default error message can be overwritten with a ``message`` argument. The
+    ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
+    `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
+    options. The `{value}` is the value returned by the keyword and the `{expected}`
+    is the expected value defined by the user, usually value in the
+    ``assertion_expected`` argument. The `{value_type}` and
+    `{expected_type}` are the type definitions returned by the Python
+    [https://docs.python.org/3/library/functions.html#type|type] method for the
+    `{value}`  and `{expected}` values. Assertions will retry until ``timeout``
+    has expired if they do not pass.
 
     The assertion ``assertion_expected`` value is not converted by the library and
     is used as is. Therefore when assertion is made, the ``assertion_expected``
