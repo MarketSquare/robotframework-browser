@@ -132,5 +132,17 @@ Get Element width and height
     ${wh}=    Get BoundingBox    \#progress_bar    ALL    evaluate    {'w': value['width'], 'h': value['height']}
     Should Be Equal    ${wh}    ${expected}
 
+Get BoundingBox Normal Error
+    Run Keyword And Expect Error
+    ...    BoundingBox x is '0' (int) should be '99.0' (float)
+    ...    Get BoundingBox    \#progress_bar    x    ==    99
+
+Get BoundingBox Custom Error
+    Run Keyword And Expect Error
+    ...    Custom Error 0 int 99.0 float
+    ...    Get BoundingBox
+    ...    \#progress_bar    x    ==    99
+    ...    Custom Error {value} {value_type} {expected} {expected_type}
+
 Get Page Source
     Get Page Source    contains    <title>Login Page</title>
