@@ -4,7 +4,7 @@ Test Setup        New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${UserNameLabel}=    label[for="username_field"]
-${InputUsername}=    ${UserNameLabel} >> //.. >> input
+${InputUsername}=    ${UserNameLabel} >> //../.. >> input
 
 *** Test Cases ***
 Get Text
