@@ -588,7 +588,8 @@ class Interaction(LibraryComponent):
         self,
         action: DialogAction,
         prompt_input: str = "",
-        expected_dialog_text: str = None
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
     ):
         """Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
@@ -597,8 +598,8 @@ class Interaction(LibraryComponent):
 
             ``prompt_input`` The value to enter into prompt. Only valid if
             ``action`` equals accept. Defaults to empty string.
-            ``expectedDialogText`` The text expected being on the dialog. Default to no checking
-            Optionally asserts the dialog message.
+            If ``assertion_operator`` is set and property is not found, ``value`` is ``None``
+            and Keyword does not fail. See `Get Attribute` for examples.
 
             See `Assertions` for further details for the assertion arguments. Defaults to None.
 
@@ -608,9 +609,18 @@ class Interaction(LibraryComponent):
             if prompt_input and action is not DialogAction.accept:
                 raise ValueError("prompt_input is only valid if action is 'accept'")
             response = stub.HandleAlert(
-                Request().AlertAction(alertAction=action.name, promptInput=prompt_input, expectedDialogText=expected_dialog_text)
+                Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
             )
             logger.debug(response.log)
+            if assertion_operator is not None:
+                dialog_text = response.body
+                logger.debug(dialog_text)
+                verify_assertion(
+                    dialog_text,
+                    assertion_operator,
+                    assertion_expected,
+                    f"Asserting dialog text",
+                )
 
     @keyword(tags=("Setter", "PageContent"))
     def mouse_button(

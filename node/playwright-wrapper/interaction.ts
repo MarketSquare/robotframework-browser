@@ -137,24 +137,16 @@ export async function uploadFile(request: Request.FilePath, page?: Page): Promis
     return emptyWithLog('Succesfully uploaded file');
 }
 
-export async function handleAlert(request: Request.AlertAction, page?: Page): Promise<Response.Empty> {
+export async function handleAlert(request: Request.AlertAction, page?: Page): Promise<Response.String> {
     const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
     const promptInput = request.getPromptinput();
-    const expectedDialogText: string = request.getExpecteddialogtext();
-
     const fn = async (dialog: Dialog) => {
         if (promptInput) await dialog[alertAction](promptInput);
         else await dialog[alertAction]();
-
-        if (expectedDialogText) {
-            const actualDialogText: string = dialog.message()
-            if (!(actualDialogText === expectedDialogText)) {
-                throw new Error(`Dialog message (${expectedDialogText}) expected, but retrieved (${actualDialogText})`);
-            }
-        }
+        return dialog.message()
     };
-    await invokeOnPage(page, 'on', 'dialog', fn).catch();
-    return emptyWithLog('Set event handler for next alert');
+    const dialogMessage = await invokeOnPage(page, 'on', 'dialog', fn);
+    return stringResponse(dialogMessage, 'Set event handler for next alert');
 }
 
 export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {
