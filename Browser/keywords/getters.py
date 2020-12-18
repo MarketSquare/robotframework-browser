@@ -433,6 +433,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         expected_value: Union[int, str] = 0,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the count of elements found with ``selector``.
 
@@ -444,6 +445,8 @@ class Getters(LibraryComponent):
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
         ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
@@ -455,6 +458,7 @@ class Getters(LibraryComponent):
                 assertion_operator,
                 expected_value,
                 f"Element count for selector `{selector}` is",
+                message,
             )
 
     @keyword(tags=("Getter", "Assertion", "BrowserControl"))
@@ -593,6 +597,8 @@ class Getters(LibraryComponent):
         otherwise it will just return the single value selected by the key.
         Note: If a single value is retrieved, an assertion does *not* need a ``validate``
         combined with a cast of ``value``.
+
+        ``message`` overrides the default error message.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
@@ -738,6 +744,8 @@ class Getters(LibraryComponent):
         ``key`` Optionally filters the returned values.
         If keys is set to ``ALL`` (default) it will return the scroll size as dictionary,
         otherwise it will just return the single value selected by the key.
+
+        ``message`` overrides the default error message.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
