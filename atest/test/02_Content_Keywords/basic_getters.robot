@@ -146,3 +146,29 @@ Get BoundingBox Custom Error
 
 Get Page Source
     Get Page Source    contains    <title>Login Page</title>
+
+Get Client Size
+    ${size} =    Get Client Size
+    Should Be True    ${size}[width] > 0
+    Should Be True    ${size}[height] > 0
+
+Get Client Size Element
+    ${size} =    Get Client Size     \#progress_bar    width    >    0
+
+Get Client Size Element Default Error
+    Run Keyword And Expect Error
+    ...    Client height is '*' (int) should be less than '0.0' (float)
+    ...    Get Client Size     h1    height    <    0
+    ${expected} =    Create Dictionary    wrong=value
+    Run Keyword And Expect Error
+    ...    KeyError: 'width'
+    ...    Get Client Size     h1    all    <    ${expected}
+
+Get Client Size Element Custom Error
+    Run Keyword And Expect Error
+    ...    Custom Error With ÄÄÄÄ 0.0
+    ...    Get Client Size     h1    height    <    0    Custom Error With ÄÄÄÄ {expected}
+    ${expected} =    Create Dictionary    wrong=value
+    Run Keyword And Expect Error
+    ...    Custom Error With ÄÄÄÄ {'wrong': 'value'}
+    ...    Get Client Size     h1    all    ==    ${expected}    Custom Error With ÄÄÄÄ {expected}
