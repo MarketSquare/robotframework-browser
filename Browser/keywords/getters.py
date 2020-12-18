@@ -392,6 +392,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         expected_state: Union[bool, str] = "Unchecked",
+        message: Optional[str] = None,
     ) -> bool:
         """Returns the state of the checkbox found by ``selector``.
 
@@ -414,6 +415,7 @@ class Getters(LibraryComponent):
         - ``checked`` => ``True``
         - ``unchecked`` => ``False``
 
+        ``message`` overrides the default error message.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
@@ -423,7 +425,11 @@ class Getters(LibraryComponent):
             value: bool = response.body
             logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
             return bool_verify_assertion(
-                value, assertion_operator, expected_state, f"Checkbox {selector} is"
+                value,
+                assertion_operator,
+                expected_state,
+                f"Checkbox {selector} is",
+                message,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
