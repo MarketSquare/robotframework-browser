@@ -683,6 +683,7 @@ class Getters(LibraryComponent):
         key: AreaFields = AreaFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
 
@@ -700,6 +701,8 @@ class Getters(LibraryComponent):
         If keys is set to ``ALL`` (default) it will return the scroll position as dictionary,
         otherwise it will just return the single value selected by the key.
 
+        ``message`` overrides the default error message.
+
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
@@ -716,6 +719,7 @@ class Getters(LibraryComponent):
                 assertion_operator,
                 assertion_expected,
                 "Scroll position is",
+                message,
             )
         else:
             logger.info(f"Value of '{key}'': {scroll_position[key.name]}")
@@ -723,7 +727,8 @@ class Getters(LibraryComponent):
                 scroll_position[key.name],
                 assertion_operator,
                 assertion_expected,
-                f"Scroll position {key.name} is ",
+                f"Scroll position {key.name} is",
+                message,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))

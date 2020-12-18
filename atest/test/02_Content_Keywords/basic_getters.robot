@@ -182,3 +182,32 @@ Get Client Size Element Custom Error
     Run Keyword And Expect Error
     ...    Custom Error With ÄÄÄÄ {'wrong': 'value'}
     ...    Get Client Size    h1    all    ==    ${expected}    Custom Error With ÄÄÄÄ {expected}
+
+Get Scroll Position
+    ${position} =    Get Scroll Position
+    Should Be True    ${position}[top] >= 0
+    Should Be True    ${position}[left] >= 0
+    Should Be True    ${position}[bottom] > 0
+    Should Be True    ${position}[right] > 0
+    Length Should Be    ${position}    4
+
+Get Scroll Position Element
+    Get Scroll Position    h1    top    >=    0
+
+Get Scroll Position Element Default Error
+    Run Keyword And Expect Error
+    ...    Scroll position top is '0' (int) should be less than '0.0' (float)
+    ...    Get Scroll Position    h1    top    <    0
+    ${expected} =    Create Dictionary    top=-1    left=-1    bottom=-1    right=-1
+    Run Keyword And Expect Error
+    ...    Scroll position is * (dict) should be '{'top': '-1', 'left': '-1', 'bottom': '-1', 'right': '-1'}' (dotdict)
+    ...    Get Scroll Position    h1    all    ==    ${expected}
+
+Get Scroll Position Element Custom Error
+    Run Keyword And Expect Error
+    ...    Kala ÄÄ 0.0
+    ...    Get Scroll Position    h1    top    <    0    Kala ÄÄ {expected}
+    ${expected} =    Create Dictionary    top=-1    left=-1    bottom=-1    right=-1
+    Run Keyword And Expect Error
+    ...    Kala ÄÄ {'top': '-1', 'left': '-1', 'bottom': '-1', 'right': '-1'}
+    ...    Get Scroll Position    h1    all    ==    ${expected}    Kala ÄÄ {expected}
