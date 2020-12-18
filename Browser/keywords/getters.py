@@ -727,6 +727,7 @@ class Getters(LibraryComponent):
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
@@ -751,6 +752,7 @@ class Getters(LibraryComponent):
                 assertion_operator,
                 assertion_expected,
                 "Client size is",
+                message,
             )
         else:
             logger.info(f"Value of '{key}'': {client_size[key.name]}")
@@ -758,7 +760,8 @@ class Getters(LibraryComponent):
                 client_size[key.name],
                 assertion_operator,
                 assertion_expected,
-                f"Client {key.name} is ",
+                f"Client {key.name} is",
+                message,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
