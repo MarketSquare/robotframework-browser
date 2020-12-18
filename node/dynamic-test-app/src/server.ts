@@ -53,6 +53,24 @@ app.get('/slowpage.html', (req, res) => {
     }, 11000);
 });
 
+app.get('/redirector.html', (req, res) => {
+    setTimeout(() => {
+        res.redirect('/redirector2.html');
+    }, 700);
+});
+
+app.get('/redirector2.html', (req, res) => {
+    setTimeout(() => {
+        res.redirect('/postredirect.html');
+    }, 700);
+});
+
+app.post('/posted.html', (req, res) => {
+    setTimeout(() => {
+        res.send('<html lang="en"><head><title>Posted</title></head><body>Posted HELLO!!</body></html>');
+    }, 100);
+});
+
 app.use(express.static(path.join(__dirname, '..')));
 app.use(express.static(path.join(__dirname, '..', 'static')));
 
