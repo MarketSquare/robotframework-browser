@@ -636,6 +636,7 @@ class Getters(LibraryComponent):
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
 
@@ -646,6 +647,8 @@ class Getters(LibraryComponent):
         ``key`` Optionally filters the returned values.
         If keys is set to ``ALL`` (default) it will return the scroll size as dictionary,
         otherwise it will just return the single value selected by the key.
+
+        ``message`` overrides the default error message.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
@@ -666,6 +669,7 @@ class Getters(LibraryComponent):
                 assertion_operator,
                 assertion_expected,
                 "Scroll size is",
+                message,
             )
         else:
             logger.info(f"Value of '{key}'': {scroll_size[key.name]}")
@@ -673,7 +677,8 @@ class Getters(LibraryComponent):
                 scroll_size[key.name],
                 assertion_operator,
                 assertion_expected,
-                f"Scroll {key.name} is ",
+                f"Scroll {key.name} is",
+                message,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
