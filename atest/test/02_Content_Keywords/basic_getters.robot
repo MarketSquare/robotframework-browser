@@ -211,3 +211,30 @@ Get Scroll Position Element Custom Error
     Run Keyword And Expect Error
     ...    Kala ÄÄ {'top': '-1', 'left': '-1', 'bottom': '-1', 'right': '-1'}
     ...    Get Scroll Position    h1    all    ==    ${expected}    Kala ÄÄ {expected}
+
+Get Scroll Size
+    ${size} =    Get Scroll Size
+    Should Be True    ${size}[width] >= 0
+    Should Be True    ${size}[height] >= 0
+    Length Should Be    ${size}    2
+
+Get Scroll Size Element
+    ${size} =    Get Scroll Size    h1    width    >=    0
+
+Get Scroll Size Element Default Error
+    Run Keyword And Expect Error
+    ...    Scroll width is * (int) should be less than '0.0' (float)
+    ...    Get Scroll Size    h1    width    <    0
+    ${expected} =    Create Dictionary    top=-1    left=-1
+    Run Keyword And Expect Error
+    ...    Scroll size is * (dict) should be '{'top': '-1', 'left': '-1'}' (dotdict)
+    ...    Get Scroll Size    h1    all    ==    ${expected}
+
+Get Scroll Size Element Custom Error
+    Run Keyword And Expect Error
+    ...    Tidii
+    ...    Get Scroll Size    h1    width    <    0    Tidii
+    ${expected} =    Create Dictionary    top=-1    left=-1
+    Run Keyword And Expect Error
+    ...    Tidii {'top': '-1', 'left': '-1'}"
+    ...    Get Scroll Size    h1    all    ==    ${expected}    Tidii {expected}"
