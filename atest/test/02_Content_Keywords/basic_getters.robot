@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Suite Setup       New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${UserNameLabel}=    label[for="username_field"]
@@ -104,6 +104,16 @@ Get Element Count and Assert
     ${promise}=    Promise to    Get Element Count    label
     ${count}=    Wait for    ${promise}
     should be equal    ${count}    ${2}
+
+Get Element Count Default Error
+    Run Keyword And Expect Error
+    ...    Element count for selector `h1` is '1' (int) should be less than '1.0' (float)
+    ...    Get Element Count    h1    <    1
+
+Get Element Count Custom Error
+    Run Keyword And Expect Error
+    ...    My Errör
+    ...    Get Element Count    h1    <    1    My Errör
 
 Get Style and Assert
     Get Style    h1    ALL    *=    align-content
