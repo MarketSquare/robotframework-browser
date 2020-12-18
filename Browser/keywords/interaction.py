@@ -619,7 +619,7 @@ class Interaction(LibraryComponent):
                     dialog_text,
                     assertion_operator,
                     assertion_expected,
-                    f"Asserting dialog text",
+                    "Asserting dialog text",
                 )
 
     @keyword(tags=("Setter", "PageContent"))
