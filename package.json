@@ -39,7 +39,7 @@
     "@grpc/grpc-js": "^1.2.2",
     "@types/uuid": "^8.3.0",
     "google-protobuf": "3.14.0",
-    "playwright": "^1.7.0",
+    "playwright": "^1.8.0-next.1608058261773",
     "uuid": "^8.3.2"
   },
   "husky": {
