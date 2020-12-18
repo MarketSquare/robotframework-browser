@@ -262,3 +262,20 @@ Get Viewport Size Custom Error
     Run Keyword And Expect Error
     ...    My error dotdict
     ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}
+
+Get Element State
+    ${state} =    Get Element State    h1
+    Should Be True    ${state}
+
+Get Element State With Assertion
+    Get Element State    h1    readonly    ==    False
+
+Get Element State Default Error
+    Run Keyword And Expect Error
+    ...    State 'readonly' of 'h1' is 'False' (bool) should be 'True' (bool)
+    ...    Get Element State    h1    readonly    ==    True
+
+Get Element State Custom Error
+    Run Keyword And Expect Error
+    ...    Tidii
+    ...    Get Element State    h1    readonly    ==    True    Tidii
