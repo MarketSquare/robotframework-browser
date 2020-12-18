@@ -238,3 +238,27 @@ Get Scroll Size Element Custom Error
     Run Keyword And Expect Error
     ...    Tidii {'top': '-1', 'left': '-1'}"
     ...    Get Scroll Size    h1    all    ==    ${expected}    Tidii {expected}"
+
+Get Viewport Size
+    ${size} =    Get Viewport Size
+    Should Be True    ${size}[width] >= 0
+    Should Be True    ${size}[height] >= 0
+    Length Should Be    ${size}    2
+
+Get Viewport Size Default Error
+    Run Keyword And Expect Error
+    ...    SizeFields.height is '720' (int) should be less than '0.0' (float)
+    ...    Get Viewport Size    height    <    0
+    ${expected} =    Create Dictionary    width=-1    height=-1
+    Run Keyword And Expect Error
+    ...    Viewport size is * (dict) should be '{'width': '-1', 'height': '-1'}' (dotdict)
+    ...    Get Viewport Size    all    ==    ${expected}
+
+Get Viewport Size Custom Error
+    Run Keyword And Expect Error
+    ...    My error
+    ...    Get Viewport Size    height    <    0    My error
+    ${expected} =    Create Dictionary    width=-1    height=-1
+    Run Keyword And Expect Error
+    ...    My error dotdict
+    ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}

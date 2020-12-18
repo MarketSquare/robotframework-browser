@@ -468,6 +468,7 @@ class Getters(LibraryComponent):
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the current viewport dimensions.
 
@@ -478,6 +479,8 @@ class Getters(LibraryComponent):
         otherwise it will just return the single value selected by the key.
         Note: If a single value is retrieved, an assertion does *not* need a ``validate``
         combined with a cast of ``value``.
+
+        ``message`` overrides the default error message.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
@@ -493,7 +496,11 @@ class Getters(LibraryComponent):
             logger.debug(parsed)
             if key == SizeFields.ALL:
                 return int_dict_verify_assertion(
-                    parsed, assertion_operator, assertion_expected, "Viewport size is"
+                    parsed,
+                    assertion_operator,
+                    assertion_expected,
+                    "Viewport size is",
+                    message,
                 )
             else:
                 logger.info(f"Value of '{key}'': {parsed[key.name]}")
@@ -501,7 +508,8 @@ class Getters(LibraryComponent):
                     parsed[key.name],
                     assertion_operator,
                     assertion_expected,
-                    f"{key} is ",
+                    f"{key} is",
+                    message,
                 )
 
     @keyword(tags=("Getter", "PageContent"))
