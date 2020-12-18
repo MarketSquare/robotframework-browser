@@ -803,6 +803,7 @@ class Getters(LibraryComponent):
         state: ElementStateKey = ElementStateKey.visible,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: bool = True,
+        message: Optional[str] = None,
     ):
         """Get the given state from the element found by ``selector``.
 
@@ -825,6 +826,8 @@ class Getters(LibraryComponent):
 
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
+
+        ``message`` overrides the default error message.
         """
         funct = {
             ElementStateKey.disabled: "e => e.disabled",
@@ -862,4 +865,5 @@ class Getters(LibraryComponent):
                 assertion_operator,
                 assertion_expected,
                 f"State '{state.name}' of '{selector}' is",
+                message,
             )
