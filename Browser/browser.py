@@ -467,10 +467,10 @@ class Browser(DynamicCore):
     options. The `{value}` is the value returned by the keyword and the `{expected}`
     is the expected value defined by the user, usually value in the
     ``assertion_expected`` argument. The `{value_type}` and
-    `{expected_type}` are the type definitions returned by the Python
-    [https://docs.python.org/3/library/functions.html#type|type] method for the
-    `{value}`  and `{expected}` values. Assertions will retry until ``timeout``
-    has expired if they do not pass.
+    `{expected_type}` are the type definitions from `{value}` and `{expected}`
+    arguments. In similar fashion as Python
+    [https://docs.python.org/3/library/functions.html#type|type] returns type definition.
+    Assertions will retry until ``timeout`` has expired if they do not pass.
 
     The assertion ``assertion_expected`` value is not converted by the library and
     is used as is. Therefore when assertion is made, the ``assertion_expected``
