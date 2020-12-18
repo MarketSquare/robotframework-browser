@@ -4091,10 +4091,10 @@ pkg-dir@^5.0.0:
   dependencies:
     find-up "^5.0.0"
 
-playwright@^1.8.0-next.1608058261773:
-  version "1.8.0-next.1608267826725"
-  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.8.0-next.1608267826725.tgz#6c3b92fddbef9f64d3d210126ac46fcbb4beb479"
-  integrity sha512-NdwE3jyVcAiNP8pRl1MlClvyjep64PnjHWetpN/5DqzQNkOkUoEGXuRj69VVrYLFkTMMl3O5o1zwzpStmNERwA==
+playwright@^1.7.0:
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/playwright/-/playwright-1.7.0.tgz#72a836dcdfa5a99cc36981eb2e86abafd9a30ce3"
+  integrity sha512-yHf4lySomty4wtWetzXu71zswPOBMHnCqyeGM3dMRObuflyuIUWb0/U++hxZnwHCkyS1H8/1+93Rjq25Rz3IGw==
   dependencies:
     debug "^4.1.1"
     extract-zip "^2.0.1"
