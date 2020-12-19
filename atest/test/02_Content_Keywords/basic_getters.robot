@@ -351,3 +351,13 @@ Get Element State Custom Error
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Element State    h1    readonly    ==    True    Tidii
+
+Get Url Default Error
+    Run Keyword And Expect Error
+    ...    URL 'http://localhost:*' (str) should contain 'Valid' (str)
+    ...    Get Url    contains    Valid
+
+Get Url Custom Error
+    Run Keyword And Expect Error
+    ...    Tidii
+    ...    Get Url    contains    Valid    Tidii
