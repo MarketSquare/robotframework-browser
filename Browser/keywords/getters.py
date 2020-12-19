@@ -237,7 +237,11 @@ class Getters(LibraryComponent):
                 raise AttributeError(f"Attribute '{attribute}' not found!")
             logger.debug(f"Attribute is: {value}")
             return verify_assertion(
-                value, assertion_operator, assertion_expected, f"Attribute {selector}", message
+                value,
+                assertion_operator,
+                assertion_expected,
+                f"Attribute {selector}",
+                message,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
