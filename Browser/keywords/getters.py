@@ -332,6 +332,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns value of the textfield found by ``selector``.
 
@@ -341,12 +342,15 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        ``message`` overrides the default error message.
         """
         return verify_assertion(
             self.get_property(selector, "value"),
             assertion_operator,
             assertion_expected,
             f"Value {selector}",
+            message,
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
