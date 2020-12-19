@@ -46,19 +46,22 @@ class Getters(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the current URL.
 
         Optionally asserts that it matches the specified assertion.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        ``message`` overrides the default error message.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
             logger.debug(response.log)
             value = response.body
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "URL "
+                value, assertion_operator, assertion_expected, "URL", message
             )
 
     # @keyword(tags=("Getter", "Assertion", "BrowserControl"))
@@ -129,6 +132,8 @@ class Getters(LibraryComponent):
         Optionally asserts that it matches the specified assertion.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        ``message`` overrides the default error message.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
