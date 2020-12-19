@@ -106,6 +106,16 @@ Get Classes and Assert
     Get Classes    id=draggable    ==    react-draggable    box
     Get Classes    id=draggable    validate    "react-draggable-dragged" not in value
 
+Get Classes Default Error
+    Run Keyword And Expect Error
+    ...    Classes of id=draggable '[[]'box', 'react-draggable'[]]' (list) should contain 'not-here' (str)
+    ...    Get Classes    id=draggable    contains    not-here
+
+Get Classes Custom Error
+    Run Keyword And Expect Error
+    ...    My Custom Error
+    ...    Get Classes    id=draggable    contains    not-here    message=My Custom Error
+
 Get Element Count
     ${count}=    Get Element Count    h1
     Should Be Equal    ${count}    ${1}
