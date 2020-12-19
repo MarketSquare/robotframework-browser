@@ -22,6 +22,20 @@ Get Closed Browsers
     ${browsers}    Get Browser Catalog
     should be empty    ${browsers}
 
+Get Browser Catalog Default Error
+    New Browser
+    ${expected} =    Create List    1    2
+    Run Keyword And Expect Error
+    ...    Browser Catalog '*' (list) should be '[[]'1', '2'[]]' (list)
+    ...    Get Browser Catalog    ==    ${expected}
+
+Get Browser Catalog Custom Error
+    New Browser
+    ${expected} =    Create List    1    2
+    Run Keyword And Expect Error
+    ...    Tidii
+    ...    Get Browser Catalog    ==    ${expected}    Tidii
+
 Get Viewport Size
     New Context    viewport={"height": 600, "width": 800}
     New Page

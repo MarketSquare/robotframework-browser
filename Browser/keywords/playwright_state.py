@@ -537,9 +537,12 @@ class PlaywrightState(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Dict:
         """Returns all browsers, open contexts in them and open pages in these contexts.
         See `Browser, Context and Page` for more information about these concepts.
+
+        ``message`` overrides the default error message.
 
         The data is parsed into a python list containing data representing the open Objects.
 
@@ -610,7 +613,11 @@ class PlaywrightState(LibraryComponent):
             parsed = json.loads(response.json)
             logger.info(json.dumps(parsed))
             return verify_assertion(
-                parsed, assertion_operator, assertion_expected, "Browser Catalog "
+                parsed,
+                assertion_operator,
+                assertion_expected,
+                "Browser Catalog",
+                message,
             )
 
     @keyword(tags=("Setter", "BrowserControl"))
