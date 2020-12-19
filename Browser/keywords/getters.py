@@ -122,6 +122,7 @@ class Getters(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the title of the current page.
 
@@ -134,7 +135,7 @@ class Getters(LibraryComponent):
             logger.debug(response.log)
             value = response.body
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "Title "
+                value, assertion_operator, assertion_expected, "Title", message
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
