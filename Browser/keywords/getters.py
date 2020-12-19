@@ -278,6 +278,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns all classes of an element as a list.
 
@@ -301,6 +302,7 @@ class Getters(LibraryComponent):
             assertion_operator,
             expected,
             f"Classes of {selector}",
+            message,
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
