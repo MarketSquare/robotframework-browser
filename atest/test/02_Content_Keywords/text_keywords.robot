@@ -154,3 +154,15 @@ Fill Text with Clearing
     Fill Text    input#username_field    Wrong Text
     Fill Text    input#username_field    username
     Get TextField Value    css=input#username_field    ==    username
+
+Get TextField Value Default Error
+    Type Text    input#username_field    Wrong Text
+    Run Keyword And Expect Error
+    ...    Value css=input#username_field 'Wrong Text' (str) should be 'username' (str)
+    ...    Get TextField Value    css=input#username_field    ==    username
+
+Get TextField Value Custom Error
+    Type Text    input#username_field    Wrong Text
+    Run Keyword And Expect Error
+    ...    Tidii
+    ...    Get TextField Value    css=input#username_field    ==    username    Tidii
