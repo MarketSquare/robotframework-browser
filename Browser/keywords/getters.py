@@ -95,8 +95,11 @@ class Getters(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets pages HTML source as a string.
+
+        ``message`` overrides the default error message.
 
         Optionally does a string assertion.
 
@@ -107,7 +110,7 @@ class Getters(LibraryComponent):
             logger.debug(response.log)
             value = json.loads(response.body)
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "HTML: "
+                value, assertion_operator, assertion_expected, "HTML:", message
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))

@@ -209,6 +209,16 @@ Get BoundingBox Custom Error
 Get Page Source
     Get Page Source    contains    <title>Login Page</title>
 
+Get Page Source Default Error
+    Run Keyword And Expect Error
+    ...    HTML: '<!DOCTYPE html* (str) should contain 'tidii' (str)
+    ...    Get Page Source    contains    tidii
+
+Get Page Source Custom Error
+    Run Keyword And Expect Error
+    ...    KalaKala
+    ...    Get Page Source    contains    tidii    KalaKala
+
 Get Client Size
     ${size} =    Get Client Size
     Should Be True    ${size}[width] > 0
