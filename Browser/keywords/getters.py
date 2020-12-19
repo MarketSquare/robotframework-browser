@@ -244,6 +244,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns all HTML attribute names of an element as a list.
 
@@ -259,13 +260,15 @@ class Getters(LibraryComponent):
         - ``contains`` / ``*=`` only accepts one single expected value
 
         Other operators are not allowed.
+
+        ``message`` overrides the default error message.
         """
         attribute_names = self.library.execute_javascript(
             "(element) => element.getAttributeNames()", selector
         )
         expected = list(assertion_expected)
         return list_verify_assertion(
-            attribute_names, assertion_operator, expected, "Attribute names"
+            attribute_names, assertion_operator, expected, "Attribute names", message
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
