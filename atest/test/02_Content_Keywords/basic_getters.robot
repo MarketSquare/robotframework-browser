@@ -28,6 +28,16 @@ Get Text With Nonmatching Selector
 Get Property and Assert
     Get Property    h1    innerText    ==    Login Page
 
+Get Property Default Error
+    Run Keyword And Expect Error
+    ...    Property innerText 'Login Page' (str) should not be 'Login Page' (str)
+    ...    Get Property    h1    innerText    !=    Login Page
+
+Get Property Custom Error
+    Run Keyword And Expect Error
+    ...    Tidii
+    ...    Get Property    h1    innerText    !=    Login Page    Tidii
+
 Get Property innerText
     ${inner_text}=    Get Property    ${UserNameLabel}    innerText
     Should Be Equal    ${inner_text}    User Name:
