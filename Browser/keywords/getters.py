@@ -163,6 +163,7 @@ class Getters(LibraryComponent):
         property: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
@@ -178,6 +179,8 @@ class Getters(LibraryComponent):
         and Keyword does not fail. See `Get Attribute` for examples.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        ``message`` overrides the default error message.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
@@ -191,7 +194,11 @@ class Getters(LibraryComponent):
             else:
                 raise AttributeError(f"Property '{property}' not found!")
             return verify_assertion(
-                value, assertion_operator, assertion_expected, f"Property {property}"
+                value,
+                assertion_operator,
+                assertion_expected,
+                f"Property {property}",
+                message,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
