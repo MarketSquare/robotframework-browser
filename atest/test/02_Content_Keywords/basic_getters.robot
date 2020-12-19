@@ -71,6 +71,25 @@ Get Attribute Names
     END
     [Teardown]    Close Page
 
+Get Attribute Names Default Error
+    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    ${expected} =    Create List    1    3
+    Run Keyword And Expect Error
+    ...    Attribute names '*' (list) should be '?'1', '3'?' (list)
+    ...    Get Attribute Names    [name="readonly_input"]    ==    ${expected}
+    [Teardown]    Close Page
+
+Get Attribute Names Custom Error
+    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    ${expected} =    Create List    1    3
+    Run Keyword And Expect Error
+    ...    Custom error ?'1', '3'? list
+    ...    Get Attribute Names    [name="readonly_input"]    ==    ${expected}    message=Custom error {expected} {expected_type}
+    Run Keyword And Expect Error
+    ...    Custom error ?'1', '3'? list
+    ...    Get Attribute Names    [name="readonly_input"]    ==    1    3    message=Custom error {expected} {expected_type}
+    [Teardown]    Close Page
+
 Get Attribute Names and Assert single and multiple
     [Setup]    New Page    ${ELEMENT_STATE_URL}
     Get Attribute Names    [name="readonly_input"]    ==    type    name    value    readonly
