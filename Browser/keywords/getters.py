@@ -68,10 +68,13 @@ class Getters(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns page model state object as a dictionary.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        ``message`` overrides the default error message.
 
         This must be given on the page to ``window.__SET_RFBROWSER_STATE__``
 
@@ -86,7 +89,7 @@ class Getters(LibraryComponent):
             logger.debug(response.log)
             value = json.loads(response.result)
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "State "
+                value, assertion_operator, assertion_expected, "State", message
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
