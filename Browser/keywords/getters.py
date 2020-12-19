@@ -196,6 +196,7 @@ class Getters(LibraryComponent):
         attribute: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
@@ -211,6 +212,8 @@ class Getters(LibraryComponent):
         the keyword fails. If an assertion operator is set and the attribute is not present,
         the returned value is ``None``.
         This can be used to assert check the presents or the absents of an attribute.
+
+        ``message`` overrides the default error message.
 
         Example Element:
         | <button class="login button active" id="enabled_button" something>Login</button>
@@ -234,7 +237,7 @@ class Getters(LibraryComponent):
                 raise AttributeError(f"Attribute '{attribute}' not found!")
             logger.debug(f"Attribute is: {value}")
             return verify_assertion(
-                value, assertion_operator, assertion_expected, f"Attribute {selector}"
+                value, assertion_operator, assertion_expected, f"Attribute {selector}", message
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))

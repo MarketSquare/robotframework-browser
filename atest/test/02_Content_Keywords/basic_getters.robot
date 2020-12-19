@@ -50,8 +50,15 @@ Get Attribute
     ${type}=    Get Attribute    id=login_button    type
     Should Be Equal    ${type}    submit
 
-Get Attribute and Fail
-    Run Keyword And Expect Error    Attribute 'disabled' not found!    Get Attribute    id=login_button    disabled
+Get Attribute Default Error
+    Run Keyword And Expect Error
+    ...    Attribute 'disabled' not found!
+    ...    Get Attribute    id=login_button    disabled
+
+Get Attribute Custom Error
+    Run Keyword And Expect Error
+    ...    None, nonetype, True, bool
+    ...    Get Attribute    id=login_button    disabled    ==    ${True}    message={value}, {value_type}, {expected}, {expected_type}
 
 Get Attribute and Verify absense
     Get Attribute    id=login_button    disabled    ==    ${None}
