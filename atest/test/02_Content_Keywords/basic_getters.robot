@@ -152,6 +152,22 @@ Get Style with element
     ${elem}=    Get Element    h1
     Get Style    ${elem}    align-content    ==    normal
 
+Get Style Default Error
+    Run Keyword And Expect Error
+    ...    Computed style is * (dict) should contain 'tidii' (str)
+    ...    Get Style    h1    ALL    *=    tidii
+    Run Keyword And Expect Error
+    ...    Style value for align-content is 'normal' (str) should not be 'normal' (str)
+    ...    Get Style    h1    align-content    !=    normal
+
+Get Style Custom Error
+    Run Keyword And Expect Error
+    ...    foobar
+    ...    Get Style    h1    ALL    *=    tidii    foobar
+    Run Keyword And Expect Error
+    ...    foobar
+    ...    Get Style    h1    align-content    !=    normal    foobar
+
 Get Element Size and Assert
     ${expected}=    Evaluate    {'x': 0, 'y': 400, 'width': 40, 'height': 30}
     ${bounding_box}=    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}

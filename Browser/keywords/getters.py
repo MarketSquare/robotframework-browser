@@ -566,6 +566,7 @@ class Getters(LibraryComponent):
         key: str = "ALL",
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets the computed style properties of the element selected by ``selector``.
 
@@ -577,6 +578,8 @@ class Getters(LibraryComponent):
         ``key`` Key of the requested CSS property. Retrieves "ALL" styles by default.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        ``message`` overrides the default error message.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(Request().ElementSelector(selector=selector))
@@ -584,7 +587,11 @@ class Getters(LibraryComponent):
 
             if key == "ALL":
                 return dict_verify_assertion(
-                    parsed, assertion_operator, assertion_expected, "Computed style is"
+                    parsed,
+                    assertion_operator,
+                    assertion_expected,
+                    "Computed style is",
+                    message,
                 )
             else:
                 item = parsed.get(key, "NOT_FOUND")
@@ -594,7 +601,8 @@ class Getters(LibraryComponent):
                     item,
                     assertion_operator,
                     assertion_expected,
-                    f"Style value for {key} is ",
+                    f"Style value for {key} is",
+                    message,
                 )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
