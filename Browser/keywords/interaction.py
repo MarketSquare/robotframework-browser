@@ -634,7 +634,7 @@ class Interaction(LibraryComponent):
                     "No coordinates where set. Action appears at current position."
                 )
             if action == MouseButtonAction.click:
-                for i in range(clickCount):
+                for _ in range(clickCount):
                     self.mouse_button(MouseButtonAction.down, button=button)
                     sleep(delay / 1000)
                     self.mouse_button(MouseButtonAction.up, button=button)
