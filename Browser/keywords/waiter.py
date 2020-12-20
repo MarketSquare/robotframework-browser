@@ -29,6 +29,7 @@ class Waiter(LibraryComponent):
         selector: str,
         state: ElementState = ElementState.visible,
         timeout: Optional[timedelta] = None,
+        message: Optional[str] = None,
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
@@ -47,6 +48,11 @@ class Waiter(LibraryComponent):
         and is not considered visible.
 
         ``timeout`` uses default timeout of 10 seconds if not set.
+
+        ``message`` overrides the default error message. The ``message``
+        argument accepts `{selector}`, `{function}`, and `{timeout}`
+        [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
+        The `{function}` formatter is same ``state`` argument value.
         """
         funct = {
             ElementState.enabled: "e => !e.disabled",
@@ -60,26 +66,43 @@ class Waiter(LibraryComponent):
             ElementState.checked: "e => e.checked",
             ElementState.unchecked: "e => !e.checked",
         }
-
-        with self.playwright.grpc_channel() as stub:
-            if state in [
-                ElementState.attached,
-                ElementState.detached,
-                ElementState.visible,
-                ElementState.hidden,
-            ]:
-                options: Dict[str, object] = {"state": state.name}
-                if timeout:
-                    options["timeout"] = self.get_timeout(timeout)
-                options_json = json.dumps(options)
-                response = stub.WaitForElementsState(
-                    Request().ElementSelectorWithOptions(
-                        selector=selector, options=options_json
+        if state in [
+            ElementState.attached,
+            ElementState.detached,
+            ElementState.visible,
+            ElementState.hidden,
+        ]:
+            try:
+                self._wait_for_elements_state(selector, state, timeout)
+            except Exception:
+                if message:
+                    message = message.format(
+                        selector=selector, function=state, timeout=timeout
                     )
+                    raise AssertionError(message)
+                raise
+        else:
+            self.wait_for_function(
+                funct[state], selector=selector, timeout=timeout, message=message
+            )
+
+    def _wait_for_elements_state(
+        self,
+        selector: str,
+        state: ElementState = ElementState.visible,
+        timeout: Optional[timedelta] = None,
+    ):
+        with self.playwright.grpc_channel() as stub:
+            options: Dict[str, object] = {"state": state.name}
+            if timeout:
+                options["timeout"] = self.get_timeout(timeout)
+            options_json = json.dumps(options)
+            response = stub.WaitForElementsState(
+                Request().ElementSelectorWithOptions(
+                    selector=selector, options=options_json
                 )
-                logger.info(response.log)
-            else:
-                self.wait_for_function(funct[state], selector=selector, timeout=timeout)
+            )
+            logger.info(response.log)
 
     @keyword(tags=("Wait", "PageContent"))
     def wait_for_function(
@@ -88,6 +111,7 @@ class Waiter(LibraryComponent):
         selector: str = "",
         polling: Union[str, timedelta] = "raf",
         timeout: Optional[timedelta] = None,
+        message: Optional[str] = None,
     ):
         """Polls JavaScript expression or function in browser until it returns a
         (JavaScript) truthy value.
@@ -105,11 +129,32 @@ class Waiter(LibraryComponent):
 
         ``timeout`` Uses default timeout of 10 seconds if not set.
 
+        ``message`` overrides the default error message. The ``message``
+        argument accepts `{selector}`, `{function}`, and `{timeout}`
+        [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
+
         Example usage:
         | ${promise}    Promise To      Wait For Function    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
         | Click         \\#progress_bar
         | Wait For      ${promise}
         """
+        try:
+            self._wait_for_function(function, selector, polling, timeout)
+        except Exception:
+            if message:
+                message = message.format(
+                    selector=selector, function=function, timeout=timeout
+                )
+                raise AssertionError(message)
+            raise
+
+    def _wait_for_function(
+        self,
+        function: str,
+        selector: str = "",
+        polling: Union[str, timedelta] = "raf",
+        timeout: Optional[timedelta] = None,
+    ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
             if polling != "raf":
