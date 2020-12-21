@@ -597,7 +597,7 @@ class Browser(DynamicCore):
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
         retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot",
-        external_browser_executable: Dict[SupportedBrowsers, str] = {},
+        external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Optional[str] = None,
     ):
         """Browser library can be taken into use with optional arguments:
@@ -636,9 +636,9 @@ class Browser(DynamicCore):
         self.run_on_failure_keyword = (
             None if is_falsy(run_on_failure) else run_on_failure
         )
-        self.external_browser_executable: Dict[
-            SupportedBrowsers, str
-        ] = external_browser_executable
+        self.external_browser_executable: Dict[SupportedBrowsers, str] = (
+            external_browser_executable or {}
+        )
         self._unresolved_promises: Set[Future] = set()
         self._playwright_state = PlaywrightState(self)
         libraries = [
