@@ -248,6 +248,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "anton264",
+      "name": "anton264",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/10194266?v=4",
+      "profile": "https://github.com/anton264",
+      "contributions": [
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
