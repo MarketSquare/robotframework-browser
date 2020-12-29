@@ -31,6 +31,7 @@ from .data_types import (
     ViewportDimensions,
     convert_typed_dict,
 )
+from .deprecated import attribute_warning
 from .js_utilities import (
     exec_scroll_function,
     get_abs_scroll_coordinates,
