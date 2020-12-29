@@ -15,7 +15,7 @@
 import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from robot.utils import get_link_path  # type: ignore
 
@@ -478,12 +478,9 @@ class PlaywrightState(LibraryComponent):
 
         If there's no open Browser this keyword will open one. Does not create pages.
         """
-        # if videosPath:
-        #     attribute_warning(self.new_context.__name__, "videosPath", "recordVideo")
-        # if videoSize:
-        #     attribute_warning(self.new_context.__name__, "videoSize", "recordVideo")
         params = locals_to_params(locals())
         params = self._set_video_path(params)
+        params = self._set_video_size_to_int(params)
         params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)
@@ -501,16 +498,37 @@ class PlaywrightState(LibraryComponent):
         self.context_cache.add(response.body, self._get_video_size(params))
         return response.body
 
-    def _set_video_path(self, params):
+    def _set_video_path(self, params: dict) -> dict:
         video_path = params.get("videosPath")
+        record_video = params.get("recordVideo", {})
+        if not video_path:
+            video_path = record_video.get("dir")
         if not video_path:
             return params
         if Path(video_path).is_dir():
             return params
-        params["videosPath"] = self.video_output / video_path
+        if record_video:
+            params["recordVideo"]["dir"] = self.video_output / video_path
+        else:
+            params["videosPath"] = self.video_output / video_path
+        return params
+
+    def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
+        width = params.get("recordVideo", {}).get("size", {}).get("width")
+        height = params.get("recordVideo", {}).get("size", {}).get("height")
+        return int(width) if width else None, int(height) if height else None
+
+    def _set_video_size_to_int(self, params: dict) -> dict:
+        width, height = self._get_record_video_size(params)
+        if width and height:
+            params["recordVideo"]["size"]["width"] = width
+            params["recordVideo"]["size"]["height"] = height
         return params
 
     def _get_video_size(self, params: dict) -> dict:
+        width, height = self._get_record_video_size(params)
+        if width and height:
+            return {"width": width, "height": height}
         if "videoSize" in params:
             return params["videoSize"]
         if "viewport" in params:
