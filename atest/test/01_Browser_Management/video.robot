@@ -6,7 +6,7 @@ Suite Setup       Video Setup
 Create Video With Full Path
     [Documentation]
     ...    LOG 2:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
-    New Context    videosPath=${OUTPUT_DIR}/video
+    New Context    ${True}    videosPath=${OUTPUT_DIR}/video
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Verify Video Files    ${0}    ${1}
@@ -14,7 +14,7 @@ Create Video With Full Path
 Create Video With Relative Path
     [Documentation]
     ...    LOG 2:3    INFO    GLOB:    *video width="1280" height="720" controls*src="browser/video/my_video*.webm"*
-    New Context    videosPath=my_video
+    New Context    acceptDownloads=${True}    videosPath=my_video
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
@@ -47,6 +47,17 @@ No Video
     New Context
     New Page    ${LOGIN_URL}
     Verify Video Files    ${3}    ${3}
+
+Create Video With Deprecated Options
+    [Documentation]
+    ...    LOG 3:3    INFO    GLOB:    *width="300" height="200"*.webm"*
+    ...    LOG 2:2    WARN    Browser library New Context keyword has deprecated videosPath, use recordVideo
+    ...    LOG 2:3    WARN    Browser library New Context keyword has deprecated videoSize, use recordVideo
+    ${size} =    Create Dictionary    width    300    height    200
+    New Context    videosPath=${OUTPUT_DIR}/video    videoSize=${size}
+    New Page    ${LOGIN_URL}
+    Go To    ${FRAMES_URL}
+    Verify Video Files    ${3}    ${4}
 
 *** Keywords ***
 Video Setup

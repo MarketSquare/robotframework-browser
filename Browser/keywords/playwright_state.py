@@ -30,6 +30,7 @@ from ..utils import (
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
+    attribute_warning,
     convert_typed_dict,
     find_by_id,
     keyword,
@@ -337,6 +338,9 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=("Setter", "BrowserControl"))
+    @attribute_warning(
+        old_args=("videosPath", "videoSize"), new_args=("recordVideo", "recordVideo")
+    )
     def new_context(
         self,
         acceptDownloads: bool = False,
@@ -361,6 +365,7 @@ class PlaywrightState(LibraryComponent):
         videoSize: Optional[ViewportDimensions] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         hideRfBrowser: bool = False,
+        recordVideo: Optional[str] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -431,12 +436,14 @@ class PlaywrightState(LibraryComponent):
         Note that browser needs to be launched with the global proxy for this option to work.
         If all contexts override the proxy, global proxy will be never used and can be any string
 
-        ``videosPath`` Enables video recording for all pages to videosPath
+        ``videosPath`` is deprecated by playwright, use recordVideo instead.
+        Enables video recording for all pages to videosPath
         folder. If videosPath is not existing folder, videosPath folder is created
         under ${OUTPUT_DIR}/browser/video/ folder. If videosPath is not specified,
         videos are not recorded.
 
-        ``videoSize`` Specifies dimensions of the automatically recorded
+        ``videoSize`` is deprecated by playwright, use recordVideo instead.
+        Specifies dimensions of the automatically recorded
         video. Can only be used if videosPath is set. If not specified the size will
         be equal to viewport. If viewport is not configured explicitly the video size
         defaults to 1280x720. Actual picture of the page will be scaled down if
@@ -446,6 +453,17 @@ class PlaywrightState(LibraryComponent):
         ``defaultBrowserType`` If no browser is open and `New Context` opens a new browser
         with defaults, it now uses this setting.
         Very useful together with `Get Device` keyword:
+
+        ``recordVideo`` enables video recording for all pages into a folder. If not
+        specified videos are not recorded. Make sure to close context for videos to be saved.
+        ``recordVideo`` is dictionary containing `dir` and `size` keys. If `dir` is not
+        existing folder, videosPath folder is created under
+        ${OUTPUT_DIR}/browser/video/ folder. `size` Optional dimensions of the recorded
+        videos. If not specified the size will be equal to viewport. If viewport is not
+        configured explicitly the video size defaults to 1280x720. Actual picture of
+        each page will be scaled down if necessary to fit the specified size.
+        `size` is dictionary containing `width` (Video frame width) and  `height`
+        (Video frame height) keys.
 
         Example:
         | Test an iPhone
@@ -460,6 +478,10 @@ class PlaywrightState(LibraryComponent):
 
         If there's no open Browser this keyword will open one. Does not create pages.
         """
+        # if videosPath:
+        #     attribute_warning(self.new_context.__name__, "videosPath", "recordVideo")
+        # if videoSize:
+        #     attribute_warning(self.new_context.__name__, "videoSize", "recordVideo")
         params = locals_to_params(locals())
         params = self._set_video_path(params)
         params = convert_typed_dict(self.new_context.__annotations__, params)
