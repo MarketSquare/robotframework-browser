@@ -173,8 +173,10 @@ class Waiter(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Wait", "BrowserControl"))
-    def wait_for_download(self, saveAs: str = "") -> str:
-        """Waits for next download event on page. Returns file path to downloaded file.
+    def wait_for_download(
+        self, saveAs: str = "", suggestedFilename: bool = False
+    ) -> Union[str, dict]:
+        """Waits for next download event on page. Returns file path to downloaded file if suggestedFilename is false.
 
         To enable downloads context's ``acceptDownloads`` needs to be true.
 
@@ -182,21 +184,39 @@ class Waiter(LibraryComponent):
 
         ``saveAs`` Filename to save as. File will also temporarily be saved in playwright context's default download location.
 
+        ``suggestedFilename`` suggested filename for this download. It is typically computed by the browser from the
+        Content-Disposition response header or the download attribute. See the spec on
+        [https://html.spec.whatwg.org/#downloading-resources|whatwg]. Different browsers can use different logic for
+        computing it. If ``suggestedFilename`` is true, keyword returns a dictionary, whit saveAs and
+        suggestedFilename as keys. The saveAs contains where the file is downloaded and suggestedFilename
+        contains the name suggested name for the download.
+
         Example usage:
-        | New Context      acceptDownloads=True
-        | New Page         ${LOGIN_URL}
-        | ${dl_promise}    Promise To  Wait For Download
-        | Click            \\#file_download
-        | ${file_path}=    Wait For  ${dl_promise}
+        | New Context          acceptDownloads=True
+        | New Page             ${LOGIN_URL}
+        | ${dl_promise}        Promise To  Wait For Download
+        | Click                \\#file_download
+        | ${file_path}=        Wait For  ${dl_promise}
+        | File Should Exist    ${file_path}
+
+        Example usage for suggestedFilename:
+        | New Context          acceptDownloads=True
+        | New Page             ${LOGIN_URL}
+        | ${dl_promise}        Promise To  Wait For Download
+        | Click                \\#file_download
+        | ${file_obj}=         Wait For  ${dl_promise}
+        | File Should Exist    ${file_obj}[saveAs]
+        | Should Be True       ${file_obj}[suggestedFilename]
         """
         with self.playwright.grpc_channel() as stub:
             if not saveAs:
                 response = stub.WaitForDownload(Request().FilePath())
                 logger.debug(response.log)
-                return json.loads(response.json)
             else:
-                p = Path(saveAs)
-                p.resolve()
-                response = stub.WaitForDownload(Request().FilePath(path=str(p)))
-                logger.debug(response.log)
-                return json.loads(response.json)
+                file_path = Path(saveAs)
+                file_path.resolve()
+                response = stub.WaitForDownload(Request().FilePath(path=str(file_path)))
+        logger.info(response.log)
+        if suggestedFilename:
+            return json.loads(response.json)
+        return json.loads(response.json)["saveAs"]

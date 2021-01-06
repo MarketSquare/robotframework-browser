@@ -4,7 +4,7 @@ Test Setup        Set Library Timeout
 Test Teardown     Restore Library Timeout
 
 *** Variables ***
-${custom_dl_path}    ${CURDIR}/download_file
+${CUSTOM_DL_PATH}    ${CURDIR}/download_file
 
 *** Test Cases ***
 Upload File
@@ -26,23 +26,36 @@ Invalid Upload Path
 Wait For Download
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
-    ${dl_promise}    Promise To    Wait For Download
+    ${dl_promise}    Promise To    Wait for Download
+    Sleep    0.5
     Click    \#file_download
     ${file_path}=    Wait For    ${dl_promise}
     File Should Exist    ${file_path}
     Remove File    ${file_path}
 
-Wait For Download with custom path
+Wait For Download With Custom Path
     [Tags]    No-Windows-Support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
-    ${dl_promise}=    Promise To    Wait For Download    saveAs=${custom_dl_path}
+    ${dl_promise}=    Promise To    Wait For Download    saveAs=${CUSTOM_DL_PATH}    suggestedFilename=False
+    Sleep    0.5
     Click    \#file_download
     ${file_path}=    Wait For    ${dl_promise}
     File Should Exist    ${file_path}
-    File Should Exist    ${custom_dl_path}
-    Remove File    ${custom_dl_path}
+    File Should Exist    ${CUSTOM_DL_PATH}
+    Remove File    ${CUSTOM_DL_PATH}
     Remove File    ${file_path}
+
+Wait For Download With Suggested Filename
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    ${dl_promise}=    Promise To    Wait For Download    suggestedFilename=True
+    Sleep    0.5
+    Click    \#file_download
+    ${file_object}=    Wait For    ${dl_promise}
+    File Should Exist    ${file_object}[saveAs]
+    Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
+    Remove File    ${file_object}[saveAs]
 
 *** Keywords ***
 Set Library Timeout
