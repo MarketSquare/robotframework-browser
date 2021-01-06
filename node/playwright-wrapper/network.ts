@@ -18,6 +18,9 @@ import { Page } from 'playwright';
 import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { invokeOnPage } from './playwirght-invoke';
 
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
 export async function httpRequest(request: pb.Request.HttpRequest, page?: Page): Promise<pb.Response.Json> {
     const opts: { [k: string]: any } = {
         method: request.getMethod(),
@@ -92,5 +95,10 @@ export async function waitForDownload(request: pb.Request.FilePath, page?: Page)
         await downloadObject.saveAs(saveAs);
     }
     const path = await downloadObject.path();
-    return jsonResponse(JSON.stringify(path), 'Download done successfully to.');
+    const fileName = downloadObject.suggestedFilename();
+    logger.info('suggestedFilename: ' + fileName + ' saveAs path: ' + path);
+    return jsonResponse(
+        JSON.stringify({ saveAs: path, suggestedFilename: fileName }),
+        'Download done successfully to: ' + path,
+    );
 }
