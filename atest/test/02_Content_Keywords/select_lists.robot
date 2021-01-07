@@ -7,6 +7,14 @@ Test Timeout      10s
 Page Should Contain List
     Get Element Count    select[name=interests]    ==    1
 
+Get Select Options
+    Get Select Options    select[name=preferred_channel]    validate    len(value) == 3
+    Get Select Options    select[name=preferred_channel]    validate    value[0]['index'] == 0
+    Get Select Options    select[name=preferred_channel]    validate    value[2]['label'] == 'Direct mail'
+    ${options}    Get Select Options    select[name=possible_channels]
+    Should be equal    ${options}[0][label]    Email
+    Should be equal    ${options}[1][value]    phone
+
 Get Selected Options
     [Documentation]
     ...    Verifying list 'preferred_channel' has options [Telephone] selected.
