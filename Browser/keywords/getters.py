@@ -361,6 +361,48 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
+    def get_select_options(
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Any = None,
+        message: Optional[str] = None,
+    ) -> Any:
+        """Returns attributes of options of a ``select`` element as a list of dictionaries.
+        Returned dictionaries have the following keys and their values
+        "index", "value", "label" and "selected".
+
+        Optionally asserts that these match the specified assertion.
+
+        ``selector`` Selector from which the info is to be retrieved.
+        See the `Finding elements` section for details about the selectors.
+
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetSelectContent(
+                Request().ElementSelector(selector=selector)
+            )
+            logger.info(response)
+            result = [
+                {
+                    "index": index,
+                    "value": sel.value,
+                    "label": sel.label,
+                    "selected": bool(sel.selected),
+                }
+                for index, sel in enumerate(response.entry)
+            ]
+            return verify_assertion(
+                result,
+                assertion_operator,
+                assertion_expected,
+                "Select Options:",
+                message,
+            )
+
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_selected_options(
         self,
         selector: str,
