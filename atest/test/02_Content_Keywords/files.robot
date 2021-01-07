@@ -29,33 +29,24 @@ Wait For Download
     ${dl_promise}    Promise To    Wait for Download
     Sleep    0.5
     Click    \#file_download
-    ${file_path}=    Wait For    ${dl_promise}
-    File Should Exist    ${file_path}
-    Remove File    ${file_path}
+    ${file_object} =    Wait For    ${dl_promise}
+    File Should Exist    ${file_object}[saveAs]
+    Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
+    Remove File    ${file_object}[saveAs]
 
 Wait For Download With Custom Path
     [Tags]    No-Windows-Support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
-    ${dl_promise}=    Promise To    Wait For Download    saveAs=${CUSTOM_DL_PATH}    suggestedFilename=False
+    ${dl_promise}=    Promise To    Wait For Download    saveAs=${CUSTOM_DL_PATH}
     Sleep    0.5
     Click    \#file_download
-    ${file_path}=    Wait For    ${dl_promise}
-    File Should Exist    ${file_path}
+    ${file_object} =    Wait For    ${dl_promise}
+    File Should Exist    ${file_object.saveAs}
+    Should Be Equal    ${file_object.suggestedFilename}    test_download_file.js
     File Should Exist    ${CUSTOM_DL_PATH}
     Remove File    ${CUSTOM_DL_PATH}
-    Remove File    ${file_path}
-
-Wait For Download With Suggested Filename
-    New Context    acceptDownloads=True
-    New Page    ${LOGIN_URL}
-    ${dl_promise}=    Promise To    Wait For Download    suggestedFilename=True
-    Sleep    0.5
-    Click    \#file_download
-    ${file_object}=    Wait For    ${dl_promise}
-    File Should Exist    ${file_object}[saveAs]
-    Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
-    Remove File    ${file_object}[saveAs]
+    Remove File    ${file_object.saveAs}
 
 *** Keywords ***
 Set Library Timeout
