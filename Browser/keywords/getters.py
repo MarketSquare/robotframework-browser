@@ -378,6 +378,11 @@ class Getters(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        Example:
+
+        | `Get Select Options`     //select[2]    validate  [v["label"] for v in value] == ["Email", "Mobile"]
+        | `Get Select Options`   select#names     validate  any(v["label"] == "Mikko" for v in value)
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
