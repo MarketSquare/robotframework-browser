@@ -35,6 +35,7 @@ Wait For Download
     Remove File    ${file_object}[saveAs]
 
 Wait For Download With Custom Path
+    [Tags]    No-Windows-Support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
     ${dl_promise}=    Promise To    Wait For Download    saveAs=${CUSTOM_DL_PATH}
