@@ -36,7 +36,7 @@
     "webpack-cli": "^4.3.1"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.2.2",
+    "@grpc/grpc-js": "^1.2.3",
     "@types/uuid": "^8.3.0",
     "google-protobuf": "3.14.0",
     "playwright": "^1.7.1",
