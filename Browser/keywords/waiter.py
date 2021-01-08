@@ -182,7 +182,8 @@ class Waiter(LibraryComponent):
 
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 
-        ``saveAs`` Filename to save as. File will also temporarily be saved in playwright context's default download location.
+        ``saveAs`` defines path where the file is saved. File will also temporarily be saved in playwright context's
+        default download location.
 
         Keyword returns dictionary which contains saveAs and suggestedFilename as keys. The saveAs contains
         where the file is downloaded and suggestedFilename contains the name suggested name for the download.
@@ -193,7 +194,7 @@ class Waiter(LibraryComponent):
         Example usage:
         | New Context          acceptDownloads=True
         | New Page             ${LOGIN_URL}
-        | ${dl_promise}        Promise To  Wait For Download
+        | ${dl_promise}        Promise To  Wait For Download    /path/to/download/folder
         | Click                \\#file_download
         | ${file_obj}=         Wait For  ${dl_promise}
         | File Should Exist    ${file_obj}[saveAs]
