@@ -188,7 +188,7 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
     await page.evaluate(script, urlString);
     const path = await (await downloadStarted).path();
     const fileName = await (await downloadStarted).suggestedFilename();
-    console.log('suggestedFilename ' + fileName);
+    logger.info('Suggested file name: ' + fileName + ' and save as path: ' + path);
     return jsonResponse(
         JSON.stringify({ saveAs: path, suggestedFilename: fileName }),
         'Url content downloaded to a file: ' + path,
