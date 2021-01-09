@@ -150,7 +150,7 @@ export async function highlightElements(
     return emptyWithLog(`Highlighted elements for ${duration}.`);
 }
 
-export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.String> {
+export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.Json> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');
@@ -187,5 +187,10 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
     const downloadStarted = page.waitForEvent('download');
     await page.evaluate(script, urlString);
     const path = await (await downloadStarted).path();
-    return stringResponse(path || '', 'Url content downloaded to a file');
+    const fileName = await (await downloadStarted).suggestedFilename();
+    console.log('suggestedFilename ' + fileName);
+    return jsonResponse(
+        JSON.stringify({ saveAs: path, suggestedFilename: fileName }),
+        'Url content downloaded to a file: ' + path,
+    );
 }
