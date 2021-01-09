@@ -829,8 +829,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async download(
-        call: ServerUnaryCall<Request.Url, Response.String>,
-        callback: sendUnaryData<Response.String>,
+        call: ServerUnaryCall<Request.Url, Response.Json>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         try {
             const request = call.request;

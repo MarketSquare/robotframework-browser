@@ -306,7 +306,7 @@ service  Playwright {
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty);
   /* Download url content */
-  rpc Download(Request.Url) returns (Response.String);
+  rpc Download(Request.Url) returns (Response.Json);
   /* Clicks element specified by selector and options */
   rpc Click(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Hovers an element specified by selector and options */
