@@ -35,7 +35,11 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     private getActiveBrowser = () => this.state.getActiveBrowser();
     private getActiveContext = () => this.state.getActiveContext();
-    private getActivePage = () => this.state.getActivePage();
+    private getActivePage = () => {
+        const page = this.state.getActivePage();
+        if (!page) throw Error('No page open.');
+        return page;
+    }
 
     private wrapping = <T, K>(
         func: (request: T, state: PlaywrightState) => Promise<K>,
@@ -286,9 +290,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const page = this.getActivePage();
-            if (!page) throw Error('No page open.');
-            const response = await browserControl.goTo(request, page);
+            const response = await browserControl.goTo(request, this.getActivePage());
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -300,9 +302,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const page = this.getActivePage();
-            if (!page) throw Error('No page open.');
-            await page.goBack();
+            await this.getActivePage().goBack();
             callback(null, emptyWithLog('Did Go Back'));
         } catch (e) {
             callback(errorResponse(e), null);
@@ -314,9 +314,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const page = this.getActivePage();
-            if (!page) throw Error('No page open.');
-            await page.goForward();
+            await this.getActivePage().goForward();
             callback(null, emptyWithLog('Did Go Forward'));
         } catch (e) {
             callback(errorResponse(e), null);
@@ -728,7 +726,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await network.waitForRequest(request, this.getActivePage());
+            const page = this.getActivePage();
+            if (!page) throw Error('No page open.');
+            const result = await network.waitForRequest(request, page);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -770,7 +770,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await evaluation.waitForFunction(request, this.state);
+            const result = await evaluation.waitForFunction(request, this.state, this.getActivePage());
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -798,7 +798,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await evaluation.executeJavascript(request, this.state);
+            const result = await evaluation.executeJavascript(request, this.state, this.getActivePage());
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);

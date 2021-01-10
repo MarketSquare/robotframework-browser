@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse, keywordsResponse, stringResponse } from './response-util';
-import { exists, invokeOnPage } from './playwirght-invoke';
+import { exists } from './playwirght-invoke';
 
 import * as pino from 'pino';
 import { ServerWritableStream } from '@grpc/grpc-js';
