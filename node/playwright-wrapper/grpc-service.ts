@@ -142,7 +142,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         try {
-            const result = await cookie.getCookies(this.getActiveContext());
+            const context = this.getActiveContext();
+            if (!context) throw Error('no open context.');
+            const result = await cookie.getCookies(context);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
