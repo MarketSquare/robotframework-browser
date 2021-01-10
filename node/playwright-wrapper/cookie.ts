@@ -33,8 +33,8 @@ interface CookieData {
     sameSite?: 'Strict' | 'Lax' | 'None';
 }
 
-export async function getCookies(context?: BrowserContext): Promise<Response.Json> {
-    const allCookies = await invokeOnContext(context, 'cookies');
+export async function getCookies(context: BrowserContext): Promise<Response.Json> {
+    const allCookies = await context.cookies();
     logger.info({ 'Cookies: ': allCookies });
     const cookieName = [];
     for (const cookie of allCookies as Array<Cookie>) {
