@@ -63,12 +63,6 @@ export async function invokeOnPage<T>(page: Page | undefined, methodName: string
     return await fn(...Object.values(args));
 }
 
-export async function invokeOnContext<T>(context: BrowserContext | undefined, methodName: string, ...args: any[]) {
-    exists(context, `Tried to do playwright action '${methodName}', but no open context.`);
-    const fn: any = (context as { [key: string]: any })[methodName].bind(context);
-    return await fn(...args);
-}
-
 /**
  * Resolve the playwright method on page, frame or elementHandle and invoke it.
  * With a normal selector, invokes the `methodName` on the given `page`.

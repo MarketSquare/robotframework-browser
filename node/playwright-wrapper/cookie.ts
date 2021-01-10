@@ -16,7 +16,6 @@ import { BrowserContext, Cookie } from 'playwright';
 
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse } from './response-util';
-import { invokeOnContext } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -43,14 +42,14 @@ export async function getCookies(context: BrowserContext): Promise<Response.Json
     return jsonResponse(JSON.stringify(allCookies), cookieName.toString());
 }
 
-export async function addCookie(request: Request.Json, context?: BrowserContext): Promise<Response.Empty> {
+export async function addCookie(request: Request.Json, context: BrowserContext): Promise<Response.Empty> {
     const cookie: CookieData = JSON.parse(request.getBody());
     logger.info({ 'Cookie data: ': request.getBody() });
-    await invokeOnContext(context, 'addCookies', [cookie]);
+    await context.addCookies([cookie]);
     return emptyWithLog('Cookie "' + cookie.name + '" added.');
 }
 
-export async function deleteAllCookies(context?: BrowserContext): Promise<Response.Empty> {
-    await invokeOnContext(context, 'clearCookies');
+export async function deleteAllCookies(context: BrowserContext): Promise<Response.Empty> {
+    await context.clearCookies();
     return emptyWithLog('All cookies deleted.');
 }
