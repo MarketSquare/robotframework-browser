@@ -24,7 +24,7 @@ import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
-import { errorResponse, keywordsResponse } from './response-util';
+import { emptyWithLog, errorResponse, keywordsResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     state: PlaywrightState;
@@ -286,7 +286,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const response = await browserControl.goTo(request, this.getActivePage());
+            const page = this.getActivePage();
+            if (!page) throw Error('No page open.');
+            const response = await browserControl.goTo(request, page);
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -298,8 +300,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const response = await browserControl.goBack(this.getActivePage());
-            callback(null, response);
+            const page = this.getActivePage();
+            if (!page) throw Error('No page open.');
+            await page.goBack();
+            callback(null, emptyWithLog('Did Go Back'));
         } catch (e) {
             callback(errorResponse(e), null);
         }
@@ -310,8 +314,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const response = await browserControl.goForward(this.getActivePage());
-            callback(null, response);
+            const page = this.getActivePage();
+            if (!page) throw Error('No page open.');
+            await page.goForward();
+            callback(null, emptyWithLog('Did Go Forward'));
         } catch (e) {
             callback(errorResponse(e), null);
         }
