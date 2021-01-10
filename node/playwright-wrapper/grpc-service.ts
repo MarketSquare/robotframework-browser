@@ -39,7 +39,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         const page = this.state.getActivePage();
         if (!page) throw Error('No page open.');
         return page;
-    }
+    };
 
     private wrapping = <T, K>(
         func: (request: T, state: PlaywrightState) => Promise<K>,
