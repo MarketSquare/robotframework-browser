@@ -26,7 +26,7 @@ Open Chrome
 New Browser does not open a page
     New Browser
     Run Keyword And Expect Error
-    ...    Error: Tried to do playwright action 'goto', but no open page.    Go To    ${LOGIN_URL}
+    ...    Error: No page open.    Go To    ${LOGIN_URL}
 
 New Browser does not create a context
     New Browser
