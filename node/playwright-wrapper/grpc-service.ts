@@ -158,7 +158,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await cookie.addCookie(request, this.getActiveContext());
+            const context = this.getActiveContext();
+            if (!context) throw Error('no open context.');
+            const result = await cookie.addCookie(request, context);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -170,7 +172,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const result = await cookie.deleteAllCookies(this.getActiveContext());
+            const context = this.getActiveContext();
+            if (!context) throw Error('no open context.');
+            const result = await cookie.deleteAllCookies(context);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
