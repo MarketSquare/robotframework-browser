@@ -19,21 +19,11 @@ import { Request, Response } from './generated/playwright_pb';
 import { determineElement, exists, invokeOnPage } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
 
-export async function goTo(request: Request.Url, page?: Page): Promise<Response.Empty> {
+export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
     const url = request.getUrl();
     const timeout = request.getDefaulttimeout();
-    await invokeOnPage(page, 'goto', url, { timeout: timeout });
+    await page.goto(url, { timeout });
     return emptyWithLog(`Succesfully opened URL ${url}`);
-}
-
-export async function goBack(page?: Page): Promise<Response.Empty> {
-    await invokeOnPage(page, 'goBack');
-    return emptyWithLog('Did Go Back');
-}
-
-export async function goForward(page?: Page): Promise<Response.Empty> {
-    await invokeOnPage(page, 'goForward');
-    return emptyWithLog('Did Go Forward');
 }
 
 export async function takeScreenshot(
