@@ -20,6 +20,7 @@ from .data_types import (
     ColorScheme,
     CookieSameSite,
     CookieType,
+    DownloadedFile,
     ElementState,
     GeoLocation,
     HttpCredentials,

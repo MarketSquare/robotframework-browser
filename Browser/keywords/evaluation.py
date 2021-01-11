@@ -20,7 +20,7 @@ from robot.utils import DotDict  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import keyword, logger
+from ..utils import DownloadedFile, keyword, logger
 
 
 class Evaluation(LibraryComponent):
@@ -92,7 +92,7 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Page Content",))
-    def download(self, url: str) -> str:
+    def download(self, url: str) -> DownloadedFile:
         """Download given url content.
 
         Keyword returns dictionary which contains downloaded file path

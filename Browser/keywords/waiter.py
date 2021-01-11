@@ -21,7 +21,7 @@ from robot.utils import DotDict  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import ElementState, keyword, logger
+from ..utils import DownloadedFile, ElementState, keyword, logger
 
 
 class Waiter(LibraryComponent):
@@ -175,7 +175,7 @@ class Waiter(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Wait", "BrowserControl"))
-    def wait_for_download(self, saveAs: str = "") -> dict:
+    def wait_for_download(self, saveAs: str = "") -> DownloadedFile:
         """Waits for next download event on page.
 
         To enable downloads context's ``acceptDownloads`` needs to be true.
