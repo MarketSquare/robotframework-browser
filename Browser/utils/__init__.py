@@ -25,6 +25,7 @@ from .data_types import (
     GeoLocation,
     HttpCredentials,
     Proxy,
+    RecordVideo,
     RequestMethod,
     SelectAttribute,
     SelectionType,

@@ -82,6 +82,11 @@ class ViewportDimensions(TypedDict):
     height: int
 
 
+class RecordVideo(TypedDict, total=False):
+    dir: str
+    size: ViewportDimensions
+
+
 class HttpCredentials(TypedDict):
     """Sets the credentials for http basic-auth.
 

@@ -27,6 +27,7 @@ from ..utils import (
     GeoLocation,
     HttpCredentials,
     Proxy,
+    RecordVideo,
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
@@ -365,7 +366,7 @@ class PlaywrightState(LibraryComponent):
         videoSize: Optional[ViewportDimensions] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         hideRfBrowser: bool = False,
-        recordVideo: Optional[str] = None,
+        recordVideo: Optional[RecordVideo] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
