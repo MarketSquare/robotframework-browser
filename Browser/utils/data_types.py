@@ -144,6 +144,17 @@ class Proxy(_Server, total=False):
     password: str
 
 
+class DownloadedFile(TypedDict):
+    """Downloaded file information.
+
+    ``saveAs`` is the path where downloaded file is saved.
+    ``suggestedFilename`` is the  contains the name suggested name for the download.
+    """
+
+    saveAs: str
+    suggestedFilename: str
+
+
 class SelectionType(Enum):
     """Enum that defines if the current id or all ids shall be returned.
 
