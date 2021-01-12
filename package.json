@@ -5,7 +5,7 @@
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/express": "^4.17.9",
+    "@types/express": "^4.17.10",
     "@types/pino": "^6.3.5",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
