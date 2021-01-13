@@ -26,7 +26,7 @@ Invalid Upload Path
 Wait For Download
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
-    ${dl_promise}    Promise To    Wait for Download
+    ${dl_promise}    Promise To Wait for Download
     Sleep    0.5
     Click    \#file_download
     ${file_object} =    Wait For    ${dl_promise}
@@ -38,7 +38,7 @@ Wait For Download With Custom Path
     [Tags]    No-Windows-Support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
-    ${dl_promise}=    Promise To    Wait For Download    saveAs=${CUSTOM_DL_PATH}
+    ${dl_promise}=    Promise To Wait For Download    saveAs=${CUSTOM_DL_PATH}
     Sleep    0.5
     Click    \#file_download
     ${file_object} =    Wait For    ${dl_promise}

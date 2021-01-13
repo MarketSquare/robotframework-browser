@@ -11,13 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 from concurrent.futures import Future, ThreadPoolExecutor
+from pathlib import Path
 
 from robot.api.deco import keyword  # type: ignore
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
+from robot.utils import DotDict  # type: ignore
 
 from ..base import LibraryComponent
+from ..generated.playwright_pb2 import Request
+from ..utils import DownloadedFile, logger
 
 
 class Promises(LibraryComponent):
@@ -50,6 +54,56 @@ class Promises(LibraryComponent):
         promise = self._executor.submit(handler.current_handler(), *positional, **named)
         self.unresolved_promises.add(promise)
         return promise
+
+    @keyword(tags=("Wait", "BrowserControl"))
+    def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
+        """Returns a promise that waits for next download event on page.
+
+        To enable downloads context's ``acceptDownloads`` needs to be true.
+
+        With default filepath downloaded files are deleted when Context the download happened in is closed.
+
+        ``saveAs`` defines path where the file is saved. File will also temporarily be saved in playwright context's
+        default download location.
+
+        Waited promise returns a dictionary which contains saveAs and suggestedFilename as keys. The saveAs contains
+        where the file is downloaded and suggestedFilename contains the name suggested name for the download.
+        The suggestedFilename is typically computed by the browser from the Content-Disposition response header
+        or the download attribute. See the spec on [https://html.spec.whatwg.org/#downloading-resources|whatwg].
+        Different browsers can use different logic for computing it.
+
+        Example usage:
+        | New Context          acceptDownloads=True
+        | New Page             ${LOGIN_URL}
+        | ${dl_promise}        Promise To Wait For Download    /path/to/download/folder
+        | Click                \\#file_download
+        | ${file_obj}=         Wait For  ${dl_promise}
+        | File Should Exist    ${file_obj}[saveAs]
+        | Should Be True       ${file_obj.suggestedFilename}
+        """
+        promise = self._executor.submit(self._wait_for_download, **{"saveAs": saveAs})
+        self.unresolved_promises.add(promise)
+        return promise
+
+    @keyword(tags=("Wait", "BrowserControl"))
+    def wait_for_download(self, saveAs: str = "") -> DownloadedFile:
+        """*DEPRECATED!!* Use keyword `Promise To Wait For Download` instead."""
+        return self._wait_for_download(saveAs)
+
+    def _wait_for_download(self, saveAs: str = "") -> DownloadedFile:
+        with self.playwright.grpc_channel() as stub:
+            if not saveAs:
+                response = stub.WaitForDownload(Request().FilePath())
+                logger.debug(response.log)
+            else:
+                file_path = Path(saveAs)
+                file_path.resolve()
+                response = stub.WaitForDownload(Request().FilePath(path=str(file_path)))
+        logger.info(response.log)
+        dot_dict = DotDict()
+        for key, value in json.loads(response.json).items():
+            dot_dict[key] = value
+        return dot_dict
 
     @keyword(tags=("Wait",))
     def wait_for(self, *promises: Future):
