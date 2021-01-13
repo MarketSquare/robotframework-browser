@@ -38,6 +38,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
           repository: marketsquare/robotframework-browser
           tag_with_ref: false
+          tags: latest
           dockerfile: atest/docker/Dockerfile.latest_release
 
   gh-pages:
