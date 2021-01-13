@@ -583,13 +583,21 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("PageContent",))
     def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
-        """Handle next dialog on page with ``action``. Dialog can be any of alert,
-        beforeunload, confirm or prompt.
+        """Handle next dialog on page with ``action``. 
+        
+        Dialog can be any of alert, beforeunload, confirm or prompt. Handling dialogue
+        must be called before the action, like example click, that triggers the
+        dialogue.
 
             ``action`` How to handle the alert.
 
             ``prompt_input`` The value to enter into prompt. Only valid if
             ``action`` equals accept. Defaults to empty string.
+        
+        Example:
+        
+        | Handle Future Dialogs    action=accept
+        | Click                    \#alerts
         """
 
         with self.playwright.grpc_channel() as stub:
