@@ -3,7 +3,9 @@
 Dockerfile and Dockerfile.playwright20.04 are used for our own CI and docker image build flow.
 
 Dockerfile.latest_release is used as the base to build our published docker images. 
-See [packages](https://github.com/MarketSquare/robotframework-browser/packages) for latest released docker image.
+See [packages](https://github.com/MarketSquare/robotframework-browser/packages) for latest released docker image on github packages, and [dockerhub tags](https://hub.docker.com/r/marketsquare/robotframework-browser/tags?page=1&ordering=last_updated) for latest image on dockerhub.
+
+Example pull: `docker pull marketsquare/robotframework-browser`
 
 
 Our published Dockerfile can be used as a base for running your own test suites inside docker.
@@ -14,7 +16,7 @@ Example usage:
 ``` bash
 docker run --rm \
   -v $(pwd)/atest/test/:/test \
-    docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:1.0.0 \
+    marketsquare/robotframework-browser:v2.5.0 \
       bash -c "robot --outputdir /test/output /test"
 ```
 
