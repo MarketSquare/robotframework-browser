@@ -597,7 +597,7 @@ class Interaction(LibraryComponent):
         Example:
 
         | Handle Future Dialogs    action=accept
-        | Click                    \#alerts
+        | Click                    \\#alerts
         """
 
         with self.playwright.grpc_channel() as stub:
