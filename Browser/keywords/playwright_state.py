@@ -415,7 +415,7 @@ class PlaywrightState(LibraryComponent):
         as well as number and date formatting rules.
 
         ``permissions`` A list of permissions to grant to all pages in this context.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options | grantPermissions]
+        See [https://playwright.dev/docs/api/class-browsercontext#browsercontextgrantpermissionspermissions-options| grantPermissions]
         for more details.
 
         ``extraHTTPHeaders`` A dictionary containing additional HTTP headers
@@ -430,7 +430,7 @@ class PlaywrightState(LibraryComponent):
 
         ``colorScheme`` Emulates 'prefers-colors-scheme'
         media feature, supported values are 'light', 'dark', 'no-preference'.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
+        See [https://playwright.dev/docs/api/class-page#pageemulatemediaparams|emulateMedia(options)]
         for more details. Defaults to ``light``.
 
         ``proxy`` Network proxy settings to use with this context.
@@ -474,7 +474,7 @@ class PlaywrightState(LibraryComponent):
 
         A BrowserContext is the Playwright object that controls a single browser profile.
         Within a context caches and cookies are shared.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext]
+        See [https://playwright.dev/docs/api/class-browser#browsernewcontextoptions|Playwright browser.newContext]
         for a list of supported options.
 
         If there's no open Browser this keyword will open one. Does not create pages.

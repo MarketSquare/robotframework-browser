@@ -306,7 +306,7 @@ class SupportedBrowsers(Enum):
 ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
 ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
 
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
+        See [https://playwright.dev/docs/api/class-page?_highlight=emulatemedia#pageemulatemediaparams |emulateMedia(options)]
         for more details.
 
         Used by `New Context`. """

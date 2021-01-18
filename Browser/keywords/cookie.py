@@ -195,7 +195,7 @@ class Cookie(LibraryComponent):
         | sameSite | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
 
         See
-        [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextaddcookiescookies|playwright documentation]
+        [https://playwright.dev/docs/api/class-browsercontext#browsercontextaddcookiescookies|playwright documentation]
         for details about each attribute.
 
         Example:

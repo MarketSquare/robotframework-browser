@@ -549,14 +549,14 @@ class Browser(DynamicCore):
     |   return await page.goto(args[0]);
     | }
 
-    ``page``: [https://github.com/microsoft/playwright/blob/master/docs/api.md#class-page|the playwright Page object].
+    ``page``: [https://playwright.dev/docs/api/class-page|the playwright Page object].
 
     ``args``: list of strings from Robot Framework keyword call.
 
     !! A BIT UNSTABLE AND SUBJECT TO API CHANGES !!
     ``logger``: callback function that takes strings as arguments and writes them to robot log. Can be called multiple times.
 
-    ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://github.com/microsoft/playwright/blob/master/docs/api.md#playwright-module | API docs]
+    ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://playwright.dev/docs/api/class-playwright| API docs]
 
 
 

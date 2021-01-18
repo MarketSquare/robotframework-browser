@@ -237,7 +237,7 @@ class Interaction(LibraryComponent):
 
         See playwright's documentation for a more comprehensive list of
         supported input keys.
-        [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
+        [https://playwright.dev/docs/api/class-page#pagepressselector-key-options | Playwright docs for press.]
 
         Example:
 
@@ -284,7 +284,7 @@ class Interaction(LibraryComponent):
         top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
         If not specified, clicks to some visible point of the element.
 
-        ``force`` Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
         ``noWaitAfter`` Actions that initiate navigation, are waiting for
         these navigation to happen and for pages to start loading.
@@ -345,7 +345,7 @@ class Interaction(LibraryComponent):
         If not specified, hovers over some visible point of the element.
         Only positive values within the bounding-box are allowed.
 
-        ``force`` Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
         ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
         pressed during the hover, and then restores current modifiers back.
