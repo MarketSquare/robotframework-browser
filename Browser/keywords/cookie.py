@@ -139,7 +139,11 @@ class Cookie(LibraryComponent):
 
     def _expiry(self, expiry: str) -> int:
         try:
-            return int(expiry)
+            expiry_cleaned = str(expiry)
+            expiry_cleaned = expiry_cleaned.split(".")[0]
+            expiry_cleaned = expiry_cleaned.split(",")[0]
+            expiry_cleaned = expiry_cleaned.replace(" ", "")
+            return int(expiry_cleaned)
         except ValueError:
             return int(convert_date(expiry, result_format="epoch"))
 
