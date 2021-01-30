@@ -143,8 +143,7 @@ class Cookie(LibraryComponent):
             expiry_cleaned = expiry_cleaned.split(",")[0]
             expiry_cleaned = expiry_cleaned.replace(" ", "")
             return int(expiry_cleaned)
-        except ValueError as error:
-            logger.info(error)
+        except ValueError:
             return int(convert_date(expiry, result_format="epoch"))
 
     @keyword(tags=("Setter", "BrowserControl"))
