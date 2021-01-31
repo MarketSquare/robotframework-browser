@@ -1,5 +1,5 @@
 *** Settings ***
-Library           Browser
+Library           Browser    timeout=3s
 Resource          ../imports.resource
 Suite Setup       New Page    ${ERROR_URL}
 
@@ -18,3 +18,7 @@ Page leaker
 
 New page in same context is closed after test
     Get title    ==    Welcome Page
+
+Unhandled alert does not block execution
+    New Page    ${ERROR_URL}
+    run keyword and expect error    Timeout*    Click    text="Do not click!"
