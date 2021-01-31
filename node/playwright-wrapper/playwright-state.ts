@@ -175,8 +175,10 @@ export class PlaywrightState {
     public async getCatalog() {
         const pageToContents = async (page: IndexedPage) => {
             let title = null;
+            const titlePromise = page.p.title();
+            const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 150));
             try {
-                title = await page.p.title();
+                title = await Promise.race([titlePromise, titleTimeout]);
             } catch (e) {}
             return {
                 type: 'page',
