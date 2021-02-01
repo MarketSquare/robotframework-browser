@@ -624,6 +624,8 @@ class Browser(DynamicCore):
         - ``external_browser_executable`` <Dict <SupportedBrowsers, Path>>
           Dict mapping name of browser to path of executable of a browser.
           Will make opening new browsers of the given type use the set executablePath.
+          Currently only configuring of `chromium` to a separate executable (chrome,
+          chromium and Edge executables all work with recent versions) works.
         - ``jsextension`` <str>
           Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
         """
