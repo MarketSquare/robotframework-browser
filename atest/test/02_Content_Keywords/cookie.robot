@@ -152,7 +152,7 @@ Add Cookie With Expiry As Epoch In Different Format
     ...    Bar333
     ...    url=${url}
     ...    expires=1 612 132 430
-    ${cookie} =    Get Cookie    Foo22
+    ${cookie} =    Get Cookie    Foo333
     ${epoch_as_str} =    Convert To String    ${cookie}[expires]
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
 
