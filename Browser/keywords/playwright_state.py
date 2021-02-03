@@ -550,7 +550,10 @@ class PlaywrightState(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(
-                Request().Url(url=url, defaultTimeout=int(self.timeout))
+                # '' will be treated as falsy on .ts side.
+                # TODO: Use optional url field instead once it stabilizes at upstream
+                # https://stackoverflow.com/a/62566052
+                Request().Url(url=(url or ""), defaultTimeout=int(self.timeout))
             )
         logger.info(response.log)
         self._embed_video(json.loads(response.video))
