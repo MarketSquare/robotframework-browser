@@ -51,12 +51,12 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
-"@grpc/grpc-js@^1.2.5":
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.2.5.tgz#d1ef9ae8b99c3b46bb6cc8c82be1aa80080b7300"
-  integrity sha512-CBCNwedw8McnEBq9jvoiJikws16WN0OiHFejQPovY71XkFWSiIqgvydYiDwpvIYDJmhPQ7qZNzW9BPndhXbx1Q==
+"@grpc/grpc-js@^1.2.6":
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.2.6.tgz#579c433ab9b9dda8a62080db1ac0c86dce58bbaa"
+  integrity sha512-wfYwFy7CvVEmBKzeDX1kQQYrv5NBpe8Z+VwXipFvqof3lCXKch7k+4T3grKtptaH5GQ5KP9iKwPr9hMDSynIUw==
   dependencies:
-    "@types/node" "^12.12.47"
+    "@types/node" ">=12.12.47"
     google-auth-library "^6.1.1"
     semver "^6.2.0"
 
@@ -176,15 +176,10 @@
   resolved "https://registry.yarnpkg.com/@types/mime/-/mime-2.0.2.tgz#857a118d8634c84bba7ae14088e4508490cd5da5"
   integrity sha512-4kPlzbljFcsttWEq6aBW0OZe6BDajAmyvr2xknBG92tejQnvdGtT9+kXSZ580DqpxY9qG2xeQVF9Dq0ymUTo5Q==
 
-"@types/node@*":
-  version "14.0.25"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.0.25.tgz#7ad8b00a1206d6c9e94810e49f3115f0bcc30456"
-  integrity sha512-okMqUHqrMlGOxfDZliX1yFX5MV6qcd5PpRz96XYtjkM0Ws/hwg23FMUqt6pETrVRZS+EKUB5HY19mmo54EuQbA==
-
-"@types/node@^12.12.47":
-  version "12.19.3"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.19.3.tgz#a6e252973214079155f749e8bef99cc80af182fa"
-  integrity sha512-8Jduo8wvvwDzEVJCOvS/G6sgilOLvvhn1eMmK3TW8/T217O7u1jdrK6ImKLv80tVryaPSVeKu6sjDEiFjd4/eg==
+"@types/node@*", "@types/node@>=12.12.47":
+  version "14.14.24"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.24.tgz#541c00e4f7c41c8f108bd5b045248b5224c62946"
+  integrity sha512-6BAlkS4seVjszhrwN0W1WabqWwuJwcYF36Z1rPPyQm80LGRKsIeUPdzI51TezXenjetFNy1gRTpuDn1NBg33LA==
 
 "@types/parse-json@^4.0.0":
   version "4.0.0"
