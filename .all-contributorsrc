@@ -210,7 +210,8 @@
       "avatar_url": "https://avatars1.githubusercontent.com/u/16793171?v=4",
       "profile": "https://github.com/estimation",
       "contributions": [
-        "bug"
+        "bug",
+        "userTesting"
       ]
     },
     {
@@ -236,6 +237,24 @@
       "name": "Simon Meggle",
       "avatar_url": "https://avatars3.githubusercontent.com/u/1897410?v=4",
       "profile": "http://www.elabit.de",
+      "contributions": [
+        "userTesting"
+      ]
+    },
+    {
+      "login": "Anna-Gunda",
+      "name": "Anna-Gunda",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/13298792?v=4",
+      "profile": "https://github.com/Anna-Gunda",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "anton264",
+      "name": "anton264",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/10194266?v=4",
+      "profile": "https://github.com/anton264",
       "contributions": [
         "userTesting"
       ]

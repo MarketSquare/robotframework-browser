@@ -23,8 +23,8 @@ import * as playwrightState from './playwright-state';
 import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { ServerUnaryCall, sendUnaryData } from '@grpc/grpc-js';
-import { errorResponse, keywordsResponse } from './response-util';
+import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
+import { emptyWithLog, errorResponse, keywordsResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     state: PlaywrightState;
@@ -35,7 +35,11 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     private getActiveBrowser = () => this.state.getActiveBrowser();
     private getActiveContext = () => this.state.getActiveContext();
-    private getActivePage = () => this.state.getActivePage();
+    private getActivePage = () => {
+        const page = this.state.getActivePage();
+        if (!page) throw Error('No page open.');
+        return page;
+    };
 
     private wrapping = <T, K>(
         func: (request: T, state: PlaywrightState) => Promise<K>,
@@ -66,18 +70,16 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    async callExtensionKeyword(
-        call: ServerUnaryCall<Request.KeywordCall, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
+    async callExtensionKeyword(call: ServerWritableStream<Request.KeywordCall, Response.Json>): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await playwrightState.extensionKeywordCall(request, this.state);
-            callback(null, result);
+            const result = await playwrightState.extensionKeywordCall(request, call, this.state);
+            call.write(result);
         } catch (e) {
-            callback(errorResponse(e), null);
+            call.emit('error', errorResponse(e));
         }
+        call.end();
     }
 
     async closeBrowser(
@@ -144,7 +146,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         try {
-            const result = await cookie.getCookies(this.getActiveContext());
+            const context = this.getActiveContext();
+            if (!context) throw Error('no open context.');
+            const result = await cookie.getCookies(context);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -158,7 +162,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await cookie.addCookie(request, this.getActiveContext());
+            const context = this.getActiveContext();
+            if (!context) throw Error('no open context.');
+            const result = await cookie.addCookie(request, context);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -170,7 +176,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const result = await cookie.deleteAllCookies(this.getActiveContext());
+            const context = this.getActiveContext();
+            if (!context) throw Error('no open context.');
+            const result = await cookie.deleteAllCookies(context);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -261,6 +269,20 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async connectToBrowser(
+        call: ServerUnaryCall<Request.ConnectBrowser, Response.String>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await playwrightState.connectToBrowser(request, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
     async goTo(
         call: ServerUnaryCall<Request.Url, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
@@ -280,8 +302,8 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const response = await browserControl.goBack(this.getActivePage());
-            callback(null, response);
+            await this.getActivePage().goBack();
+            callback(null, emptyWithLog('Did Go Back'));
         } catch (e) {
             callback(errorResponse(e), null);
         }
@@ -292,8 +314,8 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const response = await browserControl.goForward(this.getActivePage());
-            callback(null, response);
+            await this.getActivePage().goForward();
+            callback(null, emptyWithLog('Did Go Forward'));
         } catch (e) {
             callback(errorResponse(e), null);
         }
@@ -704,7 +726,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await network.waitForRequest(request, this.getActivePage());
+            const page = this.getActivePage();
+            if (!page) throw Error('No page open.');
+            const result = await network.waitForRequest(request, page);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -746,7 +770,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await evaluation.waitForFunction(request, this.state);
+            const result = await evaluation.waitForFunction(request, this.state, this.getActivePage());
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -774,7 +798,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await evaluation.executeJavascript(request, this.state);
+            const result = await evaluation.executeJavascript(request, this.state, this.getActivePage());
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -817,8 +841,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async download(
-        call: ServerUnaryCall<Request.Url, Response.String>,
-        callback: sendUnaryData<Response.String>,
+        call: ServerUnaryCall<Request.Url, Response.Json>,
+        callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         try {
             const request = call.request;

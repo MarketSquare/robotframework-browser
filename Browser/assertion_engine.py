@@ -72,21 +72,37 @@ T = TypeVar("T")
 
 
 def verify_assertion(
-    value: T, operator: Optional[AssertionOperator], expected: Any, message=""
+    value: T,
+    operator: Optional[AssertionOperator],
+    expected: Any,
+    message="",
+    custom_message="",
 ) -> Any:
     if operator is None:
         return value
     if operator is AssertionOperator["then"]:
         return cast(T, BuiltIn().evaluate(expected, namespace={"value": value}))
     handler = handlers.get(operator)
+    filler = " " if message else ""
     if handler is None:
-        raise RuntimeError(f"{message} `{operator}` is not a valid assertion operator")
+        raise RuntimeError(
+            f"{message}{filler}`{operator}` is not a valid assertion operator"
+        )
     validator, text = handler
     if not validator(value, expected):
-        filler = " " if message else ""
-        raise AssertionError(
-            f"{message}{filler}'{value}' ({type_converter(value)}) {text} '{expected}' ({type_converter(expected)})"
-        )
+        if not custom_message:
+            error_msg = (
+                f"{message}{filler}'{value}' ({type_converter(value)}) "
+                f"{text} '{expected}' ({type_converter(expected)})"
+            )
+        else:
+            error_msg = custom_message.format(
+                value=value,
+                value_type=type_converter(value),
+                expected=expected,
+                expected_type=type_converter(expected),
+            )
+        raise AssertionError(error_msg)
     return value
 
 
@@ -125,7 +141,11 @@ Elapsed time in retries {now - (retries_start or now)} seconds"""
 
 
 def float_str_verify_assertion(
-    value: T, operator: Optional[AssertionOperator], expected: Any, message=""
+    value: T,
+    operator: Optional[AssertionOperator],
+    expected: Any,
+    message="",
+    custom_message="",
 ):
     if operator is None:
         return value
@@ -138,11 +158,15 @@ def float_str_verify_assertion(
         expected = str(expected)
     else:
         raise ValueError(f"Operator '{operator.name}' is not allowed.")
-    return verify_assertion(value, operator, expected, message)
+    return verify_assertion(value, operator, expected, message, custom_message)
 
 
 def bool_verify_assertion(
-    value: T, operator: Optional[AssertionOperator], expected: Any, message=""
+    value: T,
+    operator: Optional[AssertionOperator],
+    expected: Any,
+    message="",
+    custom_message="",
 ):
     if operator and operator not in [
         AssertionOperator["=="],
@@ -151,7 +175,7 @@ def bool_verify_assertion(
         raise ValueError(f"Operators '==' and '!=' are allowed, not '{operator.name}'.")
 
     expected_bool = is_truthy(expected)
-    return verify_assertion(value, operator, expected_bool, message)
+    return verify_assertion(value, operator, expected_bool, message, custom_message)
 
 
 def map_list(selected: List):
@@ -168,6 +192,7 @@ def list_verify_assertion(
     operator: Optional[AssertionOperator],
     expected: List,
     message="",
+    custom_message="",
 ):
     if operator:
         if operator not in SequenceOperators:
@@ -181,7 +206,9 @@ def list_verify_assertion(
         ]:
             expected.sort()
             value.sort()
-    return verify_assertion(map_list(value), operator, map_list(expected), message)
+    return verify_assertion(
+        map_list(value), operator, map_list(expected), message, custom_message
+    )
 
 
 def dict_verify_assertion(
@@ -189,6 +216,7 @@ def dict_verify_assertion(
     operator: Optional[AssertionOperator],
     expected: Optional[Dict],
     message="",
+    custom_message="",
 ):
     if operator and operator not in SequenceOperators:
         raise AttributeError(
@@ -196,7 +224,7 @@ def dict_verify_assertion(
             f"Allowed operators are: {SequenceOperators}"
         )
     else:
-        return verify_assertion(value, operator, expected, message)
+        return verify_assertion(value, operator, expected, message, custom_message)
 
 
 def int_dict_verify_assertion(
@@ -204,6 +232,7 @@ def int_dict_verify_assertion(
     operator: Optional[AssertionOperator],
     expected: Optional[Dict[str, int]],
     message="",
+    custom_message="",
 ):
     if not operator:
         return value
@@ -212,11 +241,13 @@ def int_dict_verify_assertion(
             evaluated_expected = ast.literal_eval(expected)
         else:
             evaluated_expected = expected
-        return verify_assertion(value, operator, evaluated_expected, message)
+        return verify_assertion(
+            value, operator, evaluated_expected, message, custom_message
+        )
     elif expected and operator in NumericalOperators:
         for k, v in value.items():
             exp = expected[k]
-            verify_assertion(v, operator, exp, message)
+            verify_assertion(v, operator, exp, message, custom_message)
         return value
     else:
         raise AttributeError(

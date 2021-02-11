@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from approvaltests import verify_all  # type: ignore
 
@@ -9,12 +11,41 @@ from Browser.assertion_engine import (
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Works only in Linux")
+def test_custom_error():
+    results = [
+        _validate_operator(
+            AssertionOperator["=="],
+            "actual",
+            "unexpected",
+            "partial error",
+            "custom message",
+        ),
+        _validate_operator(
+            AssertionOperator["=="],
+            "ääööÅÅ",
+            "åß∂ƒ©˙∆˚¬…æ",
+            "partial error",
+            "{value} {value_type} custom message {expected} {expected_type}",
+        ),
+        _validate_operator(
+            AssertionOperator["=="],
+            "ääööÅÅ",
+            "åß∂ƒ©˙∆˚¬…æ",
+            "partial error",
+            "{value} custom message {expected}",
+        ),
+    ]
+    verify_all("Test custom error", results)
+
+
 def test_equals():
     results = [
         _validate_operator(AssertionOperator["=="], "actual", "actual"),
-        _validate_operator(AssertionOperator["=="], "actual", "unexpected"),
+        _validate_operator(
+            AssertionOperator["=="], "actual", "unexpected", "partial error"
+        ),
         _validate_operator(AssertionOperator["=="], 1, "1"),
-
     ]
     verify_all("Test equals", results)
 
@@ -22,7 +53,9 @@ def test_equals():
 def test_not_equals():
     results = [
         _validate_operator(AssertionOperator["!="], "actual", "expected"),
-        _validate_operator(AssertionOperator["!="], "actual", "actual"),
+        _validate_operator(
+            AssertionOperator["!="], "actual", "actual", "partial error message"
+        ),
     ]
     verify_all("Not equal", results)
 
@@ -30,7 +63,7 @@ def test_not_equals():
 def test_contains():
     results = [
         _validate_operator(AssertionOperator["contains"], "actual", "ctua"),
-        _validate_operator(AssertionOperator["contains"], "actual", "nope"),
+        _validate_operator(AssertionOperator["contains"], "actual", "nope", "custom"),
         _validate_operator(AssertionOperator["*="], "actual", "tual"),
         _validate_operator(AssertionOperator["*="], "actual", "nope"),
     ]
@@ -69,7 +102,7 @@ def test_without_assertions_polling():
     results = [
         fb.is_three(3),
         _method_validator(fb.is_three, 2),
-        _method_validator(fb.second_run_success)
+        _method_validator(fb.second_run_success),
     ]
     verify_all("No polling", results)
 
@@ -77,7 +110,7 @@ def test_without_assertions_polling():
 def test_greater():
     results = [
         _validate_operator(AssertionOperator["<"], 1, 2),
-        _validate_operator(AssertionOperator["<"], 1, 0),
+        _validate_operator(AssertionOperator["<"], 1, 0, "custom"),
     ]
     verify_all("Greater", results)
 
@@ -85,7 +118,7 @@ def test_greater():
 def test_less():
     results = [
         _validate_operator(AssertionOperator[">"], 2, 1),
-        _validate_operator(AssertionOperator[">"], 2, 3),
+        _validate_operator(AssertionOperator[">"], 2, 3, "custom"),
     ]
     verify_all("Less", results)
 
@@ -115,9 +148,12 @@ def test_match():
         _validate_operator(AssertionOperator["matches"], "Actual", "^Act"),
         _validate_operator(AssertionOperator["matches"], "Actual", "/(\\d)+/"),
         _validate_operator(AssertionOperator["matches"], "Actual", "ual$"),
-        _validate_operator(AssertionOperator["matches"], "Actual\nmultiline", "(?m)Actual\nmultiline$"),
-        _validate_operator(AssertionOperator["matches"], "Actual\nmultiline", "/(\\d)+/"),
-
+        _validate_operator(
+            AssertionOperator["matches"], "Actual\nmultiline", "(?m)Actual\nmultiline$"
+        ),
+        _validate_operator(
+            AssertionOperator["matches"], "Actual\nmultiline", "/(\\d)+/"
+        ),
     ]
     verify_all("match", results)
 
@@ -148,7 +184,7 @@ def test_then(with_suite):
     results = [
         verify_assertion(8, then_op, "value + 3") == 11,
         verify_assertion(2, then_op, "value + 3") == 5,
-        verify_assertion("René", then_op, "'Hello ' + value + '!'") == "Hello René!"
+        verify_assertion("René", then_op, "'Hello ' + value + '!'") == "Hello René!",
     ]
     verify_all("then", results)
 
@@ -157,11 +193,16 @@ def test_start_with():
     results = [
         _validate_operator(AssertionOperator["^="], "Hello Robots", "Hello"),
         _validate_operator(AssertionOperator["^="], "Hello Robots", "Robots"),
-        _validate_operator(AssertionOperator["should start with"], "Hello Robots", "Hello"),
-        _validate_operator(AssertionOperator["should start with"], "Hello Robots", "Robots"),
-        _validate_operator(AssertionOperator["^="], "Hel[4,5]?[1-9]+ Robots", "Hel[4,5]?[1-"),
+        _validate_operator(
+            AssertionOperator["should start with"], "Hello Robots", "Hello"
+        ),
+        _validate_operator(
+            AssertionOperator["should start with"], "Hello Robots", "Robots"
+        ),
+        _validate_operator(
+            AssertionOperator["^="], "Hel[4,5]?[1-9]+ Robots", "Hel[4,5]?[1-"
+        ),
         _validate_operator(AssertionOperator["^="], "Hel[4,5]?[1-9]+ Robots", ".*"),
-
     ]
     verify_all("start with", results)
 
@@ -170,15 +211,27 @@ def test_ends_with():
     results = [
         _validate_operator(AssertionOperator["$="], "Hello Robots", "Robots"),
         _validate_operator(AssertionOperator["$="], "Hello Robots", "Hello"),
-        _validate_operator(AssertionOperator["$="], "Hel[4,5]?[1-9]+ Robots", "[1-9]+ Robots"),
+        _validate_operator(
+            AssertionOperator["$="], "Hel[4,5]?[1-9]+ Robots", "[1-9]+ Robots"
+        ),
         _validate_operator(AssertionOperator["$="], "Hel[4,5]?[1-9]+ Robots", ".*"),
     ]
     verify_all("ends with", results)
 
 
-def _validate_operator(operator: AssertionOperator, actual, expected):
+def test_invalid_operator():
+    results = [
+        _validate_operator("foo", "actual", "unexpected", "bar"),
+        _validate_operator("foo", "actual", "unexpected"),
+    ]
+    verify_all("Custom error", results)
+
+
+def _validate_operator(
+    operator: AssertionOperator, actual, expected, message="", custom_message=""
+):
     try:
-        return verify_assertion(actual, operator, expected)
+        return verify_assertion(actual, operator, expected, message, custom_message)
     except Exception as error:
         return error
 

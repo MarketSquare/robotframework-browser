@@ -16,24 +16,14 @@ import { BrowserContext, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, exists, invokeOnPage } from './playwirght-invoke';
+import { determineElement, exists } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
 
-export async function goTo(request: Request.Url, page?: Page): Promise<Response.Empty> {
+export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
     const url = request.getUrl();
     const timeout = request.getDefaulttimeout();
-    await invokeOnPage(page, 'goto', url, { timeout: timeout });
+    await page.goto(url, { timeout });
     return emptyWithLog(`Succesfully opened URL ${url}`);
-}
-
-export async function goBack(page?: Page): Promise<Response.Empty> {
-    await invokeOnPage(page, 'goBack');
-    return emptyWithLog('Did Go Back');
-}
-
-export async function goForward(page?: Page): Promise<Response.Empty> {
-    await invokeOnPage(page, 'goForward');
-    return emptyWithLog('Did Go Forward');
 }
 
 export async function takeScreenshot(
@@ -51,7 +41,7 @@ export async function takeScreenshot(
     } else {
         const page = state.getActivePage();
         exists(page, 'Tried to take screenshot, but no page was open.');
-        await invokeOnPage(page, 'screenshot', { path: path, fullPage });
+        await page.screenshot({ path, fullPage });
     }
     const message = 'Screenshot succesfully captured to: ' + path;
     return stringResponse(path, message);
@@ -64,9 +54,9 @@ export async function setTimeout(request: Request.Timeout, context?: BrowserCont
     return emptyWithLog(`Set timeout to: ${timeout}`);
 }
 
-export async function setViewportSize(request: Request.Viewport, page?: Page): Promise<Response.Empty> {
+export async function setViewportSize(request: Request.Viewport, page: Page): Promise<Response.Empty> {
     const size = { width: request.getWidth(), height: request.getHeight() };
-    await invokeOnPage(page, 'setViewportSize', size);
+    await page.setViewportSize(size);
     return emptyWithLog(`Set viewport size to: ${size}`);
 }
 
@@ -77,8 +67,8 @@ export async function setOffline(request: Request.Bool, context?: BrowserContext
     return emptyWithLog(`Set context to ${offline}`);
 }
 
-export async function reload(page?: Page): Promise<Response.Empty> {
-    await invokeOnPage(page, 'reload');
+export async function reload(page: Page): Promise<Response.Empty> {
+    await page.reload();
     return emptyWithLog('Reloaded page');
 }
 

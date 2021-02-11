@@ -14,7 +14,8 @@
 
 import json
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from robot.utils import get_link_path  # type: ignore
 
@@ -26,9 +27,11 @@ from ..utils import (
     GeoLocation,
     HttpCredentials,
     Proxy,
+    RecordVideo,
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
+    attribute_warning,
     convert_typed_dict,
     find_by_id,
     keyword,
@@ -229,6 +232,26 @@ class PlaywrightState(LibraryComponent):
                         logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
+    def connect_to_browser(
+        self, wsEndpoint: str, browser: SupportedBrowsers = SupportedBrowsers.chromium
+    ):
+        """Connect to a playwright Browser.
+        See `Browser, Context and Page` for more information about Browser and related concepts.
+
+        Returns a stable identifier for the connected browser.
+
+        ``wsEndpoint`` Address to connect to.
+
+        ``browser`` Opens the specified browser. Defaults to chromium.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ConnectToBrowser(
+                Request().ConnectBrowser(url=wsEndpoint, browser=browser.name)
+            )
+            logger.info(response.log)
+            return response.body
+
+    @keyword(tags=("Setter", "BrowserControl"))
     def new_browser(
         self,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
@@ -316,6 +339,9 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=("Setter", "BrowserControl"))
+    @attribute_warning(
+        old_args=("videosPath", "videoSize"), new_args=("recordVideo", "recordVideo")
+    )
     def new_context(
         self,
         acceptDownloads: bool = False,
@@ -340,6 +366,7 @@ class PlaywrightState(LibraryComponent):
         videoSize: Optional[ViewportDimensions] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         hideRfBrowser: bool = False,
+        recordVideo: Optional[RecordVideo] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -388,7 +415,7 @@ class PlaywrightState(LibraryComponent):
         as well as number and date formatting rules.
 
         ``permissions`` A list of permissions to grant to all pages in this context.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextgrantpermissionspermissions-options | grantPermissions]
+        See [https://playwright.dev/docs/api/class-browsercontext#browsercontextgrantpermissionspermissions-options| grantPermissions]
         for more details.
 
         ``extraHTTPHeaders`` A dictionary containing additional HTTP headers
@@ -403,17 +430,21 @@ class PlaywrightState(LibraryComponent):
 
         ``colorScheme`` Emulates 'prefers-colors-scheme'
         media feature, supported values are 'light', 'dark', 'no-preference'.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#pageemulatemediaoptions|emulateMedia(options)]
+        See [https://playwright.dev/docs/api/class-page#pageemulatemediaparams|emulateMedia(options)]
         for more details. Defaults to ``light``.
 
         ``proxy`` Network proxy settings to use with this context.
         Note that browser needs to be launched with the global proxy for this option to work.
         If all contexts override the proxy, global proxy will be never used and can be any string
 
-        ``videosPath`` Enables video recording for all pages to videosPath
-        folder. If not specified, videos are not recorded.
+        ``videosPath`` is deprecated by playwright, use recordVideo instead.
+        Enables video recording for all pages to videosPath
+        folder. If videosPath is not existing folder, videosPath folder is created
+        under ${OUTPUT_DIR}/browser/video/ folder. If videosPath is not specified,
+        videos are not recorded.
 
-        ``videoSize`` Specifies dimensions of the automatically recorded
+        ``videoSize`` is deprecated by playwright, use recordVideo instead.
+        Specifies dimensions of the automatically recorded
         video. Can only be used if videosPath is set. If not specified the size will
         be equal to viewport. If viewport is not configured explicitly the video size
         defaults to 1280x720. Actual picture of the page will be scaled down if
@@ -424,6 +455,17 @@ class PlaywrightState(LibraryComponent):
         with defaults, it now uses this setting.
         Very useful together with `Get Device` keyword:
 
+        ``recordVideo`` enables video recording for all pages into a folder. If not
+        specified videos are not recorded. Make sure to close context for videos to be saved.
+        ``recordVideo`` is dictionary containing `dir` and `size` keys. If `dir` is not
+        existing folder, videosPath folder is created under
+        ${OUTPUT_DIR}/browser/video/ folder. `size` Optional dimensions of the recorded
+        videos. If not specified the size will be equal to viewport. If viewport is not
+        configured explicitly the video size defaults to 1280x720. Actual picture of
+        each page will be scaled down if necessary to fit the specified size.
+        `size` is dictionary containing `width` (Video frame width) and  `height`
+        (Video frame height) keys.
+
         Example:
         | Test an iPhone
         |     ${device}=    `Get Device`    iPhone X
@@ -432,12 +474,14 @@ class PlaywrightState(LibraryComponent):
 
         A BrowserContext is the Playwright object that controls a single browser profile.
         Within a context caches and cookies are shared.
-        See [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsernewcontextoptions|Playwright browser.newContext]
+        See [https://playwright.dev/docs/api/class-browser#browsernewcontextoptions|Playwright browser.newContext]
         for a list of supported options.
 
         If there's no open Browser this keyword will open one. Does not create pages.
         """
         params = locals_to_params(locals())
+        params = self._set_video_path(params)
+        params = self._set_video_size_to_int(params)
         params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)
@@ -455,7 +499,37 @@ class PlaywrightState(LibraryComponent):
         self.context_cache.add(response.body, self._get_video_size(params))
         return response.body
 
+    def _set_video_path(self, params: dict) -> dict:
+        video_path = params.get("videosPath")
+        record_video = params.get("recordVideo", {})
+        if not video_path:
+            video_path = record_video.get("dir")
+        if not video_path:
+            return params
+        if Path(video_path).is_dir():
+            return params
+        if record_video:
+            params["recordVideo"]["dir"] = self.video_output / video_path
+        else:
+            params["videosPath"] = self.video_output / video_path
+        return params
+
+    def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
+        width = params.get("recordVideo", {}).get("size", {}).get("width")
+        height = params.get("recordVideo", {}).get("size", {}).get("height")
+        return int(width) if width else None, int(height) if height else None
+
+    def _set_video_size_to_int(self, params: dict) -> dict:
+        width, height = self._get_record_video_size(params)
+        if width and height:
+            params["recordVideo"]["size"]["width"] = width
+            params["recordVideo"]["size"]["height"] = height
+        return params
+
     def _get_video_size(self, params: dict) -> dict:
+        width, height = self._get_record_video_size(params)
+        if width and height:
+            return {"width": width, "height": height}
         if "videoSize" in params:
             return params["videoSize"]
         if "viewport" in params:
@@ -476,7 +550,10 @@ class PlaywrightState(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(
-                Request().Url(url=url, defaultTimeout=int(self.timeout))
+                # '' will be treated as falsy on .ts side.
+                # TODO: Use optional url field instead once it stabilizes at upstream
+                # https://stackoverflow.com/a/62566052
+                Request().Url(url=(url or ""), defaultTimeout=int(self.timeout))
             )
         logger.info(response.log)
         self._embed_video(json.loads(response.video))
@@ -504,9 +581,12 @@ class PlaywrightState(LibraryComponent):
         self,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Dict:
         """Returns all browsers, open contexts in them and open pages in these contexts.
         See `Browser, Context and Page` for more information about these concepts.
+
+        ``message`` overrides the default error message.
 
         The data is parsed into a python list containing data representing the open Objects.
 
@@ -577,7 +657,11 @@ class PlaywrightState(LibraryComponent):
             parsed = json.loads(response.json)
             logger.info(json.dumps(parsed))
             return verify_assertion(
-                parsed, assertion_operator, assertion_expected, "Browser Catalog "
+                parsed,
+                assertion_operator,
+                assertion_expected,
+                "Browser Catalog",
+                message,
             )
 
     @keyword(tags=("Setter", "BrowserControl"))
@@ -653,8 +737,8 @@ class PlaywrightState(LibraryComponent):
 
 
         ``browser`` Defaults to ``ALL``
-        - ``ALL`` Returns all ids as a list.
-        - ``ACTIVE`` or ``CURRENT`` Returns the id of the currently active browser as list.
+        - ``ALL`` / ``ANY`` Returns all ids as a list.
+        - ``ACTIVE`` / ``CURRENT`` Returns the id of the currently active browser as list.
 
         The ACTIVE browser is a synonym for the CURRENT Browser.
         """
@@ -675,6 +759,8 @@ class PlaywrightState(LibraryComponent):
         """Returns a list of context ids based on the browser selection.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
+        ``ALL`` and ``ANY`` are synonyms.
+        ``ACTIVE`` and ``CURRENT`` are also synonyms.
 
         ``context`` Defaults to ``ALL``
         - ``ALL`` Returns all context ids as a list.
@@ -719,6 +805,8 @@ class PlaywrightState(LibraryComponent):
         """Returns a list of page ids based on the context and browser selection.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
+        ``ALL`` and ``ANY`` are synonyms.
+        ``ACTIVE`` and ``CURRENT`` are also synonyms.
 
         ``page``
         - ``ALL`` Returns all page ids as a list.
@@ -731,6 +819,15 @@ class PlaywrightState(LibraryComponent):
         ``browser``
         - ``ALL`` page ids from all open browsers shall be fetched.
         - ``ACTIVE`` only page ids from the active browser shall be fetched.
+
+        Example:
+        | Test Case
+        |     `New Page`    http://www.imbus.de
+        |     `New Page`    http://www.reaktor.com
+        |     ${current_page}=   Get Page IDs    ACTIVE    ACTIVE    ACTIVE
+        |     Log                Current page ID is: ${current_page}[0]
+        |     ${all_pages}=      Get Page IDs    CURRENT   CURRENT   ALL
+        |     Log Many           These are all Page IDs    @{all_pages}
 
         The ACTIVE page of the ACTIVE context of the ACTIVE Browser is the ``Current`` Page.
         """

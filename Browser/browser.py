@@ -461,7 +461,16 @@ class Browser(DynamicCore):
     | ``evaluate``        |  ``then``                         | When using this operator, the keyword does return the evaluated Python expression. |                        |
 
 
-    The keywords will provide an error message if the assertion fails.
+    Bu default the keywords will provide an error message if the assertion fails,
+    but default error message can be overwritten with a ``message`` argument. The
+    ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
+    `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
+    options. The `{value}` is the value returned by the keyword and the `{expected}`
+    is the expected value defined by the user, usually value in the
+    ``assertion_expected`` argument. The `{value_type}` and
+    `{expected_type}` are the type definitions from `{value}` and `{expected}`
+    arguments. In similar fashion as Python
+    [https://docs.python.org/3/library/functions.html#type|type] returns type definition.
     Assertions will retry until ``timeout`` has expired if they do not pass.
 
     The assertion ``assertion_expected`` value is not converted by the library and
@@ -535,8 +544,22 @@ class Browser(DynamicCore):
     can be also translated to modules that can be used from Node.js. For example TypeScript, PureScript and
     ClojureScript just to mention few.
 
-    Exposed functions will get the playwright page object as the first argument. Second argument is a list of
-    strings from Robot Framework keyword call.
+    | async function myGoToKeyword(page, args, logger, playwright) {
+    |   logger(args.toString())
+    |   playwright.coolNewFeature()
+    |   return await page.goto(args[0]);
+    | }
+
+    ``page``: [https://playwright.dev/docs/api/class-page|the playwright Page object].
+
+    ``args``: list of strings from Robot Framework keyword call.
+
+    !! A BIT UNSTABLE AND SUBJECT TO API CHANGES !!
+    ``logger``: callback function that takes strings as arguments and writes them to robot log. Can be called multiple times.
+
+    ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://playwright.dev/docs/api/class-playwright| API docs]
+
+
 
     == Example module.js ==
 
@@ -576,7 +599,7 @@ class Browser(DynamicCore):
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
         retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot",
-        external_browser_executable: Dict[SupportedBrowsers, str] = {},
+        external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Optional[str] = None,
         enable_presenter_mode: bool = False,
     ):
@@ -604,6 +627,8 @@ class Browser(DynamicCore):
         - ``external_browser_executable`` <Dict <SupportedBrowsers, Path>>
           Dict mapping name of browser to path of executable of a browser.
           Will make opening new browsers of the given type use the set executablePath.
+          Currently only configuring of `chromium` to a separate executable (chrome,
+          chromium and Edge executables all work with recent versions) works.
         - ``jsextension`` <str>
           Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
         - ``enable_presenter_mode`` <bool>
@@ -618,9 +643,9 @@ class Browser(DynamicCore):
         self.run_on_failure_keyword = (
             None if is_falsy(run_on_failure) else run_on_failure
         )
-        self.external_browser_executable: Dict[
-            SupportedBrowsers, str
-        ] = external_browser_executable
+        self.external_browser_executable: Dict[SupportedBrowsers, str] = (
+            external_browser_executable or {}
+        )
         self._unresolved_promises: Set[Future] = set()
         self._playwright_state = PlaywrightState(self)
         libraries = [
@@ -659,10 +684,13 @@ class Browser(DynamicCore):
         @keyword
         def func(*args):
             with self.playwright.grpc_channel() as stub:
-                response = stub.CallExtensionKeyword(
+                responses = stub.CallExtensionKeyword(
                     Request().KeywordCall(name=name, arguments=args)
                 )
-                logger.info(response.log)
+                for response in responses:
+                    logger.info(response.log)
+                if response.json == "":
+                    return
                 return json.loads(response.json)
 
         return func
@@ -678,7 +706,7 @@ class Browser(DynamicCore):
         try:
             self.playwright.close()
         except ConnectionError as e:
-            logger.warn(f"Browser library closing problem: {e}")
+            logger.trace(f"Browser library closing problem: {e}")
 
     def _start_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
@@ -709,7 +737,7 @@ class Browser(DynamicCore):
                 catalog_before_test = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_test)
             except AssertionError as e:
-                logger.warn(f"Test Case: {name}, End Test: {e}")
+                logger.debug(f"Test Case: {name}, End Test: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
@@ -722,7 +750,7 @@ class Browser(DynamicCore):
                 catalog_before_suite = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_suite)
             except AssertionError as e:
-                logger.warn(f"Test Suite: {name}, End Suite: {e}")
+                logger.debug(f"Test Suite: {name}, End Suite: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 

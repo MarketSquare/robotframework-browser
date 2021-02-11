@@ -4,7 +4,7 @@ Resource          imports.resource
 *** Test Cases ***
 No Open Browser Throws
     Run KeyWord and Expect Error
-    ...    Error: Tried to do playwright action 'goto', but no open page.
+    ...    Error: No page open.
     ...    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward

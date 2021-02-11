@@ -6,14 +6,15 @@ Library           OperatingSystem
 Open PDF in another tab and download it
     [Setup]    New Browser    headless=${FALSE}    downloadsPath=${EXECDIR}
     New Context    acceptDownloads=${TRUE}
+    Set Browser Timeout    30s
     New Page    ${WELCOME_URL}
     Click    text=Open pdf
     Switch Page    NEW
     ${url}=    Get Url    should end with    .pdf
     ${path}=    Download    ${url}
-    ${actual_size}=    get file size    ${path}
+    ${actual_size}=    get file size    ${path.saveAs}
     Should be equal    ${actual_size}    ${32201}
-    remove file    ${path}
+    remove file    ${path.saveAs}
     Close Page
     Get Url    should end with    welcome.html
     [Teardown]    Close Browser
@@ -43,6 +44,7 @@ Download works also headless
     New Context    acceptDownloads=${TRUE}
     New Page    ${WELCOME_URL}
     ${path}=    Download    ${WELCOME_URL}
-    ${actual_size}=    get file size    ${path}
-    Should be equal    ${actual_size}    ${449}
-    remove file    ${path}
+    ${actual_size}=    get file size    ${path}[saveAs]
+    Should Be True    ${actual_size} < ${500}
+    remove file    ${path}[saveAs]
+    Should Contain    ${path}[suggestedFilename]    .html

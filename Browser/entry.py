@@ -52,7 +52,7 @@ def rfbrowser_init(skip_browser_install: bool):
             f"Installation directory `{installation_dir}` does not contain the required package.json "
             + "\nPrinting contents:"
         )
-        for root, dirs, files in os.walk(installation_dir):
+        for root, _dirs, files in os.walk(installation_dir):
             level = root.replace(installation_dir.__str__(), "").count(os.sep)
             indent = " " * 4 * (level)
             print("{}{}/".format(indent, os.path.basename(root)))
@@ -105,3 +105,7 @@ def rfbrowser_init(skip_browser_install: bool):
         )
 
     print("rfbrowser init completed")
+
+
+if __name__ == "__main__":
+    run()

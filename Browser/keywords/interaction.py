@@ -237,7 +237,7 @@ class Interaction(LibraryComponent):
 
         See playwright's documentation for a more comprehensive list of
         supported input keys.
-        [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
+        [https://playwright.dev/docs/api/class-page#pagepressselector-key-options | Playwright docs for press.]
 
         Example:
 
@@ -284,7 +284,7 @@ class Interaction(LibraryComponent):
         top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
         If not specified, clicks to some visible point of the element.
 
-        ``force`` Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
         ``noWaitAfter`` Actions that initiate navigation, are waiting for
         these navigation to happen and for pages to start loading.
@@ -349,7 +349,7 @@ class Interaction(LibraryComponent):
         If not specified, hovers over some visible point of the element.
         Only positive values within the bounding-box are allowed.
 
-        ``force`` Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
         ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
         pressed during the hover, and then restores current modifiers back.
@@ -595,13 +595,21 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("PageContent",))
     def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
-        """Handle next dialog on page with ``action``. Dialog can be any of alert,
-        beforeunload, confirm or prompt.
+        """Handle next dialog on page with ``action``.
+
+        Dialog can be any of alert, beforeunload, confirm or prompt. Handling dialogue
+        must be called before the action, like example click, that triggers the
+        dialogue.
 
             ``action`` How to handle the alert.
 
             ``prompt_input`` The value to enter into prompt. Only valid if
             ``action`` equals accept. Defaults to empty string.
+
+        Example:
+
+        | Handle Future Dialogs    action=accept
+        | Click                    \\#alerts
         """
 
         with self.playwright.grpc_channel() as stub:
@@ -646,7 +654,7 @@ class Interaction(LibraryComponent):
                     "No coordinates where set. Action appears at current position."
                 )
             if action == MouseButtonAction.click:
-                for i in range(clickCount):
+                for _ in range(clickCount):
                     self.mouse_button(MouseButtonAction.down, button=button)
                     sleep(delay / 1000)
                     self.mouse_button(MouseButtonAction.up, button=button)

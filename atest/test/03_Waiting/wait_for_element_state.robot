@@ -69,11 +69,33 @@ Wait For Elements State unchecked
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    unchecked    1s
 
-Wait For Elements State fails on too short timeout
+Wait For Elements State fails On Too Short Timeout
     Select Options By    \#dropdown    value    unchecked
     Click    \#submit    noWaitAfter=True
     Run Keyword and Expect Error
-    ...    STARTS:TimeoutError: page.waitForFunction: Timeout 300ms exceeded.    Wait For Elements State    \#victim    unchecked    300ms
+    ...    STARTS:TimeoutError: page.waitForFunction: Timeout 300ms exceeded.
+    ...    Wait For Elements State    \#victim    unchecked    300ms
+
+Wait For Elements State Fails On Too Short Timeout Custom Error With Formatting
+    Select Options By    \#dropdown    value    unchecked
+    Click    \#submit    noWaitAfter=True
+    Run Keyword and Expect Error
+    ...    Custom Error #victim, e => !e.checked and 0:00:00.300000
+    ...    Wait For Elements State    \#victim    unchecked    300ms    Custom Error {selector}, {function} and {timeout}
+
+Wait For Elements State Fails On Too Short Timeout Custom Error
+    Select Options By    \#dropdown    value    unchecked
+    Click    \#submit    noWaitAfter=True
+    Run Keyword and Expect Error
+    ...    Custom Error
+    ...    Wait For Elements State    \#victim    unchecked    300ms    Custom Error
+
+Wait For Elements State Fails On Too Short Timeout Custom Error And Hidden
+    Select Options By    \#dropdown    value    unchecked
+    Click    \#submit    noWaitAfter=True
+    Run Keyword and Expect Error
+    ...    Custom Error #victim, ElementState.hidden and 0:00:00.300000
+    ...    Wait For Elements State    \#victim    hidden    300ms    Custom Error {selector}, {function} and {timeout}
 
 Wait For Elements State to hide with Promise
     Select Options By    \#dropdown    value    hidden    # Now it is visible
@@ -93,6 +115,7 @@ Wait For Elements State to hide fails with Promise
     Run Keyword and Expect Error    *Timeout 200ms exceeded.*waiting for selector "#victim" to be hidden*    Wait for    ${promise}
 
 Wait For Elements State to hide with Promise and wait for all promises
+    [Tags]    No-Windows-Support
     Select Options By    \#dropdown    value    hidden    # Now it is visible
     ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms

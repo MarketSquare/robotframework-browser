@@ -30,7 +30,7 @@ def test_open_page_get_text(application_server, browser):
 
 def test_readme_example(browser):
     browser.new_page("https://playwright.dev")
-    assert browser.get_text("h1") == "🎭 Playwright"
+    assert "Playwright" in browser.get_text("h1")
 
 
 def test_new_browser_and_close(browser):

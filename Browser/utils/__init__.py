@@ -20,10 +20,12 @@ from .data_types import (
     ColorScheme,
     CookieSameSite,
     CookieType,
+    DownloadedFile,
     ElementState,
     GeoLocation,
     HttpCredentials,
     Proxy,
+    RecordVideo,
     RequestMethod,
     SelectAttribute,
     SelectionType,
@@ -31,6 +33,7 @@ from .data_types import (
     ViewportDimensions,
     convert_typed_dict,
 )
+from .deprecated import attribute_warning
 from .js_utilities import (
     exec_scroll_function,
     get_abs_scroll_coordinates,

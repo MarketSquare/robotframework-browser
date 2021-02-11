@@ -30,6 +30,7 @@ class WebAppState(LibraryComponent):
         key: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """
         Get saved data from the local storage.
@@ -47,7 +48,8 @@ class WebAppState(LibraryComponent):
                 json.loads(response.result),
                 assertion_operator,
                 assertion_expected,
-                "localStorage ",
+                "localStorage",
+                message,
             )
 
     @keyword(name="localStorage set Item", tags=("Setter", "PageContent"))

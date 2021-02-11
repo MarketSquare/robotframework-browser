@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as playwright from 'playwright';
 import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
-import { ServerUnaryCall, sendUnaryData } from '@grpc/grpc-js';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse, keywordsResponse, stringResponse } from './response-util';
-import { exists, invokeOnPage } from './playwirght-invoke';
+import { exists } from './playwirght-invoke';
 
 import * as pino from 'pino';
+import { ServerWritableStream } from '@grpc/grpc-js';
 
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
@@ -40,12 +41,20 @@ export async function initializeExtension(
 
 export async function extensionKeywordCall(
     request: Request.KeywordCall,
+    call: ServerWritableStream<Request.KeywordCall, Response.Json>,
     state: PlaywrightState,
 ): Promise<Response.Json> {
     const methodName = request.getName();
     const args = request.getArgumentsList();
     // @ts-ignore
-    const result = await state.extension[methodName](state.getActivePage(), args);
+    const result = await state.extension[methodName](
+        state.getActivePage(),
+        args,
+        (msg: string) => {
+            call.write(jsonResponse(JSON.stringify(''), msg));
+        },
+        playwright,
+    );
     return jsonResponse(JSON.stringify(result), 'ok');
 }
 
@@ -63,6 +72,21 @@ async function _newBrowser(
         browser = await chromium.launch({ headless: headless, ...options });
     } else if (browserType === 'webkit') {
         browser = await webkit.launch({ headless: headless, ...options });
+    } else {
+        throw new Error('unsupported browser');
+    }
+    return [browser, browserType];
+}
+
+async function _connectBrowser(browserType: string, url: string): Promise<[Browser, string]> {
+    browserType = browserType || 'chromium';
+    let browser;
+    if (browserType === 'firefox') {
+        browser = await firefox.connect({ wsEndpoint: url });
+    } else if (browserType === 'chromium') {
+        browser = await chromium.connect({ wsEndpoint: url });
+    } else if (browserType === 'webkit') {
+        browser = await webkit.connect({ wsEndpoint: url });
     } else {
         throw new Error('unsupported browser');
     }
@@ -150,9 +174,15 @@ export class PlaywrightState {
 
     public async getCatalog() {
         const pageToContents = async (page: IndexedPage) => {
+            let title = null;
+            const titlePromise = page.p.title();
+            const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 150));
+            try {
+                title = await Promise.race([titlePromise, titleTimeout]);
+            } catch (e) {}
             return {
                 type: 'page',
-                title: await page.p.title(),
+                title,
                 url: page.p.url(),
                 id: page.id,
                 timestamp: page.timestamp,
@@ -388,6 +418,17 @@ export async function newBrowser(request: Request.Browser, openBrowsers: Playwri
     const [browser, name] = await _newBrowser(browserType, headless, options);
     const browserState = openBrowsers.addBrowser(name, browser);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
+}
+
+export async function connectToBrowser(
+    request: Request.ConnectBrowser,
+    openBrowsers: PlaywrightState,
+): Promise<Response.String> {
+    const browserType = request.getBrowser();
+    const url = request.getUrl();
+    const [browser, name] = await _connectBrowser(browserType, url);
+    const browserState = openBrowsers.addBrowser(name, browser);
+    return stringResponse(browserState.id, 'Successfully connected to browser');
 }
 
 async function _switchPage(id: Uuid, browserState: BrowserState) {

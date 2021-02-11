@@ -3,28 +3,44 @@ Resource          imports.resource
 Suite Setup       Video Setup
 
 *** Test Cases ***
-Create Video
+Create Video With Full Path
     [Documentation]
-    ...    LOG 2:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
-    New Context    videosPath=${OUTPUT_DIR}/video
+    ...    LOG 3:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
+    ${record_video} =    Create Dictionary    dir    ${OUTPUT_DIR}/video
+    New Context    ${True}    recordVideo=${record_video}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Verify Video Files    ${0}    ${1}
 
+Create Video With Relative Path
+    [Documentation]
+    ...    LOG 3:3    INFO    GLOB:    *video width="1280" height="720" controls*src="browser/video/my_video*.webm"*
+    ${record_video} =    Create Dictionary    dir    my_video
+    New Context    recordVideo=${record_video}
+    New Page    ${LOGIN_URL}
+    Go To    ${FRAMES_URL}
+    ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
+    Should Be Equal    ${{len(${files})}}    ${0}
+    Close Page
+    ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
+    Should Be Equal    ${{len(${files})}}    ${1}
+
 Create Video With videoSize
     [Documentation]
-    ...    LOG 3:3    INFO    GLOB:    *width="300" height="200"*.webm"*
+    ...    LOG 4:3    INFO    GLOB:    *width="300" height="200"*.webm"*
     ${size} =    Create Dictionary    width    300    height    200
-    New Context    videosPath=${OUTPUT_DIR}/video    videoSize=${size}
+    ${record_video} =    Create Dictionary    size    ${size}    dir    ${OUTPUT_DIR}/video
+    New Context    recordVideo=${record_video}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Verify Video Files    ${1}    ${2}
 
 Create Video With viewport
     [Documentation]
-    ...    LOG 3:3    INFO    GLOB:    *width="400" height="250"*.webm"*
+    ...    LOG 4:3    INFO    GLOB:    *width="400" height="250"*.webm"*
     ${size} =    Create Dictionary    width    400    height    250
-    New Context    videosPath=${OUTPUT_DIR}/video    viewport=${size}
+    ${record_video} =    Create Dictionary    dir    ${OUTPUT_DIR}/video
+    New Context    recordVideo=${record_video}    viewport=${size}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Verify Video Files    ${2}    ${3}
@@ -35,6 +51,17 @@ No Video
     New Context
     New Page    ${LOGIN_URL}
     Verify Video Files    ${3}    ${3}
+
+Create Video With Deprecated Options
+    [Documentation]
+    ...    LOG 3:3    INFO    GLOB:    *width="300" height="200"*.webm"*
+    ...    LOG 2:2    WARN    Browser library New Context keyword has deprecated videosPath, use recordVideo
+    ...    LOG 2:3    WARN    Browser library New Context keyword has deprecated videoSize, use recordVideo
+    ${size} =    Create Dictionary    width    300    height    200
+    New Context    videosPath=${OUTPUT_DIR}/video    videoSize=${size}
+    New Page    ${LOGIN_URL}
+    Go To    ${FRAMES_URL}
+    Verify Video Files    ${3}    ${4}
 
 *** Keywords ***
 Video Setup

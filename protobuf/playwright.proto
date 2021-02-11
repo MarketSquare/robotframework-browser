@@ -69,6 +69,11 @@ message Request {
     int32 defaultTimeout = 2;
   }
 
+  message ConnectBrowser {
+    string browser = 1;
+    string url= 2;
+  }
+
   message TextInput {
     string input = 1;
     string selector = 2;
@@ -301,7 +306,7 @@ service  Playwright {
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty);
   /* Download url content */
-  rpc Download(Request.Url) returns (Response.String);
+  rpc Download(Request.Url) returns (Response.Json);
   /* Clicks element specified by selector and options */
   rpc Click(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Hovers an element specified by selector and options */
@@ -353,6 +358,7 @@ service  Playwright {
   rpc NewPage(Request.Url) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.String);
   rpc NewBrowser(Request.Browser) returns (Response.String);
+  rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
@@ -361,5 +367,5 @@ service  Playwright {
 
   /* Extension handling */
   rpc InitializeExtension(Request.FilePath) returns (Response.Keywords);
-  rpc CallExtensionKeyword(Request.KeywordCall) returns (Response.Json);
+  rpc CallExtensionKeyword(Request.KeywordCall) returns (stream Response.Json);
 }

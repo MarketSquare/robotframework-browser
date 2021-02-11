@@ -16,9 +16,11 @@ import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
 
 import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
-import { invokeOnPage } from './playwirght-invoke';
 
-export async function httpRequest(request: pb.Request.HttpRequest, page?: Page): Promise<pb.Response.Json> {
+import * as pino from 'pino';
+const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
+export async function httpRequest(request: pb.Request.HttpRequest, page: Page): Promise<pb.Response.Json> {
     const opts: { [k: string]: any } = {
         method: request.getMethod(),
         url: request.getUrl(),
@@ -27,7 +29,7 @@ export async function httpRequest(request: pb.Request.HttpRequest, page?: Page):
     if (opts.method != 'GET') {
         opts.body = request.getBody();
     }
-    const response = await page?.evaluate(({ url, method, body, headers }) => {
+    const response = await page.evaluate(({ url, method, body, headers }) => {
         return fetch(url, { method, body, headers }).then((data: Response) => {
             return data.text().then((body) => {
                 const headers: { [k: string]: any } = {};
@@ -48,12 +50,10 @@ export async function httpRequest(request: pb.Request.HttpRequest, page?: Page):
     return jsonResponse(JSON.stringify(response), 'Request performed succesfully.');
 }
 
-export async function waitForResponse(request: pb.Request.HttpCapture, page?: Page): Promise<pb.Response.Json> {
+export async function waitForResponse(request: pb.Request.HttpCapture, page: Page): Promise<pb.Response.Json> {
     const urlOrPredicate = new RegExp(`.*${request.getUrlorpredicate()}`);
     const timeout = request.getTimeout();
-    const data = await invokeOnPage(page, 'waitForResponse', urlOrPredicate, {
-        timeout: timeout,
-    });
+    const data = await page.waitForResponse(urlOrPredicate, { timeout });
     return jsonResponse(
         JSON.stringify({
             status: data.status(),
@@ -71,26 +71,31 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page?: Pa
         '',
     );
 }
-export async function waitForRequest(request: pb.Request.HttpCapture, page?: Page): Promise<pb.Response.String> {
+export async function waitForRequest(request: pb.Request.HttpCapture, page: Page): Promise<pb.Response.String> {
     const urlOrPredicate = request.getUrlorpredicate();
     const timeout = request.getTimeout();
-    const result = await invokeOnPage(page, 'waitForRequest', urlOrPredicate, { timeout: timeout });
+    const result = await page.waitForRequest(urlOrPredicate, { timeout });
     return stringResponse(result.url(), 'Requested compeleted withing timeout.');
 }
 
-export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page?: Page): Promise<pb.Response.Empty> {
+export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: Page): Promise<pb.Response.Empty> {
     const timeout = request.getTimeout();
-    await invokeOnPage(page, 'waitForLoadState', 'networkidle', { timeout: timeout });
+    await page.waitForLoadState('networkidle', { timeout });
     return emptyWithLog('Network is idle');
 }
 
-export async function waitForDownload(request: pb.Request.FilePath, page?: Page): Promise<pb.Response.Json> {
+export async function waitForDownload(request: pb.Request.FilePath, page: Page): Promise<pb.Response.Json> {
     const saveAs = request.getPath();
-    const downloadObject = await invokeOnPage(page, 'waitForEvent', 'download');
+    const downloadObject = await page.waitForEvent('download');
 
     if (saveAs) {
         await downloadObject.saveAs(saveAs);
     }
     const path = await downloadObject.path();
-    return jsonResponse(JSON.stringify(path), 'Download done successfully to.');
+    const fileName = downloadObject.suggestedFilename();
+    logger.info('suggestedFilename: ' + fileName + ' saveAs path: ' + path);
+    return jsonResponse(
+        JSON.stringify({ saveAs: path, suggestedFilename: fileName }),
+        'Download done successfully to: ' + path,
+    );
 }

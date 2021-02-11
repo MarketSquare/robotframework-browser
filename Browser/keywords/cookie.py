@@ -139,7 +139,11 @@ class Cookie(LibraryComponent):
 
     def _expiry(self, expiry: str) -> int:
         try:
-            return int(expiry)
+            expiry_cleaned = str(expiry)
+            expiry_cleaned = expiry_cleaned.split(".")[0]
+            expiry_cleaned = expiry_cleaned.split(",")[0]
+            expiry_cleaned = expiry_cleaned.replace(" ", "")
+            return int(expiry_cleaned)
         except ValueError:
             return int(convert_date(expiry, result_format="epoch"))
 
@@ -195,7 +199,7 @@ class Cookie(LibraryComponent):
         | sameSite | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
 
         See
-        [https://github.com/microsoft/playwright/blob/master/docs/api.md#browsercontextaddcookiescookies|playwright documentation]
+        [https://playwright.dev/docs/api/class-browsercontext#browsercontextaddcookiescookies|playwright documentation]
         for details about each attribute.
 
         Example:

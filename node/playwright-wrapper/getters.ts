@@ -17,18 +17,18 @@ import { ElementHandle, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function getTitle(page?: Page): Promise<Response.String> {
-    const title = await invokeOnPage(page, 'title');
+export async function getTitle(page: Page): Promise<Response.String> {
+    const title = await page.title();
     return stringResponse(title, 'Active page title is: ' + title);
 }
 
-export async function getUrl(page?: Page): Promise<Response.String> {
-    const url = await invokeOnPage(page, 'url');
+export async function getUrl(page: Page): Promise<Response.String> {
+    const url = page.url();
     return stringResponse(url, url);
 }
 
@@ -128,8 +128,8 @@ export async function getStyle(request: Request.ElementSelector, state: Playwrig
     return jsonResponse(result, 'Style get succesfully.');
 }
 
-export async function getViewportSize(page?: Page): Promise<Response.Json> {
-    const result = await invokeOnPage(page, 'viewportSize');
+export async function getViewportSize(page: Page): Promise<Response.Json> {
+    const result = page.viewportSize();
     return jsonResponse(JSON.stringify(result), 'View port size received sucesfully from page.');
 }
 
@@ -143,8 +143,8 @@ export async function getBoundingBox(request: Request.ElementSelector, state: Pl
     return jsonResponse(JSON.stringify(boundingBox), '');
 }
 
-export async function getPageSource(page?: Page): Promise<Response.String> {
-    const result = await invokeOnPage(page, 'content');
+export async function getPageSource(page: Page): Promise<Response.String> {
+    const result = await page.content();
     logger.info(result);
     return stringResponse(JSON.stringify(result), 'Page source obtained succesfully.');
 }

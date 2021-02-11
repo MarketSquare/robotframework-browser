@@ -45,28 +45,14 @@ export async function invokeOnMouse<T>(
 }
 
 export async function invokeOnKeyboard<T>(
-    page: Page | undefined,
+    page: Page,
     methodName: 'down' | 'up' | 'press' | 'insertText' | 'type',
     ...args: any[]
 ) {
-    exists(page, `Tried to execute keyboard action '${methodName}' but no open page`);
     logger.info(`Invoking keyboard action ${methodName} with params ${JSON.stringify(args)}`);
-    const fn: any = page?.keyboard[methodName].bind(page.keyboard);
+    const fn: any = page.keyboard[methodName].bind(page.keyboard);
     exists(fn, `Bind failure with '${fn}'`);
     return await fn(...Object.values(args));
-}
-
-export async function invokeOnPage<T>(page: Page | undefined, methodName: string, ...args: any[]) {
-    exists(page, `Tried to do playwright action '${methodName}', but no open page.`);
-    const fn: any = (page as { [key: string]: any })[methodName].bind(page);
-    exists(fn, `Bind failure with '${fn}'`);
-    return await fn(...Object.values(args));
-}
-
-export async function invokeOnContext<T>(context: BrowserContext | undefined, methodName: string, ...args: any[]) {
-    exists(context, `Tried to do playwright action '${methodName}', but no open context.`);
-    const fn: any = (context as { [key: string]: any })[methodName].bind(context);
-    return await fn(...args);
 }
 
 /**

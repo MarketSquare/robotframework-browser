@@ -5,14 +5,16 @@ black >= 20.8b1
 mypy >= 0.782
 mypy-protobuf >= 1.23
 flake8 >= 3.8.3
+flake8-bugbear >= 20.11.1 
 isort >= 5.4.2
 wheel>=0.35.1
-robotframework-pabot >= 1.10.0
+robotframework-pabot >= 1.10.1
 twine >= 3.2.0
 robotstatuschecker >= 1.4
 rellu >= 0.7
-approvaltests == 0.2.10
-pytest-mock==3.3.1
+approvaltests >= 0.2.10
+pytest-approvaltests >= 0.1.0
+pytest-mock==3.5.1
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.9.3
 # Include normal dependencies from requirements.txt. Makes it possible to use

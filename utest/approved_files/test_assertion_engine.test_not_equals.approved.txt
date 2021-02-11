@@ -1,4 +1,4 @@
 Not equal
 
 0) actual
-1) 'actual' (str) should not be 'actual' (str)
+1) partial error message 'actual' (str) should not be 'actual' (str)

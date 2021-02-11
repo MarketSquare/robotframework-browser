@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 
 import pytest
@@ -32,4 +33,7 @@ def test_as_dot_dict(cookie: Cookie):
     )
     assert dot_dict[0].name == "tidii"
     assert dot_dict[0].value == 1111
-    assert dot_dict[0].expires == datetime.fromtimestamp(-1)
+    if sys.platform == "win32":
+        assert dot_dict[0].expires is None
+    else:
+        assert dot_dict[0].expires == datetime.fromtimestamp(-1)

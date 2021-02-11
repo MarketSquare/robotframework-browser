@@ -6,7 +6,7 @@ Test Setup        Open Browser To Form Page
 Cookies From Closed Context
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Error: Tried to do playwright action 'cookies', but no open context.
+    ...    Error: no open context.
     ...    Get Cookies
 
 Get Cookies Should Return Empty List When No Cookies Are Available
@@ -33,7 +33,7 @@ Add Cookie Should Fail If Context Is Not Open
     ${url} =    Get Url
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Error: Tried to do playwright action 'addCookies', but no open context.
+    ...    Error: no open context.
     ...    Add Cookie    Foo    Bar    url=${url}
 
 Add Cookie With Url
@@ -137,6 +137,25 @@ Add Cookie With Expiry As Epoch Int
     ${date_time} =    Convert Date    ${epoch}
     Should Be Equal    ${expires.year}    ${expires.year}
 
+Add Cookie With Expiry As Epoch In Different Format
+    ${url} =    Get Url
+    Add Cookie
+    ...    Foo22
+    ...    Bar22
+    ...    url=${url}
+    ...    expires=3 155 760 000,195223
+    ${cookie} =    Get Cookie    Foo22
+    ${epoch_as_str} =    Convert To String    ${cookie}[expires]
+    Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
+    Add Cookie
+    ...    Foo333
+    ...    Bar333
+    ...    url=${url}
+    ...    expires=3 155 760 000
+    ${cookie} =    Get Cookie    Foo333
+    ${epoch_as_str} =    Convert To String    ${cookie}[expires]
+    Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
+
 Delete All Cookies
     ${url} =    Get Url
     Add Cookie    Foo    Bar    url=${url}
@@ -147,7 +166,7 @@ Delete All Cookies
 Delete All Cookies From Closed Context
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Error: Tried to do playwright action 'clearCookies', but no open context.
+    ...    Error: no open context.
     ...    Delete All Cookies
 
 Delete All Cookies When Cookies Does Not Exist

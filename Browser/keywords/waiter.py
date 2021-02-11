@@ -14,7 +14,6 @@
 
 import json
 from datetime import timedelta
-from pathlib import Path
 from typing import Dict, Optional, Union
 
 from ..base import LibraryComponent
@@ -29,6 +28,7 @@ class Waiter(LibraryComponent):
         selector: str,
         state: ElementState = ElementState.visible,
         timeout: Optional[timedelta] = None,
+        message: Optional[str] = None,
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
@@ -41,26 +41,17 @@ class Waiter(LibraryComponent):
         ``selector`` Selector of the corresponding object.
         See the `Finding elements` section for details about the selectors.
 
-        ``state`` Defaults to visible. Possible states are:
-        - ``attached``: to be present in DOM.
-        - ``detached``: to not be present in DOM.
-        - ``visible``: to have non-empty bounding box and no visibility:hidden.
-        - ``hidden``: to be detached from DOM, or have an empty bounding box or visibility:hidden.
-        - ``enabled``: to not be ``disabled``.
-        - ``disabled``: to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
-        - ``editable``: to not be ``readOnly``.
-        - ``readonly``: to be ``readOnly``. Can be used on <input> and <textarea>.
-        - ``selected``: to be ``selected``. Can be used on <option>.
-        - ``deselected``: to not be ``selected``.
-        - ``focused``: to be the ``activeElement``.
-        - ``defocused``: to not be the ``activeElement``.
-        - ``checked``: to be ``checked``. Can be used on <input>.
-        - ``unchecked``: to not be ``checked``.
+        ``state`` See `ElementState` for explaination.
 
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
         ``timeout`` uses default timeout of 10 seconds if not set.
+
+        ``message`` overrides the default error message. The ``message``
+        argument accepts `{selector}`, `{function}`, and `{timeout}`
+        [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
+        The `{function}` formatter is same ``state`` argument value.
         """
         funct = {
             ElementState.enabled: "e => !e.disabled",
@@ -74,26 +65,43 @@ class Waiter(LibraryComponent):
             ElementState.checked: "e => e.checked",
             ElementState.unchecked: "e => !e.checked",
         }
-
-        with self.playwright.grpc_channel() as stub:
-            if state in [
-                ElementState.attached,
-                ElementState.detached,
-                ElementState.visible,
-                ElementState.hidden,
-            ]:
-                options: Dict[str, object] = {"state": state.name}
-                if timeout:
-                    options["timeout"] = self.get_timeout(timeout)
-                options_json = json.dumps(options)
-                response = stub.WaitForElementsState(
-                    Request().ElementSelectorWithOptions(
-                        selector=selector, options=options_json
+        if state in [
+            ElementState.attached,
+            ElementState.detached,
+            ElementState.visible,
+            ElementState.hidden,
+        ]:
+            try:
+                self._wait_for_elements_state(selector, state, timeout)
+            except Exception:
+                if message:
+                    message = message.format(
+                        selector=selector, function=state, timeout=timeout
                     )
+                    raise AssertionError(message)
+                raise
+        else:
+            self.wait_for_function(
+                funct[state], selector=selector, timeout=timeout, message=message
+            )
+
+    def _wait_for_elements_state(
+        self,
+        selector: str,
+        state: ElementState = ElementState.visible,
+        timeout: Optional[timedelta] = None,
+    ):
+        with self.playwright.grpc_channel() as stub:
+            options: Dict[str, object] = {"state": state.name}
+            if timeout:
+                options["timeout"] = self.get_timeout(timeout)
+            options_json = json.dumps(options)
+            response = stub.WaitForElementsState(
+                Request().ElementSelectorWithOptions(
+                    selector=selector, options=options_json
                 )
-                logger.info(response.log)
-            else:
-                self.wait_for_function(funct[state], selector=selector, timeout=timeout)
+            )
+            logger.info(response.log)
 
     @keyword(tags=("Wait", "PageContent"))
     def wait_for_function(
@@ -102,6 +110,7 @@ class Waiter(LibraryComponent):
         selector: str = "",
         polling: Union[str, timedelta] = "raf",
         timeout: Optional[timedelta] = None,
+        message: Optional[str] = None,
     ):
         """Polls JavaScript expression or function in browser until it returns a
         (JavaScript) truthy value.
@@ -119,11 +128,32 @@ class Waiter(LibraryComponent):
 
         ``timeout`` Uses default timeout of 10 seconds if not set.
 
+        ``message`` overrides the default error message. The ``message``
+        argument accepts `{selector}`, `{function}`, and `{timeout}`
+        [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
+
         Example usage:
         | ${promise}    Promise To      Wait For Function    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
         | Click         \\#progress_bar
         | Wait For      ${promise}
         """
+        try:
+            self._wait_for_function(function, selector, polling, timeout)
+        except Exception:
+            if message:
+                message = message.format(
+                    selector=selector, function=function, timeout=timeout
+                )
+                raise AssertionError(message)
+            raise
+
+    def _wait_for_function(
+        self,
+        function: str,
+        selector: str = "",
+        polling: Union[str, timedelta] = "raf",
+        timeout: Optional[timedelta] = None,
+    ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
             if polling != "raf":
@@ -140,32 +170,3 @@ class Waiter(LibraryComponent):
             )
             logger.debug(response.json)
             logger.info(response.log)
-
-    @keyword(tags=("Wait", "BrowserControl"))
-    def wait_for_download(self, saveAs: str = "") -> str:
-        """Waits for next download event on page. Returns file path to downloaded file.
-
-        To enable downloads context's ``acceptDownloads`` needs to be true.
-
-        With default filepath downloaded files are deleted when Context the download happened in is closed.
-
-        ``saveAs`` Filename to save as. File will also temporarily be saved in playwright context's default download location.
-
-        Example usage:
-        | New Context      acceptDownloads=True
-        | New Page         ${LOGIN_URL}
-        | ${dl_promise}    Promise To  Wait For Download
-        | Click            \\#file_download
-        | ${file_path}=    Wait For  ${dl_promise}
-        """
-        with self.playwright.grpc_channel() as stub:
-            if not saveAs:
-                response = stub.WaitForDownload(Request().FilePath())
-                logger.debug(response.log)
-                return json.loads(response.json)
-            else:
-                p = Path(saveAs)
-                p.resolve()
-                response = stub.WaitForDownload(Request().FilePath(path=str(p)))
-                logger.debug(response.log)
-                return json.loads(response.json)

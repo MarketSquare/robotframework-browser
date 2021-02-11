@@ -1,6 +1,6 @@
 *** Settings ***
 Resource          imports.resource
-Test Setup        New Page    ${FORM_URL}
+Suite Setup       New Page    ${FORM_URL}
 
 *** Test Cases ***
 Get Checkbox State Checked
@@ -8,6 +8,16 @@ Get Checkbox State Checked
 
 Get Checkbox State Unchecked
     Get Checkbox State    [name=can_send_sms]    ==    UnChecked
+
+Get Checkbox State Default Error
+    Run Keyword And Expect Error
+    ...    Checkbox ?name=can_send_email? is 'True' (bool) should be 'False' (bool)
+    ...    Get Checkbox State    [name=can_send_email]    ==    unchecked
+
+Get Checkbox State Custom Error
+    Run Keyword And Expect Error
+    ...    Kala False bool
+    ...    Get Checkbox State    [name=can_send_email]    ==    unchecked    Kala {expected} {expected_type}
 
 Check Checkbox
     ${state}=    Get Checkbox State    [name=can_send_sms]    ==    off

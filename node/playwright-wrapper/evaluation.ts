@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, invokeOnPage, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -61,6 +61,7 @@ export async function getElements(request: Request.ElementSelector, state: Playw
 export async function executeJavascript(
     request: Request.JavascriptCode,
     state: PlaywrightState,
+    page: Page,
 ): Promise<Response.JavascriptExecutionResult> {
     const selector = request.getSelector();
     let script = request.getScript();
@@ -69,12 +70,12 @@ export async function executeJavascript(
         elem = await determineElement(state, selector);
         script = eval(script);
     }
-    const result = await invokeOnPage(state.getActivePage(), 'evaluate', script, elem);
-    return jsResponse(result, 'JavaScript executed successfully.');
+    const result = await page.evaluate(script, elem);
+    return jsResponse(result as string, 'JavaScript executed successfully.');
 }
 
-export async function getPageState(page?: Page): Promise<Response.JavascriptExecutionResult> {
-    const result = await invokeOnPage(page, 'evaluate', () => window.__RFBROWSER__);
+export async function getPageState(page: Page): Promise<Response.JavascriptExecutionResult> {
+    const result = await page.evaluate(() => window.__RFBROWSER__);
     return jsResponse(result, 'Page state evaluated successfully.');
 }
 
@@ -91,6 +92,7 @@ export async function waitForElementState(
 export async function waitForFunction(
     request: Request.WaitForFunctionOptions,
     state: PlaywrightState,
+    page: Page,
 ): Promise<Response.Json> {
     let script = request.getScript();
     const selector = request.getSelector();
@@ -104,13 +106,13 @@ export async function waitForFunction(
     }
 
     // TODO: This might behave weirdly if element selector points to a different page
-    const result = await invokeOnPage(state.getActivePage(), 'waitForFunction', script, elem, options);
+    const result = await page.waitForFunction(script, elem, options);
     return jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Function completed succesfully.');
 }
 
-export async function addStyleTag(request: Request.StyleTag, page?: Page): Promise<Response.Empty> {
+export async function addStyleTag(request: Request.StyleTag, page: Page): Promise<Response.Empty> {
     const content = request.getContent();
-    await invokeOnPage(page, 'addStyleTag', { content: content });
+    await page.addStyleTag({ content });
     return emptyWithLog('added Style: ' + content);
 }
 
@@ -150,7 +152,7 @@ export async function highlightElements(
     return emptyWithLog(`Highlighted elements for ${duration}.`);
 }
 
-export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.String> {
+export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.Json> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');
@@ -167,7 +169,7 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
         throw new Error('Download requires an active page');
     }
     const urlString = request.getUrl();
-    const script = (urlString: string) => {
+    const script = (urlString: string): Promise<string | void> => {
         return fetch(urlString)
             .then((resp) => {
                 return resp.blob();
@@ -187,5 +189,10 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
     const downloadStarted = page.waitForEvent('download');
     await page.evaluate(script, urlString);
     const path = await (await downloadStarted).path();
-    return stringResponse(path || '', 'Url content downloaded to a file');
+    const fileName = (await downloadStarted).suggestedFilename();
+    logger.info('Suggested file name: ' + fileName + ' and save as path: ' + path);
+    return jsonResponse(
+        JSON.stringify({ saveAs: path, suggestedFilename: fileName }),
+        'Url content downloaded to a file: ' + path,
+    );
 }

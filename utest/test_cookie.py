@@ -20,7 +20,7 @@ def test_cookie_as_dot_dict_expiry(cookie: Cookie):
 def test_cookie_as_dot_dict_negative_expiry(cookie: Cookie):
     epoch = -1
     data = cookie._cookie_as_dot_dict({"expires": epoch})
-    if sys.platform == "windows":
+    if sys.platform == "win32":
         assert data.expires is None
     else:
         assert data.expires == datetime.fromtimestamp(epoch)

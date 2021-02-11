@@ -13,12 +13,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [3.7, 3.9]
-        node-version: [12.x]
+        os: ["ubuntu-latest", "windows-latest"]
+        python-version: [3.7, 3.8, 3.9]
+        node-version: [14.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -33,12 +35,12 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install ffmpeg and libgles on unix-like
+    - name: Install ffmpeg and libgles on linux
       run: |
         sudo apt-get update
         sudo apt-get install ffmpeg
         sudo apt-get install libgles2
-      if: matrix.os != 'windows-latest'
+      if: matrix.os == 'ubuntu-latest'
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
@@ -53,16 +55,22 @@ jobs:
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser
-    - name: Start xvfb
+    - name: Start xvfb on Linux
+      if: matrix.os == 'ubuntu-latest'
       run: |
         export DISPLAY=:99.0
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
       run: |
        inv utest
-    - name: Run Robot Framework tests
+    - name: Run Robot Framework tests on linux
+      if: matrix.os == 'ubuntu-latest'
       run: |
-        xvfb-run --auto-servernum inv atest
+        xvfb-run --auto-servernum inv atest  -z true
+    - name: Run Robot Framework tests on Windows
+      if: matrix.os != 'ubuntu-latest'
+      run: |
+        inv atest -z true
     - name: Create Distributable Package
       run: |
         inv package
@@ -70,15 +78,18 @@ jobs:
       if: ${{ always() }}
       with:
         name: Test results
-        path: atest/output
+        path: zip_results/output
     - uses: actions/upload-artifact@v2
       with:
         name: rfbrowser-wheel 
         path: dist/robotframework_browser-*-py3-none-any.whl
+    - name: Package demoapp
+      run: |
+        inv demo-app
     - uses: actions/upload-artifact@v2
       with:
         name: demoapp
-        path: node/dynamic-test-app
+        path: zip_results/demoapp
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
@@ -87,7 +98,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: [3.8]
-        node-version: [12.x]
+        node-version: [12.x, 14.x]
     steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
@@ -98,7 +109,17 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: demoapp
-          path: node/dynamic-test-app
+          path: zip_results/demoapp
+      - name: Unzip demoapp in linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          ls -l zip_results/demoapp
+          unzip -o zip_results/demoapp/demo-app-linux.zip
+      - name: Unzip demoapp in windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          dir zip_results/demoapp
+          tar -xf zip_results/demoapp/demo-app-win32.zip
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
@@ -145,3 +166,24 @@ jobs:
         with:
           name: ${{ matrix.os }} Clean install results
           path: atest/output
+  automerge:
+    name: Automerge Dependabot
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
+    needs: test-install
+    steps:
+      - name: 'Wait for status checks'
+        id: waitforstatuschecks
+        uses: "WyriHaximus/github-action-wait-for-status@v1.2"
+        with:
+          ignoreActions: Automerge Dependabot
+          checkInterval: 13
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Merge pull requests
+        uses: pascalgn/automerge-action@v0.12.0
+        if: steps.waitforstatuschecks.outputs.status == 'success'
+        env:
+          MERGE_METHOD: "squash"
+          MERGE_LABELS: ""
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

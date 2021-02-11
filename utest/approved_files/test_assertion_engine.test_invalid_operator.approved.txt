@@ -1,0 +1,4 @@
+Custom error
+
+0) bar `foo` is not a valid assertion operator
+1) `foo` is not a valid assertion operator

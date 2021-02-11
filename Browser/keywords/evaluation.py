@@ -16,9 +16,11 @@ import json
 from datetime import timedelta
 from typing import Any
 
+from robot.utils import DotDict  # type: ignore
+
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import keyword, logger
+from ..utils import DownloadedFile, keyword, logger
 
 
 class Evaluation(LibraryComponent):
@@ -90,11 +92,17 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Page Content",))
-    def download(self, url: str) -> str:
-        """
-        Download given url content and return downloaded file path
+    def download(self, url: str) -> DownloadedFile:
+        """Download given url content.
+
+        Keyword returns dictionary which contains downloaded file path
+        and suggested filename as keys (saveAs and suggestedFilename).
+        See `Wait For Download` for more details.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Download(Request().Url(url=url))
-            logger.info(response.log)
-            return response.body
+        logger.info(response.log)
+        dot_dict = DotDict()
+        for key, value in json.loads(response.json).items():
+            dot_dict[key] = value
+        return dot_dict

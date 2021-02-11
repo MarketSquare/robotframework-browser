@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Redirect on load with post</title>
+</head>
+<body onload="redirectPoster()">
+</body>
+<script type="text/javascript">
+    function redirectPoster(){
+        const formi = document.createElement('form');
+        formi.method = 'POST';
+        formi.action = 'posted.html';
+        const inputField = document.createElement("input");
+        inputField.setAttribute('type',"hidden");
+        inputField.setAttribute('name', "key");
+        inputField.setAttribute('value', "parameter");
+        formi.appendChild(inputField);
+        document.body.appendChild(formi);
+        formi.submit();
+    }
+</script>
+</html>

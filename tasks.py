@@ -1,13 +1,15 @@
 import os
 import subprocess
 import sys
-from pathlib import Path
+import zipfile
+from pathlib import Path, PurePath
 import platform
 import re
 import shutil
 
 from invoke import task, Exit
 from robot import rebot_cli
+from robot import __version__ as robot_version
 
 try:
     from pabot import pabot
@@ -19,19 +21,20 @@ try:
 except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
-root_dir = Path(os.path.dirname(__file__))
-atest_output = root_dir / "atest" / "output"
-dist_dir = root_dir / "dist"
-build_dir = root_dir / "build"
-proto_sources = (root_dir / "protobuf").glob("*.proto")
-python_src_dir = root_dir / "Browser"
+ROOT_DIR = Path(os.path.dirname(__file__))
+ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
+dist_dir = ROOT_DIR / "dist"
+build_dir = ROOT_DIR / "build"
+proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
+python_src_dir = ROOT_DIR / "Browser"
 python_protobuf_dir = python_src_dir / "generated"
-node_protobuf_dir = root_dir / "node" / "playwright-wrapper" / "generated"
-node_dir = root_dir / "node"
+node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
+node_dir = ROOT_DIR / "node"
 node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
 
+ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
 RELEASE_NOTES_TITLE = "Browser library {version}"
 REPOSITORY = "MarketSquare/robotframework-browser"
@@ -130,13 +133,13 @@ def _python_protobuf_gen(c):
 def _node_protobuf_gen(c):
     plugin_suffix = ".cmd" if platform.platform().startswith("Windows") else ""
     protoc_plugin = (
-        root_dir
+        ROOT_DIR
         / "node_modules"
         / ".bin"
         / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
     )
     protoc_ts_plugin = (
-        root_dir / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
+        ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     )
     c.run(
         f"yarn run grpc_tools_node_protoc \
@@ -213,16 +216,20 @@ def utest_watch(c):
 
 @task
 def clean_atest(c):
-    if atest_output.exists():
-        shutil.rmtree(atest_output)
+    if ATEST_OUTPUT.exists():
+        shutil.rmtree(ATEST_OUTPUT)
+    if ZIP_DIR.exists():
+        shutil.rmtree(ZIP_DIR)
 
 
 @task(clean_atest)
-def atest(c, suite=None):
+def atest(c, suite=None, include=None, zip=None):
     """Runs Robot Framework acceptance tests.
 
     Args:
         suite: Select which suite to run.
+        include: Select test by tag
+        zip: Create zip file from output files.
     """
     args = [
         "--pythonpath",
@@ -230,13 +237,41 @@ def atest(c, suite=None):
     ]
     if suite:
         args.extend(["--suite", suite])
-    _run_robot(args)
+    if include:
+        args.extend(["--include", include])
+    exit = False if zip else True
+    rc = _run_robot(args, exit)
+    if zip:
+        _clean_zip_dir()
+        print(f"Zip file created to: {_create_zip()}")
+    sys.exit(rc)
+
+
+def _clean_zip_dir():
+    if ZIP_DIR.exists():
+        shutil.rmtree(ZIP_DIR)
+
+
+def _create_zip():
+    zip_dir = ZIP_DIR / "output"
+    zip_dir.mkdir(parents=True)
+    python_version = platform.python_version()
+    zip_name = f"{sys.platform}-rf-{robot_version}-python-{python_version}.zip"
+    zip_path = zip_dir / zip_name
+    print(f"Creating zip  in: {zip_path}")
+    zip_file = zipfile.ZipFile(zip_path, "w")
+    for file in ATEST_OUTPUT.glob("**/*.*"):
+        file = PurePath(file)
+        arc_name = file.relative_to(str(ATEST_OUTPUT))
+        zip_file.write(file, arc_name)
+    zip_file.close()
+    return zip_path
 
 
 @task(clean_atest)
 def atest_robot(c):
-    os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
-    command = f"robot --exclude Not-Implemented --loglevel DEBUG --outputdir {str(atest_output)}"
+    os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
+    command = f"robot --exclude Not-Implemented --loglevel DEBUG --outputdir {str(ATEST_OUTPUT)}"
     if platform.platform().startswith("Windows"):
         command += " --exclude No-Windows-Support"
     command += " atest/test"
@@ -266,8 +301,8 @@ def run_tests(c, tests):
     process.wait(600)
 
 
-def _run_robot(extra_args=None):
-    os.environ["ROBOT_SYSLOG_FILE"] = str(atest_output / "syslog.txt")
+def _run_robot(extra_args=None, exit=True):
+    os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
         sys.executable,
         "-m",
@@ -287,24 +322,25 @@ def _run_robot(extra_args=None):
         "--log",
         "NONE",
         "--outputdir",
-        str(atest_output),
+        str(ATEST_OUTPUT),
     ]
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "No-Windows-Support"])
     default_args.append("atest/test")
     process = subprocess.Popen(pabot_args + (extra_args or []) + default_args)
     process.wait(600)
-    output_xml = str(atest_output / "output.xml")
+    output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml, verbose=False)
-    rebot_cli(["--outputdir", str(atest_output), output_xml])
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=exit)
     print("DONE")
+    return rc
 
 
 @task
 def lint_python(c):
     all_py_sources = list(python_src_dir.glob("**/*.py")) + list(
-        (root_dir / "utest").glob("**/*.py")
+        (ROOT_DIR / "utest").glob("**/*.py")
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
         c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
@@ -374,6 +410,23 @@ def docker_test(c):
           """
     )
 
+@task()
+def docker_run_tmp_tests(c):
+    """
+    Run robot with dev Browser from docker against tmp dir.
+    """
+    c.run(
+        """docker run\
+        --rm \
+        --ipc=host\
+        --security-opt seccomp=atest/docker/chrome.json \
+        -v $(pwd)/tmp/:/app/tmp \
+        -v $(pwd)/node/:/app/node/ \
+        --workdir /app \
+        rfbrowser \
+        sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin robot --loglevel debug --outputdir /app/tmp/output /app/tmp/"
+        """
+    )
 
 @task(build)
 def run_test_app(c):
@@ -382,7 +435,8 @@ def run_test_app(c):
 
 @task
 def docs(c):
-    output = root_dir / "docs" / "Browser.html"
+    """Generate library keyword documentation."""
+    output = ROOT_DIR / "docs" / "Browser.html"
     libdoc("Browser", str(output))
     with output.open("r") as file:
         data = file.read()
@@ -414,7 +468,7 @@ def docs(c):
 
 @task(clean, build, docs)
 def package(c):
-    shutil.copy(root_dir / "package.json", root_dir / "Browser" / "wrapper")
+    shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
     c.run("python setup.py sdist bdist_wheel")
 
 
@@ -458,13 +512,13 @@ def version(c, version):
     os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}.html")
     if not version:
         print("Give version with inv version <version>")
-    py_version_file = root_dir / "Browser" / "version.py"
+    py_version_file = ROOT_DIR / "Browser" / "version.py"
     py_version_matcher = re.compile("__version__ = .*")
     _replace_version(py_version_file, py_version_matcher, f'__version__ = "{version}"')
-    node_version_file = root_dir / "package.json"
+    node_version_file = ROOT_DIR / "package.json"
     node_version_matcher = re.compile('"version": ".*"')
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
-    setup_py_file = root_dir / "setup.py"
+    setup_py_file = ROOT_DIR / "setup.py"
     _replace_version(setup_py_file, node_version_matcher, f'"version": "{version}"')
     # workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
     # workflow_version_matcher = re.compile("VERSION: .*")
@@ -512,3 +566,22 @@ def gh_pages_index(c):
 
     with open("docs/index.html", "w") as f:
         f.write(index_contents)
+
+
+@task
+def demo_app(c):
+    """Zip demo application to OS specific package for CI"""
+    _clean_zip_dir()
+    zip_dir = ZIP_DIR / "demoapp"
+    zip_dir.mkdir(parents=True)
+    zip_name = f"demo-app-{sys.platform}.zip"
+    zip_path = zip_dir / zip_name
+    demo_app = Path("node", "dynamic-test-app").resolve()
+    print(f"Creating zip  in: {zip_path}")
+    zip_file = zipfile.ZipFile(zip_path, "w")
+    for file in demo_app.glob("**/*.*"):
+        file = PurePath(file)
+        arc_name = file.relative_to(str(ROOT_DIR))
+        zip_file.write(file, arc_name)
+    zip_file.close()
+    return zip_path

@@ -9,3 +9,6 @@ updates:
     directory: "/Browser"
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "grpcio-*"
+        versions: ["1.34.x"]
