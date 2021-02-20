@@ -461,7 +461,7 @@ class Browser(DynamicCore):
     | ``evaluate``        |  ``then``                         | When using this operator, the keyword does return the evaluated Python expression. |                        |
 
 
-    Bu default the keywords will provide an error message if the assertion fails,
+    But default the keywords will provide an error message if the assertion fails,
     but default error message can be overwritten with a ``message`` argument. The
     ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
     `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
