@@ -31,12 +31,6 @@ source .venv/bin/activate  # On linux and OSX
 
 [Invoke](http://www.pyinvoke.org/index.html) is used as a task runner / build tool.
 
-Activate your virtualenv and install `invoke` with
-
-```
-pip install invoke
-```
-
 Other dependencies can be installed/updated with `inv deps`. This command installs and updated both Python and nodejs dependencies.
 
 Run `inv -l` to get list of current build commands.
