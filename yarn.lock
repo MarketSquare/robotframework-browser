@@ -2420,10 +2420,10 @@ grpc-tools@^1.10.0:
   dependencies:
     node-pre-gyp "^0.15.0"
 
-grpc_tools_node_protoc_ts@^5.1.1:
-  version "5.1.1"
-  resolved "https://registry.yarnpkg.com/grpc_tools_node_protoc_ts/-/grpc_tools_node_protoc_ts-5.1.1.tgz#199fff9a2143cf672adc693c1774ef20ecf48258"
-  integrity sha512-IR+629LMKQnwLQxAnNz9GTLKSWX+d0HcO8JNeU+Vf2dW3d2pdM4ue7Vsx/gvXClcrywx3/pbPkXVeJNC8MkEcg==
+grpc_tools_node_protoc_ts@^5.1.3:
+  version "5.1.3"
+  resolved "https://registry.yarnpkg.com/grpc_tools_node_protoc_ts/-/grpc_tools_node_protoc_ts-5.1.3.tgz#c24d6470b6f0204a7ec920cee0f057fcb11eea66"
+  integrity sha512-BiElSWEmRgrhWFV/+yFtRiqxC3D/nrk1g0GezJ/9ZrJxUvu/0sBVeqe4rTmkFFqQVZTRX1+MNOVeOJKDmQ41Xg==
   dependencies:
     google-protobuf "3.12.4"
     handlebars "4.7.6"
