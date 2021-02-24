@@ -601,6 +601,8 @@ class Interaction(LibraryComponent):
         must be called before the action, like example click, that triggers the
         dialogue.
 
+        If a handler is not set dialogs are dismissed by default.
+
             ``action`` How to handle the alert.
 
             ``prompt_input`` The value to enter into prompt. Only valid if

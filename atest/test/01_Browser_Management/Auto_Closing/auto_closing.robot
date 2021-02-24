@@ -21,4 +21,4 @@ New page in same context is closed after test
 
 Unhandled alert does not block execution
     New Page    ${ERROR_URL}
-    run keyword and expect error    Timeout*    Click    text="Do not click!"
+    Click    text="Do not click!"
