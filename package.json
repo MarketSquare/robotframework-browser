@@ -38,7 +38,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.2.8",
     "@types/uuid": "^8.3.0",
-    "google-protobuf": "3.15.0",
+    "google-protobuf": "3.15.2",
     "playwright": "^1.9.0",
     "uuid": "^8.3.2"
   },
