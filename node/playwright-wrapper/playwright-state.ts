@@ -17,7 +17,7 @@ import {Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit,
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse, keywordsResponse, stringResponse } from './response-util';
+import {emptyWithLog, jsonResponse, keywordsResponse, pageReportResponse, stringResponse} from './response-util';
 import { exists } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -268,7 +268,7 @@ type IndexedContext = {
     options?: Record<string, unknown>;
 };
 
-type IndexedPage = {
+export type IndexedPage = {
     p: Page;
     id: Uuid;
     timestamp: number;
@@ -355,9 +355,9 @@ export class BrowserState {
     get contextStack(): IndexedContext[] {
         return this._contextStack;
     }
-    public popPage(): void {
+    public popPage(): IndexedPage | undefined {
         const pageStack = this.context?.pageStack || [];
-        pageStack.pop();
+        return pageStack.pop();
     }
     public popContext(): void {
         this._contextStack.pop();
@@ -386,11 +386,13 @@ export async function closeContext(openBrowsers: PlaywrightState): Promise<Respo
     return emptyWithLog('Successfully closed Context');
 }
 
-export async function closePage(openBrowsers: PlaywrightState): Promise<Response.Empty> {
+export async function closePage(openBrowsers: PlaywrightState): Promise<Response.PageReportResponse> {
     const activeBrowser = openBrowsers.getActiveBrowser();
     await openBrowsers.getActivePage()?.close();
-    activeBrowser.popPage();
-    return emptyWithLog('Successfully closed Page');
+    const closedPage = activeBrowser.popPage();
+    if (!closedPage)
+        throw new Error("No open page");
+    return pageReportResponse('Successfully closed Page', closedPage);
 }
 
 export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {

@@ -242,6 +242,12 @@ message Response {
     string body = 2;
     string video = 3;
   }
+
+  message PageReportResponse {
+    string log = 1;
+    string errors = 2;
+    string console = 3;
+  }
 }
 
 service  Playwright {
@@ -364,7 +370,7 @@ service  Playwright {
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
-  rpc ClosePage(Request.Empty) returns (Response.Empty);
+  rpc ClosePage(Request.Empty) returns (Response.PageReportResponse);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
 
   /* Extension handling */

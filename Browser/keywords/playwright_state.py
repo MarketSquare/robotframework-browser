@@ -230,7 +230,17 @@ class PlaywrightState(LibraryComponent):
                         if page != "CURRENT":
                             self.switch_page(p)
                         response = stub.ClosePage(Request().Empty())
-                        logger.info(response.log)
+                        if response.log:
+                            logger.info(response.log)
+                        errors = json.loads(response.errors)
+                        if errors:
+                            for error in errors:
+                                logger.error(f"Error during page life: {error}")
+                        messages = json.loads(response.console)
+                        if messages:
+                            for message in messages:
+                                logger.error(f"Console output: '{message}'")
+
 
     @keyword(tags=("Setter", "BrowserControl"))
     def connect_to_browser(

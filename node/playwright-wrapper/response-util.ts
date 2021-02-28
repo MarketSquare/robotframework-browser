@@ -15,10 +15,19 @@
 import { Response } from './generated/playwright_pb';
 import { errors } from 'playwright';
 import { status } from '@grpc/grpc-js';
+import {IndexedPage} from "./playwright-state";
 
 export function emptyWithLog(text: string): Response.Empty {
     const response = new Response.Empty();
     response.setLog(text);
+    return response;
+}
+
+export function pageReportResponse(log: string, page: IndexedPage): Response.PageReportResponse {
+    const response = new Response.PageReportResponse();
+    response.setLog(log);
+    response.setConsole(JSON.stringify(page.consoleMessages.map(m => `${m.location().url} [${m.type()}]: ${m.text()}`)));
+    response.setErrors(JSON.stringify(page.pageErrors.map(e => e.message)));
     return response;
 }
 
