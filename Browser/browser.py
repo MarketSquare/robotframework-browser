@@ -596,7 +596,7 @@ class Browser(DynamicCore):
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
-    ROBOT_LISTENER_API_VERSION = 2
+    ROBOT_LISTENER_API_VERSION = 3
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
@@ -726,7 +726,7 @@ class Browser(DynamicCore):
         except ConnectionError as e:
             logger.trace(f"Browser library closing problem: {e}")
 
-    def _start_suite(self, name, attrs):
+    def _start_suite(self, suite, result):
         if not self._suite_cleanup_done and self.browser_output.is_dir():
             self._suite_cleanup_done = True
             logger.debug(f"Removing: {self.browser_output}")
@@ -737,16 +737,16 @@ class Browser(DynamicCore):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, name, attrs):
+    def _start_test(self, test, result):
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
-    def _end_test(self, name, attrs):
+    def _end_test(self, test, result):
         if len(self._unresolved_promises) > 0:
-            logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
+            logger.warn(f"Waiting unresolved promises at the end of test '{test.name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
             if self.presenter_mode:
@@ -759,11 +759,11 @@ class Browser(DynamicCore):
                 catalog_before_test = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_test)
             except AssertionError as e:
-                logger.debug(f"Test Case: {name}, End Test: {e}")
+                logger.debug(f"Test Case: {test.name}, End Test: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
-    def _end_suite(self, name, attrs):
+    def _end_suite(self, suite, result):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")
@@ -772,7 +772,7 @@ class Browser(DynamicCore):
                 catalog_before_suite = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_suite)
             except AssertionError as e:
-                logger.debug(f"Test Suite: {name}, End Suite: {e}")
+                logger.debug(f"Test Suite: {suite.name}, End Suite: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
