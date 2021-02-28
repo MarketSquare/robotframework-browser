@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
+import {Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit, ConsoleMessage} from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -112,17 +112,32 @@ async function _newBrowserContext(
     context.setDefaultTimeout(defaultTimeout);
     const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options };
     c.c.on('page', (page) => {
-        const timestamp = new Date().getTime() / 1000;
-        const newPage = { id: `page=${uuidv4()}`, p: page, timestamp: timestamp };
-        c.pageStack.unshift(newPage);
+        c.pageStack.unshift(indexedPage(page));
     });
     return c;
 }
 
-async function _newPage(context: BrowserContext): Promise<IndexedPage> {
-    const newPage = await context.newPage();
+function indexedPage(newPage: Page) {
     const timestamp = new Date().getTime() / 1000;
-    return { id: `page=${uuidv4()}`, p: newPage, timestamp: timestamp };
+    const pageErrors: Error[] = [];
+    const consoleMessages: ConsoleMessage[] = [];
+    newPage.on('pageerror', (error) => {
+        pageErrors.push(error);
+    });
+    newPage.on('console', (message) => {
+        consoleMessages.push(message);
+    });
+    return {
+        id: `page=${uuidv4()}`,
+        p: newPage,
+        timestamp,
+        pageErrors,
+        consoleMessages
+    };
+}
+
+async function _newPage(context: BrowserContext): Promise<IndexedPage> {
+    return indexedPage(await context.newPage());
 }
 
 export class PlaywrightState {
@@ -257,6 +272,8 @@ type IndexedPage = {
     p: Page;
     id: Uuid;
     timestamp: number;
+    pageErrors: Error[];
+    consoleMessages: ConsoleMessage[];
 };
 
 type Uuid = string;
