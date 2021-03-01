@@ -239,7 +239,7 @@ class PlaywrightState(LibraryComponent):
                         messages = json.loads(response.console)
                         if messages:
                             for message in messages:
-                                logger.console(f"console: {message}")
+                                logger.error(f"console: {message}")
 
     @keyword(tags=("Setter", "BrowserControl"))
     def connect_to_browser(

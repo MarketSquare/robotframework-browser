@@ -26,6 +26,8 @@ from typing import Dict, List, Optional, Set, Union
 from assertionengine import AssertionOperator
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
+from robot.result.model import TestCase as TestCaseResult  # type: ignore
+from robot.running.model import TestCase as TestCaseRunning  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .base import ContextCache, LibraryComponent
@@ -744,7 +746,7 @@ class Browser(DynamicCore):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
-    def _end_test(self, test, result):
+    def _end_test(self, test: TestCaseRunning, result: TestCaseResult):
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{test.name}'")
             self.wait_for_all_promises()
@@ -762,6 +764,7 @@ class Browser(DynamicCore):
                 logger.debug(f"Test Case: {test.name}, End Test: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_test connection problem: {e}")
+
 
     def _end_suite(self, suite, result):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
