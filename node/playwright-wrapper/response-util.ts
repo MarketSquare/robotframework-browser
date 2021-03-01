@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Response } from './generated/playwright_pb';
-import { errors } from 'playwright';
-import { status } from '@grpc/grpc-js';
+import {Response} from './generated/playwright_pb';
+import {errors} from 'playwright';
+import {status} from '@grpc/grpc-js';
 import {IndexedPage} from "./playwright-state";
 
 export function emptyWithLog(text: string): Response.Empty {
@@ -26,8 +26,12 @@ export function emptyWithLog(text: string): Response.Empty {
 export function pageReportResponse(log: string, page: IndexedPage): Response.PageReportResponse {
     const response = new Response.PageReportResponse();
     response.setLog(log);
-    response.setConsole(JSON.stringify(page.consoleMessages.map(m => `${m.location().url} [${m.type()}]: ${m.text()}`)));
-    response.setErrors(JSON.stringify(page.pageErrors.map(e => e.message)));
+    response.setConsole(JSON.stringify(page.consoleMessages.map(m => ({
+        type: m.type(),
+        text: m.text(),
+        ...m.location()
+    }))));
+    response.setErrors(JSON.stringify(page.pageErrors.map(e => `${e.name}: ${e.message}\n${e.stack}`)));
     return response;
 }
 
@@ -74,7 +78,7 @@ export function errorResponse(e: Error) {
     if (e instanceof errors.TimeoutError) {
         errorCode = status.DEADLINE_EXCEEDED;
     }
-    return { code: status.DEADLINE_EXCEEDED, message: errorMessage };
+    return {code: status.DEADLINE_EXCEEDED, message: errorMessage};
 }
 
 export function keywordsResponse(keywords: string[], logMessage: string) {
