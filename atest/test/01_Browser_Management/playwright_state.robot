@@ -188,7 +188,6 @@ Closing Page/Contex/Browser Multiple Times Should Not Cause Errors
     New Context
     New Page
     Close Page
-    Close Page
     Close Context
     Close Context
     Close Browser
