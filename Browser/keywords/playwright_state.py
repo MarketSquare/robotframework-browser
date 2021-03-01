@@ -241,7 +241,6 @@ class PlaywrightState(LibraryComponent):
                             for message in messages:
                                 logger.error(f"Console output: '{message}'")
 
-
     @keyword(tags=("Setter", "BrowserControl"))
     def connect_to_browser(
         self, wsEndpoint: str, browser: SupportedBrowsers = SupportedBrowsers.chromium
