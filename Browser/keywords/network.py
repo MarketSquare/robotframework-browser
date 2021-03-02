@@ -169,3 +169,17 @@ class Network(LibraryComponent):
                 Request().Timeout(timeout=self.get_timeout(timeout))
             )
             logger.debug(response.log)
+
+    @keyword(tags=("Wait", "HTTP"))
+    def wait_for_navigation(self, url: str, timeout: Optional[timedelta] = None):
+        """Waits until page has navigated to given ``url``.
+
+        ``url``  expected navigation target address.
+
+        ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.WaitForNavigation(
+                Request().Url(defaultTimeout=int(self.get_timeout(timeout)), url=url)
+            )
+            logger.debug(response.log)

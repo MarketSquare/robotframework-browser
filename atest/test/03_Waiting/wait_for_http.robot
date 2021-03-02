@@ -34,3 +34,8 @@ Wait until network is idle works
     Get text    \#server_delayed_response    ==    Server response after 400ms
     Wait until network is idle    timeout=3s
     Get text    \#server_delayed_response    ==    after some time I respond
+
+Wait for navigation works
+    Go To    ${ROOT_URL}/redirector.html
+    Wait for navigation   ${ROOT_URL}/posted.html
+    Get Url  ==  ${ROOT_URL}/posted.html
