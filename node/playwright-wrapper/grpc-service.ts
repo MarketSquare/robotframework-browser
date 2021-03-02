@@ -763,6 +763,20 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async waitForNavigation(
+        call: ServerUnaryCall<Request.Url, Response.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await network.waitForNavigation(request, this.getActivePage());
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions, Response.Json>,
         callback: sendUnaryData<Response.Json>,

@@ -84,6 +84,13 @@ export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: 
     return emptyWithLog('Network is idle');
 }
 
+export async function waitForNavigation(request: pb.Request.Url, page: Page): Promise<pb.Response.Empty> {
+    const url = request.getUrl();
+    const timeout = request.getDefaulttimeout();
+    await page.waitForNavigation({timeout, url})
+    return emptyWithLog(`Navigated to ${url}`);
+}
+
 export async function waitForDownload(request: pb.Request.FilePath, page: Page): Promise<pb.Response.Json> {
     const saveAs = request.getPath();
     const downloadObject = await page.waitForEvent('download');

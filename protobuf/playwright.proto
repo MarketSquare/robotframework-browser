@@ -332,6 +332,7 @@ service  Playwright {
   rpc WaitForResponse(Request.HttpCapture) returns (Response.Json);
   rpc WaitForDownload(Request.FilePath) returns (Response.Json);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
+  rpc WaitForNavigation(Request.Url) returns (Response.Empty);
   /* Geolocation */
   rpc SetGeolocation(Request.Json) returns (Response.Empty);
 
