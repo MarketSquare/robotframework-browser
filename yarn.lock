@@ -2408,10 +2408,10 @@ google-protobuf@3.12.4:
   resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.12.4.tgz#fd89b7e5052cdb35a80f9b455612851d542a5c9f"
   integrity sha512-ItTn8YepDQMHEMHloUPH+FDaTPiHTnbsMvP50aXfbI65IK3AA5+wXlHSygJH8xz+h1g4gu7V+CK5X1/SaGITsA==
 
-google-protobuf@3.15.3:
-  version "3.15.3"
-  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.15.3.tgz#a5408078ff447e72c939c414b39b9b933eb5a41e"
-  integrity sha512-+q6w/pTPS8hmdeHe+OWO7PRKOkqtPM4+dxUUOtC9lLgiaLUd7FQq+0EkTt9UmEHf2KMigkbV1fIxSr73t/JG/A==
+google-protobuf@3.15.4:
+  version "3.15.4"
+  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.15.4.tgz#014dc3da8957b0ec147bab6f560cc4cdef47741f"
+  integrity sha512-szktYSHUV9D+ZY1FbS+zvJLdkT+OsZ0HIr4PPP3Tgi9kYpJAPcvY9H2uEsRvJkeHzMAzOS+F1sueFIMrDbcjLw==
 
 graceful-fs@^4.1.11, graceful-fs@^4.1.2, graceful-fs@^4.2.4:
   version "4.2.4"
