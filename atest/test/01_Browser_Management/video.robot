@@ -70,8 +70,6 @@ Video Setup
 
 Verify Video Files
     [Arguments]    ${start count}    ${end count}
-    ${files} =    List Files In Directory    ${OUTPUT_DIR}/video
-    Should Be Equal    ${{len(${files})}}    ${start count}
+    ${files} =    Wait File Count In Directory    ${OUTPUT_DIR}/video    ${start count}
     Close Page
-    ${files} =    List Files In Directory    ${OUTPUT_DIR}/video
-    Should Be Equal    ${{len(${files})}}    ${end count}
+    ${files} =    Wait File Count In Directory    ${OUTPUT_DIR}/video    ${end count}

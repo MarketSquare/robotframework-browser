@@ -5,6 +5,7 @@ Library           OperatingSystem
 Library           DateTime
 Library           Collections
 Library           ../library/common.py
+Library           ../library/os_wrapper.py
 
 *** Keywords ***
 Open Browser To No Page
