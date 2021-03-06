@@ -87,7 +87,7 @@ export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: 
 export async function waitForNavigation(request: pb.Request.Url, page: Page): Promise<pb.Response.Empty> {
     const url = request.getUrl();
     const timeout = request.getDefaulttimeout();
-    await page.waitForNavigation({timeout, url})
+    await page.waitForNavigation({ timeout, url });
     return emptyWithLog(`Navigated to ${url}`);
 }
 

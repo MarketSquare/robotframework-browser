@@ -37,5 +37,5 @@ Wait until network is idle works
 
 Wait for navigation works
     Go To    ${ROOT_URL}/redirector.html
-    Wait for navigation   ${ROOT_URL}/posted.html
-    Get Url  ==  ${ROOT_URL}/posted.html
+    Wait for navigation    ${ROOT_URL}/posted.html
+    Get Url    ==    ${ROOT_URL}/posted.html
