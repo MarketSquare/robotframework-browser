@@ -44,7 +44,12 @@ def _format_response(response: Dict):
 def _jsonize_content(data, bodykey):
     headers = json.loads(data["headers"])
     data["headers"] = headers
-    if "content-type" in headers and "application/json" in headers["content-type"]:
+    # HTTP header field names are case-insensitive
+    lower_headers = dict((k.lower(), v) for k, v in headers.items())
+    if (
+        "content-type" in lower_headers
+        and "application/json" in lower_headers["content-type"]
+    ):
         try:
             data[bodykey] = json.loads(data[bodykey])
         except json.decoder.JSONDecodeError:
