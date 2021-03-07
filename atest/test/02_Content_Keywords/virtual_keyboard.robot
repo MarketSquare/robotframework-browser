@@ -11,7 +11,7 @@ Keyboard Key Inputs characters
     Keyboard Key    press    l
     Keyboard Key    press    l
     Keyboard Key    press    o
-    Get TextField Value    input[name="name"]    ==    Hello
+    Get Text    input[name="name"]    ==    Hello
 
 Select list options
     Click    select[name="possible_channels"] > option[value="email"]

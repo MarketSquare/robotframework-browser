@@ -6,12 +6,12 @@ Test Setup        New Page    ${FORM_URL}
 Press Keys Generate Characters
     Clear Text    input[name="name"]
     Press Keys    input[name="name"]    H    e    l    l    o    Space    W    o    r    l    d    !
-    Get TextField Value    input[name="name"]    ==    Hello World!
+    Get Text    input[name="name"]    ==    Hello World!
 
 Press Key Combinations of Keystrokes in TextField
     Press Keys    input[name="email"]    Home    Shift+End    Delete
     Press Keys    input[name="email"]    Shift+KeyA    KeyA
-    Get TextField Value    input[name="email"]    ==    Aa
+    Get Text    input[name="email"]    ==    Aa
 
 Press Keys Combination of Keystrokes in Select List
     Click    select[name="possible_channels"] > option[value="email"]

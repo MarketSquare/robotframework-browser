@@ -72,11 +72,7 @@ export async function getDomProperty(
 
 async function getTextContentProperty(element: ElementHandle<Node>): Promise<string> {
     const tag = await (await element.getProperty('tagName')).jsonValue();
-    if (tag === 'INPUT') {
-        const type = await (await element.getProperty('type')).jsonValue();
-        if (type === 'text' || type === 'password') return 'value';
-    }
-    if (tag === 'TEXTAREA') {
+    if (tag === 'INPUT' || tag === 'TEXTAREA') {
         return 'value';
     }
     return 'innerText';
