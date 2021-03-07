@@ -7,6 +7,8 @@ const app = express.default();
 app.use(bodyParser.json());
 const port = parseInt(process.argv[2]) || 7272;
 
+app.set('etag', false);
+
 app.head('/api/get/json', (req, res) => {
     res.header('Content-Type', 'application/json');
     res.send();
