@@ -158,7 +158,7 @@ Fill Text with Clearing
 Get Text Default Error
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
-    ...    Text css=input#username_field 'Wrong Text' (str) should be 'username' (str)
+    ...    Text 'Wrong Text' (str) should be 'username' (str)
     ...    Get Text    css=input#username_field    ==    username
 
 Get Text Custom Error
