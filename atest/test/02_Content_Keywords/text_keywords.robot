@@ -166,3 +166,10 @@ Get Text Custom Error
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Text    css=input#username_field    ==    username    Tidii
+
+Text Area access
+    Get Text  id=textarea51  ==  Some initial text
+    Type Text   id=textarea51   Area 51
+    Get Text  id=textarea51  ==  Area 51
+    Type Text   id=textarea51   Ufo detected
+    Get Text  id=textarea51  ==  Ufo detected

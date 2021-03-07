@@ -204,6 +204,7 @@ export default function Site() {
                         </tbody>
                     </table>
                 </form>
+                <textarea id="textarea51">Some initial text</textarea>
                 <button id="goes_hidden" onClick={goesInvisible}>
                     Visible
                 </button>

@@ -348,17 +348,7 @@ class Getters(LibraryComponent):
         assertion_expected: Any = None,
         message: Optional[str] = None,
     ) -> Any:
-        """Returns value of the textfield found by ``selector``.
-
-        Optionally asserts that the value matches the specified assertion.
-
-        ``selector`` Selector from which the info is to be retrieved.
-        See the `Finding elements` section for details about the selectors.
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
-
-        ``message`` overrides the default error message.
-        """
+        """*DEPRECATED!!* Use keyword `Get Text` instead."""
         return verify_assertion(
             self.get_property(selector, "value"),
             assertion_operator,
