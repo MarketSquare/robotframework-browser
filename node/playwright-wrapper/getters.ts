@@ -70,6 +70,32 @@ export async function getDomProperty(
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
+async function getTextContentProperty(element: ElementHandle<Node>): Promise<string> {
+    const tag = await (await element.getProperty('tagName')).jsonValue();
+    if (tag === 'INPUT') {
+        const type = await (await element.getProperty('type')).jsonValue();
+        if (type === 'text' || type === 'password') return 'value';
+    }
+    if (tag === 'TEXTAREA') {
+        return 'value';
+    }
+    return 'innerText';
+}
+
+export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
+    const selector = request.getSelector();
+    const element = await waitUntilElementExists(state, selector);
+    let content: string;
+    try {
+        content = await (await element.getProperty(await getTextContentProperty(element))).jsonValue();
+        logger.info(`Retrieved text for element ${selector} containing ${content}`);
+    } catch (e) {
+        logger.error(e);
+        throw e;
+    }
+    return stringResponse(JSON.stringify(content), 'Text received successfully.');
+}
+
 export async function getBoolProperty(
     request: Request.ElementProperty,
     state: PlaywrightState,

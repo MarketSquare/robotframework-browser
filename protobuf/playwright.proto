@@ -271,6 +271,7 @@ service  Playwright {
   rpc ClearText(Request.ClearText) returns (Response.Empty);
   /* Gets the DOM property 'property' of selector specified element */
   rpc GetDomProperty(Request.ElementProperty) returns (Response.String);
+  rpc GetText(Request.ElementSelector) returns (Response.String);
   /* Gets the XML attribute 'attribute' of selector specified element */
   rpc GetElementAttribute(Request.ElementProperty) returns (Response.String);
   /* Gets the boolean DOM property 'property' of selector specified element */

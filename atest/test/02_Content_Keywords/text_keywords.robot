@@ -8,7 +8,7 @@ Type Text with Clearing
     Type Text    input#username_field    Wrong Text
     Type Text    input#username_field    user
     Type Text    input#username_field    name    clear=No
-    Get TextField Value    css=input#username_field    ==    username
+    Get Text    css=input#username_field    ==    username
 
 Type Text With Nonmatching Selector
     Set Browser Timeout    50ms
@@ -17,11 +17,11 @@ Type Text With Nonmatching Selector
 
 Clear Text
     Fill Text    input#username_field    Wrong Text
-    Get TextField Value    css=input#username_field    ==    Wrong Text
+    Get Text    css=input#username_field    ==    Wrong Text
     Clear Text    input#username_field
-    Get TextField Value    css=input#username_field    ==    ${EMPTY}
+    Get Text    css=input#username_field    ==    ${EMPTY}
     Type Text    input#username_field    username    clear=No
-    Get TextField Value    css=input#username_field    ==    username
+    Get Text    css=input#username_field    ==    username
 
 Clear Text With Nonmatching Selector
     Set Browser Timeout    50ms
@@ -30,7 +30,7 @@ Clear Text With Nonmatching Selector
 
 Fill with css selector
     Fill Text    css=input#username_field    username
-    Get TextField Value    css=input#username_field    ==    username
+    Get Text    css=input#username_field    ==    username
 
 Fill Text With Nonmatching Selector
     Set Browser Timeout    50ms
@@ -39,88 +39,88 @@ Fill Text With Nonmatching Selector
 
 Fill Secret Direct Value
     Type Secret    css=input#username_field    Direct Value    200 ms    True
-    Get TextField Value    css=input#username_field    ==    Direct Value
+    Get Text    css=input#username_field    ==    Direct Value
     Fill Secret    css=input#password_field    Direct Value
-    Get TextField Value    css=input#password_field    ==    Direct Value
+    Get Text    css=input#password_field    ==    Direct Value
 
 Fill Secret placeholder-env-var
     Set Environment Variable    PH_ENV_VAR    password11
     Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.2}    ${TRUE}
-    Get TextField Value    css=input#username_field    ==    password11
+    Get Text    css=input#username_field    ==    password11
     Fill Secret    css=input#password_field    %PH_ENV_VAR
-    Get TextField Value    css=input#password_field    ==    password11
+    Get Text    css=input#password_field    ==    password11
 
 Fill Secret robot-env-var
     Set Environment Variable    WAITTIMER    100 ms
     Set Environment Variable    ENV_VAR    password12
     Type Secret    css=input#username_field    %{ENV_VAR}    %{WAITTIMER}    clear=True
-    Get TextField Value    css=input#username_field    ==    password12
+    Get Text    css=input#username_field    ==    password12
     Fill Secret    css=input#password_field    %{ENV_VAR}
-    Get TextField Value    css=input#password_field    ==    password12
+    Get Text    css=input#password_field    ==    password12
 
 Fill Secret robot-env-var mixed
     Set Environment Variable    ENV_VAR    password13
     Type Secret    css=input#username_field    %{ENV_VAR}XXX
-    Get TextField Value    css=input#username_field    ==    password13XXX
+    Get Text    css=input#username_field    ==    password13XXX
     Fill Secret    css=input#password_field    %{ENV_VAR}XXX
-    Get TextField Value    css=input#password_field    ==    password13XXX
+    Get Text    css=input#password_field    ==    password13XXX
 
 Fill Secret robot-env-var mixed2
     Set Environment Variable    ENV_VAR    password13
     Type Secret    css=input#username_field    XXX%{ENV_VAR}XXX
-    Get TextField Value    css=input#username_field    ==    XXXpassword13XXX
+    Get Text    css=input#username_field    ==    XXXpassword13XXX
     Fill Secret    css=input#password_field    XXX%{ENV_VAR}XXX
-    Get TextField Value    css=input#password_field    ==    XXXpassword13XXX
+    Get Text    css=input#password_field    ==    XXXpassword13XXX
 
 Fill Secret placeholder-robot-var
     ${var}=    Set Variable    password123
     Type Secret    css=input#username_field    $var
-    Get TextField Value    css=input#username_field    ==    password123
+    Get Text    css=input#username_field    ==    password123
     Fill Secret    css=input#password_field    $var
-    Get TextField Value    css=input#password_field    ==    password123
+    Get Text    css=input#password_field    ==    password123
 
 Fill Secret robot var
     ${var}=    Set Variable    password321
     Type Secret    css=input#username_field    ${var}
-    Get TextField Value    css=input#username_field    ==    password321
+    Get Text    css=input#username_field    ==    password321
     Fill Secret    css=input#password_field    ${var}
-    Get TextField Value    css=input#password_field    ==    password321
+    Get Text    css=input#password_field    ==    password321
 
 Fill Secret robot var mixed
     ${var}=    Set Variable    password321
     Type Secret    css=input#username_field    ${var}XXX
-    Get TextField Value    css=input#username_field    ==    password321XXX
+    Get Text    css=input#username_field    ==    password321XXX
     Fill Secret    css=input#password_field    ${var}XXX
-    Get TextField Value    css=input#password_field    ==    password321XXX
+    Get Text    css=input#password_field    ==    password321XXX
 
 Fill Secret robot var mixed2
     ${var}=    Set Variable    password321
     Type Secret    css=input#username_field    xxx${var}XXX
-    Get TextField Value    css=input#username_field    ==    xxxpassword321XXX
+    Get Text    css=input#username_field    ==    xxxpassword321XXX
     Fill Secret    css=input#password_field    xxx${var}XXX
-    Get TextField Value    css=input#password_field    ==    xxxpassword321XXX
+    Get Text    css=input#password_field    ==    xxxpassword321XXX
 
 Fill Secret placeholder in robot var
     Set Global Variable    ${global}    password666
     ${var}=    Set Variable    $global
     Type Secret    css=input#username_field    ${var}
-    Get TextField Value    css=input#username_field    ==    password666
+    Get Text    css=input#username_field    ==    password666
     Fill Secret    css=input#password_field    ${var}
-    Get TextField Value    css=input#password_field    ==    password666
+    Get Text    css=input#password_field    ==    password666
 
 Fill Secret env placeholder in robot var
     Set Environment Variable    pwd_TWO    ENV_password123
     ${var}=    Set Variable    %pwd_TWO
     Type Secret    css=input#username_field    ${var}
-    Get TextField Value    css=input#username_field    ==    ENV_password123
+    Get Text    css=input#username_field    ==    ENV_password123
     Fill Secret    css=input#password_field    ${var}
-    Get TextField Value    css=input#password_field    ==    ENV_password123
+    Get Text    css=input#password_field    ==    ENV_password123
 
 Fill Secret with direct $value not resolvable
     Type Secret    css=input#username_field    $Direct Value
-    Get TextField Value    css=input#username_field    ==    $Direct Value
+    Get Text    css=input#username_field    ==    $Direct Value
     Fill Secret    css=input#password_field    $Direct Value
-    Get TextField Value    css=input#password_field    ==    $Direct Value
+    Get Text    css=input#password_field    ==    $Direct Value
 
 Fill Secret fails when variable is not set
     Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret    css=input#username_field    ${NONE_EXISTING_ENV_VARIABLE}
@@ -133,12 +133,12 @@ Fill Secret fails when env variable is not set
 Type Secret env
     Set Environment Variable    TYPE_SECRET    password22
     Type Secret    css=input#password_field    %TYPE_SECRET
-    Get TextField Value    css=input#password_field    ==    password22
+    Get Text    css=input#password_field    ==    password22
 
 Type Secret local
     ${var}=    Set Variable    password321
     Type Secret    css=input#password_field    $var
-    Get TextField Value    css=input#password_field    ==    password321
+    Get Text    css=input#password_field    ==    password321
 
 Fill Secret With Nonmatching Selector
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
@@ -148,21 +148,21 @@ Fill Secret With Nonmatching Selector
 
 Type Text with Delay
     Type Text    input#username_field    username    delay=10 ms
-    Get TextField Value    css=input#username_field    ==    username
+    Get Text    css=input#username_field    ==    username
 
 Fill Text with Clearing
     Fill Text    input#username_field    Wrong Text
     Fill Text    input#username_field    username
-    Get TextField Value    css=input#username_field    ==    username
+    Get Text    css=input#username_field    ==    username
 
-Get TextField Value Default Error
+Get Text Default Error
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
-    ...    Value css=input#username_field 'Wrong Text' (str) should be 'username' (str)
-    ...    Get TextField Value    css=input#username_field    ==    username
+    ...    Text css=input#username_field 'Wrong Text' (str) should be 'username' (str)
+    ...    Get Text    css=input#username_field    ==    username
 
-Get TextField Value Custom Error
+Get Text Custom Error
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Tidii
-    ...    Get TextField Value    css=input#username_field    ==    username    Tidii
+    ...    Get Text    css=input#username_field    ==    username    Tidii
