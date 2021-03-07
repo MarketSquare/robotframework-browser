@@ -34,7 +34,7 @@ function ProgressBar() {
             id="progress"
             style={{
                 position: 'absolute',
-                top: '400px',
+                top: '500px',
                 left: '0px',
                 width: '400px',
                 height: '30px',
