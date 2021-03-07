@@ -52,11 +52,11 @@ class Interaction(LibraryComponent):
     def type_text(
         self,
         selector: str,
-        text: str,
+        txt: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
     ):
-        """Types the given ``text`` into the text field found by ``selector``.
+        """Types the given ``txt`` into the text field found by ``selector``.
 
         Sends a ``keydown``, ``keypress/input``, and ``keyup`` event for each
         character in the text.
@@ -64,7 +64,7 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``text`` Text for the text field.
+        ``txt`` Text for the text field.
 
         ``delay`` Delay between the single key strokes. It may be either a
         number or a Robot Framework time string. Time strings are fully
@@ -76,11 +76,11 @@ class Interaction(LibraryComponent):
 
         See `Fill Text` for direct filling of the full text at once.
         """
-        logger.info(f"Types the text '{text}' in the given field.")
-        self._type_text(selector, text, delay, clear)
+        logger.info(f"Types the text '{txt}' in the given field.")
+        self._type_text(selector, txt, delay, clear)
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_text(self, selector: str, text: str):
+    def fill_text(self, selector: str, txt: str):
         """Clears and fills the given ``text`` into the text field found by ``selector``.
 
         This method waits for an element matching the ``selector`` to appear,
@@ -94,12 +94,12 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``text`` Text for the text field.
+        ``txt`` Text for the text field.
 
         See `Type Text` for emulating typing text character by character.
         """
-        logger.info(f"Fills the text '{text}' in the given field.")
-        self._fill_text(selector, text)
+        logger.info(f"Fills the text '{txt}' in the given field.")
+        self._fill_text(selector, txt)
 
     @keyword(tags=("Setter", "PageContent"))
     def clear_text(self, selector: str):
@@ -543,20 +543,20 @@ class Interaction(LibraryComponent):
             response = stub.DeselectOption(Request().ElementSelector(selector=selector))
             logger.debug(response.log)
 
-    def _fill_text(self, selector: str, text: str, log_response: bool = True):
+    def _fill_text(self, selector: str, txt: str, log_response: bool = True):
         if self.library.presenter_mode:
             self.hover(selector)
             self.library.highlight_elements(selector, duration=timedelta(seconds=2))
             sleep(2)
         with self.playwright.grpc_channel() as stub:
-            response = stub.FillText(Request().FillText(selector=selector, text=text))
+            response = stub.FillText(Request().FillText(selector=selector, text=txt))
             if log_response:
                 logger.debug(response.log)
 
     def _type_text(
         self,
         selector: str,
-        text: str,
+        txt: str,
         delay: timedelta = timedelta(microseconds=0),
         clear: bool = True,
         log_response: bool = True,
@@ -569,7 +569,7 @@ class Interaction(LibraryComponent):
             delay_ms = self.get_timeout(delay)
             response = stub.TypeText(
                 Request().TypeText(
-                    selector=selector, text=text, delay=int(delay_ms), clear=clear
+                    selector=selector, text=txt, delay=int(delay_ms), clear=clear
                 )
             )
             if log_response:
