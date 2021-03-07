@@ -150,6 +150,13 @@ Type Text with Delay
     Type Text    input#username_field    username    delay=10 ms
     Get Text    css=input#username_field    ==    username
 
+Type and Fill Text with text selector
+    Type Text    input#username_field    Text field
+    Type Text    text=Text field    some text
+    Get TextField Value    text=some text    ==    some text
+    Type Text    text=some text    another text
+    Get TextField Value    text=another text    ==    another text
+
 Fill Text with Clearing
     Fill Text    input#username_field    Wrong Text
     Fill Text    input#username_field    username
