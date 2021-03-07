@@ -13,7 +13,7 @@ Register Keyword To Run On Failure
     ${prev}=    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
-    ...    Get TextField Value    css=input#username_field    ==    not_username
+    ...    Get Text    css=input#username_field    ==    not_username
     File Should Exist    ${FailureScreenshot}
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot}
@@ -23,7 +23,7 @@ Register KåWä On Failure with unicode " 💩 "
     ${prev}=    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
-    ...    Get TextField Value    css=input#username_field    ==    not_username
+    ...    Get Text    css=input#username_field    ==    not_username
     File Should Exist    ${FailureScreenshot2}
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot2}

@@ -149,6 +149,7 @@ class Getters(LibraryComponent):
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
         See the `Finding elements` section for details about the selectors.
@@ -156,10 +157,17 @@ class Getters(LibraryComponent):
         Optionally asserts that the text matches the specified assertion.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        ``message`` overrides the default error message.
         """
-        return self.get_property(
-            selector, "innerText", assertion_operator, assertion_expected
-        )
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetText(Request().ElementSelector(selector=selector))
+            logger.debug(response.log)
+            if response.body:
+                value = json.loads(response.body)
+            return verify_assertion(
+                value, assertion_operator, assertion_expected, "Text", message
+            )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -340,17 +348,7 @@ class Getters(LibraryComponent):
         assertion_expected: Any = None,
         message: Optional[str] = None,
     ) -> Any:
-        """Returns value of the textfield found by ``selector``.
-
-        Optionally asserts that the value matches the specified assertion.
-
-        ``selector`` Selector from which the info is to be retrieved.
-        See the `Finding elements` section for details about the selectors.
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
-
-        ``message`` overrides the default error message.
-        """
+        """*DEPRECATED!!* Use keyword `Get Text` instead."""
         return verify_assertion(
             self.get_property(selector, "value"),
             assertion_operator,

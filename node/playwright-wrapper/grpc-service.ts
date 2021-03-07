@@ -441,6 +441,20 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async getText(
+        call: ServerUnaryCall<Request.ElementSelector, Response.String>,
+        callback: sendUnaryData<Response.String>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await getters.getText(request, this.state);
+            callback(null, response);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
     async getBoolProperty(
         call: ServerUnaryCall<Request.ElementProperty, Response.Bool>,
         callback: sendUnaryData<Response.Bool>,

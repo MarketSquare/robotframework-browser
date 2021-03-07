@@ -186,17 +186,17 @@ Get Style Custom Error
     ...    Get Style    h1    align-content    !=    normal    foobar
 
 Get Element Size and Assert
-    ${expected}=    Evaluate    {'x': 0, 'y': 400, 'width': 40, 'height': 30}
+    ${expected}=    Evaluate    {'x': 0, 'y': 500, 'width': 40, 'height': 30}
     ${bounding_box}=    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}
     Should Be Equal    ${bounding_box}    ${expected}
-    Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 400, 'width': 40, 'height': 30}}}
+    Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 500, 'width': 40, 'height': 30}}}
 
 Get Element and Assert x
     ${x}=    Get BoundingBox    \#progress_bar    x    ==    0
     Should Be Equal    ${x}    ${0}
 
 Get Element and Assert y
-    Get BoundingBox    \#progress_bar    y    validate    value - 400 == 0
+    Get BoundingBox    \#progress_bar    y    validate    value - 500 == 0
 
 Get Element width and height
     ${expected}=    Evaluate    {'w': 40, 'h': 30}

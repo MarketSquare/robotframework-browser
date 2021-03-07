@@ -34,7 +34,7 @@ function ProgressBar() {
             id="progress"
             style={{
                 position: 'absolute',
-                top: '400px',
+                top: '500px',
                 left: '0px',
                 width: '400px',
                 height: '30px',
@@ -204,6 +204,7 @@ export default function Site() {
                         </tbody>
                     </table>
                 </form>
+                <textarea id="textarea51">Some initial text</textarea>
                 <button id="goes_hidden" onClick={goesInvisible}>
                     Visible
                 </button>
