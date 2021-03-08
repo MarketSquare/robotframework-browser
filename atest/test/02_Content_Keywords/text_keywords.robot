@@ -152,10 +152,17 @@ Type Text with Delay
 
 Type and Fill Text with text selector
     Type Text    input#username_field    Text field
-    Type Text    text=Text field    some text
-    Get TextField Value    text=some text    ==    some text
-    Type Text    text=some text    another text
-    Get TextField Value    text=another text    ==    another text
+    Type Text    text=User Name:    some text
+    Get Text    input#username_field    ==    some text
+    Fill Text    text=User Name:    another text
+    Get Text    input#username_field    ==    another text
+
+Type and Fill Secret with text selector
+    Type Secret    input#password_field    pwfield
+    Type Secret    text=Password:    some text
+    Get Text    input#password_field    ==    some text
+    Fill Secret    text=Password:    another text
+    Get Text    input#password_field    ==    another text
 
 Fill Text with Clearing
     Fill Text    input#username_field    Wrong Text
