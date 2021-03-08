@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Promised to make an example</title>
+    <style>
+        #container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #clicker {
+            margin: 2rem;
+            width: 30vw;
+            height: 20vh;
+            font-size: 16px;
+        }
+        #texts {
+            font-weight: bold;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <button id="clicker" onclick="runnit()">Do X</button>
+    <span id="texts">Beginning</span>
+</div>
+</body>
+<script>
+    function runnit() {
+        const ordering = Math.random() > 0.5;
+        const element = document.getElementById('texts');
+        element.innerText = "Beginning"
+        setTimeout(() => {
+            element.innerText = "Cat"
+        }, ordering ? 150 : 300);
+        setTimeout(() => {
+            element.innerText = "Dog"
+        }, ordering ? 300 : 150);
+        setTimeout(() => {
+            element.innerText = "The End"
+        }, 500);
+    }
+</script>
+</html>
