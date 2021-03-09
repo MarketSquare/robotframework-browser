@@ -15,23 +15,23 @@
 import json
 from typing import Any, List, Optional, Union
 
-import grpc  # type: ignore
-
-from ..assertion_engine import (
+from AssertionEngine.assertion_engine import (
     bool_verify_assertion,
     dict_verify_assertion,
     float_str_verify_assertion,
     int_dict_verify_assertion,
     list_verify_assertion,
     verify_assertion,
-    with_assertion_polling,
 )
+from AssertionEngine import AssertionOperator
+import grpc  # type: ignore
+
+from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import exec_scroll_function, keyword, logger
 from ..utils.data_types import (
     AreaFields,
-    AssertionOperator,
     BoundingBoxFields,
     ElementStateKey,
     SelectAttribute,

@@ -17,9 +17,10 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from AssertionEngine import verify_assertion, AssertionOperator
 from robot.utils import get_link_path  # type: ignore
 
-from ..assertion_engine import verify_assertion, with_assertion_polling
+from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -38,7 +39,6 @@ from ..utils import (
     locals_to_params,
     logger,
 )
-from ..utils.data_types import AssertionOperator
 
 
 class PlaywrightState(LibraryComponent):

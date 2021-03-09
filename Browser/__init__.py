@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from AssertionEngine import AssertionOperator
+
 from .browser import Browser
 from .utils.data_types import (
-    AssertionOperator,
     ColorScheme,
     ElementState,
     KeyboardModifier,
