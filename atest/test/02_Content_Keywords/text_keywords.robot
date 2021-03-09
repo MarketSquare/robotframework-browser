@@ -152,9 +152,9 @@ Type Text with Delay
 
 Type and Fill Text with text selector
     Type Text    input#username_field    Text field
-    Type Text    text=User Name:    some text
+    Type Text    text=User Name:    txt=some text
     Get Text    input#username_field    ==    some text
-    Fill Text    text=User Name:    another text
+    Fill Text    text=User Name:    txt=another text
     Get Text    input#username_field    ==    another text
 
 Type and Fill Secret with text selector

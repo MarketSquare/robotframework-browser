@@ -230,6 +230,8 @@ class Browser(DynamicCore):
     ``Wait For Elements State   text="lazy loaded text"`` waits for the "lazy loaded text"
     to appear in the page.
 
+    Text engine finds fields based on their labels in text inserting keywords.
+
     Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
     to be a text selector. For example, ``Click    "Login"`` is converted to ``Click    text="Login"``.
     Be aware that these leads to exact matches only!
