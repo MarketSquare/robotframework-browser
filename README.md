@@ -25,6 +25,13 @@ Only Python 3.7 or newer is supported.
 
 Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [atest/docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/master/atest/docker/README.md).
 
+## Update instructions
+
+To upgrade your already installed robotframework-browser library
+
+1. Update from commandline: `pip install -U robotframework-browser`
+2. Install the node dependencies for the newly installed version: `rfbrowser init`
+
 # Examples
 
 ### Testing with [Robot Framework](https://robotframework.org)
