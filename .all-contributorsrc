@@ -258,6 +258,24 @@
       "contributions": [
         "userTesting"
       ]
+    },
+    {
+      "login": "emakaay",
+      "name": "emakaay",
+      "avatar_url": "https://avatars.githubusercontent.com/u/72747481?v=4",
+      "profile": "https://github.com/emakaay",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "Virvatuli",
+      "name": "Nea Ohvo",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29060467?v=4",
+      "profile": "https://virvatuli.itch.io/",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,

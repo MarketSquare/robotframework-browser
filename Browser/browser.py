@@ -230,6 +230,8 @@ class Browser(DynamicCore):
     ``Wait For Elements State   text="lazy loaded text"`` waits for the "lazy loaded text"
     to appear in the page.
 
+    Text engine finds fields based on their labels in text inserting keywords.
+
     Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
     to be a text selector. For example, ``Click    "Login"`` is converted to ``Click    text="Login"``.
     Be aware that these leads to exact matches only!
@@ -559,8 +561,6 @@ class Browser(DynamicCore):
 
     ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://playwright.dev/docs/api/class-playwright| API docs]
 
-
-
     == Example module.js ==
 
     | async function myGoToKeyword(page, args) {
@@ -580,6 +580,27 @@ class Browser(DynamicCore):
     |   New Page
     |   ${title}=  myGoToKeyword  https://playwright.dev
     |   Should be equal  ${title}  Playwright
+
+    Also selector syntax can be extended withm custom selector with a js module
+
+    == Example module keyword for custom selector registerin ==
+
+    | async function registerMySelector(page, args, log, playwright) {
+    | playwright.selectors.register("myselector", () => ({
+    |    // Returns the first element matching given selector in the root's subtree.
+    |    query(root, selector) {
+    |       return root.querySelector(`a[data-title="${selector}"]`);
+    |     },
+    |
+    |     // Returns all elements matching given selector in the root's subtree.
+    |     queryAll(root, selector) {
+    |       return Array.from(root.querySelectorAll(`a[data-title="${selector}"]`));
+    |     }
+    | }));
+    | return 1;
+    | }
+    | exports.__esModule = true;
+    | exports.registerMySelector = registerMySelector;
     """
 
     ROBOT_LIBRARY_VERSION = VERSION

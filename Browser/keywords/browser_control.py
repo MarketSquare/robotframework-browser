@@ -80,11 +80,11 @@ class Control(LibraryComponent):
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
         ``filename`` Filename into which to save. The file will be saved into the robot framework
-         ${OUTPUTDIR}/browser/screenshot directory by default. String ``{index}`` in filename
-         will be replaced with a rolling number. Use this to not override filenames. If filename
-         equals to EMBED (case insensitive), then screenshot is embedded as Base64 image to the
-         log.html. The image is saved temporally to the disk and warning is displayed
-        if removing the temporary file fails.
+         ${OUTPUTDIR}/browser/screenshot directory by default, but it can overwritten by providing
+         custom path or filename. String ``{index}`` in filename will be replaced with a rolling
+         number. Use this to not override filenames. If filename equals to EMBED (case insensitive),
+         then screenshot is embedded as Base64 image to the log.html. The image is saved temporally
+         to the disk and warning is displayed if removing the temporary file fails.
 
         ``selector`` Take a screenshot of the element matched by selector.
         See the `Finding elements` section for details about the selectors.

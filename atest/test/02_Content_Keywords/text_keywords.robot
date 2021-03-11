@@ -150,6 +150,20 @@ Type Text with Delay
     Type Text    input#username_field    username    delay=10 ms
     Get Text    css=input#username_field    ==    username
 
+Type and Fill Text with text selector
+    Type Text    input#username_field    Text field
+    Type Text    text=User Name:    txt=some text
+    Get Text    input#username_field    ==    some text
+    Fill Text    text=User Name:    txt=another text
+    Get Text    input#username_field    ==    another text
+
+Type and Fill Secret with text selector
+    Type Secret    input#password_field    pwfield
+    Type Secret    text=Password:    some text
+    Get Text    input#password_field    ==    some text
+    Fill Secret    text=Password:    another text
+    Get Text    input#password_field    ==    another text
+
 Fill Text with Clearing
     Fill Text    input#username_field    Wrong Text
     Fill Text    input#username_field    username
