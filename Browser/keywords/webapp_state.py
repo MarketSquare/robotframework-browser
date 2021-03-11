@@ -15,11 +15,12 @@
 import json
 from typing import Any, Optional
 
-from ..assertion_engine import verify_assertion, with_assertion_polling
+from assertionengine import AssertionOperator, verify_assertion
+
+from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-from ..utils.data_types import AssertionOperator
 
 
 class WebAppState(LibraryComponent):

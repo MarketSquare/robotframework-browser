@@ -1,7 +1,7 @@
 import pytest
 import subprocess
 
-from Browser.assertion_engine import AssertionOperator
+from assertionengine import AssertionOperator
 
 
 @pytest.fixture()

@@ -106,6 +106,8 @@ from typing import (
     Tuple,
 )
 
+from assertionengine import AssertionOperator
+
 from .utils.data_types import *
 
 
