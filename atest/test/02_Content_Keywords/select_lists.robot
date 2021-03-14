@@ -37,6 +37,10 @@ Get Selected Options
     Run Keyword And Expect Error    *
     ...    Get Selected Options    select[name=possible_channels]    label    ==    Email    Telephone    Direct mail
 
+Get Selected Options with xpath
+    ${selection}=    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==    Telephone
+    Should Be Equal    ${selection}    Telephone
+
 Get Selected Options With Nonmatching Selector
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Selected Options    notamatch
