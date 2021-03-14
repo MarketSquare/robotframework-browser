@@ -46,9 +46,15 @@ export async function getSelectContent(
     await waitUntilElementExists(state, selector);
 
     type Value = [string, string, boolean];
-    const content: Value[] = await invokePlaywrightMethod(state, '$$eval', selector + ' option', (elements: any) =>
-        (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
-    );
+
+    const content: Value[] = await invokePlaywrightMethod(state, '$eval', selector, (select: HTMLSelectElement) => {
+        const options: Value[] = [];
+        for (let i = 0; i < select.options.length; i++) {
+            const elem: HTMLOptionElement = select.options[i];
+            options.push([elem.label, elem.value, elem.selected]);
+        }
+        return options;
+    });
 
     const response = new Response.Select();
     content.forEach((option) => {
