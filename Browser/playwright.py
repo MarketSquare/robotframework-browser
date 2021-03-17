@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 from .utils import find_free_port, logger
 
+
 class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwirght process."""
 
