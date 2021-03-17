@@ -275,7 +275,7 @@ class Interaction(LibraryComponent):
 
         ``button`` Defaults to ``left`` if invalid.
 
-        ``click_count`` Defaults to 1.
+        ``clickCount`` Defaults to 1.
 
         ``delay`` Time to wait between mouse-down and mouse-up.
         Defaults to 0.
