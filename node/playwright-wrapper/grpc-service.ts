@@ -62,19 +62,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         };
     };
 
-    async initializeExtension(
-        call: ServerUnaryCall<Request.FilePath, Response.Keywords>,
-        callback: sendUnaryData<Response.Keywords>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await playwrightState.initializeExtension(request, this.getState(call));
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    initializeExtension = this.wrapping(playwrightState.initializeExtension);
 
     async callExtensionKeyword(call: ServerWritableStream<Request.KeywordCall, Response.Json>): Promise<void> {
         try {
@@ -198,7 +186,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const response = await playwrightState.switchPage(request, this.getState(call).getActiveBrowser());
+            const response = await playwrightState.switchPage(request, this.getActiveBrowser(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -212,82 +200,18 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const response = await playwrightState.switchContext(request, this.getState(call).getActiveBrowser());
+            const response = await playwrightState.switchContext(request, this.getActiveBrowser(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
         }
     }
 
-    async switchBrowser(
-        call: ServerUnaryCall<Request.Index, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.switchBrowser(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async newPage(
-        call: ServerUnaryCall<Request.Url, Response.String>,
-        callback: sendUnaryData<Response.NewPageResponse>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.newPage(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async newContext(
-        call: ServerUnaryCall<Request.Context, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.newContext(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async newBrowser(
-        call: ServerUnaryCall<Request.Browser, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.newBrowser(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async connectToBrowser(
-        call: ServerUnaryCall<Request.ConnectBrowser, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.connectToBrowser(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    switchBrowser = this.wrapping(playwrightState.switchBrowser);
+    newPage = this.wrapping(playwrightState.newPage);
+    newContext = this.wrapping(playwrightState.newContext);
+    newBrowser = this.wrapping(playwrightState.newBrowser);
+    connectToBrowser = this.wrapping(playwrightState.connectToBrowser);
 
     async goTo(
         call: ServerUnaryCall<Request.Url, Response.Empty>,
@@ -327,33 +251,8 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    async takeScreenshot(
-        call: ServerUnaryCall<Request.ScreenshotOptions, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await browserControl.takeScreenshot(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getBoundingBox(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getBoundingBox(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    takeScreenshot = this.wrapping(browserControl.takeScreenshot);
+    getBoundingBox = this.wrapping(getters.getBoundingBox);
 
     async getPageSource(
         call: ServerUnaryCall<Request.Empty, Response.String>,
@@ -405,103 +304,13 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    async getElementCount(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Int>,
-        callback: sendUnaryData<Response.Int>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getElementCount(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getSelectContent(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Select>,
-        callback: sendUnaryData<Response.Select>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getSelectContent(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getDomProperty(
-        call: ServerUnaryCall<Request.ElementProperty, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getDomProperty(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getText(
-        call: ServerUnaryCall<Request.ElementSelector, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getText(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getBoolProperty(
-        call: ServerUnaryCall<Request.ElementProperty, Response.Bool>,
-        callback: sendUnaryData<Response.Bool>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getBoolProperty(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getElementAttribute(
-        call: ServerUnaryCall<Request.ElementProperty, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getElementAttribute(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getStyle(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getStyle(request, this.getState(call));
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    getElementCount = this.wrapping(getters.getElementCount);
+    getSelectContent = this.wrapping(getters.getSelectContent);
+    getDomProperty = this.wrapping(getters.getDomProperty);
+    getText = this.wrapping(getters.getText);
+    getBoolProperty = this.wrapping(getters.getBoolProperty);
+    getElementAttribute = this.wrapping(getters.getElementAttribute);
+    getStyle = this.wrapping(getters.getStyle);
 
     async getViewportSize(
         call: ServerUnaryCall<Request.Empty, Response.Json>,
@@ -515,19 +324,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    async selectOption(
-        call: ServerUnaryCall<Request.SelectElementSelector, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.selectOption(request, this.getState(call));
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    selectOption = this.wrapping(interaction.selectOption);
 
     async deselectOption(
         call: ServerUnaryCall<Request.ElementSelector, Response.Empty>,
