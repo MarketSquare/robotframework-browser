@@ -376,7 +376,10 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
     return emptyWithLog('Successfully closed Page');
 }
 
-export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {
+export async function newPage(
+    request: Request.Url,
+    openBrowsers: PlaywrightState
+): Promise<Response.NewPageResponse> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
     const defaultTimeout = request.getDefaulttimeout();
     const context = await browserState.getOrCreateActiveContext(defaultTimeout);

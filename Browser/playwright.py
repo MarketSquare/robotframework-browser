@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 
 from .utils import find_free_port, logger
 
-
 class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwirght process."""
 
@@ -43,7 +42,7 @@ class Playwright(LibraryComponent):
         self.port = None
 
     @cached_property
-    def _playwright_process(self) -> Popen:
+    def _playwright_process(self) -> None:
         process = self.start_playwright()
         self.wait_until_server_up()
         return process
@@ -76,21 +75,21 @@ class Playwright(LibraryComponent):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
-        port = str(find_free_port())
-        if self.enable_playwright_debug:
-            os.environ["DEBUG"] = "pw:api"
-        logger.info(f"Starting Browser process {playwright_script} using port {port}")
-        self.port = port
+        # logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
+        # port = str(find_free_port())
+        # if self.enable_playwright_debug:
+        #    os.environ["DEBUG"] = "pw:api"
+        # logger.info(f"Starting Browser process {playwright_script} using port {port}")
+        self.port = "18771"
         os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
-        return Popen(
-            ["node", str(playwright_script), port],
-            shell=False,
-            cwd=workdir,
-            env=os.environ,
-            stdout=logfile,
-            stderr=STDOUT,
-        )
+        # return Popen(
+        #    ["node", str(playwright_script), port],
+        #    shell=False,
+        #    cwd=workdir,
+        #    env=os.environ,
+        #    stdout=logfile,
+        #    stderr=STDOUT,
+        # )
 
     def wait_until_server_up(self):
         for _ in range(50):
@@ -109,20 +108,23 @@ class Playwright(LibraryComponent):
             f"Could not connect to the playwright process at port {self.port}."
         )
 
+    @cached_property
+    def _channel(self):
+        return grpc.insecure_channel(f"localhost:{self.port}")
+
     @contextlib.contextmanager
     def grpc_channel(self, original_error=False):
         """Yields a PlayWrightstub on a newly initialized channel
 
         Acts as a context manager, so channel is closed automatically when control returns.
         """
-        returncode = self._playwright_process.poll()
+        returncode = self._playwright_process
         if returncode is not None:
             raise ConnectionError(
                 "Playwright process has been terminated with code {}".format(returncode)
             )
-        channel = grpc.insecure_channel(f"localhost:{self.port}")
         try:
-            yield playwright_pb2_grpc.PlaywrightStub(channel)
+            yield playwright_pb2_grpc.PlaywrightStub(self._channel)
         except grpc.RpcError as error:
             if original_error:
                 raise error
@@ -130,15 +132,13 @@ class Playwright(LibraryComponent):
         except Exception as error:
             logger.debug(f"Unknown error received: {error}")
             raise AssertionError(str(error))
-        finally:
-            channel.close()
 
     def close(self):
         logger.debug("Closing all open browsers, contexts and pages in Playwright")
         with self.grpc_channel() as stub:
             response = stub.CloseAllBrowsers(Request().Empty())
             logger.info(response.log)
-
+        self._channel.close()
         logger.debug("Closing Playwright process")
-        self._playwright_process.kill()
+        # self._playwright_process.kill()
         logger.debug("Playwright process killed")
