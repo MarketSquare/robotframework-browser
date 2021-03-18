@@ -125,6 +125,12 @@ async function _newPage(context: BrowserContext): Promise<IndexedPage> {
     return { id: `page=${uuidv4()}`, p: newPage, timestamp: timestamp };
 }
 
+const globalBrowsers : {
+    chromium?: Browser;
+    firefox?: Browser;
+    webkit?: Browser;
+} = {};
+
 export class PlaywrightState {
     constructor() {
         this.browserStack = [];
@@ -155,7 +161,14 @@ export class PlaywrightState {
     public async getOrCreateActiveBrowser(browserType?: string): Promise<BrowserState> {
         const currentBrowser = this.activeBrowser;
         if (currentBrowser === undefined) {
-            const [newBrowser, name] = await _newBrowser(browserType);
+            const name: string = browserType || 'chromium';
+            // @ts-ignore
+            if (!globalBrowsers[name]) {
+                // @ts-ignore
+                globalBrowsers[name] = (await _newBrowser(name))[0];
+            }
+            // @ts-ignore
+            const newBrowser = globalBrowsers[name] as Browser;
             const newState = new BrowserState(name, newBrowser);
             this.browserStack.push(newState);
             return newState;
@@ -279,7 +292,10 @@ export class BrowserState {
 
     public async close(): Promise<void> {
         this._contextStack = [];
-        await this.browser.close();
+        // @ts-ignore
+        if (globalBrowsers[this.name] !== this.browser) {
+            await this.browser.close();
+        }
     }
 
     public async getOrCreateActiveContext(defaultTimeout: number): Promise<IndexedContext> {
