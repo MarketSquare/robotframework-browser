@@ -13,6 +13,7 @@ node/dynamic-test-app/src/*.js
 *.js.map
 
 .idea
+.DS_Store
 .pabotsuitenames
 .mypy_cache
 __pycache__
