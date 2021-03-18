@@ -13,15 +13,15 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
-import { v4 as uuidv4 } from 'uuid';
+import {Browser, BrowserContext, chromium, ElementHandle, firefox, Page, webkit} from 'playwright';
+import {v4 as uuidv4} from 'uuid';
 
-import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse, keywordsResponse, stringResponse } from './response-util';
-import { exists } from './playwirght-invoke';
+import {Request, Response} from './generated/playwright_pb';
+import {emptyWithLog, jsonResponse, keywordsResponse, stringResponse} from './response-util';
+import {exists} from './playwirght-invoke';
 
 import * as pino from 'pino';
-import { ServerWritableStream } from '@grpc/grpc-js';
+import {ServerWritableStream} from '@grpc/grpc-js';
 
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
@@ -446,8 +446,7 @@ async function _switchPage(id: Uuid, browserState: BrowserState) {
     } else {
         const mapped = pages?.map((page) => `{ id: ${page.id}, url: ${page.p.url()} }`).join(',');
         const message = `No page for id ${id}. Open pages: ${mapped}`;
-        const error = new Error(message);
-        throw error;
+        throw new Error(message);
     }
 }
 
