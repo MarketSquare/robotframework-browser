@@ -109,6 +109,10 @@ class Playwright(LibraryComponent):
             f"Could not connect to the playwright process at port {self.port}."
         )
 
+    @cached_property
+    def _channel(self):
+        return grpc.insecure_channel(f"localhost:{self.port}")
+
     @contextlib.contextmanager
     def grpc_channel(self, original_error=False):
         """Yields a PlayWrightstub on a newly initialized channel
@@ -120,9 +124,8 @@ class Playwright(LibraryComponent):
             raise ConnectionError(
                 "Playwright process has been terminated with code {}".format(returncode)
             )
-        channel = grpc.insecure_channel(f"localhost:{self.port}")
         try:
-            yield playwright_pb2_grpc.PlaywrightStub(channel)
+            yield playwright_pb2_grpc.PlaywrightStub(self._channel)
         except grpc.RpcError as error:
             if original_error:
                 raise error
@@ -130,15 +133,13 @@ class Playwright(LibraryComponent):
         except Exception as error:
             logger.debug(f"Unknown error received: {error}")
             raise AssertionError(str(error))
-        finally:
-            channel.close()
 
     def close(self):
         logger.debug("Closing all open browsers, contexts and pages in Playwright")
         with self.grpc_channel() as stub:
             response = stub.CloseAllBrowsers(Request().Empty())
             logger.info(response.log)
-
+        self._channel.close()
         logger.debug("Closing Playwright process")
         self._playwright_process.kill()
         logger.debug("Playwright process killed")
