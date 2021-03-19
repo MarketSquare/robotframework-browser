@@ -17,7 +17,7 @@ import os
 import time
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import grpc  # type: ignore
 from backports.cached_property import cached_property
@@ -36,6 +36,8 @@ from .utils import find_free_port, logger
 class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwirght process."""
 
+    port: Optional[str]
+
     def __init__(self, library: "Browser", enable_playwright_debug: bool):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
@@ -43,7 +45,7 @@ class Playwright(LibraryComponent):
         self.port = None
 
     @cached_property
-    def _playwright_process(self) -> Popen:
+    def _playwright_process(self) -> Optional[Popen]:
         process = self.start_playwright()
         self.wait_until_server_up()
         return process
@@ -72,7 +74,14 @@ class Playwright(LibraryComponent):
             "Run `rfbrowser init` to install the dependencies."
         )
 
-    def start_playwright(self):
+    def start_playwright(self) -> Optional[Popen]:
+        existing_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
+        if existing_port is not None:
+            self.port = existing_port
+            logger.info(
+                f"ROBOT_FRAMEWORK_BROWSER_NODE_PORT {existing_port} defined in env skipping Browser process start"
+            )
+            return None
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
@@ -119,11 +128,15 @@ class Playwright(LibraryComponent):
 
         Acts as a context manager, so channel is closed automatically when control returns.
         """
-        returncode = self._playwright_process.poll()
-        if returncode is not None:
-            raise ConnectionError(
-                "Playwright process has been terminated with code {}".format(returncode)
-            )
+        playwright_process = self._playwright_process
+        if playwright_process:
+            returncode = playwright_process.poll()
+            if returncode is not None:
+                raise ConnectionError(
+                    "Playwright process has been terminated with code {}".format(
+                        returncode
+                    )
+                )
         try:
             yield playwright_pb2_grpc.PlaywrightStub(self._channel)
         except grpc.RpcError as error:
@@ -140,6 +153,10 @@ class Playwright(LibraryComponent):
             response = stub.CloseAllBrowsers(Request().Empty())
             logger.info(response.log)
         self._channel.close()
-        logger.debug("Closing Playwright process")
-        self._playwright_process.kill()
-        logger.debug("Playwright process killed")
+        playwright_process = self._playwright_process
+        if playwright_process:
+            logger.debug("Closing Playwright process")
+            playwright_process.kill()
+            logger.debug("Playwright process killed")
+        else:
+            logger.debug("Disconnected from external Playwright process")

@@ -240,7 +240,14 @@ def atest(c, suite=None, include=None, zip=None):
     if include:
         args.extend(["--include", include])
     exit = False if zip else True
-    rc = _run_robot(args, exit)
+    process = subprocess.Popen([
+        "node",
+        "Browser/wrapper/index.js",
+        "18771",
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = str(18771)
+    rc = _run_pabot(args, exit)
+    process.kill()
     if zip:
         _clean_zip_dir()
         print(f"Zip file created to: {_create_zip()}")
@@ -281,13 +288,13 @@ def atest_robot(c):
 
 @task(clean_atest)
 def atest_global_pythonpath(c):
-    _run_robot()
+    _run_pabot()
 
 
 # Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
 @task()
 def atest_failed(c):
-    _run_robot(["--rerunfailed", "atest/output/output.xml"])
+    _run_pabot(["--rerunfailed", "atest/output/output.xml"])
 
 
 @task()
@@ -301,7 +308,7 @@ def run_tests(c, tests):
     process.wait(600)
 
 
-def _run_robot(extra_args=None, exit=True):
+def _run_pabot(extra_args=None, exit=True):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
         sys.executable,
