@@ -21,22 +21,27 @@ import * as interaction from './interaction';
 import * as network from './network';
 import * as playwrightState from './playwright-state';
 import { IPlaywrightServer } from './generated/playwright_grpc_pb';
+import { Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
+import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
-import { emptyWithLog, errorResponse, keywordsResponse } from './response-util';
+import { emptyWithLog, errorResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
-    state: PlaywrightState;
+    private states: { [peer: string]: PlaywrightState } = {};
 
-    constructor() {
-        this.state = new PlaywrightState();
-    }
-
-    private getActiveBrowser = () => this.state.getActiveBrowser();
-    private getActiveContext = () => this.state.getActiveContext();
-    private getActivePage = () => {
-        const page = this.state.getActivePage();
+    private getState = (peer: ServerSurfaceCall): PlaywrightState => {
+        const p = peer.getPeer();
+        if (!(p in this.states)) {
+            this.states[p] = new PlaywrightState();
+        }
+        return this.states[p];
+    };
+    private getActiveBrowser = (peer: ServerSurfaceCall) => this.getState(peer).getActiveBrowser();
+    private getActiveContext = (peer: ServerSurfaceCall) => this.getState(peer).getActiveContext();
+    private getActivePage = (peer: ServerSurfaceCall) => {
+        const page = this.getState(peer).getActivePage();
         if (!page) throw Error('No page open.');
         return page;
     };
@@ -48,7 +53,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
-                const response = await func(request, this.state);
+                const response = await func(request, this.getState(call));
                 callback(null, response);
             } catch (e) {
                 callback(errorResponse(e), null);
@@ -56,25 +61,41 @@ export class PlaywrightServer implements IPlaywrightServer {
         };
     };
 
-    async initializeExtension(
-        call: ServerUnaryCall<Request.FilePath, Response.Keywords>,
-        callback: sendUnaryData<Response.Keywords>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await playwrightState.initializeExtension(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    private wrappingState = <T, K>(
+        func: (state: PlaywrightState) => Promise<K>,
+    ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
+        return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
+            try {
+                const response = await func(this.getState(call));
+                callback(null, response);
+            } catch (e) {
+                callback(errorResponse(e), null);
+            }
+        };
+    };
+
+    private wrappingPage = <T, K>(
+        func: (request: T, page: Page) => Promise<K>,
+    ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
+        return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
+            try {
+                const request = call.request;
+                if (request === null) throw Error('No request');
+                const response = await func(request, this.getActivePage(call));
+                callback(null, response);
+            } catch (e) {
+                callback(errorResponse(e), null);
+            }
+        };
+    };
+
+    initializeExtension = this.wrapping(playwrightState.initializeExtension);
 
     async callExtensionKeyword(call: ServerWritableStream<Request.KeywordCall, Response.Json>): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await playwrightState.extensionKeywordCall(request, call, this.state);
+            const result = await playwrightState.extensionKeywordCall(request, call, this.getState(call));
             call.write(result);
         } catch (e) {
             call.emit('error', errorResponse(e));
@@ -82,71 +103,18 @@ export class PlaywrightServer implements IPlaywrightServer {
         call.end();
     }
 
-    async closeBrowser(
-        call: ServerUnaryCall<Request.Empty, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const result = await playwrightState.closeBrowser(this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-    async closeAllBrowsers(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const result = await playwrightState.closeAllBrowsers(this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async closeContext(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const result = await playwrightState.closeContext(this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async closePage(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const result = await playwrightState.closePage(this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getBrowserCatalog(
-        call: ServerUnaryCall<Request.Empty, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const result = await playwrightState.getBrowserCatalog(this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    closeBrowser = this.wrappingState(playwrightState.closeBrowser);
+    closeAllBrowsers = this.wrappingState(playwrightState.closeAllBrowsers);
+    closeContext = this.wrappingState(playwrightState.closeContext);
+    closePage = this.wrappingState(playwrightState.closePage);
+    getBrowserCatalog = this.wrappingState(playwrightState.getBrowserCatalog);
 
     async getCookies(
         call: ServerUnaryCall<Request.Empty, Response.Json>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         try {
-            const context = this.getActiveContext();
+            const context = this.getActiveContext(call);
             if (!context) throw Error('no open context.');
             const result = await cookie.getCookies(context);
             callback(null, result);
@@ -162,7 +130,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const context = this.getActiveContext();
+            const context = this.getActiveContext(call);
             if (!context) throw Error('no open context.');
             const result = await cookie.addCookie(request, context);
             callback(null, result);
@@ -176,7 +144,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            const context = this.getActiveContext();
+            const context = this.getActiveContext(call);
             if (!context) throw Error('no open context.');
             const result = await cookie.deleteAllCookies(context);
             callback(null, result);
@@ -192,7 +160,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const response = await playwrightState.switchPage(request, this.state.getActiveBrowser());
+            const response = await playwrightState.switchPage(request, this.getActiveBrowser(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -206,103 +174,26 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const response = await playwrightState.switchContext(request, this.state.getActiveBrowser());
+            const response = await playwrightState.switchContext(request, this.getActiveBrowser(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
         }
     }
 
-    async switchBrowser(
-        call: ServerUnaryCall<Request.Index, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.switchBrowser(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async newPage(
-        call: ServerUnaryCall<Request.Url, Response.String>,
-        callback: sendUnaryData<Response.NewPageResponse>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.newPage(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async newContext(
-        call: ServerUnaryCall<Request.Context, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.newContext(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async newBrowser(
-        call: ServerUnaryCall<Request.Browser, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.newBrowser(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async connectToBrowser(
-        call: ServerUnaryCall<Request.ConnectBrowser, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await playwrightState.connectToBrowser(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async goTo(
-        call: ServerUnaryCall<Request.Url, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await browserControl.goTo(request, this.getActivePage());
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    switchBrowser = this.wrapping(playwrightState.switchBrowser);
+    newPage = this.wrapping(playwrightState.newPage);
+    newContext = this.wrapping(playwrightState.newContext);
+    newBrowser = this.wrapping(playwrightState.newBrowser);
+    connectToBrowser = this.wrapping(playwrightState.connectToBrowser);
+    goTo = this.wrappingPage(browserControl.goTo);
 
     async goBack(
         call: ServerUnaryCall<Request.Empty, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            await this.getActivePage().goBack();
+            await this.getActivePage(call).goBack();
             callback(null, emptyWithLog('Did Go Back'));
         } catch (e) {
             callback(errorResponse(e), null);
@@ -314,47 +205,22 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
-            await this.getActivePage().goForward();
+            await this.getActivePage(call).goForward();
             callback(null, emptyWithLog('Did Go Forward'));
         } catch (e) {
             callback(errorResponse(e), null);
         }
     }
 
-    async takeScreenshot(
-        call: ServerUnaryCall<Request.ScreenshotOptions, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await browserControl.takeScreenshot(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getBoundingBox(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getBoundingBox(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    takeScreenshot = this.wrapping(browserControl.takeScreenshot);
+    getBoundingBox = this.wrapping(getters.getBoundingBox);
 
     async getPageSource(
         call: ServerUnaryCall<Request.Empty, Response.String>,
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         try {
-            const response = await getters.getPageSource(this.getActivePage());
+            const response = await getters.getPageSource(this.getActivePage(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -368,7 +234,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const response = await browserControl.setTimeout(request, this.getActiveBrowser()?.context?.c);
+            const response = await browserControl.setTimeout(request, this.getActiveBrowser(call)?.context?.c);
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -380,7 +246,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         try {
-            const response = await getters.getTitle(this.getActivePage());
+            const response = await getters.getTitle(this.getActivePage(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -392,404 +258,53 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.String>,
     ): Promise<void> {
         try {
-            const response = await getters.getUrl(this.getActivePage());
+            const response = await getters.getUrl(this.getActivePage(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
         }
     }
 
-    async getElementCount(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Int>,
-        callback: sendUnaryData<Response.Int>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getElementCount(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getSelectContent(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Select>,
-        callback: sendUnaryData<Response.Select>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getSelectContent(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getDomProperty(
-        call: ServerUnaryCall<Request.ElementProperty, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getDomProperty(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getText(
-        call: ServerUnaryCall<Request.ElementSelector, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getText(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getBoolProperty(
-        call: ServerUnaryCall<Request.ElementProperty, Response.Bool>,
-        callback: sendUnaryData<Response.Bool>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getBoolProperty(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getElementAttribute(
-        call: ServerUnaryCall<Request.ElementProperty, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getElementAttribute(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getStyle(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const response = await getters.getStyle(request, this.state);
-            callback(null, response);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    getElementCount = this.wrapping(getters.getElementCount);
+    getSelectContent = this.wrapping(getters.getSelectContent);
+    getDomProperty = this.wrapping(getters.getDomProperty);
+    getText = this.wrapping(getters.getText);
+    getBoolProperty = this.wrapping(getters.getBoolProperty);
+    getElementAttribute = this.wrapping(getters.getElementAttribute);
+    getStyle = this.wrapping(getters.getStyle);
 
     async getViewportSize(
         call: ServerUnaryCall<Request.Empty, Response.Json>,
         callback: sendUnaryData<Response.Json>,
     ): Promise<void> {
         try {
-            const response = await getters.getViewportSize(this.getActivePage());
+            const response = await getters.getViewportSize(this.getActivePage(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
         }
     }
 
-    async selectOption(
-        call: ServerUnaryCall<Request.SelectElementSelector, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.selectOption(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async deselectOption(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ) {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.deSelectOption(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async inputText(
-        call: ServerUnaryCall<Request.TextInput, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.inputText(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async typeText(
-        call: ServerUnaryCall<Request.TypeText, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.typeText(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async fillText(
-        call: ServerUnaryCall<Request.FillText, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.fillText(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async clearText(
-        call: ServerUnaryCall<Request.ClearText, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.clearText(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async press(
-        call: ServerUnaryCall<Request.PressKeys, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.press(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async click(
-        call: ServerUnaryCall<Request.ElementSelectorWithOptions, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.click(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async hover(
-        call: ServerUnaryCall<Request.ElementSelectorWithOptions, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.hover(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async focus(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.focus(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async checkCheckbox(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.checkCheckbox(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async uncheckCheckbox(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.uncheckCheckbox(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getElement(
-        call: ServerUnaryCall<Request.ElementSelector, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await evaluation.getElement(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async getElements(
-        call: ServerUnaryCall<Request.ElementSelector, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await evaluation.getElements(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async addStyleTag(
-        call: ServerUnaryCall<Request.StyleTag, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await evaluation.addStyleTag(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async waitForElementsState(
-        call: ServerUnaryCall<Request.ElementSelectorWithOptions, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await evaluation.waitForElementState(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async waitForRequest(
-        call: ServerUnaryCall<Request.HttpCapture, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const page = this.getActivePage();
-            if (!page) throw Error('No page open.');
-            const result = await network.waitForRequest(request, page);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async waitForResponse(
-        call: ServerUnaryCall<Request.HttpCapture, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await network.waitForResponse(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async waitUntilNetworkIsIdle(
-        call: ServerUnaryCall<Request.Timeout, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await network.waitUntilNetworkIsIdle(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async waitForNavigation(
-        call: ServerUnaryCall<Request.Url, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await network.waitForNavigation(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    selectOption = this.wrapping(interaction.selectOption);
+    deselectOption = this.wrapping(interaction.deSelectOption);
+    inputText = this.wrapping(interaction.inputText);
+    typeText = this.wrapping(interaction.typeText);
+    fillText = this.wrapping(interaction.fillText);
+    clearText = this.wrapping(interaction.clearText);
+    press = this.wrapping(interaction.press);
+    click = this.wrapping(interaction.click);
+    hover = this.wrapping(interaction.hover);
+    focus = this.wrapping(interaction.focus);
+    checkCheckbox = this.wrapping(interaction.checkCheckbox);
+    uncheckCheckbox = this.wrapping(interaction.uncheckCheckbox);
+    getElement = this.wrapping(evaluation.getElement);
+    getElements = this.wrapping(evaluation.getElements);
+    addStyleTag = this.wrappingPage(evaluation.addStyleTag);
+    waitForElementsState = this.wrapping(evaluation.waitForElementState);
+    waitForRequest = this.wrappingPage(network.waitForRequest);
+    waitForResponse = this.wrappingPage(network.waitForResponse);
+    waitUntilNetworkIsIdle = this.wrappingPage(network.waitUntilNetworkIsIdle);
+    waitForNavigation = this.wrappingPage(network.waitForNavigation);
 
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions, Response.Json>,
@@ -798,26 +313,14 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await evaluation.waitForFunction(request, this.state, this.getActivePage());
+            const result = await evaluation.waitForFunction(request, this.getState(call), this.getActivePage(call));
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
         }
     }
 
-    async waitForDownload(
-        call: ServerUnaryCall<Request.FilePath, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await network.waitForDownload(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    waitForDownload = this.wrappingPage(network.waitForDownload);
 
     async executeJavascript(
         call: ServerUnaryCall<Request.JavascriptCode, Response.JavascriptExecutionResult>,
@@ -826,7 +329,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await evaluation.executeJavascript(request, this.state, this.getActivePage());
+            const result = await evaluation.executeJavascript(request, this.getState(call), this.getActivePage(call));
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -838,7 +341,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback: sendUnaryData<Response.JavascriptExecutionResult>,
     ): Promise<void> {
         try {
-            const result = await evaluation.getPageState(this.getActivePage());
+            const result = await evaluation.getPageState(this.getActivePage(call));
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -854,61 +357,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         callback(null, response);
     }
 
-    async highlightElements(
-        call: ServerUnaryCall<Request.ElementSelectorWithDuration, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await evaluation.highlightElements(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async download(
-        call: ServerUnaryCall<Request.Url, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await evaluation.download(request, this.state);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async setViewportSize(
-        call: ServerUnaryCall<Request.Viewport, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await browserControl.setViewportSize(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async httpRequest(
-        call: ServerUnaryCall<Request.HttpRequest, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await network.httpRequest(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    highlightElements = this.wrapping(evaluation.highlightElements);
+    download = this.wrapping(evaluation.download);
+    setViewportSize = this.wrappingPage(browserControl.setViewportSize);
+    httpRequest = this.wrappingPage(network.httpRequest);
 
     async getDevice(
         call: ServerUnaryCall<Request.Device, Response.Json>,
@@ -937,89 +389,12 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    async uploadFile(
-        call: ServerUnaryCall<Request.FilePath, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.uploadFile(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async handleAlert(
-        call: ServerUnaryCall<Request.AlertAction, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.handleAlert(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async mouseMove(
-        call: ServerUnaryCall<Request.Json, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.mouseMove(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async mouseButton(
-        call: ServerUnaryCall<Request.MouseButtonOptions, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.mouseButton(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async keyboardKey(
-        call: ServerUnaryCall<Request.KeyboardKeypress, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.keyboardKey(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async keyboardInput(
-        call: ServerUnaryCall<Request.KeyboardInputOptions, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = await interaction.keyboardInput(request, this.getActivePage());
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    uploadFile = this.wrappingPage(interaction.uploadFile);
+    handleAlert = this.wrappingPage(interaction.handleAlert);
+    mouseMove = this.wrappingPage(interaction.mouseMove);
+    mouseButton = this.wrappingPage(interaction.mouseButton);
+    keyboardKey = this.wrappingPage(interaction.keyboardKey);
+    keyboardInput = this.wrappingPage(interaction.keyboardInput);
 
     async setOffline(
         call: ServerUnaryCall<Request.Bool, Response.Empty>,
@@ -1028,7 +403,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await browserControl.setOffline(request, this.getActiveContext());
+            const result = await browserControl.setOffline(request, this.getActiveContext(call));
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -1042,7 +417,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await browserControl.setGeolocation(request, this.getActiveContext());
+            const result = await browserControl.setGeolocation(request, this.getActiveContext(call));
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -1056,7 +431,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await browserControl.reload(this.getActivePage());
+            const result = await browserControl.reload(this.getActivePage(call));
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
