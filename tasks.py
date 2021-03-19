@@ -244,7 +244,7 @@ def atest(c, suite=None, include=None, zip=None):
         "node",
         "Browser/wrapper/index.js",
         "18771",
-    ])
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = str(18771)
     rc = _run_pabot(args, exit)
     process.kill()
