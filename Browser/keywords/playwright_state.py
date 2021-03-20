@@ -466,6 +466,8 @@ class PlaywrightState(LibraryComponent):
         `size` is dictionary containing `width` (Video frame width) and  `height`
         (Video frame height) keys.
 
+        The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
+
         Example:
         | Test an iPhone
         |     ${device}=    `Get Device`    iPhone X

@@ -86,6 +86,8 @@ class Control(LibraryComponent):
          then screenshot is embedded as Base64 image to the log.html. The image is saved temporally
          to the disk and warning is displayed if removing the temporary file fails.
 
+         The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
+
         ``selector`` Take a screenshot of the element matched by selector.
         See the `Finding elements` section for details about the selectors.
         If not provided take a screenshot of current viewport.
