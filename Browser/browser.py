@@ -14,11 +14,13 @@
 import json
 import os
 import re
+import shutil
 import string
 import sys
 import time
 from concurrent.futures._base import Future
 from datetime import timedelta
+from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
@@ -612,6 +614,7 @@ class Browser(DynamicCore):
     _pause_on_failure: Set["Browser"] = set()
     _context_cache = ContextCache()
     presenter_mode = False
+    _suite_cleanup_done = False
 
     def __init__(
         self,
@@ -723,6 +726,10 @@ class Browser(DynamicCore):
         else:
             return "."
 
+    @property
+    def browser_output(self) -> Path:
+        return Path(self.outputdir, "browser")
+
     def _close(self):
         try:
             self.playwright.close()
@@ -730,6 +737,10 @@ class Browser(DynamicCore):
             logger.trace(f"Browser library closing problem: {e}")
 
     def _start_suite(self, name, attrs):
+        if not self._suite_cleanup_done and self.browser_output.is_dir():
+            self._suite_cleanup_done = True
+            logger.debug(f"Removing: {self.browser_output}")
+            shutil.rmtree(str(self.browser_output), ignore_errors=True)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             try:
                 self._execution_stack.append(self.get_browser_catalog())

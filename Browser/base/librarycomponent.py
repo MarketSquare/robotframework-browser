@@ -67,7 +67,7 @@ class LibraryComponent:
 
     @property
     def browser_output(self):
-        return Path(self.outputdir, "browser")
+        return self.library.browser_output
 
     @property
     def screenshots_output(self):
