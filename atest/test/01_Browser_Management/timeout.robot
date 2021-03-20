@@ -52,3 +52,7 @@ Set Browser Timeout Should Fail With Invalid Value And Not Change Existing Value
     ${new} =    Set Browser Timeout    ${old}
     Should Not Be Equal    ${old}    Nan
     Should Be Equal    ${new}    1 minute
+
+Calling Set Browser Timeout Without Open Contex Should Not Fail
+    [Documentation]    LOG 1:2    DEBUG    GLOB:    Suppress error Error: Tried to set timeout*
+    Set Browser Timeout    1s
