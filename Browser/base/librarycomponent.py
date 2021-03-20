@@ -14,7 +14,6 @@
 
 from concurrent.futures._base import Future
 from datetime import timedelta
-from pathlib import Path
 from typing import TYPE_CHECKING, Set, Union
 
 if TYPE_CHECKING:
