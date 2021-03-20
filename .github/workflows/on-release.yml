@@ -57,7 +57,7 @@ jobs:
           python-version: 3.8
       - name: Dependencies for building docs # TODO: thin a bit
         run: |
-          yarn --frozen-lockfile install
+          npm ci
           python -m pip install --upgrade pip
           pip install -r Browser/dev-requirements.txt
           inv build
