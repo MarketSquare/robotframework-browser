@@ -155,9 +155,12 @@ class Control(LibraryComponent):
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
         self.timeout = self.convert_timeout(timeout)
-        with self.playwright.grpc_channel() as stub:
-            response = stub.SetTimeout(Request().Timeout(timeout=self.timeout))
-            logger.info(response.log)
+        try:
+            with self.playwright.grpc_channel() as stub:
+                response = stub.SetTimeout(Request().Timeout(timeout=self.timeout))
+                logger.info(response.log)
+        except Exception as error:  # Suppress  all errors
+            logger.debug(f"Suppress error {error} when setting timeout.")
         return old_timeout
 
     @keyword(tags=("Setter", "Config"))
