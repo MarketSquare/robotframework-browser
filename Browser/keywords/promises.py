@@ -14,6 +14,7 @@
 import json
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
+from time import sleep
 
 from robot.api.deco import keyword  # type: ignore
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
@@ -53,6 +54,8 @@ class Promises(LibraryComponent):
 
         promise = self._executor.submit(handler.current_handler(), *positional, **named)
         self.unresolved_promises.add(promise)
+        while not (promise.running() or promise.done()):
+            sleep(0.01)
         return promise
 
     @keyword(tags=("Wait", "BrowserControl"))
