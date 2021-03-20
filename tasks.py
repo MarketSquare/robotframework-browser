@@ -73,7 +73,7 @@ def deps(c):
     c.run("pip install -r Browser/dev-requirements.txt")
     if os.environ.get("CI"):
         shutil.rmtree("node_modules")
-    c.run("yarn", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
+    c.run("npm install", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
 
 
 @task
@@ -142,7 +142,7 @@ def _node_protobuf_gen(c):
         ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     )
     c.run(
-        f"yarn run grpc_tools_node_protoc \
+        f"npm run grpc_tools_node_protoc \
 		--js_out=import_style=commonjs,binary:{node_protobuf_dir} \
 		--grpc_out=grpc_js:{node_protobuf_dir} \
 		--plugin=protoc-gen-grpc={protoc_plugin} \
@@ -150,7 +150,7 @@ def _node_protobuf_gen(c):
 		protobuf/*.proto"
     )
     c.run(
-        f"yarn run grpc_tools_node_protoc \
+        f"npm run grpc_tools_node_protoc \
 		--plugin=protoc-gen-ts={protoc_ts_plugin} \
 		--ts_out={node_protobuf_dir} \
 		-I ./protobuf \
@@ -163,7 +163,7 @@ def node_build(c):
     if _sources_changed(
         node_dir.glob("**/*.ts"), node_timestamp_file
     ) or _sources_changed(node_dir.glob("**/*.tsx"), node_timestamp_file):
-        c.run("yarn build")
+        c.run("npm build")
         node_timestamp_file.touch()
     else:
         print("no changes in .ts files, skipping node build")
@@ -180,12 +180,6 @@ def _sources_changed(source_files, timestamp_file):
         src_last_modified = [f.lstat().st_mtime for f in source_files]
         return not all([last_built >= modified for modified in src_last_modified])
     return True
-
-
-@task(build)
-def watch(c):
-    c.run("yarn watch")
-
 
 @task
 def utest(c, reporter=None, suite=None):
@@ -362,7 +356,7 @@ def lint_python(c):
 @task
 def lint_node(c):
     if _sources_changed(node_dir.glob("**/*.ts"), node_lint_timestamp_file):
-        c.run("yarn run lint")
+        c.run("npm run lint")
         node_lint_timestamp_file.touch()
     else:
         print("no changes in .ts files, skipping node lint")

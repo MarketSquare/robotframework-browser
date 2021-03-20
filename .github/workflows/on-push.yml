@@ -30,7 +30,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install nodejs dependencies
       run: |
-        yarn --frozen-lockfile install
+        npm ci
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
