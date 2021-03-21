@@ -51,7 +51,8 @@ jobs:
         pip install -r Browser/requirements.txt
     - name: Build Protos and check with tsc
       run: |
-        inv build
+        inv node-build
+        python -m Browser.gen_stub
     - name: Check types with mypy
       run: |
         mypy --config-file Browser/mypy.ini Browser
