@@ -34,8 +34,8 @@ jobs:
         path: |
           node_modules
           */*/node_modules
-          home/runner/.cache/ms-playwright
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-node-module-with-pw
+          /home/runner/.cache/ms-playwright
+        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-node-with-pw
     - name: Install nodejs dependencies
       run: |
         yarn --frozen-lockfile install
