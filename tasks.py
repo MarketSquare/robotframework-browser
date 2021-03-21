@@ -297,13 +297,7 @@ def atest_robot(c):
         command_args.extend(["--exclude", "No-Windows-Support"])
     command_args.append("atest/test")
     process = subprocess.Popen(command_args)
-    process.wait(600)
-    output_xml = str(ATEST_OUTPUT / "output.xml")
-    print(f"Process {output_xml}")
-    robotstatuschecker.process_output(output_xml, verbose=False)
-    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=exit)
-    print("DONE")
-    return rc
+    return process.wait(600)
 
 
 @task(clean_atest)

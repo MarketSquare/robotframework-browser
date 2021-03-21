@@ -156,6 +156,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           echo ${{ matrix.os }}
+          rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum inv atest-robot
