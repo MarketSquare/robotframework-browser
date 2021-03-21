@@ -240,11 +240,14 @@ def atest(c, suite=None, include=None, zip=None):
     if include:
         args.extend(["--include", include])
     exit = False if zip else True
+    os.mkdir(ATEST_OUTPUT)
+    logfile = open(Path(ATEST_OUTPUT, "playwright-log.txt"), "w")
+    os.environ["DEBUG"] = "pw:api"
     process = subprocess.Popen([
         "node",
         "Browser/wrapper/index.js",
         "18771",
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ], stdout=logfile, stderr=subprocess.STDOUT)
     os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = str(18771)
     rc = _run_pabot(args, exit)
     process.kill()
