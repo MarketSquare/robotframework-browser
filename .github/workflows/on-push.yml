@@ -35,6 +35,7 @@ jobs:
           node_modules
           */*/node_modules
           /home/runner/.cache/ms-playwright
+          C:\Users\runneradmin\AppData\Local\ms-playwright
         key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-node-with-pw
     - name: Install nodejs dependencies
       run: |
