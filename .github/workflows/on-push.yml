@@ -28,14 +28,14 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: restore node_modules
+    - name: restore node_modules and playwright drivers
       uses: actions/cache@v2
       with:
         path: |
           node_modules
           */*/node_modules
           home/runner/.cache/ms-playwright
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-node-module-with-pw
     - name: Install nodejs dependencies
       run: |
         yarn --frozen-lockfile install
