@@ -77,7 +77,8 @@ jobs:
         inv atest -z true
     - name: Create Distributable Package
       run: |
-        inv package
+        inv docs
+        inv create-package
     - uses: actions/upload-artifact@v2
       if: ${{ always() }}
       with:
