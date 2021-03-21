@@ -28,7 +28,18 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - name: restore node_modules and playwright drivers
+      uses: actions/cache@v2
+      with:
+        path: |
+          node_modules
+          */*/node_modules
+          /home/runner/.cache/ms-playwright
+          C:\Users\runneradmin\AppData\Local\ms-playwright
+        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-node-and-pw
     - name: Install nodejs dependencies
+      env:
+        PLAYWRIGHT_BROWSERS_PATH: 0
       run: |
         yarn --frozen-lockfile install
     - name: Set up Python ${{ matrix.python-version }}
@@ -38,11 +49,12 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r Browser/requirements.txt
         pip install -r Browser/dev-requirements.txt
+        pip install -r Browser/requirements.txt
     - name: Build Protos and check with tsc
       run: |
-        inv build
+        inv node-build
+        python -m Browser.gen_stub
     - name: Check types with mypy
       run: |
         mypy --config-file Browser/mypy.ini Browser
@@ -67,7 +79,8 @@ jobs:
         inv atest -z true
     - name: Create Distributable Package
       run: |
-        inv package
+        inv docs
+        inv create-package
     - uses: actions/upload-artifact@v2
       if: ${{ always() }}
       with:

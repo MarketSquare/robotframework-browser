@@ -243,6 +243,7 @@ def atest(c, suite=None, include=None, zip=None):
     os.mkdir(ATEST_OUTPUT)
     logfile = open(Path(ATEST_OUTPUT, "playwright-log.txt"), "w")
     os.environ["DEBUG"] = "pw:api"
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
     process = subprocess.Popen([
         "node",
         "Browser/wrapper/index.js",
@@ -476,10 +477,15 @@ def docs(c):
         file.write(str(soup))
 
 
-@task(clean, build, docs)
+@task
+def create_package(c):
+     shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
+     c.run("python setup.py sdist bdist_wheel")
+
+
+@task(clean, build, docs, create_package)
 def package(c):
-    shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
-    c.run("python setup.py sdist bdist_wheel")
+    pass
 
 
 @task
