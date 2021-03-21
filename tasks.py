@@ -297,12 +297,12 @@ def atest_robot(c):
         command_args.extend(["--exclude", "No-Windows-Support"])
     command_args.append("atest/test")
     process = subprocess.Popen(command_args)
-    return process.wait(600)
+    sys.exit(process.wait(600))
 
 
 @task(clean_atest)
 def atest_global_pythonpath(c):
-    _run_pabot()
+    sys.exit(_run_pabot())
 
 
 # Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
