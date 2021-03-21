@@ -309,7 +309,7 @@ def run_tests(c, tests):
     process = subprocess.Popen(
         [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests]
     )
-    process.wait(600)
+    return process.wait(600)
 
 
 def _run_pabot(extra_args=None, exit=True):
