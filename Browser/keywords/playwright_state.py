@@ -28,6 +28,7 @@ from ..utils import (
     GeoLocation,
     HttpCredentials,
     Proxy,
+    RecordHar,
     RecordVideo,
     SelectionType,
     SupportedBrowsers,
@@ -367,6 +368,7 @@ class PlaywrightState(LibraryComponent):
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         hideRfBrowser: bool = False,
         recordVideo: Optional[RecordVideo] = None,
+        recordHar: Optional[RecordHar] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -466,6 +468,14 @@ class PlaywrightState(LibraryComponent):
         each page will be scaled down if necessary to fit the specified size.
         `size` is dictionary containing `width` (Video frame width) and  `height`
         (Video frame height) keys.
+
+        ``recordHar`` Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording
+        for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file.
+        If not specified, the HAR is not recorded. Make sure to await context to close for the
+        to be saved.
+
+        `omitContent`: Optional setting to control whether to omit request content
+        from the HAR. Default is False `path`: Path on the filesystem to write the HAR file to.
 
         The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
