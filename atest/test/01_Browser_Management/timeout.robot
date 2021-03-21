@@ -55,7 +55,7 @@ Set Browser Timeout Should Fail With Invalid Value And Not Change Existing Value
 
 Calling Set Browser Timeout Without Open Contex Should Not Fail
     [Documentation]
-    ...    LOG 1:2    INFO    GLOB:    No context open.
+    ...    LOG 1:2    INFO     GLOB:    No context open.
     ...    LOG 3:2    DEBUG    GLOB:    Suppress error Error: Browser has been closed*
     Set Browser Timeout    1s
     Close Browser    ALL

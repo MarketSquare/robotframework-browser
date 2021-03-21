@@ -475,15 +475,12 @@ def docs(c):
     with output.open("w") as file:
         file.write(str(soup))
 
-@task
-def create_package(c):
+
+@task(clean, build, docs)
+def package(c):
     shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
     c.run("python setup.py sdist bdist_wheel")
 
-
-@task(clean, build, docs, create_package)
-def package(c):
-    pass
 
 @task
 def release_notes(c, version=None, username=None, password=None, write=False):
