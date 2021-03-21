@@ -477,10 +477,15 @@ def docs(c):
         file.write(str(soup))
 
 
-@task(clean, build, docs)
+@task
+def create_package(c):
+     shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
+     c.run("python setup.py sdist bdist_wheel")
+
+
+@task(clean, build, docs, create_package)
 def package(c):
-    shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
-    c.run("python setup.py sdist bdist_wheel")
+    pass
 
 
 @task
