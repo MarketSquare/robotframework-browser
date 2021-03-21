@@ -423,7 +423,8 @@ class PlaywrightState(LibraryComponent):
 
         ``offline`` Whether to emulate network being offline. Defaults to False.
 
-        ``httpCredentials`` Credentials for HTTP authentication.
+        ``httpCredentials`` Credentials for
+        [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication].
         - example: ``{'username': 'admin', 'password': '123456'}``
         - ``username``
         - ``password``
