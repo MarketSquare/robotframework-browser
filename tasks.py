@@ -282,12 +282,28 @@ def _create_zip():
 @task(clean_atest)
 def atest_robot(c):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    command = f"robot --exclude Not-Implemented --loglevel DEBUG --outputdir {str(ATEST_OUTPUT)}"
+    command_args = [
+        sys.executable,
+        "-m",
+        "robot",
+        "--exclude",
+        "Not-Implemented",
+        "--loglevel",
+        "DEBUG",
+        "--outputdir",
+        str(ATEST_OUTPUT),
+    ]
     if platform.platform().startswith("Windows"):
-        command += " --exclude No-Windows-Support"
-    command += " atest/test"
-    print(command)
-    c.run(command)
+        command_args.extend(["--exclude", "No-Windows-Support"])
+    command_args.append("atest/test")
+    process = subprocess.Popen(command_args)
+    process.wait(600)
+    output_xml = str(ATEST_OUTPUT / "output.xml")
+    print(f"Process {output_xml}")
+    robotstatuschecker.process_output(output_xml, verbose=False)
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=exit)
+    print("DONE")
+    return rc
 
 
 @task(clean_atest)
@@ -310,7 +326,6 @@ def run_tests(c, tests):
         [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests]
     )
     return process.wait(600)
-
 
 def _run_pabot(extra_args=None, exit=True):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
