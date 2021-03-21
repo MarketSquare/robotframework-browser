@@ -152,13 +152,14 @@ jobs:
           echo "nothing happening here"
         env:
           blank: ""
-      - name: Test on unix-like os
+      - name: Test on unix-like os - serial mode
         if: matrix.os != 'windows-latest'
         run: |
           echo ${{ matrix.os }}
+          rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum inv atest-global-pythonpath
+          xvfb-run --auto-servernum inv atest-robot
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |

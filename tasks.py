@@ -282,17 +282,27 @@ def _create_zip():
 @task(clean_atest)
 def atest_robot(c):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    command = f"robot --exclude Not-Implemented --loglevel DEBUG --outputdir {str(ATEST_OUTPUT)}"
+    command_args = [
+        sys.executable,
+        "-m",
+        "robot",
+        "--exclude",
+        "Not-Implemented",
+        "--loglevel",
+        "DEBUG",
+        "--outputdir",
+        str(ATEST_OUTPUT),
+    ]
     if platform.platform().startswith("Windows"):
-        command += " --exclude No-Windows-Support"
-    command += " atest/test"
-    print(command)
-    c.run(command)
+        command_args.extend(["--exclude", "No-Windows-Support"])
+    command_args.append("atest/test")
+    process = subprocess.Popen(command_args)
+    sys.exit(process.wait(600))
 
 
 @task(clean_atest)
 def atest_global_pythonpath(c):
-    _run_pabot()
+    sys.exit(_run_pabot())
 
 
 # Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
@@ -309,8 +319,7 @@ def run_tests(c, tests):
     process = subprocess.Popen(
         [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests]
     )
-    process.wait(600)
-
+    return process.wait(600)
 
 def _run_pabot(extra_args=None, exit=True):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
