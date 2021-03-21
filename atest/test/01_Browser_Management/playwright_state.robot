@@ -81,20 +81,6 @@ Close Page switches active page
     Close Page
     Get Title    matches    (?i)login
 
-Switch Browser
-    ${first_browser}    New Browser    chromium
-    New Page Login
-    ${first_url}    Get Url
-    ${second_browser}    New Browser    firefox
-    New Context
-    ${timeout}=    Set Browser Timeout    10s
-    New Page Form
-    ${second_url}    Get Url
-    ${before_switch}    Switch Browser    ${first_browser}
-    Should Be Equal As Strings    ${second_browser}    ${before_switch}
-    ${third_url}    Get Url
-    Get Title    matches    (?i)login
-
 Browser, Context and Page UUIDs
     ${browser}=    New Browser
     ${context}=    New Context
