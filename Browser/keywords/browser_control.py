@@ -160,7 +160,10 @@ class Control(LibraryComponent):
                 response = stub.SetTimeout(Request().Timeout(timeout=self.timeout))
                 logger.info(response.log)
         except Exception as error:  # Suppress  all errors
-            logger.debug(f"Suppress error {error} when setting timeout.")
+            if "Browser has been closed" in str(error):
+                logger.debug(f"Suppress error {error} when setting timeout.")
+            else:
+                raise
         return old_timeout
 
     @keyword(tags=("Setter", "Config"))

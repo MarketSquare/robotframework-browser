@@ -48,7 +48,9 @@ export async function takeScreenshot(
 }
 
 export async function setTimeout(request: Request.Timeout, context?: BrowserContext): Promise<Response.Empty> {
-    exists(context, 'Tried to set timeout, no open context');
+    if (!context) {
+        return emptyWithLog(`No context open.`);
+    }
     const timeout = request.getTimeout();
     context.setDefaultTimeout(timeout);
     return emptyWithLog(`Set timeout to: ${timeout}`);
