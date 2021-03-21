@@ -158,7 +158,7 @@ jobs:
           echo ${{ matrix.os }}
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum inv run-tests atest/test
+          xvfb-run --auto-servernum inv atest-robot
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
