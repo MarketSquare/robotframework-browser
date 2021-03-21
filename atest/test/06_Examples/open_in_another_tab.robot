@@ -25,6 +25,13 @@ Download without page fails
     ...    Error: Download requires an active page
     ...    Download    ${WELCOME_URL}
 
+Download without page URL fails
+    New Context    acceptDownloads=${TRUE}
+    New Page
+    Run Keyword And Expect Error
+    ...    Error: page.evaluate:*
+    ...    Download    ${WELCOME_URL}
+
 Download with no acceptDownloads fails
     New Context    acceptDownloads=${FALSE}
     New Page    ${WELCOME_URL}
