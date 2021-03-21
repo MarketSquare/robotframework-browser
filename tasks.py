@@ -307,7 +307,7 @@ def run_tests(c, tests):
     Run robot with dev Browser. Parameter [tests] is the path to tests to run.
     """
     process = subprocess.Popen(
-        [sys.executable, "-m", "robot", "--loglevel", "DEBUG", tests]
+        [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests]
     )
     process.wait(600)
 
