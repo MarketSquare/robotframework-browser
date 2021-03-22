@@ -1,5 +1,6 @@
 *** Settings ***
 Resource          imports.resource
+Suite Setup       New Page    ${FORM_URL}
 
 *** Test Cases ***
 test server title
