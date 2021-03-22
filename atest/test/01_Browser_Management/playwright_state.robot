@@ -205,6 +205,7 @@ Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
     Close Browser    ALL
 
 New Context with defaultBrowserType ff
+    Test Timeout      80s    # Because FF is just slow sometimes
     New Context    defaultBrowserType=firefox
     Verify Browser Type    firefox
 
