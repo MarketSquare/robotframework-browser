@@ -132,8 +132,8 @@ export async function uncheckCheckbox(
 
 export async function uploadFile(request: Request.FilePath, page: Page): Promise<Response.Empty> {
     const path = request.getPath();
-    const fn = async (fileChooser: FileChooser) => await fileChooser.setFiles(path);
-    await page.on('filechooser', fn);
+    const fileChooser = await page.waitForEvent('filechooser');
+    await fileChooser.setFiles(path);
     return emptyWithLog('Succesfully uploaded file');
 }
 
