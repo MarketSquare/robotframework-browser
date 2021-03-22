@@ -147,8 +147,9 @@ class Promises(LibraryComponent):
 
         Example use:
 
-        | Upload File    ${CURDIR}/test_upload_file
+        | ${promise}=  Promise To Upload File    ${CURDIR}/test_upload_file
         | Click          \\#file_chooser
+        | ${upload_result}=  Wait For  ${promise}
 
         """
 
@@ -158,8 +159,8 @@ class Promises(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def upload_file(self, path: PathLike):
-        """*DEPRECATED!!* Use keyword `Promise To Upload File` instead."""
-        """Upload file from ``path`` into next file chooser dialog on page.
+        """*DEPRECATED!!* Use keyword `Promise To Upload File` instead.
+        Upload file from ``path`` into next file chooser dialog on page.
 
         ``path`` Path to file to be uploaded.
 
