@@ -576,7 +576,7 @@ class Interaction(LibraryComponent):
                 logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def upload_file(self, path: str):
+    def promise_to_upload_file(self, path: str):
         """Upload file from ``path`` into next file chooser dialog on page.
 
         ``path`` Path to file to be uploaded.
