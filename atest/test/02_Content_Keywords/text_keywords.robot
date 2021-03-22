@@ -1,6 +1,7 @@
 *** Settings ***
 Resource          imports.resource
 Library           OperatingSystem
+Suite Setup       New Page
 Test Setup        Go To    ${LOGIN_URL}
 
 *** Test Cases ***
