@@ -575,24 +575,6 @@ class Interaction(LibraryComponent):
             if log_response:
                 logger.debug(response.log)
 
-    @keyword(tags=("Setter", "PageContent"))
-    def promise_to_upload_file(self, path: str):
-        """Upload file from ``path`` into next file chooser dialog on page.
-
-        ``path`` Path to file to be uploaded.
-
-        Example use:
-
-        | Upload File    ${CURDIR}/test_upload_file
-        | Click          \\#file_chooser
-
-        """
-        p = Path(path)
-        p.resolve(strict=True)
-        with self.playwright.grpc_channel() as stub:
-            response = stub.UploadFile(Request().FilePath(path=str(p)))
-            logger.debug(response.log)
-
     @keyword(tags=("PageContent",))
     def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
         """Handle next dialog on page with ``action``.
