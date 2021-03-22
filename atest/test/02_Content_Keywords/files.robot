@@ -1,7 +1,7 @@
 *** Settings ***
 Resource          imports.resource
 Test Setup        Set Library Timeout
-Test Teardown     Restore Library Timeout
+Test Teardown     Run Keywords    Restore Library Timeout    AND    Wait For All Promises
 
 *** Variables ***
 ${CUSTOM_DL_PATH}    ${CURDIR}/download_file
@@ -21,7 +21,9 @@ Upload File with different name
 
 Invalid Upload Path
     [Tags]    No-Windows-Support
-    Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Promise to Upload File    NonExistentFile
+    ${promise}=    Promise to Upload File    NonExistentFile
+    Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For    ${promise}
+    Wait For All Promises
 
 Wait For Download
     New Context    acceptDownloads=True
