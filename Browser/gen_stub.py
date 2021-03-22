@@ -105,6 +105,7 @@ from typing import (
     Union,
     Tuple,
 )
+from os import PathLike
 
 from assertionengine import AssertionOperator
 
