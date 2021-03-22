@@ -37,13 +37,13 @@
         element.innerText = "Beginning"
         setTimeout(() => {
             element.innerText = "Cat"
-        }, ordering ? 150 : 300);
+        }, ordering ? 300 : 600);
         setTimeout(() => {
             element.innerText = "Dog"
-        }, ordering ? 300 : 150);
+        }, ordering ? 600 : 300);
         setTimeout(() => {
             element.innerText = "The End"
-        }, 500);
+        }, 1000);
     }
 </script>
 </html>
