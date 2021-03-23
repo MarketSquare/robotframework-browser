@@ -47,6 +47,7 @@ setup_kwargs = {
         "Framework :: Robot Framework",
         "Framework :: Robot Framework :: Library",
     ],
+    "include_package_data": True
 }
 
 
