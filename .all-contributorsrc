@@ -312,6 +312,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "VilleSalonen",
+      "name": "Ville Salonen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1070813?v=4",
+      "profile": "http://villesalonen.fi",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
