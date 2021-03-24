@@ -87,6 +87,26 @@ class RecordVideo(TypedDict, total=False):
     size: ViewportDimensions
 
 
+class RecordHar(TypedDict, total=False):
+    """Enables HAR recording for all pages into to a file.
+
+    If not specified, the HAR is not recorded. Make sure to await context to close for the
+    [http://www.softwareishard.com/blog/har-12-spec/|HAR] to be saved.
+
+    `omitContent`: Optional setting to control whether to omit request content
+    from the HAR. Default is False
+
+    `path`: Path on the filesystem to write the HAR file to.
+
+    Example:
+    | ${har} =    Create Dictionary     path=/path/to/har.file    omitContent=True
+    | New Context    recordHar=${har}
+    """
+
+    omitContent: bool
+    path: str
+
+
 class HttpCredentials(TypedDict):
     """Sets the credentials for http basic-auth.
 

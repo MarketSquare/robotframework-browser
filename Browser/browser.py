@@ -541,6 +541,16 @@ class Browser(DynamicCore):
 
     Automatic closing can be configured or switched off with the ``auto_closing_level`` library parameter.
 
+    = Experimental: Re-using same node process =
+
+    Browser library integrated nodejs and python. NodeJS side can be also executed as a standalone process.
+    Browser libraries running on the same machine can talk to that instead of starting new node processes.
+    This can speed execution when running tests parallel.
+    To start node side run on the directory when Browser package is
+    ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js PORT``.
+    ``PORT`` is port you want to use for the node process.
+    To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
+
     = Extending Browser library with a JavaScript module =
 
     Browser library can be extended with JavaScript. Module must be in CommonJS format that Node.js uses.
