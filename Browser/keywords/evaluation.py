@@ -97,7 +97,8 @@ class Evaluation(LibraryComponent):
 
         Keyword returns dictionary which contains downloaded file path
         and suggested filename as keys (saveAs and suggestedFilename).
-        See `Wait For Download` for more details.
+        See `Wait For Download` for more details. Keyword requires
+        that current active page has loaded valid html webpage.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Download(Request().Url(url=url))
