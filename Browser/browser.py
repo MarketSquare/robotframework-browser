@@ -144,15 +144,8 @@ class Browser(DynamicCore):
     When a `New Page` is called without an open browser, `New Browser`
     and `New Context` are executed with default values first.
 
-    If there is no browser opened in Suite Setup and `New Page` is executed in
-    Test Setup, the corresponding pages and context is closed automatically at the end of
-    the test. The browser process remains open and will be closed at the end of
-    execution.
-
     Each Browser, Context and Page has a unique ID with which they can be addressed.
     A full catalog of what is open can be received by `Get Browser Catalog` as dictionary.
-
-
 
     = Finding elements =
 
@@ -627,10 +620,9 @@ class Browser(DynamicCore):
         - ``enable_playwright_debug`` <bool>
           Enable low level debug information from the playwright tool. Mainly
           Useful for the library developers and for debugging purposes.
-        - ``auto_closing_level`` < ``SUITE`` | ``TEST`` | ``MANUAL`` >
-          Configure context and page automatic closing. Default is after each test.
-          Other options are SUITE for closing after each suite and MANUAL
-          for no automatic closing.
+        - ``auto_closing_level`` < ``TEST`` | ``SUITE`` | ``MANUAL`` >
+          Configure context and page automatic closing. Default is ``TEST``,
+          for more details, see `AutoClosingLevel`
         - ``retry_assertions_for`` <str>
           Timeout for retrying assertions on keywords before failing the keywords.
           This timeout starts counting from the first failure.
