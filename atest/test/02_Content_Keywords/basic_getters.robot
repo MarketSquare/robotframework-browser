@@ -4,7 +4,7 @@ Suite Setup       New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${UserNameLabel}=    label[for="username_field"]
-${InputUsername}=    ${UserNameLabel} >> //.. >> input
+${InputUsername}=    id=username_field
 
 *** Test Cases ***
 Get Text
@@ -43,8 +43,6 @@ Get Property innerText
     Should Be Equal    ${inner_text}    User Name:
 
 Get Property size
-    [Tags]    Not-Implemented
-    Should Be Equal    ${size}    text
     Get Property    ${InputUsername}    type    ==    text
 
 Get Property and Then .. (Closure)
