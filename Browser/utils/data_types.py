@@ -389,12 +389,23 @@ class BoundingBoxFields(Enum):
 
 
 class AutoClosingLevel(Enum):
-    """Library will close pages and contexts that are created during test execution.
+    """Controls when contexts and pages are closed during the test execution.
 
-    Pages and contexts created before test in Suite Setup or Suite Teardown will be closed after that suite.
-    This will remove the burden of closing these resources in teardowns.
-    *Browsers will not be automatically closed.* A browser is expensive to create and should be reused.
-    Automatic closing can be configured or switched off with the auto_closing_level library parameter.
+    If automatic closing level is `TEST`, contexts and pages that are created during a single test are
+    automatically closed when the test ends. Contexts and pages that are created during suite setup are
+    closed when the suite teardown ends.
+
+    If automatic closing level is `SUITE`, all contexts and pages that are created during the test suite
+     are closed when the suite teardown ends.
+
+    If automatic closing level is `MANUAL`, nothing is closed automatically during the test execution
+    is ongoing.
+
+    All browsers are automatically closed, always and regardless of the automatic closing level at
+    the end of the test execution. This will also close all remaining pages and contexts.
+
+    Automatic closing can be configured or switched off with the auto_closing_level library import
+    parameter.
 
     See: `Importing`"""
 
