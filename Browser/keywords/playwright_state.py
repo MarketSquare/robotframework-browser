@@ -281,6 +281,7 @@ class PlaywrightState(LibraryComponent):
         env: Optional[Dict] = None,
         devtools: bool = False,
         slowMo: timedelta = timedelta(seconds=0),
+        channel: Optional[str] = None,
     ) -> str:
 
         """Create a new playwright Browser with specified options.
@@ -330,6 +331,10 @@ class PlaywrightState(LibraryComponent):
 
         ``slowMo`` Slows down Playwright operations by the specified amount of milliseconds.
         Useful so that you can see what is going on. Defaults to no delay.
+
+        ``channel`` Allows to operate against the stock Google Chrome and Microsoft Edge browsers.
+        For more details see:
+        [https://playwright.dev/docs/browsers/#google-chrome--microsoft-edge|Playwright documentation].
         """
         params = locals_to_params(locals())
         params = convert_typed_dict(self.new_context.__annotations__, params)
@@ -340,7 +345,10 @@ class PlaywrightState(LibraryComponent):
         browser_path = self.library.external_browser_executable.get(browser)
         if browser_path:
             params["executablePath"] = browser_path
-
+        if channel and browser != SupportedBrowsers.chromium:
+            raise ValueError(
+                f"Must use {SupportedBrowsers.chromium.name} browser with channel definition"
+            )
         options = json.dumps(params, default=str)
         logger.info(options)
 
