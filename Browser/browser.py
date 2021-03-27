@@ -594,11 +594,7 @@ class Browser(DynamicCore):
     ROBOT_LISTENER_API_VERSION = 3
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    SUPPORTED_BROWSERS = ["chromium", "firefox", "webkit"]
-    _auto_closing_level: AutoClosingLevel
-    _pause_on_failure: Set["Browser"] = set()
     _context_cache = ContextCache()
-    presenter_mode = False
     _suite_cleanup_done = False
 
     def __init__(
@@ -647,7 +643,7 @@ class Browser(DynamicCore):
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
-        self._pause_on_failure = set()
+        self._pause_on_failure: Set["Browser"] = set()
         self.run_on_failure_keyword = (
             None if is_falsy(run_on_failure) else run_on_failure
         )
