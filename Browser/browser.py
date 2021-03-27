@@ -519,13 +519,7 @@ class Browser(DynamicCore):
 
     = Automatic page and context closing =
 
-    Library will close pages and contexts that are created during test execution.
-    Pages and contexts created before test in Suite Setup or Suite Teardown will be closed after that suite.
-    This will remove the burden of closing these resources in teardowns.
-
-    Browsers will not be automatically closed. A browser is expensive to create and should be reused.
-
-    Automatic closing can be configured or switched off with the ``auto_closing_level`` library parameter.
+    %AUTO_CLOSING_LEVEL%
 
     = Experimental: Re-using same node process =
 
@@ -783,7 +777,6 @@ class Browser(DynamicCore):
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
-        # WIP CODE BEGINS
         catalog_after = self.get_browser_catalog()
         ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
         ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
@@ -807,17 +800,6 @@ class Browser(DynamicCore):
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
             self._playwright_state.close_page(page_id, ctx_id)
-        # try to set active page and context back to right place.
-        # Not needed now that active page and context are just stack heads
-        """ for browser in catalog_after:
-            if browser["activeBrowser"]:
-                activeContext = browser.get("activeContext", None)
-                activePage = browser.get("activePage", None)
-                if not new_ctx_ids and activeContext is not None:
-                    self._playwright_state.switch_context(activeContext)
-                    if not (activePage, activeContext) in new_page_ids:
-                        self._playwright_state.switch_page(activePage)
-        """
 
     def run_keyword(self, name, args, kwargs=None):
         try:
@@ -904,6 +886,6 @@ class Browser(DynamicCore):
     def get_keyword_documentation(self, name):
         doc = DynamicCore.get_keyword_documentation(self, name)
         if name == "__intro__":
-            assertion_table = AssertionOperator.__doc__
-            doc = doc.replace("%ASSERTION_TABLE%", assertion_table)
+            doc = doc.replace("%ASSERTION_TABLE%", AssertionOperator.__doc__)
+            doc = doc.replace("%AUTO_CLOSING_LEVEL%", AutoClosingLevel.__doc__)
         return doc
