@@ -881,7 +881,7 @@ class Browser(DynamicCore):
 
     def _failure_screenshot_path(self):
         valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-        test_name = BuiltIn().get_variable_value("${TEST NAME}")
+        test_name = BuiltIn().get_variable_value("${TEST NAME}", "GENERIC")
         return os.path.join(
             self.outputdir,
             "".join(c for c in test_name if c in valid_chars).replace(" ", "_")
