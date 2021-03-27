@@ -1,4 +1,4 @@
-backports.cached-property >= 1.0.0
+backports.cached-property >= 1.0.1
 grpcio == 1.36.1
 grpcio-tools == 1.36.1
 protobuf==3.15.6
