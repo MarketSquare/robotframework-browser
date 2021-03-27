@@ -239,7 +239,7 @@ class PlaywrightState(LibraryComponent):
                             {
                                 "errors": json.loads(response.errors),
                                 "console": json.loads(response.console),
-                                "id": p,
+                                "id": response.pageId,
                             }
                         )
         return result

@@ -247,6 +247,7 @@ message Response {
     string log = 1;
     string errors = 2;
     string console = 3;
+    string pageId = 4;
   }
 }
 
