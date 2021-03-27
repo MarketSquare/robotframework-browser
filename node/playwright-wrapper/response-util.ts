@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { IndexedPage } from './playwright-state';
 import { Response } from './generated/playwright_pb';
 import { errors } from 'playwright';
 import { status } from '@grpc/grpc-js';
@@ -19,6 +20,25 @@ import { status } from '@grpc/grpc-js';
 export function emptyWithLog(text: string): Response.Empty {
     const response = new Response.Empty();
     response.setLog(text);
+    return response;
+}
+
+export function pageReportResponse(log: string, page: IndexedPage): Response.PageReportResponse {
+    const response = new Response.PageReportResponse();
+    response.setLog(log);
+    response.setConsole(
+        JSON.stringify(
+            page.consoleMessages.map((m) => ({
+                type: m.type(),
+                text: m.text(),
+                ...m.location(),
+            })),
+        ),
+    );
+    response.setErrors(
+        JSON.stringify(page.pageErrors.map((e) => (e ? `${e.name}: ${e.message}\n${e.stack}` : 'unknown error'))),
+    );
+    response.setPageid(page.id);
     return response;
 }
 
