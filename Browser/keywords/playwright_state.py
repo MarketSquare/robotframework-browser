@@ -189,7 +189,10 @@ class PlaywrightState(LibraryComponent):
         ``browser`` < ``CURRENT`` | ``ALL`` | str > Id of the browser that belongs to the page to be closed.
         If ``ALL`` is passed, the requested pages depending of the context of all browsers are closed.
         Defaults to CURRENT.
+
+        Returns a list of dictionaries containing errors and console messages from the page.
         """
+        result = []
         with self.playwright.grpc_channel() as stub:
             catalog = self.library.get_browser_catalog()
 
@@ -232,14 +235,13 @@ class PlaywrightState(LibraryComponent):
                         response = stub.ClosePage(Request().Empty())
                         if response.log:
                             logger.info(response.log)
-                        errors = json.loads(response.errors)
-                        if errors:
-                            for error in errors:
-                                logger.error(f"Page error: {error}")
-                        messages = json.loads(response.console)
-                        if messages:
-                            for message in messages:
-                                logger.error(f"console: {message}")
+                        result.append(
+                            {
+                                "errors": json.loads(response.errors),
+                                "console": json.loads(response.console),
+                            }
+                        )
+        return result
 
     @keyword(tags=("Setter", "BrowserControl"))
     def connect_to_browser(

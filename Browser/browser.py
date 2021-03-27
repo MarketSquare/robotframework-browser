@@ -25,9 +25,9 @@ from typing import Dict, List, Optional, Set, Union
 
 from assertionengine import AssertionOperator
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
-from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robot.result.model import TestCase as TestCaseResult  # type: ignore
 from robot.running.model import TestCase as TestCaseRunning  # type: ignore
+from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .base import ContextCache, LibraryComponent
@@ -653,7 +653,7 @@ class Browser(DynamicCore):
         self.timeout = self.convert_timeout(timeout)
         self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
         self.ROBOT_LIBRARY_LISTENER = self
-        self._execution_stack: List[object] = []
+        self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self._pause_on_failure = set()
         self.run_on_failure_keyword = (
@@ -764,7 +764,6 @@ class Browser(DynamicCore):
                 logger.debug(f"Test Case: {test.name}, End Test: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_test connection problem: {e}")
-
 
     def _end_suite(self, suite, result):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:

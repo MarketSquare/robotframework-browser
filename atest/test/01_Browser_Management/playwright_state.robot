@@ -156,6 +156,13 @@ Page indices are unique
     ${second}=    New Page
     Should Not Be Equal    ${first}    ${second}
 
+Close Page gets errors and console log
+    New Page    ${ERROR_URL}
+    Click    "Crash click"
+    ${response}=    Close Page
+    Should be equal    ${response}[0][console][0][text]    Hello from warning
+    Should match    ${response}[0][errors][0]    Error: a is not defined*
+
 Context indices are unique
     ${first}=    New Context
     Close Context

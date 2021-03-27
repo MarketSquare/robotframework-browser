@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import {Browser, BrowserContext, ElementHandle, Page, chromium, firefox, webkit, ConsoleMessage} from 'playwright';
+import { Browser, BrowserContext, ConsoleMessage, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import {emptyWithLog, jsonResponse, keywordsResponse, pageReportResponse, stringResponse} from './response-util';
+import { emptyWithLog, jsonResponse, keywordsResponse, pageReportResponse, stringResponse } from './response-util';
 import { exists } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -132,7 +132,7 @@ function indexedPage(newPage: Page) {
         p: newPage,
         timestamp,
         pageErrors,
-        consoleMessages
+        consoleMessages,
     };
 }
 
@@ -390,8 +390,7 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
     const activeBrowser = openBrowsers.getActiveBrowser();
     await openBrowsers.getActivePage()?.close();
     const closedPage = activeBrowser.popPage();
-    if (!closedPage)
-        throw new Error("No open page");
+    if (!closedPage) throw new Error('No open page');
     return pageReportResponse('Successfully closed Page', closedPage);
 }
 
