@@ -8,6 +8,7 @@ Wrong Browser With Channel
     ...    New Browser    firefox    channel=chrome
 
 Use Chrome Stable With Channel Argument
+    [Timeout]    60s    # Is slow in Windows OS.
     New Browser    chromium    headless=False    channel=chrome
     New Context
     New Page    ${LOGIN_URL}
