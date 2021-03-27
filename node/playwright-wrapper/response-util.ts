@@ -35,7 +35,9 @@ export function pageReportResponse(log: string, page: IndexedPage): Response.Pag
             })),
         ),
     );
-    response.setErrors(JSON.stringify(page.pageErrors.map((e) => `${e.name}: ${e.message}\n${e.stack}`)));
+    response.setErrors(
+        JSON.stringify(page.pageErrors.map((e) => (e ? `${e.name}: ${e.message}\n${e.stack}` : 'unknown error'))),
+    );
     return response;
 }
 
