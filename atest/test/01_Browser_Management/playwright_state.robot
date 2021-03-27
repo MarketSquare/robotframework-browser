@@ -157,11 +157,12 @@ Page indices are unique
     Should Not Be Equal    ${first}    ${second}
 
 Close Page gets errors and console log
-    New Page    ${ERROR_URL}
+    ${id}=    New Page    ${ERROR_URL}
     Click    "Crash click"
     ${response}=    Close Page
     Should be equal    ${response}[0][console][0][text]    Hello from warning
     Should match    ${response}[0][errors][0]    Error: a is not defined*
+    Should be equal    ${response}[0][id]    ${id}
 
 Context indices are unique
     ${first}=    New Context
@@ -187,7 +188,8 @@ Close All Pages
     New Page
     New Page
     New Page
-    Close Page    ALL
+    ${closes}=    Close Page    ALL
+    Length Should Be    ${closes}    3
     ${current}=    Switch Page    CURRENT
     Should Be Equal    ${current}    NO PAGE OPEN
 
