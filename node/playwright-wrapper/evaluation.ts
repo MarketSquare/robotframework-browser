@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ElementHandle, Page } from 'playwright';
+import {ElementHandle, JSHandle, Page} from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -21,6 +21,7 @@ import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
+import {finder} from "@medv/finder";
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 declare global {
@@ -114,6 +115,30 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
     const content = request.getContent();
     await page.addStyleTag({ content });
     return emptyWithLog('added Style: ' + content);
+}
+
+export async function recordSelector(
+    request: Request.StyleTag,
+    page: Page,
+): Promise<Response.JavascriptExecutionResult> {
+    await page.addScriptTag({
+        type: 'module',
+        content: `import {finder} from 'https://medv.io/finder/finder.js';
+        window.currentTarget = "MOI";
+        document.addEventListener('mousemove', function (e) {
+            const target = document.elementFromPoint(e.pageX, e.pageY);
+            if (target) {
+                window.currentTarget = finder(target);
+            }
+        });
+        `,
+    });
+    await new Promise((r) => setTimeout(() => r(''), 5000));
+    const result = await page.evaluate(() => {
+        // @ts-ignore
+        return window.currentTarget;
+    });
+    return jsResponse(result as string, 'Selector recorded.');
 }
 
 export async function highlightElements(

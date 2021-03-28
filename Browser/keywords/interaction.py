@@ -296,6 +296,9 @@ class Interaction(LibraryComponent):
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
         """
+        if selector == "__DETECT__":
+            selector = self._record_selector()
+            print(selector)
         if self.library.presenter_mode:
             self.hover(selector)
             self.library.highlight_elements(selector, duration=timedelta(seconds=2))
@@ -323,6 +326,12 @@ class Interaction(LibraryComponent):
                 )
             )
             logger.debug(response.log)
+
+    def _record_selector(self):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.RecordSelector(Request.Empty())
+            logger.info(f"Selector: {response.result}")
+            return json.loads(response.result)
 
     @keyword(tags=("Setter", "PageContent"))
     def hover(
