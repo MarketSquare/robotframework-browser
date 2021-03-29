@@ -179,11 +179,38 @@ function cssesc(a, b = {}) {
     }), !e && c.wrap ? d + g + d : g
 }
 
-window.currentTarget = "MOI";
+function showHighlighter(e) {
+    const d = document.createElement('div');
+    d.className = 'robotframework-browser-selector';
+    d.appendChild(document.createTextNode(''));
+    d.style.position = 'fixed';
+    const rect = e.getBoundingClientRect();
+    d.style.top = `${rect.top}px`;
+    d.style.left = `${rect.left}px`;
+    d.style.width = `${rect.width}px`;
+    d.style.height = `${rect.height}px`;
+    d.style.border = '1px solid blue';
+    d.style.background = 'rgba(255,0,0,0.3)';
+    document.body.appendChild(d);
+    setTimeout(() => {
+        d.remove();
+    }, options?.dur ?? 5000);
+}
+
+function debounce(a,b,c){var d;return function(){var e=this,f=arguments;clearTimeout(d),d=setTimeout(function(){d=null,c||a.apply(e,f)},b),c&&!d&&a.apply(e,f)}}
+
+window.currentTarget = "NOTSET";
+var showingSelector = false;
 document.addEventListener('mousemove', function (e) {
-    const target = document.elementFromPoint(e.pageX, e.pageY);
-    console.log(target);
-    if (target) {
-        window.currentTarget = finder(target);
-    }
+    if (showingSelector) {
+        return;
+    };
+    debounce(() => {
+        const target = document.elementFromPoint(e.pageX, e.pageY);
+        if (target) {
+            window.currentTarget = finder(target);
+            showHighlighter(target);
+            showingSelector = true;
+        }
+    }, 300);
 });
