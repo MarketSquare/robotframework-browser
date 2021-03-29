@@ -132,15 +132,7 @@ export async function recordSelector(
 ): Promise<Response.JavascriptExecutionResult> {
     await page.addScriptTag({
         type: 'module',
-        content: `import {finder} from 'https://medv.io/finder/finder.js';
-        window.currentTarget = "MOI";
-        document.addEventListener('mousemove', function (e) {
-            const target = document.elementFromPoint(e.pageX, e.pageY);
-            if (target) {
-                window.currentTarget = finder(target);
-            }
-        });
-        `,
+        path: 'static/selector-finder.js',
     });
     await new Promise((r) => setTimeout(() => r(''), 5000));
     const result = await page.evaluate(() => {
