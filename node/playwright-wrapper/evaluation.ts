@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {ElementHandle, JSHandle, Page} from 'playwright';
+import { ElementHandle, JSHandle, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -21,7 +21,7 @@ import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
-import {finder} from "@medv/finder";
+import { finder } from '@medv/finder';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 declare global {
