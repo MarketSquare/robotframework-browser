@@ -61,7 +61,7 @@ Exposing Playwirght channel API for easier support for different browsers (`#865
 -----------------------------------------------------------------------------------
 Playwright comes with inbuild Chromium browser, but starting from 1.10 release, it has been
 possible to use preinstalled Chrome/Chromium Edge browsers with channel argument. This
-is now exposed argument in Browser library side too. 
+is now exposed argument in Browser library side too.
 
 
 Full list of fixes and enhancements
