@@ -78,7 +78,7 @@ class Control(LibraryComponent):
         fullPage: bool = False,
         fileType: str = "png",
         quality: str = "",
-        timeout: Optional[timedelta] = None
+        timeout: Optional[timedelta] = None,
     ) -> str:
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
@@ -102,7 +102,9 @@ class Control(LibraryComponent):
             logger.debug("Embedding image to log.html.")
         else:
             logger.debug(f"Using {filename} to take screenshot.")
-        file_path = self._take_screenshot(filename, selector, fullPage, fileType, quality, timeout)
+        file_path = self._take_screenshot(
+            filename, selector, fullPage, fileType, quality, timeout
+        )
         if self._is_embed(filename):
             return self._embed_to_log(file_path)
         return self._log_image_link(file_path)
@@ -134,12 +136,25 @@ class Control(LibraryComponent):
             logger.warn(f"Could not remove {png}")
         return "EMBED"
 
-    def _take_screenshot(self, filename: str, selector: str, fullPage: bool, fileType: str, quality:str, timeout: timedelta) -> str:
+    def _take_screenshot(
+        self,
+        filename: str,
+        selector: str,
+        fullPage: bool,
+        fileType: str,
+        quality: str,
+        timeout: Optional[timedelta],
+    ) -> str:
         string_path_no_extension = str(self._get_screenshot_path(filename, fileType))
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
-                    path=string_path_no_extension, selector=selector, fullPage=fullPage, fileType=fileType, quality=quality, timeout=int(self.get_timeout(timeout))
+                    path=string_path_no_extension,
+                    selector=selector,
+                    fullPage=fullPage,
+                    fileType=fileType,
+                    quality=quality,
+                    timeout=int(self.get_timeout(timeout)),
                 )
             )
         logger.debug(response.log)
