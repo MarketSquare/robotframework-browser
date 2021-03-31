@@ -31,17 +31,25 @@ export async function takeScreenshot(
     state: PlaywrightState,
 ): Promise<Response.String> {
     // Add the file extension here because the image type is defined by playwrights defaults
-    const path = request.getPath() + '.png';
+    const fileType = request.getFiletype();
+    const path = request.getPath() + '.' + fileType;
     const fullPage = request.getFullpage();
     const selector = request.getSelector();
+    const quality = request.getQuality();
+    const timeout = request.getTimeout();
+    const options: Record<string, string | number | boolean> = { path: path, type: fileType, timeout: timeout };
+    if (quality) {
+        options.quality = parseInt(quality);
+    }
     if (selector) {
         const elem = await determineElement(state, selector);
         exists(elem, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
-        await elem.screenshot({ path: path });
+        await elem.screenshot(options);
     } else {
         const page = state.getActivePage();
         exists(page, 'Tried to take screenshot, but no page was open.');
-        await page.screenshot({ path, fullPage });
+        options.fullPage = fullPage;
+        await page.screenshot(options);
     }
     const message = 'Screenshot succesfully captured to: ' + path;
     return stringResponse(path, message);

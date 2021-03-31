@@ -55,7 +55,7 @@ class Control(LibraryComponent):
             )
             logger.info(response.log)
 
-    def _get_screenshot_path(self, filename: str) -> Path:
+    def _get_screenshot_path(self, filename: str, fileType: str) -> Path:
         directory = self.screenshots_output
         # Filename didn't contain {index}
         if "{index}" not in filename:
@@ -67,7 +67,7 @@ class Control(LibraryComponent):
             logger.trace(indexed)
             path = directory / indexed
             # Unique path was found
-            if not path.with_suffix(".png").is_file():
+            if not path.with_suffix(f".{fileType}").is_file():
                 return path
 
     @keyword(tags=("PageContent",))
@@ -76,6 +76,9 @@ class Control(LibraryComponent):
         filename: str = "robotframework-browser-screenshot-{index}",
         selector: str = "",
         fullPage: bool = False,
+        fileType: str = "png",
+        quality: str = "",
+        timeout: Optional[timedelta] = None,
     ) -> str:
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
@@ -99,7 +102,9 @@ class Control(LibraryComponent):
             logger.debug("Embedding image to log.html.")
         else:
             logger.debug(f"Using {filename} to take screenshot.")
-        file_path = self._take_screenshot(filename, selector, fullPage)
+        file_path = self._take_screenshot(
+            filename, selector, fullPage, fileType, quality, timeout
+        )
         if self._is_embed(filename):
             return self._embed_to_log(file_path)
         return self._log_image_link(file_path)
@@ -131,12 +136,25 @@ class Control(LibraryComponent):
             logger.warn(f"Could not remove {png}")
         return "EMBED"
 
-    def _take_screenshot(self, filename: str, selector: str, fullPage: bool) -> str:
-        string_path_no_extension = str(self._get_screenshot_path(filename))
+    def _take_screenshot(
+        self,
+        filename: str,
+        selector: str,
+        fullPage: bool,
+        fileType: str,
+        quality: str,
+        timeout: Optional[timedelta],
+    ) -> str:
+        string_path_no_extension = str(self._get_screenshot_path(filename, fileType))
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
-                    path=string_path_no_extension, selector=selector, fullPage=fullPage
+                    path=string_path_no_extension,
+                    selector=selector,
+                    fullPage=fullPage,
+                    fileType=fileType,
+                    quality=quality,
+                    timeout=int(self.get_timeout(timeout)),
                 )
             )
         logger.debug(response.log)

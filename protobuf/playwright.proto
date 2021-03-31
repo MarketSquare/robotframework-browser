@@ -21,6 +21,9 @@ message Request {
     string path = 1;
     string selector = 2;
     bool fullPage = 3;
+    string fileType = 4;
+    string quality = 5;
+    int32 timeout = 6;
   }
 
   message KeywordCall {
