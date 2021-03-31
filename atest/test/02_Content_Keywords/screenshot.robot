@@ -48,6 +48,24 @@ Element Screenshotting
     File Should Exist    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.png
     [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/*.png
 
+Quality Argument Incompatible With Png
+    Run Keyword And Expect Error    *quality is unsupported for the png screenshots*    Take Screenshot  fullPage=True  fileType=png  timeout=10s  quality=50
+    [Teardown]    Remove Files     ${OUTPUT_DIR}/browser/screenshot/*.png
+
+Screenshot Fails Due To Timeout
+    Run Keyword And Expect Error    *TimeoutError*  Take Screenshot      timeout=1ms
+    [Teardown]    Remove Files     ${OUTPUT_DIR}/browser/screenshot/*.png
+
+Screenshot Pass With Right Timeout
+    Take Screenshot      fullPage=True  fileType=png  timeout=10s
+    File Should Exist    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.png
+    [Teardown]    Remove Files     ${OUTPUT_DIR}/browser/screenshot/*.png
+
+Screenshotting With Jpeg Extension And Quality
+    Take Screenshot      fullPage=True  fileType=jpeg  quality=50  timeout=10s
+    File Should Exist    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.jpeg
+    [Teardown]    Remove Files     ${OUTPUT_DIR}/browser/screenshot/*.jpeg
+
 If Element Not Found Screenshot Should Fail
     Run Keyword And Expect Error
     ...    Error: Tried to capture element screenshot, element '#not_there' wasn't found.
