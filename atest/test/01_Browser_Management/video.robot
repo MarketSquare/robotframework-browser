@@ -22,8 +22,7 @@ Create Video With Relative Path
     ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
     Should Be Equal    ${{len(${files})}}    ${0}
     Close Page
-    ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
-    Should Be Equal    ${{len(${files})}}    ${1}
+    Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    1
 
 Create Video With videoSize
     [Documentation]
