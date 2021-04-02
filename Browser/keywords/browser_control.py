@@ -159,7 +159,7 @@ class Control(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
-                    path=f"{string_path_no_extension}.{fileType}",
+                    path=string_path_no_extension,
                     selector=selector,
                     fullPage=fullPage,
                     fileType=fileType.name,

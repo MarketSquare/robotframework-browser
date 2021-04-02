@@ -31,7 +31,7 @@ export async function takeScreenshot(
     state: PlaywrightState,
 ): Promise<Response.String> {
     const fileType = request.getFiletype();
-    const path = request.getPath();
+    const path = request.getPath() + '.' + fileType;
     const fullPage = request.getFullpage();
     const selector = request.getSelector();
     const quality = request.getQuality();
