@@ -22,9 +22,8 @@ from robot.utils import get_link_path  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-from ..utils.data_types import (
-    ScreenshotFileTypes,
-)
+from ..utils.data_types import ScreenshotFileTypes
+
 
 class Control(LibraryComponent):
     """Keywords to do things on the current browser page and modify the page"""
@@ -154,7 +153,9 @@ class Control(LibraryComponent):
         quality: str = "",
         timeout: Optional[timedelta] = None,
     ) -> str:
-        string_path_no_extension = str(self._get_screenshot_path(filename, fileType.name))
+        string_path_no_extension = str(
+            self._get_screenshot_path(filename, fileType.name)
+        )
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(

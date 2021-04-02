@@ -30,14 +30,13 @@ export async function takeScreenshot(
     request: Request.ScreenshotOptions,
     state: PlaywrightState,
 ): Promise<Response.String> {
-    // Add the file extension here because the image type is defined by playwrights defaults
     const fileType = request.getFiletype();
-    const path = request.getPath() + '.' + fileType;
+    const path = request.getPath();
     const fullPage = request.getFullpage();
     const selector = request.getSelector();
     const quality = request.getQuality();
     const timeout = request.getTimeout();
-    const options: Record<string, string | number | boolean> = { path: path, type: fileType, timeout: timeout };
+    const options: Record<string, any> = { path: path, type: fileType, timeout: timeout };
     if (quality) {
         options.quality = parseInt(quality);
     }
