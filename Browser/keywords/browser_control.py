@@ -22,7 +22,9 @@ from robot.utils import get_link_path  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-
+from ..utils.data_types import (
+    ScreenshotFileTypes,
+)
 
 class Control(LibraryComponent):
     """Keywords to do things on the current browser page and modify the page"""
@@ -76,7 +78,7 @@ class Control(LibraryComponent):
         filename: str = "robotframework-browser-screenshot-{index}",
         selector: str = "",
         fullPage: bool = False,
-        fileType: str = "png",
+        fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
         quality: str = "",
         timeout: Optional[timedelta] = None,
     ) -> str:
@@ -97,6 +99,13 @@ class Control(LibraryComponent):
 
         ``fullPage`` When True, takes a screenshot of the full scrollable page,
         instead of the currently visible viewport. Defaults to False.
+
+        ``fileType`` <"png"|"jpeg"> Specify screenshot type, defaults to png.
+
+        ``quality`` The quality of the image, between 0-100. Not applicable to png images.
+
+        ``timeout`` Maximum time in milliseconds, defaults to 30 seconds, pass 0 to disable timeout.
+        The default value can be changed by using the `Set Browser Timeout` keyword.
         """
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
@@ -139,20 +148,20 @@ class Control(LibraryComponent):
     def _take_screenshot(
         self,
         filename: str,
-        selector: str,
-        fullPage: bool,
-        fileType: str,
-        quality: str,
-        timeout: Optional[timedelta],
+        selector: str = "",
+        fullPage: bool = False,
+        fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
+        quality: str = "",
+        timeout: Optional[timedelta] = None,
     ) -> str:
-        string_path_no_extension = str(self._get_screenshot_path(filename, fileType))
+        string_path_no_extension = str(self._get_screenshot_path(filename, fileType.name))
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
                     path=string_path_no_extension,
                     selector=selector,
                     fullPage=fullPage,
-                    fileType=fileType,
+                    fileType=fileType.name,
                     quality=quality,
                     timeout=int(self.get_timeout(timeout)),
                 )
