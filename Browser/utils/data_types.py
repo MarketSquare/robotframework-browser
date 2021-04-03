@@ -466,3 +466,10 @@ class ElementStateKey(Enum):
     selected = auto()
     focused = auto()
     checked = auto()
+
+
+class ScreenshotFileTypes(Enum):
+    """Enum that defines available file types for screenshots."""
+
+    png = auto()
+    jpeg = auto()
