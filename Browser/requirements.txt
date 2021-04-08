@@ -1,5 +1,5 @@
 backports.cached-property >= 1.0.1
-grpcio == 1.36.1
+grpcio == 1.37.0
 grpcio-tools == 1.36.1
 protobuf==3.15.7
 robotframework >=3.2.2
