@@ -178,21 +178,25 @@ class Interaction(LibraryComponent):
         """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
 
-        This keyword does not log secret in Robot Framework logs.
-        If ``enable_playwright_debug`` is enabled in the library
-        import, secret will be always visible as plain text in the playwright debug
+        This keyword does not log secret in Robot Framework logs, when
+        keywords resolves the ``secret`` variable internally. When
+        ``secret`` variable is prefixed with `$`, without the curly braces,
+         library will resolve the corresponding Robot Framework variable.
+         If ``secret`` variable is prefixed with `%`, library will resolve
+         corresponding environment variable. Example `$Password`` will
+         resolve to ``${Password}`` Robot Framework variable. Also
+         ``%ENV_PWD``will resolve to ``%{ENV_PWD}`` environment variable.
+         Using normal Robt Framework variables or plain text will also work,
+         but then library can not prevent Robot Framework leaking the secrets
+         in the output files. Also library will log a warning if library
+         can not resolve the secret internally.
+
+        If ``enable_playwright_debug`` is enabled in the library import,
+        secret will be always visible as plain text in the playwright debug
         logs, regardless of the Robot Framework log level.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
-
-        ``secret`` Environment variable name with % prefix or a local
-        variable with $ prefix that has the secret text value.
-        Variable names can be used with and without curly braces.
-
-        Example:
-        ``$Password`` and ``${Password}`` resolve the robot framework variable.
-        ``%ENV_PWD`` and ``%{ENV_PWD}`` resolve to the environment variable ``ENV_PWD``.
 
         See `Fill Text` for other details.
         """
