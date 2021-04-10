@@ -183,11 +183,9 @@ class Network(LibraryComponent):
     ):
         """Waits until page has navigated to given ``url``.
 
-        ``url``  expected navigation target address.
+        ``url``  expected navigation target address either the exact match or a regex.
 
         ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
-
-        ``regex``  Boolean, whether the url parameter is a regex or not.
 
         ``waitUntil`` <"load"|"domcontentloaded"|"networkidle"> When to consider operation succeeded, defaults to load. Events can be either:
         'domcontentloaded' - consider operation to be finished when the DOMContentLoaded event is fired.
@@ -201,7 +199,6 @@ class Network(LibraryComponent):
                     url=Request().Url(
                         url=url, defaultTimeout=int(self.get_timeout(timeout))
                     ),
-                    regex=regex,
                     waitUntil=wait_until.name,
                 )
             )

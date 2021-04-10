@@ -87,14 +87,18 @@ export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: 
 export async function waitForNavigation(request: pb.Request.UrlOptions, page: Page): Promise<pb.Response.Empty> {
     const url = <string>request.getUrl()?.getUrl();
     const timeout = request.getUrl()?.getDefaulttimeout();
-    const regex = request.getRegex();
     const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getWaituntil();
-    if (regex) {
-        await page.waitForNavigation({ timeout, url: new RegExp(url), waitUntil: waitUntil });
-    } else {
-        await page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil });
+    try {
+        await Promise.any([
+            page.waitForNavigation({ timeout, url: new RegExp(url), waitUntil: waitUntil }),
+            page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil }),
+        ]);
+    } catch (e) {
+        const message = `Error navigating to: ${url}, location is: ${page.url()}`;
+        const error = new Error(message);
+        throw error;
     }
-    return emptyWithLog(`Navigated to ${url}`);
+    return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 
 export async function waitForDownload(request: pb.Request.FilePath, page: Page): Promise<pb.Response.Json> {

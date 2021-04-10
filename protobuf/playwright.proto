@@ -74,8 +74,7 @@ message Request {
 
   message UrlOptions {
     Url url = 1;
-    bool regex = 2;
-    string waitUntil = 3;
+    string waitUntil = 2;
   }
 
   message ConnectBrowser {
