@@ -473,3 +473,11 @@ class ScreenshotFileTypes(Enum):
 
     png = auto()
     jpeg = auto()
+
+
+class PageLoadStates(Enum):
+    """Enum that defines available page load states."""
+
+    load = auto()
+    domcontentloaded = auto()
+    networkidle = auto()

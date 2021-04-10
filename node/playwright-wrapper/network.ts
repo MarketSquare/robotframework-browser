@@ -84,10 +84,16 @@ export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: 
     return emptyWithLog('Network is idle');
 }
 
-export async function waitForNavigation(request: pb.Request.Url, page: Page): Promise<pb.Response.Empty> {
-    const url = request.getUrl();
-    const timeout = request.getDefaulttimeout();
-    await page.waitForNavigation({ timeout, url });
+export async function waitForNavigation(request: pb.Request.UrlOptions, page: Page): Promise<pb.Response.Empty> {
+    const url = <string>request.getUrl()?.getUrl();
+    const timeout = request.getUrl()?.getDefaulttimeout();
+    const regex = request.getRegex();
+    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getWaituntil();
+    if (regex) {
+        await page.waitForNavigation({ timeout, url: new RegExp(url), waitUntil: waitUntil });
+    } else {
+        await page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil });
+    }
     return emptyWithLog(`Navigated to ${url}`);
 }
 

@@ -72,6 +72,12 @@ message Request {
     int32 defaultTimeout = 2;
   }
 
+  message UrlOptions {
+    Url url = 1;
+    bool regex = 2;
+    string waitUntil = 3;
+  }
+
   message ConnectBrowser {
     string browser = 1;
     string url= 2;
@@ -343,7 +349,7 @@ service  Playwright {
   rpc WaitForResponse(Request.HttpCapture) returns (Response.Json);
   rpc WaitForDownload(Request.FilePath) returns (Response.Json);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
-  rpc WaitForNavigation(Request.Url) returns (Response.Empty);
+  rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);
   /* Geolocation */
   rpc SetGeolocation(Request.Json) returns (Response.Empty);
 

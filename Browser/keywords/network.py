@@ -21,7 +21,7 @@ from typing_extensions import Literal
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-from ..utils.data_types import RequestMethod
+from ..utils.data_types import PageLoadStates, RequestMethod
 
 
 def _get_headers(body: str, headers: Dict):
@@ -64,7 +64,6 @@ class Network(LibraryComponent):
         body: Optional[str] = None,
         headers: Optional[dict] = None,
     ) -> Any:
-
         """Performs an HTTP request in the current browser context
 
         Accepts the following arguments:
@@ -175,15 +174,35 @@ class Network(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Wait", "HTTP"))
-    def wait_for_navigation(self, url: str, timeout: Optional[timedelta] = None):
+    def wait_for_navigation(
+        self,
+        url: str,
+        timeout: Optional[timedelta] = None,
+        regex: bool = False,
+        wait_until: PageLoadStates = PageLoadStates.load,
+    ):
         """Waits until page has navigated to given ``url``.
 
         ``url``  expected navigation target address.
 
         ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
+
+        ``regex``  Boolean, whether the url parameter is a regex or not.
+
+        ``waitUntil`` <"load"|"domcontentloaded"|"networkidle"> When to consider operation succeeded, defaults to load. Events can be either:
+        'domcontentloaded' - consider operation to be finished when the DOMContentLoaded event is fired.
+        'load' - consider operation to be finished when the load event is fired.
+        'networkidle' - consider operation to be finished when there are no network connections for at least 500 ms.
+
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitForNavigation(
-                Request().Url(defaultTimeout=int(self.get_timeout(timeout)), url=url)
+                Request().UrlOptions(
+                    url=Request().Url(
+                        url=url, defaultTimeout=int(self.get_timeout(timeout))
+                    ),
+                    regex=regex,
+                    waitUntil=wait_until.name,
+                )
             )
             logger.debug(response.log)
