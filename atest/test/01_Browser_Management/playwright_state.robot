@@ -221,3 +221,11 @@ New Context with defaultBrowserType ff
 New Context with defaultBrowserType chromium
     New Context    defaultBrowserType=chromium
     Verify Browser Type    chromium
+
+When Context Without Browser This Is Logged For User
+    [Documentation]    ...
+    ...    Log    1:3    No browser is open and new browser was automatically opened when this context is created.
+    ...    Log    2:3    None
+    [Setup]    Close Browser    ALL
+    New Context
+    New Context
