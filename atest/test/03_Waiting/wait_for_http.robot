@@ -42,12 +42,12 @@ Wait For Navigation Works
 
 Wait For Navigation Works With Regex
     Go To    ${ROOT_URL}/redirector.html
-    Wait for navigation    p[a-z]{4}d
+    Wait for navigation    /p[\\w]{4}d/i
     Get Url    contains    posted
 
 Wait For Navigation Fails With Wrong Regex
     Go To    ${ROOT_URL}/redirector.html
-    Run Keyword And Expect Error    *Error navigating to*    Wait for navigation    foobar
+    Run Keyword And Expect Error    *TimeoutError*    Wait for navigation    foobar
     Get Url    not contains    foobar
 
 Wait For Navigation Fails With Wrong wait_until
