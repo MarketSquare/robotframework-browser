@@ -29,6 +29,11 @@ function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
 }
 
+interface IBrowserState {
+    browser: BrowserState;
+    newBrowser: boolean;
+}
+
 export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
@@ -167,15 +172,16 @@ export class PlaywrightState {
         return this.getActiveBrowser();
     };
 
-    public async getOrCreateActiveBrowser(browserType?: string): Promise<BrowserState> {
+    public async getOrCreateActiveBrowser(browserType?: string): Promise<IBrowserState> {
         const currentBrowser = this.activeBrowser;
+        logger.info('currentBrowser: ' + currentBrowser);
         if (currentBrowser === undefined) {
             const [newBrowser, name] = await _newBrowser(browserType);
             const newState = new BrowserState(name, newBrowser);
             this.browserStack.push(newState);
-            return newState;
+            return { browser: newState, newBrowser: true };
         } else {
-            return currentBrowser;
+            return { browser: currentBrowser, newBrowser: false };
         }
     }
 
@@ -397,12 +403,12 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
 export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
     const defaultTimeout = request.getDefaulttimeout();
-    const context = await browserState.getOrCreateActiveContext(defaultTimeout);
+    const context = await browserState.browser.getOrCreateActiveContext(defaultTimeout);
 
     const page = await _newPage(context.c);
     const videoPath = await page.p.video()?.path();
     logger.info('Video path: ' + videoPath);
-    browserState.pushPage(page);
+    browserState.browser.pushPage(page);
     const url = request.getUrl() || 'about:blank';
     try {
         await page.p.goto(url);
@@ -413,20 +419,26 @@ export async function newPage(request: Request.Url, openBrowsers: PlaywrightStat
         response.setVideo(JSON.stringify(video));
         return response;
     } catch (e) {
-        browserState.popPage();
+        browserState.browser.popPage();
         throw e;
     }
 }
 
-export async function newContext(request: Request.Context, openBrowsers: PlaywrightState): Promise<Response.String> {
+export async function newContext(
+    request: Request.Context,
+    openBrowsers: PlaywrightState,
+): Promise<Response.NewContextResponse> {
     const hideRfBrowser = request.getHiderfbrowser();
     const options = JSON.parse(request.getRawoptions());
     const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType);
     const defaultTimeout = request.getDefaulttimeout();
-    const context = await _newBrowserContext(browserState.browser, defaultTimeout, options, hideRfBrowser);
-    browserState.pushContext(context);
-
-    return stringResponse(context.id, 'Successfully created context with options: ' + JSON.stringify(options));
+    const context = await _newBrowserContext(browserState.browser.browser, defaultTimeout, options, hideRfBrowser);
+    browserState.browser.pushContext(context);
+    const response = new Response.NewContextResponse();
+    response.setId(context.id);
+    response.setLog('Successfully created context with options: ' + JSON.stringify(options));
+    response.setNewbrowser(browserState.newBrowser);
+    return response;
 }
 
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {

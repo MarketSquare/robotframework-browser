@@ -245,10 +245,18 @@ message Response {
     string result = 2;
   }
 
+  message NewContextResponse {
+    string id = 1;
+    string log = 2;
+    bool newBrowser = 3;
+  }
+
   message NewPageResponse {
     string log = 1;
     string body = 2;
     string video = 3;
+    bool newBrowser = 4;
+    bool newContext = 5;
   }
 
   message PageReportResponse {
@@ -373,7 +381,7 @@ service  Playwright {
   rpc SwitchContext(Request.Index) returns (Response.String);
   rpc SwitchBrowser(Request.Index) returns (Response.String);
   rpc NewPage(Request.Url) returns (Response.NewPageResponse);
-  rpc NewContext(Request.Context) returns (Response.String);
+  rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);

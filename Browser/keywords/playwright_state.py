@@ -529,8 +529,13 @@ class PlaywrightState(LibraryComponent):
                 )
             )
         logger.info(response.log)
-        self.context_cache.add(response.body, self._get_video_size(params))
-        return response.body
+        if response.newBrowser:
+            logger.info(
+                "No browser is open and new browser was automatically "
+                "opened when this context is created."
+            )
+        self.context_cache.add(response.id, self._get_video_size(params))
+        return response.id
 
     def _set_video_path(self, params: dict) -> dict:
         video_path = params.get("videosPath")
