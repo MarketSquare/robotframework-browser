@@ -88,23 +88,11 @@ export async function waitForNavigation(request: pb.Request.UrlOptions, page: Pa
     const url = <string>request.getUrl()?.getUrl();
     const timeout = request.getUrl()?.getDefaulttimeout();
     const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getWaituntil();
-    const match = url.match(new RegExp('^/(.*?)/([gimy]*)$'));
-    if (
-        match &&
-        (() => {
-            try {
-                return new RegExp(match[1], match[2]);
-            } catch {
-                return undefined;
-            }
-        })() instanceof RegExp
-    ) {
-        await page.waitForNavigation({ timeout, url: new RegExp(match[1], match[2]), waitUntil: waitUntil });
-    } else {
-        await page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil });
-    }
-
-    return emptyWithLog(`Navigated to: ${url}, location is lll: ${page.url()}`);
+    const lastSlash = url.lastIndexOf('/');
+    const urlOrRegex =
+        url[0] === '/' && lastSlash > 0 ? new RegExp(url.substring(1, lastSlash), url.substring(lastSlash + 1)) : url;
+    await page.waitForNavigation({ timeout, url: urlOrRegex, waitUntil: waitUntil });
+    return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 
 export async function waitForDownload(request: pb.Request.FilePath, page: Page): Promise<pb.Response.Json> {

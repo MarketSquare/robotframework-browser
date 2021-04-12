@@ -183,7 +183,7 @@ class Network(LibraryComponent):
     ):
         """Waits until page has navigated to given ``url``.
 
-        ``url``  expected navigation target address either the exact match or a regex.
+        ``url``  expected navigation target address either the exact match or a JavaScript-like regex wrapped in ``/`` symbols.
 
         ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
 
