@@ -14,7 +14,7 @@
     "@typescript-eslint/parser": "^4.22.0",
     "eslint": "^7.24.0",
     "eslint-config-prettier": "^8.2.0",
-    "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
     "express": "^4.17.1",
     "grpc_tools_node_protoc_ts": "^5.2.1",
