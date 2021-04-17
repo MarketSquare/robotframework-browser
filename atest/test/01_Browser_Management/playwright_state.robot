@@ -222,10 +222,34 @@ New Context with defaultBrowserType chromium
     New Context    defaultBrowserType=chromium
     Verify Browser Type    chromium
 
-When Context Without Browser This Is Logged For User
-    [Documentation]    ...
-    ...    Log    1:3    No browser is open and new browser was automatically opened when this context is created.
-    ...    Log    2:3    None
+When Context Without Browser Is Created This Is Logged For User
+    [Documentation]
+    ...    LOG    1:4    INFO    No browser is open and new browser was automatically opened when this context is created.
+    ...    LOG    1:5    NONE
+    ...    LOG    2:4    NONE
     [Setup]    Close Browser    ALL
     New Context
     New Context
+
+When Page Without Browser Is Created This Is Logged For User
+    [Documentation]
+    ...    LOG    1:3    INFO    No browser and context are open when this page was created. New browser and context was automatically created.
+    ...    LOG    1:4    DEBUG    Video is not enabled.
+    ...    LOG    1:5    NONE
+    ...    LOG    2:3    DEBUG    Video is not enabled.
+    ...    LOG    2:4    NONE
+    [Setup]    Close Browser    ALL
+    New Page
+    New Page
+
+When Page Without Context Is Created This Is Logged For User
+    [Documentation]
+    ...    LOG    2:3    INFO    No context is open and new context was automatically opened when this page is created.
+    ...    LOG    2:4    DEBUG    Video is not enabled.
+    ...    LOG    2:5    NONE
+    ...    LOG    3:3    DEBUG    Video is not enabled.
+    ...    LOG    3:4    NONE
+    [Setup]    Close Browser    ALL
+    New Browser
+    New Page
+    New Page

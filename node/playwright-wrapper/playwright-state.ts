@@ -34,6 +34,11 @@ interface IBrowserState {
     newBrowser: boolean;
 }
 
+interface IIndexedContext {
+    context: IndexedContext;
+    newContext: boolean;
+}
+
 export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
@@ -305,14 +310,14 @@ export class BrowserState {
         await this.browser.close();
     }
 
-    public async getOrCreateActiveContext(defaultTimeout: number): Promise<IndexedContext> {
+    public async getOrCreateActiveContext(defaultTimeout: number): Promise<IIndexedContext> {
         if (this.context) {
-            return this.context;
+            return { context: this.context, newContext: false };
         } else {
             const activeBrowser = this.browser;
             const context = await _newBrowserContext(activeBrowser, defaultTimeout);
             this.pushContext(context);
-            return context;
+            return { context: context, newContext: true };
         }
     }
     get context(): IndexedContext | undefined {
@@ -402,10 +407,11 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
 
 export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {
     const browserState = await openBrowsers.getOrCreateActiveBrowser();
+    const newBrowser = browserState.newBrowser;
     const defaultTimeout = request.getDefaulttimeout();
     const context = await browserState.browser.getOrCreateActiveContext(defaultTimeout);
 
-    const page = await _newPage(context.c);
+    const page = await _newPage(context.context.c);
     const videoPath = await page.p.video()?.path();
     logger.info('Video path: ' + videoPath);
     browserState.browser.pushPage(page);
@@ -415,8 +421,10 @@ export async function newPage(request: Request.Url, openBrowsers: PlaywrightStat
         const response = new Response.NewPageResponse();
         response.setBody(page.id);
         response.setLog(`Successfully initialized new page object and opened url: ${url}`);
-        const video = { video_path: videoPath || null, contextUuid: context.id };
+        const video = { video_path: videoPath || null, contextUuid: context.context.id };
         response.setVideo(JSON.stringify(video));
+        response.setNewbrowser(newBrowser);
+        response.setNewcontext(context.newContext);
         return response;
     } catch (e) {
         browserState.browser.popPage();
