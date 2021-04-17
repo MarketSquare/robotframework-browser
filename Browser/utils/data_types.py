@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from enum import Enum, auto
-from typing import Dict, Union, List
+from typing import Dict, Tuple, Union
 
 from typing_extensions import TypedDict
 
@@ -61,7 +61,7 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
 
 class DelayedKeyword(TypedDict):
     name: str
-    args: List[str]
+    args: Tuple[str, ...]
 
 
 class BoundingBox(TypedDict, total=False):

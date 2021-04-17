@@ -5,6 +5,7 @@ Test Setup        New Page    ${LOGIN_URL}
 *** Variables ***
 ${FailureScreenshot}=    ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
 ${FailureScreenshot2}=    ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
+${FailureScreenshot3}=    ${OUTPUT_DIR}${/}myfailure_screenshot.png
 ${TestScreenshot}=    ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
@@ -27,6 +28,16 @@ Register KåWä On Failure with unicode " 💩 "
     File Should Exist    ${FailureScreenshot2}
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot2}
+
+Register kw with custom path
+    Type Text    css=input#username_field    username
+    ${prev}=    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
+    Run Keyword And Expect Error
+    ...    *'username' (str) should be 'not_username' (str)
+    ...    Get Text    css=input#username_field    ==    not_username
+    File Should Exist    ${FailureScreenshot3}
+    Register Keyword To Run On Failure    ${prev}
+    [Teardown]    Remove File    ${FailureScreenshot3}
 
 Screenshot By Default Filename
     Take Screenshot

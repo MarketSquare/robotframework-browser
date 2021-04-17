@@ -28,8 +28,7 @@ from ..utils import is_falsy, keyword, logger
 class RunOnFailureKeywords(LibraryComponent):
     @keyword(tags=("Config",))
     def register_keyword_to_run_on_failure(
-        self, keyword: Optional[str],
-        *args: str
+        self, keyword: Optional[str], *args: str
     ) -> Optional[str]:
         """Sets the keyword to execute, when a Browser keyword fails.
 
@@ -37,6 +36,8 @@ class RunOnFailureKeywords(LibraryComponent):
         Browser keyword fails. It is possible to use any available
         keyword, including user keywords or keywords from other libraries,
         but the keyword must not take any arguments.
+
+        ``args`` are the arguments to the keyword if any.
 
         The initial keyword to use is set when `importing` the library, and
         the keyword that is used by default is `Take Screenshot`.
@@ -59,9 +60,11 @@ class RunOnFailureKeywords(LibraryComponent):
 
         """
         old_keyword = self.library.run_on_failure_keyword
-        self.library.run_on_failure_keyword = (None if is_falsy(keyword) else {
-            "name": keyword,
-            "args": args
-        })
+        if keyword is None or is_falsy(keyword):
+            self.library.run_on_failure_keyword = None
+        else:
+            self.library.run_on_failure_keyword = {"name": keyword, "args": args}
         logger.info(f"{keyword or 'No keyword'} will be run on failure.")
-        return old_keyword
+        if old_keyword is None:
+            return None
+        return old_keyword["name"]

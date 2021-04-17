@@ -50,7 +50,7 @@ from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
 
 # Importing this directly from .utils break the stub type checks
-from .utils.data_types import SupportedBrowsers, DelayedKeyword
+from .utils.data_types import DelayedKeyword, SupportedBrowsers
 from .version import __version__ as VERSION
 
 
@@ -646,10 +646,7 @@ class Browser(DynamicCore):
         self._running_on_failure_keyword = False
         self._pause_on_failure: Set["Browser"] = set()
         self.run_on_failure_keyword = (
-            None if is_falsy(run_on_failure) else {
-                "name": run_on_failure,
-                "args": []
-            }
+            None if is_falsy(run_on_failure) else {"name": run_on_failure, "args": ()}
         )
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             external_browser_executable or {}
@@ -845,10 +842,14 @@ class Browser(DynamicCore):
         try:
             self._running_on_failure_keyword = True
             if is_same_keyword(self.run_on_failure_keyword["name"], "Take Screenshot"):
-                self.take_screenshot(self._failure_screenshot_path())
+                args = self.run_on_failure_keyword["args"]
+                path = args[0] if args else self._failure_screenshot_path()
+                self.take_screenshot(path)
             else:
-                BuiltIn().run_keyword(self.run_on_failure_keyword["name"],
-                                      *self.run_on_failure_keyword["args"])
+                BuiltIn().run_keyword(
+                    self.run_on_failure_keyword["name"],
+                    *self.run_on_failure_keyword["args"],
+                )
         except Exception as err:
             logger.warn(
                 f"Keyword '{self.run_on_failure_keyword['name']}' could not be run on failure:\n{err}"

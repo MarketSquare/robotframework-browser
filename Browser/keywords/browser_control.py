@@ -13,6 +13,7 @@
 # limitations under the License.
 import base64
 import json
+import os
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional
@@ -57,7 +58,12 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     def _get_screenshot_path(self, filename: str, fileType: str) -> Path:
-        directory = self.screenshots_output
+        if os.path.isabs(filename):
+            d, file = os.path.split(filename)
+            directory = Path(d)
+            filename = os.path.splitext(file)[0]
+        else:
+            directory = self.screenshots_output
         # Filename didn't contain {index}
         if "{index}" not in filename:
             return directory / filename
@@ -89,6 +95,7 @@ class Control(LibraryComponent):
          number. Use this to not override filenames. If filename equals to EMBED (case insensitive),
          then screenshot is embedded as Base64 image to the log.html. The image is saved temporally
          to the disk and warning is displayed if removing the temporary file fails.
+         If the filename is an absolute path, then filename is considered as an absolute path.
 
          The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
