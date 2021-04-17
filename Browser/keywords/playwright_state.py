@@ -531,8 +531,8 @@ class PlaywrightState(LibraryComponent):
         logger.info(response.log)
         if response.newBrowser:
             logger.info(
-                "No browser is open and new browser was automatically "
-                "opened when this context is created."
+                "No browser was open. New browser was automatically opened "
+                "when this context is created."
             )
         self.context_cache.add(response.id, self._get_video_size(params))
         return response.id
@@ -584,7 +584,6 @@ class PlaywrightState(LibraryComponent):
         and `New Context` are executed with default values first.
 
         ``url`` If specified it will open the new page to the specified URL.
-
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(
@@ -596,13 +595,13 @@ class PlaywrightState(LibraryComponent):
         logger.info(response.log)
         if response.newBrowser:
             logger.info(
-                "No browser and context are open when this page was created. New browser "
-                "and context was automatically created."
+                "No browser and context was open. New browser and context was "
+                "automatically opened when page is created."
             )
         if response.newContext and not response.newBrowser:
             logger.info(
-                "No context is open and new context was automatically "
-                "opened when this page is created."
+                "No context was open. New context was automatically opened when "
+                "this page is created."
             )
         self._embed_video(json.loads(response.video))
         return response.body
