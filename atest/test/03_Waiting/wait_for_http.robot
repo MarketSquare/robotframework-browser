@@ -29,13 +29,36 @@ Wait For Response async
     Click    \#delayed_request
     ${body}=    Wait For    ${promise}
 
-Wait until network is idle works
+Wait Until Network Is Idle Works
     Go To    ${ROOT_URL}/delayed-load.html
     Get text    \#server_delayed_response    ==    Server response after 400ms
     Wait until network is idle    timeout=3s
     Get text    \#server_delayed_response    ==    after some time I respond
 
-Wait for navigation works
+Wait For Navigation Works
     Go To    ${ROOT_URL}/redirector.html
     Wait for navigation    ${ROOT_URL}/posted.html
     Get Url    ==    ${ROOT_URL}/posted.html
+
+Wait For Navigation Works With Regex
+    Go To    ${ROOT_URL}/redirector.html
+    Wait for navigation    /p[\\w]{4}d/i
+    Get Url    contains    posted
+
+Wait For Navigation Fails With Wrong Regex
+    Go To    ${ROOT_URL}/redirector.html
+    Run Keyword And Expect Error    *TimeoutError*    Wait for navigation    foobar
+    Get Url    not contains    foobar
+
+Wait For Navigation Fails With Wrong wait_until
+    Go To    ${ROOT_URL}/redirector.html
+    Run Keyword And Expect Error
+    ...    *PageLoadStates does not have member 'foobar'. Available: 'domcontentloaded', 'load' and 'networkidle'*
+    ...    Wait for navigation    ${ROOT_URL}/posted.html    wait_until=foobar
+
+Wait For Navigation Works With wait_until
+    FOR    ${wait_until}    IN    domcontentloaded    load    networkidle
+        Go To    ${ROOT_URL}/redirector.html
+        Wait for navigation    ${ROOT_URL}/posted.html    wait_until=${wait_until}
+        Get Url    contains    posted
+    END
