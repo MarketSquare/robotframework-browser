@@ -50,7 +50,7 @@ from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
 
 # Importing this directly from .utils break the stub type checks
-from .utils.data_types import SupportedBrowsers
+from .utils.data_types import SupportedBrowsers, DelayedKeyword
 from .version import __version__ as VERSION
 
 
@@ -596,6 +596,7 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     _context_cache = ContextCache()
     _suite_cleanup_done = False
+    run_on_failure_keyword: Optional[DelayedKeyword] = None
 
     def __init__(
         self,
@@ -645,7 +646,10 @@ class Browser(DynamicCore):
         self._running_on_failure_keyword = False
         self._pause_on_failure: Set["Browser"] = set()
         self.run_on_failure_keyword = (
-            None if is_falsy(run_on_failure) else run_on_failure
+            None if is_falsy(run_on_failure) else {
+                "name": run_on_failure,
+                "args": []
+            }
         )
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             external_browser_executable or {}
@@ -840,13 +844,14 @@ class Browser(DynamicCore):
             return
         try:
             self._running_on_failure_keyword = True
-            if is_same_keyword(self.run_on_failure_keyword, "Take Screenshot"):
+            if is_same_keyword(self.run_on_failure_keyword["name"], "Take Screenshot"):
                 self.take_screenshot(self._failure_screenshot_path())
             else:
-                BuiltIn().run_keyword(self.run_on_failure_keyword)
+                BuiltIn().run_keyword(self.run_on_failure_keyword["name"],
+                                      *self.run_on_failure_keyword["args"])
         except Exception as err:
             logger.warn(
-                f"Keyword '{self.run_on_failure_keyword}' could not be run on failure:\n{err}"
+                f"Keyword '{self.run_on_failure_keyword['name']}' could not be run on failure:\n{err}"
             )
         finally:
             self._running_on_failure_keyword = False
