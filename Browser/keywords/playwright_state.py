@@ -594,6 +594,16 @@ class PlaywrightState(LibraryComponent):
                 Request().Url(url=(url or ""), defaultTimeout=int(self.timeout))
             )
         logger.info(response.log)
+        if response.newBrowser:
+            logger.info(
+                "No browser and context are open when this page was created. New browser "
+                "and context was automatically created."
+            )
+        if response.newContext and not response.newBrowser:
+            logger.info(
+                "No context is open and new context was automatically "
+                "opened when this page is created."
+            )
         self._embed_video(json.loads(response.video))
         return response.body
 

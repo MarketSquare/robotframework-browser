@@ -321,6 +321,7 @@ def run_tests(c, tests):
     )
     return process.wait(600)
 
+
 def _run_pabot(extra_args=None, exit=True):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
