@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from enum import Enum, auto
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 from typing_extensions import TypedDict
 
@@ -57,6 +57,11 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
                 typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])  # type: ignore
             params[arg_name] = typed_dict
     return params
+
+
+class DelayedKeyword(TypedDict):
+    name: str
+    args: Tuple[str, ...]
 
 
 class BoundingBox(TypedDict, total=False):
