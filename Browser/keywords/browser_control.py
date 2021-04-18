@@ -87,7 +87,7 @@ class Control(LibraryComponent):
         quality: str = "",
         timeout: Optional[timedelta] = None,
     ) -> str:
-        """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
+        """Takes a screenshot of the current window and saves it.
 
         ``filename`` Filename into which to save. The file will be saved into the robot framework
          ${OUTPUTDIR}/browser/screenshot directory by default, but it can overwritten by providing
