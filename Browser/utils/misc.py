@@ -22,7 +22,7 @@ from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 get_variable_value = BuiltIn().get_variable_value
 
 
-def find_free_port() -> str:
+def find_free_port() -> int:
     with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
