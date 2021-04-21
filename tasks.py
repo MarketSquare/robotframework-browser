@@ -11,8 +11,6 @@ from invoke import task, Exit
 from robot import rebot_cli
 from robot import __version__ as robot_version
 
-from Browser.utils import find_free_port
-
 try:
     from pabot import pabot
     import pytest
@@ -20,6 +18,7 @@ try:
     from robot.libdoc import libdoc
     import robotstatuschecker
     import bs4
+    from Browser.utils import find_free_port
 except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
