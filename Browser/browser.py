@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
 from assertionengine import AssertionOperator
+from overrides import overrides
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.result.model import TestCase as TestCaseResult  # type: ignore
 from robot.running.model import TestCase as TestCaseRunning  # type: ignore
@@ -879,6 +880,7 @@ class Browser(DynamicCore):
     def millisecs_to_timestr(self, timeout: float) -> str:
         return secs_to_timestr(timeout / 1000)
 
+    @overrides
     def get_keyword_documentation(self, name):
         doc = DynamicCore.get_keyword_documentation(self, name)
         if name == "__intro__":
