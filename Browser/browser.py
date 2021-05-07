@@ -47,6 +47,7 @@ from .keywords import (
     Waiter,
     WebAppState,
 )
+from .keywords.crawling import Crawling
 from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
 
@@ -667,6 +668,7 @@ class Browser(DynamicCore):
             Promises(self),
             Waiter(self),
             WebAppState(self),
+            Crawling(self),
         ]
         self.playwright = Playwright(self, enable_playwright_debug)
         self._auto_closing_level = auto_closing_level

@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 
 class LibraryComponent:
+    library: "Browser"
+
     def __init__(self, library: "Browser") -> None:
         """Base class exposing attributes from the common context.
 
