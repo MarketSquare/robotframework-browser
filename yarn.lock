@@ -1625,18 +1625,18 @@ grpc-tools@^1.11.1:
   dependencies:
     node-pre-gyp "^0.15.0"
 
-grpc_tools_node_protoc_ts@^5.2.1:
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/grpc_tools_node_protoc_ts/-/grpc_tools_node_protoc_ts-5.2.1.tgz#6f328596b38552196ea8fea62cc67cd8c34a7440"
-  integrity sha512-6uXvrxHkl0ax2EZIqIGL7qcgIj9Nspi+gbuGPDN20/yS4a/jvWCCUxjF2XHwBK/AKdgL0pMpW0shnyhPNPiLsA==
+grpc_tools_node_protoc_ts@^5.2.2:
+  version "5.2.2"
+  resolved "https://registry.yarnpkg.com/grpc_tools_node_protoc_ts/-/grpc_tools_node_protoc_ts-5.2.2.tgz#167979b76b5b4d55aed7a5be23eff08b82f2cd26"
+  integrity sha512-j8waJdU9uzNSyYJfEAGFFJdxP2C3k7RNkgI1dXxLB/iaT+D54p/RX1Wo+cHH2wPhBSE8hnv+BUv7HuEVT/XLPw==
   dependencies:
     google-protobuf "3.15.8"
-    handlebars "4.7.6"
+    handlebars "4.7.7"
 
-handlebars@4.7.6:
-  version "4.7.6"
-  resolved "https://registry.npmjs.org/handlebars/-/handlebars-4.7.6.tgz"
-  integrity sha512-1f2BACcBfiwAfStCKZNrUCgqNZkGsAT7UM3kkYtXuLo0KnaVfjKOyf7PRzB6++aK9STyT1Pd2ZCPe3EGOXleXA==
+handlebars@4.7.7:
+  version "4.7.7"
+  resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.7.7.tgz#9ce33416aad02dbd6c8fafa8240d5d98004945a1"
+  integrity sha512-aAcXm5OAfE/8IXkcZvCepKU3VzW1/39Fb5ZuqMtgI/hT8X2YgoMvBY5dLhq/cpOvw7Lk1nK/UF71aLG/ZnVYRA==
   dependencies:
     minimist "^1.2.5"
     neo-async "^2.6.0"
