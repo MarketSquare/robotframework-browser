@@ -14,7 +14,7 @@ robotstatuschecker >= 2.0.3
 rellu >= 0.7
 approvaltests >= 0.3.2
 pytest-approvaltests >= 0.1.0
-pytest-mock==3.6.0
+pytest-mock==3.6.1
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.9.3
 # Include normal dependencies from requirements.txt. Makes it possible to use
