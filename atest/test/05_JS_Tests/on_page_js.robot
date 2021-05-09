@@ -5,6 +5,12 @@ Test Setup        New Page    ${LOGIN_URL}
 Suite Teardown    Close Browser
 
 *** Test Cases ***
+JS execute without and with element
+    ${result}    Execute JavaScript    () => {return false;}
+    Should Be Equal    ${result}    ${False}
+    ${result}    Execute JavaScript    () => {return false;}    body
+    Should Be Equal    ${result}    ${False}
+
 Results from page
     ${result}=    Execute JavaScript    "hello from page "+location.href
     should be equal    ${result}    hello from page ${LOGIN_URL}

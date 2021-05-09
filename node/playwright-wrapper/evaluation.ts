@@ -66,9 +66,13 @@ export async function executeJavascript(
     const selector = request.getSelector();
     let script = request.getScript();
     let elem;
+    try {
+        script = eval(script);    
+    } catch (error) {
+        logger.info(`On executeJavascript, supress ${error} for eval.`)
+    }
     if (selector) {
         elem = await determineElement(state, selector);
-        script = eval(script);
     }
     const result = await page.evaluate(script, elem);
     return jsResponse(result as string, 'JavaScript executed successfully.');

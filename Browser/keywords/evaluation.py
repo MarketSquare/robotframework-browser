@@ -45,6 +45,7 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
             if response.result:
                 return json.loads(response.result)
+            return response.result
 
     @keyword(tags=("Setter", "PageContent"))
     def highlight_elements(
