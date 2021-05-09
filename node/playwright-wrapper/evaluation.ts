@@ -67,9 +67,9 @@ export async function executeJavascript(
     let script = request.getScript();
     let elem;
     try {
-        script = eval(script);    
+        script = eval(script);
     } catch (error) {
-        logger.info(`On executeJavascript, supress ${error} for eval.`)
+        logger.info(`On executeJavascript, supress ${error} for eval.`);
     }
     if (selector) {
         elem = await determineElement(state, selector);
@@ -104,6 +104,11 @@ export async function waitForFunction(
     logger.info(`unparsed args: ${script}, ${request.getSelector()}, ${request.getOptions()}`);
 
     let elem;
+    try {
+        script = eval(script);
+    } catch (error) {
+        logger.info(`On waitForFunction, supress ${error} for eval.`);
+    }
     if (selector) {
         elem = await determineElement(state, selector);
         script = eval(script);

@@ -7,6 +7,16 @@ Test Setup        New Page    ${LOGIN_URL}
 ${timeout_message}=    TimeoutError: page.waitForFunction: Timeout 100ms exceeded.
 
 *** Test Cases ***
+Wait For Function No Element and fail on timeout
+    Run Keyword And Expect Error
+    ...    TimeoutError*
+    ...    Wait For Function    () => {return false;}
+
+Wait For Function Element and fail on timeout
+    Run Keyword And Expect Error
+    ...    TimeoutError*
+    ...    Wait For Function    () => {return false;}    body
+
 Succesful Wait For Function
     Wait For Function    true    timeout=500ms
 
