@@ -24,6 +24,11 @@ Only Python 3.7 or newer is supported.
 4. Install the node dependencies: run `rfbrowser init` in your shell
   - if `rfbrowser` is not found, try `python -m Browser.entry init`
 
+Please note that by default Chromium, Firefox and WebKit browser are installed, even those would be already
+installed in the system. The installation size depends on the operating system, but usually is +700Mb.
+It is possible to skip browser binaries installation with `rfbrowser init --skip-browsers` command, but then user
+is responsible for browser binary installation.
+
 Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [atest/docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/master/atest/docker/README.md).
 
 ## Update instructions
