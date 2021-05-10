@@ -331,6 +331,24 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "JaPyR",
+      "name": "Aleh Borysiewicz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7773301?v=4",
+      "profile": "https://github.com/JaPyR",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "jkpubsrc",
+      "name": "Jürgen Knauth",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25060709?v=4",
+      "profile": "http://www.binary-overflow.de",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
