@@ -166,6 +166,8 @@ class Getters(LibraryComponent):
             logger.debug(response.log)
             if response.body:
                 value = json.loads(response.body)
+            else:
+                value = response.body
             return verify_assertion(
                 value, assertion_operator, assertion_expected, "Text", message
             )
