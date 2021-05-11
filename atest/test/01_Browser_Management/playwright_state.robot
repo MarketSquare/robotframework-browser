@@ -162,7 +162,7 @@ Close Page gets errors and console log
     ${response}=    Close Page
     Log    ${response}
     Should be equal    ${response}[0][console][0][text]    Hello from warning
-    Should match    ${response}[0][errors][0]    Error: a is not defined*
+    Should match    ${response}[0][errors][0]    *Error: a is not defined*
     Should be equal    ${response}[0][id]    ${id}
 
 Context indices are unique
