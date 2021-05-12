@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 from Browser.keywords import Getters
 
@@ -11,7 +11,7 @@ def test_get_text():
     response = MagicMock()
     response.log = ""
     response.body = ""
-    get_text.GetText = Mock(return_value=response)
+    get_text.GetText = MagicMock(return_value=response)
     enter = MagicMock(return_value=get_text)
     grpc.__enter__ = enter
     pw.grpc_channel.return_value = grpc
