@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import time
 from datetime import timedelta
 from typing import Dict, Optional, Union
 
@@ -71,15 +72,20 @@ class Waiter(LibraryComponent):
             ElementState.visible,
             ElementState.hidden,
         ]:
-            try:
-                self._wait_for_elements_state(selector, state, timeout)
-            except Exception:
-                if message:
-                    message = message.format(
-                        selector=selector, function=state, timeout=timeout
-                    )
-                    raise AssertionError(message)
-                raise
+            end = time.monotonic() + timeout if timeout else self.timeout / 1000  # type: ignore
+            while True:
+                try:
+                    return self._wait_for_elements_state(selector, state, timeout)
+                except Exception as error:
+                    if end > time.monotonic():
+                        logger.debug(f"Suppress error: {error}")
+                    else:
+                        if message:
+                            message = message.format(
+                                selector=selector, function=state, timeout=timeout
+                            )
+                            raise AssertionError(message)
+                        raise
         else:
             self.wait_for_function(
                 funct[state], selector=selector, timeout=timeout, message=message
@@ -137,6 +143,8 @@ class Waiter(LibraryComponent):
         | Click         \\#progress_bar
         | Wait For      ${promise}
         """
+        end = time.monotonic() + timeout if timeout else self.timeout / 1000  # type: ignore
+        # while True:
         try:
             self._wait_for_function(function, selector, polling, timeout)
         except Exception:
