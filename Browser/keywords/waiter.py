@@ -144,16 +144,19 @@ class Waiter(LibraryComponent):
         | Wait For      ${promise}
         """
         end = time.monotonic() + timeout if timeout else self.timeout / 1000  # type: ignore
-        # while True:
-        try:
-            self._wait_for_function(function, selector, polling, timeout)
-        except Exception:
-            if message:
-                message = message.format(
-                    selector=selector, function=function, timeout=timeout
-                )
-                raise AssertionError(message)
-            raise
+        while True:
+            try:
+                return self._wait_for_function(function, selector, polling, timeout)
+            except Exception as error:
+                if end > time.monotonic():
+                    logger.debug(f"Suppress {error}")
+                else:
+                    if message:
+                        message = message.format(
+                            selector=selector, function=function, timeout=timeout
+                        )
+                        raise AssertionError(message)
+                    raise
 
     def _wait_for_function(
         self,
