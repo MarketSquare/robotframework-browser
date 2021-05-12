@@ -164,12 +164,8 @@ class Getters(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetText(Request().ElementSelector(selector=selector))
             logger.debug(response.log)
-            if response.body:
-                value = json.loads(response.body)
-            else:
-                value = response.body
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "Text", message
+                response.body, assertion_operator, assertion_expected, "Text", message
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))

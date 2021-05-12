@@ -95,7 +95,7 @@ export async function getText(request: Request.ElementSelector, state: Playwrigh
         logger.error(e);
         throw e;
     }
-    return stringResponse(JSON.stringify(content), 'Text received successfully.');
+    return stringResponse(content, 'Text received successfully.');
 }
 
 export async function getBoolProperty(
