@@ -72,17 +72,13 @@ class Waiter(LibraryComponent):
             ElementState.visible,
             ElementState.hidden,
         ]:
-            end = timeout if timeout else self.timeout / 1000  # type: ignore
+            end = float(timeout if timeout else self.timeout / 1000)  # type: ignore
             end += time.monotonic()
-            print(end)
-            print(time.monotonic())
             while True:
                 try:
                     return self._wait_for_elements_state(selector, state, timeout)
                 except Exception as error:
-                    now = time.monotonic()
-                    print(now)
-                    if end > now:
+                    if end > time.monotonic():
                         logger.debug(f"Suppress error: {error}")
                     else:
                         if message:

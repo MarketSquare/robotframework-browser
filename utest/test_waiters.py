@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock, PropertyMock
 
-import pytest
-
 from Browser import ElementState
 from Browser.keywords import Waiter
 
@@ -25,7 +23,6 @@ def test_wait_for_state_error():
     pw.grpc_channel.return_value = grpc
     ctx.playwright = pw
     wait = Waiter(ctx)
-    # pytest.set_trace()
     wait.wait_for_elements_state("id=myText")
 
 
