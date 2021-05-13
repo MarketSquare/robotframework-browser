@@ -25,8 +25,8 @@ if (Object.keys(port).length == 0) {
 }
 const server = new Server();
 server.addService(
-    (PlaywrightService as unknown) as ServiceDefinition<UntypedServiceImplementation>,
-    (new PlaywrightServer() as unknown) as UntypedServiceImplementation,
+    PlaywrightService as unknown as ServiceDefinition<UntypedServiceImplementation>,
+    new PlaywrightServer() as unknown as UntypedServiceImplementation,
 );
 server.bindAsync(`localhost:${port}`, ServerCredentials.createInsecure(), () => {
     logger.info(`Listening on ${port}`);
