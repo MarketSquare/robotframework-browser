@@ -11,7 +11,7 @@ def test_wait_for_state(ctx: MagicMock, response: MagicMock):
 
 def test_wait_for_state_error():
     ctx = MagicMock()
-    ctx.timeout = 1000
+    ctx.timeout = 10000
     pw = MagicMock()
     grpc = MagicMock()
     get_text = MagicMock()
@@ -28,7 +28,7 @@ def test_wait_for_state_error():
 
 def test_wait_for_function():
     ctx = MagicMock()
-    ctx.timeout = 1000
+    ctx.timeout = 10000
     pw = MagicMock()
     grpc = MagicMock()
     get_text = MagicMock()
