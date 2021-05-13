@@ -24,3 +24,4 @@ ${GEOLOCATION_URL}     ${ROOT_URL}/geolocation.html
 ${DEFAULT_TEST_TIMEOUT}    30 seconds
 ${PLAYWRIGHT_TIMEOUT}    3 second
 ${SLOW_PAGE}      ${ROOT_URL}/slowpage.html
+${WEBCOMPONENT_PAGE}   ${ROOT_URL}/webcomponent.html
