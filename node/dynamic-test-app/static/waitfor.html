@@ -62,7 +62,7 @@
             }
 
             async function submit(event) {
-                await sleep(500);
+                await sleep(700);
                 switch(victimaction) {
                     case "attached":
                         document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
@@ -135,6 +135,7 @@
             <br><br>
             <button id="submit" type="submit" value="Submit" onclick="submit.call(this, event)">Go</button>
         <!--/form-->
+        <div>Timeout is 700 ms</div>
         <div id="place"></div>
     </body>
 </html>

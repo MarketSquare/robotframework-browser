@@ -125,4 +125,4 @@ Wait For Elements State to hide with Promise and wait for all promises
     Wait For Elements State    \#victim    visible    300ms
     Wait For All Promises
     ${end}=    Evaluate    time.time()
-    Should Be True    ($end - $start) < 0.7
+    Should Be True    ($end - $start) < 0.9
