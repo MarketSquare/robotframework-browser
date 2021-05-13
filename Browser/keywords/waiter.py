@@ -72,7 +72,9 @@ class Waiter(LibraryComponent):
             ElementState.visible,
             ElementState.hidden,
         ]:
-            end = float(timeout if timeout else self.timeout / 1000)  # type: ignore
+            end = float(
+                self.convert_timeout(timeout, False) if timeout else self.timeout / 1000
+            )
             end += time.monotonic()
             while True:
                 try:
@@ -144,7 +146,9 @@ class Waiter(LibraryComponent):
         | Click         \\#progress_bar
         | Wait For      ${promise}
         """
-        end = float(timeout if timeout else self.timeout / 1000)  # type: ignore
+        end = float(
+            self.convert_timeout(timeout, False) if timeout else self.timeout / 1000
+        )
         end += time.monotonic()
         while True:
             try:
