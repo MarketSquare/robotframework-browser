@@ -872,7 +872,9 @@ class Browser(DynamicCore):
             return self.timeout
         return self.convert_timeout(timeout)
 
-    def convert_timeout(self, timeout: Union[timedelta, float], to_ms: bool = True) -> float:
+    def convert_timeout(
+        self, timeout: Union[timedelta, float], to_ms: bool = True
+    ) -> float:
         convert = 1000 if to_ms else 1
         if isinstance(timeout, timedelta):
             return timeout.total_seconds() * convert
