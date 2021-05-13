@@ -144,7 +144,8 @@ class Waiter(LibraryComponent):
         | Click         \\#progress_bar
         | Wait For      ${promise}
         """
-        end = time.monotonic() + timeout if timeout else self.timeout / 1000  # type: ignore
+        end = float(timeout if timeout else self.timeout / 1000)  # type: ignore
+        end += time.monotonic()
         while True:
             try:
                 return self._wait_for_function(function, selector, polling, timeout)
