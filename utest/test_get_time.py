@@ -27,6 +27,7 @@ def test_rf_time(lib: Browser):
 
 def test_convert_timeout(lib: Browser):
     assert lib.convert_timeout(0.1) == 100
+    assert lib.convert_timeout(0.1, False) == 0.1
 
 
 def test_millisecs_to_timestr(lib: Browser):

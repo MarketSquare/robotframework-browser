@@ -79,8 +79,8 @@ class LibraryComponent:
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
 
-    def convert_timeout(self, timeout: Union[timedelta, float]) -> float:
-        return self.library.convert_timeout(timeout)
+    def convert_timeout(self, timeout: Union[timedelta, float], to_ms: bool = True) -> float:
+        return self.library.convert_timeout(timeout, to_ms)
 
     def millisecs_to_timestr(self, timeout: float) -> str:
         return self.library.millisecs_to_timestr(timeout)
