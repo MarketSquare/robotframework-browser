@@ -76,12 +76,12 @@ export async function getDomProperty(
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
-async function getTextContentProperty(element: ElementHandle<Node>): Promise<string> {
+async function getTextContent(element: ElementHandle<Node>): Promise<string> {
     const tag = await (await element.getProperty('tagName')).jsonValue();
     if (tag === 'INPUT' || tag === 'TEXTAREA') {
-        return 'value';
+        return await (await element.getProperty('value')).jsonValue();
     }
-    return 'innerText';
+    return await element.innerText();
 }
 
 export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
@@ -89,7 +89,7 @@ export async function getText(request: Request.ElementSelector, state: Playwrigh
     const element = await waitUntilElementExists(state, selector);
     let content: string;
     try {
-        content = await (await element.getProperty(await getTextContentProperty(element))).jsonValue();
+        content = await getTextContent(element);
         logger.info(`Retrieved text for element ${selector} containing ${content}`);
     } catch (e) {
         logger.error(e);
