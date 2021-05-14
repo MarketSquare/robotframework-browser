@@ -20,7 +20,7 @@
     "grpc_tools_node_protoc_ts": "^5.2.2",
     "grpc-tools": "^1.11.1",
     "html-webpack-plugin": "^5.3.1",
-    "husky": "6.0.0",
+    "husky": "^6.0.0",
     "lint-staged": "^11.0.0",
     "pino": "^6.11.3",
     "prettier": "^2.3.0",
@@ -42,15 +42,10 @@
     "playwright": "^1.11.0",
     "uuid": "^8.3.2"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "echo 'precommit 🔱' && inv lint",
-      "pre-push": "echo 'prepush 🚀' && inv build && inv utest && inv atest"
-    }
-  },
   "scripts": {
     "build": "webpack --config node/webpack.config.js",
     "watch": "webpack --config node/webpack.config.js --watch",
-    "lint": "eslint 'node/**/*.{ts,tsx}' --quiet --fix"
+    "lint": "eslint 'node/**/*.{ts,tsx}' --quiet --fix",
+    "prepare": "husky install"
   }
 }
