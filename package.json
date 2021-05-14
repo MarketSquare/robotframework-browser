@@ -45,7 +45,6 @@
   "scripts": {
     "build": "webpack --config node/webpack.config.js",
     "watch": "webpack --config node/webpack.config.js --watch",
-    "lint": "eslint 'node/**/*.{ts,tsx}' --quiet --fix",
-    "prepare": "husky install"
+    "lint": "eslint 'node/**/*.{ts,tsx}' --quiet --fix"
   }
 }
