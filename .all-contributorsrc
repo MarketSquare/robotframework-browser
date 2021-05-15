@@ -349,6 +349,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "dalaakso",
+      "name": "dalaakso",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50731554?v=4",
+      "profile": "https://github.com/dalaakso",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
