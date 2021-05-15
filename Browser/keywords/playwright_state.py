@@ -518,8 +518,9 @@ class PlaywrightState(LibraryComponent):
         params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)
+        masked_params = self._mask_credentials(params.copy())
         options = json.dumps(params, default=str)
-        logger.info(options)
+        logger.info(json.dumps(masked_params, default=str))
         with self.playwright.grpc_channel() as stub:
             response = stub.NewContext(
                 Request().Context(
@@ -528,7 +529,10 @@ class PlaywrightState(LibraryComponent):
                     defaultTimeout=int(self.timeout),
                 )
             )
-        logger.info(response.log)
+        log_msg, json_data = response.log.split("options:")
+        log_msg = f"{log_msg} options:"
+        json_data = self._mask_credentials(json.loads(json_data))
+        logger.info(f"{log_msg}\n{json.dumps(json_data)}")
         if response.newBrowser:
             logger.info(
                 "No browser was open. New browser was automatically opened "
@@ -536,6 +540,11 @@ class PlaywrightState(LibraryComponent):
             )
         self.context_cache.add(response.id, self._get_video_size(params))
         return response.id
+
+    def _mask_credentials(self, data: dict):
+        if "httpCredentials" in data:
+            data["httpCredentials"] = "XXX"
+        return data
 
     def _set_video_path(self, params: dict) -> dict:
         video_path = params.get("videosPath")
