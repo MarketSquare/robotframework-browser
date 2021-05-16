@@ -447,9 +447,16 @@ class PlaywrightState(LibraryComponent):
 
         ``httpCredentials`` Credentials for
         [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication].
-        - example: ``{'username': 'admin', 'password': '123456'}``
+        - example: ``{'username': '$username', 'password': '$pwd'}``
         - ``username``
         - ``password``
+        Direct usage of username and password is not recommended, but is possible. If username and password
+        is directly used, it can leak secret information to Robot Framework output files. Instead the username
+        and password values can be prefixed with ``$`` or ``%``.  Then keyword will internally resolve the
+        values and secrets are not leaked to Robot Framework output files. The ``$`` prefix will resolve Robot
+        Framework variable and ``%`` will resolve environment variable. If
+        [https://marketsquare.github.io/robotframework-browser/Browser.html#Importing|enable_playwright_debug]
+        is enabled, all secrets are written as plain text in Playwright debugs logs.
 
         ``colorScheme`` Emulates 'prefers-colors-scheme'
         media feature, supported values are 'light', 'dark', 'no-preference'.
@@ -515,6 +522,10 @@ class PlaywrightState(LibraryComponent):
         params = locals_to_params(locals())
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
+        if "httpCredentials" in params and params["httpCredentials"] is not None:
+            self.resolve_secret(
+                httpCredentials, params.get("httpCredentials"), "httpCredentials"
+            )
         params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)

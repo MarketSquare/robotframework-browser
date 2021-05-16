@@ -39,6 +39,9 @@ Fill Text With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill Secret Direct Value
+    [Documentation]    ...
+    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use variables or environment variables instead.
+    ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use variables or environment variables instead.
     Type Secret    css=input#username_field    Direct Value    200 ms    True
     Get Text    css=input#username_field    ==    Direct Value
     Fill Secret    css=input#password_field    Direct Value

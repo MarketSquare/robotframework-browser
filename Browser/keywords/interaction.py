@@ -149,7 +149,9 @@ class Interaction(LibraryComponent):
         See `Type Text` for details.
         """
         originals = self._get_original_values(locals())
-        secret = self.resolve_secret(secret, originals.get("secret") or secret)
+        secret = self.resolve_secret(
+            secret, originals.get("secret") or secret, "secret"
+        )
         self._type_text(selector, secret, delay, clear, log_response=False)
 
     def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
@@ -197,7 +199,9 @@ class Interaction(LibraryComponent):
         See `Fill Text` for other details.
         """
         originals = self._get_original_values(locals())
-        secret = self.resolve_secret(secret, originals.get("secret") or secret)
+        secret = self.resolve_secret(
+            secret, originals.get("secret") or secret, "secret"
+        )
         self._fill_text(selector, secret, log_response=False)
 
     @keyword(tags=("Setter", "PageContent"))
