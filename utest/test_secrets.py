@@ -1,44 +1,38 @@
+from unittest.mock import MagicMock
+
 import Browser.keywords.interaction as interaction
 
+WARN_MESSAGE = (
+    "WARNING  RobotFramework:logger.py:95 Direct assignment of values as 'secret' is "
+    "deprecated. Use variables or environment variables instead.\n"
+)
 
-def test_fill_or_type_secret_in_plain_text_logs_warning():
-    def whole_lib():
-        pass
 
-    whole_lib.current_arguments = False
+def test_fill_secret_in_plain_text(caplog):
+    secrerts = interaction.Interaction(MagicMock())
+    secrerts.fill_secret("selector", "password")
+    assert caplog.text == WARN_MESSAGE
 
-    class MyLogger:
-        def __init__(self):
-            self.message = None
 
-        def warn(self, message):
-            self.message = message
+def test_type_secret_in_plain_text(caplog):
+    secrerts = interaction.Interaction(MagicMock())
+    secrerts.type_secret("selector", "password")
+    assert caplog.text == WARN_MESSAGE
 
-    interaction.logger = MyLogger()
-    interaction.get_variable_value = lambda *args: "value"
 
-    browser = interaction.Interaction(whole_lib)
-    browser._fill_text = lambda selector, secret, log_response=False: 0
-    browser._type_text = lambda selector, secret, delay, clear, log_response=False: 0
+def test_type_secret_with_prefix(caplog):
+    secrerts = interaction.Interaction(MagicMock())
+    secrerts._replace_placeholder_variables = MagicMock(return_value="123")
+    secrerts.type_secret("selector", "$password")
+    assert caplog.text == ""
+    secrerts.type_secret("selector", "%password")
+    assert caplog.text == ""
 
-    browser.fill_secret("selector", "my secret in plain text")
-    assert (
-        interaction.logger.message
-        == "Direct assignment of values as 'secret' is deprecated.Use variables or "
-        "environment variables instead."
-    )
-    interaction.logger = MyLogger()
-    browser.fill_secret("selector", "$variable")
-    assert interaction.logger.message is None
 
-    interaction.logger = MyLogger()
-    browser.type_secret("selector", "$variable")
-    assert interaction.logger.message is None
-
-    interaction.logger = MyLogger()
-    browser.type_secret("selector", "my secret in plain text")
-    assert (
-        interaction.logger.message
-        == "Direct assignment of values as 'secret' is deprecated.Use variables or "
-        "environment variables instead."
-    )
+def test_fill_secret_with_prefix(caplog):
+    secrerts = interaction.Interaction(MagicMock())
+    secrerts._replace_placeholder_variables = MagicMock(return_value="123")
+    secrerts.fill_secret("selector", "$password")
+    assert caplog.text == ""
+    secrerts.fill_secret("selector", "%password")
+    assert caplog.text == ""
