@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-import os
 from datetime import timedelta
 from time import sleep
 from typing import Any, Dict, Optional
@@ -24,7 +23,6 @@ from ..utils import (
     exec_scroll_function,
     get_abs_scroll_coordinates,
     get_rel_scroll_coordinates,
-    get_variable_value,
     keyword,
     locals_to_params,
     logger,
@@ -42,8 +40,6 @@ from ..utils.data_types import (
     ScrollBehavior,
     SelectAttribute,
 )
-
-NOT_FOUND = object()
 
 
 class Interaction(LibraryComponent):
@@ -153,7 +149,7 @@ class Interaction(LibraryComponent):
         See `Type Text` for details.
         """
         originals = self._get_original_values(locals())
-        secret = self._resolve_secret(secret, originals.get("secret") or secret)
+        secret = self.resolve_secret(secret, originals.get("secret") or secret)
         self._type_text(selector, secret, delay, clear, log_response=False)
 
     def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
@@ -201,29 +197,8 @@ class Interaction(LibraryComponent):
         See `Fill Text` for other details.
         """
         originals = self._get_original_values(locals())
-        secret = self._resolve_secret(secret, originals.get("secret") or secret)
+        secret = self.resolve_secret(secret, originals.get("secret") or secret)
         self._fill_text(selector, secret, log_response=False)
-
-    def _resolve_secret(self, secret_variable: str, original_secret) -> str:
-        secret = self._replace_placeholder_variables(secret_variable)
-        if secret == original_secret:
-            logger.warn(
-                "Direct assignment of values as 'secret' is deprecated."
-                "Use variables or environment variables instead."
-            )
-        return secret
-
-    def _replace_placeholder_variables(self, placeholder):
-        if not isinstance(placeholder, str) or placeholder[:1] not in "$%":
-            return placeholder
-        if placeholder.startswith("%"):
-            value = os.environ.get(placeholder[1:], NOT_FOUND)
-        else:
-            value = get_variable_value(placeholder, NOT_FOUND)
-        if value is NOT_FOUND:
-            logger.warn("Given variable placeholder could not be resolved.")
-            return placeholder
-        return value
 
     @keyword(tags=("Setter", "PageContent"))
     def press_keys(self, selector: str, *keys: str):
