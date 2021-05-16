@@ -13,8 +13,9 @@
 # limitations under the License.
 import os
 from concurrent.futures._base import Future
+from copy import deepcopy
 from datetime import timedelta
-from typing import TYPE_CHECKING, Set, Union
+from typing import TYPE_CHECKING, Any, Set, Union
 
 from ..utils import get_variable_value, logger
 
@@ -91,16 +92,25 @@ class LibraryComponent:
     def millisecs_to_timestr(self, timeout: float) -> str:
         return self.library.millisecs_to_timestr(timeout)
 
-    def resolve_secret(self, secret_variable: str, original_secret) -> str:
-        secret = self._replace_placeholder_variables(secret_variable)
+    def resolve_secret(
+        self, secret_variable: Any, original_secret: Any, arg_name: str
+    ) -> str:
+        secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         if secret == original_secret:
             logger.warn(
-                "Direct assignment of values as 'secret' is deprecated."
+                f"Direct assignment of values as '{arg_name}' is deprecated. "
                 "Use variables or environment variables instead."
             )
         return secret
 
     def _replace_placeholder_variables(self, placeholder):
+        if isinstance(placeholder, dict):
+            for key in placeholder:
+                placeholder[key] = self._replace_placeholder_variable(placeholder[key])
+            return placeholder
+        return self._replace_placeholder_variable(placeholder)
+
+    def _replace_placeholder_variable(self, placeholder):
         if not isinstance(placeholder, str) or placeholder[:1] not in "$%":
             return placeholder
         if placeholder.startswith("%"):
