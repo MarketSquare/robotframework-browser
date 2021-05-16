@@ -11,13 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 from concurrent.futures._base import Future
 from datetime import timedelta
 from typing import TYPE_CHECKING, Set, Union
 
+from ..utils import get_variable_value, logger
+
 if TYPE_CHECKING:
     from ..browser import Browser
+
+NOT_FOUND = object()
 
 
 class LibraryComponent:
@@ -86,3 +90,24 @@ class LibraryComponent:
 
     def millisecs_to_timestr(self, timeout: float) -> str:
         return self.library.millisecs_to_timestr(timeout)
+
+    def resolve_secret(self, secret_variable: str, original_secret) -> str:
+        secret = self._replace_placeholder_variables(secret_variable)
+        if secret == original_secret:
+            logger.warn(
+                "Direct assignment of values as 'secret' is deprecated."
+                "Use variables or environment variables instead."
+            )
+        return secret
+
+    def _replace_placeholder_variables(self, placeholder):
+        if not isinstance(placeholder, str) or placeholder[:1] not in "$%":
+            return placeholder
+        if placeholder.startswith("%"):
+            value = os.environ.get(placeholder[1:], NOT_FOUND)
+        else:
+            value = get_variable_value(placeholder, NOT_FOUND)
+        if value is NOT_FOUND:
+            logger.warn("Given variable placeholder could not be resolved.")
+            return placeholder
+        return value
