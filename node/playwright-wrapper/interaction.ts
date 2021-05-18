@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Dialog, FileChooser, Page } from 'playwright';
+import { Dialog, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog } from './response-util';
+import { emptyWithLog, stringResponse } from './response-util';
 import { invokeOnKeyboard, invokeOnMouse, invokePlaywrightMethod } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -141,11 +141,28 @@ export async function handleAlert(request: Request.AlertAction, page: Page): Pro
     const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
     const promptInput = request.getPromptinput();
     const fn = async (dialog: Dialog) => {
+        const dialogueText = dialog.message();
         if (promptInput) await dialog[alertAction](promptInput);
         else await dialog[alertAction]();
+        logger.info(`Alert text: ${dialogueText}`);
     };
     page.on('dialog', fn);
     return emptyWithLog('Set event handler for next alert');
+}
+
+export async function waitForAlert(request: Request.AlertAction, page: Page): Promise<Response.String> {
+    const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
+    const promptInput = request.getPromptinput();
+    const dialogObject = await page.waitForEvent('dialog');
+    const message = dialogObject.message();
+    if (alertAction == 'accept' && promptInput) {
+        dialogObject.accept(promptInput);
+    } else if (alertAction == 'accept') {
+        dialogObject.accept();
+    } else {
+        dialogObject.dismiss();
+    }
+    return stringResponse(message, 'Next alert was handeled succesfully.');
 }
 
 export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {

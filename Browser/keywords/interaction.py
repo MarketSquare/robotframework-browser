@@ -586,6 +586,47 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
+    @keyword(tags=("Wait", "PageContent"))
+    def wait_for_alert(
+        self, action: DialogAction, prompt_input: str = "", text: Optional[str] = None
+    ):
+        """Handle next dialog on page with ``action`` as promise.
+
+        See `Handle Future Dialogs` for more details about ``action`` and what
+        types of dialogues are supported.
+
+        The main difference between this keyword and `Handle Future Dialogs`
+        is that `Handle Future Dialogs` keyword is automatically set as promise.
+        But this keyword must be called as argument to `Promise To` keyword. Also this
+        keyword can optionally verify the dialogue text and return it. If ``text`` is
+        argument ``None`` or is not set, dialogue text is not verified.
+
+        Example with returning text:
+
+        | ${promise} =       Promise To    Wait For Alert    action=accept
+        | Click              id=alerts
+        | ${text} =          Wait For      ${promise}
+        | Should Be Equal    ${text}       Am an alert
+
+        Example with text verify:
+
+        | ${promise} =       Promise To    Wait For Alert    action=accept    text=Am an alert
+        | Click              id=alerts
+        | ${text} =          Wait For      ${promise}
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.WaitForAlert(
+                Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
+            )
+        logger.debug(response.log)
+        if text is not None:
+            assert (
+                text == response.body
+            ), f'Alert text was: "{response.body}" but it should have been: "{text}"'
+        else:
+            logger.debug("Not verifying alter text.")
+        return response.body
+
     @keyword(tags=("Setter", "PageContent"))
     def mouse_button(
         self,

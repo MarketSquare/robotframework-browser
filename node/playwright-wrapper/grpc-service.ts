@@ -391,6 +391,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     uploadFile = this.wrappingPage(interaction.uploadFile);
     handleAlert = this.wrappingPage(interaction.handleAlert);
+    waitForAlert = this.wrappingPage(interaction.waitForAlert);
     mouseMove = this.wrappingPage(interaction.mouseMove);
     mouseButton = this.wrappingPage(interaction.mouseButton);
     keyboardKey = this.wrappingPage(interaction.keyboardKey);
