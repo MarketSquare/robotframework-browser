@@ -29,7 +29,7 @@ Verify Dialogue Text With Wrong Text
     Click    id=prompts
     Run Keyword And Expect Error
     ...    Alert text was: "Enter a value" but it should have been: "Wrong Text"
-   ...    Wait For    ${promise}
+    ...    Wait For    ${promise}
     Get Text    id=prompt_result    ==    Kala
 
 Verify Dialogue Text
