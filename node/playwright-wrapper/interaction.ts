@@ -155,9 +155,9 @@ export async function waitForAlert(request: Request.AlertAction, page: Page): Pr
     const promptInput = request.getPromptinput();
     const dialogObject = await page.waitForEvent('dialog');
     const message = dialogObject.message();
-    if (alertAction == 'accept' && promptInput) {
+    if (alertAction === 'accept' && promptInput) {
         dialogObject.accept(promptInput);
-    } else if (alertAction == 'accept') {
+    } else if (alertAction === 'accept') {
         dialogObject.accept();
     } else {
         dialogObject.dismiss();
