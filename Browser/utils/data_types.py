@@ -487,7 +487,9 @@ class PageLoadStates(Enum):
     domcontentloaded = auto()
     networkidle = auto()
 
+
 class PromiseState(Enum):
+    """Enum representing possible promise states."""
 
     cancelled = auto()
     pending = auto()

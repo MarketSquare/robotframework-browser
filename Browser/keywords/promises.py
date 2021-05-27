@@ -139,6 +139,10 @@ class Promises(LibraryComponent):
 
     @keyword()
     def get_promise_state(self, promise: Future) -> PromiseState:
+        """
+        Returns state of ``promise`` as ``PromiseState``.
+
+        """
         if promise.cancelled():
             return PromiseState.cancelled
         elif promise.done():
