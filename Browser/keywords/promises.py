@@ -136,8 +136,6 @@ class Promises(LibraryComponent):
         self.unresolved_promises -= {*promises}
 
         return [promise.cancel() for promise in promises]
-        
-        return
 
     @keyword()
     def get_promise_state(self, promise: Future) -> PromiseState:
@@ -147,7 +145,6 @@ class Promises(LibraryComponent):
             return PromiseState.done
         else:
             return PromiseState.pending
-
 
     @keyword(tags=("Wait",))
     def wait_for_all_promises(self):
