@@ -23,7 +23,7 @@ from robot.utils import DotDict  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import DownloadedFile, logger
+from ..utils import DownloadedFile, logger, PromiseState
 
 
 class Promises(LibraryComponent):
@@ -127,6 +127,27 @@ class Promises(LibraryComponent):
         if len(promises) == 1:
             return promises[0].result()
         return [promise.result() for promise in promises]
+
+    @keyword(tags=("Wait",))
+    def reject(self, *promises: Future):
+        """
+        Marks promises for rejection. Will let test pass with the "rejected" promises still existing
+        """
+        self.unresolved_promises -= {*promises}
+
+        return [promise.cancel() for promise in promises]
+        
+        return
+
+    @keyword()
+    def get_promise_state(self, promise: Future) -> PromiseState:
+        if promise.cancelled():
+            return PromiseState.cancelled
+        elif promise.done():
+            return PromiseState.done
+        else:
+            return PromiseState.pending
+
 
     @keyword(tags=("Wait",))
     def wait_for_all_promises(self):

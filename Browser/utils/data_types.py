@@ -486,3 +486,9 @@ class PageLoadStates(Enum):
     load = auto()
     domcontentloaded = auto()
     networkidle = auto()
+
+class PromiseState(Enum):
+
+    cancelled = auto()
+    pending = auto()
+    done = auto()

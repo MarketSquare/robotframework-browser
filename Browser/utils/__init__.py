@@ -31,6 +31,7 @@ from .data_types import (
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
+    PromiseState,
     convert_typed_dict,
 )
 from .deprecated import attribute_warning
