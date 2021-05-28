@@ -712,12 +712,6 @@ class Browser(DynamicCore):
     def browser_output(self) -> Path:
         return Path(self.outputdir, "browser")
 
-    def _close(self):
-        try:
-            self.playwright.close()
-        except ConnectionError as e:
-            logger.trace(f"Browser library closing problem: {e}")
-
     def _start_suite(self, suite, result):
         if not self._suite_cleanup_done and self.browser_output.is_dir():
             self._suite_cleanup_done = True
