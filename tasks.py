@@ -8,10 +8,10 @@ import re
 import shutil
 
 from invoke import task, Exit
-from robot import rebot_cli
-from robot import __version__ as robot_version
 
 try:
+    from robot import rebot_cli
+    from robot import __version__ as robot_version
     from pabot import pabot
     import pytest
     from rellu import ReleaseNotesGenerator, Version
