@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import atexit
 import contextlib
 import os
 import time
@@ -47,6 +48,7 @@ class Playwright(LibraryComponent):
     @cached_property
     def _playwright_process(self) -> Optional[Popen]:
         process = self.start_playwright()
+        atexit.register(self.close)
         self.wait_until_server_up()
         return process
 
