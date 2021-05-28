@@ -5,6 +5,7 @@ import zipfile
 from pathlib import Path, PurePath
 import platform
 import re
+import traceback
 import shutil
 
 from invoke import task, Exit
@@ -20,6 +21,7 @@ try:
     import bs4
     from Browser.utils import find_free_port
 except ModuleNotFoundError:
+    traceback.print_exc()
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
 ROOT_DIR = Path(os.path.dirname(__file__))
