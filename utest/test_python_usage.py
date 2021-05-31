@@ -1,5 +1,6 @@
 import pytest
 import subprocess
+from unittest.mock import Mock
 
 from assertionengine import AssertionOperator
 
@@ -14,12 +15,21 @@ def application_server():
 
 
 @pytest.fixture()
-def browser(monkeypatch):
+def browser():
     import Browser
 
     browser = Browser.Browser()
     yield browser
     browser.close_browser("ALL")
+
+
+@pytest.fixture()
+def atexit_register(monkeypatch):
+    import atexit
+
+    register = Mock()
+    monkeypatch.setattr(atexit, "register", register)
+    return register
 
 
 def test_open_page_get_text(application_server, browser):
@@ -36,3 +46,24 @@ def test_readme_example(browser):
 def test_new_browser_and_close(browser):
     browser.new_browser()
     browser.close_browser()
+
+
+def test_playwright_exit_handler(atexit_register):
+    import Browser
+
+    browser = Browser.Browser()
+    try:
+        atexit_register.assert_not_called()
+        browser.new_browser()
+        atexit_register.assert_called_with(browser.playwright.close)
+    finally:
+        browser.playwright.close()
+
+
+def test_playwright_double_close():
+    import Browser
+
+    browser = Browser.Browser()
+    browser.new_browser()
+    browser.playwright.close()
+    browser.playwright.close()
