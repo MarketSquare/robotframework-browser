@@ -368,6 +368,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "osrjv",
+      "name": "Ossi R.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29481017?v=4",
+      "profile": "https://github.com/osrjv",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
