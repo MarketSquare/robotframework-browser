@@ -377,6 +377,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "adrian-evo",
+      "name": "Adrian V.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19324942?v=4",
+      "profile": "https://github.com/adrian-evo",
+      "contributions": [
+        "code",
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
