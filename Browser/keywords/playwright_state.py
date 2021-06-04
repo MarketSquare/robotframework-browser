@@ -523,9 +523,10 @@ class PlaywrightState(LibraryComponent):
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
         if "httpCredentials" in params and params["httpCredentials"] is not None:
-            self.resolve_secret(
+            secret = self.resolve_secret(
                 httpCredentials, params.get("httpCredentials"), "httpCredentials"
             )
+            params["httpCredentials"] = secret
         params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)
