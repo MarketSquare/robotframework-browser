@@ -1,5 +1,8 @@
 import json
+import sys
 from unittest.mock import MagicMock, patch, PropertyMock
+
+import pytest
 
 import Browser.keywords as interaction
 from Browser.keywords import PlaywrightState
@@ -40,6 +43,7 @@ def test_fill_secret_with_prefix(caplog):
     assert caplog.text == ""
 
 
+@pytest.mark.skipif(sys.version_info.minor == 7, reason="Does not work with Python 3.7")
 def test_http_credentials_in_new_context():
     ctx = MagicMock()
     pw = MagicMock()
