@@ -1,6 +1,6 @@
 import json
 import sys
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
