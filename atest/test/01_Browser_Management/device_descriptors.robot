@@ -5,11 +5,8 @@ Resource          imports.resource
 *** Variables ***
 ${device_json}=
 ...               json.loads('''{
-...               "userAgent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3765.0 Mobile Safari/537.36",
-...               "viewport": {
-...               "width": 360,
-...               "height": 640
-...               },
+...               "userAgent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4530.0 Mobile Safari/537.36",
+...               "viewport": {"width": 360, "height": 640},
 ...               "deviceScaleFactor": 3,
 ...               "isMobile": true,
 ...               "hasTouch": true,
