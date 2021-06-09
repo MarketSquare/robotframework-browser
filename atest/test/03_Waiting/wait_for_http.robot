@@ -60,5 +60,5 @@ Wait For Navigation Works With wait_until
     FOR    ${wait_until}    IN    domcontentloaded    load    networkidle
         Go To    ${ROOT_URL}/redirector.html
         Wait for navigation    ${ROOT_URL}/posted.html    wait_until=${wait_until}
-        Get Url    contains    posted
+        Get Url    contains    postaaa
     END

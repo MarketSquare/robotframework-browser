@@ -22,5 +22,5 @@ Test
         Go To    ${SHELLGAME_URL}
         Mouse Move Relative To    id=indicator    -100
         Mouse Button    click
-        Get Text    h1    ==    CORRECT :D
+        Get Text    h1    ==    WRONG :/
     END
