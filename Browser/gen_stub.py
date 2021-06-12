@@ -46,7 +46,9 @@ def get_type_string_from_type(argument_type: type) -> str:
 def get_type_string_from_argument(argument_string: str, argument_types: dict) -> str:
     agrument_name = argument_string.lstrip("*")
     if agrument_name in argument_types:
-        return get_type_string_from_type(argument_types[agrument_name])
+        type_string = get_type_string_from_type(argument_types[agrument_name])
+        type_string = type_string.replace("Browser.utils.data_types.", "")
+        return type_string
     return ""
 
 
@@ -95,19 +97,16 @@ function_list = get_function_list_from_keywords(br.get_keyword_names())
 
 pyi_boilerplate = """\
 import datetime
+import typing
 from concurrent.futures import Future
 from datetime import timedelta
 from typing import (
     Any,
-    Dict,
-    List,
     Optional,
-    Union,
-    Tuple,
 )
 from os import PathLike
 
-from assertionengine import AssertionOperator
+import assertionengine
 
 from .utils.data_types import *
 
