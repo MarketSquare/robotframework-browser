@@ -98,8 +98,8 @@ class LibraryComponent:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         if secret == original_secret:
             logger.warn(
-                f"Direct assignment of values as '{arg_name}' is deprecated. "
-                "Use variables or environment variables instead."
+                f"Direct assignment of values as '{arg_name}' is deprecated. Use special "
+                "variable syntax to resolve variable. Example $var instead of ${var}."
             )
         return secret
 
