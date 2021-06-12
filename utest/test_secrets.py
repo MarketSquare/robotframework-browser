@@ -8,8 +8,8 @@ import Browser.keywords as interaction
 from Browser.keywords import PlaywrightState
 
 WARN_MESSAGE = (
-    "WARNING  RobotFramework:logger.py:95 Direct assignment of values as 'secret' is "
-    "deprecated. Use variables or environment variables instead.\n"
+    "WARNING  RobotFramework:logger.py:95 Direct assignment of values as 'secret' is deprecated. "
+    "Use special variable syntax to resolve variable. Example $var instead of ${var}.\n"
 )
 
 

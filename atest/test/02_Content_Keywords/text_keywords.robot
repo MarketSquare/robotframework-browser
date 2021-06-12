@@ -40,8 +40,8 @@ Fill Text With Nonmatching Selector
 
 Fill Secret Direct Value
     [Documentation]    ...
-    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use variables or environment variables instead.
-    ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use variables or environment variables instead.
+    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Type Secret    css=input#username_field    Direct Value    200 ms    True
     Get Text    css=input#username_field    ==    Direct Value
     Fill Secret    css=input#password_field    Direct Value
