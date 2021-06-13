@@ -540,8 +540,8 @@ class PlaywrightState(LibraryComponent):
         params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)
-        masked_params = self._mask_credentials(params.copy())
         trace_file = params.pop("tracing", None)
+        masked_params = self._mask_credentials(params.copy())
         options = json.dumps(params, default=str)
         logger.info(json.dumps(masked_params, default=str))
         trace_file = Path(self.outputdir, trace_file) if tracing else ""
@@ -554,10 +554,9 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-        log_msg, json_data = response.log.split("options:")
-        log_msg = f"{log_msg} options:"
-        json_data = self._mask_credentials(json.loads(json_data))
-        logger.info(f"{log_msg}\n{json.dumps(json_data)}")
+        context_options = self._mask_credentials(json.loads(response.contextOptions))
+        logger.info(response.log)
+        logger.info(context_options)
         if response.newBrowser:
             logger.info(
                 "No browser was open. New browser was automatically opened "
