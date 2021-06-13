@@ -283,7 +283,6 @@ class PlaywrightState(LibraryComponent):
         devtools: bool = False,
         slowMo: timedelta = timedelta(seconds=0),
         channel: Optional[str] = None,
-        tracesDir: Optional[str] = None,
     ) -> str:
 
         """Create a new playwright Browser with specified options.
@@ -337,8 +336,6 @@ class PlaywrightState(LibraryComponent):
         ``channel`` Allows to operate against the stock Google Chrome and Microsoft Edge browsers.
         For more details see:
         [https://playwright.dev/docs/browsers/#google-chrome--microsoft-edge|Playwright documentation].
-
-        ``tracesDir`` If tracing is enabled, traces are saved into this directory.
         """
         params = locals_to_params(locals())
         params = convert_typed_dict(self.new_context.__annotations__, params)
@@ -353,6 +350,7 @@ class PlaywrightState(LibraryComponent):
             raise ValueError(
                 f"Must use {SupportedBrowsers.chromium.name} browser with channel definition"
             )
+        params["tracesDir"] = str(self.traces_output)
         options = json.dumps(params, default=str)
         logger.info(options)
 
@@ -393,7 +391,7 @@ class PlaywrightState(LibraryComponent):
         hideRfBrowser: bool = False,
         recordVideo: Optional[RecordVideo] = None,
         recordHar: Optional[RecordHar] = None,
-        tracing: Optional[Tracing] = None
+        tracing: Optional[str] = None
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -511,13 +509,12 @@ class PlaywrightState(LibraryComponent):
 
         The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
-        ``tracing`` is dictionary for enabling and defining Playwright
-        [https://playwright.dev/docs/api/class-tracing/|tracing options]. Dictionary contains
-        three keys: `name`, `screenshots` and `snapshots`. if `name` is specified, the trace
-        is going to be saved into the file with the given name inside the tracesDir folder
-        specified in `New Browser`.  `screenshots` is boolean. Whether to capture screenshots
-        during tracing. Screenshots are used to build a timeline preview. `snapshots` is boolean.
-        Whether to capture DOM snapshot on every action.
+        ``tracing`` is file name where the [https://playwright.dev/docs/api/class-tracing/|tracing]
+         file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace
+         files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will
+         be enabled for all pages in the context. Tracing is automatically closed when context is
+         closed. Temporary trace files will be automatically deleted at start of each test
+         execution.
 
         Example:
         | Test an iPhone
@@ -544,17 +541,17 @@ class PlaywrightState(LibraryComponent):
         if not videosPath:
             params.pop("videoSize", None)
         masked_params = self._mask_credentials(params.copy())
-        trace_options = params.pop("tracing", None)
+        trace_file = params.pop("tracing", None)
         options = json.dumps(params, default=str)
         logger.info(json.dumps(masked_params, default=str))
-        trace_options = json.dumps(trace_options) if tracing else "{}"
+        trace_file = Path(self.outputdir, trace_file) if tracing else ""
         with self.playwright.grpc_channel() as stub:
             response = stub.NewContext(
                 Request().Context(
                     rawOptions=options,
                     hideRfBrowser=hideRfBrowser,
                     defaultTimeout=int(self.timeout),
-                    traceAsJson=trace_options,
+                    traceFile=str(trace_file),
                 )
             )
         log_msg, json_data = response.log.split("options:")

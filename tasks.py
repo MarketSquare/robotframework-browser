@@ -336,7 +336,7 @@ def _run_pabot(extra_args=None, exit=True):
         "--pabotlibport",
         "0",
         "--artifacts",
-        "png,webm",
+        "png,webm,zip",
         "--artifactsinsubfolders",
     ]
     default_args = [

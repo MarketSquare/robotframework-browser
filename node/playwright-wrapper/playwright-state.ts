@@ -106,6 +106,7 @@ async function _connectBrowser(browserType: string, url: string): Promise<[Brows
 async function _newBrowserContext(
     browser: Browser,
     defaultTimeout: number,
+    traceFile: string,
     options?: Record<string, unknown>,
     hideRfBrowser?: boolean,
 ): Promise<IndexedContext> {
@@ -120,7 +121,17 @@ async function _newBrowserContext(
         });
     }
     context.setDefaultTimeout(defaultTimeout);
-    const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options };
+    const c = { 
+        id: `context=${uuidv4()}`, 
+        c: context, 
+        pageStack: [] as IndexedPage[], 
+        options: options,
+        traceFile: traceFile 
+    };
+    if (traceFile) {
+        logger.info('Tracing enabled with: { screenshots: true, snapshots: true }')
+        context.tracing.start({ screenshots: true, snapshots: true });
+    }
     c.c.on('page', (page) => {
         c.pageStack.unshift(indexedPage(page));
     });
@@ -252,6 +263,9 @@ export class PlaywrightState {
         return this.activeBrowser?.context?.c;
     };
 
+    public getTraceFile = (): string | undefined => {
+        return this.activeBrowser?.context?.traceFile;
+    };
     public getActivePage = (): Page | undefined => {
         return this.activeBrowser?.page?.p;
     };
@@ -275,6 +289,7 @@ export class PlaywrightState {
 type IndexedContext = {
     c: BrowserContext;
     id: Uuid;
+    traceFile: string;
     pageStack: IndexedPage[];
     options?: Record<string, unknown>;
 };
@@ -315,7 +330,7 @@ export class BrowserState {
             return { context: this.context, newContext: false };
         } else {
             const activeBrowser = this.browser;
-            const context = await _newBrowserContext(activeBrowser, defaultTimeout);
+            const context = await _newBrowserContext(activeBrowser, defaultTimeout, '');
             this.pushContext(context);
             return { context: context, newContext: true };
         }
@@ -392,6 +407,10 @@ export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<R
 
 export async function closeContext(openBrowsers: PlaywrightState): Promise<Response.Empty> {
     const activeBrowser = openBrowsers.getActiveBrowser();
+    const traceFile = openBrowsers.getTraceFile();
+    if (traceFile) {
+        await openBrowsers.getActiveContext()?.tracing.stop({ path: traceFile });
+    }
     await openBrowsers.getActiveContext()?.close();
     activeBrowser.popContext();
     return emptyWithLog('Successfully closed Context');
@@ -440,7 +459,9 @@ export async function newContext(
     const options = JSON.parse(request.getRawoptions());
     const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType);
     const defaultTimeout = request.getDefaulttimeout();
-    const context = await _newBrowserContext(browserState.browser.browser, defaultTimeout, options, hideRfBrowser);
+    const traceFile = request.getTracefile();
+    logger.info(`Trace file: ${traceFile}`);
+    const context = await _newBrowserContext(browserState.browser.browser, defaultTimeout, traceFile, options, hideRfBrowser);
     browserState.browser.pushContext(context);
     const response = new Response.NewContextResponse();
     response.setId(context.id);
