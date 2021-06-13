@@ -249,7 +249,8 @@ message Response {
   message NewContextResponse {
     string id = 1;
     string log = 2;
-    bool newBrowser = 3;
+    string contextOptions = 3;
+    bool newBrowser = 4;
   }
 
   message NewPageResponse {

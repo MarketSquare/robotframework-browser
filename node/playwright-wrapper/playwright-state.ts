@@ -465,7 +465,13 @@ export async function newContext(
     browserState.browser.pushContext(context);
     const response = new Response.NewContextResponse();
     response.setId(context.id);
-    response.setLog('Successfully created context with options: ' + JSON.stringify(options));
+    if (traceFile) {
+        response.setLog(`Successfully created context and trace file will be saved to: ${traceFile}`);
+        options.trace = { screenshots: true, snapshots: true };
+    } else {
+        response.setLog('Successfully created context. ');
+    }
+    response.setContextoptions(JSON.stringify(options));
     response.setNewbrowser(browserState.newBrowser);
     return response;
 }
