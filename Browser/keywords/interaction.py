@@ -279,9 +279,6 @@ class Interaction(LibraryComponent):
         during the click, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
         """
-        if selector == "__DETECT__":
-            selector = self._record_selector()
-            print(selector)
         if self.library.presenter_mode:
             self.hover(selector)
             self.library.highlight_elements(selector, duration=timedelta(seconds=2))
@@ -310,7 +307,12 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    def _record_selector(self):
+    @keyword(tags=("PageContent",))
+    def record_selector(self):
+        """
+        Records the selector that is under mouse after 15 seconds.
+        Also during that time console.logs all the seen selectors.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.RecordSelector(Request.Empty())
             logger.info(f"Selector: {response.result}")

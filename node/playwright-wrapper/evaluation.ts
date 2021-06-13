@@ -127,14 +127,14 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
 }
 
 export async function recordSelector(
-    request: Request.StyleTag,
+    request: Request.Empty,
     page: Page,
 ): Promise<Response.JavascriptExecutionResult> {
     await page.addScriptTag({
         type: 'module',
         path: 'static/selector-finder.js',
     });
-    await new Promise((r) => setTimeout(() => r(''), 5000));
+    await new Promise((r) => setTimeout(() => r(''), 15000));
     const result = await page.evaluate(() => {
         // @ts-ignore
         return window.currentTarget;

@@ -180,9 +180,14 @@ function cssesc(a, b = {}) {
 }
 
 window.currentTarget = "NOTSET";
-document.addEventListener('mousemove', function (e) {
+function mouseMoveListener(e) {
     const target = document.elementFromPoint(e.pageX, e.pageY);
     if (target) {
         window.currentTarget = finder(target);
+        console.log(`Current target: "${window.currentTarget}"`);
     }
-});
+}
+document.addEventListener('mousemove', mouseMoveListener);
+setTimeout(function() {
+    document.removeEventListener('mousemove', mouseMoveListener);
+}, 15000);
