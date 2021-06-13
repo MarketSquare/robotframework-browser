@@ -30,6 +30,7 @@ from .data_types import (
     SelectAttribute,
     SelectionType,
     SupportedBrowsers,
+    Tracing,
     ViewportDimensions,
     convert_typed_dict,
 )

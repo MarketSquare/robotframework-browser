@@ -32,6 +32,7 @@ from ..utils import (
     RecordVideo,
     SelectionType,
     SupportedBrowsers,
+    Tracing,
     ViewportDimensions,
     attribute_warning,
     convert_typed_dict,
@@ -392,6 +393,7 @@ class PlaywrightState(LibraryComponent):
         hideRfBrowser: bool = False,
         recordVideo: Optional[RecordVideo] = None,
         recordHar: Optional[RecordHar] = None,
+        tracing: Optional[Tracing] = None
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -509,6 +511,14 @@ class PlaywrightState(LibraryComponent):
 
         The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
+        ``tracing`` is dictionary for enabling and defining Playwright
+        [https://playwright.dev/docs/api/class-tracing/|tracing options]. Dictionary contains
+        three keys: `name`, `screenshots` and `snapshots`. if `name` is specified, the trace
+        is going to be saved into the file with the given name inside the tracesDir folder
+        specified in `New Browser`.  `screenshots` is boolean. Whether to capture screenshots
+        during tracing. Screenshots are used to build a timeline preview. `snapshots` is boolean.
+        Whether to capture DOM snapshot on every action.
+
         Example:
         | Test an iPhone
         |     ${device}=    `Get Device`    iPhone X
@@ -516,8 +526,8 @@ class PlaywrightState(LibraryComponent):
         |     `New Page`    http://example.com
 
         A BrowserContext is the Playwright object that controls a single browser profile.
-        Within a context caches and cookies are shared.
-        See [https://playwright.dev/docs/api/class-browser#browsernewcontextoptions|Playwright browser.newContext]
+        Within a context caches and cookies are shared. See
+        [https://playwright.dev/docs/api/class-browser#browsernewcontextoptions|Playwright browser.newContext]
         for a list of supported options.
 
         If there's no open Browser this keyword will open one. Does not create pages.
@@ -534,14 +544,17 @@ class PlaywrightState(LibraryComponent):
         if not videosPath:
             params.pop("videoSize", None)
         masked_params = self._mask_credentials(params.copy())
+        trace_options = params.pop("tracing", None)
         options = json.dumps(params, default=str)
         logger.info(json.dumps(masked_params, default=str))
+        trace_options = json.dumps(trace_options) if tracing else "{}"
         with self.playwright.grpc_channel() as stub:
             response = stub.NewContext(
                 Request().Context(
                     rawOptions=options,
                     hideRfBrowser=hideRfBrowser,
                     defaultTimeout=int(self.timeout),
+                    traceAsJson=trace_options,
                 )
             )
         log_msg, json_data = response.log.split("options:")
