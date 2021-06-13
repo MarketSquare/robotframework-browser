@@ -282,6 +282,7 @@ class PlaywrightState(LibraryComponent):
         devtools: bool = False,
         slowMo: timedelta = timedelta(seconds=0),
         channel: Optional[str] = None,
+        tracesDir: Optional[str] = None,
     ) -> str:
 
         """Create a new playwright Browser with specified options.
@@ -335,6 +336,8 @@ class PlaywrightState(LibraryComponent):
         ``channel`` Allows to operate against the stock Google Chrome and Microsoft Edge browsers.
         For more details see:
         [https://playwright.dev/docs/browsers/#google-chrome--microsoft-edge|Playwright documentation].
+
+        ``tracesDir`` If tracing is enabled, traces are saved into this directory.
         """
         params = locals_to_params(locals())
         params = convert_typed_dict(self.new_context.__annotations__, params)
