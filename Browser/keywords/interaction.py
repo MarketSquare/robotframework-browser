@@ -307,6 +307,17 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
+    @keyword(tags=("PageContent",))
+    def record_selector(self):
+        """
+        Records the selector that is under mouse after 15 seconds.
+        Also during that time console.logs all the seen selectors.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.RecordSelector(Request.Empty())
+            logger.info(f"Selector: {response.result}")
+            return json.loads(response.result)
+
     @keyword(tags=("Setter", "PageContent"))
     def hover(
         self,
