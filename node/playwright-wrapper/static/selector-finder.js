@@ -180,14 +180,41 @@ function cssesc(a, b = {}) {
 }
 
 window.currentTarget = "NOTSET";
+
+const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
+
+function addElement () {
+  const newDiv = document.createElement("div");
+  newDiv.style.border = "2px solid blue";
+  newDiv.style.borderRadius = "5px";
+  newDiv.style.background = "white";
+  newDiv.style.color = "black";
+  newDiv.style.zIndex = "9000";
+  newDiv.style.position = "fixed";
+  newDiv.style.top = "16px";
+  newDiv.style.left = "16px";
+  newDiv.style.padding = "8px";
+  newDiv.id = BROWSER_LIBRARY_ID;
+  newDiv.textContent = window.currentTarget;
+  document.body.appendChild(newDiv);
+}
+const startTime = new Date().getTime();
+function updateTexts() {
+    const tdiff = Math.floor((15 - (new Date().getTime() - startTime)/1000)*100)/100
+    document.getElementById(BROWSER_LIBRARY_ID).textContent = `${tdiff} ${window.currentTarget}`;
+}
 function mouseMoveListener(e) {
     const target = document.elementFromPoint(e.pageX, e.pageY);
     if (target) {
         window.currentTarget = finder(target);
-        console.log(`Current target: "${window.currentTarget}"`);
+        updateTexts();
     }
 }
 document.addEventListener('mousemove', mouseMoveListener);
+addElement();
+const intervalTimer = setInterval(updateTexts, 100);
 setTimeout(function() {
     document.removeEventListener('mousemove', mouseMoveListener);
+    document.getElementById(BROWSER_LIBRARY_ID).remove();
+    clearInterval(intervalTimer);
 }, 15000);
