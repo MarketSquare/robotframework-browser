@@ -32,7 +32,6 @@ from ..utils import (
     RecordVideo,
     SelectionType,
     SupportedBrowsers,
-    Tracing,
     ViewportDimensions,
     attribute_warning,
     convert_typed_dict,
@@ -391,7 +390,7 @@ class PlaywrightState(LibraryComponent):
         hideRfBrowser: bool = False,
         recordVideo: Optional[RecordVideo] = None,
         recordHar: Optional[RecordHar] = None,
-        tracing: Optional[str] = None
+        tracing: Optional[str] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
