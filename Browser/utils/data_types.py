@@ -185,6 +185,21 @@ class DownloadedFile(TypedDict):
     suggestedFilename: str
 
 
+class Tracing(TypedDict):
+    """Traces definition for collecting and saving Playwright traces.
+
+    ``screenshots`` is the path where downloaded file is saved.
+    ``snapshots`` is the  contains the name suggested name for the download.
+    ``name`` If specified, the trace is going to be saved into the file with
+    the given name inside the tracesDir folder specified in
+    [https://marketsquare.github.io/robotframework-browser/Browser.html#New%20Browser|New Browser]
+    """
+
+    screenshots: bool
+    snapshots: bool
+    name: str
+
+
 class SelectionType(Enum):
     """Enum that defines if the current id or all ids shall be returned.
 
