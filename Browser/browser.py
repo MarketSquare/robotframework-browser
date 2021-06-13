@@ -163,6 +163,7 @@ class Browser(DynamicCore):
     | ``text``     | Browser text engine.       | ``text=Login``                     |
     | ``id``       | Element ID Attribute.      | ``id=login_btn``                   |
 
+    CSS Selectors can also be recorded with `Record selector` keyword.
 
     == Explicit Selector Strategy ==
 
