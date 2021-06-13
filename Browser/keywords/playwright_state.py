@@ -544,15 +544,8 @@ class PlaywrightState(LibraryComponent):
         options = json.dumps(params, default=str)
         logger.info(json.dumps(masked_params, default=str))
         trace_file = Path(self.outputdir, trace_file) if tracing else ""
-        with self.playwright.grpc_channel() as stub:
-            response = stub.NewContext(
-                Request().Context(
-                    rawOptions=options,
-                    hideRfBrowser=hideRfBrowser,
-                    defaultTimeout=int(self.timeout),
-                    traceFile=str(trace_file),
-                )
-            )
+        response = self._new_context(options, hideRfBrowser, trace_file)
+        print(response.contextOptions)
         context_options = self._mask_credentials(json.loads(response.contextOptions))
         logger.info(response.log)
         logger.info(context_options)
@@ -563,6 +556,19 @@ class PlaywrightState(LibraryComponent):
             )
         self.context_cache.add(response.id, self._get_video_size(params))
         return response.id
+
+    # Only to ease unit test mocking.
+    def _new_context(self, options: str, hide_rf_browser: bool, trace_file: str):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.NewContext(
+                Request().Context(
+                    rawOptions=options,
+                    hideRfBrowser=hide_rf_browser,
+                    defaultTimeout=int(self.timeout),
+                    traceFile=str(trace_file),
+                )
+            )
+            return response
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:

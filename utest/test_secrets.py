@@ -1,6 +1,6 @@
 import json
 import sys
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -45,25 +45,20 @@ def test_fill_secret_with_prefix(caplog):
 
 @pytest.mark.skipif(sys.version_info.minor == 7, reason="Does not work with Python 3.7")
 def test_http_credentials_in_new_context():
+    class Response:
+        contextOptions = json.dumps({'username': 'USERNAME', 'password': 'PWD'})
+        log = "Something here"
+        newBrowser = True
+        id = 123
     ctx = MagicMock()
-    pw = MagicMock()
-    grpc = MagicMock()
-    new_context = MagicMock()
-    response = MagicMock()
-    msg = 'Successfully created context with  options: {"username": "USERNAME", "password": "PWD"}'
-    type(response).log = PropertyMock(return_value=msg)
-    context = MagicMock(return_value=response)
-    new_context.NewContext = context
-    enter = MagicMock(return_value=new_context)
-    grpc.__enter__ = enter
-    pw.grpc_channel.return_value = grpc
-    ctx.playwright = pw
+    dummy_new_context = MagicMock(return_value=Response())
     pw = PlaywrightState(ctx)
+    pw._new_context = dummy_new_context
     pw.resolve_secret = MagicMock(
         return_value={"username": "USERNAME", "password": "PWD"}
     )
     pw.new_context(httpCredentials={"username": "$username", "password": "$pwd"})
-    args = new_context.NewContext.call_args_list
-    result_raw_options = json.loads(args[0].args[0].rawOptions)
+    name, args, kwargs = dummy_new_context.mock_calls[0]
+    result_raw_options = json.loads(args[0])
     assert result_raw_options["httpCredentials"]["username"] == "USERNAME"
     assert result_raw_options["httpCredentials"]["password"] == "PWD"
