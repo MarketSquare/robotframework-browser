@@ -81,6 +81,10 @@ class LibraryComponent:
     def video_output(self):
         return self.browser_output / "video"
 
+    @property
+    def traces_output(self):
+        return self.browser_output / "traces"
+
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
 

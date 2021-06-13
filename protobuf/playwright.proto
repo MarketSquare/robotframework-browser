@@ -65,7 +65,7 @@ message Request {
     string rawOptions = 1;
     bool hideRfBrowser = 2;
     int32 defaultTimeout = 3;
-    string traceAsJson = 4;
+    string traceFile = 4;
   }
 
   message Url {
