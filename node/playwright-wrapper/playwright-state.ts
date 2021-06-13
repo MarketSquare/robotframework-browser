@@ -121,15 +121,15 @@ async function _newBrowserContext(
         });
     }
     context.setDefaultTimeout(defaultTimeout);
-    const c = { 
-        id: `context=${uuidv4()}`, 
-        c: context, 
-        pageStack: [] as IndexedPage[], 
+    const c = {
+        id: `context=${uuidv4()}`,
+        c: context,
+        pageStack: [] as IndexedPage[],
         options: options,
-        traceFile: traceFile 
+        traceFile: traceFile,
     };
     if (traceFile) {
-        logger.info('Tracing enabled with: { screenshots: true, snapshots: true }')
+        logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
         context.tracing.start({ screenshots: true, snapshots: true });
     }
     c.c.on('page', (page) => {
@@ -461,7 +461,13 @@ export async function newContext(
     const defaultTimeout = request.getDefaulttimeout();
     const traceFile = request.getTracefile();
     logger.info(`Trace file: ${traceFile}`);
-    const context = await _newBrowserContext(browserState.browser.browser, defaultTimeout, traceFile, options, hideRfBrowser);
+    const context = await _newBrowserContext(
+        browserState.browser.browser,
+        defaultTimeout,
+        traceFile,
+        options,
+        hideRfBrowser,
+    );
     browserState.browser.pushContext(context);
     const response = new Response.NewContextResponse();
     response.setId(context.id);

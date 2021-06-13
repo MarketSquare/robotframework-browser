@@ -20,4 +20,3 @@ When Not Enabled No Trace File
     ${count} =    Glob Files Count    ${tmp_traces}
     Should Be True    ${count} == ${0}
     Wait File Count In Directory    ${OUTPUT_DIR}    1    trace*.zip
-
