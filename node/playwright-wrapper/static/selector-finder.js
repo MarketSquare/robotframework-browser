@@ -179,12 +179,13 @@ function cssesc(a, b = {}) {
     }), !e && c.wrap ? d + g + d : g
 }
 
-window.currentTarget = "NOTSET";
-
 const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
+const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
 
 function addElement () {
   const newDiv = document.createElement("div");
+  newDiv.style.display = "flex";
+  newDiv.style.flexDirection = "column";
   newDiv.style.border = "2px solid blue";
   newDiv.style.borderRadius = "5px";
   newDiv.style.background = "white";
@@ -195,36 +196,59 @@ function addElement () {
   newDiv.style.left = "16px";
   newDiv.style.padding = "8px";
   newDiv.id = BROWSER_LIBRARY_ID;
-  newDiv.textContent = window.currentTarget;
+  const header = document.createElement("h5");
+  header.textContent = "Selector recorder";
+  newDiv.appendChild(header);
+  const targetSpan = document.createElement("span");
+  targetSpan.id = BROWSER_LIBRARY_TEXT_ID;
+  targetSpan.textContent = "NOTSET";
+  newDiv.appendChild(targetSpan);
+  const desc = document.createElement("span");
+  desc.textContent = "Click focus to page and press (s) to record a selector.";
+  newDiv.appendChild(desc);
   document.body.appendChild(newDiv);
 }
 
 window.selectorRecorderFindSelector = function() {
-    window.currentTarget = "NOTSET";
-    const startTime = new Date().getTime();
-
-    function updateTexts() {
-        const tdiff = Math.floor((15 - (new Date().getTime() - startTime)/1000)*100)/100
-        document.getElementById(BROWSER_LIBRARY_ID).textContent = `${tdiff} ${window.currentTarget}`;
-    }
-
-    function mouseMoveListener(e) {
-        const target = document.elementFromPoint(e.pageX, e.pageY);
-        if (target) {
-            window.currentTarget = finder(target);
-            updateTexts();
-        }
-    }
-
-    document.addEventListener('mousemove', mouseMoveListener);
-    addElement();
-    const intervalTimer = setInterval(updateTexts, 100);
     return new Promise((resolve) => {
-        setTimeout(function() {
-        document.removeEventListener('mousemove', mouseMoveListener);
-        document.getElementById(BROWSER_LIBRARY_ID).remove();
-        clearInterval(intervalTimer);
-        resolve(window.currentTarget);
-        }, 15000);
+        let currentTarget = "NOTSET";
+
+        function updateTexts() {
+            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget;
+        }
+
+        function mouseMoveListener(e) {
+            console.log(e.pageY);
+            const target = document.elementFromPoint(e.pageX, e.pageY);
+            if (target) {
+                currentTarget = finder(target);
+                updateTexts();
+            }
+            const elem = document.getElementById(BROWSER_LIBRARY_ID);
+            if (e.pageY < 120) {
+                elem.style.top = null;
+                elem.style.bottom = "16px";
+            } else {
+                elem.style.top = "16px";
+                elem.style.bottom = null;
+            }
+        }
+
+        function keydownListener(e) {
+            const keyName = e.key;
+            console.log(keyName);
+            if (keyName === 's' || keyName === 'S') {
+                document.removeEventListener('mousemove', mouseMoveListener);
+                document.removeEventListener('keydown', keydownListener);
+                document.getElementById(BROWSER_LIBRARY_ID).remove();
+                clearInterval(intervalTimer);
+                resolve(currentTarget);
+            }
+        }
+
+        document.addEventListener('keydown', keydownListener);
+        document.addEventListener('mousemove', mouseMoveListener);
+        addElement();
+        const intervalTimer = setInterval(updateTexts, 150);
     });
 }
