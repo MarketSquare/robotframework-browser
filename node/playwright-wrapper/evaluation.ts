@@ -126,10 +126,7 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
     return emptyWithLog('added Style: ' + content);
 }
 
-export async function recordSelector(
-    request: Request.Empty,
-    page: Page,
-): Promise<Response.JavascriptExecutionResult> {
+export async function recordSelector(request: Request.Empty, page: Page): Promise<Response.JavascriptExecutionResult> {
     await page.addScriptTag({
         type: 'module',
         path: 'static/selector-finder.js',
