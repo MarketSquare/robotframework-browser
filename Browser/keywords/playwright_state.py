@@ -16,6 +16,7 @@ import json
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
 from robot.utils import get_link_path  # type: ignore
@@ -349,7 +350,8 @@ class PlaywrightState(LibraryComponent):
             raise ValueError(
                 f"Must use {SupportedBrowsers.chromium.name} browser with channel definition"
             )
-        params["tracesDir"] = str(self.traces_output)
+        trace_dir = self.traces_output / str(uuid4())
+        params["tracesDir"] = str(trace_dir)
         options = json.dumps(params, default=str)
         logger.info(options)
 
