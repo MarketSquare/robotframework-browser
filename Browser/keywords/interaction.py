@@ -310,8 +310,9 @@ class Interaction(LibraryComponent):
     @keyword(tags=("PageContent",))
     def record_selector(self):
         """
-        Records the selector that is under mouse after 15 seconds.
-        Also during that time console.logs all the seen selectors.
+        Record the selector that is under mouse.
+        Focus on the page and move mouse over the element you want to select.
+        Press 's' to store the elements selector.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.RecordSelector(Request.Empty())
