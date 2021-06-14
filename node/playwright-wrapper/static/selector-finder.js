@@ -198,23 +198,33 @@ function addElement () {
   newDiv.textContent = window.currentTarget;
   document.body.appendChild(newDiv);
 }
-const startTime = new Date().getTime();
-function updateTexts() {
-    const tdiff = Math.floor((15 - (new Date().getTime() - startTime)/1000)*100)/100
-    document.getElementById(BROWSER_LIBRARY_ID).textContent = `${tdiff} ${window.currentTarget}`;
-}
-function mouseMoveListener(e) {
-    const target = document.elementFromPoint(e.pageX, e.pageY);
-    if (target) {
-        window.currentTarget = finder(target);
-        updateTexts();
+
+window.selectorRecorderFindSelector = function() {
+    window.currentTarget = "NOTSET";
+    const startTime = new Date().getTime();
+
+    function updateTexts() {
+        const tdiff = Math.floor((15 - (new Date().getTime() - startTime)/1000)*100)/100
+        document.getElementById(BROWSER_LIBRARY_ID).textContent = `${tdiff} ${window.currentTarget}`;
     }
+
+    function mouseMoveListener(e) {
+        const target = document.elementFromPoint(e.pageX, e.pageY);
+        if (target) {
+            window.currentTarget = finder(target);
+            updateTexts();
+        }
+    }
+
+    document.addEventListener('mousemove', mouseMoveListener);
+    addElement();
+    const intervalTimer = setInterval(updateTexts, 100);
+    return new Promise((resolve) => {
+        setTimeout(function() {
+        document.removeEventListener('mousemove', mouseMoveListener);
+        document.getElementById(BROWSER_LIBRARY_ID).remove();
+        clearInterval(intervalTimer);
+        resolve(window.currentTarget);
+        }, 15000);
+    });
 }
-document.addEventListener('mousemove', mouseMoveListener);
-addElement();
-const intervalTimer = setInterval(updateTexts, 100);
-setTimeout(function() {
-    document.removeEventListener('mousemove', mouseMoveListener);
-    document.getElementById(BROWSER_LIBRARY_ID).remove();
-    clearInterval(intervalTimer);
-}, 15000);

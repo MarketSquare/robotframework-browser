@@ -131,10 +131,9 @@ export async function recordSelector(request: Request.Empty, page: Page): Promis
         type: 'module',
         path: 'static/selector-finder.js',
     });
-    await new Promise((r) => setTimeout(() => r(''), 15000));
     const result = await page.evaluate(() => {
         // @ts-ignore
-        return window.currentTarget;
+        return window.selectorRecorderFindSelector();
     });
     return jsResponse(result as string, 'Selector recorded.');
 }
