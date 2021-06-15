@@ -164,6 +164,11 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           inv atest-global-pythonpath
+      - name: Test rfbrowser show-trace on unix-like os
+        if: matrix.os != 'windows-latest'
+        run: |
+          echo ${{ matrix.os }}
+          inv show-trace
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
