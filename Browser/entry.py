@@ -110,7 +110,7 @@ class SmartFormatter(argparse.HelpFormatter):
         return argparse.HelpFormatter._split_lines(self, text, width)
 
 
-if __name__ == "__main__":
+def run():
     parser = argparse.ArgumentParser(
         description="Robot Framework Browser library command line tool.",
         formatter_class=SmartFormatter,
@@ -152,3 +152,7 @@ if __name__ == "__main__":
         raise Exception(
             f"Command should be init or show-trace, but it was {args.command}"
         )
+
+
+if __name__ == "__main__":
+    run()
