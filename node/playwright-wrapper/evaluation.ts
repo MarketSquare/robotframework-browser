@@ -131,6 +131,8 @@ export async function recordSelector(request: Request.Empty, page: Page): Promis
         type: 'module',
         path: path.join(__dirname, '/static/selector-finder.js'),
     });
+    // Seems that selector-finder injecting method to namespace is slow.
+    await new Promise((resolve) => setTimeout(resolve, 500));
     const result = await page.evaluate(() => {
         // @ts-ignore
         return window.selectorRecorderFindSelector();
