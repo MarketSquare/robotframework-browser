@@ -41,8 +41,9 @@ const testappFrontend = {
 const sharedNode = {
     target: 'node',
     node: {
-        __filename: true,
-        __dirname: true
+        global: false,
+        __filename: false,
+        __dirname: false,
     },
 }
 

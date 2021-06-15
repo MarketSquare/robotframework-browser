@@ -16,7 +16,7 @@ package_data = {
         "wrapper/index.js",
         "wrapper/package.json",
         "wrapper/package-lock.json",
-        "wrapper/generated/*",
+        "wrapper/static/selector-finder.js",
     ],
 }
 

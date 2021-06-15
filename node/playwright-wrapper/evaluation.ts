@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ElementHandle, JSHandle, Page } from 'playwright';
+import * as path from 'path';
+import { ElementHandle, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -21,7 +22,6 @@ import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
-import { finder } from '@medv/finder';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 declare global {
@@ -129,11 +129,27 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
 export async function recordSelector(request: Request.Empty, page: Page): Promise<Response.JavascriptExecutionResult> {
     await page.addScriptTag({
         type: 'module',
-        path: 'static/selector-finder.js',
+        path: path.join(__dirname, '/static/selector-finder.js'),
     });
     const result = await page.evaluate(() => {
+        function rafAsync() {
+            return new Promise((resolve) => {
+                requestAnimationFrame(resolve); //faster than set time out
+            });
+        }
+
         // @ts-ignore
-        return window.selectorRecorderFindSelector();
+        function waitUntilRecorderAvailable() {
+            // @ts-ignore
+            if (!window.selectorRecorderFindSelector) {
+                return rafAsync().then(() => waitUntilRecorderAvailable());
+            } else {
+                // @ts-ignore
+                return Promise.resolve(window.selectorRecorderFindSelector());
+            }
+        }
+
+        return waitUntilRecorderAvailable();
     });
     return jsResponse(result as string, 'Selector recorded.');
 }
