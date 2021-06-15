@@ -1,3 +1,8 @@
+/*
+ This is MIT licensed Anton Medvedevs cool work:
+ https://github.com/antonmedv/finder
+ Static copy because of ease of installation
+ */
 var Limit;
 (function (a) {
     a[a.All = 0] = "All", a[a.Two = 1] = "Two", a[a.One = 2] = "One"
@@ -178,6 +183,7 @@ function cssesc(a, b = {}) {
         return b && b.length % 2 ? a : (b || "") + c
     }), !e && c.wrap ? d + g + d : g
 }
+/* Cool work ends and Browser library work begins */
 
 const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
 const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
