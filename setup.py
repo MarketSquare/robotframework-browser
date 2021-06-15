@@ -17,6 +17,7 @@ package_data = {
         "wrapper/package.json",
         "wrapper/package-lock.json",
         "wrapper/generated/*",
+        "wrapper/static/*",
     ],
 }
 

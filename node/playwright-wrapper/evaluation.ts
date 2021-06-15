@@ -133,7 +133,7 @@ export async function recordSelector(request: Request.Empty, page: Page): Promis
     });
     const result = await page.evaluate(() => {
         function rafAsync() {
-            return new Promise(resolve => {
+            return new Promise((resolve) => {
                 requestAnimationFrame(resolve); //faster than set time out
             });
         }
