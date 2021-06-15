@@ -132,8 +132,24 @@ export async function recordSelector(request: Request.Empty, page: Page): Promis
         path: path.join(__dirname, '/static/selector-finder.js'),
     });
     const result = await page.evaluate(() => {
+        function rafAsync() {
+            return new Promise(resolve => {
+                requestAnimationFrame(resolve); //faster than set time out
+            });
+        }
+
         // @ts-ignore
-        return window.selectorRecorderFindSelector();
+        function waitUntilRecorderAvailable() {
+            // @ts-ignore
+            if (!window.selectorRecorderFindSelector) {
+                return rafAsync().then(() => waitUntilRecorderAvailable());
+            } else {
+                // @ts-ignore
+                return Promise.resolve(window.selectorRecorderFindSelector());
+            }
+        }
+
+        return waitUntilRecorderAvailable();
     });
     return jsResponse(result as string, 'Selector recorded.');
 }
