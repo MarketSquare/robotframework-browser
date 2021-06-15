@@ -89,7 +89,6 @@ def show_trace(file: str):
     playwright = INSTALLATION_DIR / "node_modules" / "playwright"
     local_browsers = playwright / ".local-browsers"
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
-    print(os.environ["PLAYWRIGHT_BROWSERS_PATH"])
     trace_arguments = [
         "npx",
         "playwright",
