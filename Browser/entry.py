@@ -103,10 +103,10 @@ def show_trace(file: str):
 class SmartFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
         if text.startswith("Possible commands are:"):
-            parts = text.splitlines()
-            last_text = argparse.HelpFormatter._split_lines(self, parts[-1], width)
-            parts.pop()
-            parts.extend(last_text)
+            parts = []
+            for part in text.splitlines():
+                part = argparse.HelpFormatter._split_lines(self, part, width)
+                parts.extend(part if part else "\n")
             return parts
         return argparse.HelpFormatter._split_lines(self, text, width)
 
@@ -119,16 +119,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "command",
         help=(
-            "Possible commands are:\n\ninit\nshow-trace\n\ninit command will install the required node dependencies. "
-            "init command is needed only when library is installed or updated. show-trace command will start the "
-            "Playwright trace viewer tool. See the each command argument group for more details what (optional) "
+            "Possible commands are:\ninit\nshow-trace\n\ninit command will install the required node dependencies. "
+            "init command is needed when library is installed or updated.\n\nshow-trace command will start the "
+            "Playwright trace viewer tool.\n\nSee the each command argument group for more details what (optional) "
             "arguments that command supports."
         ),
     )
     install = parser.add_argument_group("init options")
     install.add_argument(
         "--skip-browsers",
-        help="Skips the Playwright browser installation. Argument is optional",
+        help="If defined skips the Playwright browser installation. Argument is optional",
         default=False,
         action="store_true",
     )
@@ -143,7 +143,6 @@ if __name__ == "__main__":
         default=False,
     )
     args = parser.parse_args()
-    print(args)
     if args.command == "init":
         rfbrowser_init(args.skip_browsers)
     elif args.command == "show-trace":
