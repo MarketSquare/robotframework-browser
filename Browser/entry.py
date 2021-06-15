@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import argparse
 import os
 import platform
 import subprocess
@@ -19,54 +19,31 @@ import sys
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
-USAGE = """USAGE
-  rfbrowser [command]
-AVAILABLE COMMANDS
-  init  Install required nodejs dependencies
-    OPTIONS:
-        --skip-browsers
-
-"""
-
-
-def run():
-    if len(sys.argv) < 2:
-        print(USAGE)
-        sys.exit(1)
-    cmd = sys.argv[1]
-    if cmd == "init":
-        arg2 = sys.argv[2] if len(sys.argv) >= 3 else ""
-        rfbrowser_init(arg2 == "--skip-browsers")
-    else:
-        print(f"Invalid command `{cmd}`")
-        print(USAGE)
-        sys.exit(64)
+INSTALLATION_DIR = Path(__file__).parent / "wrapper"
 
 
 def rfbrowser_init(skip_browser_install: bool):
     print("Installing node dependencies...")
-    installation_dir = Path(__file__).parent / "wrapper"
-
-    if not (installation_dir / "package.json").is_file():
+    if not (INSTALLATION_DIR / "package.json").is_file():
         print(
-            f"Installation directory `{installation_dir}` does not contain the required package.json "
+            f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json "
             + "\nPrinting contents:"
         )
-        for root, _dirs, files in os.walk(installation_dir):
-            level = root.replace(installation_dir.__str__(), "").count(os.sep)
+        for root, _dirs, files in os.walk(INSTALLATION_DIR):
+            level = root.replace(INSTALLATION_DIR.__str__(), "").count(os.sep)
             indent = " " * 4 * (level)
             print("{}{}/".format(indent, os.path.basename(root)))
             subindent = " " * 4 * (level + 1)
             for f in files:
                 print("{}{}".format(subindent, f))
         raise RuntimeError("Could not find robotframework-browser's package.json")
-    if not os.access(installation_dir, os.W_OK):
+    if not os.access(INSTALLATION_DIR, os.W_OK):
         sys.tracebacklimit = 0
         raise RuntimeError(
-            f"`rfbrowser init` needs write permissions to {installation_dir}"
+            f"`rfbrowser init` needs write permissions to {INSTALLATION_DIR}"
         )
 
-    print("Installing rfbrowser node dependencies at {}".format(installation_dir))
+    print(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
 
     try:
         # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
@@ -88,7 +65,7 @@ def rfbrowser_init(skip_browser_install: bool):
     process = Popen(
         "npm install --production",
         shell=True,
-        cwd=installation_dir,
+        cwd=INSTALLATION_DIR,
         stdout=PIPE,
         stderr=STDOUT,
     )
@@ -105,6 +82,76 @@ def rfbrowser_init(skip_browser_install: bool):
         )
 
     print("rfbrowser init completed")
+
+
+def show_trace(file: str):
+    print(f"Opening file: {file}")
+    playwright = INSTALLATION_DIR / "node_modules" / "playwright"
+    local_browsers = playwright / ".local-browsers"
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
+    trace_arguments = [
+        "npx",
+        "playwright",
+        "show-trace",
+        file,
+    ]
+    subprocess.run(trace_arguments)
+
+
+# Based on: https://stackoverflow.com/questions/3853722/how-to-insert-newlines-on-argparse-help-text
+class SmartFormatter(argparse.HelpFormatter):
+    def _split_lines(self, text, width):
+        if text.startswith("Possible commands are:"):
+            parts = []
+            for part in text.splitlines():
+                part = argparse.HelpFormatter._split_lines(self, part, width)
+                parts.extend(part if part else "\n")
+            return parts
+        return argparse.HelpFormatter._split_lines(self, text, width)
+
+
+def run():
+    parser = argparse.ArgumentParser(
+        description="Robot Framework Browser library command line tool.",
+        formatter_class=SmartFormatter,
+    )
+    parser.add_argument(
+        "command",
+        help=(
+            "Possible commands are:\ninit\nshow-trace\n\ninit command will install the required node dependencies. "
+            "init command is needed when library is installed or updated.\n\nshow-trace command will start the "
+            "Playwright trace viewer tool.\n\nSee the each command argument group for more details what (optional) "
+            "arguments that command supports."
+        ),
+    )
+    install = parser.add_argument_group("init options")
+    install.add_argument(
+        "--skip-browsers",
+        help="If defined skips the Playwright browser installation. Argument is optional",
+        default=False,
+        action="store_true",
+    )
+    trace = parser.add_argument_group("show-trace options")
+    trace.add_argument(
+        "--file",
+        "-F",
+        help=(
+            "Full path to trace zip file. See New Context keyword for more details how to "
+            "create trace file. Argument is mandatory."
+        ),
+        default=False,
+    )
+    args = parser.parse_args()
+    if args.command == "init":
+        rfbrowser_init(args.skip_browsers)
+    elif args.command == "show-trace":
+        if not args.file:
+            raise Exception("show-trace needs also --file argument")
+        show_trace(args.file)
+    else:
+        raise Exception(
+            f"Command should be init or show-trace, but it was {args.command}"
+        )
 
 
 if __name__ == "__main__":
