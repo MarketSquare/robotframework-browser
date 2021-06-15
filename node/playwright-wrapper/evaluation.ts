@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ElementHandle, JSHandle, Page } from 'playwright';
+import * as path from 'path';
+import { ElementHandle, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -21,7 +22,6 @@ import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
-import { finder } from '@medv/finder';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
 declare global {
@@ -129,7 +129,7 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
 export async function recordSelector(request: Request.Empty, page: Page): Promise<Response.JavascriptExecutionResult> {
     await page.addScriptTag({
         type: 'module',
-        path: 'static/selector-finder.js',
+        path: path.join(__dirname, '/static/selector-finder.js'),
     });
     const result = await page.evaluate(() => {
         // @ts-ignore
