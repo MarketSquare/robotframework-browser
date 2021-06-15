@@ -620,7 +620,7 @@ def demo_app(c):
     zip_file.close()
     return zip_path
 
-def _check_process():
+def _check_process(zip_file):
     for pid in psutil.pids():
         process = psutil.Process(pid)
         try:
@@ -628,7 +628,7 @@ def _check_process():
         except psutil.AccessDenied:
             pass
         else:
-            if 'show-trace' in cmd and '-F' in cmd and 'atest/output/0-trace_1.zip' in cmd and process.is_running():
+            if 'show-trace' in cmd and '-F' in cmd and str(zip_file) in cmd and process.is_running():
                 print(f"Process found: {process}")
                 return True
 
@@ -637,11 +637,20 @@ def _check_process():
 def show_trace(c):
     """CI check for rfbrowser show-trace command.
 
-    Waits 30s to see rfbrowser show-trace"""
+    Waits 30s to see rfbrowser show-trace with psutil.
+
+    This is deeply coupled with tests. atest execution must create
+    atest/output/0-trace_1.zip file. Also this command works ony when
+    library is installed with pip and rfbrowser init command.
+    """
+    zip_files = ATEST_OUTPUT.glob("*trace_1.zip")
+    zip_file = list(zip_files)[0]
+    process = subprocess.Popen(["rfbrowser", "show-trace", "-F", zip_file], cwd=ROOT_DIR)
+    print("Give process time to start")
+    time.sleep(1)
     end_time = time.monotonic() + 30
-    process = subprocess.Popen(["rfbrowser", "show-trace", "-F", "atest/output/0-trace_1.zip"], cwd=ROOT_DIR)
     while end_time > time.monotonic():
-        if _check_process():
+        if _check_process(zip_file):
             process.kill()
             break
     else:
