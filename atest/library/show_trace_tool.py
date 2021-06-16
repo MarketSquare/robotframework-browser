@@ -2,6 +2,7 @@ import subprocess
 import time
 
 import psutil
+from psutil import NoSuchProcess
 from robot.libraries.BuiltIn import BuiltIn
 
 
@@ -15,7 +16,11 @@ def start_show_trace(zip_file: str):
 
 def _check_trace_process(process: subprocess.Popen):
     pid = process.pid
-    psutil.pid_exists(pid)
+    try:
+        psutil.pid_exists(pid)
+    except NoSuchProcess:
+        print(process.stdout)
+        raise 
     proc = psutil.Process(pid)
     binary = False
     show_trace = False
