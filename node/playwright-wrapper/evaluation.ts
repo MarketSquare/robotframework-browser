@@ -131,6 +131,7 @@ export async function recordSelector(request: Request.Empty, page: Page): Promis
         type: 'module',
         path: path.join(__dirname, '/static/selector-finder.js'),
     });
+    await page.bringToFront();
     const result = await page.evaluate(() => {
         function rafAsync() {
             return new Promise((resolve) => {
