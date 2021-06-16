@@ -42,7 +42,11 @@ Most important enhancements
 Record selectors (`#1080`_)
 ---------------------------
 Library has not possibility to record selecors when tests are created. Mikko
-made video which explain the details of feature better: https://www.youtube.com/watch?v=IDAGxNxksg0
+made video which explain the details of feature better: 
+
+.. image:: https://img.youtube.com/vi/IDAGxNxksg0/0.jpg
+   :target: https://www.youtube.com/watch?v=IDAGxNxksg0
+
 
 Add support to enable trace recording (`#1072`_)
 ------------------------------------------------
