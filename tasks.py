@@ -1,7 +1,6 @@
 import os
 import subprocess
 import sys
-import time
 import zipfile
 from pathlib import Path, PurePath
 import platform
@@ -9,7 +8,6 @@ import re
 import traceback
 import shutil
 
-import psutil
 from invoke import task, Exit
 
 try:
@@ -308,7 +306,7 @@ def atest_robot(c):
 
 @task(clean_atest)
 def atest_global_pythonpath(c):
-    sys.exit(_run_pabot())
+    sys.exit(_run_pabot(["--variable", "SYS_VAR_CI:True"]))
 
 
 # Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
@@ -619,39 +617,3 @@ def demo_app(c):
         zip_file.write(file, arc_name)
     zip_file.close()
     return zip_path
-
-def _check_process(zip_file):
-    for pid in psutil.pids():
-        process = psutil.Process(pid)
-        try:
-            cmd = process.cmdline()
-        except psutil.AccessDenied:
-            pass
-        else:
-            if 'show-trace' in cmd and '-F' in cmd and str(zip_file) in cmd and process.is_running():
-                print(f"Process found: {process}")
-                return True
-
-
-@task
-def show_trace(c):
-    """CI check for rfbrowser show-trace command.
-
-    Waits 30s to see rfbrowser show-trace with psutil.
-
-    This is deeply coupled with tests. atest execution must create
-    atest/output/0-trace_1.zip file. Also this command works ony when
-    library is installed with pip and rfbrowser init command.
-    """
-    zip_files = ATEST_OUTPUT.glob("*trace_1.zip")
-    zip_file = list(zip_files)[0]
-    process = subprocess.Popen(["rfbrowser", "show-trace", "-F", zip_file], cwd=ROOT_DIR)
-    print("Give process time to start")
-    time.sleep(1)
-    end_time = time.monotonic() + 30
-    while end_time > time.monotonic():
-        if _check_process(zip_file):
-            process.kill()
-            break
-    else:
-        raise ValueError("Timeout")
