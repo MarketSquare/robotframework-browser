@@ -12,7 +12,13 @@ def start_show_trace(zip_file: str):
     ouput_dir = BuiltIn().get_variable_value("${OUTPUT_DIR}")
     out_file = Path(ouput_dir, "rfbrower.log")
     with open(out_file, "w") as file:
-        process = subprocess.Popen(["rfbrowser", "show-trace", "-F", zip_file], cwd=exec_dir, stderr=subprocess.STDOUT, stdout=file)
+        process = subprocess.Popen(
+            ["rfbrowser", "show-trace", "-F", zip_file],
+            cwd=exec_dir,
+            stderr=subprocess.STDOUT,
+            stdout=file,
+            shell=True
+        )
     print("Give process time to start")
     time.sleep(3)
     print(out_file.read_text())
