@@ -1,5 +1,6 @@
 import subprocess
 import time
+from pathlib import Path
 
 import psutil
 from psutil import NoSuchProcess
@@ -8,9 +9,13 @@ from robot.libraries.BuiltIn import BuiltIn
 
 def start_show_trace(zip_file: str):
     exec_dir = BuiltIn().get_variable_value("${EXECDIR}")
-    process = subprocess.Popen(["rfbrowser", "show-trace", "-F", zip_file], cwd=exec_dir)
+    ouput_dir = BuiltIn().get_variable_value("${OUTPUT_DIR}")
+    out_file = Path(ouput_dir, "rfbrower.log")
+    with open(out_file, "w") as file:
+        process = subprocess.Popen(["rfbrowser", "show-trace", "-F", zip_file], cwd=exec_dir, stderr=subprocess.STDOUT, stdout=file)
     print("Give process time to start")
     time.sleep(3)
+    print(out_file.read_text())
     return process
 
 
