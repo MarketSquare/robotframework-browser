@@ -1,5 +1,6 @@
 *** Settings ***
 Resource          imports.resource
+Library    ../../../.venv/lib/python3.8/site-packages/robot/libraries/Process.py
 
 *** Test Cases ***
 Enable Tracing To File
@@ -42,6 +43,8 @@ Check Show-Trace Command
     IF    '${SYS_VAR_CI}' == 'False'
         Log    This is only for CI when installation is done.
     ELSE
+        ${help} =    Run Rfbrowser Help
+        Should Contain    ${help}    Possible commands are
         ${process} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
         Check Trace Process    ${process}
     END
