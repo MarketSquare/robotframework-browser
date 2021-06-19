@@ -6,6 +6,7 @@ Library           DateTime
 Library           Collections
 Library           ../library/common.py
 Library           ../library/os_wrapper.py
+Library           ../library/show_trace_tool.py
 
 *** Keywords ***
 Open Browser To No Page

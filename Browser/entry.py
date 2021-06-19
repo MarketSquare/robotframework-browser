@@ -20,6 +20,9 @@ from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
+# This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
+# But shell=True breaks our linux CI
+SHELL = True if platform.platform().startswith("Windows") else False
 
 
 def rfbrowser_init(skip_browser_install: bool):
@@ -46,10 +49,7 @@ def rfbrowser_init(skip_browser_install: bool):
     print(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
 
     try:
-        # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
-        # But shell=True breaks our linux CI
-        shell = True if platform.platform().startswith("Windows") else False
-        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=shell)
+        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=SHELL)
     except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
         print(
             "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
@@ -88,14 +88,15 @@ def show_trace(file: str):
     print(f"Opening file: {file}")
     playwright = INSTALLATION_DIR / "node_modules" / "playwright"
     local_browsers = playwright / ".local-browsers"
-    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
+    env = os.environ.copy()
+    env["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
     trace_arguments = [
         "npx",
         "playwright",
         "show-trace",
         file,
     ]
-    subprocess.run(trace_arguments)
+    subprocess.run(trace_arguments, env=env, shell=SHELL)
 
 
 # Based on: https://stackoverflow.com/questions/3853722/how-to-insert-newlines-on-argparse-help-text
