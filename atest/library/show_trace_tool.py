@@ -80,10 +80,10 @@ def _check_trace_process(process: subprocess.Popen):
         chromium = False
         for child_proc in proc.children(recursive=True):
             logger.info(child_proc)
-            if child_proc.name().lower() == "node":
+            if "node" in child_proc.name().lower():
                 logger.info(child_proc.name())
                 node = True
-            if child_proc.name().lower() == "chromium":
+            if "chromium" in child_proc.name().lower() or "chrome" in child_proc.name().lower():
                 logger.info(child_proc.name())
                 chromium = True
         if chromium and node:
