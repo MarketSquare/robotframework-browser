@@ -79,6 +79,7 @@ def _check_trace_process(process: subprocess.Popen):
         node = False
         chromium = False
         for child_proc in proc.children(recursive=True):
+            logger.info(child_proc)
             if child_proc.name().lower() == "node":
                 logger.info(child_proc.name())
                 node = True
@@ -101,5 +102,7 @@ def check_trace_process(prcess: subprocess.Popen):
     while end_time > time.monotonic():
         if _check_trace_process(prcess):
             return True
+        logger.info("Sleep 1s and retry.")
+        time.sleep(1)
     raise ValueError("No valid trace process found")
 
