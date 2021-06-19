@@ -23,6 +23,7 @@ def start_show_trace(zip_file: str):
     print("Give process time to start")
     time.sleep(3)
     print(out_file.read_text())
+    assert process.returncode is None, "Process should be still running, but it was not."
     return process
 
 
