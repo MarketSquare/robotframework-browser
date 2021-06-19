@@ -8,12 +8,13 @@ from robot.libraries.BuiltIn import BuiltIn
 
 
 def start_show_trace(zip_file: str):
+    zip_file = Path(zip_file).resolve(strict=True)
     exec_dir = BuiltIn().get_variable_value("${EXECDIR}")
     ouput_dir = BuiltIn().get_variable_value("${OUTPUT_DIR}")
     out_file = Path(ouput_dir, "rfbrower.log")
     with open(out_file, "w") as file:
         process = subprocess.Popen(
-            ["rfbrowser", "show-trace", "-F", zip_file],
+            ["rfbrowser", "show-trace", "-F", str(zip_file)],
             cwd=exec_dir,
             stderr=subprocess.STDOUT,
             stdout=file,
