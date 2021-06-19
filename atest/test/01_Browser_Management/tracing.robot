@@ -1,6 +1,5 @@
 *** Settings ***
 Resource          imports.resource
-Library    ../../../.venv/lib/python3.8/site-packages/robot/libraries/Process.py
 
 *** Test Cases ***
 Enable Tracing To File
