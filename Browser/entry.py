@@ -88,14 +88,15 @@ def show_trace(file: str):
     print(f"Opening file: {file}")
     playwright = INSTALLATION_DIR / "node_modules" / "playwright"
     local_browsers = playwright / ".local-browsers"
-    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
+    env = os.environ.copy()
+    env["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
     trace_arguments = [
         "npx",
         "playwright",
         "show-trace",
         file,
     ]
-    subprocess.run(trace_arguments)
+    subprocess.run(trace_arguments, shell=True, env=env)
 
 
 # Based on: https://stackoverflow.com/questions/3853722/how-to-insert-newlines-on-argparse-help-text
