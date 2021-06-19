@@ -515,7 +515,8 @@ class PlaywrightState(LibraryComponent):
          files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will
          be enabled for all pages in the context. Tracing is automatically closed when context is
          closed. Temporary trace files will be automatically deleted at start of each test
-         execution.
+         execution. Trace file can be opened after the test execution by running command from
+         shell: `rfbrowser show-trace -F /path/to/trace.zip`.
 
         Example:
         | Test an iPhone
