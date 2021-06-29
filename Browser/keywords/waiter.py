@@ -84,6 +84,7 @@ class Waiter(LibraryComponent):
                         logger.debug(f"Suppress error: {error}")
                     else:
                         if message:
+                            timeout = self.millisecs_to_timestr(self.get_timeout(timeout))
                             message = message.format(
                                 selector=selector, function=state, timeout=timeout
                             )
@@ -158,6 +159,7 @@ class Waiter(LibraryComponent):
                     logger.debug(f"Suppress {error}")
                 else:
                     if message:
+                        timeout = self.millisecs_to_timestr(self.get_timeout(timeout))
                         message = message.format(
                             selector=selector, function=function, timeout=timeout
                         )
