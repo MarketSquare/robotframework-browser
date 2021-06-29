@@ -60,8 +60,9 @@ Docker container builds a clean install package. This can be used to check that 
 Ensure generated code and types are up to date with `inv build`
 
 ### Set version number
-Run `inv version <new_version>` to update the version information to both Python and Node components.
-Version number should match to the milestone to the [issue tracker](https://github.com/MarketSquare/robotframework-browser/milestones)
+Set `VERSION=<version>` and run `inv version <new_version>` to update the version
+information to both Python and Node components. Version number should match to the
+milestone to the [issue tracker](https://github.com/MarketSquare/robotframework-browser/milestones)
 
 ```
 git add Browser/version.py
@@ -82,7 +83,6 @@ Set GitHub user information into shell variables to ease copy-pasting the follow
 ```
 GITHUB_USERNAME=<username>
 GITHUB_PASSWORD=<password>
-VERSION=<version>
 ```
 
 Generate a template for the release notes:
