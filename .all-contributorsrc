@@ -388,6 +388,15 @@
         "bug",
         "ideas"
       ]
+    },
+    {
+      "login": "ssallmen",
+      "name": "Sami Sallmén",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39527407?v=4",
+      "profile": "https://github.com/ssallmen",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
