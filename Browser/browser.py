@@ -610,6 +610,7 @@ class Browser(DynamicCore):
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Optional[str] = None,
         enable_presenter_mode: bool = False,
+        playwright_process_port: Optional[int] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 

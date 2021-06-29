@@ -26,17 +26,21 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
-import { emptyWithLog, errorResponse } from './response-util';
+import { emptyWithLog, errorResponse, jsonResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     private states: { [peer: string]: PlaywrightState } = {};
 
+    private createState = (key: string): PlaywrightState => {
+        if (!(key in this.states)) {
+            this.states[key] = new PlaywrightState();
+        }
+        return this.states[key];
+    };
+
     private getState = (peer: ServerSurfaceCall): PlaywrightState => {
         const p = peer.getPeer();
-        if (!(p in this.states)) {
-            this.states[p] = new PlaywrightState();
-        }
-        return this.states[p];
+        return this.createState(p);
     };
     private getActiveBrowser = (peer: ServerSurfaceCall) => this.getState(peer).getActiveBrowser();
     private getActiveContext = (peer: ServerSurfaceCall) => this.getState(peer).getActiveContext();
@@ -436,6 +440,42 @@ export class PlaywrightServer implements IPlaywrightServer {
             if (request === null) throw Error('No request');
             const result = await browserControl.reload(this.getActivePage(call));
             callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async listPlaywrightStates(
+        call: ServerUnaryCall<Request.Empty, Response.Empty>,
+        callback: sendUnaryData<Response.Json>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = this.states;
+            callback(null, jsonResponse(JSON.stringify(Object.keys(result)), ''));
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    /* When calling, it is on caller's responsibility to clean resources in state which is being switched away from.
+     * If state does not exist error will be thrown
+     */
+    async selectPlaywrightState(
+        call: ServerUnaryCall<Request.Index, Response.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = this.states[request.getIndex()];
+            if (result) {
+                this.states[call.getPeer()] = result;
+                callback(null, emptyWithLog(''));
+            } else {
+                throw new Error('Invalid index for PlaywrightState');
+            }
         } catch (e) {
             callback(errorResponse(e), null);
         }

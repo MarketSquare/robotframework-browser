@@ -18,7 +18,7 @@ import os
 import time
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
 
 import grpc  # type: ignore
 from backports.cached_property import cached_property
@@ -77,7 +77,7 @@ class Playwright(LibraryComponent):
         )
 
     def start_playwright(self) -> Optional[Popen]:
-        existing_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
+        existing_port = self.port or os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
         if existing_port is not None:
             self.port = existing_port
             logger.info(
@@ -168,3 +168,11 @@ class Playwright(LibraryComponent):
             logger.debug("Playwright process killed")
         else:
             logger.debug("Disconnected from external Playwright process")
+
+    def list_playwright_states(self) -> List[str]:
+        with self.grpc_channel() as stub:
+            return stub.ListPlaywrightStates(Request().Empty())
+
+    def select_playwright_state(self, id: str) -> None:
+        with self.grpc_channel() as stub:
+            return stub.SelectPlaywrightState(Request().Index(index=id))

@@ -397,4 +397,8 @@ service  Playwright {
   /* Extension handling */
   rpc InitializeExtension(Request.FilePath) returns (Response.Keywords);
   rpc CallExtensionKeyword(Request.KeywordCall) returns (stream Response.Json);
+
+  /* Switching of GRPC Playwright-state bound sessions */
+  rpc ListPlaywrightStates(Request.Empty) returns (Response.Json);
+  rpc SelectPlaywrightState(Request.Index) returns (Response.Empty);
 }
