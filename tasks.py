@@ -248,11 +248,15 @@ def atest(c, suite=None, include=None, zip=None):
     os.environ["DEBUG"] = "pw:api"
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
     port = str(find_free_port())
-    process = subprocess.Popen([
-        "node",
-        "Browser/wrapper/index.js",
-        port,
-    ], stdout=logfile, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(
+        [
+            "node",
+            "Browser/wrapper/index.js",
+            port,
+        ],
+        stdout=logfile,
+        stderr=subprocess.STDOUT,
+    )
     os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
     rc = _run_pabot(args, exit)
     process.kill()
@@ -437,6 +441,7 @@ def docker_test(c):
           """
     )
 
+
 @task()
 def docker_run_tmp_tests(c):
     """
@@ -454,6 +459,7 @@ def docker_run_tmp_tests(c):
         sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin robot --loglevel debug --outputdir /app/tmp/output /app/tmp/"
         """
     )
+
 
 @task(build)
 def run_test_app(c):
@@ -495,8 +501,8 @@ def docs(c):
 
 @task
 def create_package(c):
-     shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
-     c.run("python setup.py sdist bdist_wheel")
+    shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
+    c.run("python setup.py sdist bdist_wheel")
 
 
 @task(clean, build, docs, create_package)

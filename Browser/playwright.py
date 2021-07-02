@@ -16,6 +16,7 @@ import atexit
 import contextlib
 import os
 import time
+import json
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 from typing import TYPE_CHECKING, Optional, List
@@ -172,7 +173,7 @@ class Playwright(LibraryComponent):
 
     def list_playwright_states(self) -> List[str]:
         with self.grpc_channel() as stub:
-            return stub.ListPlaywrightStates(Request().Empty())
+            return json.loads(stub.ListPlaywrightStates(Request().Empty()).json)
 
     def select_playwright_state(self, id: str) -> None:
         with self.grpc_channel() as stub:
