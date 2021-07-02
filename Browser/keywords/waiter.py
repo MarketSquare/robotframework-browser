@@ -54,6 +54,7 @@ class Waiter(LibraryComponent):
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
         The `{function}` formatter is same ``state`` argument value.
         """
+        timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
             ElementState.enabled: "e => !e.disabled",
             ElementState.disabled: "e => e.disabled",
@@ -85,7 +86,9 @@ class Waiter(LibraryComponent):
                     else:
                         if message:
                             message = message.format(
-                                selector=selector, function=state, timeout=timeout
+                                selector=selector,
+                                function=state,
+                                timeout=timeout_as_str,
                             )
                             raise AssertionError(message)
                         raise
@@ -146,6 +149,7 @@ class Waiter(LibraryComponent):
         | Click         \\#progress_bar
         | Wait For      ${promise}
         """
+        timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         end = float(
             self.convert_timeout(timeout, False) if timeout else self.timeout / 1000
         )
@@ -159,7 +163,7 @@ class Waiter(LibraryComponent):
                 else:
                     if message:
                         message = message.format(
-                            selector=selector, function=function, timeout=timeout
+                            selector=selector, function=function, timeout=timeout_as_str
                         )
                         raise AssertionError(message)
                     raise
