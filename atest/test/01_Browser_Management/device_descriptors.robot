@@ -17,6 +17,11 @@ Get Device
     Should Be True    ${device}[isMobile]
     Should Be True    ${device}[hasTouch]
 
+Get Device with Screen
+    ${device}=    Get Device    iPhone 11
+    New Browser
+    New Context    &{device}    acceptDownloads=True
+
 Get Invalid Device Errors
     Run Keyword And Expect Error
     ...    Error: No device named NonExistentDeviceName
