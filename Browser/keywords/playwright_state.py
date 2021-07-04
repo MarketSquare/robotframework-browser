@@ -393,6 +393,7 @@ class PlaywrightState(LibraryComponent):
         recordVideo: Optional[RecordVideo] = None,
         recordHar: Optional[RecordHar] = None,
         tracing: Optional[str] = None,
+        screen: Optional[Dict[str, int]] = None
     ) -> str:
         """Create a new BrowserContext with specified options.
         See `Browser, Context and Page` for more information about BrowserContext.
@@ -517,6 +518,11 @@ class PlaywrightState(LibraryComponent):
          closed. Temporary trace files will be automatically deleted at start of each test
          execution. Trace file can be opened after the test execution by running command from
          shell: `rfbrowser show-trace -F /path/to/trace.zip`.
+
+        ``screen``
+       Emulates consistent window screen size available inside web page via window.screen.
+       Is only used when the viewport is set.
+        - Example {'width': 414, 'height': 896}
 
         Example:
         | Test an iPhone
