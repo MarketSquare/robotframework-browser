@@ -908,7 +908,7 @@ class Getters(LibraryComponent):
         - ``focused`` : to be the ``activeElement``.
         - ``checked`` : to be ``checked`` . Can be used on <input>.
 
-        Note that element must be attached to DOM to be able to fetch the state of ``readonly`` , ``selectec`` and ``checked``.
+        Note that element must be attached to DOM to be able to fetch the state of ``readonly`` , ``selected`` and ``checked``.
         The other states are false if the requested element is not attached.
 
         Note that element without any content or with display:none has an empty bounding box
