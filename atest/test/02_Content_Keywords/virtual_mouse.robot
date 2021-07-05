@@ -75,7 +75,7 @@ Delay click
     ${x}=    Get Boundingbox    \#clickWithOptions    x
     ${y}=    Get Boundingbox    \#clickWithOptions    y
     Mouse Button    click    ${x}    ${y}    delay=1000
-    Get Text    \#mouse_delay_time    validate    int(value) > 1000
+    Get Text    \#mouse_delay_time    validate    int(value) > 950
 
 Left Right and Middle Click
     ${x}=    Get Boundingbox    \#clickWithOptions    x
