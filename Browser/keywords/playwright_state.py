@@ -554,7 +554,6 @@ class PlaywrightState(LibraryComponent):
         logger.info(json.dumps(masked_params, default=str))
         trace_file = Path(self.outputdir, trace_file) if tracing else ""
         response = self._new_context(options, hideRfBrowser, trace_file)
-        print(response.contextOptions)
         context_options = self._mask_credentials(json.loads(response.contextOptions))
         logger.info(response.log)
         logger.info(context_options)
