@@ -975,3 +975,50 @@ class PlaywrightState(LibraryComponent):
             ):
                 return [context]
         return []
+
+    @keyword(tags=("Getter", "BrowserControl"))
+    def save_storage_state(self) -> str:
+        """Saves the current active context storage state to a file.
+
+        Web apps use cookie-based or token-based authentication, where
+        authenticated state is stored as
+        [https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies|cookies]
+        or in
+        [https://developer.mozilla.org/en-US/docs/Web/API/Storage|local storage].
+        Keyword retrieves the storage state from authenticated contexts and
+        save it to disk. Then `New Context` can be created with prepopulated
+        state.
+
+        Please note state file contains secrets and should not be shared
+        with people outside of your organisation.
+
+        The file is created in ${OUTPUTDIR}/state folder and file(s) are
+        automatically deleted when new test execution starts.
+
+        Example:
+        | Test Case
+        |     `New context`
+        |     `New Page`    https://login.page.html
+        |     #  Perform login
+        |     `Fill Secret`    id=username    $username
+        |     `Fill Secret`    id=password    $password
+        |     `Click`    id=button
+        |     `Get Text`    id=header    ==    Something
+        |     #  Save storage to disk
+        |     ${state_file} =    `Save Storage State`
+        |     #  Create new context with saved state
+        |     `New context`    storageState=${state_file}
+        |     `New Page`    https://login.page.html
+        |     #  Login is not needed because authentication is read from state file
+        |     `Get Text`    id=header    ==    Something
+        """
+        file = str(self.state_file / f"{str(uuid4())}.json")
+        self.state_file.mkdir(parents=True, exist_ok=True)
+        log = self._save_storage_state(file)
+        logger.info(log)
+        return file
+
+    def _save_storage_state(self, path: str) -> str:
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SaveStorageState(Request().FilePath(path=path))
+        return response.log

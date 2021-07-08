@@ -181,6 +181,20 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async saveStorageState(
+        call: ServerUnaryCall<Request.FilePath, Response.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await playwrightState.saveStorageState(request, this.getActiveBrowser(call));
+            callback(null, response);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
     switchBrowser = this.wrapping(playwrightState.switchBrowser);
     newPage = this.wrapping(playwrightState.newPage);
     newContext = this.wrapping(playwrightState.newContext);
