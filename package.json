@@ -9,7 +9,7 @@
     "@types/pino": "^6.3.8",
     "@types/react": "^17.0.13",
     "@types/react-dom": "^17.0.9",
-    "@types/react-router-dom": "^5.1.7",
+    "@types/react-router-dom": "^5.1.8",
     "@typescript-eslint/eslint-plugin": "^4.28.2",
     "@typescript-eslint/parser": "^4.28.2",
     "copy-webpack-plugin": "^9.0.1",
