@@ -612,3 +612,15 @@ export async function switchBrowser(request: Request.Index, openBrowsers: Playwr
 export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<Response.Json> {
     return jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
 }
+
+export async function saveStorageState(
+    request: Request.FilePath,
+    browserState?: BrowserState,
+): Promise<Response.Empty> {
+    exists(browserState, "Tried to save storage state but browser wasn't open");
+    const context = browserState.context;
+    exists(context, 'Tried to save storage state butno context was open');
+    const stateFile = request.getPath();
+    await context.c.storageState({ path: stateFile });
+    return emptyWithLog('Current context state is saved to: ' + stateFile);
+}
