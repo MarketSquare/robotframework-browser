@@ -396,146 +396,147 @@ class PlaywrightState(LibraryComponent):
         screen: Optional[Dict[str, int]] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
-         See `Browser, Context and Page` for more information about BrowserContext.
 
-         Returns a stable identifier for the created context
-         that can be used in `Switch Context`.
+        See `Browser, Context and Page` for more information about BrowserContext.
 
-         ``acceptDownloads`` Whether to automatically downloads all the attachments.
-         Defaults to False where all the downloads are canceled.
+        Returns a stable identifier for the created context
+        that can be used in `Switch Context`.
 
-         ``ignoreHTTPSErrors`` Whether to ignore HTTPS errors during navigation.
-         Defaults to False.
+        ``acceptDownloads`` Whether to automatically downloads all the attachments.
+        Defaults to False where all the downloads are canceled.
 
-         ``bypassCSP`` Toggles bypassing page's Content-Security-Policy. Defaults to False.
+        ``ignoreHTTPSErrors`` Whether to ignore HTTPS errors during navigation.
+        Defaults to False.
 
-         ``viewport`` Sets a consistent viewport for each page.
-         Defaults to an ``{'width': 1280, 'height': 720}`` viewport.
-         Value of ``viewport`` can be a dict or a string
-         representation of a dictionary.
+        ``bypassCSP`` Toggles bypassing page's Content-Security-Policy. Defaults to False.
 
-         ``userAgent`` Specific user agent to use in this context.
+        ``viewport`` Sets a consistent viewport for each page.
+        Defaults to an ``{'width': 1280, 'height': 720}`` viewport.
+        Value of ``viewport`` can be a dict or a string
+        representation of a dictionary.
 
-         ``deviceScaleFactor`` Specify device scale factor
-         (can be thought of as dpr). Defaults to 1.
+        ``userAgent`` Specific user agent to use in this context.
 
-         ``isMobile`` Whether the meta viewport tag is taken into account
-         and touch events are enabled. Defaults to False. Not supported in Firefox.
+        ``deviceScaleFactor`` Specify device scale factor
+        (can be thought of as dpr). Defaults to 1.
 
-         ``hasTouch`` Specifies if viewport supports touch events. Defaults to False.
+        ``isMobile`` Whether the meta viewport tag is taken into account
+        and touch events are enabled. Defaults to False. Not supported in Firefox.
 
-         ``javaScriptEnabled`` Whether or not to enable JavaScript in the context.
-         Defaults to True.
+        ``hasTouch`` Specifies if viewport supports touch events. Defaults to False.
 
-         ``timezoneId`` Changes the timezone of the context.
-         See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt | ICU’s metaZones.txt]
-         for a list of supported timezone IDs.
+        ``javaScriptEnabled`` Whether or not to enable JavaScript in the context.
+        Defaults to True.
 
-         ``geolocation`` Sets the geolocation. No location is set by default.
-         - ``latitude`` <number> Latitude between -90 and 90.
-         - ``longitude`` <number> Longitude between -180 and 180.
-         - ``accuracy`` Optional <number> Non-negative accuracy value. Defaults to 0.
-         Example usage: ``{'latitude': 59.95, 'longitude': 30.31667}``
+        ``timezoneId`` Changes the timezone of the context. See
+        [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt | ICU’s metaZones.txt]
+        for a list of supported timezone IDs.
 
-         ``locale`` Specify user locale, for example ``en-GB``, ``de-DE``, etc.
-         Locale will affect ``navigator.language`` value, ``Accept-Language`` request header value
-         as well as number and date formatting rules.
+        ``geolocation`` Sets the geolocation. No location is set by default.
+        - ``latitude`` <number> Latitude between -90 and 90.
+        - ``longitude`` <number> Longitude between -180 and 180.
+        - ``accuracy`` Optional <number> Non-negative accuracy value. Defaults to 0.
+        Example usage: ``{'latitude': 59.95, 'longitude': 30.31667}``
 
-         ``permissions`` A list of permissions to grant to all pages in this context.
-         See [https://playwright.dev/docs/api/class-browsercontext#browsercontextgrantpermissionspermissions-options| grantPermissions]
-         for more details.
+        ``locale`` Specify user locale, for example ``en-GB``, ``de-DE``, etc.
+        Locale will affect ``navigator.language`` value, ``Accept-Language`` request header value
+        as well as number and date formatting rules.
 
-         ``extraHTTPHeaders`` A dictionary containing additional HTTP headers
-         to be sent with every request. All header values must be strings.
+        ``permissions`` A list of permissions to grant to all pages in this context. See
+        [https://playwright.dev/docs/api/class-browsercontext#browsercontextgrantpermissionspermissions-options| grantPermissions]
+        for more details.
 
-         ``offline`` Whether to emulate network being offline. Defaults to False.
+        ``extraHTTPHeaders`` A dictionary containing additional HTTP headers
+        to be sent with every request. All header values must be strings.
 
-         ``httpCredentials`` Credentials for
-         [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication].
-         - example: ``{'username': '$username', 'password': '$pwd'}``
-         - ``username``
-         - ``password``
-         Direct usage of username and password is not recommended, but is possible. If username and password
-         is directly used, it can leak secret information to Robot Framework output files. Instead the username
-         and password values can be prefixed with ``$`` or ``%``.  Then keyword will internally resolve the
-         values and secrets are not leaked to Robot Framework output files. The ``$`` prefix will resolve Robot
-         Framework variable and ``%`` will resolve environment variable. If
-         [https://marketsquare.github.io/robotframework-browser/Browser.html#Importing|enable_playwright_debug]
-         is enabled, all secrets are written as plain text in Playwright debugs logs.
+        ``offline`` Whether to emulate network being offline. Defaults to False.
 
-         ``colorScheme`` Emulates 'prefers-colors-scheme'
-         media feature, supported values are 'light', 'dark', 'no-preference'.
-         See [https://playwright.dev/docs/api/class-page#pageemulatemediaparams|emulateMedia(options)]
-         for more details. Defaults to ``light``.
+        ``httpCredentials`` Credentials for
+        [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication].
+        - example: ``{'username': '$username', 'password': '$pwd'}``
+        - ``username``
+        - ``password``
+        Direct usage of username and password is not recommended, but is possible. If username and password
+        is directly used, it can leak secret information to Robot Framework output files. Instead the username
+        and password values can be prefixed with ``$`` or ``%``.  Then keyword will internally resolve the
+        values and secrets are not leaked to Robot Framework output files. The ``$`` prefix will resolve Robot
+        Framework variable and ``%`` will resolve environment variable. If
+        [https://marketsquare.github.io/robotframework-browser/Browser.html#Importing|enable_playwright_debug]
+        is enabled, all secrets are written as plain text in Playwright debugs logs.
 
-         ``proxy`` Network proxy settings to use with this context.
-         Note that browser needs to be launched with the global proxy for this option to work.
-         If all contexts override the proxy, global proxy will be never used and can be any string
+        ``colorScheme`` Emulates 'prefers-colors-scheme'
+        media feature, supported values are 'light', 'dark', 'no-preference'. See
+        [https://playwright.dev/docs/api/class-page#pageemulatemediaparams|emulateMedia(options)]
+        for more details. Defaults to ``light``.
 
-         ``videosPath`` is deprecated by playwright, use recordVideo instead.
-         Enables video recording for all pages to videosPath
-         folder. If videosPath is not existing folder, videosPath folder is created
-         under ${OUTPUT_DIR}/browser/video/ folder. If videosPath is not specified,
-         videos are not recorded.
+        ``proxy`` Network proxy settings to use with this context.
+        Note that browser needs to be launched with the global proxy for this option to work.
+        If all contexts override the proxy, global proxy will be never used and can be any string
 
-         ``videoSize`` is deprecated by playwright, use recordVideo instead.
-         Specifies dimensions of the automatically recorded
-         video. Can only be used if videosPath is set. If not specified the size will
-         be equal to viewport. If viewport is not configured explicitly the video size
-         defaults to 1280x720. Actual picture of the page will be scaled down if
-         necessary to fit specified size.
-         - Example {"width": 1280, "height": 720}
+        ``videosPath`` is deprecated by playwright, use recordVideo instead.
+        Enables video recording for all pages to videosPath
+        folder. If videosPath is not existing folder, videosPath folder is created
+        under ${OUTPUT_DIR}/browser/video/ folder. If videosPath is not specified,
+        videos are not recorded.
 
-         ``defaultBrowserType`` If no browser is open and `New Context` opens a new browser
-         with defaults, it now uses this setting.
-         Very useful together with `Get Device` keyword:
+        ``videoSize`` is deprecated by playwright, use recordVideo instead.
+        Specifies dimensions of the automatically recorded
+        video. Can only be used if videosPath is set. If not specified the size will
+        be equal to viewport. If viewport is not configured explicitly the video size
+        defaults to 1280x720. Actual picture of the page will be scaled down if
+        necessary to fit specified size.
+        - Example {"width": 1280, "height": 720}
 
-         ``recordVideo`` enables video recording for all pages into a folder. If not
-         specified videos are not recorded. Make sure to close context for videos to be saved.
-         ``recordVideo`` is dictionary containing `dir` and `size` keys. If `dir` is not
-         existing folder, videosPath folder is created under
-         ${OUTPUT_DIR}/browser/video/ folder. `size` Optional dimensions of the recorded
-         videos. If not specified the size will be equal to viewport. If viewport is not
-         configured explicitly the video size defaults to 1280x720. Actual picture of
-         each page will be scaled down if necessary to fit the specified size.
-         `size` is dictionary containing `width` (Video frame width) and  `height`
-         (Video frame height) keys.
+        ``defaultBrowserType`` If no browser is open and `New Context` opens a new browser
+        with defaults, it now uses this setting.
+        Very useful together with `Get Device` keyword:
 
-         ``recordHar`` Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording
-         for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file.
-         If not specified, the HAR is not recorded. Make sure to await context to close for the
-         to be saved.
+        ``recordVideo`` enables video recording for all pages into a folder. If not
+        specified videos are not recorded. Make sure to close context for videos to be saved.
+        ``recordVideo`` is dictionary containing `dir` and `size` keys. If `dir` is not
+        existing folder, videosPath folder is created under
+        ${OUTPUT_DIR}/browser/video/ folder. `size` Optional dimensions of the recorded
+        videos. If not specified the size will be equal to viewport. If viewport is not
+        configured explicitly the video size defaults to 1280x720. Actual picture of
+        each page will be scaled down if necessary to fit the specified size.
+        `size` is dictionary containing `width` (Video frame width) and  `height`
+        (Video frame height) keys.
 
-         `omitContent`: Optional setting to control whether to omit request content
-         from the HAR. Default is False `path`: Path on the filesystem to write the HAR file to.
+        ``recordHar`` Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording
+        for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file.
+        If not specified, the HAR is not recorded. Make sure to await context to close for the
+        to be saved.
 
-         The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
+        `omitContent`: Optional setting to control whether to omit request content
+        from the HAR. Default is False `path`: Path on the filesystem to write the HAR file to.
 
-         ``tracing`` is file name where the [https://playwright.dev/docs/api/class-tracing/|tracing]
-          file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace
-          files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will
-          be enabled for all pages in the context. Tracing is automatically closed when context is
-          closed. Temporary trace files will be automatically deleted at start of each test
-          execution. Trace file can be opened after the test execution by running command from
-          shell: `rfbrowser show-trace -F /path/to/trace.zip`.
+        The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
-         ``screen``
+        ``tracing`` is file name where the [https://playwright.dev/docs/api/class-tracing/|tracing]
+        file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace
+        files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will
+        be enabled for all pages in the context. Tracing is automatically closed when context is
+        closed. Temporary trace files will be automatically deleted at start of each test
+        execution. Trace file can be opened after the test execution by running command from
+        shell: `rfbrowser show-trace -F /path/to/trace.zip`.
+
+        ``screen``
         Emulates consistent window screen size available inside web page via window.screen.
         Is only used when the viewport is set.
-         - Example {'width': 414, 'height': 896}
+        - Example {'width': 414, 'height': 896}
 
-         Example:
-         | Test an iPhone
-         |     ${device}=    `Get Device`    iPhone X
-         |     `New Context`    &{device}        # unpacking here with &
-         |     `New Page`    http://example.com
+        Example:
+        | Test an iPhone
+        |     ${device}=    `Get Device`    iPhone X
+        |     `New Context`    &{device}        # unpacking here with &
+        |     `New Page`    http://example.com
 
-         A BrowserContext is the Playwright object that controls a single browser profile.
-         Within a context caches and cookies are shared. See
-         [https://playwright.dev/docs/api/class-browser#browsernewcontextoptions|Playwright browser.newContext]
-         for a list of supported options.
+        A BrowserContext is the Playwright object that controls a single browser profile.
+        Within a context caches and cookies are shared. See
+        [https://playwright.dev/docs/api/class-browser#browsernewcontextoptions|Playwright browser.newContext]
+        for a list of supported options.
 
-         If there's no open Browser this keyword will open one. Does not create pages.
+        If there's no open Browser this keyword will open one. Does not create pages.
         """
         params = locals_to_params(locals())
         params = self._set_video_path(params)
