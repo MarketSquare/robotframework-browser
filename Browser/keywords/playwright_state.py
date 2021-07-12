@@ -394,7 +394,7 @@ class PlaywrightState(LibraryComponent):
         recordHar: Optional[RecordHar] = None,
         tracing: Optional[str] = None,
         screen: Optional[Dict[str, int]] = None,
-        storageState: Optional[str] = None
+        storageState: Optional[str] = None,
     ) -> str:
         """Create a new BrowserContext with specified options.
 
@@ -546,7 +546,9 @@ class PlaywrightState(LibraryComponent):
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
         if storageState and not Path(storageState).is_file():
-            raise ValueError(f"storageState argument value '{storageState}' is not file, but it should be.")
+            raise ValueError(
+                f"storageState argument value '{storageState}' is not file, but it should be."
+            )
         if "httpCredentials" in params and params["httpCredentials"] is not None:
             secret = self.resolve_secret(
                 httpCredentials, params.get("httpCredentials"), "httpCredentials"
