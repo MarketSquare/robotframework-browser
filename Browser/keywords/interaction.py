@@ -316,7 +316,8 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.RecordSelector(Request.Empty())
-            logger.info(f"Selector: {response.result}")
+            selector_repr = response.result.replace("#", "\\#")
+            logger.info(f"Selector: {selector_repr}")
             return json.loads(response.result)
 
     @keyword(tags=("Setter", "PageContent"))
