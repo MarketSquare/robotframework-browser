@@ -1001,8 +1001,9 @@ class PlaywrightState(LibraryComponent):
         Please note state file contains secrets and should not be shared
         with people outside of your organisation.
 
-        The file is created in ${OUTPUTDIR}/state folder and file(s) are
-        automatically deleted when new test execution starts.
+        The file is created in ${OUTPUTDIR}/browser/state folder and file(s)
+        are automatically deleted when new test execution starts. File path
+        is returned by the keyword.
 
         Example:
         | Test Case
