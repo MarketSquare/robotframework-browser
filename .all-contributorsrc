@@ -397,6 +397,16 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "pekkaklarck",
+      "name": "Pekka Klärck",
+      "avatar_url": "https://avatars.githubusercontent.com/u/114985?v=4",
+      "profile": "http://eliga.fi",
+      "contributions": [
+        "code",
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
