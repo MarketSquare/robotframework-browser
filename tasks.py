@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -59,7 +60,8 @@ to install the latest available release or use
 to install exactly this version. Alternatively you can download the source
 distribution from PyPI_ and install it manually.
 Browser library {version} was released on {date}. Browser supports
-Python 3.7+, Node 12/14 LTS and Robot Framework 3.2+.
+Python 3.7+, Node 12/14 LTS and Robot Framework 3.2+. Library was
+tested with Playwright REPLACE_PW_VERSION
 
 .. _Robot Framework: http://robotframework.org
 .. _Browser: https://github.com/MarketSquare/robotframework-browser
@@ -527,9 +529,19 @@ def release_notes(c, version=None, username=None, password=None, write=False):
     version = Version(version, VERSION_PATH, pattern)
     file = RELEASE_NOTES_PATH if write else sys.stdout
     generator = ReleaseNotesGenerator(
-        REPOSITORY, RELEASE_NOTES_TITLE, RELEASE_NOTES_INTRO
+        REPOSITORY,
+        RELEASE_NOTES_TITLE,
+        RELEASE_NOTES_INTRO.replace("REPLACE_PW_VERSION", _get_pw_version())
     )
     generator.generate(version, username, password, file)
+
+
+def _get_pw_version() -> str:
+    with open(ROOT_DIR / "package.json", "r") as file:
+        data = json.load(file)
+    version = data["dependencies"]["playwright"]
+    match = re.search(r"\d+\.\d+\.\d+", version)
+    return match.group(0)
 
 
 @task(package)
