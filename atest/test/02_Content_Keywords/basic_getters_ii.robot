@@ -178,7 +178,9 @@ Get Viewport Size Custom Error
     ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}
 
 Get Element State
-    ${state} =    Get Element State    h1    assertion_operator=equal
+    ${state} =    Get Element State    h1    assertion_operator=equal    assertion_expected=True
+    Should Be True    ${state}
+    ${state} =    Get Element State    h1
     Should Be True    ${state}
 
 Get Element State With Assertion
