@@ -889,7 +889,7 @@ class Getters(LibraryComponent):
         selector: str,
         state: ElementStateKey = ElementStateKey.visible,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: bool = True,
+        assertion_expected: Any = None,
         message: Optional[str] = None,
     ):
         """Get the given state from the element found by ``selector``.
