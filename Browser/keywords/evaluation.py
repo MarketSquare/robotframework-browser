@@ -42,7 +42,8 @@ class Evaluation(LibraryComponent):
             response = stub.ExecuteJavascript(
                 Request().JavascriptCode(script=function, selector=selector)
             )
-            logger.info(response.log)
+            if response.log:
+                logger.info(response.log)
             if response.result:
                 return json.loads(response.result)
             return response.result
