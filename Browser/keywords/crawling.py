@@ -1,3 +1,4 @@
+import urllib.parse
 from typing import List, Optional, Set, Tuple
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
@@ -31,12 +32,14 @@ class Crawling(LibraryComponent):
 
     def _crawl(
         self,
-        baseurl: str,
+        start_url: str,
         page_crawl_keyword: str,
         max_number_of_page_to_crawl: int,
         max_depth_to_crawl: int,
     ):
-        hrefs_to_crawl: List[Tuple[str, int]] = [(baseurl, 0)]
+        hrefs_to_crawl: List[Tuple[str, int]] = [(start_url, 0)]
+        url_parts = urllib.parse.urlparse(start_url)
+        baseurl = url_parts.scheme + "://" + url_parts.netloc
         crawled: Set[str] = set()
         while hrefs_to_crawl and len(crawled) < max_number_of_page_to_crawl:
             href, depth = hrefs_to_crawl.pop()
