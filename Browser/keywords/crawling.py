@@ -1,4 +1,4 @@
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Tuple
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robotlibcore import keyword  # type: ignore
@@ -11,25 +11,35 @@ from ..utils import logger
 class Crawling(LibraryComponent):
     @keyword(tags=["Crawling"])
     def crawl_site(
-        self, url: Optional[str] = None, page_crawl_keyword="take_screenshot"
+        self,
+        url: Optional[str] = None,
+        page_crawl_keyword="take_screenshot",
+        max_number_of_page_to_crawl: int = 1000,
+        max_depth_to_crawl: int = 50,
     ):
         """
         Take screenshots from all urls inside a specific site.
         """
         if url:
             self.library.new_page(url)
-        self._crawl(self.library.get_url() or "", page_crawl_keyword)
+        self._crawl(
+            self.library.get_url() or "",
+            page_crawl_keyword,
+            max_number_of_page_to_crawl,
+            max_depth_to_crawl,
+        )
 
-    def _crawl(self, baseurl: str, page_crawl_keyword: str):
-        hrefs_to_crawl = [baseurl]
+    def _crawl(
+        self,
+        baseurl: str,
+        page_crawl_keyword: str,
+        max_number_of_page_to_crawl: int,
+        max_depth_to_crawl: int,
+    ):
+        hrefs_to_crawl: List[Tuple[str, int]] = [(baseurl, 0)]
         crawled: Set[str] = set()
-        while hrefs_to_crawl:
-            href = hrefs_to_crawl.pop()
-            if href.startswith("/"):
-                href = baseurl + href[1:]
-            if href.endswith(".zip"):
-                logger.console("zip file detected ignoring")
-                continue
+        while hrefs_to_crawl and len(crawled) < max_number_of_page_to_crawl:
+            href, depth = hrefs_to_crawl.pop()
             if not href.startswith(baseurl):
                 continue
             if href in crawled:
@@ -40,30 +50,42 @@ class Crawling(LibraryComponent):
             )
             self.library.go_to(href)
             BuiltIn().run_keyword(page_crawl_keyword)
-            link_elements = self.library.get_elements("//a[@href]")
-            links = set()
-            for link_element in link_elements:
-                links.add(self.library.execute_javascript("(e) => e.href", link_element))
-            child_hrefs = list(links)
+            child_hrefs = self._gather_links(depth)
             crawled.add(href)
             hrefs_to_crawl = self._build_urls_to_crawl(
-                child_hrefs, hrefs_to_crawl, crawled, baseurl
+                child_hrefs, hrefs_to_crawl, crawled, baseurl, max_depth_to_crawl
             )
+
+    def _gather_links(self, parent_depth: int) -> List[Tuple[str, int]]:
+        link_elements = self.library.get_elements("//a[@href]")
+        links: Set[str] = set()
+        depth = parent_depth + 1
+        for link_element in link_elements:
+            href, normal_link = self.library.execute_javascript(
+                "(e) => [e.href, !e.download]", link_element
+            )
+            if normal_link:
+                links.add(href)
+        return [(c, depth) for c in links]
 
     def _build_urls_to_crawl(
         self,
-        new_hrefs_to_crawl: List[str],
-        old_hrefs_to_crawl: List[str],
+        new_hrefs_to_crawl: List[Tuple[str, int]],
+        old_hrefs_to_crawl: List[Tuple[str, int]],
         crawled: Set[str],
         baseurl: str,
-    ) -> List[str]:
+        max_depth: int,
+    ) -> List[Tuple[str, int]]:
         new_hrefs = []
-        for href in new_hrefs_to_crawl:
-            if href in old_hrefs_to_crawl:
+        for href, depth in new_hrefs_to_crawl:
+            if depth > max_depth:
+                continue
+            if href in [h[0] for h in old_hrefs_to_crawl]:
                 continue
             if href in crawled:
                 continue
             if not href.startswith(baseurl):
                 continue
-            new_hrefs.append(href)
+            logger.debug(f"Adding link to {href}")
+            new_hrefs.append((href, depth))
         return new_hrefs + old_hrefs_to_crawl
