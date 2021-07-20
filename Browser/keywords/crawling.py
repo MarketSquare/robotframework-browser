@@ -19,7 +19,18 @@ class Crawling(LibraryComponent):
         max_depth_to_crawl: int = 50,
     ):
         """
-        Take screenshots from all urls inside a specific site.
+        Web crawler is a tool to go through all the linked pages on a specific URL domain.
+
+        ``url`` is the page to start crawling from.
+
+        ``page_crawl_keyword`` is the keyword that will be executed on every page.
+        By default it will take a screenshot on every page.
+
+        ``max_number_of_page_to_crawl`` is the upper limit of pages to crawl.
+        Crawling will stop if this number of crawled pages goes over this.
+
+        ``max_depth_to_crawl`` is the upper limit of consecutive links followed from the start page.
+        Crawling will stop if there are no more links under this depth.
         """
         if url:
             self.library.new_page(url)
