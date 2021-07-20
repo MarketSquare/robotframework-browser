@@ -12,7 +12,8 @@
 
 Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visibility.
 
-See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html).
+See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html) and
+[web page](https://robotframework-browser.org/) for more details.
 
 # Installation instructions
 
