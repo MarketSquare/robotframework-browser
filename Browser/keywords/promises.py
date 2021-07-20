@@ -79,7 +79,7 @@ class Promises(LibraryComponent):
         Example usage:
         | New Context          acceptDownloads=True
         | New Page             ${LOGIN_URL}
-        | ${dl_promise}        Promise To Wait For Download    /path/to/download/folder
+        | ${dl_promise}        Promise To Wait For Download    /path/to/download/file.name
         | Click                \\#file_download
         | ${file_obj}=         Wait For  ${dl_promise}
         | File Should Exist    ${file_obj}[saveAs]
