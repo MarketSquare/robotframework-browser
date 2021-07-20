@@ -25,4 +25,5 @@ ${DEFAULT_TEST_TIMEOUT}    30 seconds
 ${PLAYWRIGHT_TIMEOUT}    3 second
 ${SLOW_PAGE}      ${ROOT_URL}/slowpage.html
 ${WEBCOMPONENT_PAGE}   ${ROOT_URL}/webcomponent.html
+${LINKER_URL}    ${ROOT_URL}/links/link1.html
 ${SYS_VAR_CI}    False
