@@ -19,7 +19,8 @@ class Crawling(LibraryComponent):
         max_depth_to_crawl: int = 50,
     ):
         """
-        Web crawler is a tool to go through all the linked pages on a specific URL domain.
+        Web crawler is a tool to go through all the pages on a specific URL domain.
+        This happens by finding all links going to the same site and opening those.
 
         ``url`` is the page to start crawling from.
 
@@ -27,7 +28,7 @@ class Crawling(LibraryComponent):
         By default it will take a screenshot on every page.
 
         ``max_number_of_page_to_crawl`` is the upper limit of pages to crawl.
-        Crawling will stop if this number of crawled pages goes over this.
+        Crawling will stop if the number of crawled pages goes over this.
 
         ``max_depth_to_crawl`` is the upper limit of consecutive links followed from the start page.
         Crawling will stop if there are no more links under this depth.
