@@ -407,6 +407,15 @@
         "code",
         "bug"
       ]
+    },
+    {
+      "login": "janipalsamaki",
+      "name": "Jani Palsamäki",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1157184?v=4",
+      "profile": "https://github.com/janipalsamaki",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
