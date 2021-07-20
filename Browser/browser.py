@@ -47,6 +47,7 @@ from .keywords import (
     Waiter,
     WebAppState,
 )
+from .keywords.crawling import Crawling
 from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
 
@@ -659,6 +660,7 @@ class Browser(DynamicCore):
             self._playwright_state,
             Control(self),
             Cookie(self),
+            Crawling(self),
             Devices(self),
             Evaluation(self),
             Interaction(self),
