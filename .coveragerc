@@ -4,3 +4,4 @@ omit =
     utest/*
     atest/*
     tasks.py
+    Browser/generated/*
