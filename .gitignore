@@ -38,3 +38,7 @@ build
 pip-wheel-metadata
 tmp
 .vscode
+
+# coverage
+.coverage
+htmlcov

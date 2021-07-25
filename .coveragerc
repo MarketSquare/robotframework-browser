@@ -1,0 +1,6 @@
+[run]
+omit =
+    .venv/*
+    utest/*
+    atest/*
+    tasks.py
