@@ -5,3 +5,7 @@ omit =
     atest/*
     tasks.py
     Browser/generated/*
+
+[report]
+skip_empty=True
+skip_covered=True
