@@ -1,5 +1,6 @@
 import json
 import os
+import site
 import subprocess
 import sys
 import zipfile
@@ -289,6 +290,40 @@ def _create_zip():
     return zip_path
 
 
+@task()
+def sitecustomize(c):
+    """Add sitecustomize.py for coverage and subprocess.
+
+    Creates sitecustomize.py file and adds these lines:
+    import coverage
+    coverage.process_startup()
+
+    To run coverage use:
+    coverage run -m invoke utest
+    coverage run -a -m invoke atest-robot
+    coverage report
+
+    For some reason, coverage calculation does not work with pabot.
+    Therefore coverage run -a -m invoke atest does not provide correct
+    coverage report.
+    """
+    sitepackages = site.getsitepackages()
+    sitepackages = Path(sitepackages.pop())
+    sitecustomize = sitepackages / "sitecustomize.py"
+    use_coverage = "import coverage\ncoverage.process_startup()\n"
+    if sitecustomize.is_file():
+        data = sitecustomize.read_text()
+        if "import coverage" in data and "coverage.process_startup()" in data:
+            print("coverage already in place, do nothing")
+        else:
+            print("Found sitecustomize.py file, but no coverage in place.")
+            print(f"Add:\n{use_coverage}")
+            sitecustomize.write_text(f"{data}\n{use_coverage}")
+    else:
+        print(f"Creating {sitecustomize} file.")
+        sitecustomize.write_text(use_coverage)
+
+
 @task(clean_atest)
 def atest_robot(c):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
@@ -328,14 +363,18 @@ def run_tests(c, tests):
     """
     Run robot with dev Browser. Parameter [tests] is the path to tests to run.
     """
+    env = os.environ.copy()
+    env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(
-        [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests]
+        [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests],
+        env=env
     )
     return process.wait(600)
 
 
 def _run_pabot(extra_args=None, exit=True):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
+    os.environ["COVERAGE_PROCESS_START"] = ".coveragerc"
     pabot_args = [
         sys.executable,
         "-m",
@@ -362,7 +401,7 @@ def _run_pabot(extra_args=None, exit=True):
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "No-Windows-Support"])
     default_args.append("atest/test")
-    process = subprocess.Popen(pabot_args + (extra_args or []) + default_args)
+    process = subprocess.Popen(pabot_args + (extra_args or []) + default_args, env=os.environ)
     process.wait(600)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
