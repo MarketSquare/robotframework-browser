@@ -87,7 +87,7 @@ class Control(LibraryComponent):
         quality: str = "",
         timeout: Optional[timedelta] = None,
     ) -> str:
-        """Takes a screenshot of the current window and saves it.
+        """Takes a screenshot of the current window or element and saves it to disk.
 
         ``filename`` Filename into which to save. The file will be saved into the robot framework
          ${OUTPUTDIR}/browser/screenshot directory by default, but it can overwritten by providing
@@ -95,7 +95,6 @@ class Control(LibraryComponent):
          number. Use this to not override filenames. If filename equals to EMBED (case insensitive),
          then screenshot is embedded as Base64 image to the log.html. The image is saved temporally
          to the disk and warning is displayed if removing the temporary file fails.
-         If the filename is an absolute path, then filename is considered as an absolute path.
 
          The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
@@ -110,8 +109,15 @@ class Control(LibraryComponent):
 
         ``quality`` The quality of the image, between 0-100. Not applicable to png images.
 
-        ``timeout`` Maximum time in milliseconds, defaults to 30 seconds, pass 0 to disable timeout.
+        ``timeout`` Maximum time how long taking screenshot can last, defaults to library timeout.
+        Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout.
         The default value can be changed by using the `Set Browser Timeout` keyword.
+
+        Example
+        | `Take Screenshot`                                 # Takes screenshot from page with default filename
+        | `Take Screenshot`   selector=id=username_field    # Captures element in image
+        | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
+        | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
         """
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
