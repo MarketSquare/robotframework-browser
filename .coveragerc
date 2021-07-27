@@ -5,6 +5,7 @@ omit =
     atest/*
     tasks.py
     Browser/generated/*
+parallel = true
 
 [report]
 skip_empty=True
