@@ -68,6 +68,7 @@ jobs:
     - name: Run pytests
       run: |
        coverage run -m invoke utest
+       coverage combine .coverage.*
        coverage report
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
@@ -165,6 +166,7 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           echo ${{ matrix.os }}
+          coverage combine .coverage.*
           coverage report
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os == 'windows-latest' }}
