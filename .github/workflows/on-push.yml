@@ -67,7 +67,8 @@ jobs:
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
       run: |
-       invoke utest
+       coverage run -m invoke utest
+       coverage report
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -159,13 +160,7 @@ jobs:
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           inv sitecustomize
-          xvfb-run --auto-servernum coverage run -m invoke atest-robot
-      - name: Coverage report on unix-like os - after serial mode
-        if: matrix.os != 'windows-latest'
-        run: |
-          echo ${{ matrix.os }}
-          coverage combine .coverage.*
-          coverage report
+          xvfb-run --auto-servernum invoke atest-robot
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
