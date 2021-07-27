@@ -159,7 +159,13 @@ jobs:
           rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum inv atest-robot
+          inv sitecustomize
+          xvfb-run --auto-servernum coverage run -a -m invoke atest-robot
+      - name: Coverage report on unix-like os - after serial mode
+        if: matrix.os != 'windows-latest'
+        run: |
+          echo ${{ matrix.os }}
+          coverage report
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
