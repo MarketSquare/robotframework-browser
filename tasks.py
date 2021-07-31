@@ -441,6 +441,7 @@ def lint_node(c):
 def lint_robot(c):
     in_ci = os.getenv("GITHUB_WORKFLOW")
     print(f"Lint Robot files {'in ci' if in_ci else ''}")
+    atest_folder = "atest/test/"
     command = [
         "robotidy",
         "--lineseparator",
@@ -452,13 +453,19 @@ def lint_robot(c):
     if in_ci:
         command.insert(1, "--check")
         command.insert(1, "--diff")
-    c.run(" ".join(command))
+    for file in Path(atest_folder).glob("*"):
+        if not file.name == "keywords.resource":
+            print(file)
+            command.append(str(file))
+            c.run(" ".join(command))
+            command.pop()
     # keywords.resource needs resource to be imported before library, but generally
     # that should be avoided.
     command.insert(1, "--configure")
     command.insert(2, "OrderSettingsSection:imports_order=resource,library,variables")
     command.pop()
-    command.append("atest/test/keywords.resource")
+    command.append(f"{atest_folder}/keywords.resource")
+    print(f"{atest_folder}/keywords.resource")
     c.run(" ".join(command))
 
 
