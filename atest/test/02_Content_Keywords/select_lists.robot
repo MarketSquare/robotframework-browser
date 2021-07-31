@@ -12,7 +12,7 @@ Get Select Options
     Get Select Options    select[name=preferred_channel]    validate    len(value) == 3
     Get Select Options    select[name=preferred_channel]    validate    value[0]['index'] == 0
     Get Select Options    select[name=preferred_channel]    validate    value[2]['label'] == 'Direct mail'
-    ${options}=    Get Select Options    select[name=possible_channels]
+    ${options} =    Get Select Options    select[name=possible_channels]
     Should be equal    ${options}[0][label]    Email
     Should be equal    ${options}[1][value]    phone
 
@@ -22,24 +22,24 @@ Get Selected Options
     ...    Verifying list 'possible_channels' has options [ Email | Telephone ] selected.
     ...    Verifying list 'interests' has no options selected.
     ...    Verifying list 'possible_channels' fails if assert all options selected.
-    ${selection}=    Get Selected Options    select[name=preferred_channel]    label    ==    Telephone
+    ${selection} =    Get Selected Options    select[name=preferred_channel]    label    ==    Telephone
     Log    ${selection}
     Should Be Equal    ${selection}    Telephone
     Get Selected Options    select[name=preferred_channel]    value    ==    phone
     Get Selected Options    select[name=possible_channels]    text    ==    Email    Telephone
     Get Selected Options    select[name=possible_channels]    text    validate    len(value) == 2
     Get Selected Options    select[name=possible_channels]    label    ==    Telephone    Email
-    ${selection}=    Get Selected Options    select[name=possible_channels]    value    ==    phone    email
+    ${selection} =    Get Selected Options    select[name=possible_channels]    value    ==    phone    email
     Should Be Equal    ${selection}[0]    email
     Should Be Equal    ${selection}[1]    phone
     Get Selected Options    select[name=interests]    label    ==
-    ${selection}=    Get Selected Options    select[name=interests]    label    ==
+    ${selection} =    Get Selected Options    select[name=interests]    label    ==
     Should Be Equal    ${selection}    ${None}
     Run Keyword And Expect Error    *
     ...    Get Selected Options    select[name=possible_channels]    label    ==    Email    Telephone    Direct mail
 
 Get Selected Options with xpath
-    ${selection}=    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==
+    ${selection} =    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==
     ...    Telephone
     Should Be Equal    ${selection}    Telephone
 

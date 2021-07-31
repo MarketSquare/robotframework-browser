@@ -29,9 +29,9 @@ Left Right and Middle Click
     Get Text    \#mouse_button    ==    left
 
 Click with Coordinates
-    ${xy}    Get Boundingbox    \#clickWithOptions
-    ${x}    Evaluate    "${xy}[x]"
-    ${y}    Evaluate    "${xy}[y]"
+    ${xy} =    Get Boundingbox    \#clickWithOptions
+    ${x} =    Evaluate    "${xy}[x]"
+    ${y} =    Evaluate    "${xy}[y]"
     Click    \#clickWithOptions    position_x=0    position_y=0
     # Give five pixels of leeway since the elements visual boundingbox might differ from the box used by click
     Get Text    \#coordinatesX    validate    abs(${x} - float(value)) < 5

@@ -10,5 +10,5 @@ Test Timeout        ${DEFAULT_TEST_TIMEOUT}
 
 *** Keywords ***
 Start Test Application
-    ${port}=    Start Test Server
+    ${port} =    Start Test Server
     Set Global Variable    $SERVER_PORT    ${port}

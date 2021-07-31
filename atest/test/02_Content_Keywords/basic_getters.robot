@@ -4,12 +4,12 @@ Resource        imports.resource
 Suite Setup     New Page    ${LOGIN_URL}
 
 *** Variables ***
-${UserNameLabel}=       label[for="username_field"]
-${InputUsername}=       id=username_field
+${UserNameLabel} =      label[for="username_field"]
+${InputUsername} =      id=username_field
 
 *** Test Cases ***
 Get Text
-    ${h1}=    Get Text    h1
+    ${h1} =    Get Text    h1
     Should Be Equal    ${h1}    Login Page
 
 Get Text and Assert ==
@@ -40,14 +40,14 @@ Get Property Custom Error
     ...    Get Property    h1    innerText    !=    Login Page    Tidii
 
 Get Property innerText
-    ${inner_text}=    Get Property    ${UserNameLabel}    innerText
+    ${inner_text} =    Get Property    ${UserNameLabel}    innerText
     Should Be Equal    ${inner_text}    User Name:
 
 Get Property size
     Get Property    ${InputUsername}    type    ==    text
 
 Get Property and Then .. (Closure)
-    ${text}=    Get Property    h1    innerText    then    value.replace('g', 'k')
+    ${text} =    Get Property    h1    innerText    then    value.replace('g', 'k')
     Should be equal    ${text}    Lokin Pake
 
 Get Property With Nonmatching Selector
@@ -57,7 +57,7 @@ Get Property With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute
-    ${type}=    Get Attribute    id=login_button    type
+    ${type} =    Get Attribute    id=login_button    type
     Should Be Equal    ${type}    submit
 
 Get Attribute Default Error
@@ -73,23 +73,23 @@ Get Attribute and Verify absense
     Get Attribute    id=login_button    disabled    ==    ${None}
 
 Get Attribute and return presents state
-    ${present}=    Get Attribute    id=login_button    value    evaluate    value is not None
+    ${present} =    Get Attribute    id=login_button    value    evaluate    value is not None
     Should Be True    ${present}
-    ${present}=    Get Attribute    id=login_button    disabled    evaluate    value is None
+    ${present} =    Get Attribute    id=login_button    disabled    evaluate    value is None
     Should Be True    ${present}
 
 Get Attribute Names
     [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${attrs}=    Get Attribute Names    [name="readonly_input"]
+    ${attrs} =    Get Attribute Names    [name="readonly_input"]
     FOR    ${attr}    IN    @{attrs}
-        ${value}=    Get Attribute    [name="readonly_input"]    ${attr}
+        ${value} =    Get Attribute    [name="readonly_input"]    ${attr}
         Log    ${attr}=${value}
     END
     [Teardown]    Close Page
 
 Get Attribute Names Default Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${expected}=    Create List    1    3
+    ${expected} =    Create List    1    3
     Run Keyword And Expect Error
     ...    Attribute names '*' (list) should be '?'1', '3'?' (list)
     ...    Get Attribute Names    [name="readonly_input"]    ==    ${expected}
@@ -97,7 +97,7 @@ Get Attribute Names Default Error
 
 Get Attribute Names Custom Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${expected}=    Create List    1    3
+    ${expected} =    Create List    1    3
     Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
     ...    ==    ${expected}    message=Custom error {expected} {expected_type}
     Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
@@ -112,7 +112,7 @@ Get Attribute Names and Assert single and multiple
     [Teardown]    Close Page
 
 Get Classes
-    ${classes}=    Get Classes    id=draggable
+    ${classes} =    Get Classes    id=draggable
     Should Be Equal    ${classes}    ${{["box", "react-draggable"]}}
 
 Get Classes and Assert
@@ -131,11 +131,11 @@ Get Classes Custom Error
     ...    Get Classes    id=draggable    contains    not-here    message=My Custom Error
 
 Get Element Count
-    ${count}=    Get Element Count    h1
+    ${count} =    Get Element Count    h1
     Should Be Equal    ${count}    ${1}
-    ${count}=    Get Element Count    label
+    ${count} =    Get Element Count    label
     Should Be Equal    ${count}    ${2}
-    ${count}=    Get Element Count    not-existing
+    ${count} =    Get Element Count    not-existing
     Should Be Equal    ${count}    ${0}
 
 Get Element Count and Assert
@@ -144,8 +144,8 @@ Get Element Count and Assert
     Get Element Count    label    validate    value == 2
     Get Element Count    label    >    1
     Get Element Count    not-existing    ==
-    ${promise}=    Promise to    Get Element Count    label
-    ${count}=    Wait for    ${promise}
+    ${promise} =    Promise to    Get Element Count    label
+    ${count} =    Wait for    ${promise}
     should be equal    ${count}    ${2}
 
 Get Element Count Default Error

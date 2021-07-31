@@ -7,17 +7,17 @@ Test Setup          New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 JS execute without and with element
-    ${result}=    Execute JavaScript    () => {return false;}
+    ${result} =    Execute JavaScript    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    ${result}=    Execute JavaScript    () => {return false;}    body
+    ${result} =    Execute JavaScript    () => {return false;}    body
     Should Be Equal    ${result}    ${False}
 
 Results from page
-    ${result}=    Execute JavaScript    "hello from page "+location.href
+    ${result} =    Execute JavaScript    "hello from page "+location.href
     should be equal    ${result}    hello from page ${LOGIN_URL}
-    ${result2}=    Execute JavaScript    1+2+3
+    ${result2} =    Execute JavaScript    1+2+3
     should be equal    ${result2}    ${6}
-    ${result3}=    Execute JavaScript    1.3314*3.13432
+    ${result3} =    Execute JavaScript    1.3314*3.13432
     should be equal    ${result3}    ${4.173033648}
 
 Mutate Element On Page
@@ -26,7 +26,7 @@ Mutate Element On Page
     Get Property    h1    innerText    ==    abc
 
 Mutate Element On Page With ElementHandle
-    ${ref}=    Get Element    h1
+    ${ref} =    Get Element    h1
     Get Property    ${ref}    innerText    ==    Login Page
     Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
     Get Property    ${ref}    innerText    ==    abc
@@ -48,7 +48,7 @@ Highlight Element with style
     Get Style    .robotframework-browser-highlight    border-bottom-color    ==    rgb(0, 0, 255)
     Sleep    400ms
     Highlight Elements    input#login_button    duration=200ms    width=4px    style=solid    color=\#FF00FF
-    ${style}=    Get Style    .robotframework-browser-highlight
+    ${style} =    Get Style    .robotframework-browser-highlight
     Should Be True    "${style}[border-bottom-width]" == "4px"
     Should Be True    "${style}[border-bottom-style]" == "solid"
     Should Be True    "${style}[border-bottom-color]" == "rgb(255, 0, 255)"
@@ -56,7 +56,7 @@ Highlight Element with style
 
 Highlight Element with element selector
     New Page    ${LOGIN_URL}
-    ${elem}=    Get Element    input#login_button
+    ${elem} =    Get Element    input#login_button
     Highlight Elements    ${elem}
     Get Element Count    .robotframework-browser-highlight    ==    1
 

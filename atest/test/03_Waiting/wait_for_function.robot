@@ -5,7 +5,7 @@ Suite Setup     Open Browser To No Page
 Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
-${timeout_message}      TimeoutError: page.waitForFunction: Timeout 100ms exceeded.
+${timeout_message} =    TimeoutError: page.waitForFunction: Timeout 100ms exceeded.
 
 *** Test Cases ***
 Wait For Function No Element and fail on timeout
@@ -31,7 +31,7 @@ Failed complicated Wait For Function
     ...    (selector) => document.activeElement === selector    selector=\#username_field    timeout=100ms
 
 Failed Wait For Function Promise
-    ${promise}    Promise To    Wait For Function
+    ${promise} =    Promise To    Wait For Function
     ...    (selector) => {console.log(selector); return document.activeElement === selector}
     ...    selector=\#username_field    timeout=100ms
     Run Keyword and Expect Error
@@ -39,7 +39,7 @@ Failed Wait For Function Promise
     ...    Wait For    ${promise}
 
 Succesful Wait For Function Promise
-    ${promise}    Promise To    Wait For Function    (selector) => document.activeElement === selector
+    ${promise} =    Promise To    Wait For Function    (selector) => document.activeElement === selector
     ...    selector=\#username_field    timeout=500ms
     Click    \#username_field
     Wait For    ${promise}

@@ -13,7 +13,7 @@ Wait For Request synchronous
     Wait For Request    timeout=1s
 
 Wait For Request async
-    ${promise}=    Promise To    Wait For Request    matcher=    timeout=3s
+    ${promise} =    Promise To    Wait For Request    matcher=    timeout=3s
     # Go To    http://localhost:7272/api/get/json
     Click    \#delayed_request
     Wait For    ${promise}
@@ -27,9 +27,9 @@ Wait For Response synchronous with default timeout
     Wait For Response
 
 Wait For Response async
-    ${promise}=    Promise To    Wait For Response    matcher=    timeout=3s
+    ${promise} =    Promise To    Wait For Response    matcher=    timeout=3s
     Click    \#delayed_request
-    ${body}=    Wait For    ${promise}
+    ${body} =    Wait For    ${promise}
 
 Wait Until Network Is Idle Works
     Go To    ${ROOT_URL}/delayed-load.html

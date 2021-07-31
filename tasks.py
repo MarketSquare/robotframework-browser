@@ -441,7 +441,14 @@ def lint_node(c):
 def lint_robot(c):
     in_ci = os.getenv("GITHUB_WORKFLOW")
     print(f"Lint Robot files {'in ci' if in_ci else ''}")
-    command = ["robotidy", "--lineseparator", "unix", "atest/test/"]
+    command = [
+        "robotidy",
+        "--lineseparator",
+        "unix",
+        "--configure",
+        "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
+        "atest/test/",
+    ]
     if in_ci:
         command.insert(1, "--check")
     c.run(" ".join(command))

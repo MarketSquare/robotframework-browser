@@ -4,15 +4,15 @@ Resource        imports.resource
 Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
-${FailureScreenshot}=       ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot2}=      ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
-${FailureScreenshot3}=      ${OUTPUT_DIR}${/}myfailure_screenshot.png
-${TestScreenshot}=          ${OUTPUT_DIR}${/}test_screenshot
+${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
+${FailureScreenshot2} =     ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
+${FailureScreenshot3} =     ${OUTPUT_DIR}${/}myfailure_screenshot.png
+${TestScreenshot} =         ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
 Register Keyword To Run On Failure
     Type Text    css=input#username_field    username
-    ${prev}=    Register Keyword To Run On Failure    Take Screenshot
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
@@ -22,7 +22,7 @@ Register Keyword To Run On Failure
 
 Register KåWä On Failure with unicode " 💩 "
     Type Text    css=input#username_field    username
-    ${prev}=    Register Keyword To Run On Failure    Take Screenshot
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
@@ -32,7 +32,7 @@ Register KåWä On Failure with unicode " 💩 "
 
 Register kw with custom path
     Type Text    css=input#username_field    username
-    ${prev}=    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
@@ -86,16 +86,16 @@ If Element Not Found Screenshot Should Fail
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
 ElementHandle Screenshotting
-    ${ref}=    Get Element    \#username_field
+    ${ref} =    Get Element    \#username_field
     Take screenshot    ${TestScreenshot}    ${ref}
     File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}.png
 
 Screenshotting Without Path
     Remove File    ${OUTPUT_DIR}/*.png
-    ${path1}=    Take Screenshot
+    ${path1} =    Take Screenshot
     File Should Exist    ${path1}
-    ${path2}=    Take Screenshot
+    ${path2} =    Take Screenshot
     File Should Exist    ${path2}
     Should Not Be Equal    ${path1}    ${path2}
     [Teardown]    Remove Files    ${path1}    ${path2}
@@ -113,14 +113,14 @@ Screenshot Filename Incrementation
 Embed ScreenShot To log.html File
     [Documentation]
     ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
-    ${path}=    Take screenshot    EMBED
+    ${path} =    Take screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
     Should Be Equal    ${path}    EMBED
 
 Embed Element Picture To log.html File
     [Documentation]
     ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
-    ${path}=    Take screenshot    EMbeD    selector=\#username_field
+    ${path} =    Take screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
 

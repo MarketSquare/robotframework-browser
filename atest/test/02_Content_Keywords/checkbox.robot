@@ -21,10 +21,10 @@ Get Checkbox State Custom Error
     ...    Get Checkbox State    [name=can_send_email]    ==    unchecked    Kala {expected} {expected_type}
 
 Check Checkbox
-    ${state}=    Get Checkbox State    [name=can_send_sms]    ==    off
+    ${state} =    Get Checkbox State    [name=can_send_sms]    ==    off
     Should Not Be True    ${state}
     Check Checkbox    [name=can_send_sms]
-    ${state}=    Get Checkbox State    [name=can_send_sms]    ==    on
+    ${state} =    Get Checkbox State    [name=can_send_sms]    ==    on
     Should Be True    ${state}
 
 Uncheck Checkbox
