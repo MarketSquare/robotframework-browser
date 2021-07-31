@@ -439,15 +439,19 @@ def lint_node(c):
 
 @task
 def lint_robot(c):
-    print("Lint Robot files")
-    c.run("robotidy --lineseparator unix atest/test/")
+    in_ci = os.getenv("GITHUB_WORKFLOW")
+    print(f"Lint Robot files {'in ci' if in_ci else ''}")
+    command = ["robotidy", "--lineseparator", "unix", "atest/test/"]
+    if in_ci:
+        command.insert(1, "--check")
+    c.run(" ".join(command))
     # keywords.resource needs resource to be imported before library, but generally
     # that should be avoided.
-    c.run(
-        "robotidy --lineseparator unix "
-        "--configure OrderSettingsSection:imports_order=resource,library,variables "
-        "atest/test/keywords.resource"
-    )
+    command.insert(1, "--configure")
+    command.insert(2, "OrderSettingsSection:imports_order=resource,library,variables")
+    command.pop()
+    command.append("atest/test/keywords.resource")
+    c.run(" ".join(command))
 
 
 @task(lint_python, lint_node, lint_robot)
