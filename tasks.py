@@ -444,18 +444,17 @@ def lint_robot(c):
     atest_folder = "atest/test/"
     command = [
         "robotidy",
+        "-v",
         "--lineseparator",
         "unix",
         "--configure",
         "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
-        "atest/test/",
     ]
     if in_ci:
         command.insert(1, "--check")
         command.insert(1, "--diff")
     for file in Path(atest_folder).glob("*"):
         if not file.name == "keywords.resource":
-            print(file)
             command.append(str(file))
             c.run(" ".join(command))
             command.pop()
@@ -463,9 +462,7 @@ def lint_robot(c):
     # that should be avoided.
     command.insert(1, "--configure")
     command.insert(2, "OrderSettingsSection:imports_order=resource,library,variables")
-    command.pop()
-    command.append(f"{atest_folder}/keywords.resource")
-    print(f"{atest_folder}/keywords.resource")
+    command.append(f"{atest_folder}keywords.resource")
     c.run(" ".join(command))
 
 
