@@ -1,6 +1,6 @@
 *** Settings ***
-Resource          imports.resource
-Library           Browser
+Library     Browser
+Resource    imports.resource
 
 *** Test Cases ***
 Finds a selector

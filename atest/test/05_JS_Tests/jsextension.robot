@@ -1,6 +1,6 @@
 *** Settings ***
-Library           Browser    jsextension=${CURDIR}/funky.js
-Resource          imports.resource
+Library     Browser    jsextension=${CURDIR}/funky.js
+Resource    imports.resource
 
 *** Test Cases ***
 Calling custom js keyword

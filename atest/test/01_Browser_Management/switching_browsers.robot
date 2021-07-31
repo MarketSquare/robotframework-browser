@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Teardown     Close Browser    ALL
+Resource            imports.resource
+
+Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Switch Browser
@@ -10,7 +11,7 @@ Switch Browser
     ${first_url}    Get Url
     ${second_browser}    New Browser    firefox
     New Context
-    ${timeout}=    Set Browser Timeout    10s
+    ${timeout}    Set Browser Timeout    10s
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     ${second_url}    Get Url

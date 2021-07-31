@@ -1,10 +1,11 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Suite Setup     New Page    ${LOGIN_URL}
 
 *** Variables ***
-${UserNameLabel}=    label[for="username_field"]
-${InputUsername}=    id=username_field
+${UserNameLabel}=       label[for="username_field"]
+${InputUsername}=       id=username_field
 
 *** Test Cases ***
 Get Text
@@ -51,7 +52,8 @@ Get Property and Then .. (Closure)
 
 Get Property With Nonmatching Selector
     [Setup]    Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Property    notamatch    attributeName
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Property
+    ...    notamatch    attributeName
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute
@@ -64,9 +66,8 @@ Get Attribute Default Error
     ...    Get Attribute    id=login_button    disabled
 
 Get Attribute Custom Error
-    Run Keyword And Expect Error
-    ...    None, nonetype, True, bool
-    ...    Get Attribute    id=login_button    disabled    ==    ${True}    message={value}, {value_type}, {expected}, {expected_type}
+    Run Keyword And Expect Error    None, nonetype, True, bool    Get Attribute    id=login_button    disabled    ==
+    ...    ${True}    message={value}, {value_type}, {expected}, {expected_type}
 
 Get Attribute and Verify absense
     Get Attribute    id=login_button    disabled    ==    ${None}
@@ -88,7 +89,7 @@ Get Attribute Names
 
 Get Attribute Names Default Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${expected} =    Create List    1    3
+    ${expected}=    Create List    1    3
     Run Keyword And Expect Error
     ...    Attribute names '*' (list) should be '?'1', '3'?' (list)
     ...    Get Attribute Names    [name="readonly_input"]    ==    ${expected}
@@ -96,13 +97,11 @@ Get Attribute Names Default Error
 
 Get Attribute Names Custom Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${expected} =    Create List    1    3
-    Run Keyword And Expect Error
-    ...    Custom error ?'1', '3'? list
-    ...    Get Attribute Names    [name="readonly_input"]    ==    ${expected}    message=Custom error {expected} {expected_type}
-    Run Keyword And Expect Error
-    ...    Custom error ?'1', '3'? list
-    ...    Get Attribute Names    [name="readonly_input"]    ==    1    3    message=Custom error {expected} {expected_type}
+    ${expected}=    Create List    1    3
+    Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
+    ...    ==    ${expected}    message=Custom error {expected} {expected_type}
+    Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
+    ...    ==    1    3    message=Custom error {expected} {expected_type}
     [Teardown]    Close Page
 
 Get Attribute Names and Assert single and multiple

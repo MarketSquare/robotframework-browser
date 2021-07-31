@@ -1,6 +1,6 @@
 *** Settings ***
-Library           Browser
-Resource          imports.resource
+Library     Browser
+Resource    imports.resource
 
 *** Test Cases ***
 Get Devices

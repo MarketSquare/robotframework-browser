@@ -1,6 +1,6 @@
 *** Settings ***
-Resource          imports.resource
-Library           OperatingSystem
+Library     OperatingSystem
+Resource    imports.resource
 
 *** Test Cases ***
 Open PDF in another tab and download it

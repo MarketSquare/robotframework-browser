@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          imports.resource
+Resource    imports.resource
 
 *** Test Cases ***
 Wrong Browser With Channel

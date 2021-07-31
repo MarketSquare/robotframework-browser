@@ -1,12 +1,13 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
-${FailureScreenshot}=    ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot2}=    ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
-${FailureScreenshot3}=    ${OUTPUT_DIR}${/}myfailure_screenshot.png
-${TestScreenshot}=    ${OUTPUT_DIR}${/}test_screenshot
+${FailureScreenshot}=       ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
+${FailureScreenshot2}=      ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
+${FailureScreenshot3}=      ${OUTPUT_DIR}${/}myfailure_screenshot.png
+${TestScreenshot}=          ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
 Register Keyword To Run On Failure
@@ -60,7 +61,8 @@ Element Screenshotting
     [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/*.png
 
 Quality Argument Incompatible With Png
-    Run Keyword And Expect Error    *quality is unsupported for the png screenshots*    Take Screenshot    fullPage=True    fileType=png    timeout=10s    quality=50
+    Run Keyword And Expect Error    *quality is unsupported for the png screenshots*    Take Screenshot
+    ...    fullPage=True    fileType=png    timeout=10s    quality=50
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.png
 
 Screenshot Fails Due To Timeout
@@ -111,14 +113,14 @@ Screenshot Filename Incrementation
 Embed ScreenShot To log.html File
     [Documentation]
     ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
-    ${path} =    Take screenshot    EMBED
+    ${path}=    Take screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
     Should Be Equal    ${path}    EMBED
 
 Embed Element Picture To log.html File
     [Documentation]
     ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
-    ${path} =    Take screenshot    EMbeD    selector=\#username_field
+    ${path}=    Take screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
 

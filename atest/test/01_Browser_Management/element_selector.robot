@@ -1,7 +1,9 @@
 *** Settings ***
-Documentation     Tests for Get Element and `element=<ref>` selector syntax
-Resource          imports.resource
-Test Setup        New Page    ${FORM_URL}
+Documentation       Tests for Get Element and `element=<ref>` selector syntax
+
+Resource            imports.resource
+
+Test Setup          New Page    ${FORM_URL}
 
 *** Test Cases ***
 Get Element

@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Suite Setup     New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Equal

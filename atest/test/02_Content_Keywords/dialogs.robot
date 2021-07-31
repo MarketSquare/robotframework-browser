@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Dismiss Alert
@@ -22,7 +23,8 @@ Promptinput works
     Get Text    \#prompt_result    ==    Some Input String
 
 Dismiss and Promptinput Fails
-    Run Keyword And Expect Error    prompt_input is only valid if action is 'accept'    Handle Future Dialogs    action=dismiss    prompt_input=Some Prompt Input
+    Run Keyword And Expect Error    prompt_input is only valid if action is 'accept'    Handle Future Dialogs
+    ...    action=dismiss    prompt_input=Some Prompt Input
 
 Verify Dialogue Text With Wrong Text
     ${promise} =    Promise To    Wait For Alert    action=accept    prompt_input=Kala    text=Wrong Text

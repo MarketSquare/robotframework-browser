@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Click Button
@@ -9,7 +10,8 @@ Click Button
 
 Click Nonmatching Selector
     ${originaltimeout}=    Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "css=notamatch"*    Click    css=notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "css=notamatch"*    Click
+    ...    css=notamatch
     [Teardown]    Set Browser Timeout    ${originaltimeout}
 
 Click With Invalid Selector

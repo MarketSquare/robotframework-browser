@@ -1,7 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Library           Browser
-Library           Collections
+Library     Collections
+Library     Browser
+Resource    imports.resource
 
 *** Test Cases ***
 Normal Crawling

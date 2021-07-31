@@ -1,8 +1,9 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Browser
-Test Setup        New Page    ${LOGIN_URL}
-Suite Teardown    Close Browser
+Resource            imports.resource
+
+Suite Setup         New Browser
+Suite Teardown      Close Browser
+Test Setup          New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Localstorage

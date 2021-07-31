@@ -1,9 +1,10 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
-${Center_Func}=    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
+${Center_Func}=     {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
 
 *** Test Cases ***
 Click With coordinates
@@ -22,8 +23,8 @@ Draggable Test
     ${x}=    Get Boundingbox    \#draggable    x
     ${y}=    Get Boundingbox    \#draggable    y
     # evaluate end coordinates
-    ${xnew}    Evaluate    ${x}+400
-    ${ynew}    Evaluate    ${y}+400
+    ${xnew}=    Evaluate    ${x}+400
+    ${ynew}=    Evaluate    ${y}+400
     Mouse Button    down    ${x}    ${y}
     Mouse Button    up    ${xnew}    ${ynew}
     # just do a random move to make sure the element is not stuck to mouse any more

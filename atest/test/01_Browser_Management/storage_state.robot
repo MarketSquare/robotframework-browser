@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Browser
+Resource        imports.resource
+
+Suite Setup     New Browser
 
 *** Test Cases ***
 Save storage state
@@ -13,9 +14,9 @@ Save storage state
 
 Restore Storage State
     New Context    storageState=${STATE_FILE}
-    ${cookie}=    Get Cookie    Foo
+    ${cookie} =    Get Cookie    Foo
     Should Be Equal    ${cookie.value}    Bar
-    ${cookie}=    Get Cookie    Key
+    ${cookie} =    Get Cookie    Key
     Should Be Equal    ${cookie.value}    Value
 
 Restore Storage State With Invalid Path

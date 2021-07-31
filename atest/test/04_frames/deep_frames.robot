@@ -1,7 +1,8 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       Open Browser To Deep Frame Page
-Suite Teardown    Close Browser
+Resource            imports.resource
+
+Suite Setup         Open Browser To Deep Frame Page
+Suite Teardown      Close Browser
 
 *** Test Cases ***
 First level

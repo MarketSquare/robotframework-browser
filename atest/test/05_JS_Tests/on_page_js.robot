@@ -1,14 +1,15 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Browser
-Test Setup        New Page    ${LOGIN_URL}
-Suite Teardown    Close Browser
+Resource            imports.resource
+
+Suite Setup         New Browser
+Suite Teardown      Close Browser
+Test Setup          New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 JS execute without and with element
-    ${result}    Execute JavaScript    () => {return false;}
+    ${result}=    Execute JavaScript    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    ${result}    Execute JavaScript    () => {return false;}    body
+    ${result}=    Execute JavaScript    () => {return false;}    body
     Should Be Equal    ${result}    ${False}
 
 Results from page

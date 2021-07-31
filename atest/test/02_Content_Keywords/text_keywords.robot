@@ -1,8 +1,9 @@
 *** Settings ***
-Resource          imports.resource
-Library           OperatingSystem
-Suite Setup       New Page
-Test Setup        Go To    ${LOGIN_URL}
+Library         OperatingSystem
+Resource        imports.resource
+
+Suite Setup     New Page
+Test Setup      Go To    ${LOGIN_URL}
 
 *** Test Cases ***
 Type Text with Clearing
@@ -13,7 +14,8 @@ Type Text with Clearing
 
 Type Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Type Text    notamatch    text
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Type Text    notamatch
+    ...    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Clear Text
@@ -26,7 +28,8 @@ Clear Text
 
 Clear Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Clear Text    notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Clear Text
+    ...    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill with css selector
@@ -35,7 +38,8 @@ Fill with css selector
 
 Fill Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Text    notamatch    text
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Text    notamatch
+    ...    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill Secret Direct Value
@@ -127,12 +131,16 @@ Fill Secret with direct $value not resolvable
     Get Text    css=input#password_field    ==    $Direct Value
 
 Fill Secret fails when variable is not set
-    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret    css=input#username_field    ${NONE_EXISTING_ENV_VARIABLE}
-    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret    css=input#password_field    ${NONE_EXISTING_ENV_VARIABLE}
+    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret
+    ...    css=input#username_field    ${NONE_EXISTING_ENV_VARIABLE}
+    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret
+    ...    css=input#password_field    ${NONE_EXISTING_ENV_VARIABLE}
 
 Fill Secret fails when env variable is not set
-    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret    css=input#username_field    %{NONE_EXISTING_ENV_VARIABLE}
-    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret    css=input#password_field    %{NONE_EXISTING_ENV_VARIABLE}
+    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret
+    ...    css=input#username_field    %{NONE_EXISTING_ENV_VARIABLE}
+    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret
+    ...    css=input#password_field    %{NONE_EXISTING_ENV_VARIABLE}
 
 Type Secret env
     Set Environment Variable    TYPE_SECRET    password22
@@ -147,7 +155,8 @@ Type Secret local
 Fill Secret With Nonmatching Selector
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Secret    notamatch    %MY_RFBROWSER_SECRET
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Secret
+    ...    notamatch    %MY_RFBROWSER_SECRET
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Type Text with Delay

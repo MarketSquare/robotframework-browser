@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Page    ${FORM_URL}
+Resource        imports.resource
+
+Suite Setup     New Page    ${FORM_URL}
 
 *** Test Cases ***
 Get Checkbox State Checked
@@ -33,5 +34,6 @@ Uncheck Checkbox
 
 Get Checkbox State With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "xpath=//notamatch"*    Get Checkbox State    xpath=//notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "xpath=//notamatch"*
+    ...    Get Checkbox State    xpath=//notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}

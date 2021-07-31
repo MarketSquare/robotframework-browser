@@ -1,20 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Teardown     Close Browser    ALL
+Resource            imports.resource
 
-*** Keywords ***
-Open Browser and assert Login Page
-    [Arguments]    ${local_browser}
-    Open Browser To Login Page
-    Get Text    h1    ==    Login Page
-
-New Page Form
-    New Page    ${FORM_URL}
-    Get Title    ==    prefilled_email_form.html
-
-New Page Login
-    New Page    ${LOGIN_URL}
-    Get Title    matches    (?i)login
+Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Open Firefox
@@ -31,12 +18,12 @@ New Browser does not open a page
 New Browser does not create a context
     New Browser
     # Use Switch context to test that no context exists here
-    ${no_context_id}    Switch Context    CURRENT
+    ${no_context_id}=    Switch Context    CURRENT
     Should Be Equal    ${no_context_id}    NO CONTEXT OPEN
 
 New Context does not open a page
     New Context
-    ${no_page_id}    Switch Page    CURRENT
+    ${no_page_id}=    Switch Page    CURRENT
     Should Be Equal    ${no_page_id}    NO PAGE OPEN
 
 Open Browser opens everything
@@ -44,11 +31,15 @@ Open Browser opens everything
     Get Title    ==    prefilled_email_form.html
 
 Open Browser with invalid browser fails on RF side
-    Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Open Browser    url=${FORM_URL}    browser=netscape
+    Run Keyword and Expect Error
+    ...    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Open Browser
+    ...    url=${FORM_URL}    browser=netscape
     [Teardown]    no operation
 
 New Browser with invalid browser fails on RF side
-    Run Keyword and Expect Error    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    New Browser    netscape
+    Run Keyword and Expect Error
+    ...    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    New Browser
+    ...    netscape
     [Teardown]    no operation
 
 Create Chain Works
@@ -91,10 +82,10 @@ Browser, Context and Page UUIDs
     [Teardown]    Close Browser
 
 Switch Context
-    ${first_context}    New Context
+    ${first_context}=    New Context
     New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    ${second_context}    New Context
+    ${second_context}=    New Context
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     Switch Context    ${first_context}
@@ -124,12 +115,12 @@ Switch New Page fails when no new pages
 
 Set Viewport Size
     New Page
-    ${size}    Get Viewport Size
-    ${desired_first}    Evaluate    {"height": 720, "width": 1280}
+    ${size}=    Get Viewport Size
+    ${desired_first}=    Evaluate    {"height": 720, "width": 1280}
     Should Be Equal    ${size}    ${desired_first}
     Set Viewport Size    height=600    width=800
-    ${desired_second}    Evaluate    {"height": 600, "width": 800}
-    ${second_size}    Get Viewport Size
+    ${desired_second}=    Evaluate    {"height": 600, "width": 800}
+    ${second_size}=    Get Viewport Size
     Should Be Equal    ${desired_second}    ${second_size}
 
 Page Index is stable when other pages closed
@@ -253,3 +244,17 @@ When Page Without Context Is Created This Is Logged For User
     New Browser
     New Page
     New Page
+
+*** Keywords ***
+Open Browser and assert Login Page
+    [Arguments]    ${local_browser}
+    Open Browser To Login Page
+    Get Text    h1    ==    Login Page
+
+New Page Form
+    New Page    ${FORM_URL}
+    Get Title    ==    prefilled_email_form.html
+
+New Page Login
+    New Page    ${LOGIN_URL}
+    Get Title    matches    (?i)login

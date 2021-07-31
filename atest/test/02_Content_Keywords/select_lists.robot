@@ -1,7 +1,8 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${FORM_URL}
-Test Timeout      10s
+Resource        imports.resource
+
+Test Setup      New Page    ${FORM_URL}
+Test Timeout    10s
 
 *** Test Cases ***
 Page Should Contain List
@@ -11,7 +12,7 @@ Get Select Options
     Get Select Options    select[name=preferred_channel]    validate    len(value) == 3
     Get Select Options    select[name=preferred_channel]    validate    value[0]['index'] == 0
     Get Select Options    select[name=preferred_channel]    validate    value[2]['label'] == 'Direct mail'
-    ${options}    Get Select Options    select[name=possible_channels]
+    ${options}=    Get Select Options    select[name=possible_channels]
     Should be equal    ${options}[0][label]    Email
     Should be equal    ${options}[1][value]    phone
 
@@ -38,12 +39,14 @@ Get Selected Options
     ...    Get Selected Options    select[name=possible_channels]    label    ==    Email    Telephone    Direct mail
 
 Get Selected Options with xpath
-    ${selection}=    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==    Telephone
+    ${selection}=    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==
+    ...    Telephone
     Should Be Equal    ${selection}    Telephone
 
 Get Selected Options With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Selected Options    notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Selected Options
+    ...    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Option By label
@@ -60,7 +63,8 @@ Select Options By text
 
 Select Options By With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Select Options By    notamatch    label    Label
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Select Options By
+    ...    notamatch    label    Label
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Deselect Options Implicitly
@@ -72,7 +76,8 @@ Deselect Options Explicitly
 
 Deselect Options With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Deselect Options    notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Deselect Options
+    ...    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 *** Keywords ***

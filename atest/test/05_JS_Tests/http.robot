@@ -1,11 +1,12 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Page    ${LOGIN_URL}
+Resource        imports.resource
 
-*** Variable ***
-&{expected get json body}    greeting=HELLO
-&{expected post json body}    name=John    id=${1}
-&{expected put json body}    name=Jane    id=${3}
+Suite Setup     New Page    ${LOGIN_URL}
+
+*** Variables ***
+&{expected get json body}=      greeting=HELLO
+&{expected post json body}=     name=John    id=${1}
+&{expected put json body}=      name=Jane    id=${3}
 
 *** Test Cases ***
 GET with text response
