@@ -227,9 +227,9 @@ class Control(LibraryComponent):
 
         Example:
         | `Set Browser Timeout`    10 seconds
-        | ${old} =    Set Retry Assertions For    30s
-        | Get title    ==    Login Page
-        | Set Retry Assertions For    ${old}
+        | ${old} =    `Set Retry Assertions For`    30s
+        | `Get Title`    ==    Login Page
+        | `Set Retry Assertions For`    ${old}
 
         Example waits 10 seconds on Playwright to get the page title and library
         will retry 30 seconds to make sure that title is correct.
@@ -254,7 +254,7 @@ class Control(LibraryComponent):
 
         ``width`` Sets the width size.
 
-        ``height`` Sets the heigth size.
+        ``height`` Sets the height size.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetViewportSize(
@@ -280,6 +280,13 @@ class Control(LibraryComponent):
         """Updated the correct Context's geolocation.
 
         Latitude can be between -90 and 90 and longitude can be between -180 and 180.
+        Accuracy of the location must be positive number and defaults to 0. When
+        creating context, grant ``geolocation`` permission for pages to read its geolocation.
+
+        Example:
+        | ${permissions} =    Create List    geolocation
+        | `New Context`    permissions=${permissions}
+        | `Set Geolocation`    60.173708, 24.982263    3    # Points to Korkeasaari in Helsinki.
         """
         geolocation_dict = {"latitude": latitude, "longitude": longitude}
         if accuracy:
