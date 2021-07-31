@@ -70,6 +70,10 @@ class Evaluation(LibraryComponent):
 
         ``color`` Sets the color of the border. Valid colors i.e. are:
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``
+
+        Example:
+        | `Highlight Elements`    input#login_button    duration=200ms
+        | `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.HighlightElements(
@@ -88,6 +92,9 @@ class Evaluation(LibraryComponent):
         """Adds a <style type="text/css"> tag with the content.
 
         ``content`` Raw CSS content to be injected into frame.
+
+        Example:
+        | `Add Style Tag`    \\#username_field:focus {background-color: aqua;}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))
@@ -101,6 +108,10 @@ class Evaluation(LibraryComponent):
         and suggested filename as keys (saveAs and suggestedFilename).
         See `Wait For Download` for more details. Keyword requires
         that current active page has loaded valid html webpage.
+
+        Example:
+        | ${path}=    `Download`    ${url}
+        | ${actual_size}=    Get File Size    ${path.saveAs}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Download(Request().Url(url=url))
