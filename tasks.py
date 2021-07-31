@@ -437,7 +437,7 @@ def lint_node(c):
 
 @task
 def lint_robot(c):
-    c.run("python -m robot.tidy --recursive atest/test")
+    c.run("robotidy atest/test")
 
 
 @task(lint_python, lint_node, lint_robot)
