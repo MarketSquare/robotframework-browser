@@ -451,6 +451,7 @@ def lint_robot(c):
     ]
     if in_ci:
         command.insert(1, "--check")
+        command.insert(1, "--diff")
     c.run(" ".join(command))
     # keywords.resource needs resource to be imported before library, but generally
     # that should be avoided.
