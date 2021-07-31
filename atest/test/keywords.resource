@@ -1,4 +1,5 @@
 *** Settings ***
+Resource    variables.resource
 Library     Collections
 Library     DateTime
 Library     OperatingSystem
@@ -6,7 +7,6 @@ Library     Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=
 Library     ../library/common.py
 Library     ../library/os_wrapper.py
 Library     ../library/show_trace_tool.py
-Resource    variables.resource
 
 *** Keywords ***
 Open Browser To No Page

@@ -367,7 +367,7 @@ def run_tests(c, tests):
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(
         [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests],
-        env=env
+        env=env,
     )
     return process.wait(600)
 
@@ -401,7 +401,9 @@ def _run_pabot(extra_args=None, exit=True):
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "No-Windows-Support"])
     default_args.append("atest/test")
-    process = subprocess.Popen(pabot_args + (extra_args or []) + default_args, env=os.environ)
+    process = subprocess.Popen(
+        pabot_args + (extra_args or []) + default_args, env=os.environ
+    )
     process.wait(600)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
@@ -437,7 +439,15 @@ def lint_node(c):
 
 @task
 def lint_robot(c):
-    c.run("robotidy atest/test")
+    print("Lint Robot files")
+    c.run("robotidy --lineseparator unix atest/test/")
+    # keywords.resource needs resource to be imported before library, but generally
+    # that should be avoided.
+    c.run(
+        "robotidy --lineseparator unix "
+        "--configure OrderSettingsSection:imports_order=resource,library,variables "
+        "atest/test/keywords.resource"
+    )
 
 
 @task(lint_python, lint_node, lint_robot)
