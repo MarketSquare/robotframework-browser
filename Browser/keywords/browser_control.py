@@ -190,9 +190,15 @@ class Control(LibraryComponent):
     def set_browser_timeout(self, timeout: timedelta) -> str:
         """Sets the timeout used by most input and getter keywords.
 
-        ``timeout`` Timeout of it is for current playwright context.
+        ``timeout`` Timeout of it is for current playwright context
+        and for new contexts. Supports Robot Framework
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format|time format]
+        . Returns the previous value of the timeout.
 
-        Returns the previous value of the timeout.
+        Example:
+        | ${old_timeout} =    `Set Browser Timeout`    1m 30 seconds
+        | Click     //button
+        | `Set Browser Timeout`    ${old_timeout}
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
         self.timeout = self.convert_timeout(timeout)
@@ -211,9 +217,22 @@ class Control(LibraryComponent):
     def set_retry_assertions_for(self, timeout: timedelta) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
-        ``timeout``
+        `Set Browser timeout` controls how long Playwright will perform
+        waiting in the node side, assertion retry will determine how long
+        Browser library will retry the playwright operation. Generally
+        assertion timeout should be longer than the timeout set by
+        `Set Browser timeout`.
 
-        Returns the previous value of the retry_assertions_until.
+        Returns the previous value of the assertion retry.
+
+        Example:
+        | `Set Browser Timeout`    10 seconds
+        | ${old} =    Set Retry Assertions For    30s
+        | Get title    ==    Login Page
+        | Set Retry Assertions For    ${old}
+
+        Example waits 10 seconds on Playwright to get the page title and library
+        will retry 30 seconds to make sure that title is correct.
         """
         old_retry_assertions_for = self.millisecs_to_timestr(self.retry_assertions_for)
         self.retry_assertions_for = self.convert_timeout(timeout)
