@@ -35,7 +35,10 @@ class Promises(LibraryComponent):
     def promise_to(self, kw: str, *args) -> Future:
         """
         Wrap a Browser library keyword and make it a promise.
-        Returns that promise and executes the keyword on background.
+        Promised keyword is executed and started on background.
+        Test execution continues without waiting for ``kw`` to finish.
+
+        Returns reference to the promised keyword.
 
         ``kw`` Keyword that will work async on background.
 
@@ -115,6 +118,10 @@ class Promises(LibraryComponent):
         Waits for promises to finish and returns results from them.
         Returns one result if one promise waited. Otherwise returns an array of results.
         If one fails, then this keyword will fail.
+
+        See `Promise To` for more information about promises.
+
+        For general waiting of elements please see `Implicit waiting`.
 
         ``promises`` *Work in progress*
 

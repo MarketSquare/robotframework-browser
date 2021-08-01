@@ -449,12 +449,13 @@ class Browser(DynamicCore):
     can optionally assert.
     %ASSERTION_TABLE%
 
-    But default the keywords will provide an error message if the assertion fails,
-    but default error message can be overwritten with a ``message`` argument. The
-    ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
+    By default keywords will provide an error message if an assertion fails.
+    Default error message can be overwritten with a ``message`` argument.
+    The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
     `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
-    options. The `{value}` is the value returned by the keyword and the `{expected}`
-    is the expected value defined by the user, usually value in the
+    options.
+    The `{value}` is value returned by the keyword and the `{expected}`
+    is expected value defined by the user, usually value in the
     ``assertion_expected`` argument. The `{value_type}` and
     `{expected_type}` are the type definitions from `{value}` and `{expected}`
     arguments. In similar fashion as Python
@@ -518,6 +519,20 @@ class Browser(DynamicCore):
     = Automatic page and context closing =
 
     %AUTO_CLOSING_LEVEL%
+
+    = Implicit waiting =
+
+    Browser library and Playwright have many mechanisms to help in waiting for elements.
+    Playwright will auto-wait before performing actions on elements.
+    Please see [https://playwright.dev/docs/actionability/ | Auto-waiting on Playwright documentation]
+    for more information.
+
+    On top of Playwright auto-waiting Browser assertions will wait and retry
+    for specified time before failing any `Assertions`.
+    Time is specified in Browser library initialization with ``retry_assertions_for``.
+
+    Browser library also includes explicit waiting keywords such as `Wait for Elements State`
+    if more control for waiting is needed.
 
     = Experimental: Re-using same node process =
 
