@@ -450,7 +450,9 @@ class Browser(DynamicCore):
     = Assertions =
 
     Keywords that accept arguments ``assertion_operator`` <`AssertionOperator`> and ``assertion_expected``
-    can optionally assert. Assert will retry and fail only after a specified timeout.
+    can optionally assert that a specified condition holds.
+
+    Assert will retry and fail only after a specified timeout.
     See `Importing` and ``retry_assertions_for`` (default is 1 second) for configuring this timeout.
 
 
