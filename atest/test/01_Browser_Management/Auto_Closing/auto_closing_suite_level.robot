@@ -1,7 +1,8 @@
 *** Settings ***
-Library           Browser    auto_closing_level=SUITE    run_on_failure=None
-Resource          ../imports.resource
-Suite Setup       New Page    ${ERROR_URL}
+Library         Browser    auto_closing_level=SUITE    run_on_failure=None
+Resource        ../imports.resource
+
+Suite Setup     New Page    ${ERROR_URL}
 
 *** Test Cases ***
 Resource leaker

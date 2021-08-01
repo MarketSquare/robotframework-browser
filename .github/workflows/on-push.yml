@@ -57,6 +57,9 @@ jobs:
     - name: Check types with mypy
       run: |
         mypy --config-file Browser/mypy.ini Browser
+    - name: Lint atest
+      run: |
+        inv lint-robot
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser

@@ -1,6 +1,6 @@
 *** Settings ***
-Resource          imports.resource
-Library           OperatingSystem
+Library     OperatingSystem
+Resource    imports.resource
 
 *** Test Cases ***
 Open PDF in another tab and download it
@@ -10,9 +10,9 @@ Open PDF in another tab and download it
     New Page    ${WELCOME_URL}
     Click    text=Open pdf
     Switch Page    NEW
-    ${url}=    Get Url    should end with    .pdf
-    ${path}=    Download    ${url}
-    ${actual_size}=    get file size    ${path.saveAs}
+    ${url} =    Get Url    should end with    .pdf
+    ${path} =    Download    ${url}
+    ${actual_size} =    get file size    ${path.saveAs}
     Should be equal    ${actual_size}    ${32201}
     remove file    ${path.saveAs}
     Close Page
@@ -50,8 +50,8 @@ Open html in another tab
 Download works also headless
     New Context    acceptDownloads=${TRUE}
     New Page    ${WELCOME_URL}
-    ${path}=    Download    ${WELCOME_URL}
-    ${actual_size}=    get file size    ${path}[saveAs]
+    ${path} =    Download    ${WELCOME_URL}
+    ${actual_size} =    get file size    ${path}[saveAs]
     Should Be True    ${actual_size} < ${500}
     remove file    ${path}[saveAs]
     Should Contain    ${path}[suggestedFilename]    .html

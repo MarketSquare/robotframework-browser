@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Teardown     Close Browser    ALL
+Resource            imports.resource
+
+Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Get Multiple Browsers
@@ -10,16 +11,18 @@ Get Multiple Browsers
     New Page    ${LOGIN_URL}
     New Browser
     New Context
-    ${oldtimeout}=    Set Browser Timeout    15s
+    ${oldtimeout} =    Set Browser Timeout    15s
     New Page    http://example.com
-    ${browsers}    Get Browser Catalog    then    [(b['type'], b['activeBrowser'], [[p['url'] for p in c['pages']] for c in b['contexts']]) for b in value]
-    ${expected}    evaluate    [('chromium', False, [['http://${SERVER}/prefilled_email_form.html'], ['${LOGIN_URL}']]), ('chromium', True, [['http://example.com/']])]
+    ${browsers} =    Get Browser Catalog    then
+    ...    [(b['type'], b['activeBrowser'], [[p['url'] for p in c['pages']] for c in b['contexts']]) for b in value]
+    ${expected} =    evaluate
+    ...    [('chromium', False, [['http://${SERVER}/prefilled_email_form.html'], ['${LOGIN_URL}']]), ('chromium', True, [['http://example.com/']])]
     should be equal    ${browsers}    ${expected}
 
 Get Closed Browsers
     New Browser
     Close Browser
-    ${browsers}    Get Browser Catalog
+    ${browsers} =    Get Browser Catalog
     should be empty    ${browsers}
 
 Get Browser Catalog Default Error
@@ -39,7 +42,7 @@ Get Browser Catalog Custom Error
 Get Viewport Size
     New Context    viewport={"height": 600, "width": 800}
     New Page
-    ${size}    Evaluate    {"height": 600, "width": 800}
+    ${size} =    Evaluate    {"height": 600, "width": 800}
     Get Viewport Size    ALL    ==    {"height": 600, "width": 800}
     Get Viewport Size    ALL    ==    ${size}
     Get Viewport Size    width    ==    800

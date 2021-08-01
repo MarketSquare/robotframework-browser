@@ -1,7 +1,8 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       Open Browser To No Page
-Test Setup        New Page    ${WAIT_URL}
+Resource        imports.resource
+
+Suite Setup     Open Browser To No Page
+Test Setup      New Page    ${WAIT_URL}
 
 *** Test Cases ***
 Wait For Elements State attached
@@ -78,17 +79,17 @@ Wait For Elements State fails On Too Short Timeout
 
 Wait For Elements State fails On Too Short Global Timeout
     ${timeout} =    Set Browser Timeout    0.3 s
-    Run Keyword and Expect Error
-    ...    Custom Error #submit, ElementState.hidden and 300 milliseconds
-    ...    Wait For Elements State    \#submit    hidden    ${None}    Custom Error {selector}, {function} and {timeout}
+    Run Keyword and Expect Error    Custom Error #submit, ElementState.hidden and 300 milliseconds
+    ...    Wait For Elements State    \#submit    hidden    ${None}
+    ...    Custom Error {selector}, {function} and {timeout}
     [Teardown]    Set Browser Timeout    ${timeout}
 
 Wait For Elements State Fails On Too Short Timeout Custom Error With Formatting
     Select Options By    \#dropdown    value    unchecked
     Click    \#submit    noWaitAfter=True
-    Run Keyword and Expect Error
-    ...    Custom Error #victim, e => !e.checked and 300 milliseconds
-    ...    Wait For Elements State    \#victim    unchecked    300ms    Custom Error {selector}, {function} and {timeout}
+    Run Keyword and Expect Error    Custom Error #victim, e => !e.checked and 300 milliseconds
+    ...    Wait For Elements State    \#victim    unchecked    300ms
+    ...    Custom Error {selector}, {function} and {timeout}
 
 Wait For Elements State Fails On Too Short Timeout Custom Error
     Select Options By    \#dropdown    value    unchecked
@@ -106,30 +107,31 @@ Wait For Elements State Fails On Too Short Timeout Custom Error And Hidden
 
 Wait For Elements State to hide with Promise
     Select Options By    \#dropdown    value    hidden    # Now it is visible
-    ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    3s
+    ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms
     Sleep    200 ms    reason=to check that the promise keeps beeing active
-    ${start}=    Evaluate    time.time()
+    ${start} =    Evaluate    time.time()
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
     Wait for    ${promise}
-    ${end}=    Evaluate    time.time()
+    ${end} =    Evaluate    time.time()
     Should Be True    ($end - $start) < 1.0
 
 Wait For Elements State to hide fails with Promise
     Select Options By    \#dropdown    value    hidden    # Now it is visible
-    ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    200ms
-    Run Keyword and Expect Error    *Timeout 200ms exceeded.*waiting for selector "#victim" to be hidden*    Wait for    ${promise}
+    ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    200ms
+    Run Keyword and Expect Error    *Timeout 200ms exceeded.*waiting for selector "#victim" to be hidden*    Wait for
+    ...    ${promise}
 
 Wait For Elements State to hide with Promise and wait for all promises
     [Tags]    No-Windows-Support
     Select Options By    \#dropdown    value    hidden    # Now it is visible
-    ${promise}=    Promise to    Wait For Elements State    \#victim    hidden    3s
+    ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms
     Sleep    200 ms    reason=to check that the promise keeps beeing active
-    ${start}=    Evaluate    time.time()
+    ${start} =    Evaluate    time.time()
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
     Wait For All Promises
-    ${end}=    Evaluate    time.time()
+    ${end} =    Evaluate    time.time()
     Should Be True    ($end - $start) < 0.9

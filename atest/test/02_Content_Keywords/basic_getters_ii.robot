@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Suite Setup     New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Get Style and Assert
@@ -8,7 +9,7 @@ Get Style and Assert
     Get Style    h1    align-content    ==    normal
 
 Get Style with element
-    ${elem}=    Get Element    h1
+    ${elem} =    Get Element    h1
     Get Style    ${elem}    align-content    ==    normal
 
 Get Style Default Error
@@ -28,22 +29,22 @@ Get Style Custom Error
     ...    Get Style    h1    align-content    !=    normal    foobar
 
 Get Element Size and Assert
-    ${expected}=    Evaluate    {'x': 0, 'y': 500, 'width': 40, 'height': 30}
-    ${bounding_box}=    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}
+    ${expected} =    Evaluate    {'x': 0, 'y': 500, 'width': 40, 'height': 30}
+    ${bounding_box} =    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}
     Should Be Equal    ${bounding_box}    ${expected}
     Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 500, 'width': 40, 'height': 30}}}
 
 Get Element and Assert x
-    ${x}=    Get BoundingBox    \#progress_bar    x    ==    0
+    ${x} =    Get BoundingBox    \#progress_bar    x    ==    0
     Should Be Equal    ${x}    ${0}
 
 Get Element and Assert y
     Get BoundingBox    \#progress_bar    y    validate    value - 500 == 0
 
 Get Element width and height
-    ${expected}=    Evaluate    {'w': 40, 'h': 30}
-    ${wh}=    Get BoundingBox    \#progress_bar    ALL    validate    value['width'] == 40
-    ${wh}=    Get BoundingBox    \#progress_bar    ALL    evaluate    {'w': value['width'], 'h': value['height']}
+    ${expected} =    Evaluate    {'w': 40, 'h': 30}
+    ${wh} =    Get BoundingBox    \#progress_bar    ALL    validate    value['width'] == 40
+    ${wh} =    Get BoundingBox    \#progress_bar    ALL    evaluate    {'w': value['width'], 'h': value['height']}
     Should Be Equal    ${wh}    ${expected}
 
 Get BoundingBox Normal Error

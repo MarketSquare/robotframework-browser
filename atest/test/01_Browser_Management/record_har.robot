@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Browser
+Resource        imports.resource
+
+Suite Setup     New Browser
 
 *** Test Cases ***
 Har path Only Defined

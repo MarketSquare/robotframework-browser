@@ -19,6 +19,7 @@ pytest-mock==3.6.1
 beautifulsoup4 >= 4.9.3
 psutil >= 1.10.0
 coverage >= 5.5
+robotframework-tidy >= 1.4.0
 # Include normal dependencies from requirements.txt. Makes it possible to use
 # requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
 -r requirements.txt

@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Page    ${FORM_URL}
+Resource        imports.resource
+
+Suite Setup     New Page    ${FORM_URL}
 
 *** Test Cases ***
 Get Checkbox State Checked
@@ -20,10 +21,10 @@ Get Checkbox State Custom Error
     ...    Get Checkbox State    [name=can_send_email]    ==    unchecked    Kala {expected} {expected_type}
 
 Check Checkbox
-    ${state}=    Get Checkbox State    [name=can_send_sms]    ==    off
+    ${state} =    Get Checkbox State    [name=can_send_sms]    ==    off
     Should Not Be True    ${state}
     Check Checkbox    [name=can_send_sms]
-    ${state}=    Get Checkbox State    [name=can_send_sms]    ==    on
+    ${state} =    Get Checkbox State    [name=can_send_sms]    ==    on
     Should Be True    ${state}
 
 Uncheck Checkbox
@@ -33,5 +34,6 @@ Uncheck Checkbox
 
 Get Checkbox State With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "xpath=//notamatch"*    Get Checkbox State    xpath=//notamatch
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "xpath=//notamatch"*
+    ...    Get Checkbox State    xpath=//notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
