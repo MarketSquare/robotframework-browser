@@ -22,6 +22,8 @@ class Crawling(LibraryComponent):
         Web crawler is a tool to go through all the pages on a specific URL domain.
         This happens by finding all links going to the same site and opening those.
 
+        returns list of crawled urls.
+
         ``url`` is the page to start crawling from.
 
         ``page_crawl_keyword`` is the keyword that will be executed on every page.
@@ -35,11 +37,13 @@ class Crawling(LibraryComponent):
         """
         if url:
             self.library.new_page(url)
-        self._crawl(
-            self.library.get_url() or "",
-            page_crawl_keyword,
-            max_number_of_page_to_crawl,
-            max_depth_to_crawl,
+        return list(
+            self._crawl(
+                self.library.get_url() or "",
+                page_crawl_keyword,
+                max_number_of_page_to_crawl,
+                max_depth_to_crawl,
+            )
         )
 
     def _crawl(
@@ -70,6 +74,7 @@ class Crawling(LibraryComponent):
             hrefs_to_crawl = self._build_urls_to_crawl(
                 child_hrefs, hrefs_to_crawl, crawled, baseurl, max_depth_to_crawl
             )
+        return crawled
 
     def _gather_links(self, parent_depth: int) -> List[Tuple[str, int]]:
         link_elements = self.library.get_elements("//a[@href]")

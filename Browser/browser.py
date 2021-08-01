@@ -159,7 +159,7 @@ class Browser(DynamicCore):
     below.
 
     | = Strategy = |     = Match based on =     |         = Example =                |
-    | ``css``      | CSS selector.              | ``css=.class > #login_btn``        |
+    | ``css``      | CSS selector.              | ``css=.class > \\#login_btn``      |
     | ``xpath``    | XPath expression.          | ``xpath=//input[@id="login_btn"]`` |
     | ``text``     | Browser text engine.       | ``text=Login``                     |
     | ``id``       | Element ID Attribute.      | ``id=login_btn``                   |
@@ -208,8 +208,12 @@ class Browser(DynamicCore):
     Any malformed selector not starting with ``//`` or ``..`` nor starting and ending
     with a quote is assumed to be a css selector.
 
-    Example:
+    Note that ``#`` is a comment character in [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#ignored-data | Robot Framework syntax] and needs to be
+    escaped like ``\\#`` to work as a [https://developer.mozilla.org/en-US/docs/Web/CSS/ID_selectors | css ID selector].
+
+    Examples:
     | `Click`  span > button.some_class
+    | `Get Text`  \\#username_field  ==  George
 
 
     == XPath ==
@@ -446,15 +450,21 @@ class Browser(DynamicCore):
     = Assertions =
 
     Keywords that accept arguments ``assertion_operator`` <`AssertionOperator`> and ``assertion_expected``
-    can optionally assert.
+    can optionally assert that a specified condition holds.
+
+    Assert will retry and fail only after a specified timeout.
+    See `Importing` and ``retry_assertions_for`` (default is 1 second) for configuring this timeout.
+
+
     %ASSERTION_TABLE%
 
-    But default the keywords will provide an error message if the assertion fails,
-    but default error message can be overwritten with a ``message`` argument. The
-    ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
+    By default keywords will provide an error message if an assertion fails.
+    Default error message can be overwritten with a ``message`` argument.
+    The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
     `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
-    options. The `{value}` is the value returned by the keyword and the `{expected}`
-    is the expected value defined by the user, usually value in the
+    options.
+    The `{value}` is value returned by the keyword and the `{expected}`
+    is expected value defined by the user, usually value in the
     ``assertion_expected`` argument. The `{value_type}` and
     `{expected_type}` are the type definitions from `{value}` and `{expected}`
     arguments. In similar fashion as Python
@@ -518,6 +528,20 @@ class Browser(DynamicCore):
     = Automatic page and context closing =
 
     %AUTO_CLOSING_LEVEL%
+
+    = Implicit waiting =
+
+    Browser library and Playwright have many mechanisms to help in waiting for elements.
+    Playwright will auto-wait before performing actions on elements.
+    Please see [https://playwright.dev/docs/actionability/ | Auto-waiting on Playwright documentation]
+    for more information.
+
+    On top of Playwright auto-waiting Browser assertions will wait and retry
+    for specified time before failing any `Assertions`.
+    Time is specified in Browser library initialization with ``retry_assertions_for``.
+
+    Browser library also includes explicit waiting keywords such as `Wait for Elements State`
+    if more control for waiting is needed.
 
     = Experimental: Re-using same node process =
 
