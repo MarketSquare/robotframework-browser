@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${FORM_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${FORM_URL}
 
 *** Test Cases ***
 Keyboard Key Inputs characters

@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${FORM_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${FORM_URL}
 
 *** Test Cases ***
 Press Keys Generate Characters
@@ -21,5 +22,6 @@ Press Keys Combination of Keystrokes in Select List
 
 Press Keys With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "css=notamatch"*    Press Keys    css=notamatch    F
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "css=notamatch"*    Press Keys
+    ...    css=notamatch    F
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}

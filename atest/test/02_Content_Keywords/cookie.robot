@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        Open Browser To Form Page
+Resource        imports.resource
+
+Test Setup      Open Browser To Form Page
 
 *** Test Cases ***
 Cookies From Closed Context
@@ -10,7 +11,7 @@ Cookies From Closed Context
     ...    Get Cookies
 
 Get Cookies Should Return Empty List When No Cookies Are Available
-    ${empty_list}    Create List
+    ${empty_list} =    Create List
     ${cookies} =    Get Cookies    dictionary
     Should Be Equal    ${cookies}    ${empty_list}
     ${cookies} =    Get Cookies    dict
@@ -118,7 +119,7 @@ Add Cookie With Expiry As Epoch String
     Check Cookie    ${cookies}    1    Foo    Bar
     ${epoch_as_str} =    Convert To String    ${cookies}[0][expires]
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
-    ${expires}    Set Variable    ${cookies}[0][expires]
+    ${expires} =    Set Variable    ${cookies}[0][expires]
     Should Be Equal    ${expires.year}    ${expires.year}
 
 Add Cookie With Expiry As Epoch Int
@@ -133,7 +134,7 @@ Add Cookie With Expiry As Epoch Int
     Check Cookie    ${cookies}    1    Foo    Bar
     ${epoch_as_str} =    Convert To String    ${cookies}[0][expires]
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
-    ${expires}    Set Variable    ${cookies}[0][expires]
+    ${expires} =    Set Variable    ${cookies}[0][expires]
     ${date_time} =    Convert Date    ${epoch}
     Should Be Equal    ${expires.year}    ${expires.year}
 

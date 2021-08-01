@@ -1,10 +1,11 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        Set Library Timeout
-Test Teardown     Run Keywords    Restore Library Timeout    AND    Wait For All Promises
+Resource            imports.resource
+
+Test Setup          Set Library Timeout
+Test Teardown       Run Keywords    Restore Library Timeout    AND    Wait For All Promises
 
 *** Variables ***
-${CUSTOM_DL_PATH}    ${CURDIR}/download_file
+${CUSTOM_DL_PATH} =     ${CURDIR}/download_file
 
 *** Test Cases ***
 Upload File
@@ -21,14 +22,15 @@ Upload File with different name
 
 Invalid Upload Path
     [Tags]    No-Windows-Support
-    ${promise}=    Promise to Upload File    NonExistentFile
-    Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For    ${promise}
+    ${promise} =    Promise to Upload File    NonExistentFile
+    Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
+    ...    ${promise}
     Wait For All Promises
 
 Wait For Download
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
-    ${dl_promise}    Promise To Wait for Download
+    ${dl_promise} =    Promise To Wait for Download
     Sleep    0.5
     Click    \#file_download
     ${file_object} =    Wait For    ${dl_promise}
@@ -40,7 +42,7 @@ Wait For Download With Custom Path
     [Tags]    No-Windows-Support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
-    ${dl_promise}=    Promise To Wait For Download    saveAs=${CUSTOM_DL_PATH}
+    ${dl_promise} =    Promise To Wait For Download    saveAs=${CUSTOM_DL_PATH}
     Sleep    0.5
     Click    \#file_download
     ${file_object} =    Wait For    ${dl_promise}
@@ -52,10 +54,14 @@ Wait For Download With Custom Path
 
 *** Keywords ***
 Set Library Timeout
-    ${open_browsers}=    Get Browser Ids
-    Run Keyword If    $open_browsers == []    New Browser    ${BROWSER}    headless=${HEADLESS}
-    ${current_contexts}=    Get Context Ids    Active    Active
-    Run Keyword If    $current_contexts == []    New Context
+    ${open_browsers} =    Get Browser Ids
+    IF    $open_browsers == []
+        New Browser    ${BROWSER}    headless=${HEADLESS}
+    END
+    ${current_contexts} =    Get Context Ids    Active    Active
+    IF    $current_contexts == []
+        New Context
+    END
     ${timeout} =    Set Browser Timeout    2 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 

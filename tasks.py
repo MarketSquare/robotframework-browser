@@ -367,7 +367,7 @@ def run_tests(c, tests):
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(
         [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests],
-        env=env
+        env=env,
     )
     return process.wait(600)
 
@@ -401,7 +401,9 @@ def _run_pabot(extra_args=None, exit=True):
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "No-Windows-Support"])
     default_args.append("atest/test")
-    process = subprocess.Popen(pabot_args + (extra_args or []) + default_args, env=os.environ)
+    process = subprocess.Popen(
+        pabot_args + (extra_args or []) + default_args, env=os.environ
+    )
     process.wait(600)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
@@ -437,7 +439,31 @@ def lint_node(c):
 
 @task
 def lint_robot(c):
-    c.run("python -m robot.tidy --recursive atest/test")
+    in_ci = os.getenv("GITHUB_WORKFLOW")
+    print(f"Lint Robot files {'in ci' if in_ci else ''}")
+    atest_folder = "atest/test/"
+    command = [
+        "robotidy",
+        "-v",
+        "--lineseparator",
+        "unix",
+        "--configure",
+        "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
+    ]
+    if in_ci:
+        command.insert(1, "--check")
+        command.insert(1, "--diff")
+    for file in Path(atest_folder).glob("*"):
+        if not file.name == "keywords.resource":
+            command.append(str(file))
+            c.run(" ".join(command))
+            command.pop()
+    # keywords.resource needs resource to be imported before library, but generally
+    # that should be avoided.
+    command.insert(1, "--configure")
+    command.insert(2, "OrderSettingsSection:imports_order=resource,library,variables")
+    command.append(f"{atest_folder}keywords.resource")
+    c.run(" ".join(command))
 
 
 @task(lint_python, lint_node, lint_robot)

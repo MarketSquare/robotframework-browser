@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Add Style

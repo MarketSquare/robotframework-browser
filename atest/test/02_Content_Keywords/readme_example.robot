@@ -1,7 +1,8 @@
 *** Settings ***
-Library           Browser
-Resource          imports.resource
-Suite Teardown    Close Page
+Library             Browser
+Resource            imports.resource
+
+Suite Teardown      Close Page
 
 *** Test Cases ***
 Example
