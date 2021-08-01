@@ -33,6 +33,9 @@ class Waiter(LibraryComponent):
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
+        Note that Browser library has `Implicit waiting` mechanisms. Depending on
+        the situation you might not need to use `Wait for Elements State`.
+
         State options could be either appear/disappear from dom, or become visible/hidden.
         If at the moment of calling the keyword, the selector already satisfies the condition,
         the keyword will return immediately.

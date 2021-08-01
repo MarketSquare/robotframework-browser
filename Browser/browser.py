@@ -159,7 +159,7 @@ class Browser(DynamicCore):
     below.
 
     | = Strategy = |     = Match based on =     |         = Example =                |
-    | ``css``      | CSS selector.              | ``css=.class > #login_btn``        |
+    | ``css``      | CSS selector.              | ``css=.class > \\#login_btn``      |
     | ``xpath``    | XPath expression.          | ``xpath=//input[@id="login_btn"]`` |
     | ``text``     | Browser text engine.       | ``text=Login``                     |
     | ``id``       | Element ID Attribute.      | ``id=login_btn``                   |
@@ -208,8 +208,12 @@ class Browser(DynamicCore):
     Any malformed selector not starting with ``//`` or ``..`` nor starting and ending
     with a quote is assumed to be a css selector.
 
-    Example:
+    Note that ``#`` is a comment character in [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#ignored-data | Robot Framework syntax] and needs to be
+    escaped like ``\\#`` to work as a [https://developer.mozilla.org/en-US/docs/Web/CSS/ID_selectors | css ID selector].
+
+    Examples:
     | `Click`  span > button.some_class
+    | `Get Text`  \\#username_field  ==  George
 
 
     == XPath ==
