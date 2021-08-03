@@ -50,9 +50,8 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the current URL.
 
-        Optionally asserts that it matches the specified assertion.
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        Optionally asserts that it matches the specified assertion. See `Assertions` for further details
+        for the assertion arguments. By default assertion is not done.
 
         ``message`` overrides the default error message.
         """
@@ -107,9 +106,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message.
 
-        Optionally does a string assertion.
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        Optionally does a string assertion. See `Assertions` for further details for
+        the assertion arguments. By default assertion is not done.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageSource(Request().Empty())
@@ -129,9 +127,8 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the title of the current page.
 
-        Optionally asserts that it matches the specified assertion.
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        Optionally asserts that title matches the specified assertion. See `Assertions`
+        for further details for the assertion arguments. By default assertion is not done.
 
         ``message`` overrides the default error message.
         """
@@ -153,11 +150,11 @@ class Getters(LibraryComponent):
         message: Optional[str] = None,
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
+
         See the `Finding elements` section for details about the selectors.
 
-        Optionally asserts that the text matches the specified assertion.
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        Optionally asserts that the text matches the specified assertion. See `Assertions`
+        for further details for the assertion arguments. By default assertion is not done.
 
         ``message`` overrides the default error message.
         """
@@ -180,18 +177,16 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
-        Optionally asserts that the property value matches the specified
-        assertion.
-
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
         ``property`` Requested property name.
 
+        Optionally asserts that the property value matches the expected value. See `Assertions`
+        for further details for the assertion arguments. By default assertion is not done.
+
         If ``assertion_operator`` is set and property is not found, ``value`` is ``None``
         and Keyword does not fail. See `Get Attribute` for examples.
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
 
         ``message`` overrides the default error message.
         """
@@ -226,18 +221,19 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
-        Optionally asserts that the attribute value matches the specified
-        assertion.
-
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
         ``attribute`` Requested attribute name.
 
+        Optionally asserts that the attribute value matches the expected value. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
+
         When a attribute is selected that is not present and no assertion operator is set,
         the keyword fails. If an assertion operator is set and the attribute is not present,
-        the returned value is ``None``.
-        This can be used to assert check the presents or the absents of an attribute.
+        the returned value is ``None``. This can be used to assert check the presents or
+        the absents of an attribute.
 
         ``message`` overrides the default error message.
 
@@ -246,12 +242,9 @@ class Getters(LibraryComponent):
 
         Example Code:
         | Get Attribute   id=enabled_button    disabled                   # FAIL => "Attribute 'disabled' not found!"
-        | Get Attribute   id=enabled_button    disabled     ==    None     # PASS => returns: None
+        | Get Attribute   id=enabled_button    disabled     ==    ${None}     # PASS => returns: None
         | Get Attribute   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
         | Get Attribute   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
-
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
@@ -281,12 +274,12 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns all HTML attribute names of an element as a list.
 
-        Optionally asserts that these match the specified assertion.
-
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
-        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+        Optionally asserts that attribute names do match to the expected value. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         Available assertions:
         - ``==`` and ``!=`` can work with multiple values

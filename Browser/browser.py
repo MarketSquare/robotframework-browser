@@ -450,7 +450,8 @@ class Browser(DynamicCore):
     = Assertions =
 
     Keywords that accept arguments ``assertion_operator`` <`AssertionOperator`> and ``assertion_expected``
-    can optionally assert that a specified condition holds.
+    can optionally assert that a specified condition holds. Keywords will return the value even when the
+    assertion is performed by the keyword.
 
     Assert will retry and fail only after a specified timeout.
     See `Importing` and ``retry_assertions_for`` (default is 1 second) for configuring this timeout.
@@ -475,14 +476,14 @@ class Browser(DynamicCore):
     is used as is. Therefore when assertion is made, the ``assertion_expected``
     argument value and value returned the keyword must have same type. If types
     are not same, assertion will fail. Example `Get Text` always returns a string
-    and has to be compared with a string, even the returnd value might look like
+    and has to be compared with a string, even the returned value might look like
     a number.
 
     Other Keywords have other specific types they return.
     `Get Element Count` always returns an integer.
     `Get Bounding Box` and `Get Viewport Size` can be filtered.
     They return a dictionary without filter and a number when filtered.
-    These Keywords do autoconvert the expected value if a number is returned.
+    These Keywords do automatic conversion for the expected value if a number is returned.
 
     * < less or greater > With Strings*
     Compairisons of strings with ``greater than`` or ``less than`` compares each character,

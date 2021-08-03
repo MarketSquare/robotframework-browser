@@ -28,6 +28,7 @@ Get Text With Nonmatching Selector
 
 Get Property and Assert
     Get Property    h1    innerText    ==    Login Page
+    Get Property    h1    innerText    !=    ${None}
 
 Get Property Default Error
     Run Keyword And Expect Error
@@ -45,6 +46,12 @@ Get Property innerText
 
 Get Property size
     Get Property    ${InputUsername}    type    ==    text
+
+Get Property For Element Property Which Does Not Exist
+    Run Keyword And Expect Error
+    ...    Property 'not_here' not found!
+    ...    Get Property    ${UserNameLabel}    not_here
+    ${attribute} =    Get Property    ${UserNameLabel}    not_here    ==    ${None}
 
 Get Property and Then .. (Closure)
     ${text} =    Get Property    h1    innerText    then    value.replace('g', 'k')
