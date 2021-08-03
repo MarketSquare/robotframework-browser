@@ -92,11 +92,6 @@ class Promises(LibraryComponent):
         self.unresolved_promises.add(promise)
         return promise
 
-    @keyword(tags=("Wait", "BrowserControl"))
-    def wait_for_download(self, saveAs: str = "") -> DownloadedFile:
-        """*DEPRECATED!!* Use keyword `Promise To Wait For Download` instead."""
-        return self._wait_for_download(saveAs)
-
     def _wait_for_download(self, saveAs: str = "") -> DownloadedFile:
         with self.playwright.grpc_channel() as stub:
             if not saveAs:
@@ -163,21 +158,6 @@ class Promises(LibraryComponent):
         promise = self._executor.submit(self._upload_file, **{"path": path})
         self.unresolved_promises.add(promise)
         return promise
-
-    @keyword(tags=("Setter", "PageContent"))
-    def upload_file(self, path: PathLike):
-        """*DEPRECATED!!* Use keyword `Promise To Upload File` instead.
-        Upload file from ``path`` into next file chooser dialog on page.
-
-        ``path`` Path to file to be uploaded.
-
-        Example use:
-
-        | Upload File    ${CURDIR}/test_upload_file
-        | Click          \\#file_chooser
-
-        """
-        return self._upload_file(path)
 
     def _upload_file(self, path: PathLike):
         p = Path(path)

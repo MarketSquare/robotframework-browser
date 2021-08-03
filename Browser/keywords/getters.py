@@ -393,24 +393,6 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
-    def get_textfield_value(
-        self,
-        selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
-        message: Optional[str] = None,
-    ) -> Any:
-        """*DEPRECATED!!* Use keyword `Get Text` instead."""
-        return verify_assertion(
-            self.get_property(selector, "value"),
-            assertion_operator,
-            assertion_expected,
-            f"Value {selector}",
-            message,
-        )
-
-    @keyword(tags=("Getter", "Assertion", "PageContent"))
-    @with_assertion_polling
     def get_select_options(
         self,
         selector: str,
