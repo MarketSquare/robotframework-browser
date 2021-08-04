@@ -155,6 +155,18 @@ class Network(LibraryComponent):
           - ``headers`` <dict> A dictionary containing all response headers.
           - ``ok`` <bool> Whether the request was successfull, i.e. the ``status`` is range 200-299.
           - ``request`` <dict> containing ``method`` <str>, ``headers`` <dict> and ``postData`` <dict> | <str>
+
+        Synchronous Example:
+        | `Click`                \\#delayed_request    # Creates response which should be waited before next actions
+        | `Wait For Response`    matcher=\\\\/\\\\/local\\\\w+\\\\:\\\\d+\\\\/api
+        | `Click`                \\#save
+
+        Asynchronous Example:
+        | ${promise} =    `Promise To`    `Wait For Request`    timeout=60s
+        | `Click`           \\#delayed_request    # Creates response which should be waited before pressing save.
+        | `Click`           \\#next
+        | `Wait For`        ${promise}            # Waits for the response
+        | `Click`           \\#save
         """
         return self._wait_for_http("Response", matcher, timeout)
 
