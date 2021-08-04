@@ -70,6 +70,10 @@ class Interaction(LibraryComponent):
         Defaults to true.
 
         See `Fill Text` for direct filling of the full text at once.
+
+        Example
+        | `Type Text`    input#username_field    user
+        | `Type Text`    input#username_field    user    delay=10 ms    clear=No
         """
         logger.info(f"Types the text '{txt}' in the given field.")
         self._type_text(selector, txt, delay, clear)
@@ -92,6 +96,9 @@ class Interaction(LibraryComponent):
         ``txt`` Text for the text field.
 
         See `Type Text` for emulating typing text character by character.
+
+        Example:
+        | `Fill Text`    css=input#username_field    username
         """
         logger.info(f"Fills the text '{txt}' in the given field.")
         self._fill_text(selector, txt)
@@ -105,7 +112,6 @@ class Interaction(LibraryComponent):
 
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
-
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(Request().ClearText(selector=selector))
@@ -147,6 +153,11 @@ class Interaction(LibraryComponent):
         Defaults to true.
 
         See `Type Text` for details.
+
+        Example
+        | `Type Secret`    input#username_field    $username      # Keyword resolves variable value from Robot Framework variables
+        | `Type Secret`    input#username_field    %username      # Keyword resolves variable value from environment variables
+        | `Type Secret`    input#username_field    ${username}    # Robot Framework resolves the variable value, but secrect can leak to Robot framework output files.
         """
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
@@ -197,6 +208,10 @@ class Interaction(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         See `Fill Text` for other details.
+
+        Example:
+        | Fill Secret    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
+        | Fill Secret    input#username_field    %username    # Keyword resolves variable value from environment variables
         """
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
