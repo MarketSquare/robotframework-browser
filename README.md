@@ -80,7 +80,7 @@ Example Test
    myGoToKeyword   https://www.robotframework.org
 ```
 
-Ready made extensions and a place to share your at [robotframework-browser-extensions](https://github.com/MarketSquare/robotframework-browser-extensions).
+Ready made extensions and a place to share your own at [robotframework-browser-extensions](https://github.com/MarketSquare/robotframework-browser-extensions).
 
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
