@@ -91,23 +91,11 @@ Full list of fixes and enhancements
     * - `#1167`_
       - enhancement
       - high
-      - Keyword to get url in a page 
-    * - `#664`_
-      - enhancement
-      - high
-      - Auto closing and closing should log more explicitly
-    * - `#815`_
-      - enhancement
-      - high
-      - Add possiblity to set up screenshot directory
+      - Keyword to get url in a page
     * - `#949`_
       - bug
       - medium
       - Promise To Wait For Download keyword documentation issue
-    * - `#992`_
-      - bug
-      - medium
-      - Setting browser path by PLAYWRIGHT_BROWSERS_PATH not working anymore
     * - `#1126`_
       - enhancement
       - medium
@@ -119,8 +107,5 @@ Altogether 9 issues. View on the `issue tracker <https://github.com/MarketSquare
 .. _#1142: https://github.com/MarketSquare/robotframework-browser/issues/1142
 .. _#1153: https://github.com/MarketSquare/robotframework-browser/issues/1153
 .. _#1167: https://github.com/MarketSquare/robotframework-browser/issues/1167
-.. _#664: https://github.com/MarketSquare/robotframework-browser/issues/664
-.. _#815: https://github.com/MarketSquare/robotframework-browser/issues/815
 .. _#949: https://github.com/MarketSquare/robotframework-browser/issues/949
-.. _#992: https://github.com/MarketSquare/robotframework-browser/issues/992
 .. _#1126: https://github.com/MarketSquare/robotframework-browser/issues/1126
