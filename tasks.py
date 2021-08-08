@@ -444,7 +444,6 @@ def lint_robot(c):
     atest_folder = "atest/test/"
     command = [
         "robotidy",
-        "-v",
         "--lineseparator",
         "unix",
         "--configure",
