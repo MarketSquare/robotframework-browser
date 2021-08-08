@@ -1,6 +1,6 @@
 {
   "name": "robotframework-playwright",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "main": "index.ts",
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
