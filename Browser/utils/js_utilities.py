@@ -54,9 +54,9 @@ def get_rel_scroll_coordinates(query: Any, full: int, client: int, dimension_str
 
 def exec_scroll_function(Browser, function: str, selector: Optional[str] = None):
     if selector:
-        scroll_script = f"(element) => element.evaluate((domElement) => domElement.{function})"
+        scroll_script = (
+            f"(element) => element.evaluate((domElement) => domElement.{function})"
+        )
     else:
         scroll_script = f"document.scrollingElement.{function}"
-    return Browser.library.execute_javascript(
-        scroll_script, selector
-    )
+    return Browser.library.execute_javascript(scroll_script, selector)

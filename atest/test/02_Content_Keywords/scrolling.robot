@@ -4,7 +4,6 @@ Resource        imports.resource
 Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
-
 Scroll To With Element
     New Page    ${LOGIN_URL}
     Set Viewport Size    300    400
