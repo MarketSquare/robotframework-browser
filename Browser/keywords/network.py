@@ -131,8 +131,16 @@ class Network(LibraryComponent):
         ``matcher`` Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout`` Timeout in seconds. Uses default timeout if not set.
+        ``timeout`` Timeout supports Robot Framework time format. Uses default timeout if not set.
 
+        Example:
+        | `Click`               \\#delayed_request
+        | `Wait For Request`    timeout=1s
+
+        Async example:
+        | ${promise} =    `Promise To`         `Wait For Request`    matcher=\\/\\/local\\w+\\:\\d+\\/api    timeout=3s
+        | `Click`         \\#delayed_request
+        | `Wait For`      ${promise}
         """
         return self._wait_for_http("Request", matcher, timeout)
 
