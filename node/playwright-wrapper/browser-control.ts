@@ -23,7 +23,7 @@ export async function goTo(request: Request.Url, page: Page): Promise<Response.E
     const url = request.getUrl();
     const timeout = request.getDefaulttimeout();
     await page.goto(url, { timeout });
-    return emptyWithLog(`Succesfully opened URL ${url}`);
+    return emptyWithLog(`Successfully opened URL ${url}`);
 }
 
 export async function takeScreenshot(
