@@ -201,7 +201,6 @@ class Network(LibraryComponent):
         self,
         url: str,
         timeout: Optional[timedelta] = None,
-        regex: bool = False,
         wait_until: PageLoadStates = PageLoadStates.load,
     ):
         """Waits until page has navigated to given ``url``.
