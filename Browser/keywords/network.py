@@ -220,6 +220,10 @@ class Network(LibraryComponent):
         https://marketsquare.github.io/robotframework-browser/Browser.html changes to
         https://marketsquare.github.io/robotframework-browser/Browser.html#Wait%20For%20Navigation
         keyword will fail.
+
+        Example:
+        | `Go To`                  ${ROOT_URL}/redirector.html
+        | `Wait for navigation`    ${ROOT_URL}/posted.html    wait_until=${wait_until}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitForNavigation(
