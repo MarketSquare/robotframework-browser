@@ -23,6 +23,6 @@ docker run --rm \
 `docker run -v` is used to mount the directory containing tests on the supervising machine. In this example robot output will also be output inside the test directory
 
 
-When testing with chrome we recommend downloading a copy of `chrome.json` security settings and using the following docker run flags ```--ipc=host --security-opt seccomp=chrome.json``` for best compatibility. [Explanations and the chrome.json can be found here](https://github.com/microsoft/playwright/tree/master/docs/docker#run-the-image)
+When testing with chrome we recommend downloading a copy of `chrome.json` security settings and using the following docker run flags ```--ipc=host --security-opt seccomp=chrome.json``` for best compatibility. [Explanations and the chrome.json can be found here](https://github.com/microsoft/playwright/tree/main/docs/docker#run-the-image)
 
 All dependencies are installed to support running tests as `pwuser` in the docker image. Running tests as root or other non `pwuser` can cause problems.
