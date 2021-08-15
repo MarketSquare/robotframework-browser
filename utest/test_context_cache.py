@@ -20,29 +20,37 @@ def cache_items(cache: ContextCache):
     return cache
 
 
+def _verify(athing):
+    verify(json.dumps(athing, indent=4) + '\n')
+
+
+def _verify_cache(cache: ContextCache):
+    _verify(cache.cache)
+
+
 def test_cache_is_empty(cache: ContextCache):
-    verify(json.dumps(cache.cache, indent=4))
+    _verify_cache(cache)
 
 
 def test_add_cache(cache: ContextCache):
     cache.add("a1", ITEM)
     cache.add("b2", ITEM)
-    verify(json.dumps(cache.cache, indent=4))
+    _verify_cache(cache)
 
 
 def test_remove_item_no_item(cache: ContextCache):
     cache.remove("a1")
-    verify(json.dumps(cache.cache, indent=4))
+    _verify_cache(cache)
 
 
 def test_remove_item(cache_items: ContextCache):
     cache_items.remove("a1")
-    verify(json.dumps(cache_items.cache, indent=4))
+    _verify_cache(cache_items)
 
 
 def test_get_item(cache_items: ContextCache):
-    verify(json.dumps(cache_items.get("a1"), indent=4))
+    _verify(cache_items.get("a1"))
 
 
 def test_get_item_no_item(cache_items: ContextCache):
-    verify(json.dumps(cache_items.get("not-here"), indent=4))
+    _verify(cache_items.get("not-here"))
