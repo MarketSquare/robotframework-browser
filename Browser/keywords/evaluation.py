@@ -36,7 +36,7 @@ class Evaluation(LibraryComponent):
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
 
-        [https://github.com/MarketSquare/robotframework-browser/tree/master/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
+        [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
