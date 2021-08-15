@@ -102,7 +102,7 @@ class PlaywrightState(LibraryComponent):
     def close_browser(self, browser: str = "CURRENT"):
         """Closes the current browser.
 
-        Activated browser is set to first active browser. Closes all context and pages belonging
+        Active browser is set to the browser that was active before this one. Closes all context and pages belonging
         to this browser. See `Browser, Context and Page` for more information about Browser and
         related concepts.
 
@@ -134,7 +134,7 @@ class PlaywrightState(LibraryComponent):
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
         """Closes a Context.
 
-        Activated context is set to first active context. Closes pages belonging to this context.
+        Active context is set to the context that was active before this one. Closes pages belonging to this context.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
         ``context`` < ``CURRENT`` | ``ALL`` | str > Close context with specified id. If ``ALL``
@@ -193,7 +193,7 @@ class PlaywrightState(LibraryComponent):
     ):
         """Closes the ``page`` in ``context`` in ``browser``.
 
-        Defaults to current for all three. Activated page is set to first active page.
+        Defaults to current for all three. Active page is set to the page that was active before this one.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
         ``page`` < ``CURRENT`` | ``ALL`` | str > Id of the page to close. If value is not "CURRENT"
