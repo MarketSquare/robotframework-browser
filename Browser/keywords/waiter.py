@@ -45,17 +45,21 @@ class Waiter(LibraryComponent):
         ``selector`` Selector of the corresponding object.
         See the `Finding elements` section for details about the selectors.
 
-        ``state`` See `ElementState` for explaination.
+        ``state`` See `ElementState` for explanation.
 
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
-        ``timeout`` uses default timeout of 10 seconds if not set.
+        ``timeout`` uses default timeout from library if not set.
 
         ``message`` overrides the default error message. The ``message``
         argument accepts `{selector}`, `{function}`, and `{timeout}`
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
         The `{function}` formatter is same ``state`` argument value.
+
+        Example:
+        | `Wait For Elements State`    //h1    visible    timeout=2 s
+        | `Wait For Elements State`    //hi    focused    1s
         """
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
@@ -127,8 +131,7 @@ class Waiter(LibraryComponent):
         timeout: Optional[timedelta] = None,
         message: Optional[str] = None,
     ):
-        """Polls JavaScript expression or function in browser until it returns a
-        (JavaScript) truthy value.
+        """Polls JavaScript expression or function in browser until it returns a (JavaScript) truthy value.
 
         ``function`` A valid javascript function or a javascript function body. For example
         ``() => true`` and ``true`` will behave similarly.
@@ -148,9 +151,9 @@ class Waiter(LibraryComponent):
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
 
         Example usage:
-        | ${promise}    Promise To      Wait For Function    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
-        | Click         \\#progress_bar
-        | Wait For      ${promise}
+        | ${promise}      `Promise To`      `Wait For Function`    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
+        | `Click`         \\#progress_bar
+        | `Wait For`      ${promise}
         """
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         end = float(

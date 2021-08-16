@@ -20,6 +20,13 @@ Sessionstorage
     sessionStorage remove Item    mykey2
     sessionStorage get Item    mykey2    ==    ${None}
 
+Sessionstorage Clear
+    sessionStorage set Item    mykey2    myvalue2
+    sessionStorage set Item    mykey3    myvalue3
+    SessionStorage Clear
+    sessionStorage get Item    mykey2    ==    ${None}
+    sessionStorage get Item    mykey3    ==    ${None}
+
 Localstorage clear
     localStorage set Item    key1    value1
     localStorage set Item    key2    value2

@@ -850,6 +850,10 @@ class PlaywrightState(LibraryComponent):
 
         ``browser`` < ``CURRENT`` | str> Switch page in specified browser. If value is not "CURRENT"
         it should be the id of the browser where to switch page.
+
+        Example:
+        | `Click`           button#pops_up    # Open new page
+        | ${previous} =    `Switch Page`      NEW
         """
         with self.playwright.grpc_channel() as stub:
             if context.upper() == "ALL":
@@ -1031,7 +1035,7 @@ class PlaywrightState(LibraryComponent):
         save it to disk. Then `New Context` can be created with prepopulated
         state.
 
-        Please note state file contains secrets and should not be shared
+        Please note state file may contains secrets and should not be shared
         with people outside of your organisation.
 
         The file is created in ${OUTPUTDIR}/browser/state folder and file(s)
