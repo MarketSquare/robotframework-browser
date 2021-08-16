@@ -33,8 +33,8 @@ class Promises(LibraryComponent):
 
     @keyword(tags=("Wait",))
     def promise_to(self, kw: str, *args) -> Future:
-        """
-        Wrap a Browser library keyword and make it a promise.
+        """Wrap a Browser library keyword and make it a promise.
+
         Promised keyword is executed and started on background.
         Test execution continues without waiting for ``kw`` to finish.
 
@@ -109,10 +109,10 @@ class Promises(LibraryComponent):
 
     @keyword(tags=("Wait",))
     def wait_for(self, *promises: Future):
-        """
-        Waits for promises to finish and returns results from them.
-        Returns one result if one promise waited. Otherwise returns an array of results.
-        If one fails, then this keyword will fail.
+        """Waits for promises to finish and returns results from them.
+
+        Returns one result if one promise waited. Otherwise returns an array of
+        results. If one fails, then this keyword will fail.
 
         See `Promise To` for more information about promises.
 
@@ -121,9 +121,9 @@ class Promises(LibraryComponent):
         ``promises`` *Work in progress*
 
         Example:
-        | ${promise}=     Promise To            Wait For Response     matcher=     timeout=3
-        | Click           \\#delayed_request
-        | ${body}=        Wait For              ${promise}
+        | ${promise}=    `Promise To`            `Wait For Response`     matcher=     timeout=3
+        | `Click`         \\#delayed_request
+        | ${body}=       `Wait For`              ${promise}
         """
         self.unresolved_promises -= {*promises}
         if len(promises) == 1:
@@ -132,15 +132,21 @@ class Promises(LibraryComponent):
 
     @keyword(tags=("Wait",))
     def wait_for_all_promises(self):
-        """
-        Waits for all promises to finish.
-        If one fails, then this keyword will fail.
+        """Waits for all promises to finish.
+
+        If one promises fails, then this keyword will fail.
+
+        Example:
+        | `Promise To`               Wait For Response     matcher=     timeout=3
+        | `Click`                    \\#delayed_request
+        | `Wait For All Promises`
         """
         self.wait_for(*self.unresolved_promises)
 
     @keyword(tags=("Setter", "PageContent"))
     def promise_to_upload_file(self, path: PathLike):
         """Returns a promise that resolves when file from ``path`` has been uploaded.
+
         Fails if the upload has not happened during timeout.
 
         Upload file from ``path`` into next file chooser dialog on page.
@@ -149,12 +155,10 @@ class Promises(LibraryComponent):
 
         Example use:
 
-        | ${promise}=  Promise To Upload File    ${CURDIR}/test_upload_file
-        | Click          \\#file_chooser
-        | ${upload_result}=  Wait For  ${promise}
-
+        | ${promise}=    `Promise To Upload File`    ${CURDIR}/test_upload_file
+        | `Click`          \\#file_chooser
+        | ${upload_result}=  `Wait For`  ${promise}
         """
-
         promise = self._executor.submit(self._upload_file, **{"path": path})
         self.unresolved_promises.add(promise)
         return promise

@@ -856,7 +856,7 @@ class Browser(DynamicCore):
                 self.screenshot_on_failure(test.name)
 
     def keyword_error(self):
-        """Sends screenshot command to Playwright.
+        """Runs keyword on failure.
 
         Only works during testing since this uses robot's outputdir for output.
         """

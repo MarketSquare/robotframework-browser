@@ -34,9 +34,7 @@ class RunOnFailureKeywords(LibraryComponent):
 
         ``keyword`` is the name of a keyword that will be executed if a
         Browser keyword fails. It is possible to use any available
-        keyword, including user keywords or keywords from other libraries,
-        but the keyword must not take any arguments.
-
+        keyword, including user keywords or keywords from other libraries.
         ``args`` are the arguments to the keyword if any.
 
         The initial keyword to use is set when `importing` the library, and
