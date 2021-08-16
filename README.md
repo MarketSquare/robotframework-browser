@@ -27,10 +27,34 @@ Only Python 3.7 or newer is supported.
 
 Please note that by default Chromium, Firefox and WebKit browser are installed, even those would be already
 installed in the system. The installation size depends on the operating system, but usually is +700Mb.
-It is possible to skip browser binaries installation with `rfbrowser init --skip-browsers` command, but then user
-is responsible for browser binary installation.
+It is possible to skip browser binaries installation if you wish to have a common browser directory shared by several development environments:
+1. Install dependencies without downloading browser binaries
+```
+rfbrowser init --skip-browsers
+```
 
-Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [atest/docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/atest/docker/README.md).
+2. Set environment variable `PLAYWRIGHT_BROWSERS_PATH` according to your shell
+```shell
+# Linux/macOS
+export PLAYWRIGHT_BROWSERS_PATH=/home/user/desired_pw_browsers_path
+```
+```Powershell
+# Windows with cmd.exe
+set PLAYWRIGHT_BROWSERS_PATH=%USERPROFILE%\desired_pw_browsers_path
+
+# Windows with PowerShell
+$env:PLAYWRIGHT_BROWSERS_PATH=$env:USERPROFILE\desired_pw_browsers_path
+```
+3. Install all or specific browsers
+```shell
+npx -g playwright install
+npx -g playwright install firefox
+```
+Run `npx -g playwright install -h` for a guide on supported browser targets. More information for managing browser binaries at [Playwright Docs](https://playwright.dev/docs/browsers).
+
+## Docker install
+
+Use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [atest/docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/atest/docker/README.md).
 
 ## Update instructions
 
