@@ -6,9 +6,13 @@ port: int = browser.playwright.port  # type: ignore
 
 
 print(port)
+print("")
 
 while True:
-    command = input()
+    try:
+        command = input()
+    except Exception:
+        command = ""
     if command == "stop":
         browser.close_browser("ALL")
         break

@@ -1,10 +1,12 @@
-from typing import IO
 import pytest
-from subprocess import PIPE, run, Popen
+from subprocess import PIPE, Popen
+import threading
+import time
 from pathlib import Path
 import locale
 
-from assertionengine import AssertionOperator
+
+ENCODING = locale.getpreferredencoding()
 
 
 def test_simple_select_and_back():
@@ -13,12 +15,15 @@ def test_simple_select_and_back():
             "python",
             str(Path(__file__).parent / "utils" / "create_new_browser_instance.py"),
         ],
-        encoding=locale.getpreferredencoding(False),
         stdin=PIPE,
         stdout=PIPE,
     ) as proc:
         assert proc.stdout is not None
-        port = proc.stdout.readline()
+        assert proc.stdin is not None
+
+        proc.stdout.flush()
+        port = proc.stdout.readline().decode(ENCODING)
+        time.sleep(2)
 
         import Browser
 
@@ -38,8 +43,10 @@ def test_simple_select_and_back():
         # assert browser2.get_browser_catalog() == browser.get_browser_catalog()
 
         # browser.close_browser("ALL")
-        proc.communicate("stop", timeout=10)
-        proc.kill()
+        proc.stdin.write("stop".encode(ENCODING))
+        proc.stdin.close()
+        proc.wait(1)
+        proc.terminate()
 
 
 # @pytest.fixture()
