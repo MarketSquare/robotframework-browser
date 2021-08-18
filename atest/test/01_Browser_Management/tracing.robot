@@ -1,5 +1,5 @@
 *** Settings ***
-Resource          imports.resource
+Resource    imports.resource
 
 *** Test Cases ***
 Enable Tracing To File
@@ -19,7 +19,7 @@ When Not Enabled No Trace File
     Should Be True    ${count} == ${0}
     Wait File Count In Directory    ${OUTPUT_DIR}    1    trace*.zip
 
-Enable Tracing To File With Two Brwosers
+Enable Tracing To File With Two Browsers
     ${browser1} =    New Browser
     New Context    tracing=trace_1.zip
     New Page    ${LOGIN_URL}

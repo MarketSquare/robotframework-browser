@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       Video Setup
+Resource        imports.resource
+
+Suite Setup     Video Setup
 
 *** Test Cases ***
 Create Video With Full Path

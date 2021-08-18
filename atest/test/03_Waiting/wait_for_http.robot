@@ -1,18 +1,19 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Wait For Fails if no success
-    Run Keyword And Expect Error    STARTS:    Timeout while waiting for event "request"    Wait For Request    /api/get/json    timeout=100ms
+    Run Keyword And Expect Error    STARTS:    Timeout while waiting for event "request"    Wait For Request
+    ...    /api/get/json    timeout=100ms
 
 Wait For Request synchronous
     Click    \#delayed_request
     Wait For Request    timeout=1s
 
 Wait For Request async
-    ${promise}=    Promise To    Wait For Request    matcher=    timeout=3s
-    # Go To    http://localhost:7272/api/get/json
+    ${promise} =    Promise To    Wait For Request    matcher=    timeout=3s
     Click    \#delayed_request
     Wait For    ${promise}
 
@@ -24,10 +25,14 @@ Wait For Response synchronous with default timeout
     Click    \#delayed_request
     Wait For Response
 
-Wait For Response async
-    ${promise}=    Promise To    Wait For Response    matcher=    timeout=3s
+Wait For Response synchronous with regex matcher
     Click    \#delayed_request
-    ${body}=    Wait For    ${promise}
+    Wait For Response    matcher=\\/\\/local\\w+\\:\\d+\\/api
+
+Wait For Response async
+    ${promise} =    Promise To    Wait For Response    matcher=    timeout=3s
+    Click    \#delayed_request
+    ${body} =    Wait For    ${promise}
 
 Wait Until Network Is Idle Works
     Go To    ${ROOT_URL}/delayed-load.html

@@ -85,6 +85,10 @@ class LibraryComponent:
     def traces_output(self):
         return self.browser_output / "traces"
 
+    @property
+    def state_file(self):
+        return self.browser_output / "state"
+
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
 

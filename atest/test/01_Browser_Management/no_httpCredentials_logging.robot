@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Teardown     Close Context
+Resource            imports.resource
+
+Test Teardown       Close Context
 
 *** Test Cases ***
 New Context No Mask For httpCredentials When Not Defined

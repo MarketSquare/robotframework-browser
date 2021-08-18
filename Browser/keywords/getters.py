@@ -50,9 +50,14 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the current URL.
 
-        Optionally asserts that it matches the specified assertion.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that it matches the specified assertion. See `Assertions` for further details
+        for the assertion arguments. By default assertion is not done.
 
         ``message`` overrides the default error message.
         """
@@ -75,9 +80,11 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns page model state object as a dictionary.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        ``message`` overrides the default error message.
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
 
         This must be given on the page to ``window.__SET_RFBROWSER_STATE__``
 
@@ -105,11 +112,14 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Gets pages HTML source as a string.
 
-        ``message`` overrides the default error message.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        Optionally does a string assertion.
+        ``expected_value`` Expected value for the state
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``message`` overrides the default error message for assertion.
+
+        Optionally does a string assertion. See `Assertions` for further details for
+        the assertion arguments. By default assertion is not done.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageSource(Request().Empty())
@@ -129,9 +139,14 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the title of the current page.
 
-        Optionally asserts that it matches the specified assertion.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that title matches the specified assertion. See `Assertions`
+        for further details for the assertion arguments. By default assertion is not done.
 
         ``message`` overrides the default error message.
         """
@@ -153,13 +168,21 @@ class Getters(LibraryComponent):
         message: Optional[str] = None,
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
+
         See the `Finding elements` section for details about the selectors.
 
-        Optionally asserts that the text matches the specified assertion.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``expected_value`` Expected value for the state
 
-        ``message`` overrides the default error message.
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the text matches the specified assertion. See `Assertions`
+        for further details for the assertion arguments. By default assertion is not done.
+
+        Example:
+        | ${text} =    `Get Text`    id=important                            # Returns element text without assertion.
+        | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetText(Request().ElementSelector(selector=selector))
@@ -180,20 +203,26 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
-        Optionally asserts that the property value matches the specified
-        assertion.
-
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
         ``property`` Requested property name.
 
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the property value matches the expected value. See `Assertions`
+        for further details for the assertion arguments. By default assertion is not done.
+
         If ``assertion_operator`` is set and property is not found, ``value`` is ``None``
         and Keyword does not fail. See `Get Attribute` for examples.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
-
-        ``message`` overrides the default error message.
+        Example:
+        | `Get Property`    h1    innerText    ==    Login Page
+        | ${property} =    `Get Property`    h1    innerText
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
@@ -226,18 +255,25 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
-        Optionally asserts that the attribute value matches the specified
-        assertion.
-
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
         ``attribute`` Requested attribute name.
 
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the attribute value matches the expected value. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
+
         When a attribute is selected that is not present and no assertion operator is set,
         the keyword fails. If an assertion operator is set and the attribute is not present,
-        the returned value is ``None``.
-        This can be used to assert check the presents or the absents of an attribute.
+        the returned value is ``None``. This can be used to assert check the presents or
+        the absents of an attribute.
 
         ``message`` overrides the default error message.
 
@@ -246,12 +282,9 @@ class Getters(LibraryComponent):
 
         Example Code:
         | Get Attribute   id=enabled_button    disabled                   # FAIL => "Attribute 'disabled' not found!"
-        | Get Attribute   id=enabled_button    disabled     ==    None     # PASS => returns: None
+        | Get Attribute   id=enabled_button    disabled     ==    ${None}     # PASS => returns: None
         | Get Attribute   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
         | Get Attribute   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
-
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
@@ -281,12 +314,18 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns all HTML attribute names of an element as a list.
 
-        Optionally asserts that these match the specified assertion.
-
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that attribute names do match to the expected value. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         Available assertions:
         - ``==`` and ``!=`` can work with multiple values
@@ -295,6 +334,10 @@ class Getters(LibraryComponent):
         Other operators are not allowed.
 
         ``message`` overrides the default error message.
+
+        Example:
+        | `Get Attribute Names`    [name="readonly_input"]    ==    type    name    value    readonly    # Has exactly these attribute names.
+        | `Get Attribute Names`    [name="readonly_input"]    contains    disabled    # Contains at least this attribute name.
         """
         attribute_names = self.library.execute_javascript(
             "(element) => element.getAttributeNames()", selector
@@ -315,18 +358,28 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns all classes of an element as a list.
 
-        Optionally asserts that the value matches the specified assertion.
-
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the value matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         Available assertions:
         - ``==`` and ``!=`` can work with multiple values
         - ``contains`` / ``*=`` only accepts one single expected value
 
         Other operators are not allowed.
+
+        Example:
+        | `Get Classes`    id=draggable    ==    react-draggable    box    # Element contains exactly this class name.
+        | `Get Classes`    id=draggable    validate    "react-draggable-dragged" not in value    # Element does not contain react-draggable-dragged class.
         """
         class_dict = self.get_property(selector, "classList")
         expected = list(assertion_expected)
@@ -340,24 +393,6 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
-    def get_textfield_value(
-        self,
-        selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
-        message: Optional[str] = None,
-    ) -> Any:
-        """*DEPRECATED!!* Use keyword `Get Text` instead."""
-        return verify_assertion(
-            self.get_property(selector, "value"),
-            assertion_operator,
-            assertion_expected,
-            f"Value {selector}",
-            message,
-        )
-
-    @keyword(tags=("Getter", "Assertion", "PageContent"))
-    @with_assertion_polling
     def get_select_options(
         self,
         selector: str,
@@ -366,15 +401,22 @@ class Getters(LibraryComponent):
         message: Optional[str] = None,
     ) -> Any:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
+
         Returned dictionaries have the following keys and their values
         "index", "value", "label" and "selected".
-
-        Optionally asserts that these match the specified assertion.
 
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that these match the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         Example:
 
@@ -414,8 +456,6 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the specified attribute of selected options of the ``select`` element.
 
-        Optionally asserts that these match the specified assertion.
-
         ``selector`` Selector from which the info is to be retrieved.
         See the `Finding elements` section for details about the selectors.
 
@@ -423,6 +463,12 @@ class Getters(LibraryComponent):
         Defaults to label.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the state
+
+        Optionally asserts that these match the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         - ``==`` and ``!=`` can work with multiple values
         - ``contains`` / ``*=`` only accepts one single expected value
@@ -438,7 +484,6 @@ class Getters(LibraryComponent):
         | `Get Selected Options`   select#names             index          `==`       2                  4      #assertion index
         | `Get Selected Options`   select#names             label          *=         Mikko                     #assertion contain
         | `Get Selected Options`   select#names             label          validate   len(value) == 3           #assertion length
-
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
@@ -478,9 +523,15 @@ class Getters(LibraryComponent):
         ``selector`` Selector which shall be examined.
         See the `Finding elements` section for details about the selectors.
 
-        Optionally asserts that the state matches the specified assertion.
-
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the state
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         - ``==`` and ``!=`` and equivalent are allowed on boolean values
         - other operators are not accepted.
@@ -495,6 +546,9 @@ class Getters(LibraryComponent):
         - ``unchecked`` => ``False``
 
         ``message`` overrides the default error message.
+
+        Example:
+        | `Get Checkbox State`    [name=can_send_email]    ==    checked
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
@@ -522,8 +576,6 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the count of elements found with ``selector``.
 
-        Optionally asserts that the count matches the specified assertion.
-
         ``selector`` Selector which shall be counted.
         See the `Finding elements` section for details about the selectors.
 
@@ -531,7 +583,14 @@ class Getters(LibraryComponent):
 
         ``expected_value`` Expected value for the counting
 
-        ``message`` overrides the default error message.
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
+
+        Example:
+        | `Get Element Count`    label    >    1
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
@@ -557,17 +616,21 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the current viewport dimensions.
 
-        Optionally asserts that the count matches the specified assertion.
-
         ``key`` Optionally filters the returned values.
         If keys is set to ``ALL`` (default) it will return the viewport size as dictionary,
         otherwise it will just return the single value selected by the key.
         Note: If a single value is retrieved, an assertion does *not* need a ``validate``
         combined with a cast of ``value``.
 
-        ``message`` overrides the default error message.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         Example:
         | Get Viewport Size    ALL    ==    {'width':1280, 'height':720}
@@ -605,6 +668,10 @@ class Getters(LibraryComponent):
 
         ``selector`` Selector from which shall be retrieved .
         See the `Finding elements` section for details about the selectors.
+
+        Example:
+        | ${element} =    `Get Element`    \\#username_field
+        | ${option_value} =    `Get Property`    ${element} >> option    value
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(Request().ElementSelector(selector=selector))
@@ -616,6 +683,11 @@ class Getters(LibraryComponent):
 
         ``selector`` Selector from which shall be retrieved.
         See the `Finding elements` section for details about the selectors.
+
+        Example:
+        | ${elements} =    `Get Elements`
+        | ${elem} =    Get From List    ${elements}    0
+        | ${option_value} =    `Get Property`    ${elem} >> option    value
         """
         try:
             with self.playwright.grpc_channel(original_error=True) as stub:
@@ -651,9 +723,15 @@ class Getters(LibraryComponent):
 
         ``key`` Key of the requested CSS property. Retrieves "ALL" styles by default.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        ``message`` overrides the default error message.
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the style matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(Request().ElementSelector(selector=selector))
@@ -699,9 +777,15 @@ class Getters(LibraryComponent):
         Note: If a single value is retrieved, an assertion does *not* need a ``validate``
         combined with a cast of ``value``.
 
-        ``message`` overrides the default error message.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the value matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         Example use:
         | ${bounding_box}=    Get BoundingBox    id=element                 # unfiltered
@@ -749,9 +833,15 @@ class Getters(LibraryComponent):
         If keys is set to ``ALL`` (default) it will return the scroll size as dictionary,
         otherwise it will just return the single value selected by the key.
 
-        ``message`` overrides the default error message.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         See `Get BoundingBox` for more similar examples.
 
@@ -807,9 +897,15 @@ class Getters(LibraryComponent):
         If keys is set to ``ALL`` (default) it will return the scroll position as dictionary,
         otherwise it will just return the single value selected by the key.
 
-        ``message`` overrides the default error message.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the value matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
         """
@@ -856,9 +952,15 @@ class Getters(LibraryComponent):
         If keys is set to ``ALL`` (default) it will return the scroll size as dictionary,
         otherwise it will just return the single value selected by the key.
 
-        ``message`` overrides the default error message.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the value matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
         """
@@ -889,7 +991,7 @@ class Getters(LibraryComponent):
         selector: str,
         state: ElementStateKey = ElementStateKey.visible,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: bool = True,
+        assertion_expected: Any = None,
         message: Optional[str] = None,
     ):
         """Get the given state from the element found by ``selector``.
@@ -908,13 +1010,24 @@ class Getters(LibraryComponent):
         - ``focused`` : to be the ``activeElement``.
         - ``checked`` : to be ``checked`` . Can be used on <input>.
 
-        Note that element must be attached to DOM to be able to fetch the state of ``readonly`` , ``selectec`` and ``checked``.
+        Note that element must be attached to DOM to be able to fetch the state of ``readonly`` , ``selected`` and ``checked``.
         The other states are false if the requested element is not attached.
 
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
-        ``message`` overrides the default error message.
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
+
+        Example:
+        | `Get Element State`    h1    readonly    ==    False
         """
         funct = {
             ElementStateKey.disabled: "e => e.disabled",

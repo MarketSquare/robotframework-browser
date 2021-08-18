@@ -1,20 +1,21 @@
 *** Settings ***
-Resource          imports.resource
-Test Teardown     Close Browser    ALL
+Resource            imports.resource
+
+Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Switch Browser
-    ${first_browser}    New Browser    chromium
+    ${first_browser} =    New Browser    chromium
     New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    ${first_url}    Get Url
-    ${second_browser}    New Browser    firefox
+    ${first_url} =    Get Url
+    ${second_browser} =    New Browser    firefox
     New Context
-    ${timeout}=    Set Browser Timeout    10s
+    ${timeout} =    Set Browser Timeout    10s
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    ${second_url}    Get Url
-    ${before_switch}    Switch Browser    ${first_browser}
+    ${second_url} =    Get Url
+    ${before_switch} =    Switch Browser    ${first_browser}
     Should Be Equal As Strings    ${second_browser}    ${before_switch}
-    ${third_url}    Get Url
+    ${third_url} =    Get Url
     Get Title    matches    (?i)login

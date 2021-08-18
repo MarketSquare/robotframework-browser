@@ -397,6 +397,34 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "pekkaklarck",
+      "name": "Pekka Klärck",
+      "avatar_url": "https://avatars.githubusercontent.com/u/114985?v=4",
+      "profile": "http://eliga.fi",
+      "contributions": [
+        "code",
+        "bug"
+      ]
+    },
+    {
+      "login": "janipalsamaki",
+      "name": "Jani Palsamäki",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1157184?v=4",
+      "profile": "https://github.com/janipalsamaki",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "AllanMedeiros",
+      "name": "AllanMedeiros",
+      "avatar_url": "https://avatars.githubusercontent.com/u/34678196?v=4",
+      "profile": "https://github.com/AllanMedeiros",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,

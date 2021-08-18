@@ -70,13 +70,17 @@ class Interaction(LibraryComponent):
         Defaults to true.
 
         See `Fill Text` for direct filling of the full text at once.
+
+        Example
+        | `Type Text`    input#username_field    user
+        | `Type Text`    input#username_field    user    delay=10 ms    clear=No
         """
         logger.info(f"Types the text '{txt}' in the given field.")
         self._type_text(selector, txt, delay, clear)
 
     @keyword(tags=("Setter", "PageContent"))
     def fill_text(self, selector: str, txt: str):
-        """Clears and fills the given ``text`` into the text field found by ``selector``.
+        """Clears and fills the given ``txt`` into the text field found by ``selector``.
 
         This method waits for an element matching the ``selector`` to appear,
         waits for actionability checks, focuses the element, fills it and
@@ -84,7 +88,7 @@ class Interaction(LibraryComponent):
 
         If the element matching selector is not an <input>, <textarea> or
         [contenteditable] element, this method throws an error. Note that
-        you can pass an empty string as ``text`` to clear the input field.
+        you can pass an empty string as ``txt`` to clear the input field.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
@@ -92,6 +96,9 @@ class Interaction(LibraryComponent):
         ``txt`` Text for the text field.
 
         See `Type Text` for emulating typing text character by character.
+
+        Example:
+        | `Fill Text`    css=input#username_field    username
         """
         logger.info(f"Fills the text '{txt}' in the given field.")
         self._fill_text(selector, txt)
@@ -105,7 +112,6 @@ class Interaction(LibraryComponent):
 
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
-
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(Request().ClearText(selector=selector))
@@ -122,10 +128,10 @@ class Interaction(LibraryComponent):
         """Types the given secret from ``variable_name`` into the text field
         found by ``selector``.
 
-        This keyword does not log secret in Robot Framework logs.
-        If ``enable_playwright_debug`` is enabled in the library
-        import, secret will be always visible as plain text in the playwright debug
-        logs, regardless of the Robot Framework log level.
+        This keyword does not log secret in Robot Framework logs, if keyword resolves
+        the variable valu internally. If ``enable_playwright_debug`` is enabled in
+        the library import, secret will be always visible as plain text in the playwright
+        debug logs, regardless of the Robot Framework log level.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
@@ -133,10 +139,6 @@ class Interaction(LibraryComponent):
         ``secret`` Environment variable name with % prefix or a local
         variable with $ prefix that has the secret text value.
         Variable names can be used with and without curly braces.
-
-        Example:
-        ``$Password`` and ``${Password}`` resolve the robot framework variable.
-        ``%ENV_PWD`` and ``%{ENV_PWD}`` resolve to the environment variable ``ENV_PWD``.
 
         ``delay`` Delay between the single key strokes. It may be either a
         number or a Robot Framework time string. Time strings are fully
@@ -147,6 +149,11 @@ class Interaction(LibraryComponent):
         Defaults to true.
 
         See `Type Text` for details.
+
+        Example
+        | `Type Secret`    input#username_field    $username      # Keyword resolves ${username} variable value from Robot Framework variables
+        | `Type Secret`    input#username_field    %username      # Keyword resolves $USERANME/%USERANME% variable value from environment variables
+        | `Type Secret`    input#username_field    ${username}    # Robot Framework resolves the variable value, but secrect can leak to Robot framework output files.
         """
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
@@ -197,6 +204,10 @@ class Interaction(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         See `Fill Text` for other details.
+
+        Example:
+        | Fill Secret    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
+        | Fill Secret    input#username_field    %username    # Keyword resolves variable value from environment variables
         """
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
@@ -222,7 +233,6 @@ class Interaction(LibraryComponent):
         [https://playwright.dev/docs/api/class-page#pagepressselector-key-options | Playwright docs for press.]
 
         Example:
-
         | # Keyword       Selector                    *Keys
         | Press Keys      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
         """  # noqa
@@ -247,20 +257,19 @@ class Interaction(LibraryComponent):
 
         This keyword clicks an element matching ``selector`` by performing the following steps:
         - Find an element matches selector. If there is none, wait until a matching element is attached to the DOM.
-        - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
+        - Wait for actionability checks on the matched element, unless ``force`` option is set.
+          If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
         - Use `Mouse Button` to click in the center of the element, or the specified position.
         - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
 
-        ``selector`` Selector element to click.
-        See the `Finding elements` section for details about the selectors.
+        ``selector`` Selector element to click. See the `Finding elements` section for details about the selectors.
 
         ``button`` Defaults to ``left`` if invalid.
 
         ``clickCount`` Defaults to 1.
 
-        ``delay`` Time to wait between mouse-down and mouse-up.
-        Defaults to 0.
+        ``delay`` Time to wait between mouse-down and mouse-up. Defaults to 0.
 
         ``position_x`` & ``position_y`` A point to click relative to the
         top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
@@ -268,16 +277,18 @@ class Interaction(LibraryComponent):
 
         ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
-        ``noWaitAfter`` Actions that initiate navigation, are waiting for
-        these navigation to happen and for pages to start loading.
-        You can opt out of waiting via setting this flag.
-        You would only need this option in the exceptional cases such as navigating
-        to inaccessible pages. Defaults to ``False``.
+        ``noWaitAfter`` Actions that initiate navigation, are waiting for these navigation to happen and
+        for pages to start loading. You can opt out of waiting via setting this flag. You would only need
+        this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``.
 
         ``*modifiers``
-        Modifier keys to press. Ensures that only these modifiers are pressed
-        during the click, and then restores current modifiers back.
-        If not specified, currently pressed modifiers are used.
+        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
+        current modifiers back. If not specified, currently pressed modifiers are used.
+
+        Example:
+        | `Click`    id=button_location
+        | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
+
         """
         if self.library.presenter_mode:
             self.hover(selector)
@@ -309,14 +320,21 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("PageContent",))
     def record_selector(self):
-        """
-        Record the selector that is under mouse.
+        """Record the selector that is under mouse.
+
         Focus on the page and move mouse over the element you want to select.
         Press 's' to store the elements selector.
+
+        Example:
+        | ${recording} =    `Promise To`    `Record Selector`
+        | `Hover`    h1
+        | `Keyboard Key`    press    s
+        | ${selector} =    `Wait For`    ${recording}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.RecordSelector(Request.Empty())
-            logger.info(f"Selector: {response.result}")
+            selector_repr = response.result.replace("#", "\\#")
+            logger.info(f"Selector: {selector_repr}")
             return json.loads(response.result)
 
     @keyword(tags=("Setter", "PageContent"))
@@ -331,13 +349,14 @@ class Interaction(LibraryComponent):
         """Moves the virtual mouse and scrolls to the element found by ``selector``.
 
         This method hovers over an element matching ``selector`` by performing the following steps:
-        - Find an element match matching ``selector``. If there is none, wait until a matching element is attached to the DOM.
-        - Wait for actionability checks on the matched element, unless ``force`` option is set. If the element is detached during the checks, the whole action is retried.
+        - Find an element match matching ``selector``. If there is none,
+          wait until a matching element is attached to the DOM.
+        - Wait for actionability checks on the matched element, unless ``force`` option is set.
+          If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
         - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
 
-        ``selector`` Selector element to hover.
-        See the `Finding elements` section for details about the selectors.
+        ``selector`` Selector element to hover. See the `Finding elements` section for details about the selectors.
 
         ``position_x`` & ``position_y`` A point to hover relative to the top-left corner of element bounding box.
         If not specified, hovers over some visible point of the element.
@@ -348,6 +367,10 @@ class Interaction(LibraryComponent):
         ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
         pressed during the hover, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
+
+        Example:
+        | `Hover`    h1
+        | `Hover`    h1    10   20    Alt
         """
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, Any] = {"force": force}
@@ -508,6 +531,12 @@ class Interaction(LibraryComponent):
         ``attribute``
 
         If no values to select are passed will deselect options in element.
+
+        Example:
+        | `Select Options By`    label    select[name=preferred_channel]    Direct mail
+        | `Select Options By`    value    select[name=interests]    males    females    others
+        | `Select Options By`    index    select[name=possible_channels]    0    2
+        | `Select Options By`    text     select[name=interests]    Males    Females
         """
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
@@ -585,7 +614,6 @@ class Interaction(LibraryComponent):
             ``action`` equals accept. Defaults to empty string.
 
         Example:
-
         | Handle Future Dialogs    action=accept
         | Click                    \\#alerts
         """
@@ -651,7 +679,6 @@ class Interaction(LibraryComponent):
     ):
         """Clicks, presses or releases a mouse button.
 
-
         ``action`` Determines if it is a mouseclick, holding down a key or releasing it.
 
         ``x`` and ``y`` Coordinates to move before.
@@ -664,6 +691,12 @@ class Interaction(LibraryComponent):
         Can only be set if the action is click.
 
         Moving the mouse between holding down and releasing it, is possible with `Mouse Move`.
+
+        Example:
+        | `Hover`                     "Obstacle"           # Move mouse over the element
+        | `Mouse Button`              down                 # Press mouse button down
+        | `Mouse Move Relative To`    "Obstacle"    500    # Drag mouse
+        | `Mouse Button`              up                   # Release mouse button
         """
         with self.playwright.grpc_channel() as stub:
             if x and y:
@@ -691,6 +724,7 @@ class Interaction(LibraryComponent):
     def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
+
         See the `Finding elements` section for details about the selectors.
 
         First it moves the mouse to the start-point,
@@ -705,6 +739,9 @@ class Interaction(LibraryComponent):
         ``selector_to`` identifies the element, which center is the end-point.
 
         ``steps`` defines how many intermediate mouse move events are sent.
+
+        Example
+        | `Drag And Drop`    "Circle"    "Goal"
         """
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
@@ -733,6 +770,11 @@ class Interaction(LibraryComponent):
         ``to_x`` & ``to_y`` identify the the end-point.
 
         ``steps`` defines how many intermediate mouse move events are sent.
+
+        Example:
+        | `Drag And Drop By Coordinates`
+        | ...    from_x=30    from_y=30
+        | ...    to_x=10    to_y=10    steps=200
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
@@ -755,6 +797,9 @@ class Interaction(LibraryComponent):
 
         ``steps`` Number of intermediate steps for the mouse event.
         This is sometime needed for websites to recognize the movement.
+
+        Example:
+        | `Mouse Move Relative To`    id=indicator    -100
         """
         with self.playwright.grpc_channel() as stub:
             bbox = self.library.get_boundingbox(selector)
@@ -783,6 +828,9 @@ class Interaction(LibraryComponent):
         of the page.
 
         ``steps`` Number of intermediate steps for the mouse event.
+
+        Example:
+        | `Mouse Move`    400    400
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
@@ -840,6 +888,8 @@ class Interaction(LibraryComponent):
         Modifier keys DO NOT effect these methods. For testing modifier effects use single key
         presses with ``Keyboard Key  press``
 
+        Example:
+        | `Keyboard Input`    insertText    0123456789
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardInput(

@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${DRAGGAME_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${DRAGGAME_URL}
 
 *** Test Cases ***
 Move obstacle to goal and make a goal

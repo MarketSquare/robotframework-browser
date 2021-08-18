@@ -87,7 +87,7 @@ class Control(LibraryComponent):
         quality: str = "",
         timeout: Optional[timedelta] = None,
     ) -> str:
-        """Takes a screenshot of the current window and saves it.
+        """Takes a screenshot of the current window or element and saves it to disk.
 
         ``filename`` Filename into which to save. The file will be saved into the robot framework
          ${OUTPUTDIR}/browser/screenshot directory by default, but it can overwritten by providing
@@ -95,7 +95,6 @@ class Control(LibraryComponent):
          number. Use this to not override filenames. If filename equals to EMBED (case insensitive),
          then screenshot is embedded as Base64 image to the log.html. The image is saved temporally
          to the disk and warning is displayed if removing the temporary file fails.
-         If the filename is an absolute path, then filename is considered as an absolute path.
 
          The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
@@ -110,8 +109,15 @@ class Control(LibraryComponent):
 
         ``quality`` The quality of the image, between 0-100. Not applicable to png images.
 
-        ``timeout`` Maximum time in milliseconds, defaults to 30 seconds, pass 0 to disable timeout.
+        ``timeout`` Maximum time how long taking screenshot can last, defaults to library timeout.
+        Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout.
         The default value can be changed by using the `Set Browser Timeout` keyword.
+
+        Example
+        | `Take Screenshot`                                 # Takes screenshot from page with default filename
+        | `Take Screenshot`   selector=id=username_field    # Captures element in image
+        | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
+        | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
         """
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
@@ -184,9 +190,15 @@ class Control(LibraryComponent):
     def set_browser_timeout(self, timeout: timedelta) -> str:
         """Sets the timeout used by most input and getter keywords.
 
-        ``timeout`` Timeout of it is for current playwright context.
+        ``timeout`` Timeout of it is for current playwright context
+        and for new contexts. Supports Robot Framework
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format|time format]
+        . Returns the previous value of the timeout.
 
-        Returns the previous value of the timeout.
+        Example:
+        | ${old_timeout} =    `Set Browser Timeout`    1m 30 seconds
+        | Click     //button
+        | `Set Browser Timeout`    ${old_timeout}
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
         self.timeout = self.convert_timeout(timeout)
@@ -205,9 +217,22 @@ class Control(LibraryComponent):
     def set_retry_assertions_for(self, timeout: timedelta) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
-        ``timeout``
+        `Set Browser timeout` controls how long Playwright will perform
+        waiting in the node side, assertion retry will determine how long
+        Browser library will retry the playwright operation. Generally
+        assertion timeout should be longer than the timeout set by
+        `Set Browser timeout`.
 
-        Returns the previous value of the retry_assertions_until.
+        Returns the previous value of the assertion retry.
+
+        Example:
+        | `Set Browser Timeout`    10 seconds
+        | ${old} =    `Set Retry Assertions For`    30s
+        | `Get Title`    ==    Login Page
+        | `Set Retry Assertions For`    ${old}
+
+        Example waits 10 seconds on Playwright to get the page title and library
+        will retry 30 seconds to make sure that title is correct.
         """
         old_retry_assertions_for = self.millisecs_to_timestr(self.retry_assertions_for)
         self.retry_assertions_for = self.convert_timeout(timeout)
@@ -229,7 +254,7 @@ class Control(LibraryComponent):
 
         ``width`` Sets the width size.
 
-        ``height`` Sets the heigth size.
+        ``height`` Sets the height size.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetViewportSize(
@@ -255,6 +280,13 @@ class Control(LibraryComponent):
         """Updated the correct Context's geolocation.
 
         Latitude can be between -90 and 90 and longitude can be between -180 and 180.
+        Accuracy of the location must be positive number and defaults to 0. When
+        creating context, grant ``geolocation`` permission for pages to read its geolocation.
+
+        Example:
+        | ${permissions} =    Create List    geolocation
+        | `New Context`    permissions=${permissions}
+        | `Set Geolocation`    60.173708, 24.982263    3    # Points to Korkeasaari in Helsinki.
         """
         geolocation_dict = {"latitude": latitude, "longitude": longitude}
         if accuracy:

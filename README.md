@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-43-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-46-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -12,7 +12,8 @@
 
 Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visibility.
 
-See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html).
+See [keyword documentation](https://marketsquare.github.io/robotframework-browser/Browser.html) and
+[web page](https://robotframework-browser.org/) for more details.
 
 # Installation instructions
 
@@ -29,7 +30,7 @@ installed in the system. The installation size depends on the operating system, 
 It is possible to skip browser binaries installation with `rfbrowser init --skip-browsers` command, but then user
 is responsible for browser binary installation.
 
-Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [atest/docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/master/atest/docker/README.md).
+Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [atest/docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/atest/docker/README.md).
 
 ## Update instructions
 
@@ -78,6 +79,9 @@ Example Test
    New Page
    myGoToKeyword   https://www.robotframework.org
 ```
+
+Ready made extensions and a place to share your own at [robotframework-browser-extensions](https://github.com/MarketSquare/robotframework-browser-extensions).
+
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
 ```RobotFramework
@@ -192,6 +196,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/ssallmen"><img src="https://avatars.githubusercontent.com/u/39527407?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sami Sallmén</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Assallmen" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="http://eliga.fi"><img src="https://avatars.githubusercontent.com/u/114985?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Pekka Klärck</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=pekkaklarck" title="Code">💻</a> <a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Apekkaklarck" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/janipalsamaki"><img src="https://avatars.githubusercontent.com/u/1157184?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jani Palsamäki</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ajanipalsamaki" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/AllanMedeiros"><img src="https://avatars.githubusercontent.com/u/34678196?v=4?s=100" width="100px;" alt=""/><br /><sub><b>AllanMedeiros</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AAllanMedeiros" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 
