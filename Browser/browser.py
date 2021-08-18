@@ -44,6 +44,7 @@ from .keywords import (
     PlaywrightState,
     Promises,
     RunOnFailureKeywords,
+    StrictMode,
     Waiter,
     WebAppState,
 )
@@ -637,6 +638,7 @@ class Browser(DynamicCore):
         jsextension: Optional[str] = None,
         enable_presenter_mode: bool = False,
         playwright_process_port: Optional[int] = None,
+        strict: bool = True,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -668,6 +670,10 @@ class Browser(DynamicCore):
           Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
         - ``enable_presenter_mode`` <bool>
           Automatic highlights to interacted components, slowMo and a small pause at the end.
+        - ``strict`` <bool>
+          If keyword selector points multiple elements and keywords should interact with one element,
+          keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords
+          or by ```et Strict Mode`` keyword.
         """
         self.timeout = self.convert_timeout(timeout)
         self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
@@ -692,6 +698,7 @@ class Browser(DynamicCore):
             Getters(self),
             Network(self),
             RunOnFailureKeywords(self),
+            StrictMode(self),
             Promises(self),
             Waiter(self),
             WebAppState(self),
@@ -704,6 +711,7 @@ class Browser(DynamicCore):
         if jsextension is not None:
             libraries.append(self._initialize_jsextension(jsextension))
         self.presenter_mode = enable_presenter_mode
+        self.strict_mode = strict
         DynamicCore.__init__(self, libraries)
 
     @staticmethod
