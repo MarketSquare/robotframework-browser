@@ -31,12 +31,3 @@ def test_shared_playwright_port():
 
     browser.close_browser("ALL")
     browser2.close_browser("ALL")
-
-
-# @pytest.fixture()
-# def browser():
-#     import Browser
-#
-#     browser = Browser.Browser()
-#     yield browser
-#     browser.close_browser("ALL")
