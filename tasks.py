@@ -343,7 +343,13 @@ def atest_robot(c):
     env = os.environ.copy()
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(command_args, env=env)
-    sys.exit(process.wait(600))
+    process.wait(600)
+    output_xml = str(ATEST_OUTPUT / "output.xml")
+    print(f"Process {output_xml}")
+    robotstatuschecker.process_output(output_xml, verbose=False)
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
+    print(f"DONE rc=({rc})")
+    sys.exit(rc)
 
 
 @task(clean_atest)
