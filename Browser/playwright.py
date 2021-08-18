@@ -16,10 +16,9 @@ import atexit
 import contextlib
 import os
 import time
-import json
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional
 
 import grpc  # type: ignore
 from backports.cached_property import cached_property
