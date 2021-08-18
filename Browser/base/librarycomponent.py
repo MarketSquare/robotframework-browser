@@ -129,3 +129,11 @@ class LibraryComponent:
             logger.warn("Given variable placeholder could not be resolved.")
             return placeholder
         return value
+
+    @property
+    def strict_mode(self) -> bool:
+        return self.library.strict_mode
+
+    @strict_mode.setter
+    def strict_mode(self, mode: bool):
+        self.library.strict_mode = mode
