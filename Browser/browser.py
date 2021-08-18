@@ -656,7 +656,7 @@ class Browser(DynamicCore):
         - ``run_on_failure`` <str>
           Sets the keyword to execute in case of a failing Browser keyword.
           It can be the name of any keyword. If the keyword has arguments those must be separated with
-          two spaces `` \\ `` for example ``My keyword \\ arg1 \\ arg2``.
+          two spaces for example ``My keyword \\ arg1 \\ arg2``.
           If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value.
         - ``external_browser_executable`` <Dict <SupportedBrowsers, Path>>
           Dict mapping name of browser to path of executable of a browser.
