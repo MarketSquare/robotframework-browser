@@ -170,11 +170,3 @@ class Playwright(LibraryComponent):
             logger.debug("Playwright process killed")
         else:
             logger.debug("Disconnected from external Playwright process")
-
-    def list_playwright_states(self) -> List[str]:
-        with self.grpc_channel() as stub:
-            return json.loads(stub.ListPlaywrightStates(Request().Empty()).json)
-
-    def select_playwright_state(self, id: str) -> None:
-        with self.grpc_channel() as stub:
-            return stub.SelectPlaywrightState(Request().Index(index=id))

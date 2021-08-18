@@ -458,40 +458,4 @@ export class PlaywrightServer implements IPlaywrightServer {
             callback(errorResponse(e), null);
         }
     }
-
-    async listPlaywrightStates(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
-        callback: sendUnaryData<Response.Json>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = this.states;
-            callback(null, jsonResponse(JSON.stringify(Object.keys(result)), ''));
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    /* When calling, it is on caller's responsibility to clean resources in state which is being switched away from.
-     * If state does not exist error will be thrown
-     */
-    async selectPlaywrightState(
-        call: ServerUnaryCall<Request.Index, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const result = this.states[request.getIndex()];
-            if (result) {
-                this.states[call.getPeer()] = result;
-                callback(null, emptyWithLog(''));
-            } else {
-                throw new Error('Invalid index for PlaywrightState');
-            }
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
 }
