@@ -697,7 +697,9 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self.playwright = Playwright(self, enable_playwright_debug)
+        self.playwright = Playwright(
+            self, enable_playwright_debug, playwright_process_port
+        )
         self._auto_closing_level = auto_closing_level
         self.current_arguments = ()
         if jsextension is not None:

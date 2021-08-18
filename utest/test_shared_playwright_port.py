@@ -21,9 +21,8 @@ def test_shared_playwright_port():
     assert browser.playwright.port
     port: str = browser.playwright.port
 
-    browser2 = Browser.Browser()
-    browser2.playwright.port = port  # type: ignore
-    assert browser.playwright.port == browser2.playwright.port
+    browser2 = Browser.Browser(playwright_process_port=int(port))
+    # assert browser.playwright.port == browser2.playwright.port
     browser2.new_page("https://google.com")
     assert browser.playwright.port == browser2.playwright.port
 

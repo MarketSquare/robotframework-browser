@@ -40,11 +40,16 @@ class Playwright(LibraryComponent):
 
     port: Optional[str]
 
-    def __init__(self, library: "Browser", enable_playwright_debug: bool):
+    def __init__(
+        self,
+        library: "Browser",
+        enable_playwright_debug: bool,
+        port: Optional[int] = None,
+    ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
         self.ensure_node_dependencies()
-        self.port = None
+        self.port = str(port) if port else None
 
     @cached_property
     def _playwright_process(self) -> Optional[Popen]:
