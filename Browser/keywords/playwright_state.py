@@ -1069,3 +1069,9 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SaveStorageState(Request().FilePath(path=path))
         return response.log
+
+    @keyword(tags=("BrowserControl", ))
+    def set_peer_id(self, new_id) -> str:
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetPeerId(Request().Index(index=new_id))
+            return response.body

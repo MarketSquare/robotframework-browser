@@ -26,10 +26,11 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
-import { emptyWithLog, errorResponse, jsonResponse } from './response-util';
+import { emptyWithLog, errorResponse, jsonResponse, stringResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     private states: { [peer: string]: PlaywrightState } = {};
+    peerOverride: string | undefined;
 
     private createState = (key: string): PlaywrightState => {
         if (!(key in this.states)) {
@@ -39,8 +40,11 @@ export class PlaywrightServer implements IPlaywrightServer {
     };
 
     private getState = (peer: ServerSurfaceCall): PlaywrightState => {
-        const p = peer.getPeer();
-        return this.createState(p);
+        if (this.peerOverride) return this.createState(this.peerOverride);
+        else {
+            const p = peer.getPeer();
+            return this.createState(p);
+        }
     };
     private getActiveBrowser = (peer: ServerSurfaceCall) => this.getState(peer).getActiveBrowser();
     private getActiveContext = (peer: ServerSurfaceCall) => this.getState(peer).getActiveContext();
@@ -454,6 +458,21 @@ export class PlaywrightServer implements IPlaywrightServer {
             if (request === null) throw Error('No request');
             const result = await browserControl.reload(this.getActivePage(call));
             callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async setPeerId(
+        call: ServerUnaryCall<Request.Index, Response.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const oldPeerId = this.peerOverride ?? call.getPeer();
+            this.peerOverride = request.getIndex();
+            callback(null, stringResponse(oldPeerId, 'Succesfully overrode peer id'));
         } catch (e) {
             callback(errorResponse(e), null);
         }

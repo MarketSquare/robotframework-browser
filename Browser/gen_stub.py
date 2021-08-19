@@ -109,12 +109,10 @@ from os import PathLike
 import assertionengine
 
 from .utils.data_types import *
-from .playwright import Playwright
 
 
 class Browser:
     timeout: Any = ...
-    playwright: Playwright
 """
 
 pyi_non_kw_methods = """\
