@@ -245,7 +245,6 @@ def atest(c, suite=None, include=None, zip=None):
         args.extend(["--suite", suite])
     if include:
         args.extend(["--include", include])
-    exit = False if zip else True
     os.mkdir(ATEST_OUTPUT)
     logfile = open(Path(ATEST_OUTPUT, "playwright-log.txt"), "w")
     os.environ["DEBUG"] = "pw:api"
@@ -261,7 +260,7 @@ def atest(c, suite=None, include=None, zip=None):
         stderr=subprocess.STDOUT,
     )
     os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-    rc = _run_pabot(args, exit)
+    rc = _run_pabot(args)
     process.kill()
     if zip:
         _clean_zip_dir()
@@ -344,7 +343,13 @@ def atest_robot(c):
     env = os.environ.copy()
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(command_args, env=env)
-    sys.exit(process.wait(600))
+    process.wait(600)
+    output_xml = str(ATEST_OUTPUT / "output.xml")
+    print(f"Process {output_xml}")
+    robotstatuschecker.process_output(output_xml, verbose=False)
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
+    print(f"DONE rc=({rc})")
+    sys.exit(rc)
 
 
 @task(clean_atest)
@@ -355,7 +360,7 @@ def atest_global_pythonpath(c):
 # Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
 @task()
 def atest_failed(c):
-    _run_pabot(["--rerunfailed", "atest/output/output.xml"])
+    sys.exit(_run_pabot(["--rerunfailed", "atest/output/output.xml"]))
 
 
 @task()
@@ -372,7 +377,7 @@ def run_tests(c, tests):
     return process.wait(600)
 
 
-def _run_pabot(extra_args=None, exit=True):
+def _run_pabot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     os.environ["COVERAGE_PROCESS_START"] = ".coveragerc"
     pabot_args = [
@@ -408,8 +413,8 @@ def _run_pabot(extra_args=None, exit=True):
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml, verbose=False)
-    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=exit)
-    print("DONE")
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
+    print(f"DONE rc=({rc})")
     return rc
 
 
