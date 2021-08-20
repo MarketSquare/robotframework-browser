@@ -26,11 +26,11 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
-import { emptyWithLog, errorResponse, jsonResponse, stringResponse } from './response-util';
+import { emptyWithLog, errorResponse, stringResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     private states: { [peer: string]: PlaywrightState } = {};
-    peerOverride: string | undefined;
+    peerMap: { [peer: string]: string } = {};
 
     private createState = (key: string): PlaywrightState => {
         if (!(key in this.states)) {
@@ -40,8 +40,11 @@ export class PlaywrightServer implements IPlaywrightServer {
     };
 
     private getState = (peer: ServerSurfaceCall): PlaywrightState => {
-        if (this.peerOverride) return this.createState(this.peerOverride);
-        else {
+        const mapPeer = this.peerMap[peer.getPeer()];
+        if (mapPeer) {
+            return this.createState(mapPeer);
+        } else {
+            this.peerMap[peer.getPeer()] = peer.getPeer();
             const p = peer.getPeer();
             return this.createState(p);
         }
@@ -470,9 +473,9 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const oldPeerId = this.peerOverride ?? call.getPeer();
-            this.peerOverride = request.getIndex();
-            callback(null, stringResponse(oldPeerId, 'Succesfully overrode peer id'));
+            const oldPeer = this.peerMap[call.getPeer()];
+            this.peerMap[call.getPeer()] = request.getIndex();
+            callback(null, stringResponse(oldPeer, 'Succesfully overrode peer id'));
         } catch (e) {
             callback(errorResponse(e), null);
         }
