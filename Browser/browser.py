@@ -636,6 +636,7 @@ class Browser(DynamicCore):
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Optional[str] = None,
         enable_presenter_mode: bool = False,
+        playwright_process_port: Optional[int] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -695,7 +696,9 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self.playwright = Playwright(self, enable_playwright_debug)
+        self.playwright = Playwright(
+            self, enable_playwright_debug, playwright_process_port
+        )
         self._auto_closing_level = auto_closing_level
         self.current_arguments = ()
         if jsextension is not None:

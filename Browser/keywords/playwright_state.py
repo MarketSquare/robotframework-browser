@@ -1069,3 +1069,9 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SaveStorageState(Request().FilePath(path=path))
         return response.log
+
+    def set_peer_id(self, new_id) -> str:
+        """Sets the peer_id for the current GRPC connection to browser's backend. Useful for sharing the same browsers or even pages among multiple separate python processes. Meaningful usage requires the port of both Browser library instances to be configured the same."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetPeerId(Request().Index(index=new_id))
+            return response.body
