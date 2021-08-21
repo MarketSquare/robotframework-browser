@@ -18,7 +18,7 @@ from ..utils import keyword, logger
 class StrictMode(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def set_strict_mode(self, mode: bool):
-        """Controls library strict mode.
+        """Controls library level strict mode.
 
         When set to ```True``, keyword that searching elements will use Playwright
         [https://playwright.dev/docs/api/class-page#page-query-selector|strict mode].

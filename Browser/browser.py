@@ -154,7 +154,14 @@ class Browser(DynamicCore):
 
     All keywords in the library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
-    how to find the element.
+    how to find the element. Keywords can find elements with strict mode. If
+    strict mode is true and locator finds multiple elements from the page, keyword
+    will fail. If keyword finds one element, keyword does not fail because of
+    strict mode. If strict mode is false, keyword does not fail if selector points
+    many elements. Strict mode is enabled by default, but can be changed in library
+    `importing`, `Set Strict Mode` keyword or controlled in individual keywords. If
+    keyword does not have ``strict`` argument, then library level strict mode is not
+    used by that keyword.
 
     Selector strategies that are supported by default are listed in the table
     below.
