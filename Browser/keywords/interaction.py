@@ -206,8 +206,8 @@ class Interaction(LibraryComponent):
         See `Fill Text` for other details.
 
         Example:
-        | Fill Secret    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
-        | Fill Secret    input#username_field    %username    # Keyword resolves variable value from environment variables
+        | `Fill Secret`    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
+        | `Fill Secret`    input#username_field    %username    # Keyword resolves variable value from environment variables
         """
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
@@ -233,8 +233,8 @@ class Interaction(LibraryComponent):
         [https://playwright.dev/docs/api/class-page#pagepressselector-key-options | Playwright docs for press.]
 
         Example:
-        | # Keyword       Selector                    *Keys
-        | Press Keys      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
+        | # Keyword         Selector                    *Keys
+        | `Press Keys`      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
         """  # noqa
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(Request().PressKeys(selector=selector, key=keys))
@@ -614,8 +614,8 @@ class Interaction(LibraryComponent):
             ``action`` equals accept. Defaults to empty string.
 
         Example:
-        | Handle Future Dialogs    action=accept
-        | Click                    \\#alerts
+        | `Handle Future Dialogs`    action=accept
+        | `Click`                    \\#alerts
         """
 
         with self.playwright.grpc_channel() as stub:
@@ -643,10 +643,10 @@ class Interaction(LibraryComponent):
 
         Example with returning text:
 
-        | ${promise} =       Promise To    Wait For Alert    action=accept
-        | Click              id=alerts
-        | ${text} =          Wait For      ${promise}
-        | Should Be Equal    ${text}       Am an alert
+        | ${promise} =         `Promise To`    `Wait For Alert`    action=accept
+        | `Click`              id=alerts
+        | ${text} =            `Wait For`      ${promise}
+        | Should Be Equal      ${text}         Am an alert
 
         Example with text verify:
 
@@ -858,11 +858,11 @@ class Interaction(LibraryComponent):
         ``Shift``, ``Control``, ``Alt``, ``Meta``, ``ShiftLeft``
 
         Example excecution:
-        | Keyboard Key    press    S
-        | Keyboard Key    down     Shift
-        | Keyboard Key    press    ArrowLeft
-        | Keyboard Key    press    Delete
-        | Keyboard Key    up       Shift
+        | `Keyboard Key`    press    S
+        | `Keyboard Key`    down     Shift
+        | `Keyboard Key`    press    ArrowLeft
+        | `Keyboard Key`    press    Delete
+        | `Keyboard Key`    up       Shift
 
         Note: Capital letters don't need to be written by the help of Shift. You can type them in directly.
         """

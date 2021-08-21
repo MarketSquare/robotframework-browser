@@ -963,9 +963,9 @@ class PlaywrightState(LibraryComponent):
         | Test Case
         |     `New Page`    http://www.imbus.de
         |     `New Page`    http://www.reaktor.com
-        |     ${current_page}=   Get Page IDs    ACTIVE    ACTIVE    ACTIVE
+        |     ${current_page}=   `Get Page IDs`    ACTIVE    ACTIVE    ACTIVE
         |     Log                Current page ID is: ${current_page}[0]
-        |     ${all_pages}=      Get Page IDs    CURRENT   CURRENT   ALL
+        |     ${all_pages}=      `Get Page IDs`    CURRENT   CURRENT   ALL
         |     Log Many           These are all Page IDs    @{all_pages}
 
         The ACTIVE page of the ACTIVE context of the ACTIVE Browser is the ``Current`` Page.

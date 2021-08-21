@@ -85,7 +85,7 @@ class Network(LibraryComponent):
         Here's an example of using Robot Framework dictionary variables and extended variable syntax to
         do assertions on the response object:
 
-        | &{res}=             HTTP                       /api/endpoint
+        | &{res}=             `HTTP`                       /api/endpoint
         | Should Be Equal     ${res.status}              200
         | Should Be Equal     ${res.body.some_field}     some value
 
