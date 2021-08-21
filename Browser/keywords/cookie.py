@@ -203,9 +203,9 @@ class Cookie(LibraryComponent):
         for details about each attribute.
 
         Example:
-        | ${cookie}=        Get Cookie              Foobar
-        | Should Be Equal   ${cookie.value}         Tidii
-        | Should Be Equal   ${cookie.expiry.year}   ${2020}
+        | ${cookie}=        `Get Cookie`              Foobar
+        | Should Be Equal   ${cookie.value}           Tidii
+        | Should Be Equal   ${cookie.expiry.year}     ${2020}
         """
         _, cookies = self._get_cookies()
         for cookie_dict in cookies:

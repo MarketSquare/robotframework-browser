@@ -281,10 +281,10 @@ class Getters(LibraryComponent):
         | <button class="login button active" id="enabled_button" something>Login</button>
 
         Example Code:
-        | Get Attribute   id=enabled_button    disabled                   # FAIL => "Attribute 'disabled' not found!"
-        | Get Attribute   id=enabled_button    disabled     ==    ${None}     # PASS => returns: None
-        | Get Attribute   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
-        | Get Attribute   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
+        | `Get Attribute`   id=enabled_button    disabled                   # FAIL => "Attribute 'disabled' not found!"
+        | `Get Attribute`   id=enabled_button    disabled     ==    ${None}     # PASS => returns: None
+        | `Get Attribute`   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
+        | `Get Attribute`   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
@@ -633,8 +633,8 @@ class Getters(LibraryComponent):
         is not done.
 
         Example:
-        | Get Viewport Size    ALL    ==    {'width':1280, 'height':720}
-        | Get Viewport Size    width    >=    1200
+        | `Get Viewport Size`    ALL    ==    {'width':1280, 'height':720}
+        | `Get Viewport Size`    width    >=    1200
 
         """
         with self.playwright.grpc_channel() as stub:
@@ -788,13 +788,13 @@ class Getters(LibraryComponent):
         is not done.
 
         Example use:
-        | ${bounding_box}=    Get BoundingBox    id=element                 # unfiltered
-        | Log                 ${bounding_box}                               # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
-        | ${x}=               Get BoundingBox    id=element    x            # filtered
-        | Log                 X: ${x}                                       # X: 559.09375
+        | ${bounding_box}=    `Get BoundingBox`    id=element                 # unfiltered
+        | Log                 ${bounding_box}                                 # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
+        | ${x}=               `Get BoundingBox`    id=element    x            # filtered
+        | Log                 X: ${x}                                         # X: 559.09375
         | # Assertions:
-        | Get BoundingBox     id=element         width         >    180
-        | Get BoundingBox     id=element         ALL           validate    value['x'] > value['y']*2
+        | `Get BoundingBox`     id=element         width         >    180
+        | `Get BoundingBox`     id=element         ALL           validate    value['x'] > value['y']*2
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
@@ -846,9 +846,9 @@ class Getters(LibraryComponent):
         See `Get BoundingBox` for more similar examples.
 
         Example use:
-        | ${height}=         Get Scroll Size    height                          # filtered page by height
+        | ${height}=         `Get Scroll Size`    height                          # filtered page by height
         | Log                Width: ${height}                                   # Height: 58425
-        | ${scroll_size}=    Get Scroll Size    id=keyword-shortcuts-container  # unfiltered element
+        | ${scroll_size}=    `Get Scroll Size`    id=keyword-shortcuts-container  # unfiltered element
         | Log                ${scroll_size}                                     # {'width': 253, 'height': 3036}
         """
         scroll_size = dict()

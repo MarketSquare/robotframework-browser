@@ -43,9 +43,9 @@ class Promises(LibraryComponent):
         ``kw`` Keyword that will work async on background.
 
         Example:
-        | ${promise}=     Promise To            Wait For Response     matcher=     timeout=3
-        | Click           \\#delayed_request
-        | ${body}=        Wait For              ${promise}
+        | ${promise}=     `Promise To`            Wait For Response     matcher=     timeout=3
+        | `Click`           \\#delayed_request
+        | ${body}=        `Wait For`              ${promise}
         """
         browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
             self.library
@@ -80,11 +80,11 @@ class Promises(LibraryComponent):
         Different browsers can use different logic for computing it.
 
         Example usage:
-        | New Context          acceptDownloads=True
-        | New Page             ${LOGIN_URL}
-        | ${dl_promise}        Promise To Wait For Download    /path/to/download/file.name
-        | Click                \\#file_download
-        | ${file_obj}=         Wait For  ${dl_promise}
+        | `New Context`          acceptDownloads=True
+        | `New Page`             ${LOGIN_URL}
+        | ${dl_promise}          `Promise To Wait For Download`    /path/to/download/file.name
+        | `Click`                \\#file_download
+        | ${file_obj}=           `Wait For`  ${dl_promise}
         | File Should Exist    ${file_obj}[saveAs]
         | Should Be True       ${file_obj.suggestedFilename}
         """
