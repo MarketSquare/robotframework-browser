@@ -940,3 +940,8 @@ class Browser(DynamicCore):
             doc = doc.replace("%ASSERTION_TABLE%", AssertionOperator.__doc__)
             doc = doc.replace("%AUTO_CLOSING_LEVEL%", AutoClosingLevel.__doc__)
         return doc
+
+    def get_strict_mode(self, strict: Union[bool, None]) -> bool:
+        if strict is not None:
+            return strict
+        return self.strict_mode
