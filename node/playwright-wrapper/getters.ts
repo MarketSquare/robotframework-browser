@@ -17,7 +17,7 @@ import { ElementHandle, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, invokePlaywrightMethod, waitUntilElementExists, waitUntilElementExists2 } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -86,7 +86,8 @@ async function getTextContent(element: ElementHandle<Node>): Promise<string> {
 
 export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const selector = request.getSelector();
-    const element = await waitUntilElementExists(state, selector);
+    const strict = request.getStrict();
+    const element = await waitUntilElementExists2(state, selector, strict);
     let content: string;
     try {
         content = await getTextContent(element);

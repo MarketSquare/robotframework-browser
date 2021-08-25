@@ -161,7 +161,8 @@ class Browser(DynamicCore):
     many elements. Strict mode is enabled by default, but can be changed in library
     `importing`, `Set Strict Mode` keyword or controlled in individual keywords. If
     keyword does not have ``strict`` argument, then library level strict mode is not
-    used by that keyword.
+    used by that keyword. For more details, see Playwright
+    [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
 
     Selector strategies that are supported by default are listed in the table
     below.
@@ -943,5 +944,7 @@ class Browser(DynamicCore):
 
     def get_strict_mode(self, strict: Union[bool, None]) -> bool:
         if strict is not None:
+            logger.debug(f"Strict mode: {strict}")
             return strict
+        logger.debug(f"Using default strict mode: {strict}")
         return self.strict_mode

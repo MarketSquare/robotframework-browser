@@ -32,6 +32,21 @@ export async function waitUntilElementExists<T>(state: PlaywrightState, selector
     return element;
 }
 
+/** TODO: Remove this one when all is converted to use strict mode */
+export async function waitUntilElementExists2<T>(state: PlaywrightState, selector: string, strictMode: boolean): Promise<ElementHandle> {
+    const { elementSelector, context } = await determineContextAndSelector(state, selector);
+    logger.info(`Strict mode is: ${strictMode}`);
+    if (elementSelector === undefined) {
+        // This type cast is safe because elementSelector is only undefined when an ElementHandle gets returned
+        return context as ElementHandle;
+    } else if ('waitForSelector' in context) {
+        await context.waitForSelector(elementSelector, { state: 'attached' });
+    }
+    const element = await context.$(elementSelector, {strict: strictMode});
+    exists(element, `Could not find element with selector \`${elementSelector}\` within timeout.`);
+    return element;
+}
+
 export async function invokeOnMouse<T>(
     page: Page | undefined,
     methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
