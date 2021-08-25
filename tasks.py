@@ -217,7 +217,7 @@ def utest(c, reporter=None, suite=None):
         suite:    Defines which test suite file to run. Same as: pytest path/to/test.py
                   Must be path to the test suite file
     """
-    args = ["--showlocals", "--junitxml=utest/output/pytest_xunit.xml"]
+    args = ["--showlocals", "--junitxml=utest/output/pytest_xunit.xml", "--tb=long"]
     if reporter:
         args.append(f"--approvaltests-add-reporter={reporter}")
     if suite:
