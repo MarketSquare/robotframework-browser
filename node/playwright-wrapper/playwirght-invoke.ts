@@ -33,7 +33,11 @@ export async function waitUntilElementExists<T>(state: PlaywrightState, selector
 }
 
 /** TODO: Remove this one when all is converted to use strict mode */
-export async function waitUntilElementExists2<T>(state: PlaywrightState, selector: string, strictMode: boolean): Promise<ElementHandle> {
+export async function waitUntilElementExists2<T>(
+    state: PlaywrightState,
+    selector: string,
+    strictMode: boolean,
+): Promise<ElementHandle> {
     const { elementSelector, context } = await determineContextAndSelector(state, selector);
     logger.info(`Strict mode is: ${strictMode}`);
     if (elementSelector === undefined) {
@@ -42,7 +46,7 @@ export async function waitUntilElementExists2<T>(state: PlaywrightState, selecto
     } else if ('waitForSelector' in context) {
         await context.waitForSelector(elementSelector, { state: 'attached' });
     }
-    const element = await context.$(elementSelector, {strict: strictMode});
+    const element = await context.$(elementSelector, { strict: strictMode });
     exists(element, `Could not find element with selector \`${elementSelector}\` within timeout.`);
     return element;
 }

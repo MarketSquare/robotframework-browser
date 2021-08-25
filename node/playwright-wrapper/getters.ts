@@ -17,7 +17,12 @@ import { ElementHandle, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExists, waitUntilElementExists2 } from './playwirght-invoke';
+import {
+    determineElement,
+    invokePlaywrightMethod,
+    waitUntilElementExists,
+    waitUntilElementExists2,
+} from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
