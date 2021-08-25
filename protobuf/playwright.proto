@@ -120,6 +120,7 @@ message Request {
 
   message ElementSelector {
     string selector = 1;
+    bool strict = 2;
   }
 
   message Timeout {

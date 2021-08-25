@@ -166,6 +166,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
 
@@ -177,6 +178,9 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict``  overrides the library default strict mode. See `Finding elements`
+        for more details about strict mode.
+
         Optionally asserts that the text matches the specified assertion. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
 
@@ -184,12 +188,15 @@ class Getters(LibraryComponent):
         | ${text} =    `Get Text`    id=important                            # Returns element text without assertion.
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetText(Request().ElementSelector(selector=selector))
-            logger.debug(response.log)
-            return verify_assertion(
-                response.body, assertion_operator, assertion_expected, "Text", message
+            response = stub.GetText(
+                Request().ElementSelector(selector=selector, strict=strict)
             )
+        logger.debug(response.log)
+        return verify_assertion(
+            response.body, assertion_operator, assertion_expected, "Text", message
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
