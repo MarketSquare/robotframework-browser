@@ -42,9 +42,8 @@ Most important enhancements
 ===========================
 
 - Write example to keyword documentation (`#1214`_)
----------------------------------------------------
 Keyword docs are now updated and contains examples.
-
+---------------------------------------------------
 
 Enhance run on failure functionality to accept arguments (`#1215`_)
 -------------------------------------------------------------------
