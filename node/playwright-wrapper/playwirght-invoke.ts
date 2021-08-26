@@ -33,7 +33,7 @@ export async function waitUntilElementExists<T>(state: PlaywrightState, selector
 }
 
 /** TODO: Remove this one when all is converted to use strict mode */
-export async function waitUntilElementExists2<T>(
+export async function waitUntilElementExistsStrict<T>(
     state: PlaywrightState,
     selector: string,
     strictMode: boolean,

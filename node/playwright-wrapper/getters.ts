@@ -21,7 +21,7 @@ import {
     determineElement,
     invokePlaywrightMethod,
     waitUntilElementExists,
-    waitUntilElementExists2,
+    waitUntilElementExistsStrict,
 } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -92,7 +92,7 @@ async function getTextContent(element: ElementHandle<Node>): Promise<string> {
 export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const selector = request.getSelector();
     const strict = request.getStrict();
-    const element = await waitUntilElementExists2(state, selector, strict);
+    const element = await waitUntilElementExistsStrict(state, selector, strict);
     let content: string;
     try {
         content = await getTextContent(element);
