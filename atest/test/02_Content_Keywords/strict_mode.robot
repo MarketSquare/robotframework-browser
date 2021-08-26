@@ -21,6 +21,7 @@ Use Strict Mode
     ...    Get Text    //input    strict=True
 
 When Strict Is False Should Not Fail
+    New Page    ${FORM_URL}
     Set Strict Mode    False
     Get Text    //input
     Get Text    //input    strict=False
