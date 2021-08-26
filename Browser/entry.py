@@ -60,7 +60,8 @@ def rfbrowser_init(skip_browser_install: bool):
     if skip_browser_install:
         os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
     else:
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
 
     process = Popen(
         "npm install --production",
