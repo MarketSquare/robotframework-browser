@@ -946,5 +946,5 @@ class Browser(DynamicCore):
         if strict is not None:
             logger.debug(f"Strict mode: {strict}")
             return strict
-        logger.debug(f"Using default strict mode: {strict}")
+        logger.debug(f"Using default strict mode: {self.strict_mode}")
         return self.strict_mode

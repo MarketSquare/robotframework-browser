@@ -178,8 +178,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict``  overrides the library default strict mode. See `Finding elements`
-        for more details about strict mode.
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
 
         Optionally asserts that the text matches the specified assertion. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
@@ -406,6 +406,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
 
@@ -421,6 +422,9 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that these match the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -430,27 +434,28 @@ class Getters(LibraryComponent):
         | `Get Select Options`     //select[2]    validate  [v["label"] for v in value] == ["Email", "Mobile"]
         | `Get Select Options`   select#names     validate  any(v["label"] == "Mikko" for v in value)
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
-                Request().ElementSelector(selector=selector)
+                Request().ElementSelector(selector=selector, strict=strict)
             )
-            logger.info(response)
-            result = [
-                {
-                    "index": index,
-                    "value": sel.value,
-                    "label": sel.label,
-                    "selected": bool(sel.selected),
-                }
-                for index, sel in enumerate(response.entry)
-            ]
-            return verify_assertion(
-                result,
-                assertion_operator,
-                assertion_expected,
-                "Select Options:",
-                message,
-            )
+        logger.info(response)
+        result = [
+            {
+                "index": index,
+                "value": sel.value,
+                "label": sel.label,
+                "selected": bool(sel.selected),
+            }
+            for index, sel in enumerate(response.entry)
+        ]
+        return verify_assertion(
+            result,
+            assertion_operator,
+            assertion_expected,
+            "Select Options:",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling

@@ -16,6 +16,13 @@ Get Select Options
     Should be equal    ${options}[0][label]    Email
     Should be equal    ${options}[1][value]    phone
 
+Get Select Options Strict
+    Run Keyword And Expect Error
+    ...    *Evaluation failed: Error: strict mode violation: selector resolved to 3 elements.*
+    ...    Get Select Options    //select
+    ${options} =    Get Select Options    //select    strict=False
+    Length Should Be    ${options}    3
+
 Get Selected Options
     [Documentation]
     ...    Verifying list 'preferred_channel' has options [Telephone] selected.

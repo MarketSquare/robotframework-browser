@@ -48,7 +48,8 @@ export async function getSelectContent(
     state: PlaywrightState,
 ): Promise<Response.Select> {
     const selector = request.getSelector();
-    await waitUntilElementExists(state, selector);
+    const strictMode = request.getStrict();
+    await waitUntilElementExistsStrict(state, selector, strictMode);
 
     type Value = [string, string, boolean];
 
