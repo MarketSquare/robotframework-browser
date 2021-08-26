@@ -118,7 +118,8 @@ export async function getBoolProperty(
 
 async function getProperty<T>(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
-    const element = await waitUntilElementExists(state, selector);
+    const strictMode = request.getStrict();
+    const element = await waitUntilElementExistsStrict(state, selector, strictMode);
     try {
         const propertyName = request.getProperty();
         const property = await element.getProperty(propertyName);

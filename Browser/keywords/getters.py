@@ -207,6 +207,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
@@ -221,6 +222,9 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that the property value matches the expected value. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
 
@@ -231,24 +235,27 @@ class Getters(LibraryComponent):
         | `Get Property`    h1    innerText    ==    Login Page
         | ${property} =    `Get Property`    h1    innerText
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                Request().ElementProperty(selector=selector, property=property)
+                Request().ElementProperty(
+                    selector=selector, property=property, strict=strict
+                )
             )
-            logger.debug(response.log)
-            if response.body:
-                value = json.loads(response.body)
-            elif assertion_operator is not None:
-                value = None
-            else:
-                raise AttributeError(f"Property '{property}' not found!")
-            return verify_assertion(
-                value,
-                assertion_operator,
-                assertion_expected,
-                f"Property {property}",
-                message,
-            )
+        logger.debug(response.log)
+        if response.body:
+            value = json.loads(response.body)
+        elif assertion_operator is not None:
+            value = None
+        else:
+            raise AttributeError(f"Property '{property}' not found!")
+        return verify_assertion(
+            value,
+            assertion_operator,
+            assertion_expected,
+            f"Property {property}",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling

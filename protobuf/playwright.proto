@@ -95,6 +95,7 @@ message Request {
   message ElementProperty {
     string selector = 1;
     string property = 2;
+    bool strict = 3;
   }
 
   message TypeText {
