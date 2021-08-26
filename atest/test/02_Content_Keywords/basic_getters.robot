@@ -30,6 +30,13 @@ Get Property and Assert
     Get Property    h1    innerText    ==    Login Page
     Get Property    h1    innerText    !=    ${None}
 
+Get Property With Strict Mode
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Get Property    //input    id
+    ${property} =    Get Property    //input    id    strict=False
+    Should Not Be Empty    ${property}
+
 Get Property Default Error
     Run Keyword And Expect Error
     ...    Property innerText 'Login Page' (str) should not be 'Login Page' (str)
@@ -49,7 +56,7 @@ Get Property size
 
 Get Property For Element Property Which Does Not Exist
     Run Keyword And Expect Error
-    ...    Property 'not_here' not found!
+    ...    *Property 'not_here' not found!
     ...    Get Property    ${UserNameLabel}    not_here
     ${attribute} =    Get Property    ${UserNameLabel}    not_here    ==    ${None}
 
