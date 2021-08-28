@@ -369,6 +369,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
+        strict: Optional[bool] = None
     ) -> Any:
         """Returns all classes of an element as a list.
 
@@ -380,6 +381,9 @@ class Getters(LibraryComponent):
         ``expected_value`` Expected value for the state
 
         ``message`` overrides the default error message for assertion.
+
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
 
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -395,7 +399,7 @@ class Getters(LibraryComponent):
         | `Get Classes`    id=draggable    ==    react-draggable    box    # Element contains exactly this class name.
         | `Get Classes`    id=draggable    validate    "react-draggable-dragged" not in value    # Element does not contain react-draggable-dragged class.
         """
-        class_dict = self.get_property(selector, "classList")
+        class_dict = self.get_property(selector, "classList", strict=strict)
         expected = list(assertion_expected)
         return list_verify_assertion(
             list(class_dict.values()),
