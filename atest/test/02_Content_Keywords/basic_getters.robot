@@ -74,9 +74,16 @@ Get Attribute
     ${type} =    Get Attribute    id=login_button    type
     Should Be Equal    ${type}    submit
 
+Get Attribute With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Get Attribute    //input    id
+    ${id} =    Get Attribute    //input    id    strict=False
+    Log    ${id}
+
 Get Attribute Default Error
     Run Keyword And Expect Error
-    ...    Attribute 'disabled' not found!
+    ...    *Attribute 'disabled' not found!
     ...    Get Attribute    id=login_button    disabled
 
 Get Attribute Custom Error
