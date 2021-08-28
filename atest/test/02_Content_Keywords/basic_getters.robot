@@ -79,7 +79,7 @@ Get Attribute With Strict
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Get Attribute    //input    id
     ${id} =    Get Attribute    //input    id    strict=False
-    Log    ${id}
+    Should Be Equal    ${id}    username_field
 
 Get Attribute Default Error
     Run Keyword And Expect Error
