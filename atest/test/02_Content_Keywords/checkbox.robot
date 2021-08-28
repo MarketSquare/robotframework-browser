@@ -10,6 +10,13 @@ Get Checkbox State Checked
 Get Checkbox State Unchecked
     Get Checkbox State    [name=can_send_sms]    ==    UnChecked
 
+Get Checkbox State With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 12 elements.*
+    ...    Get Checkbox State    //input
+    ${state} =    Get Checkbox State    //input    strict=False
+    Should Not Be True    ${state}
+
 Get Checkbox State Default Error
     Run Keyword And Expect Error
     ...    Checkbox ?name=can_send_email? is 'True' (bool) should be 'False' (bool)

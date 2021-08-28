@@ -540,6 +540,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         expected_state: Union[bool, str] = "Unchecked",
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> bool:
         """Returns the state of the checkbox found by ``selector``.
 
@@ -551,6 +552,9 @@ class Getters(LibraryComponent):
         ``expected_value`` Expected value for the state
 
         ``message`` overrides the default error message for assertion.
+
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -573,20 +577,21 @@ class Getters(LibraryComponent):
         Example:
         | `Get Checkbox State`    [name=can_send_email]    ==    checked
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
-                Request().ElementProperty(selector=selector, property="checked")
+                Request().ElementProperty(selector=selector, property="checked", strict=strict)
             )
-            logger.info(response.log)
-            value: bool = response.body
-            logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
-            return bool_verify_assertion(
-                value,
-                assertion_operator,
-                expected_state,
-                f"Checkbox {selector} is",
-                message,
-            )
+        logger.info(response.log)
+        value: bool = response.body
+        logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
+        return bool_verify_assertion(
+            value,
+            assertion_operator,
+            expected_state,
+            f"Checkbox {selector} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
