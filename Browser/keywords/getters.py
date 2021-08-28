@@ -305,7 +305,9 @@ class Getters(LibraryComponent):
         strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
-                Request().ElementProperty(selector=selector, property=attribute, strict=strict)
+                Request().ElementProperty(
+                    selector=selector, property=attribute, strict=strict
+                )
             )
         logger.debug(response.log)
         value = json.loads(response.body)
@@ -372,7 +374,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-        strict: Optional[bool] = None
+        strict: Optional[bool] = None,
     ) -> Any:
         """Returns all classes of an element as a list.
 
@@ -583,7 +585,9 @@ class Getters(LibraryComponent):
         strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
-                Request().ElementProperty(selector=selector, property="checked", strict=strict)
+                Request().ElementProperty(
+                    selector=selector, property="checked", strict=strict
+                )
             )
         logger.info(response.log)
         value: bool = response.body
