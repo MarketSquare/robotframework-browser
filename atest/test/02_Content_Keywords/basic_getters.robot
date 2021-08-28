@@ -129,6 +129,13 @@ Get Classes
     ${classes} =    Get Classes    id=draggable
     Should Be Equal    ${classes}    ${{["box", "react-draggable"]}}
 
+Get Classes With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 11 elements.*
+    ...    Get Classes    //button
+    ${classes} =    Get Classes    //button    strict=False
+    Should Be Equal    ${classes}    ${None}
+
 Get Classes and Assert
     Get Classes    id=draggable    contains    react-draggable
     Get Classes    id=draggable    ==    react-draggable    box
