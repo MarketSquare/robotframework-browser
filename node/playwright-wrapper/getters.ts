@@ -144,7 +144,8 @@ export async function getElementAttribute(
 
 async function getAttributeValue(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
-    const element = await waitUntilElementExists(state, selector);
+    const strictMode = request.getStrict();
+    const element = await waitUntilElementExistsStrict(state, selector, strictMode);
     const attributeName = request.getProperty();
     const attribute = await element.getAttribute(attributeName);
     logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);

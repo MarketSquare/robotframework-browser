@@ -266,6 +266,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
@@ -280,6 +281,9 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that the attribute value matches the expected value. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -288,8 +292,6 @@ class Getters(LibraryComponent):
         the keyword fails. If an assertion operator is set and the attribute is not present,
         the returned value is ``None``. This can be used to assert check the presents or
         the absents of an attribute.
-
-        ``message`` overrides the default error message.
 
         Example Element:
         | <button class="login button active" id="enabled_button" something>Login</button>
@@ -300,22 +302,23 @@ class Getters(LibraryComponent):
         | `Get Attribute`   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
         | `Get Attribute`   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
-                Request().ElementProperty(selector=selector, property=attribute)
+                Request().ElementProperty(selector=selector, property=attribute, strict=strict)
             )
-            logger.debug(response.log)
-            value = json.loads(response.body)
-            if assertion_operator is None and value is None:
-                raise AttributeError(f"Attribute '{attribute}' not found!")
-            logger.debug(f"Attribute is: {value}")
-            return verify_assertion(
-                value,
-                assertion_operator,
-                assertion_expected,
-                f"Attribute {selector}",
-                message,
-            )
+        logger.debug(response.log)
+        value = json.loads(response.body)
+        if assertion_operator is None and value is None:
+            raise AttributeError(f"Attribute '{attribute}' not found!")
+        logger.debug(f"Attribute is: {value}")
+        return verify_assertion(
+            value,
+            assertion_operator,
+            assertion_expected,
+            f"Attribute {selector}",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
