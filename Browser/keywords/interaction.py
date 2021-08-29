@@ -319,22 +319,25 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("PageContent",))
-    def record_selector(self):
+    def record_selector(self, label: Optional[str] = None):
         """Record the selector that is under mouse.
 
         Focus on the page and move mouse over the element you want to select.
         Press 's' to store the elements selector.
 
         Example:
-        | ${recording} =    `Promise To`    `Record Selector`
-        | `Hover`    h1
-        | `Keyboard Key`    press    s
-        | ${selector} =    `Wait For`    ${recording}
+        | ${selector} =    `Record Selector`   Button
+        | `Click`  ${selector}
+        | ${selector2} =    `Record Selector`  Page header
+        | `Get Text`  ${selector2}  ==  Expected text
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.RecordSelector(Request.Empty())
+            response = stub.RecordSelector(Request.Label(label=label or ""))
             selector_repr = response.result.replace("#", "\\#")
-            logger.info(f"Selector: {selector_repr}")
+            logger.console(
+                f"\nSelector{' for ' + label if label else ''}: {selector_repr}"
+            )
+            logger.info(f"Selector{' for ' + label if label else ''}: {selector_repr}")
             return json.loads(response.result)
 
     @keyword(tags=("Setter", "PageContent"))

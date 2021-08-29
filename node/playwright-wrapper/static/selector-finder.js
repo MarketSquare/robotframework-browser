@@ -188,7 +188,7 @@ function cssesc(a, b = {}) {
 const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
 const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
 
-function addElement () {
+function addElement (label) {
   const newDiv = document.createElement("div");
   newDiv.style.display = "flex";
   newDiv.style.flexDirection = "column";
@@ -203,7 +203,7 @@ function addElement () {
   newDiv.style.padding = "8px";
   newDiv.id = BROWSER_LIBRARY_ID;
   const header = document.createElement("h5");
-  header.textContent = "Selector recorder";
+  header.textContent = "Selector recorder" + (label && label.length ? " for " + label : "");
   newDiv.appendChild(header);
   const targetSpan = document.createElement("span");
   targetSpan.id = BROWSER_LIBRARY_TEXT_ID;
@@ -215,7 +215,7 @@ function addElement () {
   document.body.appendChild(newDiv);
 }
 
-window.selectorRecorderFindSelector = function() {
+window.selectorRecorderFindSelector = function(label) {
     return new Promise((resolve) => {
         let currentTarget = "NOTSET";
 
@@ -254,7 +254,7 @@ window.selectorRecorderFindSelector = function() {
 
         document.addEventListener('keydown', keydownListener);
         document.addEventListener('mousemove', mouseMoveListener);
-        addElement();
+        addElement(label);
         const intervalTimer = setInterval(updateTexts, 150);
     });
 }

@@ -126,13 +126,13 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
     return emptyWithLog('added Style: ' + content);
 }
 
-export async function recordSelector(request: Request.Empty, page: Page): Promise<Response.JavascriptExecutionResult> {
+export async function recordSelector(request: Request.Label, page: Page): Promise<Response.JavascriptExecutionResult> {
     await page.addScriptTag({
         type: 'module',
         path: path.join(__dirname, '/static/selector-finder.js'),
     });
     await page.bringToFront();
-    const result = await page.evaluate(() => {
+    const result = await page.evaluate((label) => {
         function rafAsync() {
             return new Promise((resolve) => {
                 requestAnimationFrame(resolve); //faster than set time out
@@ -146,12 +146,12 @@ export async function recordSelector(request: Request.Empty, page: Page): Promis
                 return rafAsync().then(() => waitUntilRecorderAvailable());
             } else {
                 // @ts-ignore
-                return Promise.resolve(window.selectorRecorderFindSelector());
+                return Promise.resolve(window.selectorRecorderFindSelector(label));
             }
         }
 
         return waitUntilRecorderAvailable();
-    });
+    }, request.getLabel());
     return jsResponse(result as string, 'Selector recorded.');
 }
 
