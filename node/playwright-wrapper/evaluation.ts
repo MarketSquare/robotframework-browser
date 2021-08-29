@@ -132,26 +132,34 @@ export async function recordSelector(
 ): Promise<Response.JavascriptExecutionResult> {
     const page = state.getActivePage() as Page;
     await page.bringToFront();
-    const frameSelector = request.getSelector();
-    let result = '';
-    if (frameSelector && frameSelector.length) {
-        const frameHandle = await determineElement(state, frameSelector);
+    const { target, pierce } = await recordSelectorIterator(request.getLabel(), page);
+    let result = target;
+    if (pierce) {
+        const frameHandle = await determineElement(state, target);
         const frame = await frameHandle?.contentFrame();
         if (!frame) {
-            return jsResponse('', 'Frame selection fails');
+            return jsResponse(target, 'Frame selection fails');
         }
-        result = frameSelector + ' >>> ' + (await recordSelectorIterator(request.getLabel(), frame));
-    } else {
-        result = await recordSelectorIterator(request.getLabel(), page);
+        const subresult = await recordSelectorIterator(request.getLabel() + ' in ' + target, frame);
+        result = target + ' >>> ' + subresult.target;
     }
     return jsResponse(result, 'Selector recorded.');
 }
 
-async function recordSelectorIterator(label: string, frame: Frame | Page): Promise<string> {
-    await frame.addScriptTag({
-        type: 'module',
-        path: path.join(__dirname, '/static/selector-finder.js'),
-    });
+async function recordSelectorIterator(
+    label: string,
+    frame: Frame | Page,
+): Promise<{ target: string; pierce: boolean }> {
+    try {
+        await frame.addScriptTag({
+            type: 'module',
+            path: path.join(__dirname, '/static/selector-finder.js'),
+        });
+    } catch (e) {
+        throw Error(
+            `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.\nOriginal error:${e}`,
+        );
+    }
     return await frame.evaluate((label) => {
         function rafAsync() {
             return new Promise((resolve) => {

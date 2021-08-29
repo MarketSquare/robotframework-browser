@@ -3,7 +3,7 @@
  https://github.com/antonmedv/finder
  Static copy because of ease of installation
  */
-var Limit;
+let Limit;
 (function (a) {
     a[a.All = 0] = "All", a[a.Two = 1] = "Two", a[a.One = 2] = "One"
 })(Limit || (Limit = {}));
@@ -187,6 +187,7 @@ function cssesc(a, b = {}) {
 
 const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
 const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
+const BROWSER_LIBRARY_DESCRIPTION = "browser-library-selector-recorder-description-text";
 
 function addElement (label) {
   const newDiv = document.createElement("div");
@@ -201,25 +202,32 @@ function addElement (label) {
   newDiv.style.top = "16px";
   newDiv.style.left = "16px";
   newDiv.style.padding = "8px";
-  newDiv.style.cursor = "move";
   newDiv.id = BROWSER_LIBRARY_ID;
   const header = document.createElement("h5");
+  header.style.cursor = "move";
+  header.style.background = "rgb(178,227,227)"
   header.textContent = "Selector recorder" + (label && label.length ? " for " + label : "");
   newDiv.appendChild(header);
   const targetSpan = document.createElement("span");
   targetSpan.id = BROWSER_LIBRARY_TEXT_ID;
   targetSpan.textContent = "NOTSET";
   newDiv.appendChild(targetSpan);
+  const descriptionSpan = document.createElement("span");
+  descriptionSpan.id = BROWSER_LIBRARY_DESCRIPTION;
+  descriptionSpan.textContent = '';
+  newDiv.appendChild(descriptionSpan);
   const desc = document.createElement("span");
-  desc.textContent = "Click focus to page and press (s) to record a selector.";
+  desc.textContent = "Click focus to page and press (s) to record a selector.\nIf pointing to IFRAME press (f) to pierce iframe and record selector inside.";
+  desc.style.maxWidth = "300px";
   newDiv.appendChild(desc);
   const elem = document.body.appendChild(newDiv);
-  dragElement(elem);
+  dragElement(elem, header);
+  setTimeout(() => elem.focus(), 300);
 }
 
-function dragElement(elmnt) {
+function dragElement(elmnt, header) {
   let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  elmnt.onmousedown = dragMouseDown;
+  header.onmousedown = dragMouseDown;
 
   function dragMouseDown(e) {
     e = e || window.event;
@@ -255,9 +263,11 @@ function dragElement(elmnt) {
 window.selectorRecorderFindSelector = function(label) {
     return new Promise((resolve) => {
         let currentTarget = "NOTSET";
+        let isFrame = false;
 
         function updateTexts() {
             document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget;
+            document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = isFrame ? 'IFRAME' : '';
         }
 
         function mouseMoveListener(e) {
@@ -274,19 +284,27 @@ window.selectorRecorderFindSelector = function(label) {
             const target = document.elementFromPoint(e.pageX, e.pageY);
             if (target) {
                 currentTarget = finder(target);
+                isFrame = target.tagName === "IFRAME";
                 updateTexts();
             }
         }
 
+        function cleanup() {
+            document.removeEventListener('mousemove', mouseMoveListener);
+            document.removeEventListener('keydown', keydownListener);
+            document.getElementById(BROWSER_LIBRARY_ID).remove();
+            clearInterval(intervalTimer);
+        }
+
         function keydownListener(e) {
             const keyName = e.key;
-            console.log(keyName);
             if (keyName === 's' || keyName === 'S') {
-                document.removeEventListener('mousemove', mouseMoveListener);
-                document.removeEventListener('keydown', keydownListener);
-                document.getElementById(BROWSER_LIBRARY_ID).remove();
-                clearInterval(intervalTimer);
-                resolve(currentTarget);
+                cleanup()
+                resolve({target: currentTarget, pierce: false});
+            }
+            if (keyName === 'f' || keyName === 'F') {
+                cleanup()
+                resolve({target: currentTarget, pierce: true});
             }
         }
 
