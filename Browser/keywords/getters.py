@@ -754,6 +754,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Gets the computed style properties of the element selected by ``selector``.
 
@@ -770,33 +771,39 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that the style matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetStyle(Request().ElementSelector(selector=selector))
-            parsed = json.loads(response.json)
+            response = stub.GetStyle(
+                Request().ElementSelector(selector=selector, strict=strict)
+            )
+        parsed = json.loads(response.json)
 
-            if key == "ALL":
-                return dict_verify_assertion(
-                    parsed,
-                    assertion_operator,
-                    assertion_expected,
-                    "Computed style is",
-                    message,
-                )
-            else:
-                item = parsed.get(key, "NOT_FOUND")
-                logger.info(f"Value of key: {key}")
-                logger.info(f"Value of selected property: {item}")
-                return verify_assertion(
-                    item,
-                    assertion_operator,
-                    assertion_expected,
-                    f"Style value for {key} is",
-                    message,
-                )
+        if key == "ALL":
+            return dict_verify_assertion(
+                parsed,
+                assertion_operator,
+                assertion_expected,
+                "Computed style is",
+                message,
+            )
+        else:
+            item = parsed.get(key, "NOT_FOUND")
+            logger.info(f"Value of key: {key}")
+            logger.info(f"Value of selected property: {item}")
+            return verify_assertion(
+                item,
+                assertion_operator,
+                assertion_expected,
+                f"Style value for {key} is",
+                message,
+            )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
     def get_boundingbox(
