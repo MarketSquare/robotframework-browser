@@ -224,18 +224,20 @@ window.selectorRecorderFindSelector = function(label) {
         }
 
         function mouseMoveListener(e) {
+            const elem = document.getElementById(BROWSER_LIBRARY_ID);
+            const rect = elem.getBoundingClientRect()
+            const xmin = rect.left + window.scrollX;
+            const xmax = xmin + rect.width;
+            const ymin = rect.top + window.scrollY;
+            const ymax = ymin + rect.height;
+            if (e.pageX >= xmin && e.pageX <= xmax &&
+                e.pageY >= ymin && e.pageY <= ymax) {
+                return;
+            }
             const target = document.elementFromPoint(e.pageX, e.pageY);
             if (target) {
                 currentTarget = finder(target);
                 updateTexts();
-            }
-            const elem = document.getElementById(BROWSER_LIBRARY_ID);
-            if (e.pageY < 120) {
-                elem.style.top = null;
-                elem.style.bottom = "16px";
-            } else {
-                elem.style.top = "16px";
-                elem.style.bottom = null;
             }
         }
 
