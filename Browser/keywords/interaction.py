@@ -319,8 +319,14 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("PageContent",))
-    def record_selector(self, label: Optional[str] = None):
+    def record_selector(
+        self, label: Optional[str] = None, selector: Optional[str] = None
+    ):
         """Record the selector that is under mouse.
+
+        ``label`` text to show when on the box in the page while recording.
+
+        ``selector`` if identified selector in a frame, target that frame with this selector.
 
         Focus on the page and move mouse over the element you want to select.
         Press 's' to store the elements selector.
@@ -332,7 +338,9 @@ class Interaction(LibraryComponent):
         | `Get Text`  ${selector2}  ==  Expected text
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.RecordSelector(Request.Label(label=label or ""))
+            response = stub.RecordSelector(
+                Request.RecordingParams(label=label or "", selector=selector or "")
+            )
             selector_repr = response.result.replace("#", "\\#")
             logger.console(
                 f"\nSelector{' for ' + label if label else ''}: {selector_repr}"

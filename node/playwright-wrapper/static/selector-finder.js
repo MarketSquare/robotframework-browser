@@ -196,7 +196,7 @@ function addElement (label) {
   newDiv.style.borderRadius = "5px";
   newDiv.style.background = "white";
   newDiv.style.color = "black";
-  newDiv.style.zIndex = "9000";
+  newDiv.style.zIndex = "2147483647";
   newDiv.style.position = "fixed";
   newDiv.style.top = "16px";
   newDiv.style.left = "16px";

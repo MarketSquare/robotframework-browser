@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { ElementHandle, Page } from 'playwright';
+import { ElementHandle, Frame, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -126,13 +126,33 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
     return emptyWithLog('added Style: ' + content);
 }
 
-export async function recordSelector(request: Request.Label, page: Page): Promise<Response.JavascriptExecutionResult> {
-    await page.addScriptTag({
+export async function recordSelector(
+    request: Request.RecordingParams,
+    state: PlaywrightState,
+): Promise<Response.JavascriptExecutionResult> {
+    const page = state.getActivePage() as Page;
+    await page.bringToFront();
+    const frameSelector = request.getSelector();
+    let result = '';
+    if (frameSelector && frameSelector.length) {
+        const frameHandle = await determineElement(state, frameSelector);
+        const frame = await frameHandle?.contentFrame();
+        if (!frame) {
+            return jsResponse('', 'Frame selection fails');
+        }
+        result = frameSelector + ' >>> ' + (await recordSelectorIterator(request.getLabel(), frame));
+    } else {
+        result = await recordSelectorIterator(request.getLabel(), page);
+    }
+    return jsResponse(result, 'Selector recorded.');
+}
+
+async function recordSelectorIterator(label: string, frame: Frame | Page): Promise<string> {
+    await frame.addScriptTag({
         type: 'module',
         path: path.join(__dirname, '/static/selector-finder.js'),
     });
-    await page.bringToFront();
-    const result = await page.evaluate((label) => {
+    return await frame.evaluate((label) => {
         function rafAsync() {
             return new Promise((resolve) => {
                 requestAnimationFrame(resolve); //faster than set time out
@@ -151,8 +171,7 @@ export async function recordSelector(request: Request.Label, page: Page): Promis
         }
 
         return waitUntilRecorderAvailable();
-    }, request.getLabel());
-    return jsResponse(result as string, 'Selector recorded.');
+    }, label);
 }
 
 export async function highlightElements(
