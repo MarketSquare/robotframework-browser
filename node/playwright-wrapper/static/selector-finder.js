@@ -281,7 +281,7 @@ window.selectorRecorderFindSelector = function(label) {
                 e.pageY >= ymin && e.pageY <= ymax) {
                 return;
             }
-            const target = document.elementFromPoint(e.pageX, e.pageY);
+            const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
             if (target) {
                 currentTarget = finder(target);
                 isFrame = target.tagName === "IFRAME";
