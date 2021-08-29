@@ -17,7 +17,12 @@ import { ElementHandle, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExistsStrict } from './playwirght-invoke';
+import {
+    determineElement,
+    invokePlaywrightMethod,
+    invokePlaywrightMethodStrict,
+    waitUntilElementExistsStrict,
+} from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -149,18 +154,25 @@ async function getAttributeValue(request: Request.ElementProperty, state: Playwr
 
 export async function getStyle(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const selector = request.getSelector();
+    const strictMode = request.getStrict();
 
     logger.info('Getting css of element on page');
-    const result = await invokePlaywrightMethod(state, '$eval', selector, function (element: Element) {
-        const rawStyle = window.getComputedStyle(element);
-        const mapped: Record<string, string> = {};
-        // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
-        for (let i = 0; i < rawStyle.length; i++) {
-            const name = rawStyle[i];
-            mapped[name] = rawStyle.getPropertyValue(name);
-        }
-        return JSON.stringify(mapped);
-    });
+    const result = await invokePlaywrightMethodStrict(
+        state,
+        '$eval',
+        selector,
+        strictMode,
+        function (element: Element) {
+            const rawStyle = window.getComputedStyle(element);
+            const mapped: Record<string, string> = {};
+            // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
+            for (let i = 0; i < rawStyle.length; i++) {
+                const name = rawStyle[i];
+                mapped[name] = rawStyle.getPropertyValue(name);
+            }
+            return JSON.stringify(mapped);
+        },
+    );
     return jsonResponse(result, 'Style get succesfully.');
 }
 
