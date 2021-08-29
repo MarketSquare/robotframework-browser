@@ -696,7 +696,7 @@ class Getters(LibraryComponent):
                 )
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_element(self, selector: str) -> str:
+    def get_element(self, selector: str, strict: Optional[bool] = None) -> str:
         """Returns a reference to a Playwright element handle.
 
         The reference can be used in subsequent selectors.
@@ -704,12 +704,18 @@ class Getters(LibraryComponent):
         ``selector`` Selector from which shall be retrieved .
         See the `Finding elements` section for details about the selectors.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Example:
         | ${element} =    `Get Element`    \\#username_field
         | ${option_value} =    `Get Property`    ${element} >> option    value
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetElement(Request().ElementSelector(selector=selector))
+            response = stub.GetElement(
+                Request().ElementSelector(selector=selector, strict=strict)
+            )
             return response.body
 
     @keyword(tags=("Getter", "PageContent"))
