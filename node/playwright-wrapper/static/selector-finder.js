@@ -224,7 +224,6 @@ window.selectorRecorderFindSelector = function(label) {
         }
 
         function mouseMoveListener(e) {
-            console.log(e.pageY);
             const target = document.elementFromPoint(e.pageX, e.pageY);
             if (target) {
                 currentTarget = finder(target);
