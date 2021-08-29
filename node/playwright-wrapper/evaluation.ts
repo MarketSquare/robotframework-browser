@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExistsStrict } from './playwirght-invoke';
+import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -36,7 +36,7 @@ declare global {
  * RF keywords.
  */
 export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
-    await waitUntilElementExistsStrict(state, request.getSelector(), request.getStrict());
+    await waitUntilElementExists(state, request.getSelector(), request.getStrict());
     const handle = await invokePlaywrightMethod(state, '$', request.getSelector());
     const id = uuidv4();
     state.addElement(id, handle);
@@ -48,7 +48,7 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
  * in RF keywords.
  */
 export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
-    await waitUntilElementExistsStrict(state, request.getSelector(), request.getStrict());
+    await waitUntilElementExists(state, request.getSelector(), request.getStrict());
     const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', request.getSelector());
 
     const response: string[] = handles.map((handle) => {

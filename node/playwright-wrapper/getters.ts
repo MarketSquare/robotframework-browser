@@ -21,7 +21,7 @@ import {
     determineElement,
     invokePlaywrightMethod,
     invokePlaywrightMethodStrict,
-    waitUntilElementExistsStrict,
+    waitUntilElementExists,
 } from './playwirght-invoke';
 
 import * as pino from 'pino';
@@ -49,7 +49,7 @@ export async function getSelectContent(
 ): Promise<Response.Select> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    await waitUntilElementExistsStrict(state, selector, strictMode);
+    await waitUntilElementExists(state, selector, strictMode);
 
     type Value = [string, string, boolean];
 
@@ -93,7 +93,7 @@ async function getTextContent(element: ElementHandle<Node>): Promise<string> {
 export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const selector = request.getSelector();
     const strict = request.getStrict();
-    const element = await waitUntilElementExistsStrict(state, selector, strict);
+    const element = await waitUntilElementExists(state, selector, strict);
     let content: string;
     try {
         content = await getTextContent(element);
@@ -119,7 +119,7 @@ export async function getBoolProperty(
 async function getProperty<T>(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const element = await waitUntilElementExistsStrict(state, selector, strictMode);
+    const element = await waitUntilElementExists(state, selector, strictMode);
     try {
         const propertyName = request.getProperty();
         const property = await element.getProperty(propertyName);
@@ -145,7 +145,7 @@ export async function getElementAttribute(
 async function getAttributeValue(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const element = await waitUntilElementExistsStrict(state, selector, strictMode);
+    const element = await waitUntilElementExists(state, selector, strictMode);
     const attributeName = request.getProperty();
     const attribute = await element.getAttribute(attributeName);
     logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
