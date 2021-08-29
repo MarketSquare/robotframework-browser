@@ -19,7 +19,7 @@ import { PlaywrightState } from './playwright-state';
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function waitUntilElementExistsStrict<T>(
+export async function waitUntilElementExists<T>(
     state: PlaywrightState,
     selector: string,
     strictMode: boolean,
