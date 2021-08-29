@@ -733,7 +733,7 @@ class Getters(LibraryComponent):
         try:
             with self.playwright.grpc_channel(original_error=True) as stub:
                 response = stub.GetElements(
-                    Request().ElementSelector(selector=selector)
+                    Request().ElementSelector(selector=selector, strict=False)
                 )
                 return json.loads(response.json)
         except grpc.RpcError as error:
