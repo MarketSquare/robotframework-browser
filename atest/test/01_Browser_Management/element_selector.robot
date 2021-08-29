@@ -8,7 +8,7 @@ Test Setup          New Page    ${FORM_URL}
 *** Test Cases ***
 Get Element
     ${ref} =    Get Element    select[name="preferred_channel"]
-    ${option_value} =    Get Property    ${ref} >> option    value
+    ${option_value} =    Get Property    ${ref} >> option    value    strict=False
     Should Be Equal    ${option_value}    email
 
 Get Element With Strict
@@ -45,7 +45,7 @@ Using Element Handle directly as selector
 Get Elements when only 1 match
     ${refs} =    Get Elements    select[name="preferred_channel"]
     ${elem} =    Get From List    ${refs}    0
-    ${option_value} =    Get Property    ${elem} >> option    value
+    ${option_value} =    Get Property    ${elem} >> option    value    strict=False
     Should Be Equal    ${option_value}    email
 
 Get Elements Include Hidden
