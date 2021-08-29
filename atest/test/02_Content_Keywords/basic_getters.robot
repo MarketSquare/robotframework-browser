@@ -80,6 +80,10 @@ Get Attribute With Strict
     ...    Get Attribute    //input    id
     ${id} =    Get Attribute    //input    id    strict=False
     Should Be Equal    ${id}    username_field
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Get Attribute    //input    id    equal    nothere
+    Get Attribute    //input    id    equal    username_field    strict=False
 
 Get Attribute Default Error
     Run Keyword And Expect Error

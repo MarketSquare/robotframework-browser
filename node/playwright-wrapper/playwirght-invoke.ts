@@ -30,7 +30,7 @@ export async function waitUntilElementExistsStrict<T>(
         // This type cast is safe because elementSelector is only undefined when an ElementHandle gets returned
         return context as ElementHandle;
     } else if ('waitForSelector' in context) {
-        await context.waitForSelector(elementSelector, { state: 'attached' });
+        await context.waitForSelector(elementSelector, { state: 'attached', strict: strictMode });
     }
     const element = await context.$(elementSelector, { strict: strictMode });
     exists(element, `Could not find element with selector \`${elementSelector}\` within timeout.`);
