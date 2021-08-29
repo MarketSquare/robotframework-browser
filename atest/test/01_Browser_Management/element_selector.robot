@@ -11,6 +11,13 @@ Get Element
     ${option_value} =    Get Property    ${ref} >> option    value
     Should Be Equal    ${option_value}    email
 
+Get Element With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 12 elements.*
+    ...    Get Element    //input
+    ${element} =    Get Element    //input    strict=False
+    Should Start With    ${element}    element=
+
 Get Element With Nonmatching child selector
     ${ref} =    Get Element    select[name="preferred_channel"]
     Run Keyword And Expect Error    *Timeout 3000ms exceeded.*waiting for selector ".notamatch"*
