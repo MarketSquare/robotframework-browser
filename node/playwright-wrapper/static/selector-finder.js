@@ -217,7 +217,8 @@ function addElement (label) {
   descriptionSpan.textContent = '';
   newDiv.appendChild(descriptionSpan);
   const desc = document.createElement("span");
-  desc.textContent = "Click focus to page and press (s) to record a selector.\nIf pointing to IFRAME press (f) to pierce iframe and record selector inside.";
+  desc.textContent = "Click focus to page and press (s) to record a selector.\n" +
+      "If pointing to IFRAME press (f) to pierce iframe and record selector inside.";
   desc.style.maxWidth = "300px";
   newDiv.appendChild(desc);
   const elem = document.body.appendChild(newDiv);
@@ -267,7 +268,7 @@ window.selectorRecorderFindSelector = function(label) {
 
         function updateTexts() {
             document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget;
-            document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = isFrame ? 'IFRAME' : '';
+            document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = isFrame ? 'IFRAME <click focus here to interact>' : '';
         }
 
         function mouseMoveListener(e) {

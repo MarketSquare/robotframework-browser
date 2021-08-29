@@ -135,15 +135,23 @@ export async function recordSelector(
     const { target, pierce } = await recordSelectorIterator(request.getLabel(), page);
     let result = target;
     if (pierce) {
-        const frameHandle = await determineElement(state, target);
-        const frame = await frameHandle?.contentFrame();
-        if (!frame) {
-            return jsResponse(target, 'Frame selection fails');
-        }
-        const subresult = await recordSelectorIterator(request.getLabel() + ' in ' + target, frame);
-        result = target + ' >>> ' + subresult.target;
+        result = await piercingSelector(state, target, request.getLabel());
     }
     return jsResponse(result, 'Selector recorded.');
+}
+
+async function piercingSelector(state: PlaywrightState, target: string, label: string): Promise<string> {
+    const frameHandle = await determineElement(state, target);
+    const frame = await frameHandle?.contentFrame();
+    if (!frame) {
+        throw Error('Frame selection fails');
+    }
+    const subresult = await recordSelectorIterator(label + ' in ' + target, frame);
+    const result = target + ' >>> ' + subresult.target;
+    if (subresult.pierce) {
+        return await piercingSelector(state, result, label);
+    }
+    return result;
 }
 
 async function recordSelectorIterator(
