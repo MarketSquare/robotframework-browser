@@ -115,13 +115,17 @@ async function determineContextAndSelector<T>(
     }
 }
 
-export async function determineElement<T>(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
+export async function determineElement(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
     const page = state.getActivePage();
     exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
-        const { frameSelector, elementSelector } = splitFrameAndElementSelector(selector);
-        const frame = await findFrame(page, frameSelector);
-        return await frame.$(elementSelector);
+        let selectors = splitFrameAndElementSelector(selector);
+        let frame = await findFrame(page, selectors.frameSelector);
+        while (isFramePiercingSelector(selectors.elementSelector)) {
+            selectors = splitFrameAndElementSelector(selectors.elementSelector);
+            frame = await findFrame(frame, selectors.frameSelector);
+        }
+        return await frame.$(selectors.elementSelector);
     } else if (isElementHandleSelector(selector)) {
         const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector);
         const elem = state.getElement(elementHandleId);
