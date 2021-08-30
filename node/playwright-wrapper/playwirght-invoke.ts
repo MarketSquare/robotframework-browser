@@ -115,7 +115,7 @@ async function determineContextAndSelector<T>(
     }
 }
 
-export async function determineElement<T>(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
+export async function determineElement(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
     const page = state.getActivePage();
     exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
