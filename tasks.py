@@ -28,6 +28,7 @@ except ModuleNotFoundError:
 
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
+UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 dist_dir = ROOT_DIR / "dist"
 build_dir = ROOT_DIR / "build"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
@@ -206,7 +207,7 @@ def utest(c, reporter=None, suite=None):
         suite:    Defines which test suite file to run. Same as: pytest path/to/test.py
                   Must be path to the test suite file
     """
-    args = ["--showlocals"]
+    args = ["--showlocals", "--junitxml=utest/output/pytest_xunit.xml"]
     if reporter:
         args.append(f"--approvaltests-add-reporter={reporter}")
     if suite:
@@ -282,11 +283,18 @@ def _create_zip():
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
     for file in ATEST_OUTPUT.glob("**/*.*"):
-        file = PurePath(file)
-        arc_name = file.relative_to(str(ATEST_OUTPUT))
-        zip_file.write(file, arc_name)
+        zip_file = _files_to_zip(zip_file, file, ATEST_OUTPUT)
+    for file in UTEST_OUTPUT.glob("*.*"):
+        zip_file = _files_to_zip(zip_file, file, UTEST_OUTPUT)
     zip_file.close()
     return zip_path
+
+
+def _files_to_zip(zip_file, file, relative_to):
+    file = PurePath(file)
+    arc_name = file.relative_to(str(relative_to))
+    zip_file.write(file, arc_name)
+    return zip_file
 
 
 @task()
@@ -334,6 +342,8 @@ def atest_robot(c):
         "Not-Implemented",
         "--loglevel",
         "DEBUG",
+        "--xunit",
+        "robot_xunit.xml",
         "--outputdir",
         str(ATEST_OUTPUT),
     ]
@@ -371,7 +381,18 @@ def run_tests(c, tests):
     env = os.environ.copy()
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(
-        [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests],
+        [
+            sys.executable,
+            "-m",
+            "robot",
+            "--xunit",
+            "robot_xunit.xml",
+            "--loglevel",
+            "DEBUG",
+            "-d",
+            "outs",
+            tests,
+        ],
         env=env,
     )
     return process.wait(600)
@@ -392,6 +413,8 @@ def _run_pabot(extra_args=None):
         "--artifactsinsubfolders",
     ]
     default_args = [
+        "--xunit",
+        "robot_xunit.xml",
         "--exclude",
         "Not-Implemented",
         "--loglevel",
