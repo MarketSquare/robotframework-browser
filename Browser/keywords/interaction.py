@@ -338,9 +338,7 @@ class Interaction(LibraryComponent):
         | `Get Text`  ${selector2}  ==  Expected text
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.RecordSelector(
-                Request.RecordingParams(label=label or "", selector=selector or "")
-            )
+            response = stub.RecordSelector(Request.Label(label=label or ""))
             selector_repr = response.result.replace("#", "\\#")
             logger.console(
                 f"\nSelector{' for ' + label if label else ''}: {selector_repr}"

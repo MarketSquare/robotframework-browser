@@ -127,7 +127,7 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
 }
 
 export async function recordSelector(
-    request: Request.RecordingParams,
+    request: Request.Label,
     state: PlaywrightState,
 ): Promise<Response.JavascriptExecutionResult> {
     const page = state.getActivePage() as Page;
