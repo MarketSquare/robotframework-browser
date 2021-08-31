@@ -283,7 +283,7 @@ window.selectorRecorderFindSelector = function(label) {
 
         async function updateTexts() {
             const recorded = await window.getRecordedSelector();
-            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget + (recorded ? ' >>> ' + recorded : '');
+            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget + (recorded && recorded.length ? ' >>> ' + recorded : '');
             document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = isFrame ? 'IFRAME <click focus here to interact>' : '';
         }
 
@@ -300,7 +300,11 @@ window.selectorRecorderFindSelector = function(label) {
             }
             const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
             if (target) {
-                currentTarget = finder(target);
+                const newTarget = finder(target);
+                if (newTarget !== currentTarget) {
+                    window.setRecordedSelector('');
+                }
+                currentTarget = newTarget;
                 isFrame = target.tagName === "IFRAME";
                 updateTexts();
             }
