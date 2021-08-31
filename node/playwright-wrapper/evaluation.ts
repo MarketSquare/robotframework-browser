@@ -133,8 +133,11 @@ export async function recordSelector(
     const page = state.getActivePage() as Page;
     await page.bringToFront();
     const myselectors: Record<string, string> = {};
-    page.exposeFunction('recordedSelector', (frameid: string, selector: string) => {
-        myselectors[frameid] = selector;
+    page.exposeFunction('setRecordedSelector', (selector: string) => {
+        myselectors['subframe'] = selector;
+    });
+    page.exposeFunction('getRecordedSelector', () => {
+        return myselectors['subframe'];
     });
     const { target, pierce } = await recordSelectorIterator(request.getLabel(), page.mainFrame());
     let result = target;
@@ -176,27 +179,25 @@ async function attachSelectorFinderScript(frame: Frame): Promise<void> {
 
 async function attachSubframeListeners(subframe: Frame): Promise<void> {
     await subframe.evaluate((frameid) => {
-            function rafAsync() {
-                return new Promise((resolve) => {
-                    requestAnimationFrame(resolve); //faster than set time out
-                });
-            }
+        function rafAsync() {
+            return new Promise((resolve) => {
+                requestAnimationFrame(resolve); //faster than set time out
+            });
+        }
 
+        // @ts-ignore
+        function waitUntilRecorderAvailable() {
             // @ts-ignore
-            function waitUntilRecorderAvailable() {
+            if (!window.subframeSelectorRecorderFindSelector) {
+                return rafAsync().then(() => waitUntilRecorderAvailable());
+            } else {
                 // @ts-ignore
-                if (!window.subframeSelectorRecorderFindSelector) {
-                    return rafAsync().then(() => waitUntilRecorderAvailable());
-                } else {
-                    // @ts-ignore
-                    return Promise.resolve(window.subframeSelectorRecorderFindSelector(frameid));
-                }
+                return Promise.resolve(window.subframeSelectorRecorderFindSelector(frameid));
             }
+        }
 
-            return waitUntilRecorderAvailable();
-        },
-        subframe.name() || "subframe",
-    );
+        return waitUntilRecorderAvailable();
+    }, subframe.name() || 'subframe');
     await Promise.all(subframe.childFrames().map((child) => attachSubframeListeners(child)));
 }
 

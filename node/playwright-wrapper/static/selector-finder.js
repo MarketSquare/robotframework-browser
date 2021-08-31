@@ -268,9 +268,7 @@ window.subframeSelectorRecorderFindSelector = function(frameid) {
     function mouseMoveListener(e) {
         const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
         if (target) {
-            window.recordedSelector(frameid, finder(target));
-        } else {
-            window.recordedSelector(frameid, '');
+            window.setRecordedSelector(finder(target));
         }
     }
 
@@ -283,8 +281,9 @@ window.selectorRecorderFindSelector = function(label) {
         let currentTarget = "NOTSET";
         let isFrame = false;
 
-        function updateTexts() {
-            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget;
+        async function updateTexts() {
+            const recorded = await window.getRecordedSelector();
+            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget + (recorded ? ' >>> ' + recorded : '');
             document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = isFrame ? 'IFRAME <click focus here to interact>' : '';
         }
 
