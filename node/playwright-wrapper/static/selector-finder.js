@@ -261,9 +261,9 @@ function dragElement(elmnt, header) {
   }
 }
 
-window.subframeSelectorRecorderFindSelector = function(frameid) {
+window.subframeSelectorRecorderFindSelector = function(frameindex) {
 
-    console.log("FrameId", frameid);
+    console.log("FrameIndex", frameindex);
 
     function mouseMoveListener(e) {
         const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);

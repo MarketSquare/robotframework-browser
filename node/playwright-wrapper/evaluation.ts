@@ -177,7 +177,7 @@ async function attachSelectorFinderScript(frame: Frame): Promise<void> {
     await Promise.all(frame.childFrames().map((child) => attachSelectorFinderScript(child)));
 }
 
-async function attachSubframeListeners(subframe: Frame): Promise<void> {
+async function attachSubframeListeners(subframe: Frame, index: number): Promise<void> {
     await subframe.evaluate((frameid) => {
         function rafAsync() {
             return new Promise((resolve) => {
@@ -197,13 +197,13 @@ async function attachSubframeListeners(subframe: Frame): Promise<void> {
         }
 
         return waitUntilRecorderAvailable();
-    }, subframe.name() || 'subframe');
-    await Promise.all(subframe.childFrames().map((child) => attachSubframeListeners(child)));
+    }, index);
+    await Promise.all(subframe.childFrames().map((child) => attachSubframeListeners(child, index + 1)));
 }
 
 async function recordSelectorIterator(label: string, frame: Frame): Promise<{ target: string; pierce: boolean }> {
     await attachSelectorFinderScript(frame);
-    await Promise.all(frame.childFrames().map((child) => attachSubframeListeners(child)));
+    await Promise.all(frame.childFrames().map((child) => attachSubframeListeners(child, 0)));
     return await frame.evaluate((label) => {
         function rafAsync() {
             return new Promise((resolve) => {
