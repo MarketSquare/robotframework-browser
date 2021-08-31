@@ -132,7 +132,7 @@ export async function recordSelector(
 ): Promise<Response.JavascriptExecutionResult> {
     const page = state.getActivePage() as Page;
     await page.bringToFront();
-    const { target, pierce } = await recordSelectorIterator(request.getLabel(), page);
+    const { target, pierce } = await recordSelectorIterator(request.getLabel(), page.mainFrame());
     let result = target;
     if (pierce) {
         result = await piercingSelector(state, target, request.getLabel());
@@ -154,10 +154,7 @@ async function piercingSelector(state: PlaywrightState, target: string, label: s
     return result;
 }
 
-async function recordSelectorIterator(
-    label: string,
-    frame: Frame | Page,
-): Promise<{ target: string; pierce: boolean }> {
+async function attachSelectorFinderScript(frame: Frame): Promise<void> {
     try {
         await frame.addScriptTag({
             type: 'module',
@@ -168,6 +165,36 @@ async function recordSelectorIterator(
             `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.\nOriginal error:${e}`,
         );
     }
+    await Promise.all(frame.childFrames().map((child) => attachSelectorFinderScript(child)));
+}
+
+async function attachSubframeListeners(subframe: Frame): Promise<void> {
+    await subframe.evaluate(() => {
+        function rafAsync() {
+            return new Promise((resolve) => {
+                requestAnimationFrame(resolve); //faster than set time out
+            });
+        }
+
+        // @ts-ignore
+        function waitUntilRecorderAvailable() {
+            // @ts-ignore
+            if (!window.subframeSelectorRecorderFindSelector) {
+                return rafAsync().then(() => waitUntilRecorderAvailable());
+            } else {
+                // @ts-ignore
+                return Promise.resolve(window.subframeSelectorRecorderFindSelector());
+            }
+        }
+
+        return waitUntilRecorderAvailable();
+    });
+    await Promise.all(subframe.childFrames().map((child) => attachSubframeListeners(child)));
+}
+
+async function recordSelectorIterator(label: string, frame: Frame): Promise<{ target: string; pierce: boolean }> {
+    await attachSelectorFinderScript(frame);
+    await Promise.all(frame.childFrames().map((child) => attachSubframeListeners(child)));
     return await frame.evaluate((label) => {
         function rafAsync() {
             return new Promise((resolve) => {

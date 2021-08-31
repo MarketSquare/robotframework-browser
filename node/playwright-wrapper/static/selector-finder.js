@@ -261,7 +261,31 @@ function dragElement(elmnt, header) {
   }
 }
 
+window.subframeSelectorRecorderFindSelector = function() {
+
+    function keydownListener(e) {
+        const keyName = e.key;
+        if (keyName === 's' || keyName === 'S') {
+            console.log(">> S");
+        }
+        if (keyName === 'f' || keyName === 'F') {
+            console.log(">> F");
+        }
+    }
+
+    function mouseMoveListener(e) {
+        const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
+        if (target) {
+            console.log(finder(target));
+        }
+    }
+
+    document.addEventListener('keydown', keydownListener);
+    document.addEventListener('mousemove', mouseMoveListener);
+}
+
 window.selectorRecorderFindSelector = function(label) {
+    console.log("HERE "+label);
     return new Promise((resolve) => {
         let currentTarget = "NOTSET";
         let isFrame = false;
