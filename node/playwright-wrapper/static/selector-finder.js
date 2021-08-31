@@ -261,26 +261,19 @@ function dragElement(elmnt, header) {
   }
 }
 
-window.subframeSelectorRecorderFindSelector = function() {
+window.subframeSelectorRecorderFindSelector = function(frameid) {
 
-    function keydownListener(e) {
-        const keyName = e.key;
-        if (keyName === 's' || keyName === 'S') {
-            console.log(">> S");
-        }
-        if (keyName === 'f' || keyName === 'F') {
-            console.log(">> F");
-        }
-    }
+    console.log("FrameId", frameid);
 
     function mouseMoveListener(e) {
         const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
         if (target) {
-            console.log(finder(target));
+            window.recordedSelector(frameid, finder(target));
+        } else {
+            window.recordedSelector(frameid, '');
         }
     }
 
-    document.addEventListener('keydown', keydownListener);
     document.addEventListener('mousemove', mouseMoveListener);
 }
 

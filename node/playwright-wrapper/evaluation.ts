@@ -132,12 +132,18 @@ export async function recordSelector(
 ): Promise<Response.JavascriptExecutionResult> {
     const page = state.getActivePage() as Page;
     await page.bringToFront();
+    const myselectors: Record<string, string> = {};
+    page.exposeFunction('recordedSelector', (frameid: string, selector: string) => {
+        myselectors[frameid] = selector;
+    });
     const { target, pierce } = await recordSelectorIterator(request.getLabel(), page.mainFrame());
     let result = target;
     if (pierce) {
         result = await piercingSelector(state, target, request.getLabel());
     }
-    return jsResponse(result, 'Selector recorded.');
+    //TODO: Does not know when outside frame or inside
+    const text = myselectors['subframe'];
+    return jsResponse(result + (text ? ' >>> ' + text : ''), 'Selector recorded.');
 }
 
 async function piercingSelector(state: PlaywrightState, target: string, label: string): Promise<string> {
@@ -169,26 +175,28 @@ async function attachSelectorFinderScript(frame: Frame): Promise<void> {
 }
 
 async function attachSubframeListeners(subframe: Frame): Promise<void> {
-    await subframe.evaluate(() => {
-        function rafAsync() {
-            return new Promise((resolve) => {
-                requestAnimationFrame(resolve); //faster than set time out
-            });
-        }
-
-        // @ts-ignore
-        function waitUntilRecorderAvailable() {
-            // @ts-ignore
-            if (!window.subframeSelectorRecorderFindSelector) {
-                return rafAsync().then(() => waitUntilRecorderAvailable());
-            } else {
-                // @ts-ignore
-                return Promise.resolve(window.subframeSelectorRecorderFindSelector());
+    await subframe.evaluate((frameid) => {
+            function rafAsync() {
+                return new Promise((resolve) => {
+                    requestAnimationFrame(resolve); //faster than set time out
+                });
             }
-        }
 
-        return waitUntilRecorderAvailable();
-    });
+            // @ts-ignore
+            function waitUntilRecorderAvailable() {
+                // @ts-ignore
+                if (!window.subframeSelectorRecorderFindSelector) {
+                    return rafAsync().then(() => waitUntilRecorderAvailable());
+                } else {
+                    // @ts-ignore
+                    return Promise.resolve(window.subframeSelectorRecorderFindSelector(frameid));
+                }
+            }
+
+            return waitUntilRecorderAvailable();
+        },
+        subframe.name() || "subframe",
+    );
     await Promise.all(subframe.childFrames().map((child) => attachSubframeListeners(child)));
 }
 
