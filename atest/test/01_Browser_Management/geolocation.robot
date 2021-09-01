@@ -24,7 +24,6 @@ Set Geolocation Out Of Bounds
 Check Geolocation
     [Arguments]    ${latitude}    ${longitude}
     Click    id=button_location
-    Take Screenshot
     Get Text    id=latitudeValue    equal    Latitude: ${latitude}
     Get Text    id=longitudeValue    equal    Longitude: ${longitude}
 
