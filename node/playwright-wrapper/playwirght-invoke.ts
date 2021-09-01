@@ -147,9 +147,6 @@ async function determineContextAndSelector<T>(
     }
 }
 
-<<<<<<< HEAD
-export async function determineElement(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
-=======
 async function determineContextAndSelectorStrict<T>(
     state: PlaywrightState,
     selector: string,
@@ -175,8 +172,7 @@ async function determineContextAndSelectorStrict<T>(
     }
 }
 
-export async function determineElement<T>(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
->>>>>>> d2c4706 (Strict mode for Get Style with frames)
+export async function determineElement(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
     const page = state.getActivePage();
     exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
