@@ -5,7 +5,7 @@ Resource    imports.resource
 Enable Tracing To File
     New Context    tracing=trace_0.zip
     New Page    ${LOGIN_URL}
-    Click    button
+    Click    id=goes_hidden
     Close Context
     ${count} =    Glob Files Count    ${OUTPUT_DIR}/browser/traces
     Should Be True    ${count} == ${0}
@@ -30,7 +30,7 @@ Enable Tracing To File With Two Browsers
     Close Context
     Switch Browser    ${browser1}
     New Page    ${LOGIN_URL}
-    Click    button
+    Click    id=goes_hidden
     Close Context
     Close Browser    ALL
     ${count} =    Glob Files Count    ${OUTPUT_DIR}/browser/traces
