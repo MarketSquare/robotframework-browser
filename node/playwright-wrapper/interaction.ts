@@ -17,7 +17,7 @@ import { Dialog, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
-import { invokeOnKeyboard, invokeOnMouse, invokePlaywrightMethod } from './playwirght-invoke';
+import { invokeOnKeyboard, invokeOnMouse, invokePlaywrightMethod, invokePlaywrightMethodStrict } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -95,7 +95,8 @@ export async function click(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const options = request.getOptions();
-    await invokePlaywrightMethod(state, 'click', selector, JSON.parse(options));
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'click', selector, strictMode, JSON.parse(options));
     return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
 }
 

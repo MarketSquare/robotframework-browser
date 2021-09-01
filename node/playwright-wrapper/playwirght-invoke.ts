@@ -82,6 +82,8 @@ export async function invokePlaywrightMethod<T>(
 ) {
     type strDict = { [key: string]: any };
     const { elementSelector, context } = await determineContextAndSelector(state, selector);
+    logger.info(`selector:::: ${selector}`);
+    logger.info(`args::: ${args}`);
     if (elementSelector) {
         const fn = (context as strDict)[methodName].bind(context);
         return await fn(elementSelector, ...args);

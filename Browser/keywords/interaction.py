@@ -251,6 +251,7 @@ class Interaction(LibraryComponent):
         position_y: Optional[float] = None,
         force: bool = False,
         noWaitAfter: bool = False,
+        strict: Optional[bool] = None,
         *modifiers: KeyboardModifier,
     ):
         """Simulates mouse click on the element found by ``selector``.
@@ -281,6 +282,9 @@ class Interaction(LibraryComponent):
         for pages to start loading. You can opt out of waiting via setting this flag. You would only need
         this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         ``*modifiers``
         Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
         current modifiers back. If not specified, currently pressed modifiers are used.
@@ -290,6 +294,7 @@ class Interaction(LibraryComponent):
         | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
 
         """
+        strict = self.get_strict_mode(strict)
         if self.library.presenter_mode:
             self.hover(selector)
             self.library.highlight_elements(selector, duration=timedelta(seconds=2))
@@ -313,7 +318,7 @@ class Interaction(LibraryComponent):
             logger.debug(f"Click options are: {options_json}")
             response = stub.Click(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+                    selector=selector, options=options_json, strict=strict
                 )
             )
             logger.debug(response.log)

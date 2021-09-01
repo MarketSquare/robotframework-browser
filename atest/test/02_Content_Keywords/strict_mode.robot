@@ -44,7 +44,7 @@ Strict Mode In invokePlaywrightMethodStrict With Frame Element
     ${width} =    Get Style    id=left >>> //input    width    strict=False
     Should End With    ${width}    px
 
-Stirct Mode In invokePlaywrightMethodStrict Without Frema
+Stirct Mode In invokePlaywrightMethodStrict Without Frame
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
@@ -52,3 +52,10 @@ Stirct Mode In invokePlaywrightMethodStrict Without Frema
     ...    Get Style    //iframe    width
     ${width} =    Get Style    //iframe    width    strict=False
     Should End With    ${width}    px
+
+Stirct Mode In invokePlaywrightMethodStrict Without Frame And
+    New Page    ${FRAMES_URL}
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 2 elements.*
+    ...    Click    //iframe
+    Click    //iframe    strict=False
