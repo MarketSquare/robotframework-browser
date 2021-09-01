@@ -143,6 +143,7 @@ message Request {
   message ElementSelectorWithOptions {
     string selector = 1;
     string options = 2;
+    bool strict = 3;
   }
 
   message ElementSelectorWithDuration {
