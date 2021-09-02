@@ -4,11 +4,13 @@ import site
 import subprocess
 import sys
 import zipfile
+from datetime import datetime
 from pathlib import Path, PurePath
 import platform
 import re
 import traceback
 import shutil
+from xml.etree import ElementTree as ET
 
 from invoke import task, Exit
 
@@ -29,6 +31,7 @@ except ModuleNotFoundError:
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
+FLIP_RATE = ROOT_DIR / "flip_rate"
 dist_dir = ROOT_DIR / "dist"
 build_dir = ROOT_DIR / "build"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
@@ -85,7 +88,14 @@ def deps(c):
 
 @task
 def clean(c):
-    for target in [dist_dir, build_dir, python_protobuf_dir, node_protobuf_dir]:
+    for target in [
+        dist_dir,
+        build_dir,
+        python_protobuf_dir,
+        node_protobuf_dir,
+        UTEST_OUTPUT,
+        FLIP_RATE
+    ]:
         if target.exists():
             shutil.rmtree(target)
     for timestamp_file in [
@@ -329,6 +339,22 @@ def sitecustomize(c):
     else:
         print(f"Creating {sitecustomize} file.")
         sitecustomize.write_text(use_coverage)
+
+
+@task()
+def copy_xunit(c):
+    """Copies local xunit files for flaky test analysis"""
+    xunit_dest = FLIP_RATE / "xunit"
+    shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", xunit_dest)
+    shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", xunit_dest)
+    robot_xunit = xunit_dest / "robot_xunit.xml"
+    tree = ET.parse(robot_xunit)
+    root = tree.getroot()
+    now = datetime.now()
+    root.attrib["timestamp"] = now.strftime("%Y-%m-%dT%H:%M:%S.000000")
+    new_root = ET.Element("testsuites")
+    new_root.insert(0, root)
+    ET.ElementTree(new_root).write(robot_xunit)
 
 
 @task(clean_atest)
