@@ -93,6 +93,15 @@ jobs:
       with:
         name: rfbrowser-wheel 
         path: dist/robotframework_browser-*-py3-none-any.whl
+    - name: Artifacts download for flaky test analysis
+      if: ${{ failure() }}
+      run : |
+        python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
+        inv copy-xunit
+    - uses:  F-Secure/fliprate_actions@master
+      if: ${{ failure() }}
+      with:
+        args: --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
     - name: Package demoapp
       run: |
         inv demo-app
