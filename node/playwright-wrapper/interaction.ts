@@ -111,7 +111,8 @@ export async function hover(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const options = request.getOptions();
-    await invokePlaywrightMethod(state, 'hover', selector, JSON.parse(options));
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'hover', selector, strictMode, JSON.parse(options));
     return emptyWithLog(`Hovered element: '${selector}' With options: '${options}'`);
 }
 

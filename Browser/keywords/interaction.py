@@ -356,6 +356,7 @@ class Interaction(LibraryComponent):
         position_x: Optional[float] = None,
         position_y: Optional[float] = None,
         force: bool = False,
+        strict: Optional[bool] = None,
         *modifiers: KeyboardModifier,
     ):
         """Moves the virtual mouse and scrolls to the element found by ``selector``.
@@ -376,6 +377,9 @@ class Interaction(LibraryComponent):
 
         ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
         pressed during the hover, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
@@ -384,6 +388,7 @@ class Interaction(LibraryComponent):
         | `Hover`    h1
         | `Hover`    h1    10   20    Alt
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, Any] = {"force": force}
             if position_x and position_y:
@@ -395,7 +400,7 @@ class Interaction(LibraryComponent):
             logger.debug(f"Hover Options are: {options_json}")
             response = stub.Hover(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+                    selector=selector, options=options_json, strict=strict
                 )
             )
             logger.debug(response.log)
