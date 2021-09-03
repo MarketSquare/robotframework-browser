@@ -30,6 +30,7 @@ class Waiter(LibraryComponent):
         state: ElementState = ElementState.visible,
         timeout: Optional[timedelta] = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
@@ -57,10 +58,14 @@ class Waiter(LibraryComponent):
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
         The `{function}` formatter is same ``state`` argument value.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Example:
         | `Wait For Elements State`    //h1    visible    timeout=2 s
         | `Wait For Elements State`    //hi    focused    1s
         """
+        strict = self.get_strict_mode(strict)
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
             ElementState.enabled: "e => !e.disabled",
@@ -86,7 +91,7 @@ class Waiter(LibraryComponent):
             end += time.monotonic()
             while True:
                 try:
-                    return self._wait_for_elements_state(selector, state, timeout)
+                    return self._wait_for_elements_state(selector, state, timeout, strict)
                 except Exception as error:
                     if end > time.monotonic():
                         logger.debug(f"Suppress error: {error}")
@@ -109,6 +114,7 @@ class Waiter(LibraryComponent):
         selector: str,
         state: ElementState = ElementState.visible,
         timeout: Optional[timedelta] = None,
+        strict: Optional[bool] = None,
     ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
@@ -117,7 +123,7 @@ class Waiter(LibraryComponent):
             options_json = json.dumps(options)
             response = stub.WaitForElementsState(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+                    selector=selector, options=options_json, strict=strict
                 )
             )
             logger.info(response.log)
