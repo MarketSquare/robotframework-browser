@@ -194,6 +194,28 @@ export async function determineElement(state: PlaywrightState, selector: string)
     }
 }
 
+export async function determineElementStrict(state: PlaywrightState, selector: string, strictMode: boolean): Promise<ElementHandle | null> {
+    const page = state.getActivePage();
+    exists(page, `Tried to do playwright action, but no open page.`);
+    if (isFramePiercingSelector(selector)) {
+        let selectors = splitFrameAndElementSelector(selector);
+        let frame = await findFrameStrict(page, selectors.frameSelector, strictMode);
+        while (isFramePiercingSelector(selectors.elementSelector)) {
+            selectors = splitFrameAndElementSelector(selectors.elementSelector);
+            frame = await findFrameStrict(frame, selectors.frameSelector, strictMode);
+        }
+        return await frame.$(selectors.elementSelector, { strict: strictMode });
+    } else if (isElementHandleSelector(selector)) {
+        const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector);
+        const elem = state.getElement(elementHandleId);
+        if (subSelector) {
+            return await elem.$(subSelector);
+        } else return elem;
+    } else {
+        return await page.$(selector, {strict: strictMode});
+    }
+}
+
 function isFramePiercingSelector(selector: string) {
     return selector.match('>>>');
 }
