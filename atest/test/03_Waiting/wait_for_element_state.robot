@@ -22,6 +22,14 @@ Wait For Elements State attached With Strict On WaitForElementsState
     ...    Wait For Elements State    //div    attached    0.5s
     Wait For Elements State    //div    attached    0.5s    strict=False
 
+Wait For Elements State enabled With Strict On wait_for_function
+    Select Options By    \#dropdown    value    enabled
+    Click    \#submit    noWaitAfter=True
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 2 elements.*
+    ...    Wait For Elements State    //div    enabled    0.5s
+    Wait For Elements State    //div    enabled    0.5s    strict=False
+
 Wait For Elements State detached
     Select Options By    \#dropdown    value    detached
     Click    \#submit    noWaitAfter=True
