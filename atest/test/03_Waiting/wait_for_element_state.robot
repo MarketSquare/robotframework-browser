@@ -10,6 +10,18 @@ Wait For Elements State attached
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    attached    1s
 
+Wait For Elements State attached With Strict On WaitForElementsState
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 2 elements.*
+    ...    Wait For Elements State    //div    attached    0.5s
+    Wait For Elements State    //div    attached    0.5s    strict=False
+
+Wait For Elements State attached With Strict On WaitForElementsState
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 2 elements.*
+    ...    Wait For Elements State    //div    attached    0.5s
+    Wait For Elements State    //div    attached    0.5s    strict=False
+
 Wait For Elements State detached
     Select Options By    \#dropdown    value    detached
     Click    \#submit    noWaitAfter=True
