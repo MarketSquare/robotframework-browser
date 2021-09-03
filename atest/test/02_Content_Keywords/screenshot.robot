@@ -1,8 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
-Suite Teardown    Register Keyword To Run On Failure    None
+Suite Teardown      Register Keyword To Run On Failure    None
+Test Setup          New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
