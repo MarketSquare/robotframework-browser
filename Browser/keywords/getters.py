@@ -1098,6 +1098,7 @@ class Getters(LibraryComponent):
                             script=funct[state],
                             selector=selector,
                             options=json.dumps({"timeout": 100}),
+                            strict=strict,
                         )
                     )
                 else:

@@ -191,6 +191,13 @@ Get Element State With Strict On ElementSelectorWithOptions
     ${state} =    Get Element State    //div    strict=False
     Should Be True    ${state}
 
+Get Element State With Strict On WaitForFunctionOptions
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 18 elements.*
+    ...    Get Element State    //div    state=disabled
+    ${state} =    Get Element State    //div    state=disabled    strict=False
+    Should Not Be True    ${state}
+
 Get Element State With Assertion
     Get Element State    h1    readonly    ==    False
 

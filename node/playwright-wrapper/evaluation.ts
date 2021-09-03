@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, invokePlaywrightMethod, invokePlaywrightMethodStrict, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, determineElementStrict, invokePlaywrightMethod, invokePlaywrightMethodStrict, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -103,6 +103,7 @@ export async function waitForFunction(
     let script = request.getScript();
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
+    const strictMode = request.getStrict();
     logger.info(`unparsed args: ${script}, ${request.getSelector()}, ${request.getOptions()}`);
 
     let elem;
@@ -112,7 +113,7 @@ export async function waitForFunction(
         logger.info(`On waitForFunction, supress ${error} for eval.`);
     }
     if (selector) {
-        elem = await determineElement(state, selector);
+        elem = await determineElementStrict(state, selector, strictMode);
         script = eval(script);
     }
 
