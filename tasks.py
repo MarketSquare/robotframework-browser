@@ -345,16 +345,28 @@ def sitecustomize(c):
 def copy_xunit(c):
     """Copies local xunit files for flaky test analysis"""
     xunit_dest = FLIP_RATE / "xunit"
-    shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", xunit_dest)
-    shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", xunit_dest)
-    robot_xunit = xunit_dest / "robot_xunit.xml"
-    tree = ET.parse(robot_xunit)
-    root = tree.getroot()
-    now = datetime.now()
-    root.attrib["timestamp"] = now.strftime("%Y-%m-%dT%H:%M:%S.000000")
-    new_root = ET.Element("testsuites")
-    new_root.insert(0, root)
-    ET.ElementTree(new_root).write(robot_xunit)
+    xunit_dest.mkdir(parents=True, exist_ok=True)
+    try:
+        shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", xunit_dest)
+    except Exception as error:
+        print(f"\nWhen copying robot xunit got error: {error}")
+        robot_copy = False
+    else:
+        robot_copy = True
+    try:
+        shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", xunit_dest)
+    except Exception as error:
+        print(f"\nWhen copying pytest xunit got error: {error}")
+        pass
+    if robot_copy:
+        robot_xunit = xunit_dest / "robot_xunit.xml"
+        tree = ET.parse(robot_xunit)
+        root = tree.getroot()
+        now = datetime.now()
+        root.attrib["timestamp"] = now.strftime("%Y-%m-%dT%H:%M:%S.000000")
+        new_root = ET.Element("testsuites")
+        new_root.insert(0, root)
+        ET.ElementTree(new_root).write(robot_xunit)
 
 
 @task(clean_atest)
