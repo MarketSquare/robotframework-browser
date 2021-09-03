@@ -184,6 +184,13 @@ Get Element State
     ${state} =    Get Element State    h1
     Should Be True    ${state}
 
+Get Element State With Strict On ElementSelectorWithOptions
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 18 elements.*
+    ...    Get Element State    //div
+    ${state} =    Get Element State    //div    strict=False
+    Should Be True    ${state}
+
 Get Element State With Assertion
     Get Element State    h1    readonly    ==    False
 
