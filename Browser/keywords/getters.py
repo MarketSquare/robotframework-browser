@@ -1041,6 +1041,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ):
         """Get the given state from the element found by ``selector``.
 
@@ -1070,6 +1071,9 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -1077,6 +1081,7 @@ class Getters(LibraryComponent):
         Example:
         | `Get Element State`    h1    readonly    ==    False
         """
+        strict = self.get_strict_mode(strict)
         funct = {
             ElementStateKey.disabled: "e => e.disabled",
             ElementStateKey.readonly: "e => e.readOnly",
@@ -1100,6 +1105,7 @@ class Getters(LibraryComponent):
                         Request().ElementSelectorWithOptions(
                             selector=selector,
                             options=json.dumps({"state": state.name, "timeout": 100}),
+                            strict=strict,
                         )
                     )
                 result = True

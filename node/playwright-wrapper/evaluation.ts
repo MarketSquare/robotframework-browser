@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, invokePlaywrightMethod, invokePlaywrightMethodStrict, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -90,7 +90,8 @@ export async function waitForElementState(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
-    await invokePlaywrightMethod(state, 'waitForSelector', selector, options);
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'waitForSelector', selector, strictMode, options);
     return emptyWithLog('Wait for Element with selector: ' + selector);
 }
 
