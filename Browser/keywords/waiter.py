@@ -108,7 +108,11 @@ class Waiter(LibraryComponent):
                         raise
         else:
             self.wait_for_function(
-                funct[state], selector=selector, timeout=timeout, message=message
+                funct[state],
+                selector=selector,
+                timeout=timeout,
+                message=message,
+                strict=strict,
             )
 
     def _wait_for_elements_state(
@@ -138,6 +142,7 @@ class Waiter(LibraryComponent):
         polling: Union[str, timedelta] = "raf",
         timeout: Optional[timedelta] = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ):
         """Polls JavaScript expression or function in browser until it returns a (JavaScript) truthy value.
 
@@ -158,11 +163,15 @@ class Waiter(LibraryComponent):
         argument accepts `{selector}`, `{function}`, and `{timeout}`
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Example usage:
         | ${promise}      `Promise To`      `Wait For Function`    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
         | `Click`         \\#progress_bar
         | `Wait For`      ${promise}
         """
+        strict = self.get_strict_mode(strict)
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         end = float(
             self.convert_timeout(timeout, False) if timeout else self.timeout / 1000
@@ -170,7 +179,9 @@ class Waiter(LibraryComponent):
         end += time.monotonic()
         while True:
             try:
-                return self._wait_for_function(function, selector, polling, timeout)
+                return self._wait_for_function(
+                    function, selector, polling, timeout, strict
+                )
             except Exception as error:
                 if end > time.monotonic():
                     logger.debug(f"Suppress {error}")
@@ -188,6 +199,7 @@ class Waiter(LibraryComponent):
         selector: str = "",
         polling: Union[str, timedelta] = "raf",
         timeout: Optional[timedelta] = None,
+        strict: bool = True,
     ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
@@ -201,6 +213,7 @@ class Waiter(LibraryComponent):
                     script=function,
                     selector=selector,
                     options=options_json,
+                    strict=strict,
                 )
             )
             logger.debug(response.json)
