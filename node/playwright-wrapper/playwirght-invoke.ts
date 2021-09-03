@@ -194,7 +194,11 @@ export async function determineElement(state: PlaywrightState, selector: string)
     }
 }
 
-export async function determineElementStrict(state: PlaywrightState, selector: string, strictMode: boolean): Promise<ElementHandle | null> {
+export async function determineElementStrict(
+    state: PlaywrightState,
+    selector: string,
+    strictMode: boolean,
+): Promise<ElementHandle | null> {
     const page = state.getActivePage();
     exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
@@ -212,7 +216,7 @@ export async function determineElementStrict(state: PlaywrightState, selector: s
             return await elem.$(subSelector);
         } else return elem;
     } else {
-        return await page.$(selector, {strict: strictMode});
+        return await page.$(selector, { strict: strictMode });
     }
 }
 

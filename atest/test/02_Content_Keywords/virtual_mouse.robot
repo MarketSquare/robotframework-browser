@@ -60,6 +60,12 @@ Hover and Drop to Hover
     Get Text    \#dragX    ==    20
     Get Text    \#dragY    ==    30
 
+Hover With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Hover    //input
+    Hover    //input    strict=False
+
 Drag and Drop with Move Relative
     Relative DnD    32    64    32    64
     Relative DnD    0    -64    32    0
