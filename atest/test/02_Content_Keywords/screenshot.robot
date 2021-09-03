@@ -2,6 +2,7 @@
 Resource        imports.resource
 
 Test Setup      New Page    ${LOGIN_URL}
+Suite Teardown    Register Keyword To Run On Failure    None
 
 *** Variables ***
 ${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png

@@ -2,6 +2,7 @@
 Library     Browser    run_on_failure=Take Screenshot \ custom-fail    timeout=3s
 Library     OperatingSystem
 Resource    imports.resource
+Suite Teardown    Register Keyword To Run On Failure    None
 
 *** Test Cases ***
 Failing with custom screenshot

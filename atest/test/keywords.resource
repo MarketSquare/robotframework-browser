@@ -3,7 +3,7 @@ Resource    variables.resource
 Library     Collections
 Library     DateTime
 Library     OperatingSystem
-Library     Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}
+Library     Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}    run_on_failure=${None}
 Library     ../library/common.py
 Library     ../library/os_wrapper.py
 Library     ../library/show_trace_tool.py
