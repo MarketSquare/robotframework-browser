@@ -91,7 +91,9 @@ class Waiter(LibraryComponent):
             end += time.monotonic()
             while True:
                 try:
-                    return self._wait_for_elements_state(selector, state, timeout, strict)
+                    return self._wait_for_elements_state(
+                        selector, state, timeout, strict
+                    )
                 except Exception as error:
                     if end > time.monotonic():
                         logger.debug(f"Suppress error: {error}")
@@ -114,7 +116,7 @@ class Waiter(LibraryComponent):
         selector: str,
         state: ElementState = ElementState.visible,
         timeout: Optional[timedelta] = None,
-        strict: Optional[bool] = None,
+        strict: bool = True,
     ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
