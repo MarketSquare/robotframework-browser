@@ -3,6 +3,7 @@ Library         Browser
 Resource        imports.resource
 
 Suite Setup     New Browser    headless=False
+Suite Teardown  Close Browser
 
 *** Test Cases ***
 Finds a selector
