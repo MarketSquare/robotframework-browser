@@ -1,9 +1,9 @@
 *** Settings ***
-Library         Browser
-Resource        imports.resource
+Library             Browser
+Resource            imports.resource
 
-Suite Setup     New Browser    headless=False
-Suite Teardown  Close Browser
+Suite Setup         New Browser    headless=False
+Suite Teardown      Close Browser
 
 *** Test Cases ***
 Finds a selector
