@@ -60,3 +60,15 @@ Welcome Page Should Be Open
 Verify Browser Type
     [Arguments]    ${expectedType}
     Get Browser Catalog    validate    value[0]['type'] == $expectedType
+
+Suite Cleanup
+    Run Keyword If    "${SUITE STATUS}" == "PASS" and "${SYS_VAR_CLEAN}" == "${True}"
+    ...    Delete Files On Teardown
+    ...    ELSE
+    ...    Log    Suite ${SUITE NAME} status is ${SUITE STATUS}, not running stuie cleaning
+
+Delete Files On Teardown
+    Remove Directory    ${OUTPUT_DIR}/browser    recursive=True
+    Remove File    ${OUTPUT_DIR}/*.png
+    Remove File    ${OUTPUT_DIR}/*.zip
+    Remove File    ${OUTPUT_DIR}/*.webm
