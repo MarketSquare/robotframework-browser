@@ -14,7 +14,7 @@
 
 import json
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from robot.utils import DotDict  # type: ignore
 
@@ -25,7 +25,9 @@ from ..utils import DownloadedFile, keyword, logger
 
 class Evaluation(LibraryComponent):
     @keyword(name="Execute JavaScript", tags=("Setter", "Getter", "PageContent"))
-    def execute_javascript(self, function: str, selector: str = "") -> Any:
+    def execute_javascript(
+        self, function: str, selector: str = "", strict: Optional[bool] = None
+    ) -> Any:
         """Executes given javascript on the page.
 
         ``function`` A valid javascript function or a javascript function body. For example
@@ -36,17 +38,23 @@ class Evaluation(LibraryComponent):
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
 
+         ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
-                Request().JavascriptCode(script=function, selector=selector)
+                Request().JavascriptCode(
+                    script=function, selector=selector, strict=strict
+                )
             )
-            if response.log:
-                logger.info(response.log)
-            if response.result:
-                return json.loads(response.result)
-            return response.result
+        if response.log:
+            logger.info(response.log)
+        if response.result:
+            return json.loads(response.result)
+        return response.result
 
     @keyword(tags=("Setter", "PageContent"))
     def highlight_elements(
