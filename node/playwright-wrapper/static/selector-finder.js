@@ -268,7 +268,7 @@ function elementSelectorFromPointInFrame(x, y) {
             return '???';
         }
         if (element.shadowRoot) {
-            return finder(element, {root:parentElement}) + " > "+ subelementFromPoint(element.shadowRoot);
+            return finder(element, {root:parentElement}) + " >> "+ subelementFromPoint(element.shadowRoot);
         }
         return finder(element, {root:parentElement});
     }
