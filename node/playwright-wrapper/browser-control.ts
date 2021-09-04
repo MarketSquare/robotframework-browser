@@ -16,7 +16,7 @@ import { BrowserContext, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, determineElementStrict, exists } from './playwirght-invoke';
+import { determineElementStrict, exists } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
 
 export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
