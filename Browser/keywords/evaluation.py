@@ -56,6 +56,7 @@ class Evaluation(LibraryComponent):
         width: str = "2px",
         style: str = "dotted",
         color: str = "blue",
+        strict: bool = False,
     ):
         """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment.
 
@@ -71,10 +72,15 @@ class Evaluation(LibraryComponent):
         ``color`` Sets the color of the border. Valid colors i.e. are:
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``
 
+        ``strict`` by default strict mode is not enabled for keyword,
+        but strict mode can be enabled by using True value for ``strict``
+        argument. See `Finding elements` for more details about strict mode.
+
         Example:
         | `Highlight Elements`    input#login_button    duration=200ms
         | `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.HighlightElements(
                 Request().ElementSelectorWithDuration(
@@ -83,6 +89,7 @@ class Evaluation(LibraryComponent):
                     width=width,
                     style=style,
                     color=color,
+                    strict=strict,
                 )
             )
             logger.info(response.log)

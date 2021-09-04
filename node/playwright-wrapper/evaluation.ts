@@ -239,6 +239,7 @@ export async function highlightElements(
     const width = request.getWidth();
     const style = request.getStyle();
     const color = request.getColor();
+    const strictMode = request.getStrict();
     const highlighter = (elements: Array<Element>, options: any) => {
         elements.forEach((e: Element) => {
             const d = document.createElement('div');
@@ -258,7 +259,7 @@ export async function highlightElements(
             }, options?.dur ?? 5000);
         });
     };
-    await invokePlaywrightMethod(state, '$$eval', selector, highlighter, {
+    await invokePlaywrightMethodStrict(state, '$$eval', selector, strictMode, highlighter, {
         dur: duration,
         wdt: width,
         stl: style,

@@ -152,6 +152,7 @@ message Request {
     string width = 3;
     string style = 4;
     string color = 5;
+    bool strict = 6;
   }
 
   message SelectElementSelector {
