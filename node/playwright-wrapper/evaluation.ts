@@ -76,14 +76,12 @@ export async function executeJavascript(
     const strictMode = request.getStrict();
     let script = request.getScript();
     let elem;
-    logger.info('strictMode' + strictMode);
     try {
         script = eval(script);
     } catch (error) {
         logger.info(`On executeJavascript, supress ${error} for eval.`);
     }
     if (selector) {
-        logger.info('HERE:::::');
         elem = await determineElementStrict(state, selector, strictMode);
     }
     const result = await page.evaluate(script, elem);
