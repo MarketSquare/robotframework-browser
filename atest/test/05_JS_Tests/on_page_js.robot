@@ -41,6 +41,12 @@ Highlight Element on page
     Sleep    400ms
     Get Element Count    .robotframework-browser-highlight    ==    0
 
+Highlight Element With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Highlight Elements    //input    duration=200ms    strict=True
+    Highlight Elements    //input    duration=200ms
+
 Highlight Element with style
     Highlight Elements    input#login_button    duration=400ms
     Get Style    .robotframework-browser-highlight    border-bottom-width    ==    2px

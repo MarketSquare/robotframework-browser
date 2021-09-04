@@ -296,8 +296,10 @@ class Interaction(LibraryComponent):
         """
         strict = self.get_strict_mode(strict)
         if self.library.presenter_mode:
-            self.hover(selector)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
+            self.hover(selector, strict=strict)
+            self.library.highlight_elements(
+                selector, duration=timedelta(seconds=2), strict=strict
+            )
             sleep(2)
         with self.playwright.grpc_channel() as stub:
             options = {
