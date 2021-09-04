@@ -178,12 +178,12 @@ jobs:
         run: |
           inv atest-global-pythonpath
       - name: Artifacts download for flaky test analysis
-        if: ${{ failure() }}
+        if: ${{ failure() && matrix.os != 'windows-latest' }}
         run: |
             python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
             inv copy-xunit
       - uses: F-Secure/fliprate_actions@master
-        if: ${{ failure() }}
+        if: ${{ failure() && matrix.os != 'windows-latest' }}
         with:
           args: --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
       - uses: actions/upload-artifact@v2

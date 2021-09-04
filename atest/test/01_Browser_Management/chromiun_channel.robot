@@ -6,9 +6,6 @@ Wrong Browser With Channel
     Run Keyword And Expect Error
     ...    ValueError: Must use chromium browser with channel definition
     ...    New Browser    firefox    channel=chrome
-    IF    "${SYS_VAR_CI}" == "True"
-        Fail
-    END
 
 Use Chrome Stable With Channel Argument
     [Tags]    Not-Implemented    # This fails very often in CI, disable it.
