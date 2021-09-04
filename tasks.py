@@ -94,7 +94,7 @@ def clean(c):
         python_protobuf_dir,
         node_protobuf_dir,
         UTEST_OUTPUT,
-        FLIP_RATE
+        FLIP_RATE,
     ]:
         if target.exists():
             shutil.rmtree(target)
@@ -275,7 +275,7 @@ def atest(c, suite=None, include=None, zip=None):
     process.kill()
     if zip:
         _clean_zip_dir()
-        print(f"Zip file created to: {_create_zip()}")
+        print(f"Zip file created to: {_create_zip(rc)}")
     sys.exit(rc)
 
 
@@ -284,9 +284,22 @@ def _clean_zip_dir():
         shutil.rmtree(ZIP_DIR)
 
 
-def _create_zip():
+def _clean_pabot_results(rc: int):
+    if rc == 0:
+
+        def on_error(function, path, excinfo):
+            print(f"Could not delete {path} with excinfo: {excinfo}")
+
+        pabot_results = ATEST_OUTPUT / "pabot_results"
+        shutil.rmtree(pabot_results, onerror=on_error)
+    else:
+        print(f"Not deleting pabot_results on error")
+
+
+def _create_zip(rc: int):
     zip_dir = ZIP_DIR / "output"
     zip_dir.mkdir(parents=True)
+    _clean_pabot_results(rc)
     python_version = platform.python_version()
     zip_name = f"{sys.platform}-rf-{robot_version}-python-{python_version}.zip"
     zip_path = zip_dir / zip_name
@@ -396,6 +409,7 @@ def atest_robot(c):
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml, verbose=False)
     rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
+    _clean_pabot_results(rc)
     print(f"DONE rc=({rc})")
     sys.exit(rc)
 
