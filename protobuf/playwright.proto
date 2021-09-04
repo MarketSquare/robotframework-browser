@@ -61,8 +61,7 @@ message Request {
 
   message Browser {
     string browser = 1;
-    bool headless = 2;
-    string rawOptions = 3;
+    string rawOptions = 2;
   }
 
   message Context {

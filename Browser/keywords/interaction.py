@@ -320,16 +320,13 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("PageContent",))
     def record_selector(
-        self, label: Optional[str] = None, selector: Optional[str] = None
+        self, label: Optional[str] = None,
     ):
         """Record the selector that is under mouse.
 
         ``label`` text to show when on the box in the page while recording.
 
-        ``selector`` if identified selector in a frame, target that frame with this selector.
-
         Focus on the page and move mouse over the element you want to select.
-        Press 's' to store the elements selector.
 
         Example:
         | ${selector} =    `Record Selector`   Button

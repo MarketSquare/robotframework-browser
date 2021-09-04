@@ -188,7 +188,7 @@ function cssesc(a, b = {}) {
 const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
 const BROWSER_LIBRARY_HEADER_ID = "browser-library-selector-recorder-header";
 const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
-const BROWSER_LIBRARY_SELECT_BUTTON_ID = "rowser-library-select-selector";
+const BROWSER_LIBRARY_SELECT_BUTTON_ID = "browser-library-select-selector";
 const BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID = "rowser-library-cancel-selector";
 const BROWSER_LIBRARY_DESCRIPTION = "browser-library-selector-recorder-description-text";
 

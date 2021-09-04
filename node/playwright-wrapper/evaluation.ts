@@ -130,6 +130,9 @@ export async function recordSelector(
     request: Request.Label,
     state: PlaywrightState,
 ): Promise<Response.JavascriptExecutionResult> {
+    if (state.getActiveBrowser().headless) {
+        throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
+    }
     const page = state.getActivePage() as Page;
     await page.bringToFront();
     const myselectors: unknown[] = [];
