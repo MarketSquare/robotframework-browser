@@ -72,10 +72,10 @@ function penalty(a) {
     return a.map(a => a.penalty).reduce((a, b) => a + b, 0)
 }
 
-function unique(a) {
-    switch (rootDocument.querySelectorAll(selector(a)).length) {
+function unique(candidate) {
+    switch (rootDocument.querySelectorAll(selector(candidate)).length) {
         case 0:
-            throw new Error(`Can't select any node with this selector: ${selector(a)}`);
+            throw new Error(`Can't select any node with this selector: ${selector(candidate)}`);
         case 1:
             return !0;
         default:
@@ -261,20 +261,28 @@ function dragElement(elmnt, header) {
   }
 }
 
+function elementSelectorFromPointInFrame(x, y) {
+    const subelementFromPoint = (parentElement) => {
+        const element = parentElement.elementFromPoint(x, y);
+        if (!element) {
+            return '???';
+        }
+        if (element.shadowRoot) {
+            return finder(element, {root:parentElement}) + " > "+ subelementFromPoint(element.shadowRoot);
+        }
+        return finder(element, {root:parentElement});
+    }
+    return subelementFromPoint(document);
+}
+
 window.subframeSelectorRecorderFindSelector = function(myid) {
 
     console.log("FrameId", myid);
 
     function mouseMoveListener(e) {
-        const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
-        if (target) {
-            if (target.shadowRoot) {
-                const subtarget = target.shadowRoot.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
-                window.setRecordedSelector(myid, finder(target) + ' >> ' + finder(subtarget));
-            } else {
-                window.setRecordedSelector(myid, finder(target));
-            }
-
+        const cssselector = elementSelectorFromPointInFrame(e.pageX - window.scrollX, e.pageY - window.scrollY);
+        if (cssselector) {
+            window.setRecordedSelector(myid, cssselector);
         }
     }
 
@@ -284,13 +292,11 @@ window.subframeSelectorRecorderFindSelector = function(myid) {
 window.selectorRecorderFindSelector = function(label) {
     console.log("HERE "+label);
     return new Promise((resolve) => {
-        let currentTarget = "NOTSET";
-        let isFrame = false;
+        let currentCssSelector = "NOTSET";
 
         async function updateTexts() {
             const recorded = await window.getRecordedSelectors();
-            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = "main:"+currentTarget + ";\n" + Object.entries(recorded).map((k, v) => k + " : " + v).join(";\n");
-            document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = isFrame ? 'IFRAME <click focus here to interact>' : '';
+            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = "main:"+currentCssSelector + ";\n" + Object.entries(recorded).map((k, v) => k + " : " + v).join(";\n");
         }
 
         function mouseMoveListener(e) {
@@ -304,14 +310,12 @@ window.selectorRecorderFindSelector = function(label) {
                 e.pageY >= ymin && e.pageY <= ymax) {
                 return;
             }
-            const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
+            const target = elementSelectorFromPointInFrame(e.pageX - window.scrollX, e.pageY - window.scrollY);
             if (target) {
-                const newTarget = finder(target);
-                if (newTarget !== currentTarget) {
+                if (target !== currentCssSelector) {
                     window.setRecordedSelector('');
                 }
-                currentTarget = newTarget;
-                isFrame = target.tagName === "IFRAME";
+                currentCssSelector = target;
                 updateTexts();
             }
         }
@@ -327,11 +331,11 @@ window.selectorRecorderFindSelector = function(label) {
             const keyName = e.key;
             if (keyName === 's' || keyName === 'S') {
                 cleanup()
-                resolve({target: currentTarget, pierce: false});
+                resolve({target: currentCssSelector, pierce: false});
             }
             if (keyName === 'f' || keyName === 'F') {
                 cleanup()
-                resolve({target: currentTarget, pierce: true});
+                resolve({target: currentCssSelector, pierce: true});
             }
         }
 
