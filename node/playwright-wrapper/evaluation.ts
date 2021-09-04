@@ -132,35 +132,18 @@ export async function recordSelector(
 ): Promise<Response.JavascriptExecutionResult> {
     const page = state.getActivePage() as Page;
     await page.bringToFront();
-    const myselectors: Record<string, string> = {};
-    page.exposeFunction('setRecordedSelector', (frameid: string, selector: string) => {
-        myselectors[frameid] = selector;
+    const myselectors: string[] = [];
+    page.exposeFunction('setRecordedSelector', (index: number, selector: string) => {
+        while (myselectors.length > index) {
+            myselectors.pop();
+        }
+        myselectors.push(selector);
     });
     page.exposeFunction('getRecordedSelectors', () => {
         return myselectors;
     });
-    const { target, pierce } = await recordSelectorIterator(request.getLabel(), page.mainFrame());
-    let result = target;
-    if (pierce) {
-        result = await piercingSelector(state, target, request.getLabel());
-    }
-    //TODO: Does not know when outside frame or inside
-    const text = myselectors['subframe'];
-    return jsResponse(result + (text ? ' >>> ' + text : ''), 'Selector recorded.');
-}
-
-async function piercingSelector(state: PlaywrightState, target: string, label: string): Promise<string> {
-    const frameHandle = await determineElement(state, target);
-    const frame = await frameHandle?.contentFrame();
-    if (!frame) {
-        throw Error('Frame selection fails');
-    }
-    const subresult = await recordSelectorIterator(label + ' in ' + target, frame);
-    const result = target + ' >>> ' + subresult.target;
-    if (subresult.pierce) {
-        return await piercingSelector(state, result, label);
-    }
-    return result;
+    const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
+    return jsResponse(result, 'Selector recorded.');
 }
 
 async function attachSelectorFinderScript(frame: Frame): Promise<void> {
@@ -178,7 +161,7 @@ async function attachSelectorFinderScript(frame: Frame): Promise<void> {
 }
 
 async function attachSubframeListeners(subframe: Frame, index: number): Promise<void> {
-    await subframe.evaluate((frameid) => {
+    await subframe.evaluate((index) => {
         function rafAsync() {
             return new Promise((resolve) => {
                 requestAnimationFrame(resolve); //faster than set time out
@@ -192,12 +175,12 @@ async function attachSubframeListeners(subframe: Frame, index: number): Promise<
                 return rafAsync().then(() => waitUntilRecorderAvailable());
             } else {
                 // @ts-ignore
-                return Promise.resolve(window.subframeSelectorRecorderFindSelector(frameid));
+                return Promise.resolve(window.subframeSelectorRecorderFindSelector(index));
             }
         }
 
         return waitUntilRecorderAvailable();
-    }, `frame-${index}`);
+    }, index);
     await Promise.all(
         subframe
             .childFrames()
@@ -206,7 +189,7 @@ async function attachSubframeListeners(subframe: Frame, index: number): Promise<
     );
 }
 
-async function recordSelectorIterator(label: string, frame: Frame): Promise<{ target: string; pierce: boolean }> {
+async function recordSelectorIterator(label: string, frame: Frame): Promise<string> {
     await attachSelectorFinderScript(frame);
     await Promise.all(
         frame

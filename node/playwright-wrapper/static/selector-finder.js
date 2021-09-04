@@ -278,11 +278,13 @@ function elementSelectorFromPointInFrame(x, y) {
 window.subframeSelectorRecorderFindSelector = function(myid) {
 
     console.log("FrameId", myid);
+    let currentCssSelector = "NOTSET";
 
     function mouseMoveListener(e) {
         const cssselector = elementSelectorFromPointInFrame(e.pageX - window.scrollX, e.pageY - window.scrollY);
-        if (cssselector) {
+        if (cssselector && cssselector !== currentCssSelector) {
             window.setRecordedSelector(myid, cssselector);
+            currentCssSelector = cssselector;
         }
     }
 
@@ -296,7 +298,7 @@ window.selectorRecorderFindSelector = function(label) {
 
         async function updateTexts() {
             const recorded = await window.getRecordedSelectors();
-            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = "main:"+currentCssSelector + ";\n" + Object.entries(recorded).map((k, v) => k + " : " + v).join(";\n");
+            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = recorded.join(" >>> ");
         }
 
         function mouseMoveListener(e) {
@@ -311,10 +313,9 @@ window.selectorRecorderFindSelector = function(label) {
                 return;
             }
             const target = elementSelectorFromPointInFrame(e.pageX - window.scrollX, e.pageY - window.scrollY);
-            if (target) {
-                if (target !== currentCssSelector) {
-                    window.setRecordedSelector('');
-                }
+            console.log("Target", target);
+            if (target && target !== currentCssSelector) {
+                window.setRecordedSelector(0, target);
                 currentCssSelector = target;
                 updateTexts();
             }
@@ -331,11 +332,9 @@ window.selectorRecorderFindSelector = function(label) {
             const keyName = e.key;
             if (keyName === 's' || keyName === 'S') {
                 cleanup()
-                resolve({target: currentCssSelector, pierce: false});
-            }
-            if (keyName === 'f' || keyName === 'F') {
-                cleanup()
-                resolve({target: currentCssSelector, pierce: true});
+                window.getRecordedSelectors().then((s) => {
+                    resolve(s.join(' >>> '));
+                });
             }
         }
 
