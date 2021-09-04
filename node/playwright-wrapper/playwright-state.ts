@@ -75,13 +75,11 @@ interface BrowserAndConfs {
 }
 
 async function _newBrowser(
-    browserType?: string,
-    headless?: boolean,
+    browserType: 'chromium' | 'firefox' | 'webkit',
+    headless: boolean,
     options?: Record<string, unknown>,
 ): Promise<BrowserAndConfs> {
-    browserType = browserType || 'chromium';
     let browser;
-    headless = !!headless;
     const launchOptions = { ...options, headless };
     if (browserType === 'firefox') {
         browser = await firefox.launch(launchOptions);
@@ -203,11 +201,11 @@ export class PlaywrightState {
         return this.getActiveBrowser();
     };
 
-    public async getOrCreateActiveBrowser(browserType?: string): Promise<IBrowserState> {
+    public async getOrCreateActiveBrowser(browserType?: 'chromium' | 'firefox' | 'webkit'): Promise<IBrowserState> {
         const currentBrowser = this.activeBrowser;
         logger.info('currentBrowser: ' + currentBrowser);
         if (currentBrowser === undefined) {
-            const browserAndConfs = await _newBrowser(browserType);
+            const browserAndConfs = await _newBrowser(browserType || 'chromium', true);
             const newState = new BrowserState(browserAndConfs);
             this.browserStack.push(newState);
             return { browser: newState, newBrowser: true };
@@ -500,7 +498,7 @@ export async function newContext(
 }
 
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
-    const browserType = request.getBrowser();
+    const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
     const browserAndConfs = await _newBrowser(browserType, options['headless'] as boolean, options);
     const browserState = openBrowsers.addBrowser(browserAndConfs);
