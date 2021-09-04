@@ -86,6 +86,7 @@ class Control(LibraryComponent):
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
         quality: str = "",
         timeout: Optional[timedelta] = None,
+        strict: Optional[bool] = None,
     ) -> str:
         """Takes a screenshot of the current window or element and saves it to disk.
 
@@ -113,18 +114,22 @@ class Control(LibraryComponent):
         Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout.
         The default value can be changed by using the `Set Browser Timeout` keyword.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Example
         | `Take Screenshot`                                 # Takes screenshot from page with default filename
         | `Take Screenshot`   selector=id=username_field    # Captures element in image
         | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
         | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
         """
+        strict = self.get_strict_mode(strict) if selector else False
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
         else:
             logger.debug(f"Using {filename} to take screenshot.")
         file_path = self._take_screenshot(
-            filename, selector, fullPage, fileType, quality, timeout
+            filename, selector, fullPage, fileType, quality, timeout, strict
         )
         if self._is_embed(filename):
             return self._embed_to_log(file_path)
@@ -165,6 +170,7 @@ class Control(LibraryComponent):
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
         quality: str = "",
         timeout: Optional[timedelta] = None,
+        strict: bool = True,
     ) -> str:
         string_path_no_extension = str(
             self._get_screenshot_path(filename, fileType.name)
@@ -178,6 +184,7 @@ class Control(LibraryComponent):
                     fileType=fileType.name,
                     quality=quality,
                     timeout=int(self.get_timeout(timeout)),
+                    strict=strict,
                 )
             )
         logger.debug(response.log)

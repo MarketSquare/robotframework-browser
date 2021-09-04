@@ -28,6 +28,7 @@ message Request {
     string fileType = 4;
     string quality = 5;
     int32 timeout = 6;
+    bool strict = 7;
   }
 
   message KeywordCall {
