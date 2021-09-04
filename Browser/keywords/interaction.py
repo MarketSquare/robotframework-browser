@@ -320,7 +320,8 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("PageContent",))
     def record_selector(
-        self, label: Optional[str] = None,
+        self,
+        label: Optional[str] = None,
     ):
         """Record the selector that is under mouse.
 
