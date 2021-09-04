@@ -163,6 +163,7 @@ message Request {
   message JavascriptCode {
     string script = 1;
     string selector = 2;
+    bool strict = 3;
   }
 
   message WaitForFunctionOptions {

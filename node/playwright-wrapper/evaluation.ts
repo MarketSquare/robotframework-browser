@@ -42,8 +42,9 @@ declare global {
  * RF keywords.
  */
 export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
-    await waitUntilElementExists(state, request.getSelector(), request.getStrict());
-    const handle = await invokePlaywrightMethod(state, '$', request.getSelector());
+    const strictMode = request.getStrict();
+    await waitUntilElementExists(state, request.getSelector(), strictMode);
+    const handle = await invokePlaywrightMethodStrict(state, '$', request.getSelector(), strictMode);
     const id = uuidv4();
     state.addElement(id, handle);
     return stringResponse(`element=${id}`, 'Element found successfully.');
@@ -54,8 +55,9 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
  * in RF keywords.
  */
 export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
-    await waitUntilElementExists(state, request.getSelector(), request.getStrict());
-    const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', request.getSelector());
+    const strictMode = request.getStrict();
+    await waitUntilElementExists(state, request.getSelector(), strictMode);
+    const handles: ElementHandle[] = await invokePlaywrightMethodStrict(state, '$$', request.getSelector(), strictMode);
 
     const response: string[] = handles.map((handle) => {
         const id = uuidv4();
@@ -71,15 +73,18 @@ export async function executeJavascript(
     page: Page,
 ): Promise<Response.JavascriptExecutionResult> {
     const selector = request.getSelector();
+    const strictMode = request.getStrict();
     let script = request.getScript();
     let elem;
+    logger.info('strictMode' + strictMode);
     try {
         script = eval(script);
     } catch (error) {
         logger.info(`On executeJavascript, supress ${error} for eval.`);
     }
     if (selector) {
-        elem = await determineElement(state, selector);
+        logger.info('HERE:::::');
+        elem = await determineElementStrict(state, selector, strictMode);
     }
     const result = await page.evaluate(script, elem);
     return jsResponse(result as string, 'JavaScript executed successfully.');
