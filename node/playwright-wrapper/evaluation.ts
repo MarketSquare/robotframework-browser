@@ -132,12 +132,12 @@ export async function recordSelector(
 ): Promise<Response.JavascriptExecutionResult> {
     const page = state.getActivePage() as Page;
     await page.bringToFront();
-    const myselectors: string[] = [];
-    page.exposeFunction('setRecordedSelector', (index: number, selector: string) => {
+    const myselectors: unknown[] = [];
+    page.exposeFunction('setRecordedSelector', (index: number, item: unknown) => {
         while (myselectors.length > index) {
             myselectors.pop();
         }
-        myselectors.push(selector);
+        myselectors.push(item);
     });
     page.exposeFunction('getRecordedSelectors', () => {
         return myselectors;
