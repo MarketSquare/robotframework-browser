@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { ElementHandle, Page } from 'playwright';
+import { ElementHandle, Frame, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -126,13 +126,81 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
     return emptyWithLog('added Style: ' + content);
 }
 
-export async function recordSelector(request: Request.Empty, page: Page): Promise<Response.JavascriptExecutionResult> {
-    await page.addScriptTag({
-        type: 'module',
-        path: path.join(__dirname, '/static/selector-finder.js'),
-    });
+export async function recordSelector(
+    request: Request.Label,
+    state: PlaywrightState,
+): Promise<Response.JavascriptExecutionResult> {
+    if (state.getActiveBrowser().headless) {
+        throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
+    }
+    const page = state.getActivePage() as Page;
     await page.bringToFront();
-    const result = await page.evaluate(() => {
+    const myselectors: unknown[] = [];
+    page.exposeFunction('setRecordedSelector', (index: number, item: unknown) => {
+        while (myselectors.length > index) {
+            myselectors.pop();
+        }
+        myselectors.push(item);
+    });
+    page.exposeFunction('getRecordedSelectors', () => {
+        return myselectors;
+    });
+    const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
+    return jsResponse(result, 'Selector recorded.');
+}
+
+async function attachSelectorFinderScript(frame: Frame): Promise<void> {
+    try {
+        await frame.addScriptTag({
+            type: 'module',
+            path: path.join(__dirname, '/static/selector-finder.js'),
+        });
+    } catch (e) {
+        throw Error(
+            `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.\nOriginal error:${e}`,
+        );
+    }
+    await Promise.all(frame.childFrames().map((child) => attachSelectorFinderScript(child)));
+}
+
+async function attachSubframeListeners(subframe: Frame, index: number): Promise<void> {
+    await subframe.evaluate((index) => {
+        function rafAsync() {
+            return new Promise((resolve) => {
+                requestAnimationFrame(resolve); //faster than set time out
+            });
+        }
+
+        // @ts-ignore
+        function waitUntilRecorderAvailable() {
+            // @ts-ignore
+            if (!window.subframeSelectorRecorderFindSelector) {
+                return rafAsync().then(() => waitUntilRecorderAvailable());
+            } else {
+                // @ts-ignore
+                return Promise.resolve(window.subframeSelectorRecorderFindSelector(index));
+            }
+        }
+
+        return waitUntilRecorderAvailable();
+    }, index);
+    await Promise.all(
+        subframe
+            .childFrames()
+            .filter((f) => f.parentFrame() === subframe)
+            .map((child) => attachSubframeListeners(child, index + 1)),
+    );
+}
+
+async function recordSelectorIterator(label: string, frame: Frame): Promise<string> {
+    await attachSelectorFinderScript(frame);
+    await Promise.all(
+        frame
+            .childFrames()
+            .filter((f) => f.parentFrame() === frame)
+            .map((child) => attachSubframeListeners(child, 1)),
+    );
+    return await frame.evaluate((label) => {
         function rafAsync() {
             return new Promise((resolve) => {
                 requestAnimationFrame(resolve); //faster than set time out
@@ -146,13 +214,12 @@ export async function recordSelector(request: Request.Empty, page: Page): Promis
                 return rafAsync().then(() => waitUntilRecorderAvailable());
             } else {
                 // @ts-ignore
-                return Promise.resolve(window.selectorRecorderFindSelector());
+                return Promise.resolve(window.selectorRecorderFindSelector(label));
             }
         }
 
         return waitUntilRecorderAvailable();
-    });
-    return jsResponse(result as string, 'Selector recorded.');
+    }, label);
 }
 
 export async function highlightElements(

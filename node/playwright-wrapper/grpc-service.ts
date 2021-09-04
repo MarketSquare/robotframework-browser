@@ -361,7 +361,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    recordSelector = this.wrappingPage(evaluation.recordSelector);
+    recordSelector = this.wrapping(evaluation.recordSelector);
 
     async getPageState(
         call: ServerUnaryCall<Request.Empty, Response.JavascriptExecutionResult>,

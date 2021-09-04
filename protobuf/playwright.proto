@@ -17,6 +17,10 @@ syntax = "proto3";
 message Request {
   message Empty {}
 
+  message Label {
+    string label = 1;
+  }
+
   message ScreenshotOptions {
     string path = 1;
     string selector = 2;
@@ -57,8 +61,7 @@ message Request {
 
   message Browser {
     string browser = 1;
-    bool headless = 2;
-    string rawOptions = 3;
+    string rawOptions = 2;
   }
 
   message Context {
@@ -345,7 +348,7 @@ service  Playwright {
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
   /* Executes javascript on the active page */
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
-  rpc RecordSelector(Request.Empty) returns (Response.JavascriptExecutionResult);
+  rpc RecordSelector(Request.Label) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
