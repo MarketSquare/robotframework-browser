@@ -416,7 +416,9 @@ def atest_robot(c):
 
 @task(clean_atest)
 def atest_global_pythonpath(c):
-    sys.exit(_run_pabot(["--variable", "SYS_VAR_CI:True"]))
+    rc = _run_pabot(["--variable", "SYS_VAR_CI:True"])
+    _clean_pabot_results(rc)
+    sys.exit(rc)
 
 
 # Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
