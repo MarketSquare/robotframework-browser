@@ -261,14 +261,20 @@ function dragElement(elmnt, header) {
   }
 }
 
-window.subframeSelectorRecorderFindSelector = function(frameindex) {
+window.subframeSelectorRecorderFindSelector = function(myid) {
 
-    console.log("FrameIndex", frameindex);
+    console.log("FrameId", myid);
 
     function mouseMoveListener(e) {
         const target = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
         if (target) {
-            window.setRecordedSelector(finder(target));
+            if (target.shadowRoot) {
+                const subtarget = target.shadowRoot.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
+                window.setRecordedSelector(myid, finder(target) + ' >> ' + finder(subtarget));
+            } else {
+                window.setRecordedSelector(myid, finder(target));
+            }
+
         }
     }
 
@@ -282,8 +288,8 @@ window.selectorRecorderFindSelector = function(label) {
         let isFrame = false;
 
         async function updateTexts() {
-            const recorded = await window.getRecordedSelector();
-            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget + (recorded && recorded.length ? ' >>> ' + recorded : '');
+            const recorded = await window.getRecordedSelectors();
+            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = "main:"+currentTarget + ";\n" + Object.entries(recorded).map((k, v) => k + " : " + v).join(";\n");
             document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = isFrame ? 'IFRAME <click focus here to interact>' : '';
         }
 

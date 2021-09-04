@@ -133,11 +133,11 @@ export async function recordSelector(
     const page = state.getActivePage() as Page;
     await page.bringToFront();
     const myselectors: Record<string, string> = {};
-    page.exposeFunction('setRecordedSelector', (selector: string) => {
-        myselectors['subframe'] = selector;
+    page.exposeFunction('setRecordedSelector', (frameid: string, selector: string) => {
+        myselectors[frameid] = selector;
     });
-    page.exposeFunction('getRecordedSelector', () => {
-        return myselectors['subframe'];
+    page.exposeFunction('getRecordedSelectors', () => {
+        return myselectors;
     });
     const { target, pierce } = await recordSelectorIterator(request.getLabel(), page.mainFrame());
     let result = target;
@@ -197,13 +197,23 @@ async function attachSubframeListeners(subframe: Frame, index: number): Promise<
         }
 
         return waitUntilRecorderAvailable();
-    }, index);
-    await Promise.all(subframe.childFrames().map((child) => attachSubframeListeners(child, index + 1)));
+    }, `frame-${index}`);
+    await Promise.all(
+        subframe
+            .childFrames()
+            .filter((f) => f.parentFrame() === subframe)
+            .map((child) => attachSubframeListeners(child, index + 1)),
+    );
 }
 
 async function recordSelectorIterator(label: string, frame: Frame): Promise<{ target: string; pierce: boolean }> {
     await attachSelectorFinderScript(frame);
-    await Promise.all(frame.childFrames().map((child) => attachSubframeListeners(child, 0)));
+    await Promise.all(
+        frame
+            .childFrames()
+            .filter((f) => f.parentFrame() === frame)
+            .map((child) => attachSubframeListeners(child, 1)),
+    );
     return await frame.evaluate((label) => {
         function rafAsync() {
             return new Promise((resolve) => {
