@@ -91,6 +91,13 @@ ElementHandle Screenshotting
     File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}.png
 
+Take Take screenshot With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Take screenshot    selector=//input
+    ${path} =    Take screenshot    browser-strict    selector=//input    strict=False
+    [Teardown]    Remove File    ${path}
+
 Screenshotting Without Path
     Remove File    ${OUTPUT_DIR}/*.png
     ${path1} =    Take Screenshot
@@ -119,7 +126,7 @@ Embed ScreenShot To log.html File
 
 Embed Element Picture To log.html File
     [Documentation]
-    ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 1:5    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
     ${path} =    Take screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
