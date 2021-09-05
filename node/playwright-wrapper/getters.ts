@@ -92,7 +92,9 @@ export async function getText(request: Request.ElementSelector, state: Playwrigh
         content = await getTextContent(element);
         logger.info(`Retrieved text for element ${selector} containing ${content}`);
     } catch (e) {
-        logger.error(e);
+        if (e instanceof Error) {
+            logger.error(e);
+        }
         throw e;
     }
     return stringResponse(content, 'Text received successfully.');
@@ -117,7 +119,9 @@ async function getProperty<T>(request: Request.ElementProperty, state: Playwrigh
         logger.info(`Retrieved dom property for element ${selector} containing ${content}`);
         return content;
     } catch (e) {
-        logger.error(e);
+        if (e instanceof Error) {
+            logger.error(e);
+        }
         throw e;
     }
 }
