@@ -189,7 +189,7 @@ const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
 const BROWSER_LIBRARY_HEADER_ID = "browser-library-selector-recorder-header";
 const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
 const BROWSER_LIBRARY_SELECT_BUTTON_ID = "browser-library-select-selector";
-const BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID = "rowser-library-cancel-selector";
+const BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID = "browser-library-cancel-selector";
 const BROWSER_LIBRARY_DESCRIPTION = "browser-library-selector-recorder-description-text";
 
 function htmlToElement(html) {
@@ -216,7 +216,7 @@ function addElement (label) {
         </h5>
         <span id="${BROWSER_LIBRARY_TEXT_ID}">NOTSET</span>
         <span id="${BROWSER_LIBRARY_DESCRIPTION}"></span>
-        <span style="max-width: 300px">Click focus to page and press (s) to record a selector.</span>
+        <span style="max-width: 300px">Move mouse and Hover over an element to record a selector.</span>
     </div>
     `)
   const elem = document.body.appendChild(newDiv);
@@ -295,7 +295,6 @@ window.subframeSelectorRecorderFindSelector = function(myid) {
 }
 
 window.selectorRecorderFindSelector = function(label) {
-    console.log("HERE "+label);
     return new Promise((resolve) => {
         let currentCssSelector = "NOTSET";
         let lastTotalRecord = "NOTSET";
@@ -331,22 +330,45 @@ height: ${rect.height}px;
 border: 3px solid green;
 z-index: 2147483647;
 ">
-<button id="${BROWSER_LIBRARY_SELECT_BUTTON_ID}"
+<style>
+#${BROWSER_LIBRARY_SELECT_BUTTON_ID} {
+    background: white;
+    border: 3px solid green;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 0.5rem;
+    box-shadow: 2px 2px 5px darkolivegreen;
+}
+#${BROWSER_LIBRARY_SELECT_BUTTON_ID}:hover {
+    background: silver;
+    border-color: greenyellow;
+}
+#${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID} {
+    background: white;
+    border: 3px solid green;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 0.5rem;
+    box-shadow: 2px 2px 5px darkolivegreen;
+}
+#${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID}:hover {
+    background: silver;
+    border-color: greenyellow;
+}
+</style>
+<div
 style="
 position: relative;
-top: -35px;
-background: white;
-border: 1px solid green;
+display: flex;
+flex-wrap: wrap;
+top: ${rect.height}px;
 "
+>
+<button id="${BROWSER_LIBRARY_SELECT_BUTTON_ID}"
 >Select</button>
 <button id="${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID}"
-style="
-position: relative;
-top: -35px;
-background: white;
-border: 1px solid green;
-"
 >Cancel</button>
+</div>
 </div>`);
                         document.body.appendChild(div);
                         document.getElementById(BROWSER_LIBRARY_SELECT_BUTTON_ID).onclick = () => {
