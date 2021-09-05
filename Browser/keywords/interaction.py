@@ -191,7 +191,7 @@ class Interaction(LibraryComponent):
         return originals
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_secret(self, selector: str, secret: str):
+    def fill_secret(self, selector: str, secret: str, strict: Optional[bool] = None):
         """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
 
@@ -215,6 +215,9 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         See `Fill Text` for other details.
 
         Example:
@@ -225,7 +228,8 @@ class Interaction(LibraryComponent):
         secret = self.resolve_secret(
             secret, originals.get("secret") or secret, "secret"
         )
-        self._fill_text(selector, secret, log_response=False)
+        strict = self.get_strict_mode(strict)
+        self._fill_text(selector, secret, log_response=False, strict=strict)
 
     @keyword(tags=("Setter", "PageContent"))
     def press_keys(self, selector: str, *keys: str):
@@ -619,13 +623,19 @@ class Interaction(LibraryComponent):
             )
         logger.debug(response.log)
 
-    def _fill_text(self, selector: str, txt: str, log_response: bool = True):
+    def _fill_text(
+        self, selector: str, txt: str, log_response: bool = True, strict: bool = True
+    ):
         if self.library.presenter_mode:
-            self.hover(selector)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
+            self.hover(selector, strict)
+            self.library.highlight_elements(
+                selector, duration=timedelta(seconds=2), strict=strict
+            )
             sleep(2)
         with self.playwright.grpc_channel() as stub:
-            response = stub.FillText(Request().FillText(selector=selector, text=txt))
+            response = stub.FillText(
+                Request().FillText(selector=selector, text=txt, strict=strict)
+            )
             if log_response:
                 logger.debug(response.log)
 

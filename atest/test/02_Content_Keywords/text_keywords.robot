@@ -51,6 +51,12 @@ Fill Secret Direct Value
     Fill Secret    css=input#password_field    Direct Value
     Get Text    css=input#password_field    ==    Direct Value
 
+Fill Secret With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Fill Secret    //input    $LOGIN_URL
+    Fill Secret    //input    $LOGIN_URL    strict=False
+
 Type Secret With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
