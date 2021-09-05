@@ -159,6 +159,7 @@ message Request {
   message SelectElementSelector {
     string selector = 1;
     string matcherJson = 2;
+    bool strict = 3;
   }
 
   message JavascriptCode {

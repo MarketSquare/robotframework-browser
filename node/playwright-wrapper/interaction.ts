@@ -33,7 +33,8 @@ export async function selectOption(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const matcher = JSON.parse(request.getMatcherjson());
-    const result = await invokePlaywrightMethod(state, 'selectOption', selector, matcher);
+    const strictMode = request.getStrict();
+    const result = await invokePlaywrightMethodStrict(state, 'selectOption', selector, strictMode, matcher);
 
     if (result.length == 0) {
         logger.info("Couldn't select any options");
