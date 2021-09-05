@@ -104,11 +104,13 @@ message Request {
     string text = 2;
     int32 delay = 3;
     bool clear = 4;
+    bool strict = 5;
   }
 
   message FillText {
     string selector = 1;
     string text = 2;
+    bool strict = 3;
   }
 
   message ClearText {

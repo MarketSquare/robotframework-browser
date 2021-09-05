@@ -58,10 +58,11 @@ export async function typeText(request: Request.TypeText, state: PlaywrightState
     const text = request.getText();
     const delay = request.getDelay();
     const clear = request.getClear();
+    const strictMode = request.getStrict();
     if (clear) {
-        await invokePlaywrightMethod(state, 'fill', selector, '');
+        await invokePlaywrightMethodStrict(state, 'fill', selector, strictMode, '');
     }
-    await invokePlaywrightMethod(state, 'type', selector, text, { delay: delay });
+    await invokePlaywrightMethodStrict(state, 'type', selector, strictMode, text, { delay: delay });
     return emptyWithLog('Typed text: ' + text);
 }
 

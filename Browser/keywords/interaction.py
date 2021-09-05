@@ -124,6 +124,7 @@ class Interaction(LibraryComponent):
         secret: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
+        strict: Optional[bool] = None,
     ):
         """Types the given secret from ``variable_name`` into the text field
         found by ``selector``.
@@ -148,6 +149,9 @@ class Interaction(LibraryComponent):
         ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         See `Type Text` for details.
 
         Example
@@ -155,11 +159,14 @@ class Interaction(LibraryComponent):
         | `Type Secret`    input#username_field    %username      # Keyword resolves $USERANME/%USERANME% variable value from environment variables
         | `Type Secret`    input#username_field    ${username}    # Robot Framework resolves the variable value, but secrect can leak to Robot framework output files.
         """
+        strict = self.get_strict_mode(strict)
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
             secret, originals.get("secret") or secret, "secret"
         )
-        self._type_text(selector, secret, delay, clear, log_response=False)
+        self._type_text(
+            selector, secret, delay, clear, log_response=False, strict=strict
+        )
 
     def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
         originals = locals_to_params(local_args)
@@ -624,16 +631,23 @@ class Interaction(LibraryComponent):
         delay: timedelta = timedelta(microseconds=0),
         clear: bool = True,
         log_response: bool = True,
+        strict: bool = True,
     ):
         if self.library.presenter_mode:
-            self.hover(selector)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
+            self.hover(selector, strict)
+            self.library.highlight_elements(
+                selector, duration=timedelta(seconds=2), strict=strict
+            )
             sleep(2)
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
             response = stub.TypeText(
                 Request().TypeText(
-                    selector=selector, text=txt, delay=int(delay_ms), clear=clear
+                    selector=selector,
+                    text=txt,
+                    delay=int(delay_ms),
+                    clear=clear,
+                    strict=strict,
                 )
             )
             if log_response:
