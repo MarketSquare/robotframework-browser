@@ -301,7 +301,6 @@ function elementSelectorFromPointInFrame(x, y) {
 
 window.subframeSelectorRecorderFindSelector = function(myid) {
 
-    console.log("FrameId", myid);
     let currentCssSelector = "NOTSET";
 
     function mouseMoveListener(e) {
@@ -407,7 +406,6 @@ top: ${rect.height}px;
                             findingElement = true;
                         };
                     }
-                    console.log(timediff)
                     document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = `${timediff / 1000} s`;
                 }
             }
@@ -415,15 +413,11 @@ top: ${rect.height}px;
 
         function displaySelection(focusDiv) {
             const maxit = Math.min(...lastTotalRecord.map(i => i.length));
-            console.log(maxit);
             const options = [];
-            console.log(lastTotalRecord);
             for (let i = 0; i < maxit; i++) {
                 const item = lastTotalRecord.map(j => j[i]).join(" >>> ");
-                console.log(item);
                 options.push(item);
             }
-            console.log(options);
             const div = htmlToElement(`<div style="
     display: flex;
     flex-direction: column;
