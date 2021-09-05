@@ -69,7 +69,8 @@ export async function typeText(request: Request.TypeText, state: PlaywrightState
 export async function fillText(request: Request.FillText, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const text = request.getText();
-    await invokePlaywrightMethod(state, 'fill', selector, text);
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'fill', selector, strictMode, text);
     return emptyWithLog('Fill text: ' + text);
 }
 
