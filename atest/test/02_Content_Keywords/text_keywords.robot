@@ -44,12 +44,18 @@ Fill Text With Nonmatching Selector
 
 Fill Secret Direct Value
     [Documentation]    ...
-    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 1:3    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Type Secret    css=input#username_field    Direct Value    200 ms    True
     Get Text    css=input#username_field    ==    Direct Value
     Fill Secret    css=input#password_field    Direct Value
     Get Text    css=input#password_field    ==    Direct Value
+
+Type Secret With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Type Secret    //input    $LOGIN_URL
+    Type Secret    //input    $LOGIN_URL    strict=False
 
 Fill Secret placeholder-env-var
     Set Environment Variable    PH_ENV_VAR    password11
