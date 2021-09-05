@@ -19,6 +19,7 @@ import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
 import {
     determineElement,
+    determineElementStrict,
     invokePlaywrightMethod,
     invokePlaywrightMethodStrict,
     waitUntilElementExists,
@@ -39,7 +40,8 @@ export async function getUrl(page: Page): Promise<Response.String> {
 
 export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
     const selector = request.getSelector();
-    const response: Array<ElementHandle> = await invokePlaywrightMethod(state, '$$', selector);
+    const strictMode = request.getStrict();
+    const response: Array<ElementHandle> = await invokePlaywrightMethodStrict(state, '$$', selector, strictMode);
     return intResponse(response.length, 'Found ' + response.length + 'element(s).');
 }
 
@@ -53,14 +55,20 @@ export async function getSelectContent(
 
     type Value = [string, string, boolean];
 
-    const content: Value[] = await invokePlaywrightMethod(state, '$eval', selector, (select: HTMLSelectElement) => {
-        const options: Value[] = [];
-        for (let i = 0; i < select.options.length; i++) {
-            const elem: HTMLOptionElement = select.options[i];
-            options.push([elem.label, elem.value, elem.selected]);
-        }
-        return options;
-    });
+    const content: Value[] = await invokePlaywrightMethodStrict(
+        state,
+        '$eval',
+        selector,
+        strictMode,
+        (select: HTMLSelectElement) => {
+            const options: Value[] = [];
+            for (let i = 0; i < select.options.length; i++) {
+                const elem: HTMLOptionElement = select.options[i];
+                options.push([elem.label, elem.value, elem.selected]);
+            }
+            return options;
+        },
+    );
 
     const response = new Response.Select();
     content.forEach((option) => {
@@ -183,12 +191,13 @@ export async function getViewportSize(page: Page): Promise<Response.Json> {
 
 export async function getBoundingBox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const selector = request.getSelector();
-    const elem = await determineElement(state, selector);
+    const strictMode = request.getStrict();
+    const elem = await determineElementStrict(state, selector, strictMode);
     if (!elem) {
         throw new Error(`No element matching ${selector} found`);
     }
     const boundingBox = await elem.boundingBox();
-    return jsonResponse(JSON.stringify(boundingBox), '');
+    return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box succesfully.');
 }
 
 export async function getPageSource(page: Page): Promise<Response.String> {

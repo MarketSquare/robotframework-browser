@@ -94,6 +94,13 @@ Left Right and Middle Click
     Mouse Button    click    ${x}    ${y}    button=left
     Get Text    \#mouse_button    ==    left
 
+Get Boundingbox With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Get Boundingbox    //input
+    ${x} =    Get Boundingbox    //input    x    strict=False
+    Should Be True    ${x}
+
 *** Keywords ***
 Relative DnD
     [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}
