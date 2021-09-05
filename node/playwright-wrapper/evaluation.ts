@@ -238,6 +238,7 @@ export async function highlightElements(
             d.appendChild(document.createTextNode(''));
             d.style.position = 'fixed';
             const rect = e.getBoundingClientRect();
+            d.style.zIndex = '2147483647';
             d.style.top = `${rect.top}px`;
             d.style.left = `${rect.left}px`;
             d.style.width = `${rect.width}px`;
