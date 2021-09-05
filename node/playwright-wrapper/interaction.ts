@@ -135,7 +135,8 @@ export async function uncheckCheckbox(
     state: PlaywrightState,
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'uncheck', selector);
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'uncheck', selector, strictMode);
     return emptyWithLog('Unchecked checkbox: ' + selector);
 }
 

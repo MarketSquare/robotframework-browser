@@ -39,6 +39,14 @@ Uncheck Checkbox
     Uncheck Checkbox    [name=can_send_email]
     Get Checkbox State    [name=can_send_email]    ==    ${False}
 
+Uncheck Checkbox With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 12 elements.*
+    ...    Uncheck Checkbox   //input
+    Run Keyword And Expect Error
+    ...    *Not a checkbox or radio button*
+    ...    Uncheck Checkbox   //input    strict=False
+
 Get Checkbox State With Nonmatching Selector
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "xpath=//notamatch"*

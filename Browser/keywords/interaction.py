@@ -524,17 +524,21 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def uncheck_checkbox(self, selector: str):
+    def uncheck_checkbox(self, selector: str, strict: Optional[bool] = None):
         """Unchecks the checkbox found by ``selector``.
 
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Does nothing if the element is not checked/selected.
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(
-                Request().ElementSelector(selector=selector)
+                Request().ElementSelector(selector=selector, strict=strict)
             )
             logger.debug(response.log)
 
