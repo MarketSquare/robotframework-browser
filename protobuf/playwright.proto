@@ -120,7 +120,8 @@ message Request {
 
   message PressKeys {
     string selector = 1;
-    repeated string key = 2;
+    bool strict = 2;
+    repeated string key = 3;
   }
 
   message ElementSelector {
