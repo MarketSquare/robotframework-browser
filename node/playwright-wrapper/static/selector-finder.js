@@ -414,11 +414,16 @@ top: ${rect.height}px;
         }
 
         function displaySelection(focusDiv) {
-            const maxit = Math.max(lastTotalRecord.map(i => i.length));
+            const maxit = Math.min(...lastTotalRecord.map(i => i.length));
+            console.log(maxit);
             const options = [];
+            console.log(lastTotalRecord);
             for (let i = 0; i < maxit; i++) {
-                options.push(lastTotalRecord.map(j => j[i]).join(" >>> "));
+                const item = lastTotalRecord.map(j => j[i]).join(" >>> ");
+                console.log(item);
+                options.push(item);
             }
+            console.log(options);
             const div = htmlToElement(`<div style="
     display: flex;
     flex-direction: column;
@@ -432,7 +437,7 @@ top: ${rect.height}px;
     padding: 8px;">
 <span>Select selector pattern to use:</span>
 <select id="${BROWSER_LIBRARY_SELECTION}">
-${options.map(o => `<option value="${o}">${o}</option>`).join("")}
+${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
 </select>
 <button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">OK</button>
 <button id="${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON}">Cancel</button>
