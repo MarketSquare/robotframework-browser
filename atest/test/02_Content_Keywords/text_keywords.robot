@@ -42,6 +42,12 @@ Fill Text With Nonmatching Selector
     ...    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
+Fill Text With Secret
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Fill Text    //input    something
+    Fill Text    //input    something    strict=${False}
+
 Fill Secret Direct Value
     [Documentation]    ...
     ...    LOG 1:3    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.

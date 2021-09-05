@@ -84,7 +84,7 @@ class Interaction(LibraryComponent):
         self._type_text(selector, txt, delay, clear, strict=strict)
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_text(self, selector: str, txt: str):
+    def fill_text(self, selector: str, txt: str, strict: Optional[bool] = None):
         """Clears and fills the given ``txt`` into the text field found by ``selector``.
 
         This method waits for an element matching the ``selector`` to appear,
@@ -100,13 +100,17 @@ class Interaction(LibraryComponent):
 
         ``txt`` Text for the text field.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         See `Type Text` for emulating typing text character by character.
 
         Example:
         | `Fill Text`    css=input#username_field    username
         """
         logger.info(f"Fills the text '{txt}' in the given field.")
-        self._fill_text(selector, txt)
+        strict = self.get_strict_mode(strict)
+        self._fill_text(selector, txt, strict=strict)
 
     @keyword(tags=("Setter", "PageContent"))
     def clear_text(self, selector: str):
