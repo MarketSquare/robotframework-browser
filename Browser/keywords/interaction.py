@@ -113,17 +113,23 @@ class Interaction(LibraryComponent):
         self._fill_text(selector, txt, strict=strict)
 
     @keyword(tags=("Setter", "PageContent"))
-    def clear_text(self, selector: str):
+    def clear_text(self, selector: str, strict: Optional[bool] = None):
         """Clears the text field found by ``selector``.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.ClearText(Request().ClearText(selector=selector))
+            response = stub.ClearText(
+                Request().ClearText(selector=selector, strict=strict)
+            )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))

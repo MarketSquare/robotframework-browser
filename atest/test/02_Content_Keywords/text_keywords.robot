@@ -26,6 +26,12 @@ Clear Text
     Type Text    input#username_field    username    clear=No
     Get Text    css=input#username_field    ==    username
 
+Clear Text With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Clear Text    //input
+    Clear Text    //input    strict=False
+
 Clear Text With Nonmatching Selector
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Clear Text

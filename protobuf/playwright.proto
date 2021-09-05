@@ -115,6 +115,7 @@ message Request {
 
   message ClearText {
     string selector = 1;
+    bool strict = 2;
   }
 
   message PressKeys {

@@ -76,7 +76,8 @@ export async function fillText(request: Request.FillText, state: PlaywrightState
 
 export async function clearText(request: Request.ClearText, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'fill', selector, '');
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'fill', selector, strictMode, '');
     return emptyWithLog('Text field cleared.');
 }
 
