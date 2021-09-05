@@ -242,11 +242,14 @@ class Interaction(LibraryComponent):
         self._fill_text(selector, secret, log_response=False, strict=strict)
 
     @keyword(tags=("Setter", "PageContent"))
-    def press_keys(self, selector: str, *keys: str):
+    def press_keys(self, selector: str, strict: Optional[bool] = None, *keys: str):
         """Types the given key combination into element found by ``selector``.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
+
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
 
         Supports values like "a, b" which will be automatically typed.
         .
@@ -262,8 +265,11 @@ class Interaction(LibraryComponent):
         | # Keyword         Selector                    *Keys
         | `Press Keys`      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
         """  # noqa
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.Press(Request().PressKeys(selector=selector, key=keys))
+            response = stub.Press(
+                Request().PressKeys(selector=selector, strict=strict, key=keys)
+            )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))

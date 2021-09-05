@@ -84,8 +84,9 @@ export async function clearText(request: Request.ClearText, state: PlaywrightSta
 export async function press(request: Request.PressKeys, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const keyList = request.getKeyList();
+    const strictMode = request.getStrict();
     for (const i of keyList) {
-        await invokePlaywrightMethod(state, 'press', selector, i);
+        await invokePlaywrightMethodStrict(state, 'press', selector, strictMode, i);
     }
     return emptyWithLog('Pressed keys: ' + keyList);
 }
