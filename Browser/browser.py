@@ -51,6 +51,7 @@ from .keywords import (
 from .keywords.crawling import Crawling
 from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
+from .utils.misc import type_converter
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import DelayedKeyword, SupportedBrowsers
@@ -944,6 +945,10 @@ class Browser(DynamicCore):
 
     def get_strict_mode(self, strict: Union[bool, None]) -> bool:
         if strict is not None:
+            if not isinstance(strict, bool):
+                raise ValueError(
+                    f"Strict mode should be boolean, but it was: {strict} ({type_converter(strict)})"
+                )
             logger.debug(f"Strict mode: {strict}")
             return strict
         logger.debug(f"Using default strict mode: {self.strict_mode}")
