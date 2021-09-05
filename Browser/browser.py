@@ -51,10 +51,10 @@ from .keywords import (
 from .keywords.crawling import Crawling
 from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
-from .utils.misc import type_converter
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import DelayedKeyword, SupportedBrowsers
+from .utils.misc import type_converter
 from .version import __version__ as VERSION
 
 

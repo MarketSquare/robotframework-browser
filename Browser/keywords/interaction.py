@@ -587,15 +587,21 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def deselect_options(self, selector: str):
+    def deselect_options(self, selector: str, strict: Optional[bool] = None):
         """Deselects all options from select element found by ``selector``.
 
         ``selector`` Selector of the select tag.
         See the `Finding elements` section for details about the selectors.
+
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.DeselectOption(Request().ElementSelector(selector=selector))
-            logger.debug(response.log)
+            response = stub.DeselectOption(
+                Request().ElementSelector(selector=selector, strict=strict)
+            )
+        logger.debug(response.log)
 
     def _fill_text(self, selector: str, txt: str, log_response: bool = True):
         if self.library.presenter_mode:

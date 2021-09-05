@@ -23,4 +23,3 @@ def test_get_strict_mode_with_error(browser: Browser.Browser):
         browser.get_strict_mode("None")  # type: ignore
     with pytest.raises(ValueError):
         browser.get_strict_mode("True")  # type: ignore
-
