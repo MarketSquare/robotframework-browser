@@ -577,8 +577,6 @@ class Getters(LibraryComponent):
         - ``checked`` => ``True``
         - ``unchecked`` => ``False``
 
-        ``message`` overrides the default error message.
-
         Example:
         | `Get Checkbox State`    [name=can_send_email]    ==    checked
         """
@@ -629,7 +627,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
-                Request().ElementSelector(selector=selector)
+                Request().ElementSelector(selector=selector, strict=False)
             )
             count = response.body
             return float_str_verify_assertion(
@@ -813,6 +811,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
@@ -831,6 +830,9 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -844,23 +846,26 @@ class Getters(LibraryComponent):
         | `Get BoundingBox`     id=element         width         >    180
         | `Get BoundingBox`     id=element         ALL           validate    value['x'] > value['y']*2
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
-            parsed = json.loads(response.json)
-            logger.debug(f"BoundingBox: {parsed}")
-            if key == BoundingBoxFields.ALL:
-                return int_dict_verify_assertion(
-                    parsed, assertion_operator, assertion_expected, "BoundingBox is"
-                )
-            else:
-                logger.info(f"Value of '{key}'': {parsed[key.name]}")
-                return float_str_verify_assertion(
-                    parsed[key.name],
-                    assertion_operator,
-                    assertion_expected,
-                    f"BoundingBox {key.name} is",
-                    message,
-                )
+            response = stub.GetBoundingBox(
+                Request.ElementSelector(selector=selector, strict=strict)
+            )
+        parsed = json.loads(response.json)
+        logger.debug(f"BoundingBox: {parsed}")
+        if key == BoundingBoxFields.ALL:
+            return int_dict_verify_assertion(
+                parsed, assertion_operator, assertion_expected, "BoundingBox is"
+            )
+        else:
+            logger.info(f"Value of '{key}'': {parsed[key.name]}")
+            return float_str_verify_assertion(
+                parsed[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"BoundingBox {key.name} is",
+                message,
+            )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     def get_scroll_size(
