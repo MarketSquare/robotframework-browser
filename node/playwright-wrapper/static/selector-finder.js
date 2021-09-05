@@ -271,7 +271,7 @@ function elementSelectorFromPointInFrame(x, y) {
         if (element.shadowRoot) {
             const parentSelector = finder(element, {root:parentElement})
             const [childSelector, rect] = subelementFromPoint(element.shadowRoot);
-            return [parentSelector + " >> "+ childSelector, rect];
+            return [childSelector.map(s => parentSelector + " >> " + s), rect];
         }
         const rect = element.getBoundingClientRect();
         const left = parseFloat(window.getComputedStyle(element, null).getPropertyValue('padding-left')) || 0;
