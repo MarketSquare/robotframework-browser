@@ -53,15 +53,6 @@ export async function deSelectOption(
     return emptyWithLog(`Deselected options in element ${selector}`);
 }
 
-export async function inputText(request: Request.TextInput, state: PlaywrightState): Promise<Response.Empty> {
-    const inputText = request.getInput();
-    const selector = request.getSelector();
-    const type = request.getType();
-    const methodName = type ? 'type' : 'fill';
-    await invokePlaywrightMethod(state, methodName, selector, inputText);
-    return emptyWithLog('Input text: ' + inputText);
-}
-
 export async function typeText(request: Request.TypeText, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const text = request.getText();
