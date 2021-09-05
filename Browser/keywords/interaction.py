@@ -50,6 +50,7 @@ class Interaction(LibraryComponent):
         txt: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
+        strict: Optional[bool] = None,
     ):
         """Types the given ``txt`` into the text field found by ``selector``.
 
@@ -69,6 +70,9 @@ class Interaction(LibraryComponent):
         ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         See `Fill Text` for direct filling of the full text at once.
 
         Example
@@ -76,7 +80,8 @@ class Interaction(LibraryComponent):
         | `Type Text`    input#username_field    user    delay=10 ms    clear=No
         """
         logger.info(f"Types the text '{txt}' in the given field.")
-        self._type_text(selector, txt, delay, clear)
+        strict = self.get_strict_mode(strict)
+        self._type_text(selector, txt, delay, clear, strict=strict)
 
     @keyword(tags=("Setter", "PageContent"))
     def fill_text(self, selector: str, txt: str):

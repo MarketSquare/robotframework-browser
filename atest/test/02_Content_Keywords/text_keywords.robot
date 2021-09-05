@@ -169,6 +169,12 @@ Type Text with Delay
     Type Text    input#username_field    username    delay=10 ms
     Get Text    css=input#username_field    ==    username
 
+Type Text With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Type Text    //input    username
+    Type Text    //input    username    strict=False
+
 Type and Fill Text with text selector
     Type Text    input#username_field    Text field
     Type Text    text=User Name:    txt=some text
