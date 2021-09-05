@@ -70,8 +70,9 @@ Select Options By text
 
 Select Options By With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Select Options By
-    ...    notamatch    label    Label
+    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
+    ...    Select Options By
+    ...    notamatch    label    False    Label
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Deselect Options Implicitly
@@ -80,6 +81,12 @@ Deselect Options Implicitly
 Deselect Options Explicitly
     Deselect Options    select[name=possible_channels]
     Get Selected Options    select[name=possible_channels]    text    ==
+
+Deselect Options With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 3 elements.*
+    ...    Deselect Options    //select
+    Deselect Options    //select    strict=False
 
 Deselect Options With Nonmatching Selector
     Set Browser Timeout    50ms

@@ -48,7 +48,8 @@ export async function deSelectOption(
     state: PlaywrightState,
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'selectOption', selector, []);
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'selectOption', selector, strictMode, []);
     return emptyWithLog(`Deselected options in element ${selector}`);
 }
 
