@@ -90,5 +90,5 @@ Deselect Options With Nonmatching Selector
 *** Keywords ***
 Select Option And Verify Selection
     [Arguments]    ${attribute}    ${list_id}    @{selection}
-    Select Options By    ${list_id}    ${attribute}    @{selection}
+    Select Options By    ${list_id}    ${attribute}    True    @{selection}
     Get Selected Options    ${list_id}    ${attribute}    ==    @{selection}

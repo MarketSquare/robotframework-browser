@@ -539,7 +539,13 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def select_options_by(self, selector: str, attribute: SelectAttribute, *values):
+    def select_options_by(
+        self,
+        selector: str,
+        attribute: SelectAttribute,
+        strict: Optional[bool] = None,
+        *values,
+    ):
         """Selects options from select element found by ``selector``.
 
         ``selector`` Selector of the select tag.
@@ -549,6 +555,9 @@ class Interaction(LibraryComponent):
         Possible attributes to match options by:
         ``attribute``
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         If no values to select are passed will deselect options in element.
 
         Example:
@@ -557,6 +566,7 @@ class Interaction(LibraryComponent):
         | `Select Options By`    index    select[name=possible_channels]    0    2
         | `Select Options By`    text     select[name=interests]    Males    Females
         """
+        strict = self.get_strict_mode(strict)
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
             self.deselect_options(selector)
@@ -570,7 +580,9 @@ class Interaction(LibraryComponent):
             matchers = json.dumps([{"index": int(s)} for s in values])
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
-                Request().SelectElementSelector(selector=selector, matcherJson=matchers)
+                Request().SelectElementSelector(
+                    selector=selector, matcherJson=matchers, strict=strict
+                )
             )
             logger.debug(response.log)
 
