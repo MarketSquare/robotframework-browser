@@ -297,8 +297,6 @@ service  Playwright {
   rpc GetTitle(Request.Empty) returns (Response.String);
   /* Returns the count of elements found with selector */
   rpc GetElementCount(Request.ElementSelector) returns (Response.Int);
-  /* Wraps playwrights page.fill to input text into input specified with selector */
-  rpc InputText(Request.TextInput) returns (Response.Empty);
    /* Wraps playwrights page.type to type text into input specified with selector */
   rpc TypeText(Request.TypeText) returns (Response.Empty);
   /* Wraps playwrights page.fill to fill text of input specified with selector */
