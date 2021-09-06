@@ -418,6 +418,7 @@ top: ${rect.height}px;
                 const item = lastTotalRecord.map(j => j[i]).join(" >>> ");
                 options.push(item);
             }
+            const oldelement = document.getElementById(BROWSER_LIBRARY_ID);
             const div = htmlToElement(`<div style="
     display: flex;
     flex-direction: column;
@@ -425,8 +426,8 @@ top: ${rect.height}px;
     border-radius: 5px;
     z-index: 2147483647;
     position: fixed;
-    top: 16px;
-    right: 16px;
+    top: ${oldelement.style.top};
+    left: ${oldelement.style.left};
     background: white;
     padding: 8px;">
 <span>Select selector pattern to use:</span>
@@ -436,6 +437,7 @@ ${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
 <button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">OK</button>
 <button id="${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON}">Cancel</button>
 </div>`);
+            oldelement.style.visibility = 'hidden';
             document.body.appendChild(div);
             const selection = document.getElementById(BROWSER_LIBRARY_SELECTION)
             document.getElementById(BROWSER_LIBRARY_SELECTION_OK_BUTTON).onclick = () => {
@@ -445,6 +447,7 @@ ${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
                 resolve(selection.value);
             };
             document.getElementById(BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON).onclick = () => {
+                oldelement.style.visibility = 'visible';
                 focusDiv.remove();
                 div.remove();
                 findingElement = true;
