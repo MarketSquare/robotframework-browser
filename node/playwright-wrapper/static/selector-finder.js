@@ -351,7 +351,7 @@ left: ${rect.left-window.scrollX}px;
 width: ${rect.width}px;
 height: ${rect.height}px;
 border: 3px solid green;
-z-index: 2147483647;
+z-index: 2147483646;
 ">
 <style>
 #${BROWSER_LIBRARY_SELECT_BUTTON_ID} {
