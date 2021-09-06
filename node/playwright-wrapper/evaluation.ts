@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElementStrict, invokePlaywrightMethodStrict, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -38,7 +38,7 @@ declare global {
 export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const strictMode = request.getStrict();
     await waitUntilElementExists(state, request.getSelector(), strictMode);
-    const handle = await invokePlaywrightMethodStrict(state, '$', request.getSelector(), strictMode);
+    const handle = await invokePlaywrightMethod(state, '$', request.getSelector(), strictMode);
     const id = uuidv4();
     state.addElement(id, handle);
     return stringResponse(`element=${id}`, 'Element found successfully.');
@@ -51,7 +51,7 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
 export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const strictMode = request.getStrict();
     await waitUntilElementExists(state, request.getSelector(), strictMode);
-    const handles: ElementHandle[] = await invokePlaywrightMethodStrict(state, '$$', request.getSelector(), strictMode);
+    const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', request.getSelector(), strictMode);
 
     const response: string[] = handles.map((handle) => {
         const id = uuidv4();
@@ -76,7 +76,7 @@ export async function executeJavascript(
         logger.info(`On executeJavascript, supress ${error} for eval.`);
     }
     if (selector) {
-        elem = await determineElementStrict(state, selector, strictMode);
+        elem = await determineElement(state, selector, strictMode);
     }
     const result = await page.evaluate(script, elem);
     return jsResponse(result as string, 'JavaScript executed successfully.');
@@ -94,7 +94,7 @@ export async function waitForElementState(
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
-    await invokePlaywrightMethodStrict(state, 'waitForSelector', selector, strictMode, options);
+    await invokePlaywrightMethod(state, 'waitForSelector', selector, strictMode, options);
     return emptyWithLog('Wait for Element with selector: ' + selector);
 }
 
@@ -116,7 +116,7 @@ export async function waitForFunction(
         logger.info(`On waitForFunction, supress ${error} for eval.`);
     }
     if (selector) {
-        elem = await determineElementStrict(state, selector, strictMode);
+        elem = await determineElement(state, selector, strictMode);
         script = eval(script);
     }
 
@@ -256,7 +256,7 @@ export async function highlightElements(
             }, options?.dur ?? 5000);
         });
     };
-    await invokePlaywrightMethodStrict(state, '$$eval', selector, strictMode, highlighter, {
+    await invokePlaywrightMethod(state, '$$eval', selector, strictMode, highlighter, {
         dur: duration,
         wdt: width,
         stl: style,

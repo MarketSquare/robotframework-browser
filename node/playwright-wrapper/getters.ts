@@ -17,13 +17,7 @@ import { ElementHandle, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import {
-    determineElement,
-    determineElementStrict,
-    invokePlaywrightMethod,
-    invokePlaywrightMethodStrict,
-    waitUntilElementExists,
-} from './playwirght-invoke';
+import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -41,7 +35,7 @@ export async function getUrl(page: Page): Promise<Response.String> {
 export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const response: Array<ElementHandle> = await invokePlaywrightMethodStrict(state, '$$', selector, strictMode);
+    const response: Array<ElementHandle> = await invokePlaywrightMethod(state, '$$', selector, strictMode);
     return intResponse(response.length, 'Found ' + response.length + 'element(s).');
 }
 
@@ -55,7 +49,7 @@ export async function getSelectContent(
 
     type Value = [string, string, boolean];
 
-    const content: Value[] = await invokePlaywrightMethodStrict(
+    const content: Value[] = await invokePlaywrightMethod(
         state,
         '$eval',
         selector,
@@ -165,7 +159,7 @@ export async function getStyle(request: Request.ElementSelector, state: Playwrig
     const strictMode = request.getStrict();
 
     logger.info('Getting css of element on page');
-    const result = await invokePlaywrightMethodStrict(
+    const result = await invokePlaywrightMethod(
         state,
         '$eval',
         selector,
@@ -192,7 +186,7 @@ export async function getViewportSize(page: Page): Promise<Response.Json> {
 export async function getBoundingBox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const elem = await determineElementStrict(state, selector, strictMode);
+    const elem = await determineElement(state, selector, strictMode);
     if (!elem) {
         throw new Error(`No element matching ${selector} found`);
     }
