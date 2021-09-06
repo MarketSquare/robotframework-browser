@@ -53,14 +53,14 @@ No Video
     Verify Video Files    ${3}    ${3}
 
 Video with dir
-    New Context    recordVideo={'dir': '${OUTPUT_DIR}/video'}
+    New Context    recordVideo={'dir': '${OUTPUT_DIR}${/}video'}
     New Page    ${LOGIN_URL}
     Verify Video Files    ${3}    ${4}
 
 Video with direct options
     [Documentation]
     ...    LOG 6:3    INFO    GLOB:    **.webm*
-    New Context    recordVideo={'dir':'${OUTPUT_DIR}/myvideo', 'size':{'width':400, 'height':250}}
+    New Context    recordVideo={'dir':'${OUTPUT_DIR}${/}myvideo', 'size':{'width':400, 'height':250}}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Wait File Count In Directory    ${OUTPUT_DIR}/myvideo    0
