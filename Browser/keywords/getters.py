@@ -482,6 +482,7 @@ class Getters(LibraryComponent):
     def get_selected_options(
         self,
         selector: str,
+        strict: Optional[bool] = None,
         option_attribute: SelectAttribute = SelectAttribute.label,
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
@@ -493,6 +494,9 @@ class Getters(LibraryComponent):
 
         ``option_attribute`` Which attribute shall be returned/verified.
         Defaults to label.
+
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
@@ -517,29 +521,30 @@ class Getters(LibraryComponent):
         | `Get Selected Options`   select#names             label          *=         Mikko                     #assertion contain
         | `Get Selected Options`   select#names             label          validate   len(value) == 3           #assertion length
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
-                Request().ElementSelector(selector=selector)
+                Request().ElementSelector(selector=selector, strict=strict)
             )
-            logger.info(response)
-            expected = list(assertion_expected)
-            selected: Union[List[int], List[str]]
-            if option_attribute is SelectAttribute.value:
-                selected = [sel.value for sel in response.entry if sel.selected]
-            elif option_attribute is SelectAttribute.label:
-                selected = [sel.label for sel in response.entry if sel.selected]
-            elif option_attribute is SelectAttribute.index:
-                selected = [
-                    index for index, sel in enumerate(response.entry) if sel.selected
-                ]
-                expected = [int(exp) for exp in expected]
+        logger.info(response)
+        expected = list(assertion_expected)
+        selected: Union[List[int], List[str]]
+        if option_attribute is SelectAttribute.value:
+            selected = [sel.value for sel in response.entry if sel.selected]
+        elif option_attribute is SelectAttribute.label:
+            selected = [sel.label for sel in response.entry if sel.selected]
+        elif option_attribute is SelectAttribute.index:
+            selected = [
+                index for index, sel in enumerate(response.entry) if sel.selected
+            ]
+            expected = [int(exp) for exp in expected]
 
-            return list_verify_assertion(
-                selected,
-                assertion_operator,
-                expected,
-                "Selected Options:",
-            )
+        return list_verify_assertion(
+            selected,
+            assertion_operator,
+            expected,
+            "Selected Options:",
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling

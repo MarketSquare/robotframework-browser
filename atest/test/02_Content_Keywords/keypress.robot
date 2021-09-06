@@ -24,7 +24,7 @@ Press Keys Combination of Keystrokes in Select List
     Click    select[name="possible_channels"] > option[value="email"]
     Browser.Press Keys    select[name="possible_channels"]    True    Shift+ArrowDown
     Browser.Press Keys    select[name="possible_channels"]    True    Shift+ArrowDown
-    Get Selected Options    select[name="possible_channels"]    value    ==    email    phone    directmail
+    Get Selected Options    select[name="possible_channels"]    True    value    ==    email    phone    directmail
 
 Press Keys With Nonmatching Selector
     Set Browser Timeout    50ms
