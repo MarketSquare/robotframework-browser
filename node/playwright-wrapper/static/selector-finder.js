@@ -406,7 +406,7 @@ top: ${rect.height}px;
                             findingElement = true;
                         };
                     }
-                    document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = `${timediff / 1000} s`;
+                    document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = `${Math.round(300 - timediff / 10) / 100} s`;
                 }
             }
         }
