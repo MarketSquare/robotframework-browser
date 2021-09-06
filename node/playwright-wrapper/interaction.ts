@@ -115,7 +115,8 @@ export async function hover(
 
 export async function focus(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'focus', selector);
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'focus', selector, strictMode);
     return emptyWithLog('Focused element: ' + selector);
 }
 
