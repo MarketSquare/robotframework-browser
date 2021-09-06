@@ -122,7 +122,8 @@ export async function focus(request: Request.ElementSelector, state: PlaywrightS
 
 export async function checkCheckbox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'check', selector);
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethodStrict(state, 'check', selector, strictMode);
     return emptyWithLog('Checked checkbox: ' + selector);
 }
 

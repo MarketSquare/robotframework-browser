@@ -549,16 +549,22 @@ class Interaction(LibraryComponent):
         )
 
     @keyword(tags=("Setter", "PageContent"))
-    def check_checkbox(self, selector: str):
+    def check_checkbox(self, selector: str, strict: Optional[bool] = None):
         """Checks the checkbox or selects radio button found by ``selector``.
 
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Does nothing if the element is already checked/selected.
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.CheckCheckbox(Request().ElementSelector(selector=selector))
+            response = stub.CheckCheckbox(
+                Request().ElementSelector(selector=selector, strict=strict)
+            )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
