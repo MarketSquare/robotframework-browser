@@ -34,6 +34,12 @@ Check Checkbox
     ${state} =    Get Checkbox State    [name=can_send_sms]    ==    on
     Should Be True    ${state}
 
+Check Checkbox With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 2 elements.*
+    ...    Check Checkbox    //input[@type="checkbox"]
+    Check Checkbox    //input[@type="checkbox"]    strict=False
+
 Uncheck Checkbox
     Get Checkbox State    [name=can_send_email]    ==    ${True}
     Uncheck Checkbox    [name=can_send_email]
