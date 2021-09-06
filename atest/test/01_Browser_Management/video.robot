@@ -52,16 +52,20 @@ No Video
     New Page    ${LOGIN_URL}
     Verify Video Files    ${3}    ${3}
 
-Create Video With Deprecated Options
+Video with dir
+    New Context    recordVideo={'dir': '${OUTPUT_DIR}/video'}
+    New Page    ${LOGIN_URL}
+    Verify Video Files    ${3}    ${4}
+
+Video with direct options
     [Documentation]
-    ...    LOG 3:3    INFO    GLOB:    *width="300" height="200"*.webm"*
-    ...    LOG 2:2    WARN    Browser library New Context keyword has deprecated videosPath, use recordVideo
-    ...    LOG 2:3    WARN    Browser library New Context keyword has deprecated videoSize, use recordVideo
-    ${size} =    Create Dictionary    width    300    height    200
-    New Context    videosPath=${OUTPUT_DIR}/video    videoSize=${size}
+    ...    LOG 6:3    INFO    GLOB:    **.webm*
+    New Context    recordVideo={'dir':'${OUTPUT_DIR}/myvideo', 'size':{'width':400, 'height':250}}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    Verify Video Files    ${3}    ${4}
+    Wait File Count In Directory    ${OUTPUT_DIR}/myvideo    0
+    Close Page
+    Wait File Count In Directory    ${OUTPUT_DIR}/myvideo    1
 
 *** Keywords ***
 Video Setup

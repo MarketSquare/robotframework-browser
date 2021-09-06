@@ -34,7 +34,6 @@ from ..utils import (
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
-    attribute_warning,
     convert_typed_dict,
     find_by_id,
     keyword,
@@ -386,9 +385,6 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=("Setter", "BrowserControl"))
-    @attribute_warning(
-        old_args=("videosPath", "videoSize"), new_args=("recordVideo", "recordVideo")
-    )
     def new_context(
         self,
         acceptDownloads: bool = False,
@@ -409,8 +405,6 @@ class PlaywrightState(LibraryComponent):
         httpCredentials: Optional[HttpCredentials] = None,
         colorScheme: Optional[ColorScheme] = None,
         proxy: Optional[Proxy] = None,
-        videosPath: Optional[str] = None,
-        videoSize: Optional[ViewportDimensions] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         hideRfBrowser: bool = False,
         recordVideo: Optional[RecordVideo] = None,
@@ -497,20 +491,6 @@ class PlaywrightState(LibraryComponent):
         Note that browser needs to be launched with the global proxy for this option to work.
         If all contexts override the proxy, global proxy will be never used and can be any string
 
-        ``videosPath`` is deprecated by playwright, use recordVideo instead.
-        Enables video recording for all pages to videosPath
-        folder. If videosPath is not existing folder, videosPath folder is created
-        under ${OUTPUT_DIR}/browser/video/ folder. If videosPath is not specified,
-        videos are not recorded.
-
-        ``videoSize`` is deprecated by playwright, use recordVideo instead.
-        Specifies dimensions of the automatically recorded
-        video. Can only be used if videosPath is set. If not specified the size will
-        be equal to viewport. If viewport is not configured explicitly the video size
-        defaults to 1280x720. Actual picture of the page will be scaled down if
-        necessary to fit specified size.
-        - Example {"width": 1280, "height": 720}
-
         ``defaultBrowserType`` If no browser is open and `New Context` opens a new browser
         with defaults, it now uses this setting.
         Very useful together with `Get Device` keyword:
@@ -525,6 +505,7 @@ class PlaywrightState(LibraryComponent):
         each page will be scaled down if necessary to fit the specified size.
         `size` is dictionary containing `width` (Video frame width) and  `height`
         (Video frame height) keys.
+        Example:  ``recordVideo={'dir':'myvideodir', 'size':{'width':400, 'height':250}}``
 
         ``recordHar`` Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording
         for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file.
@@ -566,7 +547,7 @@ class PlaywrightState(LibraryComponent):
         If there's no open Browser this keyword will open one. Does not create pages.
         """
         params = locals_to_params(locals())
-        params = self._set_video_path(params)
+        self._set_video_path(params)
         params = self._set_video_size_to_int(params)
         if storageState and not Path(storageState).is_file():
             raise ValueError(
@@ -578,8 +559,6 @@ class PlaywrightState(LibraryComponent):
             )
             params["httpCredentials"] = secret
         params = convert_typed_dict(self.new_context.__annotations__, params)
-        if not videosPath:
-            params.pop("videoSize", None)
         trace_file = params.pop("tracing", None)
         masked_params = self._mask_credentials(params.copy())
         options = json.dumps(params, default=str)
@@ -615,20 +594,16 @@ class PlaywrightState(LibraryComponent):
             data["httpCredentials"] = "XXX"
         return data
 
-    def _set_video_path(self, params: dict) -> dict:
-        video_path = params.get("videosPath")
+    def _set_video_path(self, params: dict):
         record_video = params.get("recordVideo", {})
+        video_path = record_video.get("dir")
         if not video_path:
-            video_path = record_video.get("dir")
-        if not video_path:
-            return params
+            return
         if Path(video_path).is_dir():
-            return params
-        if record_video:
-            params["recordVideo"]["dir"] = self.video_output / video_path
-        else:
-            params["videosPath"] = self.video_output / video_path
-        return params
+            return
+        if not record_video:
+            return
+        params["recordVideo"]["dir"] = self.video_output / video_path
 
     def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
         width = params.get("recordVideo", {}).get("size", {}).get("width")
