@@ -19,4 +19,4 @@ Select list options
     Keyboard Key    down    Shift
     Keyboard Key    press    ArrowDown
     Keyboard Key    press    ArrowDown
-    Get Selected Options    select[name="possible_channels"]    value    ==    email    phone    directmail
+    Get Selected Options    select[name="possible_channels"]    True    value    ==    email    phone    directmail

@@ -29,24 +29,24 @@ Get Selected Options
     ...    Verifying list 'possible_channels' has options [ Email | Telephone ] selected.
     ...    Verifying list 'interests' has no options selected.
     ...    Verifying list 'possible_channels' fails if assert all options selected.
-    ${selection} =    Get Selected Options    select[name=preferred_channel]    label    ==    Telephone
+    ${selection} =    Get Selected Options    select[name=preferred_channel]    True    label    ==    Telephone
     Log    ${selection}
     Should Be Equal    ${selection}    Telephone
-    Get Selected Options    select[name=preferred_channel]    value    ==    phone
-    Get Selected Options    select[name=possible_channels]    text    ==    Email    Telephone
-    Get Selected Options    select[name=possible_channels]    text    validate    len(value) == 2
-    Get Selected Options    select[name=possible_channels]    label    ==    Telephone    Email
-    ${selection} =    Get Selected Options    select[name=possible_channels]    value    ==    phone    email
+    Get Selected Options    select[name=preferred_channel]    True    value    ==    phone
+    Get Selected Options    select[name=possible_channels]    True    text    ==    Email    Telephone
+    Get Selected Options    select[name=possible_channels]    True    text    validate    len(value) == 2
+    Get Selected Options    select[name=possible_channels]    True    label    ==    Telephone    Email
+    ${selection} =    Get Selected Options    select[name=possible_channels]    True    value    ==    phone    email
     Should Be Equal    ${selection}[0]    email
     Should Be Equal    ${selection}[1]    phone
-    Get Selected Options    select[name=interests]    label    ==
-    ${selection} =    Get Selected Options    select[name=interests]    label    ==
+    Get Selected Options    select[name=interests]    True    label    ==
+    ${selection} =    Get Selected Options    select[name=interests]    True    label    ==
     Should Be Equal    ${selection}    ${None}
-    Run Keyword And Expect Error    *
-    ...    Get Selected Options    select[name=possible_channels]    label    ==    Email    Telephone    Direct mail
+    Run Keyword And Expect Error    *    Get Selected Options    select[name=possible_channels]    True    label    ==
+    ...    Email    Telephone    Direct mail
 
 Get Selected Options with xpath
-    ${selection} =    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==
+    ${selection} =    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    True    label    ==
     ...    Telephone
     Should Be Equal    ${selection}    Telephone
 
@@ -80,7 +80,7 @@ Deselect Options Implicitly
 
 Deselect Options Explicitly
     Deselect Options    select[name=possible_channels]
-    Get Selected Options    select[name=possible_channels]    text    ==
+    Get Selected Options    select[name=possible_channels]    True    text    ==
 
 Deselect Options With Strict
     Run Keyword And Expect Error
@@ -98,4 +98,4 @@ Deselect Options With Nonmatching Selector
 Select Option And Verify Selection
     [Arguments]    ${attribute}    ${list_id}    @{selection}
     Select Options By    ${list_id}    ${attribute}    True    @{selection}
-    Get Selected Options    ${list_id}    ${attribute}    ==    @{selection}
+    Get Selected Options    ${list_id}    True    ${attribute}    ==    @{selection}
