@@ -112,6 +112,14 @@ Get Attribute Names
     END
     [Teardown]    Close Page
 
+Get Attribute Names With Strict
+    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 12 elements.*
+    ...    Get Attribute Names    //input
+    ${attrs} =    Get Attribute Names    //input    strict=False
+    Should Not Be Empty    ${attrs}
+
 Get Attribute Names Default Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
     ${expected} =    Create List    1    3

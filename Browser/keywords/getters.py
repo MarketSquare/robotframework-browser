@@ -330,6 +330,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Returns all HTML attribute names of an element as a list.
 
@@ -341,6 +342,9 @@ class Getters(LibraryComponent):
         ``expected_value`` Expected value for the state
 
         ``message`` overrides the default error message for assertion.
+
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
 
         Optionally asserts that attribute names do match to the expected value. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -359,7 +363,7 @@ class Getters(LibraryComponent):
         | `Get Attribute Names`    [name="readonly_input"]    contains    disabled    # Contains at least this attribute name.
         """
         attribute_names = self.library.execute_javascript(
-            "(element) => element.getAttributeNames()", selector
+            "(element) => element.getAttributeNames()", selector, strict=strict
         )
         expected = list(assertion_expected)
         return list_verify_assertion(
