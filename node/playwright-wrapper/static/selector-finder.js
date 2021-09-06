@@ -191,6 +191,9 @@ const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
 const BROWSER_LIBRARY_SELECT_BUTTON_ID = "browser-library-select-selector";
 const BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID = "browser-library-cancel-selector";
 const BROWSER_LIBRARY_DESCRIPTION = "browser-library-selector-recorder-description-text";
+const BROWSER_LIBRARY_SELECTION = "browser-library-selection-id";
+const BROWSER_LIBRARY_SELECTION_OK_BUTTON = "browser-library-selection-ok-button";
+const BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON = "browser-library-selection-cancel-button"
 
 function htmlToElement(html) {
     var template = document.createElement('template');
@@ -268,19 +271,36 @@ function elementSelectorFromPointInFrame(x, y) {
         if (element.shadowRoot) {
             const parentSelector = finder(element, {root:parentElement})
             const [childSelector, rect] = subelementFromPoint(element.shadowRoot);
-            return [parentSelector + " >> "+ childSelector, rect];
+            return [childSelector.map(s => parentSelector + " >> " + s), rect];
         }
         const rect = element.getBoundingClientRect();
         const left = parseFloat(window.getComputedStyle(element, null).getPropertyValue('padding-left')) || 0;
         const top =  parseFloat(window.getComputedStyle(element, null).getPropertyValue('padding-top')) || 0;
-        return [finder(element, {root:parentElement}), {top: rect.top, left: rect.left, height: rect.height, width: rect.width, paddingLeft: left, paddingTop: top}];
+        const selectors = [];
+        const selector1 = finder(element, {root:parentElement})
+        selectors.push(selector1);
+        const selector2 = finder(element, {root:parentElement,
+            className: (c) => !selector1.includes("."+c),
+        });
+        if (!selectors.includes(selector2)) selectors.push(selector2);
+        const selector3 = finder(element, {
+            root: parentElement,
+            idName: (id) => !selector1.includes('#'+id)
+        });
+        if (!selectors.includes(selector3)) selectors.push(selector3);
+        const selector4 = finder(element, {
+            root: parentElement,
+            className: (c) => !selector1.includes("."+c),
+            idName: (id) => !selector1.includes('#'+id),
+        });
+        if (!selectors.includes(selector4)) selectors.push(selector4);
+        return [selectors, {top: rect.top, left: rect.left, height: rect.height, width: rect.width, paddingLeft: left, paddingTop: top}];
     }
     return subelementFromPoint(document);
 }
 
 window.subframeSelectorRecorderFindSelector = function(myid) {
 
-    console.log("FrameId", myid);
     let currentCssSelector = "NOTSET";
 
     function mouseMoveListener(e) {
@@ -297,17 +317,20 @@ window.subframeSelectorRecorderFindSelector = function(myid) {
 window.selectorRecorderFindSelector = function(label) {
     return new Promise((resolve) => {
         let currentCssSelector = "NOTSET";
-        let lastTotalRecord = "NOTSET";
+        let lastTotalRecord = [];
+        let lastDisplayedRecord = "NOTSET";
         let lastTotalRecordTime = new Date().getTime();
         let findingElement = true;
 
         async function updateTexts() {
             if (findingElement) {
                 const selectors = ((await window.getRecordedSelectors()) || []);
-                const recorded = selectors.map(i => i[0]).join(" >>> ");
-                if (lastTotalRecord !== recorded) {
-                    document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = recorded;
+                const recorded = selectors.map(i => i[0]);
+                const displayed = recorded.map(i => i[0]).join(" >>> ");
+                if (lastDisplayedRecord !== displayed) {
+                    document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = displayed;
                     lastTotalRecord = recorded;
+                    lastDisplayedRecord = displayed;
                     lastTotalRecordTime = new Date().getTime();
                 } else {
                     const timediff = new Date().getTime() - lastTotalRecordTime;
@@ -328,7 +351,7 @@ left: ${rect.left-window.scrollX}px;
 width: ${rect.width}px;
 height: ${rect.height}px;
 border: 3px solid green;
-z-index: 2147483647;
+z-index: 2147483646;
 ">
 <style>
 #${BROWSER_LIBRARY_SELECT_BUTTON_ID} {
@@ -371,20 +394,64 @@ top: ${rect.height}px;
 </div>
 </div>`);
                         document.body.appendChild(div);
-                        document.getElementById(BROWSER_LIBRARY_SELECT_BUTTON_ID).onclick = () => {
-                            cleanup();
-                            div.remove();
-                            resolve(lastTotalRecord);
+                        const selectButton = document.getElementById(BROWSER_LIBRARY_SELECT_BUTTON_ID);
+                        const cancelButton = document.getElementById(BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID);
+                        selectButton.onclick = () => {
+                            cancelButton.remove();
+                            selectButton.remove();
+                            displaySelection(div);
                         };
-                        document.getElementById(BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID).onclick = () => {
+                        cancelButton.onclick = () => {
                             div.remove();
                             findingElement = true;
                         };
                     }
-                    console.log(timediff)
-                    document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = `${timediff / 1000} s`;
+                    document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = `${Math.round(300 - timediff / 10) / 100} s`;
                 }
             }
+        }
+
+        function displaySelection(focusDiv) {
+            const maxit = Math.min(...lastTotalRecord.map(i => i.length));
+            const options = [];
+            for (let i = 0; i < maxit; i++) {
+                const item = lastTotalRecord.map(j => j[i]).join(" >>> ");
+                options.push(item);
+            }
+            const oldelement = document.getElementById(BROWSER_LIBRARY_ID);
+            const div = htmlToElement(`<div style="
+    display: flex;
+    flex-direction: column;
+    border: 2px solid blue;
+    border-radius: 5px;
+    z-index: 2147483647;
+    position: fixed;
+    top: ${oldelement.style.top};
+    left: ${oldelement.style.left};
+    background: white;
+    padding: 8px;">
+<span>Select selector pattern to use:</span>
+<select id="${BROWSER_LIBRARY_SELECTION}">
+${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
+</select>
+<button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">OK</button>
+<button id="${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON}">Cancel</button>
+</div>`);
+            oldelement.style.visibility = 'hidden';
+            document.body.appendChild(div);
+            const selection = document.getElementById(BROWSER_LIBRARY_SELECTION)
+            document.getElementById(BROWSER_LIBRARY_SELECTION_OK_BUTTON).onclick = () => {
+                cleanup();
+                focusDiv.remove();
+                div.remove();
+                resolve(selection.value);
+            };
+            document.getElementById(BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON).onclick = () => {
+                oldelement.style.visibility = 'visible';
+                focusDiv.remove();
+                div.remove();
+                findingElement = true;
+            };
         }
 
         function mouseMoveListener(e) {
