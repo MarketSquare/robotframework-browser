@@ -440,17 +440,23 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def focus(self, selector: str):
+    def focus(self, selector: str, strict: Optional[bool] = None):
         """Moves focus on to the element found by ``selector``.
 
         ``selector`` Selector of the element.
         See the `Finding elements` section for details about the selectors.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         If there's no element matching selector, the method waits until a
         matching element appears in the DOM. Timeouts after 10 seconds.
         """
+        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
-            response = stub.Focus(Request().ElementSelector(selector=selector))
+            response = stub.Focus(
+                Request().ElementSelector(selector=selector, strict=strict)
+            )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
