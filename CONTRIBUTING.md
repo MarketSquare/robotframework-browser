@@ -68,7 +68,7 @@ milestone to the [issue tracker](https://github.com/MarketSquare/robotframework-
 git add Browser/version.py
 git add package.json
 git add setup.py
-git commit -m "Updateverstion to: $VERSION"
+git commit -m "Updateversion to: $VERSION"
 ```
 
 Invoke command also creates old docs add the doc to the repo:
