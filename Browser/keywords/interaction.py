@@ -819,7 +819,13 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
+    def drag_and_drop(
+        self,
+        selector_from: str,
+        selector_to: str,
+        steps: int = 1,
+        strict: Optional[bool] = None,
+    ):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
 
@@ -838,12 +844,15 @@ class Interaction(LibraryComponent):
 
         ``steps`` defines how many intermediate mouse move events are sent.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Example
         | `Drag And Drop`    "Circle"    "Goal"
         """
-        from_bbox = self.library.get_boundingbox(selector_from)
+        from_bbox = self.library.get_boundingbox(selector_from, strict=strict)
         from_xy = self._center_of_boundingbox(from_bbox)
-        to_bbox = self.library.get_boundingbox(selector_to)
+        to_bbox = self.library.get_boundingbox(selector_to, strict=strict)
         to_xy = self._center_of_boundingbox(to_bbox)
         self.mouse_button(MouseButtonAction.down, **from_xy)
         self.mouse_move(**to_xy, steps=steps)
