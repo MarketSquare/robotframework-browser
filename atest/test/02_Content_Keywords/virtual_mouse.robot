@@ -111,6 +111,12 @@ Get Boundingbox With Strict
     ${x} =    Get Boundingbox    //input    x    strict=False
     Should Be True    ${x}
 
+Mouse Move Relative To With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Mouse Move Relative To    //input    4    2
+    Mouse Move Relative To    //input    4    2    strict=False
+
 *** Keywords ***
 Relative DnD
     [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}

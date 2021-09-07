@@ -896,7 +896,12 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def mouse_move_relative_to(
-        self, selector: str, x: float = 0.0, y: float = 0.0, steps: int = 1
+        self,
+        selector: str,
+        x: float = 0.0,
+        y: float = 0.0,
+        steps: int = 1,
+        strict: Optional[bool] = None,
     ):
         """Moves the mouse cursor relative to the selected element.
 
@@ -905,11 +910,14 @@ class Interaction(LibraryComponent):
         ``steps`` Number of intermediate steps for the mouse event.
         This is sometime needed for websites to recognize the movement.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Example:
         | `Mouse Move Relative To`    id=indicator    -100
         """
         with self.playwright.grpc_channel() as stub:
-            bbox = self.library.get_boundingbox(selector)
+            bbox = self.library.get_boundingbox(selector, strict=strict)
             center = self._center_of_boundingbox(bbox)
             body: MouseOptionsDict = {
                 "x": center["x"] + x,
