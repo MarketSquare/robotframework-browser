@@ -79,6 +79,14 @@ Get Client Size
 
 Get Client Size Element
     ${size} =    Get Client Size    \#progress_bar    width    >    0
+    Should Be True    ${size}
+
+Get Client Size With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Get Client Size    //input
+    ${size} =    Get Client Size    //input    strict=False
+    Should Be True    ${size}[width] > 0
 
 Get Client Size Element Default Error
     Run Keyword And Expect Error

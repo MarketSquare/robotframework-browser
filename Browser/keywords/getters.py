@@ -1012,6 +1012,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
@@ -1029,15 +1030,19 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
         """
+        strict = self.get_strict_mode(strict)
         client_size = dict()
-        client_size["width"] = exec_scroll_function(self, "clientWidth", selector)
-        client_size["height"] = exec_scroll_function(self, "clientHeight", selector)
+        client_size["width"] = exec_scroll_function(self, "clientWidth", selector, strict)
+        client_size["height"] = exec_scroll_function(self, "clientHeight", selector, strict)
         if key == SizeFields.ALL:
             return int_dict_verify_assertion(
                 client_size,
