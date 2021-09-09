@@ -1041,8 +1041,12 @@ class Getters(LibraryComponent):
         """
         strict = self.get_strict_mode(strict)
         client_size = dict()
-        client_size["width"] = exec_scroll_function(self, "clientWidth", selector, strict)
-        client_size["height"] = exec_scroll_function(self, "clientHeight", selector, strict)
+        client_size["width"] = exec_scroll_function(
+            self, "clientWidth", selector, strict
+        )
+        client_size["height"] = exec_scroll_function(
+            self, "clientHeight", selector, strict
+        )
         if key == SizeFields.ALL:
             return int_dict_verify_assertion(
                 client_size,

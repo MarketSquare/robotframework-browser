@@ -466,6 +466,7 @@ class Interaction(LibraryComponent):
         vertical: str = "top",
         horizontal: str = "left",
         behavior: ScrollBehavior = ScrollBehavior.auto,
+        strict: Optional[bool] = None,
     ):
         """Scrolls an element or the page to an absolute position based on given coordinates.
 
@@ -484,11 +485,15 @@ class Interaction(LibraryComponent):
         Works same as vertical but defines < ``left`` | ``right`` > as start and end.
 
         ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
+
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
         """
-        scroll_size = self.library.get_scroll_size(selector)
+        strict = self.get_strict_mode(strict)
+        scroll_size = self.library.get_scroll_size(selector, strict=strict)
         scroll_width = scroll_size["width"]
         scroll_height = scroll_size["height"]
-        client_size = self.library.get_client_size(selector)
+        client_size = self.library.get_client_size(selector, strict=strict)
         client_width = client_size["width"]
         client_height = client_size["height"]
         vertical_px = get_abs_scroll_coordinates(
@@ -501,6 +506,7 @@ class Interaction(LibraryComponent):
             self,
             f'scrollTo({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
             selector,
+            strict,
         )
 
     @keyword(tags=("Setter", "PageContent"))
@@ -534,10 +540,11 @@ class Interaction(LibraryComponent):
         ``strict`` overrides the library default strict mode for searching elements. See
         `Finding elements` for more details about strict mode.
         """
-        scroll_size = self.library.get_scroll_size(selector)
+        strict = self.get_strict_mode(strict)
+        scroll_size = self.library.get_scroll_size(selector, strict=strict)
         scroll_width = scroll_size["width"]
         scroll_height = scroll_size["height"]
-        client_size = self.library.get_client_size(selector)
+        client_size = self.library.get_client_size(selector, strict=strict)
         client_width = client_size["width"]
         client_height = client_size["height"]
         vertical_px = get_rel_scroll_coordinates(
@@ -550,6 +557,7 @@ class Interaction(LibraryComponent):
             self,
             f'scrollBy({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
             selector,
+            strict,
         )
 
     @keyword(tags=("Setter", "PageContent"))
