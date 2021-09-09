@@ -52,11 +52,13 @@ def get_rel_scroll_coordinates(query: Any, full: int, client: int, dimension_str
     )
 
 
-def exec_scroll_function(Browser, function: str, selector: Optional[str] = None):
+def exec_scroll_function(
+    Browser, function: str, selector: Optional[str] = None, strict: bool = True
+):
     if selector:
         element_selector = "(element) => element"
     else:
         element_selector = "document.scrollingElement"
     return Browser.library.execute_javascript(
-        f"{element_selector}.{function}", selector
+        f"{element_selector}.{function}", selector, strict=strict
     )

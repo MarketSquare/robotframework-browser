@@ -510,6 +510,7 @@ class Interaction(LibraryComponent):
         vertical: str = "height",
         horizontal: str = "0",
         behavior: ScrollBehavior = ScrollBehavior.auto,
+        strict: Optional[bool] = None,
     ):
         """Scrolls an element or the page relative from current position by the given values.
 
@@ -529,6 +530,9 @@ class Interaction(LibraryComponent):
         ``width`` defines to scroll exactly one visible range to the right.
 
         ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
+
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
         """
         scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
