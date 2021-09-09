@@ -8,7 +8,7 @@ Browser library 7.2.0
 
 Browser_ is a web testing library for `Robot Framework`_ that utilizes
 the Playwright_ tool internally. Browser library 7.2.0 is a new release with
-**UPDATE** enhancements and bug fixes.
+enhancements to record selector funtionality and bug fixes.
 All issues targeted for Browser library v7.2.0 can be found
 from the `issue tracker`_.
 If you have pip_ installed, just run
@@ -40,17 +40,10 @@ tested with Playwright 1.14.1
 Most important enhancements
 ===========================
 
-**EXPLAIN** or remove these.
+Multiple frame piercing does not work (`#1259`_)
+------------------------------------------------
+There is fix for frame piercing selector. 
 
-- Multiple frame piercing does not work (`#1259`_)
-- Strict mode (`#1233`_)
-
-Backwards incompatible changes
-==============================
-
-**EXPLAIN** or remove these.
-
-- Strict mode (`#1233`_)
 
 Full list of fixes and enhancements
 ===================================
@@ -66,10 +59,6 @@ Full list of fixes and enhancements
       - bug
       - critical
       - Multiple frame piercing does not work
-    * - `#1233`_
-      - enhancement
-      - critical
-      - Strict mode
     * - `#1257`_
       - enhancement
       - medium
