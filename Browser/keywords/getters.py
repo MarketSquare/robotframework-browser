@@ -951,6 +951,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
 
@@ -974,16 +975,24 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
         """
+        strict = self.get_strict_mode(strict)
         scroll_position = dict()
-        scroll_position["top"] = exec_scroll_function(self, "scrollTop", selector)
-        scroll_position["left"] = exec_scroll_function(self, "scrollLeft", selector)
-        client_size = self.get_client_size(selector)
+        scroll_position["top"] = exec_scroll_function(
+            self, "scrollTop", selector, strict
+        )
+        scroll_position["left"] = exec_scroll_function(
+            self, "scrollLeft", selector, strict
+        )
+        client_size = self.get_client_size(selector, strict=strict)
         scroll_position["bottom"] = scroll_position["top"] + client_size["height"]
         scroll_position["right"] = scroll_position["left"] + client_size["width"]
         if key == AreaFields.ALL:

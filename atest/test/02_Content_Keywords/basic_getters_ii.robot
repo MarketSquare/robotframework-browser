@@ -117,6 +117,13 @@ Get Scroll Position
 Get Scroll Position Element
     Get Scroll Position    h1    top    >=    0
 
+Get Scroll Position With Strict
+    Get Scroll Position    strict=True
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Get Scroll Position    //input
+    Get Scroll Position    //input    strict=False
+
 Get Scroll Position Element Default Error
     Run Keyword And Expect Error
     ...    Scroll position top is '0' (int) should be less than '0.0' (float)
