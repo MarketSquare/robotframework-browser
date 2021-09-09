@@ -133,6 +133,17 @@ Get Scroll Size
     Should Be True    ${size}[height] >= 0
     Length Should Be    ${size}    2
 
+Get Scroll Size With Strict No Element
+    ${size} =    Get Scroll Size    strict=True
+    Should Be True    ${size}[width] >= 0
+
+Get Scroll Size With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    Get Scroll Size    //input    strict=True
+    ${size} =    Get Scroll Size    //input    strict=False
+    Should Be True    ${size}[width] >= 0
+
 Get Scroll Size Element
     ${size} =    Get Scroll Size    h1    width    >=    0
 
