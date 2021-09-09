@@ -884,6 +884,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        strict: Optional[bool] = None,
     ) -> Any:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
 
@@ -901,6 +902,9 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        ``strict`` overrides the library default strict mode for searching elements. See
+        `Finding elements` for more details about strict mode.
+
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -913,9 +917,14 @@ class Getters(LibraryComponent):
         | ${scroll_size}=    `Get Scroll Size`    id=keyword-shortcuts-container  # unfiltered element
         | Log                ${scroll_size}                                     # {'width': 253, 'height': 3036}
         """
+        strict = self.get_strict_mode(strict)
         scroll_size = dict()
-        scroll_size["width"] = exec_scroll_function(self, "scrollWidth", selector)
-        scroll_size["height"] = exec_scroll_function(self, "scrollHeight", selector)
+        scroll_size["width"] = exec_scroll_function(
+            self, "scrollWidth", selector, strict
+        )
+        scroll_size["height"] = exec_scroll_function(
+            self, "scrollHeight", selector, strict
+        )
         if key == SizeFields.ALL:
             return int_dict_verify_assertion(
                 scroll_size,
