@@ -54,7 +54,6 @@ from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import DelayedKeyword, SupportedBrowsers
-from .utils.misc import type_converter
 from .version import __version__ as VERSION
 
 
@@ -942,14 +941,3 @@ class Browser(DynamicCore):
             doc = doc.replace("%ASSERTION_TABLE%", AssertionOperator.__doc__)
             doc = doc.replace("%AUTO_CLOSING_LEVEL%", AutoClosingLevel.__doc__)
         return doc
-
-    def get_strict_mode(self, strict: Union[bool, None]) -> bool:
-        if strict is not None:
-            if not isinstance(strict, bool):
-                raise ValueError(
-                    f"Strict mode should be boolean, but it was: {strict} ({type_converter(strict)})"
-                )
-            logger.debug(f"Strict mode: {strict}")
-            return strict
-        logger.debug(f"Using default strict mode: {self.strict_mode}")
-        return self.strict_mode

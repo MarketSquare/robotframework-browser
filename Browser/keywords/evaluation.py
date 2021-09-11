@@ -14,7 +14,7 @@
 
 import json
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any
 
 from robot.utils import DotDict  # type: ignore
 
@@ -25,9 +25,7 @@ from ..utils import DownloadedFile, keyword, logger
 
 class Evaluation(LibraryComponent):
     @keyword(name="Execute JavaScript", tags=("Setter", "Getter", "PageContent"))
-    def execute_javascript(
-        self, function: str, selector: str = "", strict: Optional[bool] = None
-    ) -> Any:
+    def execute_javascript(self, function: str, selector: str = "") -> Any:
         """Executes given javascript on the page.
 
         ``function`` A valid javascript function or a javascript function body. For example
@@ -38,16 +36,15 @@ class Evaluation(LibraryComponent):
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
 
-         ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode if selector is defined. See `Finding elements` for more details
+        about strict mode.
 
         [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
                 Request().JavascriptCode(
-                    script=function, selector=selector, strict=strict
+                    script=function, selector=selector, strict=self.strict_mode
                 )
             )
         if response.log:
@@ -64,7 +61,6 @@ class Evaluation(LibraryComponent):
         width: str = "2px",
         style: str = "dotted",
         color: str = "blue",
-        strict: bool = False,
     ):
         """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment.
 
@@ -80,15 +76,12 @@ class Evaluation(LibraryComponent):
         ``color`` Sets the color of the border. Valid colors i.e. are:
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``
 
-        ``strict`` by default strict mode is not enabled for keyword,
-        but strict mode can be enabled by using True value for ``strict``
-        argument. See `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
         | `Highlight Elements`    input#login_button    duration=200ms
         | `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.HighlightElements(
                 Request().ElementSelectorWithDuration(
@@ -97,7 +90,7 @@ class Evaluation(LibraryComponent):
                     width=width,
                     style=style,
                     color=color,
-                    strict=strict,
+                    strict=self.strict_mode,
                 )
             )
             logger.info(response.log)

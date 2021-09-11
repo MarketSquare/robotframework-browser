@@ -30,7 +30,6 @@ class Waiter(LibraryComponent):
         state: ElementState = ElementState.visible,
         timeout: Optional[timedelta] = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
@@ -58,14 +57,12 @@ class Waiter(LibraryComponent):
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
         The `{function}` formatter is same ``state`` argument value.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
         | `Wait For Elements State`    //h1    visible    timeout=2 s
         | `Wait For Elements State`    //hi    focused    1s
         """
-        strict = self.get_strict_mode(strict)
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
             ElementState.enabled: "e => !e.disabled",
@@ -92,7 +89,7 @@ class Waiter(LibraryComponent):
             while True:
                 try:
                     return self._wait_for_elements_state(
-                        selector, state, timeout, strict
+                        selector, state, timeout, self.strict_mode
                     )
                 except Exception as error:
                     if end > time.monotonic():
@@ -112,7 +109,6 @@ class Waiter(LibraryComponent):
                 selector=selector,
                 timeout=timeout,
                 message=message,
-                strict=strict,
             )
 
     def _wait_for_elements_state(
@@ -142,7 +138,6 @@ class Waiter(LibraryComponent):
         polling: Union[str, timedelta] = "raf",
         timeout: Optional[timedelta] = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ):
         """Polls JavaScript expression or function in browser until it returns a (JavaScript) truthy value.
 
@@ -163,15 +158,13 @@ class Waiter(LibraryComponent):
         argument accepts `{selector}`, `{function}`, and `{timeout}`
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example usage:
         | ${promise}      `Promise To`      `Wait For Function`    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
         | `Click`         \\#progress_bar
         | `Wait For`      ${promise}
         """
-        strict = self.get_strict_mode(strict)
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         end = float(
             self.convert_timeout(timeout, False) if timeout else self.timeout / 1000
@@ -180,7 +173,7 @@ class Waiter(LibraryComponent):
         while True:
             try:
                 return self._wait_for_function(
-                    function, selector, polling, timeout, strict
+                    function, selector, polling, timeout, self.strict_mode
                 )
             except Exception as error:
                 if end > time.monotonic():

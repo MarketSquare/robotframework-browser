@@ -30,7 +30,9 @@ Clear Text With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Clear Text    //input
-    Clear Text    //input    strict=False
+    Set Strict Mode    False
+    Clear Text    //input
+    [Teardown]    Set Strict Mode    True
 
 Clear Text With Nonmatching Selector
     Set Browser Timeout    50ms
@@ -52,11 +54,13 @@ Fill Text With Secret
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Fill Text    //input    something
-    Fill Text    //input    something    strict=${False}
+    Set Strict Mode    False
+    Fill Text    //input    something
+    [Teardown]    Set Strict Mode    True
 
 Fill Secret Direct Value
     [Documentation]    ...
-    ...    LOG 1:3    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Type Secret    css=input#username_field    Direct Value    200 ms    True
     Get Text    css=input#username_field    ==    Direct Value
@@ -67,13 +71,17 @@ Fill Secret With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Fill Secret    //input    $LOGIN_URL
-    Fill Secret    //input    $LOGIN_URL    strict=False
+    Set Strict Mode    False
+    Fill Secret    //input    $LOGIN_URL
+    [Teardown]    Set Strict Mode    True
 
 Type Secret With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Type Secret    //input    $LOGIN_URL
-    Type Secret    //input    $LOGIN_URL    strict=False
+    Set Strict Mode    False
+    Type Secret    //input    $LOGIN_URL
+    [Teardown]    Set Strict Mode    True
 
 Fill Secret placeholder-env-var
     Set Environment Variable    PH_ENV_VAR    password11
@@ -191,7 +199,9 @@ Type Text With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Type Text    //input    username
-    Type Text    //input    username    strict=False
+    Set Strict Mode    False
+    Type Text    //input    username
+    [Teardown]    Set Strict Mode    True
 
 Type and Fill Text with text selector
     Type Text    input#username_field    Text field

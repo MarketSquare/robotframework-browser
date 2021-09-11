@@ -34,8 +34,10 @@ Get Property With Strict Mode
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Get Property    //input    id
-    ${property} =    Get Property    //input    id    strict=False
+    Set Strict Mode    False
+    ${property} =    Get Property    //input    id
     Should Not Be Empty    ${property}
+    [Teardown]    Set Strict Mode    True
 
 Get Property Default Error
     Run Keyword And Expect Error
@@ -78,12 +80,14 @@ Get Attribute With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Get Attribute    //input    id
-    ${id} =    Get Attribute    //input    id    strict=False
-    Should Be Equal    ${id}    username_field
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Get Attribute    //input    id    equal    nothere
-    Get Attribute    //input    id    equal    username_field    strict=False
+    Set Strict Mode    False
+    ${id} =    Get Attribute    //input    id
+    Should Be Equal    ${id}    username_field
+    Get Attribute    //input    id    equal    username_field
+    [Teardown]    Set Strict Mode    True
 
 Get Attribute Default Error
     Run Keyword And Expect Error
@@ -117,8 +121,10 @@ Get Attribute Names With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 12 elements.*
     ...    Get Attribute Names    //input
-    ${attrs} =    Get Attribute Names    //input    strict=False
+    Set Strict Mode    False
+    ${attrs} =    Get Attribute Names    //input
     Should Not Be Empty    ${attrs}
+    [Teardown]    Set Strict Mode    True
 
 Get Attribute Names Default Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
@@ -152,8 +158,10 @@ Get Classes With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 11 elements.*
     ...    Get Classes    //button
-    ${classes} =    Get Classes    //button    strict=False
+    Set Strict Mode    False
+    ${classes} =    Get Classes    //button
     Should Be Equal    ${classes}    ${None}
+    [Teardown]    Set Strict Mode    True
 
 Get Classes and Assert
     Get Classes    id=draggable    contains    react-draggable

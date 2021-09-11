@@ -13,4 +13,6 @@ Focus With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Focus    //input
-    Focus    //input    strict=False
+    Set Strict Mode    False
+    Focus    //input
+    [Teardown]    Set Strict Mode    True

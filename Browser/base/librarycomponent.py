@@ -137,6 +137,3 @@ class LibraryComponent:
     @strict_mode.setter
     def strict_mode(self, mode: bool):
         self.library.strict_mode = mode
-
-    def get_strict_mode(self, strict: Union[bool, None]) -> bool:
-        return self.library.get_strict_mode(strict)

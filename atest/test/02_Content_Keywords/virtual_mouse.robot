@@ -46,8 +46,10 @@ Drag And Drop With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Drag And Drop    id=draggable    //input
-    Drag And Drop    id=draggable    //input    strict=False
-    Drag And Drop    //input    id=clickWithOptions    strict=False
+    Set Strict Mode    False
+    Drag And Drop    id=draggable    //input
+    Drag And Drop    //input    id=clickWithOptions
+    [Teardown]    Set Strict Mode    True
 
 Drag and Drop with coordinates
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
@@ -71,10 +73,13 @@ Hover and Drop to Hover
     Get Text    \#dragY    ==    30
 
 Hover With Strict
+    Set Strict Mode    True
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Hover    //input
-    Hover    //input    strict=False
+    Set Strict Mode    False
+    Hover    //input
+    [Teardown]    Set Strict Mode    True
 
 Drag and Drop with Move Relative
     Relative DnD    32    64    32    64
@@ -108,14 +113,18 @@ Get Boundingbox With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Get Boundingbox    //input
-    ${x} =    Get Boundingbox    //input    x    strict=False
+    Set Strict Mode    False
+    ${x} =    Get Boundingbox    //input    x
     Should Be True    ${x}
+    [Teardown]    Set Strict Mode    True
 
 Mouse Move Relative To With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Mouse Move Relative To    //input    4    2
-    Mouse Move Relative To    //input    4    2    strict=False
+    Set Strict Mode    False
+    Mouse Move Relative To    //input    4    2
+    [Teardown]    Set Strict Mode    True
 
 *** Keywords ***
 Relative DnD
