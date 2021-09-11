@@ -166,7 +166,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
 
@@ -178,8 +177,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the text matches the specified assertion. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
@@ -188,10 +186,9 @@ class Getters(LibraryComponent):
         | ${text} =    `Get Text`    id=important                            # Returns element text without assertion.
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetText(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
         logger.debug(response.log)
         return verify_assertion(
@@ -207,7 +204,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
@@ -222,8 +218,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the property value matches the expected value. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
@@ -235,11 +230,10 @@ class Getters(LibraryComponent):
         | `Get Property`    h1    innerText    ==    Login Page
         | ${property} =    `Get Property`    h1    innerText
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
                 Request().ElementProperty(
-                    selector=selector, property=property, strict=strict
+                    selector=selector, property=property, strict=self.strict_mode
                 )
             )
         logger.debug(response.log)
@@ -266,7 +260,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
@@ -281,8 +274,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the attribute value matches the expected value. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -302,11 +294,10 @@ class Getters(LibraryComponent):
         | `Get Attribute`   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
         | `Get Attribute`   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
                 Request().ElementProperty(
-                    selector=selector, property=attribute, strict=strict
+                    selector=selector, property=attribute, strict=self.strict_mode
                 )
             )
         logger.debug(response.log)
@@ -330,7 +321,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Returns all HTML attribute names of an element as a list.
 
@@ -343,8 +333,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that attribute names do match to the expected value. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -363,7 +352,7 @@ class Getters(LibraryComponent):
         | `Get Attribute Names`    [name="readonly_input"]    contains    disabled    # Contains at least this attribute name.
         """
         attribute_names = self.library.execute_javascript(
-            "(element) => element.getAttributeNames()", selector, strict=strict
+            "(element) => element.getAttributeNames()", selector
         )
         expected = list(assertion_expected)
         return list_verify_assertion(
@@ -378,7 +367,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Returns all classes of an element as a list.
 
@@ -391,8 +379,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -408,7 +395,7 @@ class Getters(LibraryComponent):
         | `Get Classes`    id=draggable    ==    react-draggable    box    # Element contains exactly this class name.
         | `Get Classes`    id=draggable    validate    "react-draggable-dragged" not in value    # Element does not contain react-draggable-dragged class.
         """
-        class_dict = self.get_property(selector, "classList", strict=strict)
+        class_dict = self.get_property(selector, "classList")
         expected = list(assertion_expected)
         return list_verify_assertion(
             list(class_dict.values()),
@@ -426,7 +413,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
 
@@ -442,8 +428,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that these match the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -454,10 +439,9 @@ class Getters(LibraryComponent):
         | `Get Select Options`     //select[2]    validate  [v["label"] for v in value] == ["Email", "Mobile"]
         | `Get Select Options`   select#names     validate  any(v["label"] == "Mikko" for v in value)
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
         logger.info(response)
         result = [
@@ -482,7 +466,6 @@ class Getters(LibraryComponent):
     def get_selected_options(
         self,
         selector: str,
-        strict: Optional[bool] = None,
         option_attribute: SelectAttribute = SelectAttribute.label,
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
@@ -495,8 +478,7 @@ class Getters(LibraryComponent):
         ``option_attribute`` Which attribute shall be returned/verified.
         Defaults to label.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
@@ -521,10 +503,9 @@ class Getters(LibraryComponent):
         | `Get Selected Options`   select#names             label          *=         Mikko                     #assertion contain
         | `Get Selected Options`   select#names             label          validate   len(value) == 3           #assertion length
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
         logger.info(response)
         expected = list(assertion_expected)
@@ -554,7 +535,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         expected_state: Union[bool, str] = "Unchecked",
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> bool:
         """Returns the state of the checkbox found by ``selector``.
 
@@ -567,8 +547,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -589,11 +568,10 @@ class Getters(LibraryComponent):
         Example:
         | `Get Checkbox State`    [name=can_send_email]    ==    checked
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
                 Request().ElementProperty(
-                    selector=selector, property="checked", strict=strict
+                    selector=selector, property="checked", strict=self.strict_mode
                 )
             )
         logger.info(response.log)
@@ -703,7 +681,7 @@ class Getters(LibraryComponent):
                 )
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_element(self, selector: str, strict: Optional[bool] = None) -> str:
+    def get_element(self, selector: str) -> str:
         """Returns a reference to a Playwright element handle.
 
         The reference can be used in subsequent selectors.
@@ -711,17 +689,15 @@ class Getters(LibraryComponent):
         ``selector`` Selector from which shall be retrieved .
         See the `Finding elements` section for details about the selectors.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
         | ${element} =    `Get Element`    \\#username_field
         | ${option_value} =    `Get Property`    ${element} >> option    value
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
             return response.body
 
@@ -761,7 +737,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Gets the computed style properties of the element selected by ``selector``.
 
@@ -778,17 +753,15 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the style matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
         parsed = json.loads(response.json)
 
@@ -820,7 +793,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
@@ -839,8 +811,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -855,10 +826,9 @@ class Getters(LibraryComponent):
         | `Get BoundingBox`     id=element         width         >    180
         | `Get BoundingBox`     id=element         ALL           validate    value['x'] > value['y']*2
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(
-                Request.ElementSelector(selector=selector, strict=strict)
+                Request.ElementSelector(selector=selector, strict=self.strict_mode)
             )
         parsed = json.loads(response.json)
         logger.debug(f"BoundingBox: {parsed}")
@@ -884,7 +854,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
 
@@ -902,8 +871,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -917,14 +885,9 @@ class Getters(LibraryComponent):
         | ${scroll_size}=    `Get Scroll Size`    id=keyword-shortcuts-container  # unfiltered element
         | Log                ${scroll_size}                                     # {'width': 253, 'height': 3036}
         """
-        strict = self.get_strict_mode(strict)
         scroll_size = dict()
-        scroll_size["width"] = exec_scroll_function(
-            self, "scrollWidth", selector, strict
-        )
-        scroll_size["height"] = exec_scroll_function(
-            self, "scrollHeight", selector, strict
-        )
+        scroll_size["width"] = exec_scroll_function(self, "scrollWidth", selector)
+        scroll_size["height"] = exec_scroll_function(self, "scrollHeight", selector)
         if key == SizeFields.ALL:
             return int_dict_verify_assertion(
                 scroll_size,
@@ -951,7 +914,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
 
@@ -975,8 +937,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -984,15 +945,10 @@ class Getters(LibraryComponent):
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
         """
-        strict = self.get_strict_mode(strict)
         scroll_position = dict()
-        scroll_position["top"] = exec_scroll_function(
-            self, "scrollTop", selector, strict
-        )
-        scroll_position["left"] = exec_scroll_function(
-            self, "scrollLeft", selector, strict
-        )
-        client_size = self.get_client_size(selector, strict=strict)
+        scroll_position["top"] = exec_scroll_function(self, "scrollTop", selector)
+        scroll_position["left"] = exec_scroll_function(self, "scrollLeft", selector)
+        client_size = self.get_client_size(selector)
         scroll_position["bottom"] = scroll_position["top"] + client_size["height"]
         scroll_position["right"] = scroll_position["left"] + client_size["width"]
         if key == AreaFields.ALL:
@@ -1021,7 +977,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ) -> Any:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
@@ -1039,8 +994,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -1048,14 +1002,9 @@ class Getters(LibraryComponent):
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
         """
-        strict = self.get_strict_mode(strict)
         client_size = dict()
-        client_size["width"] = exec_scroll_function(
-            self, "clientWidth", selector, strict
-        )
-        client_size["height"] = exec_scroll_function(
-            self, "clientHeight", selector, strict
-        )
+        client_size["width"] = exec_scroll_function(self, "clientWidth", selector)
+        client_size["height"] = exec_scroll_function(self, "clientHeight", selector)
         if key == SizeFields.ALL:
             return int_dict_verify_assertion(
                 client_size,
@@ -1082,7 +1031,6 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
-        strict: Optional[bool] = None,
     ):
         """Get the given state from the element found by ``selector``.
 
@@ -1112,8 +1060,7 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -1122,7 +1069,6 @@ class Getters(LibraryComponent):
         Example:
         | `Get Element State`    h1    readonly    ==    False
         """
-        strict = self.get_strict_mode(strict)
         funct = {
             ElementStateKey.disabled: "e => e.disabled",
             ElementStateKey.readonly: "e => e.readOnly",
@@ -1139,7 +1085,7 @@ class Getters(LibraryComponent):
                             script=funct[state],
                             selector=selector,
                             options=json.dumps({"timeout": 100}),
-                            strict=strict,
+                            strict=self.strict_mode,
                         )
                     )
                 else:
@@ -1147,7 +1093,7 @@ class Getters(LibraryComponent):
                         Request().ElementSelectorWithOptions(
                             selector=selector,
                             options=json.dumps({"state": state.name, "timeout": 100}),
-                            strict=strict,
+                            strict=self.strict_mode,
                         )
                     )
                 result = True

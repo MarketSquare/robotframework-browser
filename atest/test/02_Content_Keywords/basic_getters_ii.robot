@@ -85,8 +85,10 @@ Get Client Size With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Get Client Size    //input
-    ${size} =    Get Client Size    //input    strict=False
+    Set Strict Mode    False
+    ${size} =    Get Client Size    //input
     Should Be True    ${size}[width] > 0
+    [Teardown]    Set Strict Mode    True
 
 Get Client Size Element Default Error
     Run Keyword And Expect Error
@@ -118,11 +120,13 @@ Get Scroll Position Element
     Get Scroll Position    h1    top    >=    0
 
 Get Scroll Position With Strict
-    Get Scroll Position    strict=True
+    Get Scroll Position
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Get Scroll Position    //input
-    Get Scroll Position    //input    strict=False
+    Set Strict Mode    False
+    Get Scroll Position    //input
+    [Teardown]    Set Strict Mode    True
 
 Get Scroll Position Element Default Error
     Run Keyword And Expect Error
@@ -149,15 +153,17 @@ Get Scroll Size
     Length Should Be    ${size}    2
 
 Get Scroll Size With Strict No Element
-    ${size} =    Get Scroll Size    strict=True
+    ${size} =    Get Scroll Size
     Should Be True    ${size}[width] >= 0
 
 Get Scroll Size With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
-    ...    Get Scroll Size    //input    strict=True
-    ${size} =    Get Scroll Size    //input    strict=False
+    ...    Get Scroll Size    //input
+    Set Strict Mode    False
+    ${size} =    Get Scroll Size    //input
     Should Be True    ${size}[width] >= 0
+    [Teardown]    Set Strict Mode    True
 
 Get Scroll Size Element
     ${size} =    Get Scroll Size    h1    width    >=    0
@@ -214,15 +220,19 @@ Get Element State With Strict On ElementSelectorWithOptions
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 18 elements.*
     ...    Get Element State    //div
-    ${state} =    Get Element State    //div    strict=False
+    Set Strict Mode    False
+    ${state} =    Get Element State    //div
     Should Be True    ${state}
+    [Teardown]    Set Strict Mode    True
 
 Get Element State With Strict On WaitForFunctionOptions
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 18 elements.*
     ...    Get Element State    //div    state=disabled
-    ${state} =    Get Element State    //div    state=disabled    strict=False
+    Set Strict Mode    False
+    ${state} =    Get Element State    //div    state=disabled
     Should Not Be True    ${state}
+    [Teardown]    Set Strict Mode    True
 
 Get Element State With Assertion
     Get Element State    h1    readonly    ==    False

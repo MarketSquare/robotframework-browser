@@ -14,8 +14,10 @@ Get Checkbox State With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 12 elements.*
     ...    Get Checkbox State    //input
-    ${state} =    Get Checkbox State    //input    strict=False
+    Set Strict Mode    False
+    ${state} =    Get Checkbox State    //input
     Should Not Be True    ${state}
+    [Teardown]    Set Strict Mode    True
 
 Get Checkbox State Default Error
     Run Keyword And Expect Error
@@ -38,7 +40,9 @@ Check Checkbox With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 2 elements.*
     ...    Check Checkbox    //input[@type="checkbox"]
-    Check Checkbox    //input[@type="checkbox"]    strict=False
+    Set Strict Mode    False
+    Check Checkbox    //input[@type="checkbox"]
+    [Teardown]    Set Strict Mode    True
 
 Uncheck Checkbox
     Get Checkbox State    [name=can_send_email]    ==    ${True}
@@ -49,9 +53,11 @@ Uncheck Checkbox With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 12 elements.*
     ...    Uncheck Checkbox    //input
+    Set Strict Mode    False
     Run Keyword And Expect Error
     ...    *Not a checkbox or radio button*
-    ...    Uncheck Checkbox    //input    strict=False
+    ...    Uncheck Checkbox    //input
+    [Teardown]    Set Strict Mode    True
 
 Get Checkbox State With Nonmatching Selector
     Set Browser Timeout    50ms

@@ -13,17 +13,21 @@ JS execute without and with element
     Should Be Equal    ${result}    ${False}
 
 JS Execute Without Element On Strict Mode
-    ${result} =    Execute JavaScript    () => {return false;}    strict=True
+    ${result} =    Execute JavaScript    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    ${result} =    Execute JavaScript    () => {return false;}    strict=False
+    Set Strict Mode    False
+    ${result} =    Execute JavaScript    () => {return false;}
     Should Be Equal    ${result}    ${False}
+    [Teardown]    Set Strict Mode    True
 
 JS Execute With Element On Strict Mode
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
     ...    Execute JavaScript    () => {return false;}    //input
-    ${result} =    Execute JavaScript    () => {return false;}    //input    strict=False
+    Set Strict Mode    False
+    ${result} =    Execute JavaScript    () => {return false;}    //input
     Should Be Equal    ${result}    ${False}
+    [Teardown]    Set Strict Mode    True
 
 Results from page
     ${result} =    Execute JavaScript    "hello from page "+location.href
@@ -49,16 +53,21 @@ Highlight Element on page
     Get Element Count    .robotframework-browser-highlight    ==    1
     Sleep    200ms
     Get Element Count    .robotframework-browser-highlight    ==    0
+    Set Strict Mode    False
     Highlight Elements    .pure-button    duration=200ms
+    Set Strict Mode    True
     Get Element Count    .robotframework-browser-highlight    ==    5
     Sleep    400ms
     Get Element Count    .robotframework-browser-highlight    ==    0
 
 Highlight Element With Strict
+    Set Strict Mode    True
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 4 elements.*
-    ...    Highlight Elements    //input    duration=200ms    strict=True
+    ...    Highlight Elements    //input    duration=200ms
+    Set Strict Mode    False
     Highlight Elements    //input    duration=200ms
+    [Teardown]    Set Strict Mode    True
 
 Highlight Element with style
     Highlight Elements    input#login_button    duration=400ms

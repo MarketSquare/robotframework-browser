@@ -50,7 +50,6 @@ class Interaction(LibraryComponent):
         txt: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
-        strict: Optional[bool] = None,
     ):
         """Types the given ``txt`` into the text field found by ``selector``.
 
@@ -70,8 +69,7 @@ class Interaction(LibraryComponent):
         ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Fill Text` for direct filling of the full text at once.
 
@@ -80,11 +78,10 @@ class Interaction(LibraryComponent):
         | `Type Text`    input#username_field    user    delay=10 ms    clear=No
         """
         logger.info(f"Types the text '{txt}' in the given field.")
-        strict = self.get_strict_mode(strict)
-        self._type_text(selector, txt, delay, clear, strict=strict)
+        self._type_text(selector, txt, delay, clear, strict=self.strict_mode)
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_text(self, selector: str, txt: str, strict: Optional[bool] = None):
+    def fill_text(self, selector: str, txt: str):
         """Clears and fills the given ``txt`` into the text field found by ``selector``.
 
         This method waits for an element matching the ``selector`` to appear,
@@ -100,8 +97,7 @@ class Interaction(LibraryComponent):
 
         ``txt`` Text for the text field.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Type Text` for emulating typing text character by character.
 
@@ -109,26 +105,23 @@ class Interaction(LibraryComponent):
         | `Fill Text`    css=input#username_field    username
         """
         logger.info(f"Fills the text '{txt}' in the given field.")
-        strict = self.get_strict_mode(strict)
-        self._fill_text(selector, txt, strict=strict)
+        self._fill_text(selector, txt, strict=self.strict_mode)
 
     @keyword(tags=("Setter", "PageContent"))
-    def clear_text(self, selector: str, strict: Optional[bool] = None):
+    def clear_text(self, selector: str):
         """Clears the text field found by ``selector``.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(
-                Request().ClearText(selector=selector, strict=strict)
+                Request().ClearText(selector=selector, strict=self.strict_mode)
             )
             logger.debug(response.log)
 
@@ -139,7 +132,6 @@ class Interaction(LibraryComponent):
         secret: str,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
-        strict: Optional[bool] = None,
     ):
         """Types the given secret from ``variable_name`` into the text field
         found by ``selector``.
@@ -164,8 +156,7 @@ class Interaction(LibraryComponent):
         ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Type Text` for details.
 
@@ -174,13 +165,12 @@ class Interaction(LibraryComponent):
         | `Type Secret`    input#username_field    %username      # Keyword resolves $USERANME/%USERANME% variable value from environment variables
         | `Type Secret`    input#username_field    ${username}    # Robot Framework resolves the variable value, but secrect can leak to Robot framework output files.
         """
-        strict = self.get_strict_mode(strict)
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
             secret, originals.get("secret") or secret, "secret"
         )
         self._type_text(
-            selector, secret, delay, clear, log_response=False, strict=strict
+            selector, secret, delay, clear, log_response=False, strict=self.strict_mode
         )
 
     def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
@@ -201,7 +191,7 @@ class Interaction(LibraryComponent):
         return originals
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_secret(self, selector: str, secret: str, strict: Optional[bool] = None):
+    def fill_secret(self, selector: str, secret: str):
         """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
 
@@ -225,8 +215,7 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Fill Text` for other details.
 
@@ -238,18 +227,16 @@ class Interaction(LibraryComponent):
         secret = self.resolve_secret(
             secret, originals.get("secret") or secret, "secret"
         )
-        strict = self.get_strict_mode(strict)
-        self._fill_text(selector, secret, log_response=False, strict=strict)
+        self._fill_text(selector, secret, log_response=False, strict=self.strict_mode)
 
     @keyword(tags=("Setter", "PageContent"))
-    def press_keys(self, selector: str, strict: Optional[bool] = None, *keys: str):
+    def press_keys(self, selector: str, *keys: str):
         """Types the given key combination into element found by ``selector``.
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Supports values like "a, b" which will be automatically typed.
         .
@@ -265,10 +252,11 @@ class Interaction(LibraryComponent):
         | # Keyword         Selector                    *Keys
         | `Press Keys`      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
         """  # noqa
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(
-                Request().PressKeys(selector=selector, strict=strict, key=keys)
+                Request().PressKeys(
+                    selector=selector, strict=self.strict_mode, key=keys
+                )
             )
             logger.debug(response.log)
 
@@ -283,7 +271,6 @@ class Interaction(LibraryComponent):
         position_y: Optional[float] = None,
         force: bool = False,
         noWaitAfter: bool = False,
-        strict: Optional[bool] = None,
         *modifiers: KeyboardModifier,
     ):
         """Simulates mouse click on the element found by ``selector``.
@@ -314,8 +301,7 @@ class Interaction(LibraryComponent):
         for pages to start loading. You can opt out of waiting via setting this flag. You would only need
         this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         ``*modifiers``
         Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
@@ -326,12 +312,9 @@ class Interaction(LibraryComponent):
         | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
 
         """
-        strict = self.get_strict_mode(strict)
         if self.library.presenter_mode:
-            self.hover(selector, strict=strict)
-            self.library.highlight_elements(
-                selector, duration=timedelta(seconds=2), strict=strict
-            )
+            self.hover(selector)
+            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
             sleep(2)
         with self.playwright.grpc_channel() as stub:
             options = {
@@ -352,7 +335,7 @@ class Interaction(LibraryComponent):
             logger.debug(f"Click options are: {options_json}")
             response = stub.Click(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json, strict=strict
+                    selector=selector, options=options_json, strict=self.strict_mode
                 )
             )
             logger.debug(response.log)
@@ -390,7 +373,6 @@ class Interaction(LibraryComponent):
         position_x: Optional[float] = None,
         position_y: Optional[float] = None,
         force: bool = False,
-        strict: Optional[bool] = None,
         *modifiers: KeyboardModifier,
     ):
         """Moves the virtual mouse and scrolls to the element found by ``selector``.
@@ -411,8 +393,7 @@ class Interaction(LibraryComponent):
 
         ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
         pressed during the hover, and then restores current modifiers back.
@@ -422,7 +403,6 @@ class Interaction(LibraryComponent):
         | `Hover`    h1
         | `Hover`    h1    10   20    Alt
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, Any] = {"force": force}
             if position_x and position_y:
@@ -434,28 +414,26 @@ class Interaction(LibraryComponent):
             logger.debug(f"Hover Options are: {options_json}")
             response = stub.Hover(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json, strict=strict
+                    selector=selector, options=options_json, strict=self.strict_mode
                 )
             )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def focus(self, selector: str, strict: Optional[bool] = None):
+    def focus(self, selector: str):
         """Moves focus on to the element found by ``selector``.
 
         ``selector`` Selector of the element.
         See the `Finding elements` section for details about the selectors.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         If there's no element matching selector, the method waits until a
         matching element appears in the DOM. Timeouts after 10 seconds.
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
             logger.debug(response.log)
 
@@ -466,7 +444,6 @@ class Interaction(LibraryComponent):
         vertical: str = "top",
         horizontal: str = "left",
         behavior: ScrollBehavior = ScrollBehavior.auto,
-        strict: Optional[bool] = None,
     ):
         """Scrolls an element or the page to an absolute position based on given coordinates.
 
@@ -486,14 +463,12 @@ class Interaction(LibraryComponent):
 
         ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         """
-        strict = self.get_strict_mode(strict)
-        scroll_size = self.library.get_scroll_size(selector, strict=strict)
+        scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
         scroll_height = scroll_size["height"]
-        client_size = self.library.get_client_size(selector, strict=strict)
+        client_size = self.library.get_client_size(selector)
         client_width = client_size["width"]
         client_height = client_size["height"]
         vertical_px = get_abs_scroll_coordinates(
@@ -506,7 +481,6 @@ class Interaction(LibraryComponent):
             self,
             f'scrollTo({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
             selector,
-            strict,
         )
 
     @keyword(tags=("Setter", "PageContent"))
@@ -516,7 +490,6 @@ class Interaction(LibraryComponent):
         vertical: str = "height",
         horizontal: str = "0",
         behavior: ScrollBehavior = ScrollBehavior.auto,
-        strict: Optional[bool] = None,
     ):
         """Scrolls an element or the page relative from current position by the given values.
 
@@ -537,14 +510,12 @@ class Interaction(LibraryComponent):
 
         ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         """
-        strict = self.get_strict_mode(strict)
-        scroll_size = self.library.get_scroll_size(selector, strict=strict)
+        scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
         scroll_height = scroll_size["height"]
-        client_size = self.library.get_client_size(selector, strict=strict)
+        client_size = self.library.get_client_size(selector)
         client_width = client_size["width"]
         client_height = client_size["height"]
         vertical_px = get_rel_scroll_coordinates(
@@ -557,53 +528,47 @@ class Interaction(LibraryComponent):
             self,
             f'scrollBy({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
             selector,
-            strict,
         )
 
     @keyword(tags=("Setter", "PageContent"))
-    def check_checkbox(self, selector: str, strict: Optional[bool] = None):
+    def check_checkbox(self, selector: str):
         """Checks the checkbox or selects radio button found by ``selector``.
 
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Does nothing if the element is already checked/selected.
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
-            logger.debug(response.log)
+        logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def uncheck_checkbox(self, selector: str, strict: Optional[bool] = None):
+    def uncheck_checkbox(self, selector: str):
         """Unchecks the checkbox found by ``selector``.
 
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Does nothing if the element is not checked/selected.
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
-            logger.debug(response.log)
+        logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
     def select_options_by(
         self,
         selector: str,
         attribute: SelectAttribute,
-        strict: Optional[bool] = None,
         *values,
     ):
         """Selects options from select element found by ``selector``.
@@ -615,8 +580,7 @@ class Interaction(LibraryComponent):
         Possible attributes to match options by:
         ``attribute``
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         If no values to select are passed will deselect options in element.
 
@@ -626,7 +590,6 @@ class Interaction(LibraryComponent):
         | `Select Options By`    index    select[name=possible_channels]    0    2
         | `Select Options By`    text     select[name=interests]    Males    Females
         """
-        strict = self.get_strict_mode(strict)
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
             self.deselect_options(selector)
@@ -641,25 +604,23 @@ class Interaction(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
                 Request().SelectElementSelector(
-                    selector=selector, matcherJson=matchers, strict=strict
+                    selector=selector, matcherJson=matchers, strict=self.strict_mode
                 )
             )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def deselect_options(self, selector: str, strict: Optional[bool] = None):
+    def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``.
 
         ``selector`` Selector of the select tag.
         See the `Finding elements` section for details about the selectors.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         """
-        strict = self.get_strict_mode(strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(
-                Request().ElementSelector(selector=selector, strict=strict)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
         logger.debug(response.log)
 
@@ -836,7 +797,6 @@ class Interaction(LibraryComponent):
         selector_from: str,
         selector_to: str,
         steps: int = 1,
-        strict: Optional[bool] = None,
     ):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
@@ -856,15 +816,14 @@ class Interaction(LibraryComponent):
 
         ``steps`` defines how many intermediate mouse move events are sent.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example
         | `Drag And Drop`    "Circle"    "Goal"
         """
-        from_bbox = self.library.get_boundingbox(selector_from, strict=strict)
+        from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
-        to_bbox = self.library.get_boundingbox(selector_to, strict=strict)
+        to_bbox = self.library.get_boundingbox(selector_to)
         to_xy = self._center_of_boundingbox(to_bbox)
         self.mouse_button(MouseButtonAction.down, **from_xy)
         self.mouse_move(**to_xy, steps=steps)
@@ -913,7 +872,6 @@ class Interaction(LibraryComponent):
         x: float = 0.0,
         y: float = 0.0,
         steps: int = 1,
-        strict: Optional[bool] = None,
     ):
         """Moves the mouse cursor relative to the selected element.
 
@@ -922,14 +880,13 @@ class Interaction(LibraryComponent):
         ``steps`` Number of intermediate steps for the mouse event.
         This is sometime needed for websites to recognize the movement.
 
-        ``strict`` overrides the library default strict mode for searching elements. See
-        `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
         | `Mouse Move Relative To`    id=indicator    -100
         """
         with self.playwright.grpc_channel() as stub:
-            bbox = self.library.get_boundingbox(selector, strict=strict)
+            bbox = self.library.get_boundingbox(selector)
             center = self._center_of_boundingbox(bbox)
             body: MouseOptionsDict = {
                 "x": center["x"] + x,

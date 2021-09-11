@@ -20,8 +20,10 @@ Get Select Options Strict
     Run Keyword And Expect Error
     ...    *Evaluation failed: Error: strict mode violation: selector resolved to 3 elements.*
     ...    Get Select Options    //select
-    ${options} =    Get Select Options    //select    strict=False
+    Set Strict Mode    False
+    ${options} =    Get Select Options    //select
     Length Should Be    ${options}    3
+    [Teardown]    Set Strict Mode    True
 
 Get Selected Options
     [Documentation]
@@ -29,24 +31,23 @@ Get Selected Options
     ...    Verifying list 'possible_channels' has options [ Email | Telephone ] selected.
     ...    Verifying list 'interests' has no options selected.
     ...    Verifying list 'possible_channels' fails if assert all options selected.
-    ${selection} =    Get Selected Options    select[name=preferred_channel]    True    label    ==    Telephone
-    Log    ${selection}
+    ${selection} =    Get Selected Options    select[name=preferred_channel]    label    ==    Telephone
     Should Be Equal    ${selection}    Telephone
-    Get Selected Options    select[name=preferred_channel]    True    value    ==    phone
-    Get Selected Options    select[name=possible_channels]    True    text    ==    Email    Telephone
-    Get Selected Options    select[name=possible_channels]    True    text    validate    len(value) == 2
-    Get Selected Options    select[name=possible_channels]    True    label    ==    Telephone    Email
-    ${selection} =    Get Selected Options    select[name=possible_channels]    True    value    ==    phone    email
+    Get Selected Options    select[name=preferred_channel]    value    ==    phone
+    Get Selected Options    select[name=possible_channels]    text    ==    Email    Telephone
+    Get Selected Options    select[name=possible_channels]    text    validate    len(value) == 2
+    Get Selected Options    select[name=possible_channels]    label    ==    Telephone    Email
+    ${selection} =    Get Selected Options    select[name=possible_channels]    value    ==    phone    email
     Should Be Equal    ${selection}[0]    email
     Should Be Equal    ${selection}[1]    phone
-    Get Selected Options    select[name=interests]    True    label    ==
-    ${selection} =    Get Selected Options    select[name=interests]    True    label    ==
+    Get Selected Options    select[name=interests]    label    ==
+    ${selection} =    Get Selected Options    select[name=interests]    label    ==
     Should Be Equal    ${selection}    ${None}
-    Run Keyword And Expect Error    *    Get Selected Options    select[name=possible_channels]    True    label    ==
+    Run Keyword And Expect Error    *    Get Selected Options    select[name=possible_channels]    label    ==
     ...    Email    Telephone    Direct mail
 
 Get Selected Options with xpath
-    ${selection} =    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    True    label    ==
+    ${selection} =    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==
     ...    Telephone
     Should Be Equal    ${selection}    Telephone
 
@@ -80,13 +81,15 @@ Deselect Options Implicitly
 
 Deselect Options Explicitly
     Deselect Options    select[name=possible_channels]
-    Get Selected Options    select[name=possible_channels]    True    text    ==
+    Get Selected Options    select[name=possible_channels]    text    ==
 
 Deselect Options With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: selector resolved to 3 elements.*
     ...    Deselect Options    //select
-    Deselect Options    //select    strict=False
+    Set Strict Mode    False
+    Deselect Options    //select
+    [Teardown]    Set Strict Mode    True
 
 Deselect Options With Nonmatching Selector
     Set Browser Timeout    50ms
@@ -97,5 +100,5 @@ Deselect Options With Nonmatching Selector
 *** Keywords ***
 Select Option And Verify Selection
     [Arguments]    ${attribute}    ${list_id}    @{selection}
-    Select Options By    ${list_id}    ${attribute}    True    @{selection}
-    Get Selected Options    ${list_id}    True    ${attribute}    ==    @{selection}
+    Select Options By    ${list_id}    ${attribute}    @{selection}
+    Get Selected Options    ${list_id}    ${attribute}    ==    @{selection}
