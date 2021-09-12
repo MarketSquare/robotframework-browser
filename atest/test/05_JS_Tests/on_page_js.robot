@@ -62,10 +62,6 @@ Highlight Element on page
 
 Highlight Element With Strict
     Set Strict Mode    True
-    Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 4 elements.*
-    ...    Highlight Elements    //input    duration=200ms
-    Set Strict Mode    False
     Highlight Elements    //input    duration=200ms
     [Teardown]    Set Strict Mode    True
 
