@@ -34,7 +34,6 @@ from ..utils import (
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
-    attribute_warning,
     convert_typed_dict,
     find_by_id,
     keyword,
@@ -389,9 +388,6 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=("Setter", "BrowserControl"))
-    @attribute_warning(
-        old_args=("videosPath", "videoSize"), new_args=("recordVideo", "recordVideo")
-    )
     def new_context(
         self,
         acceptDownloads: bool = False,
@@ -412,8 +408,6 @@ class PlaywrightState(LibraryComponent):
         httpCredentials: Optional[HttpCredentials] = None,
         colorScheme: Optional[ColorScheme] = None,
         proxy: Optional[Proxy] = None,
-        videosPath: Optional[str] = None,
-        videoSize: Optional[ViewportDimensions] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         hideRfBrowser: bool = False,
         recordVideo: Optional[RecordVideo] = None,
@@ -581,8 +575,6 @@ class PlaywrightState(LibraryComponent):
             )
             params["httpCredentials"] = secret
         params = convert_typed_dict(self.new_context.__annotations__, params)
-        if not videosPath:
-            params.pop("videoSize", None)
         trace_file = params.pop("tracing", None)
         masked_params = self._mask_credentials(params.copy())
         options = json.dumps(params, default=str)
@@ -619,18 +611,16 @@ class PlaywrightState(LibraryComponent):
         return data
 
     def _set_video_path(self, params: dict) -> dict:
-        video_path = params.get("videosPath")
         record_video = params.get("recordVideo", {})
-        if not video_path:
-            video_path = record_video.get("dir")
-        if not video_path:
+        if not record_video:
             return params
-        if Path(video_path).is_dir():
-            return params
-        if record_video:
+        video_path = record_video.get("dir")
+        if not video_path:
             params["recordVideo"]["dir"] = self.video_output / video_path
+        elif Path(video_path).is_dir():
+            return params
         else:
-            params["videosPath"] = self.video_output / video_path
+            params["recordVideo"]["dir"] = self.video_output / video_path
         return params
 
     def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
@@ -649,8 +639,6 @@ class PlaywrightState(LibraryComponent):
         width, height = self._get_record_video_size(params)
         if width and height:
             return {"width": width, "height": height}
-        if "videoSize" in params:
-            return params["videoSize"]
         if "viewport" in params:
             return params["viewport"]
         return {"width": 1280, "height": 720}
