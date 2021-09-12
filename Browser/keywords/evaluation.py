@@ -76,8 +76,6 @@ class Evaluation(LibraryComponent):
         ``color`` Sets the color of the border. Valid colors i.e. are:
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``
 
-        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
-
         Example:
         | `Highlight Elements`    input#login_button    duration=200ms
         | `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF
@@ -90,7 +88,7 @@ class Evaluation(LibraryComponent):
                     width=width,
                     style=style,
                     color=color,
-                    strict=self.strict_mode,
+                    strict=False,
                 )
             )
             logger.info(response.log)
