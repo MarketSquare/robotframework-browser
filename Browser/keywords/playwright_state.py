@@ -34,7 +34,6 @@ from ..utils import (
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
-    attribute_warning,
     convert_typed_dict,
     find_by_id,
     keyword,
@@ -389,9 +388,6 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=("Setter", "BrowserControl"))
-    @attribute_warning(
-        old_args=("videosPath", "videoSize"), new_args=("recordVideo", "recordVideo")
-    )
     def new_context(
         self,
         acceptDownloads: bool = False,
@@ -500,14 +496,12 @@ class PlaywrightState(LibraryComponent):
         Note that browser needs to be launched with the global proxy for this option to work.
         If all contexts override the proxy, global proxy will be never used and can be any string
 
-        ``videosPath`` is deprecated by playwright, use recordVideo instead.
-        Enables video recording for all pages to videosPath
+        ``videosPath`` enables video recording for all pages to videosPath
         folder. If videosPath is not existing folder, videosPath folder is created
         under ${OUTPUT_DIR}/browser/video/ folder. If videosPath is not specified,
         videos are not recorded.
 
-        ``videoSize`` is deprecated by playwright, use recordVideo instead.
-        Specifies dimensions of the automatically recorded
+        ``videoSize`` specifies dimensions of the automatically recorded
         video. Can only be used if videosPath is set. If not specified the size will
         be equal to viewport. If viewport is not configured explicitly the video size
         defaults to 1280x720. Actual picture of the page will be scaled down if
