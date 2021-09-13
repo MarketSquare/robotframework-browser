@@ -42,6 +42,7 @@ node_dir = ROOT_DIR / "node"
 node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
+ATEST_TIMEOUT = 900
 
 ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
@@ -404,7 +405,7 @@ def atest_robot(c):
     env = os.environ.copy()
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(command_args, env=env)
-    process.wait(600)
+    process.wait(ATEST_TIMEOUT)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml, verbose=False)
@@ -449,7 +450,7 @@ def run_tests(c, tests):
         ],
         env=env,
     )
-    return process.wait(600)
+    return process.wait(ATEST_TIMEOUT)
 
 
 def _run_pabot(extra_args=None):
@@ -486,7 +487,7 @@ def _run_pabot(extra_args=None):
     process = subprocess.Popen(
         pabot_args + (extra_args or []) + default_args, env=os.environ
     )
-    process.wait(600)
+    process.wait(ATEST_TIMEOUT)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml, verbose=False)
