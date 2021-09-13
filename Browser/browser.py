@@ -159,9 +159,9 @@ class Browser(DynamicCore):
     will fail. If keyword finds one element, keyword does not fail because of
     strict mode. If strict mode is false, keyword does not fail if selector points
     many elements. Strict mode is enabled by default, but can be changed in library
-    `importing`, `Set Strict Mode` keyword or controlled in individual keywords. If
-    keyword does not have ``strict`` argument, then library level strict mode is not
-    used by that keyword. For more details, see Playwright
+    `importing` or `Set Strict Mode` keyword. Keyword documentation states if keyword
+    uses strict mode. If keyword does not state that is used strict mode, then strict
+    mode is not applied for the keyword. For more details, see Playwright
     [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
 
     Selector strategies that are supported by default are listed in the table
