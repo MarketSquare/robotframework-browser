@@ -42,7 +42,7 @@ node_dir = ROOT_DIR / "node"
 node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
-ATEST_TIMEOUT = 900
+ATEST_TIMEOUT = 600
 
 ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
