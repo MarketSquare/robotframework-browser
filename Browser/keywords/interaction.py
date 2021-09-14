@@ -629,9 +629,7 @@ class Interaction(LibraryComponent):
     ):
         if self.library.presenter_mode:
             self.hover(selector, strict)
-            self.library.highlight_elements(
-                selector, duration=timedelta(seconds=2), strict=strict
-            )
+            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
             sleep(2)
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(
@@ -651,9 +649,7 @@ class Interaction(LibraryComponent):
     ):
         if self.library.presenter_mode:
             self.hover(selector, strict)
-            self.library.highlight_elements(
-                selector, duration=timedelta(seconds=2), strict=strict
-            )
+            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
             sleep(2)
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
