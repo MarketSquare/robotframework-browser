@@ -19,7 +19,7 @@ Har path And omitContent Defined
     File Should Not Be Empty    ${OUTPUT_DIR}/har-2.file
 
 Har path And omitContent Defined As String
-    New Context    recordHar={"path": "${OUTPUT_DIR}/har-3.file", "omitContent": "True"}
+    New Context    recordHar={"path": r"${OUTPUT_DIR}/har-3.file", "omitContent": "True"}
     New Page    ${LOGIN_URL}
     Close Context
     File Should Not Be Empty    ${OUTPUT_DIR}/har-3.file
