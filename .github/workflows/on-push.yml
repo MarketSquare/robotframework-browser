@@ -57,6 +57,10 @@ jobs:
     - name: Check types with mypy
       run: |
         mypy --config-file Browser/mypy.ini Browser
+    - name: Check types with pyright
+      run: |
+        cd Browser
+        ../pyright-script.sh
     - name: Lint atest
       run: |
         inv lint-robot

@@ -20,3 +20,10 @@ exclude = '''
 profile = "black"
 src_paths="."
 skip_glob = ["generated", "__init__.pyi"]
+
+[tool.pyright]
+include = ["*"]
+exclude = ["**/node_modules",
+    "**/__pycache__",
+    "generated"
+]
