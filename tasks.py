@@ -497,12 +497,13 @@ def _run_pabot(extra_args=None):
 
 
 @task
-def lint_python(c):
+def lint_python(c, force=False):
     all_py_sources = list(python_src_dir.glob("**/*.py")) + list(
         (ROOT_DIR / "utest").glob("**/*.py")
     )
-    if _sources_changed(all_py_sources, python_lint_timestamp_file):
+    if force or _sources_changed(all_py_sources, python_lint_timestamp_file):
         c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
+        c.run("cd Browser && npx pyright .")
         c.run("black --config Browser/pyproject.toml Browser/")
         c.run("flake8 --config Browser/.flake8 Browser/ utest/")
         c.run("isort Browser/")
