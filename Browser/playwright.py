@@ -17,7 +17,7 @@ import contextlib
 import os
 import time
 from pathlib import Path
-from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
+from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, TimeoutExpired, run
 from typing import TYPE_CHECKING, Optional
 
 import grpc  # type: ignore
@@ -168,9 +168,15 @@ class Playwright(LibraryComponent):
 
         # Access (possibly) cached property without actually invoking it
         playwright_process = self.__dict__.get("_playwright_process")
-        if playwright_process:
+        if isinstance(playwright_process, Popen):
             logger.debug("Closing Playwright process")
             playwright_process.kill()
+            # Make sure that the process dies or try to terminate it forcibly
+            try:
+                playwright_process.wait(0.2)
+            except TimeoutExpired:
+                playwright_process.terminate()
+
             logger.debug("Playwright process killed")
         else:
             logger.debug("Disconnected from external Playwright process")
