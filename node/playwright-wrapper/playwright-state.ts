@@ -502,7 +502,7 @@ export async function newContext(
 }
 
 // source: https://stackoverflow.com/a/32922084
-function deepEqual<T>(x, y): boolean {
+function deepEqual<T>(x: any, y: any): boolean {
   const ok = Object.keys, tx = typeof x, ty = typeof y;
   return x && y && tx === 'object' && tx === ty ? (
     ok(x).length === ok(y).length &&
@@ -511,18 +511,23 @@ function deepEqual<T>(x, y): boolean {
 }
 
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
-
     const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
-    if (options.skip_if_exists) {
-        const matchingBrowser = openBrowsers.browserStack.find(browser => deepEqual(browser.options, options))
-        if (matchingBrowser) {
+    const matchingBrowser = openBrowsers.browserStack.find(browser => deepEqual(browser.options, options))
+    let extraWarning = ''; 
+    if (matchingBrowser) {
+        if (options.skip_if_exists) {
+            openBrowsers.switchTo(matchingBrowser.id);
             return stringResponse(matchingBrowser.id, 'Successfully skipped creating new browser, found matching browser with options: ' + JSON.stringify(options));
+        } else {
+            // If there is already a browser with requested options, print a warning. Could make this default in the future.
+            extraWarning = `Consider skip_if_exists for improved performance and automatic browser re-use. Automatically detected that ${matchingBrowser.id} could have probably been re-used.`
         }
     }
     const browserAndConfs = await _newBrowser(browserType, options['headless'] as boolean, options);
     const browserState = openBrowsers.addBrowser(browserAndConfs);
-    return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
+    return stringResponse(browserState.id, `${extraWarning}\nSuccessfully created browser with options: ${JSON.stringify(options)}`);
+
 }
 
 export async function connectToBrowser(

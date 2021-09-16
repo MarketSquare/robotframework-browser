@@ -293,7 +293,6 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def new_browser(
         self,
-        skip_if_exists: bool = False,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
         executablePath: Optional[str] = None,
@@ -309,6 +308,7 @@ class PlaywrightState(LibraryComponent):
         devtools: bool = False,
         slowMo: timedelta = timedelta(seconds=0),
         channel: Optional[str] = None,
+        skip_if_exists: bool = False,
     ) -> str:
 
         """Create a new playwright Browser with specified options.
