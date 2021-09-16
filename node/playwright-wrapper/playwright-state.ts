@@ -72,6 +72,7 @@ interface BrowserAndConfs {
     browser: Browser;
     browserType: 'chromium' | 'firefox' | 'webkit';
     headless: boolean;
+    options?: Record<string, unknown>;
 }
 
 async function _newBrowser(
@@ -94,6 +95,7 @@ async function _newBrowser(
         browser,
         browserType,
         headless,
+        options
     };
 }
 
@@ -180,7 +182,7 @@ export class PlaywrightState {
         this.elementHandles = new Map();
     }
     extension: unknown;
-    private browserStack: BrowserState[];
+    browserStack: BrowserState[];
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
@@ -326,6 +328,7 @@ export class BrowserState {
         this.name = browserAndConfs.browserType;
         this.browser = browserAndConfs.browser;
         this.headless = browserAndConfs.headless;
+        this.options = browserAndConfs.options;
         this._contextStack = [];
         this.id = `browser=${uuidv4()}`;
     }
@@ -334,6 +337,7 @@ export class BrowserState {
     name?: string;
     id: Uuid;
     headless: boolean;
+    options?: Record<string, unknown>;
 
     public async close(): Promise<void> {
         this._contextStack = [];
@@ -497,9 +501,25 @@ export async function newContext(
     return response;
 }
 
+// source: https://stackoverflow.com/a/32922084
+function deepEqual<T>(x, y): boolean {
+  const ok = Object.keys, tx = typeof x, ty = typeof y;
+  return x && y && tx === 'object' && tx === ty ? (
+    ok(x).length === ok(y).length &&
+      ok(x).every(key => deepEqual<T>(x[key], y[key]))
+  ) : (x === y);
+}
+
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
+
     const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
+    if (options.skip_if_exists) {
+        const matchingBrowser = openBrowsers.browserStack.find(browser => deepEqual(browser.options, options))
+        if (matchingBrowser) {
+            return stringResponse(matchingBrowser.id, 'Successfully skipped creating new browser, found matching browser with options: ' + JSON.stringify(options));
+        }
+    }
     const browserAndConfs = await _newBrowser(browserType, options['headless'] as boolean, options);
     const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));

@@ -293,6 +293,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def new_browser(
         self,
+        skip_if_exists: bool = False,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
         executablePath: Optional[str] = None,
