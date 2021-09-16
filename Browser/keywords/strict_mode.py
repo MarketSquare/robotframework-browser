@@ -18,12 +18,17 @@ from ..utils import keyword, logger
 class StrictMode(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def set_strict_mode(self, mode: bool):
-        """Controls library level strict mode.
+        """Controls library strict mode.
 
-        When set to ```True``, keyword that searching elements will use Playwright
+        When set to ``True``, keywords that are searching elements will use Playwright
         [https://playwright.dev/docs/api/class-page#page-query-selector|strict mode].
-        Keyword changes library level default value, which can be overwritten in
-        individual keywords by the keywords ``strict`` argument.
+        Keyword changes library strict mode value and keyword also return the previous
+        strict mode value.
+
+        Example:
+        | ${old_mode} =      Set Strict Mode    False
+        | Get Text           //input            # Does not fail if selector points to one or more elements
+        | Set Strict Mode    ${old_mode}
         """
         old_mode = self.strict_mode
         self.strict_mode = mode
