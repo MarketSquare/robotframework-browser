@@ -31,8 +31,8 @@ source .venv/bin/activate  # On linux and OSX
 
 [Invoke](http://www.pyinvoke.org/index.html) is used as a task runner / build tool.
 
-Other dependencies can be installed/updated with `inv deps`. This command installs and updated both Python and nodejs dependencies.
-After dependencies are installed, run `inv build` to compile node code code and gRPC protocol. Also this invoke command will create
+Other dependencies can be installed/updated with `inv deps`. This command installs and updates both Python and nodejs dependencies.
+After dependencies are installed, run `inv build` to compile node code and gRPC protocol. Also this invoke command will create
 Python stub file.
 
 Run `inv -l` to get list of current build commands.
