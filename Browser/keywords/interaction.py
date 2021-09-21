@@ -585,10 +585,10 @@ class Interaction(LibraryComponent):
         If no values to select are passed will deselect options in element.
 
         Example:
-        | `Select Options By`    label    select[name=preferred_channel]    Direct mail
-        | `Select Options By`    value    select[name=interests]    males    females    others
-        | `Select Options By`    index    select[name=possible_channels]    0    2
-        | `Select Options By`    text     select[name=interests]    Males    Females
+        | `Select Options By`    select[name=preferred_channel]    label    Direct mail
+        | `Select Options By`    select[name=interests]            value    males    females    others
+        | `Select Options By`    select[name=possible_channels]    index    0    2
+        | `Select Options By`    select[name=interests]            text    Males    Females
         """
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
