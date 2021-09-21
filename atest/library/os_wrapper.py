@@ -15,7 +15,7 @@ def wait_file_count_in_directory(path: str, count: int, pattern: Optional[str] =
         if file_count == count:
             return file_count
         time.sleep(0.42)
-    raise AssertionError(f"File count was {file_count}, but should have been {count} within {timeout}")
+    raise AssertionError(f"File count was {file_count}, but should have been {count} within {timeout} seconds")
 
 
 def glob_files(path: str) -> list:

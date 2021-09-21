@@ -22,7 +22,7 @@ JS Execute Without Element On Strict Mode
 
 JS Execute With Element On Strict Mode
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
     ...    Execute JavaScript    () => {return false;}    //input
     Set Strict Mode    False
     ${result} =    Execute JavaScript    () => {return false;}    //input

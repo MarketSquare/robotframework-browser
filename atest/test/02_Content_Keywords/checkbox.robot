@@ -12,7 +12,7 @@ Get Checkbox State Unchecked
 
 Get Checkbox State With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 12 elements.*
+    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
     ...    Get Checkbox State    //input
     Set Strict Mode    False
     ${state} =    Get Checkbox State    //input
@@ -38,7 +38,7 @@ Check Checkbox
 
 Check Checkbox With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 2 elements.*
+    ...    *Error: strict mode violation:*
     ...    Check Checkbox    //input[@type="checkbox"]
     Set Strict Mode    False
     Check Checkbox    //input[@type="checkbox"]
@@ -51,7 +51,7 @@ Uncheck Checkbox
 
 Uncheck Checkbox With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 12 elements.*
+    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
     ...    Uncheck Checkbox    //input
     Set Strict Mode    False
     Run Keyword And Expect Error
