@@ -11,7 +11,7 @@ Press Keys Generate Characters
 
 Press Keys With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 12 elements.*
+    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
     ...    Press Keys    //input    Foo
     Set Strict Mode    False
     Press Keys    //input    T    i    d    i    i

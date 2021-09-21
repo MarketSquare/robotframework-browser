@@ -11,7 +11,7 @@ Create Video With Full Path
     New Context    ${True}    recordVideo=${record_video}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    Verify Video Files    ${0}    ${1}
+    Verify Video Files    ${1}    ${1}
 
 Create Video With Relative Path
     [Documentation]
@@ -21,7 +21,7 @@ Create Video With Relative Path
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
-    Should Be Equal    ${{len(${files})}}    ${0}
+    Should Be Equal    ${{len(${files})}}    ${1}
     Close Page
     Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    1
 
@@ -33,7 +33,7 @@ Create Video With videoSize
     New Context    recordVideo=${record_video}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    Verify Video Files    ${1}    ${2}
+    Verify Video Files    ${2}    ${2}
 
 Create Video With viewport
     [Documentation]
@@ -43,7 +43,7 @@ Create Video With viewport
     New Context    recordVideo=${record_video}    viewport=${size}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    Verify Video Files    ${2}    ${3}
+    Verify Video Files    ${3}    ${3}
 
 No Video
     [Documentation]
