@@ -6,24 +6,26 @@ Suite Setup     Video Setup
 *** Test Cases ***
 Create Video With Full Path
     [Documentation]
-    ...    LOG 3:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
+    ...    LOG 5:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
+    ${files} =    Glob Files Count    ${OUTPUT_DIR}/video
+    Should Be Equal    ${0}    ${files}
     ${record_video} =    Create Dictionary    dir    ${OUTPUT_DIR}/video
     New Context    ${True}    recordVideo=${record_video}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    Verify Video Files    ${1}    ${1}
+    Verify Video Files    1
 
 Create Video With Relative Path
     [Documentation]
-    ...    LOG 3:3    INFO    GLOB:    *video width="1280" height="720" controls*src="browser/video/my_video*.webm"*
+    ...    LOG 5:3    INFO    GLOB:    *video width="1280" height="720" controls*src="browser/video/my_video*.webm"*
+    ${files} =    Glob Files Count    ${OUTPUT_DIR}/browser/video/my_video
+    Should Be Equal    ${0}    ${files}
     ${record_video} =    Create Dictionary    dir    my_video
     New Context    recordVideo=${record_video}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    ${files} =    List Files In Directory    ${OUTPUT_DIR}/browser/video/my_video
-    Should Be Equal    ${{len(${files})}}    ${1}
-    Close Page
-    Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    1
+    Close Context
+    Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    ${1}
 
 Create Video With videoSize
     [Documentation]
@@ -33,7 +35,7 @@ Create Video With videoSize
     New Context    recordVideo=${record_video}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    Verify Video Files    ${2}    ${2}
+    Verify Video Files    ${2}
 
 Create Video With viewport
     [Documentation]
@@ -43,14 +45,14 @@ Create Video With viewport
     New Context    recordVideo=${record_video}    viewport=${size}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    Verify Video Files    ${3}    ${3}
+    Verify Video Files    ${3}
 
 No Video
     [Documentation]
     ...    LOG 2:3    DEBUG    Video is not enabled.
     New Context
     New Page    ${LOGIN_URL}
-    Verify Video Files    ${3}    ${3}
+    Verify Video Files    ${3}
 
 Create Video With Deprecated Options
     [Documentation]
@@ -61,7 +63,7 @@ Create Video With Deprecated Options
     New Context    videosPath=${OUTPUT_DIR}/video    videoSize=${size}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
-    Verify Video Files    ${3}    ${4}
+    Verify Video Files    4
 
 *** Keywords ***
 Video Setup
@@ -69,7 +71,6 @@ Video Setup
     OperatingSystem.Remove Directory    ${OUTPUT_DIR}/video    recursive=True
 
 Verify Video Files
-    [Arguments]    ${start count}    ${end count}
-    ${files} =    Wait File Count In Directory    ${OUTPUT_DIR}/video    ${start count}
+    [Arguments]    ${count}
     Close Page
-    ${files} =    Wait File Count In Directory    ${OUTPUT_DIR}/video    ${end count}
+    Wait File Count In Directory    ${OUTPUT_DIR}/video    ${count}
