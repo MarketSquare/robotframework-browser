@@ -30,7 +30,7 @@ installed in the system. The installation size depends on the operating system, 
 It is possible to skip browser binaries installation with `rfbrowser init --skip-browsers` command, but then user
 is responsible for browser binary installation.
 
-Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [atest/docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/atest/docker/README.md).
+Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
 
 ## Update instructions
 
