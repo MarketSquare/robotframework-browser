@@ -139,6 +139,7 @@ def run():
             "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nSee the each command argument "
             "group for more details what (optional) arguments that command supports."
         ),
+        type=str
     )
     install = parser.add_argument_group("init options")
     install.add_argument(
@@ -161,7 +162,7 @@ def run():
     command = args.command.lower()
     if command == "init":
         rfbrowser_init(args.skip_browsers)
-    if command == "clean-node":
+    elif command == "clean-node":
         rfbrowser_clean_node()
     elif command == "show-trace":
         if not args.file:
@@ -169,7 +170,7 @@ def run():
         show_trace(args.file)
     else:
         raise Exception(
-            f"Command should be init or show-trace, but it was {args.command}"
+            f"Command should be init, clean-node or show-trace, but it was {command}"
         )
 
 

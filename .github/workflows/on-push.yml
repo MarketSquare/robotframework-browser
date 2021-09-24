@@ -176,8 +176,13 @@ jobs:
       - name: Artifacts download for flaky test analysis
         if: ${{ failure() && matrix.os != 'windows-latest' }}
         run: |
-            python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
-            inv copy-xunit
+          python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
+          inv copy-xunit
+      - name: Uninstall on Linux
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          rfbrowser clean-node
+          pip uninstall --yes robotframework-browser
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
