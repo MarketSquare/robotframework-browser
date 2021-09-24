@@ -37,7 +37,15 @@ Or use the [docker images](https://github.com/MarketSquare/robotframework-browse
 To upgrade your already installed robotframework-browser library
 
 1. Update from commandline: `pip install -U robotframework-browser`
-2. Install the node dependencies for the newly installed version: `rfbrowser init`
+2. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
+3. Install the node dependencies for the newly installed version: `rfbrowser init`
+
+## Uninstall instructions
+
+To completely install library, including the browser binaries installed by Playwright,
+run following commands:
+1. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
+2. Uninstall with pip: pip uninstall -U robotframework-browser
 
 # Examples
 
