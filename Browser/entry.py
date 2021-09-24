@@ -14,6 +14,7 @@
 import argparse
 import os
 import platform
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -85,6 +86,14 @@ def rfbrowser_init(skip_browser_install: bool):
     print("rfbrowser init completed")
 
 
+def rfbrowser_clean_node():
+    if not INSTALLATION_DIR.is_dir():
+        print(f"Could not find {INSTALLATION_DIR}, nothing to delete.")
+        return
+    print("Delete library node dependencies...")
+    shutil.rmtree(INSTALLATION_DIR)
+
+
 def show_trace(file: str):
     print(f"Opening file: {file}")
     playwright = INSTALLATION_DIR / "node_modules" / "playwright"
@@ -120,10 +129,15 @@ def run():
     parser.add_argument(
         "command",
         help=(
-            "Possible commands are:\ninit\nshow-trace\n\ninit command will install the required node dependencies. "
-            "init command is needed when library is installed or updated.\n\nshow-trace command will start the "
-            "Playwright trace viewer tool.\n\nSee the each command argument group for more details what (optional) "
-            "arguments that command supports."
+            "Possible commands are:\ninit\nclean-node\nshow-trace\n\ninit command will install the required node "
+            "dependencies. init command is needed when library is installed or updated.\n\nclean-node is used to delete"
+            "node side dependencies and installed browser binaries from the library default installation location. "
+            "When upgrading browser library, it is recommended to clean old node side binaries after upgrading the "
+            "Python side. Example:\n1) pip install -U robotframework-browser\n2) rfbrowser clean-node\n3)rfbrowser "
+            "init.\nRun rfbrowser clean-node command also before uninstalling the library with pip. This makes sure "
+            "that playwright browser binaries are not left in the disk after the pip uninstall command."
+            "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nSee the each command argument "
+            "group for more details what (optional) arguments that command supports."
         ),
     )
     install = parser.add_argument_group("init options")
@@ -144,9 +158,12 @@ def run():
         default=False,
     )
     args = parser.parse_args()
-    if args.command == "init":
+    command = args.command.lower()
+    if command == "init":
         rfbrowser_init(args.skip_browsers)
-    elif args.command == "show-trace":
+    if command == "clean-node":
+        rfbrowser_clean_node()
+    elif command == "show-trace":
         if not args.file:
             raise Exception("show-trace needs also --file argument")
         show_trace(args.file)
