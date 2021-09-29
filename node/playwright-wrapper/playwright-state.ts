@@ -13,7 +13,17 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, ConsoleMessage, ElementHandle, Page, chromium, firefox, webkit, Locator } from 'playwright';
+import {
+    Browser,
+    BrowserContext,
+    ConsoleMessage,
+    ElementHandle,
+    Locator,
+    Page,
+    chromium,
+    firefox,
+    webkit,
+} from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -295,7 +305,7 @@ export class PlaywrightState {
     }
 
     public addLocator(id: string, pwLocator: Locator, nth: number): void {
-        this.locatorHandles.set(id, {locator: pwLocator, nth: nth});
+        this.locatorHandles.set(id, { locator: pwLocator, nth: nth });
     }
 
     public getElement(id: string): ElementHandle {

@@ -380,9 +380,10 @@ class Interaction(LibraryComponent):
     def tidii_get_element(self, selector: str) -> str:
         with self.playwright.grpc_channel() as stub:
             response = stub.TidiiGetElement(
-                Request().TidiiGetElement(selector=selector, strict=self.strict_mode)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
-        return response.body\
+        logger.info(response.log)
+        return response.body
 
     @keyword
     def tidii_get_elements(self, selector: str) -> List[str]:
@@ -391,6 +392,7 @@ class Interaction(LibraryComponent):
                 response = stub.TidiiGetElements(
                     Request().ElementSelector(selector=selector, strict=False)
                 )
+                logger.info(response.log)
                 return json.loads(response.json)
         except grpc.RpcError as error:
             logger.info(error)
