@@ -12,13 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Dialog, Page, Locator, selectors} from 'playwright';
+import { Dialog, Locator, Page, selectors } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, stringResponse, jsonResponse } from './response-util';
-import { invokeOnKeyboard, invokeOnMouse, invokePlaywrightMethod, findLocator, exists } from './playwirght-invoke';
+import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
+import {
+    findLocator,
+    findLocatorCount,
+    invokeOnKeyboard,
+    invokeOnMouse,
+    invokePlaywrightMethod,
+} from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -203,34 +209,36 @@ export async function tidii(
     const selector = request.getSelector();
     const options = request.getOptions();
     const strictMode = request.getStrict();
-    const locator = findLocator(state, selector, strictMode);
+    const locator = findLocator(state, selector, strictMode, undefined);
     await (await locator).click(JSON.parse(options));
     return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
 }
 
-export async function tidiiGetElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
+export async function tidiiGetElement(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.String> {
     const strictMode = request.getStrict();
     const selector = request.getSelector();
-    const locator = await findLocator(state, selector, strictMode);
+    const locator = await findLocator(state, selector, strictMode, undefined);
     const id = uuidv4();
     state.addLocator(id, locator, 0);
     return stringResponse(`element=${id}`, 'Element found successfully.');
 }
 
-export async function tidiiGetElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
+export async function tidiiGetElements(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Json> {
     const strictMode = request.getStrict();
     const selector = request.getSelector();
-    const locator = await findLocator(state, selector, strictMode)
-    const count = await locator.count();
+    const count = await findLocatorCount(state, selector);
+    const response: string[] = [];
     for (let i = 0; i < count; i++) {
         const id = uuidv4();
-        state.addLocator(id, locator, i)
-        
+        const locator = await findLocator(state, selector, strictMode, i);
+        state.addLocator(id, locator, i);
+        response.push(`element=${id}`);
     }
-    const response: string[] = handles.map((handle) => {
-        const id = uuidv4();
-        state.addElement(id, handle);
-        return `element=${id}`;
-    });
-    return jsonResponse(JSON.stringify(response), 'Elements found successfully.');
+    return jsonResponse(JSON.stringify(response), `Found ${count} elements successfully.`);
 }
