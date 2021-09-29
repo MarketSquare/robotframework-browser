@@ -479,4 +479,8 @@ export class PlaywrightServer implements IPlaywrightServer {
             callback(errorResponse(e), null);
         }
     }
+
+    tidii = this.wrapping(interaction.tidii);
+    tidiiGetElement = this.wrapping(interaction.tidiiGetElement);
+    tidiiGetElements = this.wrapping(interaction.tidiiGetElements);
 }

@@ -12,12 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BrowserContext, ElementHandle, Frame, Page, errors } from 'playwright';
+import { ElementHandle, Frame, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
+export async function findLocator<T>(state: PlaywrightState, selector: string, strictMode: boolean): Promise<Locator> {
+    const activePage = state.getActivePage();
+    exists(activePage, 'Could not find active page');
+    if ( isFramePiercingSelector(selector)) {
+        let selectors = splitFrameAndElementSelector(selector);
+        let frame = await findFrame(activePage, selectors.frameSelector, strictMode);
+        while (isFramePiercingSelector(selectors.elementSelector)) {
+            selectors = splitFrameAndElementSelector(selectors.elementSelector);
+            frame = await findFrame(activePage, selectors.frameSelector, strictMode);
+        }
+        if (strictMode) {
+            logger.info(`Strict mode is enabled, find with ${selector}`)
+            return frame.locator(selectors.elementSelector);
+        } else {
+            logger.info(`Strict mode is disbaled, return first selector: ${selector}`)
+            return frame.locator(selectors.elementSelector).first();
+        }
+    }
+    if (strictMode) {
+        logger.info(`Strict mode is enabled, find with ${selector}`)
+        return activePage.locator(selector);    
+    }
+    logger.info(`Strict mode is disbaled, return first selector: ${selector}`)
+    return activePage.locator(selector).first();
+}
 
 export async function waitUntilElementExists<T>(
     state: PlaywrightState,
@@ -187,6 +213,7 @@ function splitElementHandleAndElementSelector<T>(selector: string): { elementHan
 }
 
 async function findFrame<T>(parent: Page | Frame, frameSelector: string, strictMode: boolean): Promise<Frame> {
+    logger.info(`Find frame with ${frameSelector} and strict mode ${strictMode}`);
     const contentFrame = await (await parent.$(frameSelector, { strict: strictMode }))?.contentFrame();
     exists(contentFrame, `Could not find frame with selector ${frameSelector}`);
     return contentFrame;
