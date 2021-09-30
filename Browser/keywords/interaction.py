@@ -355,6 +355,7 @@ class Interaction(LibraryComponent):
         noWaitAfter: bool = False,
         *modifiers: KeyboardModifier,
     ):
+        """Doc here"""
         options = {
             "button": button.name,
             "clickCount": clickCount,
@@ -381,6 +382,7 @@ class Interaction(LibraryComponent):
 
     @keyword
     def tidii_get_element(self, selector: str) -> str:
+        """Doc here"""
         with self.playwright.grpc_channel() as stub:
             response = stub.TidiiGetElement(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -390,6 +392,7 @@ class Interaction(LibraryComponent):
 
     @keyword
     def tidii_get_elements(self, selector: str) -> List[str]:
+        """Doc here"""
         try:
             with self.playwright.grpc_channel(original_error=True) as stub:
                 response = stub.TidiiGetElements(
