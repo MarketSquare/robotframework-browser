@@ -452,7 +452,7 @@ class Browser(DynamicCore):
     syntax `element=` like this:
 
     | ${ref}=    Get Element    .some_class
-    |            Click          element=${ref} >> .some_child
+    |            Click          ${ref} >> .some_child
 
     The `.some_child` selector in the example is relative to the element referenced by ${ref}.
 
