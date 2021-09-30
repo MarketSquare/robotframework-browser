@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require("copy-webpack-plugin");
 
 const sharedAll = {
     mode: 'development',
@@ -40,8 +41,9 @@ const testappFrontend = {
 const sharedNode = {
     target: 'node',
     node: {
-        __filename: true,
-        __dirname: true
+        global: false,
+        __filename: false,
+        __dirname: false,
     },
 }
 
@@ -65,6 +67,16 @@ const playwrightWrapper = {
         grpc: 'commonjs grpc',
         playwright: 'commonjs playwright'
     },
+    plugins: [
+        new CopyPlugin({
+          patterns: [
+            {
+                from: "./node/playwright-wrapper/static",
+                to: path.resolve(__dirname, '../Browser/wrapper/static')
+            },
+          ],
+        }),
+    ],
     ...sharedNode,
     ...sharedAll,
 }

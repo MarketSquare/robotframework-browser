@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Suite Setup     New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Get Style and Assert
@@ -8,7 +9,7 @@ Get Style and Assert
     Get Style    h1    align-content    ==    normal
 
 Get Style with element
-    ${elem}=    Get Element    h1
+    ${elem} =    Get Element    h1
     Get Style    ${elem}    align-content    ==    normal
 
 Get Style Default Error
@@ -28,22 +29,22 @@ Get Style Custom Error
     ...    Get Style    h1    align-content    !=    normal    foobar
 
 Get Element Size and Assert
-    ${expected}=    Evaluate    {'x': 0, 'y': 500, 'width': 40, 'height': 30}
-    ${bounding_box}=    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}
+    ${expected} =    Evaluate    {'x': 0, 'y': 500, 'width': 40, 'height': 30}
+    ${bounding_box} =    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}
     Should Be Equal    ${bounding_box}    ${expected}
     Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 500, 'width': 40, 'height': 30}}}
 
 Get Element and Assert x
-    ${x}=    Get BoundingBox    \#progress_bar    x    ==    0
+    ${x} =    Get BoundingBox    \#progress_bar    x    ==    0
     Should Be Equal    ${x}    ${0}
 
 Get Element and Assert y
     Get BoundingBox    \#progress_bar    y    validate    value - 500 == 0
 
 Get Element width and height
-    ${expected}=    Evaluate    {'w': 40, 'h': 30}
-    ${wh}=    Get BoundingBox    \#progress_bar    ALL    validate    value['width'] == 40
-    ${wh}=    Get BoundingBox    \#progress_bar    ALL    evaluate    {'w': value['width'], 'h': value['height']}
+    ${expected} =    Evaluate    {'w': 40, 'h': 30}
+    ${wh} =    Get BoundingBox    \#progress_bar    ALL    validate    value['width'] == 40
+    ${wh} =    Get BoundingBox    \#progress_bar    ALL    evaluate    {'w': value['width'], 'h': value['height']}
     Should Be Equal    ${wh}    ${expected}
 
 Get BoundingBox Normal Error
@@ -78,6 +79,16 @@ Get Client Size
 
 Get Client Size Element
     ${size} =    Get Client Size    \#progress_bar    width    >    0
+    Should Be True    ${size}
+
+Get Client Size With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Client Size    //input
+    Set Strict Mode    False
+    ${size} =    Get Client Size    //input
+    Should Be True    ${size}[width] > 0
+    [Teardown]    Set Strict Mode    True
 
 Get Client Size Element Default Error
     Run Keyword And Expect Error
@@ -108,6 +119,15 @@ Get Scroll Position
 Get Scroll Position Element
     Get Scroll Position    h1    top    >=    0
 
+Get Scroll Position With Strict
+    Get Scroll Position
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Scroll Position    //input
+    Set Strict Mode    False
+    Get Scroll Position    //input
+    [Teardown]    Set Strict Mode    True
+
 Get Scroll Position Element Default Error
     Run Keyword And Expect Error
     ...    Scroll position top is '0' (int) should be less than '0.0' (float)
@@ -131,6 +151,19 @@ Get Scroll Size
     Should Be True    ${size}[width] >= 0
     Should Be True    ${size}[height] >= 0
     Length Should Be    ${size}    2
+
+Get Scroll Size With Strict No Element
+    ${size} =    Get Scroll Size
+    Should Be True    ${size}[width] >= 0
+
+Get Scroll Size With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Scroll Size    //input
+    Set Strict Mode    False
+    ${size} =    Get Scroll Size    //input
+    Should Be True    ${size}[width] >= 0
+    [Teardown]    Set Strict Mode    True
 
 Get Scroll Size Element
     ${size} =    Get Scroll Size    h1    width    >=    0
@@ -178,8 +211,28 @@ Get Viewport Size Custom Error
     ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}
 
 Get Element State
+    ${state} =    Get Element State    h1    assertion_operator=equal    assertion_expected=True
+    Should Be True    ${state}
     ${state} =    Get Element State    h1
     Should Be True    ${state}
+
+Get Element State With Strict On ElementSelectorWithOptions
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//div" resolved to 18 elements*
+    ...    Get Element State    //div
+    Set Strict Mode    False
+    ${state} =    Get Element State    //div
+    Should Be True    ${state}
+    [Teardown]    Set Strict Mode    True
+
+Get Element State With Strict On WaitForFunctionOptions
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//div" resolved to 18 elements*
+    ...    Get Element State    //div    state=disabled
+    Set Strict Mode    False
+    ${state} =    Get Element State    //div    state=disabled
+    Should Not Be True    ${state}
+    [Teardown]    Set Strict Mode    True
 
 Get Element State With Assertion
     Get Element State    h1    readonly    ==    False

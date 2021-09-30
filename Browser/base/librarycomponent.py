@@ -81,6 +81,14 @@ class LibraryComponent:
     def video_output(self):
         return self.browser_output / "video"
 
+    @property
+    def traces_output(self):
+        return self.browser_output / "traces"
+
+    @property
+    def state_file(self):
+        return self.browser_output / "state"
+
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
 
@@ -98,8 +106,8 @@ class LibraryComponent:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         if secret == original_secret:
             logger.warn(
-                f"Direct assignment of values as '{arg_name}' is deprecated. "
-                "Use variables or environment variables instead."
+                f"Direct assignment of values as '{arg_name}' is deprecated. Use special "
+                "variable syntax to resolve variable. Example $var instead of ${var}."
             )
         return secret
 
@@ -121,3 +129,11 @@ class LibraryComponent:
             logger.warn("Given variable placeholder could not be resolved.")
             return placeholder
         return value
+
+    @property
+    def strict_mode(self) -> bool:
+        return self.library.strict_mode
+
+    @strict_mode.setter
+    def strict_mode(self, mode: bool):
+        self.library.strict_mode = mode

@@ -26,17 +26,28 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
-import { emptyWithLog, errorResponse } from './response-util';
+import { emptyWithLog, errorResponse, stringResponse } from './response-util';
 
 export class PlaywrightServer implements IPlaywrightServer {
     private states: { [peer: string]: PlaywrightState } = {};
+    peerMap: { [peer: string]: string } = {};
+
+    private createState = (key: string): PlaywrightState => {
+        if (!(key in this.states)) {
+            this.states[key] = new PlaywrightState();
+        }
+        return this.states[key];
+    };
 
     private getState = (peer: ServerSurfaceCall): PlaywrightState => {
-        const p = peer.getPeer();
-        if (!(p in this.states)) {
-            this.states[p] = new PlaywrightState();
+        const mapPeer = this.peerMap[peer.getPeer()];
+        if (mapPeer) {
+            return this.createState(mapPeer);
+        } else {
+            this.peerMap[peer.getPeer()] = peer.getPeer();
+            const p = peer.getPeer();
+            return this.createState(p);
         }
-        return this.states[p];
     };
     private getActiveBrowser = (peer: ServerSurfaceCall) => this.getState(peer).getActiveBrowser();
     private getActiveContext = (peer: ServerSurfaceCall) => this.getState(peer).getActiveContext();
@@ -181,6 +192,20 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async saveStorageState(
+        call: ServerUnaryCall<Request.FilePath, Response.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await playwrightState.saveStorageState(request, this.getActiveBrowser(call));
+            callback(null, response);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
     switchBrowser = this.wrapping(playwrightState.switchBrowser);
     newPage = this.wrapping(playwrightState.newPage);
     newContext = this.wrapping(playwrightState.newContext);
@@ -287,7 +312,6 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     selectOption = this.wrapping(interaction.selectOption);
     deselectOption = this.wrapping(interaction.deSelectOption);
-    inputText = this.wrapping(interaction.inputText);
     typeText = this.wrapping(interaction.typeText);
     fillText = this.wrapping(interaction.fillText);
     clearText = this.wrapping(interaction.clearText);
@@ -335,6 +359,8 @@ export class PlaywrightServer implements IPlaywrightServer {
             callback(errorResponse(e), null);
         }
     }
+
+    recordSelector = this.wrapping(evaluation.recordSelector);
 
     async getPageState(
         call: ServerUnaryCall<Request.Empty, Response.JavascriptExecutionResult>,
@@ -434,6 +460,21 @@ export class PlaywrightServer implements IPlaywrightServer {
             if (request === null) throw Error('No request');
             const result = await browserControl.reload(this.getActivePage(call));
             callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async setPeerId(
+        call: ServerUnaryCall<Request.Index, Response.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const oldPeer = this.peerMap[call.getPeer()];
+            this.peerMap[call.getPeer()] = request.getIndex();
+            callback(null, stringResponse(oldPeer, 'Succesfully overrode peer id'));
         } catch (e) {
             callback(errorResponse(e), null);
         }

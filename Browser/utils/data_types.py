@@ -88,6 +88,13 @@ class ViewportDimensions(TypedDict):
 
 
 class RecordVideo(TypedDict, total=False):
+    """Enables Video recording
+
+    Examples:
+    |  New Context  recordVideo={'dir':'videos', 'size':{'width':400, 'height':200}}
+    |  New Context  recordVideo={'dir': '${OUTPUT_DIR}/video'}
+    """
+
     dir: str
     size: ViewportDimensions
 

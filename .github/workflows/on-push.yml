@@ -5,9 +5,9 @@ name: Continuous integration
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   schedule:
     - cron: '15 10 * * *'
 
@@ -50,7 +50,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r Browser/dev-requirements.txt
-        pip install -r Browser/requirements.txt
     - name: Build Protos and check with tsc
       run: |
         inv node-build
@@ -58,6 +57,9 @@ jobs:
     - name: Check types with mypy
       run: |
         mypy --config-file Browser/mypy.ini Browser
+    - name: Lint atest
+      run: |
+        inv lint-robot
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser
@@ -68,7 +70,8 @@ jobs:
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
       run: |
-       inv utest
+       coverage run -m invoke utest
+       coverage report
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -90,6 +93,15 @@ jobs:
       with:
         name: rfbrowser-wheel 
         path: dist/robotframework_browser-*-py3-none-any.whl
+    - name: Artifacts download for flaky test analysis
+      if: ${{ failure() && matrix.os != 'windows-latest' }}
+      run : |
+        python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
+        inv copy-xunit
+    - uses: F-Secure/flaky-tests-detection@master
+      if: ${{ failure() && matrix.os != 'windows-latest' }}
+      with:
+        args: --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
     - name: Package demoapp
       run: |
         inv demo-app
@@ -159,11 +171,26 @@ jobs:
           rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum inv atest-robot
+          inv sitecustomize
+          xvfb-run --auto-servernum invoke atest-robot
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           inv atest-global-pythonpath
+      - name: Artifacts download for flaky test analysis
+        if: ${{ failure() && matrix.os != 'windows-latest' }}
+        run: |
+          python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
+          inv copy-xunit
+      - uses: F-Secure/flaky-tests-detection@master
+        if: ${{ failure() && matrix.os != 'windows-latest' }}
+        with:
+          args: --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
+      - name: Uninstall on Linux
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          rfbrowser clean-node
+          pip uninstall --yes robotframework-browser
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:

@@ -85,7 +85,7 @@ class Network(LibraryComponent):
         Here's an example of using Robot Framework dictionary variables and extended variable syntax to
         do assertions on the response object:
 
-        | &{res}=             HTTP                       /api/endpoint
+        | &{res}=             `HTTP`                       /api/endpoint
         | Should Be Equal     ${res.status}              200
         | Should Be Equal     ${res.body.some_field}     some value
 
@@ -131,8 +131,16 @@ class Network(LibraryComponent):
         ``matcher`` Request URL string, JavaScript regex or JavaScript function to match request by.
         By default (with empty string) matches first available request.
 
-        ``timeout`` Timeout in seconds. Uses default timeout if not set.
+        ``timeout`` Timeout supports Robot Framework time format. Uses default timeout if not set.
 
+        Example:
+        | `Click`               \\#delayed_request
+        | `Wait For Request`    timeout=1s
+
+        Async example:
+        | ${promise} =    `Promise To`         `Wait For Request`    matcher=\\\\/\\\\/local\\\\w+\\\\:\\\\d+\\\\/api    timeout=3s
+        | `Click`         \\#delayed_request
+        | `Wait For`      ${promise}
         """
         return self._wait_for_http("Request", matcher, timeout)
 
@@ -155,6 +163,18 @@ class Network(LibraryComponent):
           - ``headers`` <dict> A dictionary containing all response headers.
           - ``ok`` <bool> Whether the request was successfull, i.e. the ``status`` is range 200-299.
           - ``request`` <dict> containing ``method`` <str>, ``headers`` <dict> and ``postData`` <dict> | <str>
+
+        Synchronous Example:
+        | `Click`                \\#delayed_request    # Creates response which should be waited before next actions
+        | `Wait For Response`    matcher=\\\\/\\\\/local\\\\w+\\\\:\\\\d+\\\\/api
+        | `Click`                \\#save
+
+        Asynchronous Example:
+        | ${promise} =    `Promise To`    `Wait For Response`    timeout=60s
+        | `Click`           \\#delayed_request    # Creates response which should be waited before pressing save.
+        | `Click`           \\#next
+        | `Wait For`        ${promise}            # Waits for the response
+        | `Click`           \\#save
         """
         return self._wait_for_http("Response", matcher, timeout)
 
@@ -164,8 +184,11 @@ class Network(LibraryComponent):
 
         Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
 
-        ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
+        ``timeout`` Timeout supports Robot Framework time format. Uses default timeout of 10 seconds if not set.
 
+        Example:
+        | `Go To`                         ${URL}
+        | `Wait Until Network Is Idle`    timeout=3s
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitUntilNetworkIsIdle(
@@ -178,20 +201,29 @@ class Network(LibraryComponent):
         self,
         url: str,
         timeout: Optional[timedelta] = None,
-        regex: bool = False,
         wait_until: PageLoadStates = PageLoadStates.load,
     ):
         """Waits until page has navigated to given ``url``.
 
-        ``url``  expected navigation target address either the exact match or a JavaScript-like regex wrapped in ``/`` symbols.
+        ``url``  expected navigation target address either the exact match or a JavaScript-like regex wrapped
+         in ``/`` symbols.
 
         ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
 
-        ``waitUntil`` <"load"|"domcontentloaded"|"networkidle"> When to consider operation succeeded, defaults to load. Events can be either:
+        ``waitUntil`` <"load"|"domcontentloaded"|"networkidle"> When to consider operation succeeded, defaults to load.
+        Events can be either:
         'domcontentloaded' - consider operation to be finished when the DOMContentLoaded event is fired.
         'load' - consider operation to be finished when the load event is fired.
         'networkidle' - consider operation to be finished when there are no network connections for at least 500 ms.
 
+        Keyword works only when page is loaded and does not work if URL fragment changes. Example if
+        https://marketsquare.github.io/robotframework-browser/Browser.html changes to
+        https://marketsquare.github.io/robotframework-browser/Browser.html#Wait%20For%20Navigation
+        keyword will fail.
+
+        Example:
+        | `Go To`                  ${ROOT_URL}/redirector.html
+        | `Wait for navigation`    ${ROOT_URL}/posted.html    wait_until=${wait_until}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitForNavigation(

@@ -25,7 +25,8 @@ class Devices(LibraryComponent):
     def get_devices(self) -> Dict:
         """Returns a dict of all playwright device descriptors.
 
-        See Playwright's [https://github.com/Microsoft/playwright/blob/master/src/server/deviceDescriptors.ts | deviceDescriptors.ts]
+        See Playwright's
+        [https://github.com/microsoft/playwright/blob/master/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json]
         for a formatted list.
         """
         with self.playwright.grpc_channel() as stub:
@@ -35,7 +36,7 @@ class Devices(LibraryComponent):
 
     @keyword(tags=("Getter", "BrowserControl"))
     def get_device(self, name: str) -> Dict:
-        """Get a single device decriptor with name exactly matching name.
+        """Get a single device descriptor with name exactly matching name.
 
         ``name`` Given name of the requested device. See Playwright's
         [https://github.com/Microsoft/playwright/blob/master/src/server/deviceDescriptors.ts | deviceDescriptors.ts]
@@ -48,10 +49,10 @@ class Devices(LibraryComponent):
         before using ensure your active page is on that context.
         Usage:
 
-        | ${device}=          Get Device       iPhone X
-        | New Context         &{device}
-        | New Page
-        | Get Viewport Size   # returns { "width": 375, "height": 812 }
+        | ${device}=          `Get Device`       iPhone X
+        | `New Context`         &{device}
+        | `New Page`
+        | `Get Viewport Size`   # returns { "width": 375, "height": 812 }
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevice(Request().Device(name=name))

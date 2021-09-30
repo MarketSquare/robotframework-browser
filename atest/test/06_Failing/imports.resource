@@ -1,0 +1,2 @@
+*** Settings ***
+Resource    ../variables.resource

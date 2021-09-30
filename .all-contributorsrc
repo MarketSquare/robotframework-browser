@@ -359,6 +359,100 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "msirkka",
+      "name": "msirkka",
+      "avatar_url": "https://avatars.githubusercontent.com/u/84907426?v=4",
+      "profile": "https://github.com/msirkka",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "osrjv",
+      "name": "Ossi R.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29481017?v=4",
+      "profile": "https://github.com/osrjv",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "adrian-evo",
+      "name": "Adrian V.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19324942?v=4",
+      "profile": "https://github.com/adrian-evo",
+      "contributions": [
+        "code",
+        "bug",
+        "ideas"
+      ]
+    },
+    {
+      "login": "ssallmen",
+      "name": "Sami Sallmén",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39527407?v=4",
+      "profile": "https://github.com/ssallmen",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "pekkaklarck",
+      "name": "Pekka Klärck",
+      "avatar_url": "https://avatars.githubusercontent.com/u/114985?v=4",
+      "profile": "http://eliga.fi",
+      "contributions": [
+        "code",
+        "bug"
+      ]
+    },
+    {
+      "login": "janipalsamaki",
+      "name": "Jani Palsamäki",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1157184?v=4",
+      "profile": "https://github.com/janipalsamaki",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "AllanMedeiros",
+      "name": "AllanMedeiros",
+      "avatar_url": "https://avatars.githubusercontent.com/u/34678196?v=4",
+      "profile": "https://github.com/AllanMedeiros",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "ealap",
+      "name": "Emmanuel Alap",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15620712?v=4",
+      "profile": "https://github.com/ealap",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "ankurbhalla-gmail",
+      "name": "ankurbhalla-gmail",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90744440?v=4",
+      "profile": "https://github.com/ankurbhalla-gmail",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "UliSei",
+      "name": "UliSei",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89480399?v=4",
+      "profile": "https://github.com/UliSei",
+      "contributions": [
+        "ideas",
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,

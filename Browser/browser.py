@@ -44,9 +44,11 @@ from .keywords import (
     PlaywrightState,
     Promises,
     RunOnFailureKeywords,
+    StrictMode,
     Waiter,
     WebAppState,
 )
+from .keywords.crawling import Crawling
 from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
 
@@ -152,17 +154,26 @@ class Browser(DynamicCore):
 
     All keywords in the library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
-    how to find the element.
+    how to find the element. Keywords can find elements with strict mode. If
+    strict mode is true and locator finds multiple elements from the page, keyword
+    will fail. If keyword finds one element, keyword does not fail because of
+    strict mode. If strict mode is false, keyword does not fail if selector points
+    many elements. Strict mode is enabled by default, but can be changed in library
+    `importing` or `Set Strict Mode` keyword. Keyword documentation states if keyword
+    uses strict mode. If keyword does not state that is used strict mode, then strict
+    mode is not applied for the keyword. For more details, see Playwright
+    [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
 
     Selector strategies that are supported by default are listed in the table
     below.
 
     | = Strategy = |     = Match based on =     |         = Example =                |
-    | ``css``      | CSS selector.              | ``css=.class > #login_btn``        |
+    | ``css``      | CSS selector.              | ``css=.class > \\#login_btn``      |
     | ``xpath``    | XPath expression.          | ``xpath=//input[@id="login_btn"]`` |
     | ``text``     | Browser text engine.       | ``text=Login``                     |
     | ``id``       | Element ID Attribute.      | ``id=login_btn``                   |
 
+    CSS Selectors can also be recorded with `Record selector` keyword.
 
     == Explicit Selector Strategy ==
 
@@ -206,8 +217,12 @@ class Browser(DynamicCore):
     Any malformed selector not starting with ``//`` or ``..`` nor starting and ending
     with a quote is assumed to be a css selector.
 
-    Example:
+    Note that ``#`` is a comment character in [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#ignored-data | Robot Framework syntax] and needs to be
+    escaped like ``\\#`` to work as a [https://developer.mozilla.org/en-US/docs/Web/CSS/ID_selectors | css ID selector].
+
+    Examples:
     | `Click`  span > button.some_class
+    | `Get Text`  \\#username_field  ==  George
 
 
     == XPath ==
@@ -444,15 +459,22 @@ class Browser(DynamicCore):
     = Assertions =
 
     Keywords that accept arguments ``assertion_operator`` <`AssertionOperator`> and ``assertion_expected``
-    can optionally assert.
+    can optionally assert that a specified condition holds. Keywords will return the value even when the
+    assertion is performed by the keyword.
+
+    Assert will retry and fail only after a specified timeout.
+    See `Importing` and ``retry_assertions_for`` (default is 1 second) for configuring this timeout.
+
+
     %ASSERTION_TABLE%
 
-    But default the keywords will provide an error message if the assertion fails,
-    but default error message can be overwritten with a ``message`` argument. The
-    ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
+    By default keywords will provide an error message if an assertion fails.
+    Default error message can be overwritten with a ``message`` argument.
+    The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
     `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
-    options. The `{value}` is the value returned by the keyword and the `{expected}`
-    is the expected value defined by the user, usually value in the
+    options.
+    The `{value}` is value returned by the keyword and the `{expected}`
+    is expected value defined by the user, usually value in the
     ``assertion_expected`` argument. The `{value_type}` and
     `{expected_type}` are the type definitions from `{value}` and `{expected}`
     arguments. In similar fashion as Python
@@ -463,14 +485,14 @@ class Browser(DynamicCore):
     is used as is. Therefore when assertion is made, the ``assertion_expected``
     argument value and value returned the keyword must have same type. If types
     are not same, assertion will fail. Example `Get Text` always returns a string
-    and has to be compared with a string, even the returnd value might look like
+    and has to be compared with a string, even the returned value might look like
     a number.
 
     Other Keywords have other specific types they return.
     `Get Element Count` always returns an integer.
     `Get Bounding Box` and `Get Viewport Size` can be filtered.
     They return a dictionary without filter and a number when filtered.
-    These Keywords do autoconvert the expected value if a number is returned.
+    These Keywords do automatic conversion for the expected value if a number is returned.
 
     * < less or greater > With Strings*
     Compairisons of strings with ``greater than`` or ``less than`` compares each character,
@@ -516,6 +538,20 @@ class Browser(DynamicCore):
     = Automatic page and context closing =
 
     %AUTO_CLOSING_LEVEL%
+
+    = Implicit waiting =
+
+    Browser library and Playwright have many mechanisms to help in waiting for elements.
+    Playwright will auto-wait before performing actions on elements.
+    Please see [https://playwright.dev/docs/actionability/ | Auto-waiting on Playwright documentation]
+    for more information.
+
+    On top of Playwright auto-waiting Browser assertions will wait and retry
+    for specified time before failing any `Assertions`.
+    Time is specified in Browser library initialization with ``retry_assertions_for``.
+
+    Browser library also includes explicit waiting keywords such as `Wait for Elements State`
+    if more control for waiting is needed.
 
     = Experimental: Re-using same node process =
 
@@ -605,10 +641,12 @@ class Browser(DynamicCore):
         enable_playwright_debug: bool = False,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
         retry_assertions_for: timedelta = timedelta(seconds=1),
-        run_on_failure: str = "Take Screenshot",
+        run_on_failure: str = "Take Screenshot  fail-screenshot-{index}",
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Optional[str] = None,
         enable_presenter_mode: bool = False,
+        playwright_process_port: Optional[int] = None,
+        strict: bool = True,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -628,7 +666,8 @@ class Browser(DynamicCore):
           This allows stopping execution faster to assertion failure when element is found fast.
         - ``run_on_failure`` <str>
           Sets the keyword to execute in case of a failing Browser keyword.
-          It can be the name of any keyword that does not have any mandatory argument.
+          It can be the name of any keyword. If the keyword has arguments those must be separated with
+          two spaces for example ``My keyword \\ arg1 \\ arg2``.
           If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value.
         - ``external_browser_executable`` <Dict <SupportedBrowsers, Path>>
           Dict mapping name of browser to path of executable of a browser.
@@ -639,6 +678,10 @@ class Browser(DynamicCore):
           Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
         - ``enable_presenter_mode`` <bool>
           Automatic highlights to interacted components, slowMo and a small pause at the end.
+        - ``strict`` <bool>
+          If keyword selector points multiple elements and keywords should interact with one element,
+          keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords
+          or by ```et Strict Mode`` keyword.
         """
         self.timeout = self.convert_timeout(timeout)
         self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
@@ -646,9 +689,7 @@ class Browser(DynamicCore):
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self._pause_on_failure: Set["Browser"] = set()
-        self.run_on_failure_keyword = (
-            None if is_falsy(run_on_failure) else {"name": run_on_failure, "args": ()}
-        )
+        self.run_on_failure_keyword = self._parse_run_on_failure_keyword(run_on_failure)
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             external_browser_executable or {}
         )
@@ -658,23 +699,39 @@ class Browser(DynamicCore):
             self._playwright_state,
             Control(self),
             Cookie(self),
+            Crawling(self),
             Devices(self),
             Evaluation(self),
             Interaction(self),
             Getters(self),
             Network(self),
             RunOnFailureKeywords(self),
+            StrictMode(self),
             Promises(self),
             Waiter(self),
             WebAppState(self),
         ]
-        self.playwright = Playwright(self, enable_playwright_debug)
+        self.playwright = Playwright(
+            self, enable_playwright_debug, playwright_process_port
+        )
         self._auto_closing_level = auto_closing_level
         self.current_arguments = ()
         if jsextension is not None:
             libraries.append(self._initialize_jsextension(jsextension))
         self.presenter_mode = enable_presenter_mode
+        self.strict_mode = strict
         DynamicCore.__init__(self, libraries)
+
+    @staticmethod
+    def _parse_run_on_failure_keyword(
+        keyword_with_args: str,
+    ) -> Optional[DelayedKeyword]:
+        if is_falsy(keyword_with_args):
+            return None
+        parts = keyword_with_args.split("  ")
+        if len(parts) < 1:
+            return None
+        return {"name": parts[0], "args": tuple(parts[1:])}
 
     def _initialize_jsextension(self, jsextension: str) -> LibraryComponent:
         component = LibraryComponent(self)
@@ -711,12 +768,6 @@ class Browser(DynamicCore):
     @property
     def browser_output(self) -> Path:
         return Path(self.outputdir, "browser")
-
-    def _close(self):
-        try:
-            self.playwright.close()
-        except ConnectionError as e:
-            logger.trace(f"Browser library closing problem: {e}")
 
     def _start_suite(self, suite, result):
         if not self._suite_cleanup_done and self.browser_output.is_dir():
@@ -834,7 +885,7 @@ class Browser(DynamicCore):
                 self.screenshot_on_failure(test.name)
 
     def keyword_error(self):
-        """Sends screenshot command to Playwright.
+        """Runs keyword on failure.
 
         Only works during testing since this uses robot's outputdir for output.
         """

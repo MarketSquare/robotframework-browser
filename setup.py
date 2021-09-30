@@ -16,7 +16,7 @@ package_data = {
         "wrapper/index.js",
         "wrapper/package.json",
         "wrapper/package-lock.json",
-        "wrapper/generated/*",
+        "wrapper/static/selector-finder.js",
     ],
 }
 
@@ -24,7 +24,7 @@ install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
 
 setup_kwargs = {
     "name": "robotframework-browser",
-    "version": "5.0.0",
+    "version": "8.0.2",
     "description": "Robot Framework Browser library powered by Playwright. Aiming for speed, reliability and visibility.",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",

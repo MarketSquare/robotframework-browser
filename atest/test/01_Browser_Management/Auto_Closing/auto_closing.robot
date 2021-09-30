@@ -1,7 +1,8 @@
 *** Settings ***
-Library           Browser    timeout=3s
-Resource          ../imports.resource
-Suite Setup       New Page    ${ERROR_URL}
+Library         Browser    timeout=3s
+Resource        ../imports.resource
+
+Suite Setup     New Page    ${ERROR_URL}
 
 *** Test Cases ***
 Resource leaker

@@ -1,6 +1,7 @@
 *** Settings ***
-Resource          imports.resource
-Suite Setup       Close Browser    ALL
+Resource        imports.resource
+
+Suite Setup     Close Browser    ALL
 
 *** Test Cases ***
 Get Empty Browser IDs
@@ -31,7 +32,7 @@ Get Empty Context IDs from Browser
     Check Return Value is Empty List    Get Context Ids    All    All
 
 Get Empty Context ID from Empty Browser
-    ${browser}=    New Browser
+    ${browser} =    New Browser
     New Browser
     New Context
     Switch Browser    ${browser}
@@ -39,7 +40,7 @@ Get Empty Context ID from Empty Browser
     Check Return Value is Empty List    Get Context Ids    All    Active
 
 Get Empty Page ID from Empty Browser and Empty Context
-    ${browser}=    New Browser
+    ${browser} =    New Browser
     Check Return Value is Empty List    Get Page Ids    Active    Active    Active
     Check Return Value is Empty List    Get Page Ids    Active    Active    All
     Check Return Value is Empty List    Get Page Ids    Active    All    Active
@@ -48,7 +49,7 @@ Get Empty Page ID from Empty Browser and Empty Context
     Check Return Value is Empty List    Get Page Ids    All    Active    All
     Check Return Value is Empty List    Get Page Ids    All    All    Active
     Check Return Value is Empty List    Get Page Ids    All    All    All
-    ${Context}=    New Context
+    ${Context} =    New Context
     Check Return Value is Empty List    Get Page Ids    Active    Active    Active
     Check Return Value is Empty List    Get Page Ids    Active    Active    All
     Check Return Value is Empty List    Get Page Ids    Active    All    Active
@@ -68,5 +69,5 @@ Get Empty Page ID from Empty Browser and Empty Context
 *** Keywords ***
 Check Return Value is Empty List
     [Arguments]    ${keyword}    @{args}
-    ${should_be_empty}=    Run Keyword And Continue On Failure    ${keyword}    @{args}
+    ${should_be_empty} =    Run Keyword And Continue On Failure    ${keyword}    @{args}
     Run Keyword And Continue On Failure    Should Be True    $should_be_empty == []

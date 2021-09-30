@@ -33,6 +33,9 @@ class Waiter(LibraryComponent):
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
+        Note that Browser library has `Implicit waiting` mechanisms. Depending on
+        the situation you might not need to use `Wait for Elements State`.
+
         State options could be either appear/disappear from dom, or become visible/hidden.
         If at the moment of calling the keyword, the selector already satisfies the condition,
         the keyword will return immediately.
@@ -42,18 +45,25 @@ class Waiter(LibraryComponent):
         ``selector`` Selector of the corresponding object.
         See the `Finding elements` section for details about the selectors.
 
-        ``state`` See `ElementState` for explaination.
+        ``state`` See `ElementState` for explanation.
 
         Note that element without any content or with display:none has an empty bounding box
         and is not considered visible.
 
-        ``timeout`` uses default timeout of 10 seconds if not set.
+        ``timeout`` uses default timeout from library if not set.
 
         ``message`` overrides the default error message. The ``message``
         argument accepts `{selector}`, `{function}`, and `{timeout}`
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
         The `{function}` formatter is same ``state`` argument value.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Example:
+        | `Wait For Elements State`    //h1    visible    timeout=2 s
+        | `Wait For Elements State`    //hi    focused    1s
         """
+        timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
             ElementState.enabled: "e => !e.disabled",
             ElementState.disabled: "e => e.disabled",
@@ -78,20 +88,27 @@ class Waiter(LibraryComponent):
             end += time.monotonic()
             while True:
                 try:
-                    return self._wait_for_elements_state(selector, state, timeout)
+                    return self._wait_for_elements_state(
+                        selector, state, timeout, self.strict_mode
+                    )
                 except Exception as error:
                     if end > time.monotonic():
                         logger.debug(f"Suppress error: {error}")
                     else:
                         if message:
                             message = message.format(
-                                selector=selector, function=state, timeout=timeout
+                                selector=selector,
+                                function=state,
+                                timeout=timeout_as_str,
                             )
                             raise AssertionError(message)
                         raise
         else:
             self.wait_for_function(
-                funct[state], selector=selector, timeout=timeout, message=message
+                funct[state],
+                selector=selector,
+                timeout=timeout,
+                message=message,
             )
 
     def _wait_for_elements_state(
@@ -99,6 +116,7 @@ class Waiter(LibraryComponent):
         selector: str,
         state: ElementState = ElementState.visible,
         timeout: Optional[timedelta] = None,
+        strict: bool = True,
     ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
@@ -107,7 +125,7 @@ class Waiter(LibraryComponent):
             options_json = json.dumps(options)
             response = stub.WaitForElementsState(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+                    selector=selector, options=options_json, strict=strict
                 )
             )
             logger.info(response.log)
@@ -121,8 +139,7 @@ class Waiter(LibraryComponent):
         timeout: Optional[timedelta] = None,
         message: Optional[str] = None,
     ):
-        """Polls JavaScript expression or function in browser until it returns a
-        (JavaScript) truthy value.
+        """Polls JavaScript expression or function in browser until it returns a (JavaScript) truthy value.
 
         ``function`` A valid javascript function or a javascript function body. For example
         ``() => true`` and ``true`` will behave similarly.
@@ -141,25 +158,30 @@ class Waiter(LibraryComponent):
         argument accepts `{selector}`, `{function}`, and `{timeout}`
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Example usage:
-        | ${promise}    Promise To      Wait For Function    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
-        | Click         \\#progress_bar
-        | Wait For      ${promise}
+        | ${promise}      `Promise To`      `Wait For Function`    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
+        | `Click`         \\#progress_bar
+        | `Wait For`      ${promise}
         """
+        timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         end = float(
             self.convert_timeout(timeout, False) if timeout else self.timeout / 1000
         )
         end += time.monotonic()
         while True:
             try:
-                return self._wait_for_function(function, selector, polling, timeout)
+                return self._wait_for_function(
+                    function, selector, polling, timeout, self.strict_mode
+                )
             except Exception as error:
                 if end > time.monotonic():
                     logger.debug(f"Suppress {error}")
                 else:
                     if message:
                         message = message.format(
-                            selector=selector, function=function, timeout=timeout
+                            selector=selector, function=function, timeout=timeout_as_str
                         )
                         raise AssertionError(message)
                     raise
@@ -170,6 +192,7 @@ class Waiter(LibraryComponent):
         selector: str = "",
         polling: Union[str, timedelta] = "raf",
         timeout: Optional[timedelta] = None,
+        strict: bool = True,
     ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
@@ -183,6 +206,7 @@ class Waiter(LibraryComponent):
                     script=function,
                     selector=selector,
                     options=options_json,
+                    strict=strict,
                 )
             )
             logger.debug(response.json)

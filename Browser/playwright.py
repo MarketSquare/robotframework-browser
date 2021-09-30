@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import atexit
 import contextlib
 import os
 import time
@@ -38,15 +39,21 @@ class Playwright(LibraryComponent):
 
     port: Optional[str]
 
-    def __init__(self, library: "Browser", enable_playwright_debug: bool):
+    def __init__(
+        self,
+        library: "Browser",
+        enable_playwright_debug: bool,
+        port: Optional[int] = None,
+    ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
         self.ensure_node_dependencies()
-        self.port = None
+        self.port = str(port) if port else None
 
     @cached_property
     def _playwright_process(self) -> Optional[Popen]:
         process = self.start_playwright()
+        atexit.register(self.close)
         self.wait_until_server_up()
         return process
 
@@ -75,7 +82,7 @@ class Playwright(LibraryComponent):
         )
 
     def start_playwright(self) -> Optional[Popen]:
-        existing_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
+        existing_port = self.port or os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
         if existing_port is not None:
             self.port = existing_port
             logger.info(
@@ -91,7 +98,8 @@ class Playwright(LibraryComponent):
             os.environ["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
         return Popen(
             ["node", str(playwright_script), port],
             shell=False,
@@ -149,11 +157,17 @@ class Playwright(LibraryComponent):
 
     def close(self):
         logger.debug("Closing all open browsers, contexts and pages in Playwright")
-        with self.grpc_channel() as stub:
-            response = stub.CloseAllBrowsers(Request().Empty())
-            logger.info(response.log)
-        self._channel.close()
-        playwright_process = self._playwright_process
+
+        try:
+            with self.grpc_channel() as stub:
+                response = stub.CloseAllBrowsers(Request().Empty())
+                logger.info(response.log)
+            self._channel.close()
+        except Exception as exc:
+            logger.debug(f"Failed to close browsers: {exc}")
+
+        # Access (possibly) cached property without actually invoking it
+        playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:
             logger.debug("Closing Playwright process")
             playwright_process.kill()

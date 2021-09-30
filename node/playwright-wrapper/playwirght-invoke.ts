@@ -19,15 +19,20 @@ import { PlaywrightState } from './playwright-state';
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function waitUntilElementExists<T>(state: PlaywrightState, selector: string): Promise<ElementHandle> {
-    const { elementSelector, context } = await determineContextAndSelector(state, selector);
+export async function waitUntilElementExists<T>(
+    state: PlaywrightState,
+    selector: string,
+    strictMode: boolean,
+): Promise<ElementHandle> {
+    const { elementSelector, context } = await determineContextAndSelector(state, selector, strictMode);
+    logger.info(`Strict mode is: ${strictMode}`);
     if (elementSelector === undefined) {
         // This type cast is safe because elementSelector is only undefined when an ElementHandle gets returned
         return context as ElementHandle;
     } else if ('waitForSelector' in context) {
-        await context.waitForSelector(elementSelector, { state: 'attached' });
+        await context.waitForSelector(elementSelector, { state: 'attached', strict: strictMode });
     }
-    const element = await context.$(elementSelector);
+    const element = await context.$(elementSelector, { strict: strictMode });
     exists(element, `Could not find element with selector \`${elementSelector}\` within timeout.`);
     return element;
 }
@@ -73,11 +78,14 @@ export async function invokePlaywrightMethod<T>(
     state: PlaywrightState,
     methodName: string,
     selector: string,
+    strictMode: boolean,
     ...args: any[]
 ) {
     type strDict = { [key: string]: any };
-    const { elementSelector, context } = await determineContextAndSelector(state, selector);
+    const { elementSelector, context } = await determineContextAndSelector(state, selector, strictMode);
+    logger.info(`Page|Frame|Element resolved elementSelector: ${elementSelector}`);
     if (elementSelector) {
+        await context.$(elementSelector, { strict: strictMode });
         const fn = (context as strDict)[methodName].bind(context);
         return await fn(elementSelector, ...args);
     } else {
@@ -94,15 +102,16 @@ export async function invokePlaywrightMethod<T>(
 async function determineContextAndSelector<T>(
     state: PlaywrightState,
     selector: string,
+    strictMode: boolean,
 ): Promise<{ elementSelector: string | undefined; context: ElementHandle | Frame | Page }> {
     const page = state.getActivePage();
     exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
         let selectors = splitFrameAndElementSelector(selector);
-        let frame = await findFrame(page, selectors.frameSelector);
+        let frame = await findFrame(page, selectors.frameSelector, strictMode);
         while (isFramePiercingSelector(selectors.elementSelector)) {
             selectors = splitFrameAndElementSelector(selectors.elementSelector);
-            frame = await findFrame(frame, selectors.frameSelector);
+            frame = await findFrame(frame, selectors.frameSelector, strictMode);
         }
         return { elementSelector: selectors.elementSelector, context: frame };
     } else if (isElementHandleSelector(selector)) {
@@ -115,13 +124,21 @@ async function determineContextAndSelector<T>(
     }
 }
 
-export async function determineElement<T>(state: PlaywrightState, selector: string): Promise<ElementHandle | null> {
+export async function determineElement(
+    state: PlaywrightState,
+    selector: string,
+    strictMode: boolean,
+): Promise<ElementHandle | null> {
     const page = state.getActivePage();
     exists(page, `Tried to do playwright action, but no open page.`);
     if (isFramePiercingSelector(selector)) {
-        const { frameSelector, elementSelector } = splitFrameAndElementSelector(selector);
-        const frame = await findFrame(page, frameSelector);
-        return await frame.$(elementSelector);
+        let selectors = splitFrameAndElementSelector(selector);
+        let frame = await findFrame(page, selectors.frameSelector, strictMode);
+        while (isFramePiercingSelector(selectors.elementSelector)) {
+            selectors = splitFrameAndElementSelector(selectors.elementSelector);
+            frame = await findFrame(frame, selectors.frameSelector, strictMode);
+        }
+        return await frame.$(selectors.elementSelector, { strict: strictMode });
     } else if (isElementHandleSelector(selector)) {
         const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector);
         const elem = state.getElement(elementHandleId);
@@ -129,7 +146,7 @@ export async function determineElement<T>(state: PlaywrightState, selector: stri
             return await elem.$(subSelector);
         } else return elem;
     } else {
-        return await page.$(selector);
+        return await page.$(selector, { strict: strictMode });
     }
 }
 
@@ -169,8 +186,8 @@ function splitElementHandleAndElementSelector<T>(selector: string): { elementHan
     throw new Error(`Invalid element selector \`${selector}\`.`);
 }
 
-async function findFrame<T>(parent: Page | Frame, frameSelector: string): Promise<Frame> {
-    const contentFrame = await (await parent.$(frameSelector))?.contentFrame();
+async function findFrame<T>(parent: Page | Frame, frameSelector: string, strictMode: boolean): Promise<Frame> {
+    const contentFrame = await (await parent.$(frameSelector, { strict: strictMode }))?.contentFrame();
     exists(contentFrame, `Could not find frame with selector ${frameSelector}`);
     return contentFrame;
 }

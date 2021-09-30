@@ -1,17 +1,18 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
-${FailureScreenshot}=    ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot2}=    ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
-${FailureScreenshot3}=    ${OUTPUT_DIR}${/}myfailure_screenshot.png
-${TestScreenshot}=    ${OUTPUT_DIR}${/}test_screenshot
+${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
+${FailureScreenshot2} =     ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
+${FailureScreenshot3} =     ${OUTPUT_DIR}${/}myfailure_screenshot.png
+${TestScreenshot} =         ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
 Register Keyword To Run On Failure
     Type Text    css=input#username_field    username
-    ${prev}=    Register Keyword To Run On Failure    Take Screenshot
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
@@ -21,7 +22,7 @@ Register Keyword To Run On Failure
 
 Register KåWä On Failure with unicode " 💩 "
     Type Text    css=input#username_field    username
-    ${prev}=    Register Keyword To Run On Failure    Take Screenshot
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
@@ -31,7 +32,7 @@ Register KåWä On Failure with unicode " 💩 "
 
 Register kw with custom path
     Type Text    css=input#username_field    username
-    ${prev}=    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
@@ -60,7 +61,8 @@ Element Screenshotting
     [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/*.png
 
 Quality Argument Incompatible With Png
-    Run Keyword And Expect Error    *quality is unsupported for the png screenshots*    Take Screenshot    fullPage=True    fileType=png    timeout=10s    quality=50
+    Run Keyword And Expect Error    *quality is unsupported for the png screenshots*    Take Screenshot
+    ...    fullPage=True    fileType=png    timeout=10s    quality=50
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.png
 
 Screenshot Fails Due To Timeout
@@ -84,16 +86,25 @@ If Element Not Found Screenshot Should Fail
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
 ElementHandle Screenshotting
-    ${ref}=    Get Element    \#username_field
+    ${ref} =    Get Element    \#username_field
     Take screenshot    ${TestScreenshot}    ${ref}
     File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}.png
 
+Take Take screenshot With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Take screenshot    selector=//input
+    Set Strict Mode    False
+    ${path} =    Take screenshot    browser-strict    selector=//input
+    Set Strict Mode    True
+    [Teardown]    Remove File    ${path}
+
 Screenshotting Without Path
     Remove File    ${OUTPUT_DIR}/*.png
-    ${path1}=    Take Screenshot
+    ${path1} =    Take Screenshot
     File Should Exist    ${path1}
-    ${path2}=    Take Screenshot
+    ${path2} =    Take Screenshot
     File Should Exist    ${path2}
     Should Not Be Equal    ${path1}    ${path2}
     [Teardown]    Remove Files    ${path1}    ${path2}

@@ -1,11 +1,12 @@
 *** Settings ***
-Library           Browser    run_on_failure=None
-Resource          imports.resource
-Suite Setup       Open Browser To Login Page
-Suite Teardown    Close Browser
+Library             Browser    run_on_failure=None
+Resource            imports.resource
+
+Suite Setup         Open Browser To Login Page
+Suite Teardown      Close Browser
 
 *** Variables ***
-${ErrorMessage}=    page.goto: Timeout 1ms exceeded.
+${ErrorMessage} =       page.goto: Timeout 1ms exceeded.
 
 *** Test Cases ***
 Test GoTo With Short Default Timeout

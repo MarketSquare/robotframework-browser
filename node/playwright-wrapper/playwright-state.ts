@@ -68,27 +68,36 @@ export async function extensionKeywordCall(
     return jsonResponse(JSON.stringify(result), 'ok');
 }
 
+interface BrowserAndConfs {
+    browser: Browser;
+    browserType: 'chromium' | 'firefox' | 'webkit';
+    headless: boolean;
+}
+
 async function _newBrowser(
-    browserType?: string,
-    headless?: boolean,
+    browserType: 'chromium' | 'firefox' | 'webkit',
+    headless: boolean,
     options?: Record<string, unknown>,
-): Promise<[Browser, string]> {
-    browserType = browserType || 'chromium';
-    headless = headless || true;
+): Promise<BrowserAndConfs> {
     let browser;
+    const launchOptions = { ...options, headless };
     if (browserType === 'firefox') {
-        browser = await firefox.launch({ headless: headless, ...options });
+        browser = await firefox.launch(launchOptions);
     } else if (browserType === 'chromium') {
-        browser = await chromium.launch({ headless: headless, ...options });
+        browser = await chromium.launch(launchOptions);
     } else if (browserType === 'webkit') {
-        browser = await webkit.launch({ headless: headless, ...options });
+        browser = await webkit.launch(launchOptions);
     } else {
         throw new Error('unsupported browser');
     }
-    return [browser, browserType];
+    return {
+        browser,
+        browserType,
+        headless,
+    };
 }
 
-async function _connectBrowser(browserType: string, url: string): Promise<[Browser, string]> {
+async function _connectBrowser(browserType: string, url: string): Promise<BrowserAndConfs> {
     browserType = browserType || 'chromium';
     let browser;
     if (browserType === 'firefox') {
@@ -100,12 +109,17 @@ async function _connectBrowser(browserType: string, url: string): Promise<[Brows
     } else {
         throw new Error('unsupported browser');
     }
-    return [browser, browserType];
+    return {
+        browser,
+        browserType,
+        headless: false,
+    };
 }
 
 async function _newBrowserContext(
     browser: Browser,
     defaultTimeout: number,
+    traceFile: string,
     options?: Record<string, unknown>,
     hideRfBrowser?: boolean,
 ): Promise<IndexedContext> {
@@ -120,7 +134,17 @@ async function _newBrowserContext(
         });
     }
     context.setDefaultTimeout(defaultTimeout);
-    const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options };
+    const c = {
+        id: `context=${uuidv4()}`,
+        c: context,
+        pageStack: [] as IndexedPage[],
+        options: options,
+        traceFile: traceFile,
+    };
+    if (traceFile) {
+        logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
+        context.tracing.start({ screenshots: true, snapshots: true });
+    }
     c.c.on('page', (page) => {
         c.pageStack.unshift(indexedPage(page));
     });
@@ -177,12 +201,12 @@ export class PlaywrightState {
         return this.getActiveBrowser();
     };
 
-    public async getOrCreateActiveBrowser(browserType?: string): Promise<IBrowserState> {
+    public async getOrCreateActiveBrowser(browserType?: 'chromium' | 'firefox' | 'webkit'): Promise<IBrowserState> {
         const currentBrowser = this.activeBrowser;
         logger.info('currentBrowser: ' + currentBrowser);
         if (currentBrowser === undefined) {
-            const [newBrowser, name] = await _newBrowser(browserType);
-            const newState = new BrowserState(name, newBrowser);
+            const browserAndConfs = await _newBrowser(browserType || 'chromium', true);
+            const newState = new BrowserState(browserAndConfs);
             this.browserStack.push(newState);
             return { browser: newState, newBrowser: true };
         } else {
@@ -238,8 +262,8 @@ export class PlaywrightState {
         );
     }
 
-    public addBrowser(name: string, browser: Browser): BrowserState {
-        const browserState = new BrowserState(name, browser);
+    public addBrowser(browserAndConfs: BrowserAndConfs): BrowserState {
+        const browserState = new BrowserState(browserAndConfs);
         this.browserStack.push(browserState);
         return browserState;
     }
@@ -252,6 +276,9 @@ export class PlaywrightState {
         return this.activeBrowser?.context?.c;
     };
 
+    public getTraceFile = (): string | undefined => {
+        return this.activeBrowser?.context?.traceFile;
+    };
     public getActivePage = (): Page | undefined => {
         return this.activeBrowser?.page?.p;
     };
@@ -275,6 +302,7 @@ export class PlaywrightState {
 type IndexedContext = {
     c: BrowserContext;
     id: Uuid;
+    traceFile: string;
     pageStack: IndexedPage[];
     options?: Record<string, unknown>;
 };
@@ -294,9 +322,10 @@ type Uuid = string;
  * User opened items should get pushed and page opened unshifted
  * */
 export class BrowserState {
-    constructor(name: string, browser: Browser) {
-        this.name = name;
-        this.browser = browser;
+    constructor(browserAndConfs: BrowserAndConfs) {
+        this.name = browserAndConfs.browserType;
+        this.browser = browserAndConfs.browser;
+        this.headless = browserAndConfs.headless;
         this._contextStack = [];
         this.id = `browser=${uuidv4()}`;
     }
@@ -304,6 +333,7 @@ export class BrowserState {
     browser: Browser;
     name?: string;
     id: Uuid;
+    headless: boolean;
 
     public async close(): Promise<void> {
         this._contextStack = [];
@@ -315,7 +345,7 @@ export class BrowserState {
             return { context: this.context, newContext: false };
         } else {
             const activeBrowser = this.browser;
-            const context = await _newBrowserContext(activeBrowser, defaultTimeout);
+            const context = await _newBrowserContext(activeBrowser, defaultTimeout, '');
             this.pushContext(context);
             return { context: context, newContext: true };
         }
@@ -392,6 +422,10 @@ export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<R
 
 export async function closeContext(openBrowsers: PlaywrightState): Promise<Response.Empty> {
     const activeBrowser = openBrowsers.getActiveBrowser();
+    const traceFile = openBrowsers.getTraceFile();
+    if (traceFile) {
+        await openBrowsers.getActiveContext()?.tracing.stop({ path: traceFile });
+    }
     await openBrowsers.getActiveContext()?.close();
     activeBrowser.popContext();
     return emptyWithLog('Successfully closed Context');
@@ -440,21 +474,34 @@ export async function newContext(
     const options = JSON.parse(request.getRawoptions());
     const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType);
     const defaultTimeout = request.getDefaulttimeout();
-    const context = await _newBrowserContext(browserState.browser.browser, defaultTimeout, options, hideRfBrowser);
+    const traceFile = request.getTracefile();
+    logger.info(`Trace file: ${traceFile}`);
+    const context = await _newBrowserContext(
+        browserState.browser.browser,
+        defaultTimeout,
+        traceFile,
+        options,
+        hideRfBrowser,
+    );
     browserState.browser.pushContext(context);
     const response = new Response.NewContextResponse();
     response.setId(context.id);
-    response.setLog('Successfully created context with options: ' + JSON.stringify(options));
+    if (traceFile) {
+        response.setLog(`Successfully created context and trace file will be saved to: ${traceFile}`);
+        options.trace = { screenshots: true, snapshots: true };
+    } else {
+        response.setLog('Successfully created context. ');
+    }
+    response.setContextoptions(JSON.stringify(options));
     response.setNewbrowser(browserState.newBrowser);
     return response;
 }
 
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
-    const browserType = request.getBrowser();
-    const headless = request.getHeadless();
-    const options = JSON.parse(request.getRawoptions());
-    const [browser, name] = await _newBrowser(browserType, headless, options);
-    const browserState = openBrowsers.addBrowser(name, browser);
+    const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
+    const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
+    const browserAndConfs = await _newBrowser(browserType, options['headless'] as boolean, options);
+    const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
 }
 
@@ -464,8 +511,8 @@ export async function connectToBrowser(
 ): Promise<Response.String> {
     const browserType = request.getBrowser();
     const url = request.getUrl();
-    const [browser, name] = await _connectBrowser(browserType, url);
-    const browserState = openBrowsers.addBrowser(name, browser);
+    const browserAndConfs = await _connectBrowser(browserType, url);
+    const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully connected to browser');
 }
 
@@ -578,4 +625,16 @@ export async function switchBrowser(request: Request.Index, openBrowsers: Playwr
 
 export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<Response.Json> {
     return jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
+}
+
+export async function saveStorageState(
+    request: Request.FilePath,
+    browserState?: BrowserState,
+): Promise<Response.Empty> {
+    exists(browserState, "Tried to save storage state but browser wasn't open");
+    const context = browserState.context;
+    exists(context, 'Tried to save storage state butno context was open');
+    const stateFile = request.getPath();
+    await context.c.storageState({ path: stateFile });
+    return emptyWithLog('Current context state is saved to: ' + stateFile);
 }

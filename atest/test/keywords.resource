@@ -1,31 +1,32 @@
 *** Settings ***
-Resource          variables.resource
-Library           Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}
-Library           OperatingSystem
-Library           DateTime
-Library           Collections
-Library           ../library/common.py
-Library           ../library/os_wrapper.py
+Resource    variables.resource
+Library     Collections
+Library     DateTime
+Library     OperatingSystem
+Library     Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}
+Library     ../library/common.py
+Library     ../library/os_wrapper.py
+Library     ../library/show_trace_tool.py
 
 *** Keywords ***
 Open Browser To No Page
-    New Browser  ${BROWSER}  headless=${HEADLESS}
+    New Browser    ${BROWSER}    headless=${HEADLESS}
 
 Open Browser To Frame Page
-    New Browser  ${BROWSER}  headless=${HEADLESS}
-    New Page  ${FRAMES_URL}
+    New Browser    ${BROWSER}    headless=${HEADLESS}
+    New Page    ${FRAMES_URL}
 
 Open Browser To Deep Frame Page
-    New Browser  ${BROWSER}  headless=${HEADLESS}
-    New Page  ${DEEP_FRAMES_URL}
+    New Browser    ${BROWSER}    headless=${HEADLESS}
+    New Page    ${DEEP_FRAMES_URL}
 
 Open Browser To Form Page
-    New Browser  ${BROWSER}  headless=${HEADLESS}
-    New Page  ${FORM_URL}
+    New Browser    ${BROWSER}    headless=${HEADLESS}
+    New Page    ${FORM_URL}
 
 Open Browser To Login Page
-    New Browser  ${BROWSER}  headless=${HEADLESS}
-    New Page  ${LOGIN_URL}
+    New Browser    ${BROWSER}    headless=${HEADLESS}
+    New Page    ${LOGIN_URL}
     # Set Selenium Speed    ${DELAY}
     Login Page Should Be Open
 
@@ -59,3 +60,16 @@ Welcome Page Should Be Open
 Verify Browser Type
     [Arguments]    ${expectedType}
     Get Browser Catalog    validate    value[0]['type'] == $expectedType
+
+Suite Cleanup
+    IF    "${SUITE STATUS}" == "PASS" and "${SYS_VAR_CLEAN}" == "${True}"
+        Delete Files On Teardown
+    ELSE
+        Log    Suite ${SUITE NAME} status is ${SUITE STATUS}, not running stuie cleaning
+    END
+
+Delete Files On Teardown
+    Remove Directory    ${OUTPUT_DIR}/browser    recursive=True
+    Remove File    ${OUTPUT_DIR}/*.png
+    Remove File    ${OUTPUT_DIR}/*.zip
+    Remove File    ${OUTPUT_DIR}/*.webm
