@@ -15,9 +15,9 @@
 import json
 from datetime import timedelta
 from time import sleep
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
-import grpc
+import grpc  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -343,7 +343,10 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword
-    def tidii(self, selector: str, button: MouseButton = MouseButton.left,
+    def tidii(
+        self,
+        selector: str,
+        button: MouseButton = MouseButton.left,
         clickCount: int = 1,
         delay: Optional[timedelta] = None,
         position_x: Optional[float] = None,
