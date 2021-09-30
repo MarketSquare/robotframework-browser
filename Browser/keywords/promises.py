@@ -139,7 +139,7 @@ class Promises(LibraryComponent):
 
         return [promise.cancel() for promise in promises]
 
-    @keyword()
+    @keyword
     def get_promise_state(self, promise: Future) -> PromiseState:
         """
         Returns state of ``promise`` as ``PromiseState``.
