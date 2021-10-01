@@ -85,5 +85,5 @@ Highlight Element with element selector
     Get Element Count    .robotframework-browser-highlight    ==    1
 
 Page state
-    [Tags]    Not-Implemented
+    [Tags]    not-implemented
     #Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123

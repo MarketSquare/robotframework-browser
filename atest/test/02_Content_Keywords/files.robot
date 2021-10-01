@@ -21,7 +21,7 @@ Upload File with different name
     Get Text    \#upload_result    ==    wrong_upload_filename
 
 Invalid Upload Path
-    [Tags]    No-Windows-Support
+    [Tags]    no-windows-support
     ${promise} =    Promise to Upload File    NonExistentFile
     Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
     ...    ${promise}
@@ -39,7 +39,7 @@ Wait For Download
     Remove File    ${file_object}[saveAs]
 
 Wait For Download With Custom Path
-    [Tags]    No-Windows-Support
+    [Tags]    no-windows-support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
     ${dl_promise} =    Promise To Wait For Download    saveAs=${CUSTOM_DL_PATH}
