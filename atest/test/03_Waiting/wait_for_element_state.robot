@@ -150,7 +150,7 @@ Wait For Elements State to hide fails with Promise
     ...    ${promise}
 
 Wait For Elements State to hide with Promise and wait for all promises
-    [Tags]    No-Windows-Support
+    [Tags]    no-windows-support
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
     ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms

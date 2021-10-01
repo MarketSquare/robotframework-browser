@@ -139,7 +139,7 @@ def run():
             "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nSee the each command argument "
             "group for more details what (optional) arguments that command supports."
         ),
-        type=str
+        type=str,
     )
     install = parser.add_argument_group("init options")
     install.add_argument(
