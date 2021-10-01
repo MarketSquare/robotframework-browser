@@ -39,3 +39,20 @@ Get Element And Get Elements
         Should Start With    ${element}    element
 
     END
+
+Click With Element ID
+    ${element} =    Tidii Get Element    //tbody/tr[2]
+    Run Keyword And Expect Error
+    ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
+    ...    Tidii    ${element} >> css=input#login_button
+    Get Text    text=Login Page
+    ${element} =    Tidii Get Element    //tbody/tr[3]
+    Tidii    ${element} >> css=input#login_button
+    Get Text    text=Login failed. Invalid user name and/or password.
+
+Frames With Element ID
+    Go To    ${FRAMES_URL}
+    ${element} =    Tidii Get Element    iframe[name="left"]
+    Run Keyword And Expect Error
+    ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
+    ...    Tidii    ${element} >>> "foo"

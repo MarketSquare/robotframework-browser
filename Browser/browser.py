@@ -356,7 +356,7 @@ class Browser(DynamicCore):
 
     By default, selector chains do not cross frame boundaries. It means that a
     simple CSS selector is not able to select and element located inside an iframe
-    or a frameset. For this usecase, there is a special selector ``>>>`` which can
+    or a frameset. For this use case, there is a special selector ``>>>`` which can
     be used to combine a selector for the frame and a selector for an element
     inside a frame.
 
@@ -454,12 +454,13 @@ class Browser(DynamicCore):
 
     It is possible to get a reference to an element by using `Get Element` keyword. This
     reference can be used as a *first* part of a selector by using a special selector
-    syntax `element=` like this:
+    syntax `element=`. like this:
 
     | ${ref}=    Get Element    .some_class
     |            Click          ${ref} >> .some_child
 
     The `.some_child` selector in the example is relative to the element referenced by ${ref}.
+    Please note that frame piercing is not possible with element reference.
 
     = Assertions =
 

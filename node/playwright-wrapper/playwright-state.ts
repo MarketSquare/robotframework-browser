@@ -308,6 +308,14 @@ export class PlaywrightState {
         this.locatorHandles.set(id, { locator: pwLocator, nth: nth });
     }
 
+    public getLocator(id: string): LocatorCount {
+        const locator = this.locatorHandles.get(id);
+        if (locator) {
+            return locator;
+        }
+        throw new Error(`No locator hanle found with "${id}"`);
+    }
+
     public getElement(id: string): ElementHandle {
         const elem = this.elementHandles.get(id);
         if (elem) {
