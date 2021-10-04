@@ -48,7 +48,7 @@ class Control(LibraryComponent):
         """Navigates to the given ``url``.
 
         ``url`` <str> URL to be navigated to.
-        
+
         ``timeout`` <str> time to wait page to load. If not defined
         will use the library default timeout.
         """
