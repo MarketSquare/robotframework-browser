@@ -27,10 +27,12 @@ from assertionengine import AssertionOperator
 from overrides import overrides
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.result.model import TestCase as TestCaseResult  # type: ignore
+from robot.running.arguments import PythonArgumentParser  # type: ignore
 from robot.running.model import TestCase as TestCaseRunning  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
+from utils import get_normalized_keyword
 from .base import ContextCache, LibraryComponent
 from .generated.playwright_pb2 import Request
 from .keywords import (
@@ -722,6 +724,21 @@ class Browser(DynamicCore):
         self.strict_mode = strict
         DynamicCore.__init__(self, libraries)
 
+    def _parse(self, keyword_name: Union[str, None]) -> DelayedKeyword:
+        if keyword_name is None or is_falsy(keyword_name):
+            return DelayedKeyword(None, None)
+        parts = keyword_name.split("  ")
+        keyword_name = get_normalized_keyword(parts[0])
+        args = parts[1:]
+        if keyword_name in self.keywords:
+            spec = PythonArgumentParser().parse(self.keywords[keyword_name])
+            converted_args = []
+            for arg in spec.resolve(args):
+                for item in arg:
+                    converted_args.append(item)
+            args = converted_args
+        return DelayedKeyword(keyword_name, tuple(args))
+
     @staticmethod
     def _parse_run_on_failure_keyword(
         keyword_with_args: str,
@@ -885,14 +902,11 @@ class Browser(DynamicCore):
                 self.screenshot_on_failure(test.name)
 
     def keyword_error(self):
-        """Runs keyword on failure.
-
-        Only works during testing since this uses robot's outputdir for output.
-        """
+        """Runs keyword on failure."""
         if self._running_on_failure_keyword or not self.run_on_failure_keyword:
             return
+        self._running_on_failure_keyword = True
         try:
-            self._running_on_failure_keyword = True
             if is_same_keyword(self.run_on_failure_keyword["name"], "Take Screenshot"):
                 args = self.run_on_failure_keyword["args"]
                 path = args[0] if args else self._failure_screenshot_path()

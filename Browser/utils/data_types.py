@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Dict, Tuple, Union
 
@@ -59,9 +59,10 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
     return params
 
 
-class DelayedKeyword(TypedDict):
-    name: str
-    args: Tuple[str, ...]
+@dataclass
+class DelayedKeyword:
+    name: Union[str, None]
+    args: Union[Tuple[str, ...], None]
 
 
 class BoundingBox(TypedDict, total=False):
