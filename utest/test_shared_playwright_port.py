@@ -1,5 +1,6 @@
-import Browser
 import pytest
+
+import Browser
 
 
 def test_separate_playwright_port():
