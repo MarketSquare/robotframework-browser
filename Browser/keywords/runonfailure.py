@@ -22,14 +22,15 @@
 from typing import Optional
 
 from ..base import LibraryComponent
-from ..utils import is_falsy, keyword, logger
+from ..utils import keyword, logger
+from ..utils.data_types import DelayedKeyword
 
 
 class RunOnFailureKeywords(LibraryComponent):
     @keyword(tags=("Config",))
     def register_keyword_to_run_on_failure(
-        self, keyword: Optional[str], *args: str
-    ) -> Optional[str]:
+        self, new_keyword: Optional[str], *args: str
+    ) -> DelayedKeyword:
         """Sets the keyword to execute, when a Browser keyword fails.
 
         ``keyword`` is the name of a keyword that will be executed if a
@@ -57,12 +58,13 @@ class RunOnFailureKeywords(LibraryComponent):
         | `Register Keyword To Run On Failure`    ${previous kw}
 
         """
-        old_keyword = self.library.run_on_failure_keyword
-        if keyword is None or is_falsy(keyword):
-            self.library.run_on_failure_keyword = None
+        old_keyword: DelayedKeyword = self.library.run_on_failure_keyword
+        new_keyword = self.parse_run_on_failure_keyword(
+            f"{new_keyword}  {'  '.join(args)}".strip()
+        )
+        self.library.run_on_failure_keyword = new_keyword
+        if new_keyword.name:
+            logger.info(f"'{new_keyword}' will be run on failure.")
         else:
-            self.library.run_on_failure_keyword = {"name": keyword, "args": args}
-        logger.info(f"{keyword or 'No keyword'} will be run on failure.")
-        if old_keyword is None:
-            return None
-        return old_keyword["name"]
+            logger.info("Keyword will not be run on failure.")
+        return old_keyword

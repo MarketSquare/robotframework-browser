@@ -1,4 +1,4 @@
-from utils import get_normalized_keyword
+from Browser.utils import get_normalized_keyword
 
 
 def test_get_normalized_keyword():

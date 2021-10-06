@@ -4,7 +4,7 @@ Resource        imports.resource
 Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
-${TestScreenshot} =         ${OUTPUT_DIR}${/}test_screenshot
+${TestScreenshot} =     ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
 Screenshot By Default Filename

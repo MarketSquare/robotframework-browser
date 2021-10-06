@@ -16,7 +16,7 @@ Register Keyword To Run On Failure
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
     File Should Exist    ${FailureScreenshot}
-    Directory Should Not Exist   ${OUTPUT_DIR}/browser/screenshot
+    Directory Should Not Exist    ${OUTPUT_DIR}/browser/screenshot
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot}
 
@@ -50,7 +50,6 @@ Register Keyword With Arguments
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot3}
 
-
 Register User Keyword
     ${prev} =    Register Keyword To Run On Failure    Custom User Keyword    Foobar
     Type Text    css=input#username_field    username
@@ -63,7 +62,7 @@ Register User Keyword
 
 Register Get Page Source
     [Documentation]
-    ...    LOG 3.1:3  DEBUG  Page source obtained succesfully.
+    ...    LOG 3.1:4    DEBUG    Page source obtained succesfully.
     ${prev} =    Register Keyword To Run On Failure    Get Page Source
     Type Text    css=input#username_field    username
     Run Keyword And Expect Error
@@ -75,4 +74,3 @@ Register Get Page Source
 Custom User Keyword
     [Arguments]    ${log}
     Create File    ${OUTPUT_DIR}/log_file.log    ${log}
-
