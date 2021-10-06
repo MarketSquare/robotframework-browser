@@ -47,10 +47,10 @@ class RunOnFailureKeywords(LibraryComponent):
         case-insensitively, as well as Python ``None`` to disable this
         feature altogether.
 
-        This keyword returns the name of the previously registered
-        failure keyword or Python ``None`` if this functionality was
-        previously disabled. The return value can be always used to
-        restore the original value later.
+        This keyword returns an object which contains the the previously
+        registered failure keyword. The return value can be always used to
+        restore the original value later. The returned object contains
+        keyword name and the possible arguments used to for the keyword.
 
         Example:
         | `Register Keyword To Run On Failure`    Take Screenshot
