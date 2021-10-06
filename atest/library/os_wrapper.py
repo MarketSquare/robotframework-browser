@@ -24,8 +24,7 @@ def wait_file_count_in_directory(path: str, count: int, pattern: Optional[str] =
 
 def glob_files(path: str) -> list:
     """Returns files path.glob(**/*). """
-    path = Path(path)
-    files = path.glob("**/*")
+    files = Path(path).glob("**/*")
     find_files = [str(file.absolute()) for file in files if file.is_file()]
     logger.info(f"Files: \"{', '.join(find_files)}\"")
     return find_files
