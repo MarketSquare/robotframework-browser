@@ -70,6 +70,18 @@ Register Get Page Source
     ...    Get Text    css=input#username_field    ==    not_username
     [Teardown]    Register Keyword To Run On Failure    ${prev}
 
+Register None
+    ${prev1} =    Register Keyword To Run On Failure    NONE
+    Should Not Be Empty    ${prev1.name}
+    Should Not Be Empty    ${prev1.args}
+    Should Not Be Empty    ${prev1.original_name}
+    ${prev2} =    Register Keyword To Run On Failure    ${prev1}
+    Should Not Be True    ${prev2.name}
+    Should Not Be True    ${prev2.args}
+    Should Not Be True    ${prev2.original_name}
+    Log    ${prev2}
+    Log    ${prev1}
+
 *** Keywords ***
 Custom User Keyword
     [Arguments]    ${log}
