@@ -58,7 +58,7 @@ class RunOnFailureKeywords(LibraryComponent):
         | `Register Keyword To Run On Failure`    ${previous kw}
 
         """
-        old_keyword: DelayedKeyword = self.library.run_on_failure_keyword
+        old_keyword = self.library.run_on_failure_keyword
         new_keyword = self.parse_run_on_failure_keyword(
             f"{keyword}  {'  '.join(args)}".strip()
         )
