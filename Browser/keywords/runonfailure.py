@@ -29,7 +29,7 @@ from ..utils.data_types import DelayedKeyword
 class RunOnFailureKeywords(LibraryComponent):
     @keyword(tags=("Config",))
     def register_keyword_to_run_on_failure(
-        self, new_keyword: Optional[str], *args: str
+        self, keyword: Optional[str], *args: str
     ) -> DelayedKeyword:
         """Sets the keyword to execute, when a Browser keyword fails.
 
@@ -60,7 +60,7 @@ class RunOnFailureKeywords(LibraryComponent):
         """
         old_keyword: DelayedKeyword = self.library.run_on_failure_keyword
         new_keyword = self.parse_run_on_failure_keyword(
-            f"{new_keyword}  {'  '.join(args)}".strip()
+            f"{keyword}  {'  '.join(args)}".strip()
         )
         self.library.run_on_failure_keyword = new_keyword
         if new_keyword.name:
