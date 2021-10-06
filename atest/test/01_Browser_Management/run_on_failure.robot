@@ -10,14 +10,14 @@ ${FailureScreenshot3} =     ${OUTPUT_DIR}${/}myfailure_screenshot.png
 
 *** Test Cases ***
 Register Keyword To Run On Failure
-    ${count_before} =    Glob Files   ${OUTPUT_DIR}/browser/screenshot
+    ${count_before} =    Glob Files    ${OUTPUT_DIR}/browser/screenshot
     Type Text    css=input#username_field    username
     ${prev} =    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
     File Should Exist    ${FailureScreenshot}
-    ${count_after} =    Glob Files   ${OUTPUT_DIR}/browser/screenshot
+    ${count_after} =    Glob Files    ${OUTPUT_DIR}/browser/screenshot
     Lists Should Be Equal    ${count_before}    ${count_after}
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot}
