@@ -30,6 +30,14 @@ Frame With Strict Mode
     Tidii    iframe[name="left"] >>> //input
     [Teardown]    Set Strict Mode    True
 
+Nested Frame With Strict Mode
+    Go To    ${DEEP_FRAMES_URL}
+    Tidii    id=b >>> id=c >>> id=cc
+    ${element} =    Tidii Get Element    id=b >>> id=c >>> id=cc
+    Should Start With    ${element}    element
+    ${elements} =    Tidii Get Elements    id=b >>> id=c >>> id=cc
+    Length Should Be    ${elements}    1
+
 Get Element And Get Elements
     ${element} =    Tidii Get Element    input#login_button
     Should Start With    ${element}    element

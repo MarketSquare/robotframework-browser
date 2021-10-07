@@ -19,7 +19,7 @@ import { PlaywrightState } from './playwright-state';
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function findLocator<T>(
+export async function findLocator(
     state: PlaywrightState,
     selector: string,
     strictMode: boolean,
@@ -30,8 +30,6 @@ export async function findLocator<T>(
     exists(activePage, 'Could not find active page');
     if (isElementHandleSelector(selector)) {
         const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector);
-        logger.info(`elementHandleId::${elementHandleId}`);
-        logger.info(`subSelector::${subSelector}`);
         locator = state.getLocator(elementHandleId);
         selector = subSelector;
     }
@@ -40,7 +38,7 @@ export async function findLocator<T>(
         let frame = await findFrame(activePage, selectors.frameSelector, strictMode);
         while (isFramePiercingSelector(selectors.elementSelector)) {
             selectors = splitFrameAndElementSelector(selectors.elementSelector);
-            frame = await findFrame(activePage, selectors.frameSelector, strictMode);
+            frame = await findFrame(frame, selectors.frameSelector, strictMode);
         }
         if (nthLocator) {
             logger.info(`Find ${nthLocator} locator in frame.`);
@@ -80,7 +78,7 @@ export async function findLocator<T>(
     }
 }
 
-export async function findLocatorCount<T>(state: PlaywrightState, selector: string): Promise<number> {
+export async function findLocatorCount(state: PlaywrightState, selector: string): Promise<number> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     let count = -1;
@@ -89,9 +87,11 @@ export async function findLocatorCount<T>(state: PlaywrightState, selector: stri
         let frame = await findFrame(activePage, selectors.frameSelector, false);
         while (isFramePiercingSelector(selectors.elementSelector)) {
             selectors = splitFrameAndElementSelector(selectors.elementSelector);
-            frame = await findFrame(activePage, selectors.frameSelector, false);
+            frame = await findFrame(frame, selectors.frameSelector, false);
         }
         count = await frame.locator(selectors.elementSelector).count();
+        logger.info(`Selector from frame found ${count} elements`);
+        return count;
     }
     count = await activePage.locator(selector).count();
     logger.info(`Selector found ${count} elements`);
