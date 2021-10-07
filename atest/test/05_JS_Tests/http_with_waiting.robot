@@ -32,14 +32,12 @@ GET with text response
     Should be matching    ${content}    ${response}
     Should be equal    ${content}[request][method]    GET
 
-
 GET with binary response
     ${promise} =    Promise To    Wait For Response    matcher=/api/get/bad_binary    timeout=3s
     &{response} =    HTTP    /api/get/bad_binary
     ${content} =    Wait For    ${promise}
     Should be matching    ${content}    ${response}
     Should be equal    ${content}[request][method]    GET
-
 
 *** Keywords ***
 Should be matching
