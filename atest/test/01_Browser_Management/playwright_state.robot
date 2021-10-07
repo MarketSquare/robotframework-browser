@@ -250,13 +250,18 @@ New Browser with skip_if_exists does not open new browser if matching one exists
     ${catalog}=  Get Browser Catalog
     New Browser  skip_if_exists=True
     ${new_catalog}=  Get Browser Catalog
+    ${length}=  Get Length  ${new_catalog}
+    Should Be Equal As Integers    1  ${length}
     Should Be Equal  ${catalog}  ${new_catalog}
+
 New Browser with skip_if_exists opens new browser if no matching one is found
-    New Browser  skip_if_exists=True
+    New Browser  browser=firefox  skip_if_exists=True
     ${catalog}=  Get Browser Catalog
     New Browser  skip_if_exists=True
     ${new_catalog}=  Get Browser Catalog
-    Should Be Equal  ${catalog}  ${new_catalog}
+    ${length}=  Get Length  ${new_catalog}
+    Should Be Equal As Integers    2  ${length}
+    Should Not Be Equal    ${catalog}  ${new_catalog}
 
 *** Keywords ***
 Open Browser and assert Login Page
