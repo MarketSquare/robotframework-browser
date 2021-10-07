@@ -9,13 +9,13 @@ def browser():
 
 
 def test_external_keyword(browser: Browser.Browser):
-    keyword = browser._parse_run_on_failure_keyword("Tidii")
-    assert keyword.name == "Tidii"
-    assert keyword.original_name == "Tidii"
+    keyword = browser._parse_run_on_failure_keyword("Kala")
+    assert keyword.name == "Kala"
+    assert keyword.original_name == "Kala"
     assert keyword.args == tuple()
-    keyword = browser._parse_run_on_failure_keyword("Tidii  arg1  arg2")
-    assert keyword.name == "Tidii"
-    assert keyword.original_name == "Tidii"
+    keyword = browser._parse_run_on_failure_keyword("Kala  arg1  arg2")
+    assert keyword.name == "Kala"
+    assert keyword.original_name == "Kala"
     assert keyword.args == ("arg1", "arg2")
     assert keyword.kwargs == {}
 
