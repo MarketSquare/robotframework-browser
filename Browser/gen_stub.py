@@ -11,12 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
+import sys
 from datetime import timedelta
 from typing import Any
 
 from robotlibcore import KeywordBuilder  # type: ignore
 
 import Browser
+
+PY310 = sys.version_info.major == 3 and sys.version_info.minor >= 10
 
 
 def is_named_method(keyword_name: str) -> bool:
@@ -36,6 +40,10 @@ def get_method_name_for_keyword(keyword_name: str) -> str:
 
 
 def get_type_string_from_type(argument_type: type) -> str:
+    if PY310:
+        match = re.search(r"(\[)(\S+)(\])", str(argument_type))
+        if match:
+            return match.group(2)
     if hasattr(argument_type, "__name__"):
         return argument_type.__name__
     else:
