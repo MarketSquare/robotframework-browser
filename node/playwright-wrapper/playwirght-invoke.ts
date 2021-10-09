@@ -86,6 +86,15 @@ export async function findLocatorCount(state: PlaywrightState, selector: string)
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     let count = -1;
+    if (isElementHandleSelector(selector)) {
+        const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector);
+        const locator = state.getLocator(elementHandleId);
+        selector = subSelector;
+        if (!selector) {
+            logger.info('Only locator handle defined, return cached Locator.');
+            return await locator.locator.count();
+        }
+    }
     if (isFramePiercingSelector(selector)) {
         let selectors = splitFrameAndElementSelector(selector);
         let frame = await findFrame(activePage, selectors.frameSelector, false);
