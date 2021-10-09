@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { ElementHandle, Frame, Page } from 'playwright';
+import { ElementHandle, Frame, Locator, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, findLocator, findLocatorCount, invokePlaywrightMethod } from './playwirght-invoke';
+import { determineElement, findLocator, findLocatorCount, invokePlaywrightMethod, exists } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -239,32 +239,32 @@ export async function highlightElements(
     const style = request.getStyle();
     const color = request.getColor();
     const strictMode = request.getStrict();
-    const highlighter = (elements: Array<Element>, options: any) => {
-        elements.forEach((e: Element) => {
-            const d = document.createElement('div');
-            d.className = 'robotframework-browser-highlight';
-            d.appendChild(document.createTextNode(''));
-            d.style.position = 'fixed';
-            const rect = e.getBoundingClientRect();
-            d.style.zIndex = '2147483647';
-            d.style.top = `${rect.top}px`;
-            d.style.left = `${rect.left}px`;
-            d.style.width = `${rect.width}px`;
-            d.style.height = `${rect.height}px`;
-            d.style.border = `${options?.wdt ?? '1px'} ${options?.stl ?? `dotted`} ${options?.clr ?? `blue`}`;
-            document.body.appendChild(d);
-            setTimeout(() => {
-                d.remove();
-            }, options?.dur ?? 5000);
-        });
-    };
-    await invokePlaywrightMethod(state, '$$eval', selector, strictMode, highlighter, {
-        dur: duration,
-        wdt: width,
-        stl: style,
-        clr: color,
-    });
-    return emptyWithLog(`Highlighted elements for ${duration}.`);
+    const count = await findLocatorCount(state, selector)
+    for (let index = 0; index < count; index++) {
+        const locator = await findLocator(state, selector, strictMode, index);
+        await locator.evaluateAll(
+            (elements: Array<Element>, options: any) => {
+                elements.forEach((e: Element) => {
+                    const d = document.createElement('div');
+                    d.className = 'robotframework-browser-highlight';
+                    d.appendChild(document.createTextNode(''));
+                    d.style.position = 'fixed';
+                    const rect = e.getBoundingClientRect();
+                    d.style.zIndex = '2147483647';
+                    d.style.top = `${rect.top}px`;
+                    d.style.left = `${rect.left}px`;
+                    d.style.width = `${rect.width}px`;
+                    d.style.height = `${rect.height}px`;
+                    d.style.border = `${options?.wdt ?? '1px'} ${options?.stl ?? `dotted`} ${options?.clr ?? `blue`}`;
+                    document.body.appendChild(d);
+                    setTimeout(() => {
+                        d.remove();
+                    }, options?.dur ?? 5000);
+                });
+            }, {dur: duration, wdt: width, stl: style, clr: color}
+        )
+    }
+    return emptyWithLog(`Highlighted ${count} elements for ${duration}.`);
 }
 
 export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.Json> {
