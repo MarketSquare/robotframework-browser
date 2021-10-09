@@ -33,7 +33,7 @@ export async function findLocator(
         locator = state.getLocator(elementHandleId);
         selector = subSelector;
         if (!selector) {
-            logger.info("Plaing locator handle defined, return element.");
+            logger.info('Only locator handle defined, return cached Locator.');
             return locator.locator;
         }
     }
@@ -260,7 +260,7 @@ function splitElementHandleAndElementSelector<T>(selector: string): { elementHan
         logger.info(`Split element= selector into parts: ${JSON.stringify(splitted)}`);
         return splitted;
     } else if (parts[1]) {
-        logger.info(`element= selector parsed without children`);
+        logger.info(`element=${parts[1]} selector parsed without children`);
         return {
             elementHandleId: parts[1],
             subSelector: '',
