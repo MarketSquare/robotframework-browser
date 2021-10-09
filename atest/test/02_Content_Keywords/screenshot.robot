@@ -48,7 +48,7 @@ Screenshotting With Jpeg Extension And Quality
 
 If Element Not Found Screenshot Should Fail
     Run Keyword And Expect Error
-    ...    Error: Tried to capture element screenshot, element '#not_there' wasn't found.
+    ...    TimeoutError: locator.screenshot: Timeout 3000ms exceeded.*waiting for selector "#not_there"*
     ...    Take Screenshot    selector=\#not_there
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
