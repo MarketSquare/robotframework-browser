@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, invokePlaywrightMethod, findLocator, findLocatorCount} from './playwirght-invoke';
+import { determineElement, findLocator, findLocatorCount, invokePlaywrightMethod } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -77,7 +77,8 @@ export async function executeJavascript(
         logger.info(`On executeJavascript, supress ${error} for eval.`);
     }
     if (selector) {
-        elem = await determineElement(state, selector, strictMode);
+        const locator = await findLocator(state, selector, strictMode, undefined);
+        elem = await locator.elementHandle();
     }
     const result = await page.evaluate(script, elem);
     return jsResponse(result as string, 'JavaScript executed successfully.');
