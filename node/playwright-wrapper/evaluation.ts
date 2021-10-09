@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, findLocator, findLocatorCount, invokePlaywrightMethod, exists } from './playwirght-invoke';
+import { determineElement, exists, findLocator, findLocatorCount, invokePlaywrightMethod } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -239,7 +239,7 @@ export async function highlightElements(
     const style = request.getStyle();
     const color = request.getColor();
     const strictMode = request.getStrict();
-    const count = await findLocatorCount(state, selector)
+    const count = await findLocatorCount(state, selector);
     for (let index = 0; index < count; index++) {
         const locator = await findLocator(state, selector, strictMode, index);
         await locator.evaluateAll(
@@ -261,8 +261,9 @@ export async function highlightElements(
                         d.remove();
                     }, options?.dur ?? 5000);
                 });
-            }, {dur: duration, wdt: width, stl: style, clr: color}
-        )
+            },
+            { dur: duration, wdt: width, stl: style, clr: color },
+        );
     }
     return emptyWithLog(`Highlighted ${count} elements for ${duration}.`);
 }
