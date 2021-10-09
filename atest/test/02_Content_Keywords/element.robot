@@ -33,15 +33,15 @@ Frame With Strict Mode
 Nested Frame With Strict Mode
     Go To    ${DEEP_FRAMES_URL}
     Tidii    id=b >>> id=c >>> id=cc
-    ${element} =    Tidii Get Element    id=b >>> id=c >>> id=cc
+    ${element} =    Get Element    id=b >>> id=c >>> id=cc
     Should Start With    ${element}    element
-    ${elements} =    Tidii Get Elements    id=b >>> id=c >>> id=cc
+    ${elements} =    Get Elements    id=b >>> id=c >>> id=cc
     Length Should Be    ${elements}    1
 
 Get Element And Get Elements
-    ${element} =    Tidii Get Element    input#login_button
+    ${element} =    Get Element    input#login_button
     Should Start With    ${element}    element
-    ${elements} =    Tidii Get Elements    input
+    ${elements} =    Get Elements    input
     Length Should Be    ${elements}    4
     FOR    ${element}    IN    @{elements}
         Should Start With    ${element}    element
@@ -54,13 +54,13 @@ Click With Element ID
     ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
     ...    Tidii    ${element} >> css=input#login_button
     Get Text    text=Login Page
-    ${element} =    Tidii Get Element    //tbody/tr[3]
+    ${element} =    Get Element    //tbody/tr[3]
     Tidii    ${element} >> css=input#login_button
     Get Text    text=Login failed. Invalid user name and/or password.
 
 Frames With Element ID
     Go To    ${FRAMES_URL}
-    ${element} =    Tidii Get Element    iframe[name="left"]
+    ${element} =    Get Element    iframe[name="left"]
     Run Keyword And Expect Error
     ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
     ...    Tidii    ${element} >>> "foo"

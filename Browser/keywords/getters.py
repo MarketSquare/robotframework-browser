@@ -699,6 +699,7 @@ class Getters(LibraryComponent):
             response = stub.GetElement(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
+            logger.info(response.log)
             return response.body
 
     @keyword(tags=("Getter", "PageContent"))
@@ -718,7 +719,8 @@ class Getters(LibraryComponent):
                 response = stub.GetElements(
                     Request().ElementSelector(selector=selector, strict=False)
                 )
-                logger.info(response.json)
+                logger.info(response.log)
+                logger.debug(response.json)
                 return json.loads(response.json)
         except grpc.RpcError as error:
             logger.info(error)

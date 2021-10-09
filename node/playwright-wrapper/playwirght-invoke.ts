@@ -32,6 +32,10 @@ export async function findLocator(
         const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector);
         locator = state.getLocator(elementHandleId);
         selector = subSelector;
+        if (!selector) {
+            logger.info("Plaing locator handle defined, return element.");
+            return locator.locator;
+        }
     }
     if (isFramePiercingSelector(selector)) {
         let selectors = splitFrameAndElementSelector(selector);
