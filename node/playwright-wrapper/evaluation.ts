@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, invokePlaywrightMethod, findLocator, findLocatorCount} from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 
 import * as pino from 'pino';
@@ -31,34 +31,35 @@ declare global {
     }
 }
 
-/** Resolve an elementHandle, create global UUID for it, and store the reference
+/** Resolve an Locator, create global UUID for it, and store the reference
  * in global state. Enables using special selector syntax `element=<uuid>` in
  * RF keywords.
  */
 export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const strictMode = request.getStrict();
-    await waitUntilElementExists(state, request.getSelector(), strictMode);
-    const handle = await invokePlaywrightMethod(state, '$', request.getSelector(), strictMode);
+    const selector = request.getSelector();
+    const locator = await findLocator(state, selector, strictMode, undefined);
     const id = uuidv4();
-    state.addElement(id, handle);
-    return stringResponse(`element=${id}`, 'Element found successfully.');
+    state.addLocator(id, locator, 0);
+    return stringResponse(`element=${id}`, 'Locator found successfully.');
 }
 
-/** Resolve a list of elementHandles, create global UUIDs for them, and store the
+/** Resolve a list of Locator, create global UUIDs for them, and store the
  * references in global state. Enables using special selector syntax `element=<uuid>`
  * in RF keywords.
  */
 export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const strictMode = request.getStrict();
-    await waitUntilElementExists(state, request.getSelector(), strictMode);
-    const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', request.getSelector(), strictMode);
-
-    const response: string[] = handles.map((handle) => {
+    const selector = request.getSelector();
+    const count = await findLocatorCount(state, selector);
+    const response: string[] = [];
+    for (let i = 0; i < count; i++) {
         const id = uuidv4();
-        state.addElement(id, handle);
-        return `element=${id}`;
-    });
-    return jsonResponse(JSON.stringify(response), 'Elements found successfully.');
+        const locator = await findLocator(state, selector, strictMode, i);
+        state.addLocator(id, locator, i);
+        response.push(`element=${id}`);
+    }
+    return jsonResponse(JSON.stringify(response), `Found ${count} Locators successfully.`);
 }
 
 export async function executeJavascript(
