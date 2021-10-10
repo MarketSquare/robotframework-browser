@@ -21,6 +21,7 @@ import {
     determineElement,
     exists,
     findLocator,
+    findLocatorCount,
     invokePlaywrightMethod,
     waitUntilElementExists,
 } from './playwirght-invoke';
@@ -41,8 +42,8 @@ export async function getUrl(page: Page): Promise<Response.String> {
 export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const response: Array<ElementHandle> = await invokePlaywrightMethod(state, '$$', selector, strictMode);
-    return intResponse(response.length, 'Found ' + response.length + 'element(s).');
+    const count: number = await findLocatorCount(state, selector) 
+    return intResponse(count, `Found ${count} element(s).`);
 }
 
 export async function getSelectContent(
