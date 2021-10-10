@@ -209,7 +209,7 @@ export async function tidii(
     const selector = request.getSelector();
     const options = request.getOptions();
     const strictMode = request.getStrict();
-    const locator = findLocator(state, selector, strictMode, undefined);
+    const locator = findLocator(state, selector, strictMode, undefined, true);
     await (await locator).click(JSON.parse(options));
     return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
 }
@@ -220,7 +220,7 @@ export async function tidiiGetElement(
 ): Promise<Response.String> {
     const strictMode = request.getStrict();
     const selector = request.getSelector();
-    const locator = await findLocator(state, selector, strictMode, undefined);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
     const id = uuidv4();
     state.addLocator(id, locator, 0);
     return stringResponse(`element=${id}`, 'Element found successfully.');
@@ -236,7 +236,7 @@ export async function tidiiGetElements(
     const response: string[] = [];
     for (let i = 0; i < count; i++) {
         const id = uuidv4();
-        const locator = await findLocator(state, selector, strictMode, i);
+        const locator = await findLocator(state, selector, strictMode, i, true);
         state.addLocator(id, locator, i);
         response.push(`element=${id}`);
     }

@@ -14,7 +14,7 @@
 
 import { ElementHandle, Frame, Locator, Page, selectors } from 'playwright';
 
-import { PlaywrightState } from './playwright-state';
+import { LocatorCount, PlaywrightState } from './playwright-state';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -24,6 +24,7 @@ export async function findLocator(
     selector: string,
     strictMode: boolean,
     nthLocator: number | undefined,
+    firstOnly: boolean,
 ): Promise<Locator> {
     const activePage = state.getActivePage();
     let locator = undefined;
@@ -38,46 +39,89 @@ export async function findLocator(
         }
     }
     if (isFramePiercingSelector(selector)) {
-        let selectors = splitFrameAndElementSelector(selector);
-        let frame = await findFrame(activePage, selectors.frameSelector, strictMode);
-        while (isFramePiercingSelector(selectors.elementSelector)) {
-            selectors = splitFrameAndElementSelector(selectors.elementSelector);
-            frame = await findFrame(frame, selectors.frameSelector, strictMode);
-        }
-        if (nthLocator) {
-            logger.info(`Find ${nthLocator} locator in frame.`);
-            return frame.locator(selectors.elementSelector).nth(nthLocator);
-        } else if (strictMode) {
-            logger.info(`Strict mode is enabled, find with ${selector} in frame.`);
-            return frame.locator(selectors.elementSelector);
-        } else {
-            logger.info(`Strict mode is disbaled, return first selector: ${selector} in frame.`);
-            return frame.locator(selectors.elementSelector).first();
-        }
+        return await findInFrames(activePage, selector, strictMode, nthLocator, firstOnly);
     }
     if (nthLocator) {
-        if (locator?.locator) {
-            logger.info(`Find ${nthLocator} locator with locator.`);
-            return locator.locator.locator(selector).nth(nthLocator);
-        } else {
-            logger.info(`Find ${nthLocator} locator in page.`);
-            return activePage.locator(selector).nth(nthLocator);
-        }
+        return await findNthLocator(activePage, selector, nthLocator, locator);
     } else if (strictMode) {
         if (locator?.locator) {
-            logger.info(`Strict mode is enabled, find with ${selector} with locator.`);
+            logger.info(`Strict mode is enabled, find Locator with ${selector} within locator.`);
             return locator.locator.locator(selector);
         } else {
-            logger.info(`Strict mode is enabled, find with ${selector} in page.`);
+            logger.info(`Strict mode is enabled, find Locator with ${selector} in page.`);
             return activePage.locator(selector);
         }
     } else {
-        if (locator?.locator) {
-            logger.info(`Strict mode is disbaled, return first selector: ${selector} with locator.`);
-            return locator.locator.locator(selector);
+        return await findLocatorNotStrict(activePage, selector, firstOnly, locator);
+    }
+}
+
+async function findInFrames(
+    activePage: Page,
+    selector: string,
+    strictMode: boolean,
+    nthLocator: number | undefined,
+    firstOnly: boolean,
+): Promise<Locator> {
+    let selectors = splitFrameAndElementSelector(selector);
+    let frame = await findFrame(activePage, selectors.frameSelector, strictMode);
+    while (isFramePiercingSelector(selectors.elementSelector)) {
+        selectors = splitFrameAndElementSelector(selectors.elementSelector);
+        frame = await findFrame(frame, selectors.frameSelector, strictMode);
+    }
+    if (nthLocator) {
+        logger.info(`Find ${nthLocator} locator in frame.`);
+        return frame.locator(selectors.elementSelector).nth(nthLocator);
+    } else if (strictMode) {
+        logger.info(`Strict mode is enabled, find with ${selector} in frame.`);
+        return frame.locator(selectors.elementSelector);
+    } else {
+        if (firstOnly) {
+            logger.info(`Strict mode is disbaled, return first Locator: ${selector} in frame.`);
+            return frame.locator(selectors.elementSelector).first();
         } else {
-            logger.info(`Strict mode is disbaled, return first selector: ${selector} in page.`);
+            logger.info(`Strict mode is disbaled, return Locator: ${selector} in frame.`);
+            return frame.locator(selectors.elementSelector);
+        }
+    }
+}
+
+async function findNthLocator(
+    activePage: Page,
+    selector: string,
+    nthLocator: number,
+    locator?: LocatorCount,
+): Promise<Locator> {
+    if (locator?.locator) {
+        logger.info(`Find ${nthLocator} Locator within locator.`);
+        return locator.locator.locator(selector).nth(nthLocator);
+    } else {
+        logger.info(`Find ${nthLocator} Locator in page.`);
+        return activePage.locator(selector).nth(nthLocator);
+    }
+}
+
+async function findLocatorNotStrict(
+    activePage: Page,
+    selector: string,
+    firstOnly: boolean,
+    locator?: LocatorCount,
+): Promise<Locator> {
+    if (locator?.locator) {
+        if (firstOnly) {
+            logger.info(`Strict mode is disbaled, return first Locator: ${selector} with locator.`);
+            return locator.locator.locator(selector).first();
+        } else {
+            logger.info(`Strict mode is disbaled, return Locator: ${selector} with locator.`);
+            return locator.locator.locator(selector);
+        }
+    } else {
+        if (firstOnly) {
+            logger.info(`Strict mode is disbaled, return first Locator: ${selector} in page.`);
             return (locator?.locator || activePage).locator(selector).first();
+        } else {
+            logger.info(`Strict mode is disbaled, return Locator: ${selector} in page.`);
+            return (locator?.locator || activePage).locator(selector);
         }
     }
 }
