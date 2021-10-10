@@ -42,7 +42,7 @@ export async function takeScreenshot(
         options.quality = parseInt(quality);
     }
     if (selector) {
-        const locator = await findLocator(state, selector, strictMode, undefined);
+        const locator = await findLocator(state, selector, strictMode, undefined, true);
         await locator.screenshot(options);
     } else {
         const page = state.getActivePage();

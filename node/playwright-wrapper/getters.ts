@@ -17,7 +17,7 @@ import { ElementHandle, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { determineElement, findLocator, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -121,11 +121,12 @@ export async function getBoolProperty(
 async function getProperty<T>(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const element = await waitUntilElementExists(state, selector, strictMode);
+    const locator = findLocator(state, selector, strictMode, undefined, true);
     try {
+        const element = await (await locator).elementHandle();
         const propertyName = request.getProperty();
-        const property = await element.getProperty(propertyName);
-        const content = await property.jsonValue();
+        const property = await element?.getProperty(propertyName);
+        const content = await property?.jsonValue();
         logger.info(`Retrieved dom property for element ${selector} containing ${content}`);
         return content;
     } catch (e) {

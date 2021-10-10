@@ -76,6 +76,8 @@ class Evaluation(LibraryComponent):
         ``color`` Sets the color of the border. Valid colors i.e. are:
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``
 
+        Keyword does not fail if selector resolves to multiple elements.
+
         Example:
         | `Highlight Elements`    input#login_button    duration=200ms
         | `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF

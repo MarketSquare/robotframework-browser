@@ -38,7 +38,7 @@ declare global {
 export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const strictMode = request.getStrict();
     const selector = request.getSelector();
-    const locator = await findLocator(state, selector, strictMode, undefined);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
     const id = uuidv4();
     state.addLocator(id, locator, 0);
     return stringResponse(`element=${id}`, 'Locator found successfully.');
@@ -55,7 +55,7 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     const response: string[] = [];
     for (let i = 0; i < count; i++) {
         const id = uuidv4();
-        const locator = await findLocator(state, selector, strictMode, i);
+        const locator = await findLocator(state, selector, strictMode, i, false);
         state.addLocator(id, locator, i);
         response.push(`element=${id}`);
     }
@@ -77,7 +77,7 @@ export async function executeJavascript(
         logger.info(`On executeJavascript, supress ${error} for eval.`);
     }
     if (selector) {
-        const locator = await findLocator(state, selector, strictMode, undefined);
+        const locator = await findLocator(state, selector, strictMode, undefined, true);
         elem = await locator.elementHandle();
     }
     const result = await page.evaluate(script, elem);
@@ -240,31 +240,29 @@ export async function highlightElements(
     const color = request.getColor();
     const strictMode = request.getStrict();
     const count = await findLocatorCount(state, selector);
-    for (let index = 0; index < count; index++) {
-        const locator = await findLocator(state, selector, strictMode, index);
-        await locator.evaluateAll(
-            (elements: Array<Element>, options: any) => {
-                elements.forEach((e: Element) => {
-                    const d = document.createElement('div');
-                    d.className = 'robotframework-browser-highlight';
-                    d.appendChild(document.createTextNode(''));
-                    d.style.position = 'fixed';
-                    const rect = e.getBoundingClientRect();
-                    d.style.zIndex = '2147483647';
-                    d.style.top = `${rect.top}px`;
-                    d.style.left = `${rect.left}px`;
-                    d.style.width = `${rect.width}px`;
-                    d.style.height = `${rect.height}px`;
-                    d.style.border = `${options?.wdt ?? '1px'} ${options?.stl ?? `dotted`} ${options?.clr ?? `blue`}`;
-                    document.body.appendChild(d);
-                    setTimeout(() => {
-                        d.remove();
-                    }, options?.dur ?? 5000);
-                });
-            },
-            { dur: duration, wdt: width, stl: style, clr: color },
-        );
-    }
+    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    await locator.evaluateAll(
+        (elements: Array<Element>, options: any) => {
+            elements.forEach((e: Element) => {
+                const d = document.createElement('div');
+                d.className = 'robotframework-browser-highlight';
+                d.appendChild(document.createTextNode(''));
+                d.style.position = 'fixed';
+                const rect = e.getBoundingClientRect();
+                d.style.zIndex = '2147483647';
+                d.style.top = `${rect.top}px`;
+                d.style.left = `${rect.left}px`;
+                d.style.width = `${rect.width}px`;
+                d.style.height = `${rect.height}px`;
+                d.style.border = `${options?.wdt ?? '1px'} ${options?.stl ?? `dotted`} ${options?.clr ?? `blue`}`;
+                document.body.appendChild(d);
+                setTimeout(() => {
+                    d.remove();
+                }, options?.dur ?? 5000);
+            });
+        },
+        { dur: duration, wdt: width, stl: style, clr: color },
+    );
     return emptyWithLog(`Highlighted ${count} elements for ${duration}.`);
 }
 

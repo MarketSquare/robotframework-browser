@@ -49,7 +49,7 @@ interface IIndexedContext {
     newContext: boolean;
 }
 
-interface LocatorCount {
+export interface LocatorCount {
     locator: Locator;
     nth: number;
 }
