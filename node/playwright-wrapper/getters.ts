@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ElementHandle, Page } from 'playwright';
+import { ElementHandle, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, findLocator, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import {
+    determineElement,
+    exists,
+    findLocator,
+    invokePlaywrightMethod,
+    waitUntilElementExists,
+} from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -84,7 +90,9 @@ export async function getDomProperty(
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
-async function getTextContent(element: ElementHandle<Node>): Promise<string> {
+async function getTextContent(locator: Locator): Promise<string> {
+    const element = await locator.elementHandle();
+    exists(element, 'Locator did not resolve to elementHandle.');
     const tag = await (await element.getProperty('tagName')).jsonValue();
     if (tag === 'INPUT' || tag === 'TEXTAREA') {
         return await (await element.getProperty('value')).jsonValue();
@@ -95,10 +103,10 @@ async function getTextContent(element: ElementHandle<Node>): Promise<string> {
 export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const selector = request.getSelector();
     const strict = request.getStrict();
-    const element = await waitUntilElementExists(state, selector, strict);
+    const locator = await findLocator(state, selector, strict, undefined, true);
     let content: string;
     try {
-        content = await getTextContent(element);
+        content = await getTextContent(locator);
         logger.info(`Retrieved text for element ${selector} containing ${content}`);
     } catch (e) {
         if (e instanceof Error) {
