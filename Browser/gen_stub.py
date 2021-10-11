@@ -41,9 +41,15 @@ def get_method_name_for_keyword(keyword_name: str) -> str:
 
 def get_type_string_from_type(argument_type: type) -> str:
     if PY310:
+        if str(argument_type).count("[") == 1 and str(argument_type).count("]") == 1:
+            return str(argument_type).lstrip("typing.")
         match = re.search(r"(\[)(\S+)(\])", str(argument_type))
         if match:
             return match.group(2)
+        match = re.search(r"(\[)(\S+ \S+)(\])", str(argument_type))
+        if match:
+            text = match.group(2)
+            return text.lstrip("typing.")
     if hasattr(argument_type, "__name__"):
         return argument_type.__name__
     else:
