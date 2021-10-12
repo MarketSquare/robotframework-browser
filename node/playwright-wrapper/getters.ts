@@ -42,7 +42,7 @@ export async function getUrl(page: Page): Promise<Response.String> {
 export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const count: number = await findLocatorCount(state, selector) 
+    const count: number = await findLocatorCount(state, selector);
     return intResponse(count, `Found ${count} element(s).`);
 }
 
@@ -52,34 +52,24 @@ export async function getSelectContent(
 ): Promise<Response.Select> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    await waitUntilElementExists(state, selector, strictMode);
-
-    type Value = [string, string, boolean];
-
-    const content: Value[] = await invokePlaywrightMethod(
-        state,
-        '$eval',
-        selector,
-        strictMode,
-        (select: HTMLSelectElement) => {
-            const options: Value[] = [];
-            for (let i = 0; i < select.options.length; i++) {
-                const elem: HTMLOptionElement = select.options[i];
-                options.push([elem.label, elem.value, elem.selected]);
-            }
-            return options;
-        },
-    );
-
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
+    const locatorOptions = locator.locator('option');
+    const locatorOptionsCount = await locatorOptions.count();
     const response = new Response.Select();
-    content.forEach((option) => {
-        const [label, value, selected] = [option[0], option[1], option[2]];
+
+    for (let i = 0; i < locatorOptionsCount; i++) {
+        const element = await locatorOptions.nth(i).elementHandle();
+        exists(element, `The ${i} option element did not exist.`);
+        const label = await element.getProperty('label');
+        const value = await element.getProperty('value');
+        const selected = await element.getProperty('selected');
         const entry = new Types.SelectEntry();
-        entry.setLabel(label);
-        entry.setValue(value);
-        entry.setSelected(selected);
+        entry.setLabel(String(label));
+        entry.setValue(String(value));
+        entry.setSelected(JSON.parse(String(selected)));
         response.addEntry(entry);
-    });
+    }
     return response;
 }
 
