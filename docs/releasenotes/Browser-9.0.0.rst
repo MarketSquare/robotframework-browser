@@ -41,6 +41,7 @@ Most important enhancements
 ===========================
 
 - Pip does not clean inside site-packages/Browser/wrapper anymore when uninstalling (`#1253`_)
+    - Sometimes pip fails to completely clean up site packages (depends on pip version and environment), now there is `rfbrowser clean-node` to run before pip uninstall to ensure cleanup
 - Set Strict Mode keyword documentation is not correct.  (`#1320`_)
 - Issue with keyword documentation example - Select Options By (`#1335`_)
 - Take Screenshot doesn't process arguments correctly when run on failure (`#1356`_)
