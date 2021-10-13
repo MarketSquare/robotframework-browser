@@ -21,6 +21,7 @@ from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
+NODE_MODULES = INSTALLATION_DIR / "node_modules"
 # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
 # But shell=True breaks our linux CI
 SHELL = True if platform.platform().startswith("Windows") else False
@@ -87,16 +88,16 @@ def rfbrowser_init(skip_browser_install: bool):
 
 
 def rfbrowser_clean_node():
-    if not INSTALLATION_DIR.is_dir():
-        print(f"Could not find {INSTALLATION_DIR}, nothing to delete.")
+    if not NODE_MODULES.is_dir():
+        print(f"Could not find {NODE_MODULES}, nothing to delete.")
         return
     print("Delete library node dependencies...")
-    shutil.rmtree(INSTALLATION_DIR)
+    shutil.rmtree(NODE_MODULES)
 
 
 def show_trace(file: str):
     print(f"Opening file: {file}")
-    playwright = INSTALLATION_DIR / "node_modules" / "playwright"
+    playwright = NODE_MODULES / "playwright"
     local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
     env["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
