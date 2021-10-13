@@ -151,6 +151,10 @@ class Browser(DynamicCore):
     Each Browser, Context and Page has a unique ID with which they can be addressed.
     A full catalog of what is open can be received by `Get Browser Catalog` as dictionary.
 
+    = Automatic page and context closing =
+
+    %AUTO_CLOSING_LEVEL%
+
     = Finding elements =
 
     All keywords in the library that need to interact with an element
@@ -536,9 +540,6 @@ class Browser(DynamicCore):
     | Get Title                                           validate              value == "Login Page"
     | Get Title                                           evaluate              value if value == "some value" else "something else"
 
-    = Automatic page and context closing =
-
-    %AUTO_CLOSING_LEVEL%
 
     = Implicit waiting =
 
