@@ -147,8 +147,9 @@ export async function getElementAttribute(
 async function getAttributeValue(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
     const attributeName = request.getProperty();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
     const attribute = await locator.getAttribute(attributeName);
     logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
     return attribute;
