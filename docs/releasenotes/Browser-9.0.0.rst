@@ -42,7 +42,6 @@ Most important enhancements
 
 - Pip does not clean inside site-packages/Browser/wrapper anymore when uninstalling (`#1253`_)
     - Sometimes pip fails to completely clean up site packages (depends on pip version and environment), now there is `rfbrowser clean-node` to run before pip uninstall to ensure cleanup
-- `Click` keyword fails if locator is mix of `element` and something else (`#1084`_)
 - Issue with keyword documentation example - Select Options By (`#1335`_)
 - Set Strict Mode keyword documentation is not correct.  (`#1320`_)
 - Doc Keywords: Move closing context/page section into "Browser, Context, Page" section (`#1362`_)
@@ -62,10 +61,6 @@ Full list of fixes and enhancements
       - Type
       - Priority
       - Summary
-    * - `#1084`_
-      - bug
-      - critical
-      - `Click` keyword fails if locator is mix of `element` and something else
     * - `#1253`_
       - bug
       - high
@@ -93,7 +88,6 @@ Full list of fixes and enhancements
 
 Altogether 7 issues. View on the `issue tracker <https://github.com/MarketSquare/robotframework-browser/issues?q=milestone%3Av9.0.0>`__.
 
-.. _#1084: https://github.com/MarketSquare/robotframework-browser/issues/1084
 .. _#1253: https://github.com/MarketSquare/robotframework-browser/issues/1253
 .. _#1320: https://github.com/MarketSquare/robotframework-browser/issues/1320
 .. _#1335: https://github.com/MarketSquare/robotframework-browser/issues/1335
