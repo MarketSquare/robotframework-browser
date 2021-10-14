@@ -245,24 +245,6 @@ When Page Without Context Is Created This Is Logged For User
     New Page
     New Page
 
-New Browser with skip_if_exists does not open new browser if matching one exists
-    New Browser  skip_if_exists=True
-    ${catalog}=  Get Browser Catalog
-    New Browser  skip_if_exists=True
-    ${new_catalog}=  Get Browser Catalog
-    ${length}=  Get Length  ${new_catalog}
-    Should Be Equal As Integers    1  ${length}
-    Should Be Equal  ${catalog}  ${new_catalog}
-
-New Browser with skip_if_exists opens new browser if no matching one is found
-    New Browser  browser=firefox  skip_if_exists=True
-    ${catalog}=  Get Browser Catalog
-    New Browser  skip_if_exists=True
-    ${new_catalog}=  Get Browser Catalog
-    ${length}=  Get Length  ${new_catalog}
-    Should Be Equal As Integers    2  ${length}
-    Should Not Be Equal    ${catalog}  ${new_catalog}
-
 *** Keywords ***
 Open Browser and assert Login Page
     [Arguments]    ${local_browser}

@@ -501,26 +501,65 @@ export async function newContext(
     return response;
 }
 
-// source: https://stackoverflow.com/a/32922084
-function deepEqual<T>(x: any, y: any): boolean {
-    const ok = Object.keys,
-        tx = typeof x,
-        ty = typeof y;
-    return x && y && tx === 'object' && tx === ty
-        ? ok(x).length === ok(y).length && ok(x).every((key) => deepEqual<T>(x[key], y[key]))
-        : x === y;
+// source: https://stackoverflow.com/a/16788517
+
+function deepEqual(x: any, y: any): boolean {
+    if (x === null || x === undefined || y === null || y === undefined) {
+        return x === y;
+    }
+    // after this just checking type of one would be enough
+    if (x.constructor !== y.constructor) {
+        return false;
+    }
+    // if they are functions, they should exactly refer to same one (because of closures)
+    if (x instanceof Function) {
+        return x === y;
+    }
+    // if they are regexps, they should exactly refer to same one (it is hard to better equality check on current ES)
+    if (x instanceof RegExp) {
+        return x === y;
+    }
+    if (x === y || x.valueOf() === y.valueOf()) {
+        return true;
+    }
+    if (Array.isArray(x) && x.length !== y.length) {
+        return false;
+    }
+
+    // if they are dates, they must had equal valueOf
+    if (x instanceof Date) {
+        return false;
+    }
+
+    // if they are strictly equal, they both need to be object at least
+    if (!(x instanceof Object)) {
+        return false;
+    }
+    if (!(y instanceof Object)) {
+        return false;
+    }
+
+    // recursive object equality check
+    const p = Object.keys(x);
+    return Object.keys(y).every((i) => p.indexOf(i) !== -1) && p.every((i) => deepEqual(x[i], y[i]));
 }
 
-function omit(key: string, obj: Record<string, unknown>) {
+function omit<T>(key: string, obj: Record<string, T>) {
     const { [key]: omitted, ...rest } = obj;
     return rest;
+}
+
+function removeUnnecessaryOptions<T>(obj: Record<string, T>): Record<string, T> {
+    // We need to omit all options here that do not affect equality.
+    // Could also do this by implementing browserOptions as it's own class and implementing a custom .equals method
+    return omit('skip_if_exists', omit('tracesDir', obj));
 }
 
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
     const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
     const matchingBrowser = openBrowsers.browserStack.find((browser: BrowserState) => {
-        return deepEqual(omit('tracesDir', browser.options ?? {}), omit('tracesDir', options));
+        return deepEqual(removeUnnecessaryOptions(browser.options ?? {}), removeUnnecessaryOptions(options));
     });
 
     let extraWarning = '';
