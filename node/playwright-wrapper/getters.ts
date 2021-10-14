@@ -160,7 +160,9 @@ export async function getStyle(request: Request.ElementSelector, state: Playwrig
     const strictMode = request.getStrict();
 
     logger.info('Getting css of element on page');
-    const result = await invokePlaywrightMethod(state, '$eval', selector, strictMode, function (element: Element) {
+    const element = await findLocator(state, selector, strictMode, undefined, false);
+    await element.elementHandle();
+    const result = await element.evaluate(function (element: Element) {
         const rawStyle = window.getComputedStyle(element);
         const mapped: Record<string, string> = {};
         // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
