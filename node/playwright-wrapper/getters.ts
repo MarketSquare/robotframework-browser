@@ -161,6 +161,7 @@ export async function getStyle(request: Request.ElementSelector, state: Playwrig
 
     logger.info('Getting css of element on page');
     const element = await findLocator(state, selector, strictMode, undefined, false);
+    logger.info(`HERE:::${strictMode}`);
     await element.elementHandle();
     const result = await element.evaluate(function (element: Element) {
         const rawStyle = window.getComputedStyle(element);
