@@ -39,7 +39,7 @@ export async function findLocator(
         }
     }
     if (isFramePiercingSelector(selector)) {
-        return await findInFrames(activePage, selector, strictMode, nthLocator, firstOnly);
+        return await findInFrames(activePage, selector, strictMode, nthLocator);
     }
     if (nthLocator) {
         return await findNthLocator(activePage, selector, nthLocator, locator);
@@ -61,7 +61,6 @@ async function findInFrames(
     selector: string,
     strictMode: boolean,
     nthLocator: number | undefined,
-    firstOnly: boolean,
 ): Promise<Locator> {
     let selectors = splitFrameAndElementSelector(selector);
     let frame = await findFrame(activePage, selectors.frameSelector, strictMode);
@@ -76,13 +75,8 @@ async function findInFrames(
         logger.info(`Strict mode is enabled, find with ${selector} in frame.`);
         return frame.locator(selectors.elementSelector);
     } else {
-        if (firstOnly) {
-            logger.info(`Strict mode is disbaled, return first Locator: ${selector} in frame.`);
-            return frame.locator(selectors.elementSelector).first();
-        } else {
-            logger.info(`Strict mode is disbaled, return Locator: ${selector} in frame.`);
-            return frame.locator(selectors.elementSelector);
-        }
+        logger.info(`Strict mode is disabled, return first Locator: ${selector} in frame.`);
+        return frame.locator(selectors.elementSelector).first();
     }
 }
 
@@ -101,11 +95,7 @@ async function findNthLocator(
     }
 }
 
-async function findLocatorNotStrict(
-    activePage: Page,
-    selector: string,
-    locator?: LocatorCount,
-): Promise<Locator> {
+async function findLocatorNotStrict(activePage: Page, selector: string, locator?: LocatorCount): Promise<Locator> {
     if (locator?.locator) {
         logger.info(`Strict mode is disbaled, return first Locator: ${selector} with locator.`);
         return locator.locator.locator(selector).first();
