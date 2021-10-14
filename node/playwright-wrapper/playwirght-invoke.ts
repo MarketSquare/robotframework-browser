@@ -52,7 +52,7 @@ export async function findLocator(
             return activePage.locator(selector);
         }
     } else {
-        return await findLocatorNotStrict(activePage, selector, firstOnly, locator);
+        return await findLocatorNotStrict(activePage, selector, locator);
     }
 }
 
@@ -104,25 +104,14 @@ async function findNthLocator(
 async function findLocatorNotStrict(
     activePage: Page,
     selector: string,
-    firstOnly: boolean,
     locator?: LocatorCount,
 ): Promise<Locator> {
     if (locator?.locator) {
-        if (firstOnly) {
-            logger.info(`Strict mode is disbaled, return first Locator: ${selector} with locator.`);
-            return locator.locator.locator(selector).first();
-        } else {
-            logger.info(`Strict mode is disbaled, return Locator: ${selector} with locator.`);
-            return locator.locator.locator(selector);
-        }
+        logger.info(`Strict mode is disbaled, return first Locator: ${selector} with locator.`);
+        return locator.locator.locator(selector).first();
     } else {
-        if (firstOnly) {
-            logger.info(`Strict mode is disbaled, return first Locator: ${selector} in page.`);
-            return (locator?.locator || activePage).locator(selector).first();
-        } else {
-            logger.info(`Strict mode is disbaled, return Locator: ${selector} in page.`);
-            return (locator?.locator || activePage).locator(selector);
-        }
+        logger.info(`Strict mode is disbaled, return first Locator: ${selector} in page.`);
+        return (locator?.locator || activePage).locator(selector).first();
     }
 }
 
