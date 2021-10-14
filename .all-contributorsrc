@@ -201,7 +201,8 @@
       "avatar_url": "https://avatars1.githubusercontent.com/u/993527?v=4",
       "profile": "https://github.com/emanlove",
       "contributions": [
-        "doc"
+        "doc",
+        "bug"
       ]
     },
     {
@@ -442,6 +443,26 @@
       "profile": "https://github.com/ankurbhalla-gmail",
       "contributions": [
         "ideas"
+      ]
+    },
+    {
+      "login": "UliSei",
+      "name": "UliSei",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89480399?v=4",
+      "profile": "https://github.com/UliSei",
+      "contributions": [
+        "ideas",
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "tomekTieto",
+      "name": "Tomasz Pawlak",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39945193?v=4",
+      "profile": "https://github.com/tomekTieto",
+      "contributions": [
+        "bug"
       ]
     }
   ],

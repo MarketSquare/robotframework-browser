@@ -22,14 +22,15 @@
 from typing import Optional
 
 from ..base import LibraryComponent
-from ..utils import is_falsy, keyword, logger
+from ..utils import keyword, logger
+from ..utils.data_types import DelayedKeyword
 
 
 class RunOnFailureKeywords(LibraryComponent):
     @keyword(tags=("Config",))
     def register_keyword_to_run_on_failure(
         self, keyword: Optional[str], *args: str
-    ) -> Optional[str]:
+    ) -> DelayedKeyword:
         """Sets the keyword to execute, when a Browser keyword fails.
 
         ``keyword`` is the name of a keyword that will be executed if a
@@ -46,10 +47,10 @@ class RunOnFailureKeywords(LibraryComponent):
         case-insensitively, as well as Python ``None`` to disable this
         feature altogether.
 
-        This keyword returns the name of the previously registered
-        failure keyword or Python ``None`` if this functionality was
-        previously disabled. The return value can be always used to
-        restore the original value later.
+        This keyword returns an object which contains the the previously
+        registered failure keyword. The return value can be always used to
+        restore the original value later. The returned object contains
+        keyword name and the possible arguments used to for the keyword.
 
         Example:
         | `Register Keyword To Run On Failure`    Take Screenshot
@@ -58,11 +59,12 @@ class RunOnFailureKeywords(LibraryComponent):
 
         """
         old_keyword = self.library.run_on_failure_keyword
-        if keyword is None or is_falsy(keyword):
-            self.library.run_on_failure_keyword = None
+        new_keyword = self.parse_run_on_failure_keyword(
+            f"{keyword}  {'  '.join(args)}".strip()
+        )
+        self.library.run_on_failure_keyword = new_keyword
+        if new_keyword.name:
+            logger.info(f"'{new_keyword}' will be run on failure.")
         else:
-            self.library.run_on_failure_keyword = {"name": keyword, "args": args}
-        logger.info(f"{keyword or 'No keyword'} will be run on failure.")
-        if old_keyword is None:
-            return None
-        return old_keyword["name"]
+            logger.info("Keyword will not be run on failure.")
+        return old_keyword

@@ -11,12 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
+import sys
 from datetime import timedelta
 from typing import Any
 
 from robotlibcore import KeywordBuilder  # type: ignore
 
 import Browser
+
+PY310 = sys.version_info.major == 3 and sys.version_info.minor >= 10
 
 
 def is_named_method(keyword_name: str) -> bool:
@@ -36,6 +40,16 @@ def get_method_name_for_keyword(keyword_name: str) -> str:
 
 
 def get_type_string_from_type(argument_type: type) -> str:
+    if PY310:
+        if str(argument_type).count("[") == 1 and str(argument_type).count("]") == 1:
+            return str(argument_type).lstrip("typing.")
+        match = re.search(r"(\[)(\S+)(\])", str(argument_type))
+        if match:
+            return match.group(2)
+        match = re.search(r"(\[)(\S+ \S+)(\])", str(argument_type))
+        if match:
+            text = match.group(2)
+            return text.lstrip("typing.")
     if hasattr(argument_type, "__name__"):
         return argument_type.__name__
     else:
@@ -120,6 +134,7 @@ pyi_non_kw_methods = """\
     def convert_timeout(self, timeout: Union[timedelta, float], to_ms: bool = True) -> float: ...
     def millisecs_to_timestr(self, timeout: float)  -> str: ...
     def get_strict_mode(self, strict: Union[bool, None]) -> bool: ...
+    def _parse_run_on_failure_keyword(self, keyword_name: Union[str, None]) -> DelayedKeyword: ...
 
 """
 

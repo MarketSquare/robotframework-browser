@@ -18,7 +18,7 @@ Get Select Options
 
 Get Select Options Strict
     Run Keyword And Expect Error
-    ...    *Evaluation failed: Error: strict mode violation: selector resolved to 3 elements.*
+    ...    *Error: strict mode violation: "//select" resolved to 3 elements*
     ...    Get Select Options    //select
     Set Strict Mode    False
     ${options} =    Get Select Options    //select
@@ -85,7 +85,7 @@ Deselect Options Explicitly
 
 Deselect Options With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 3 elements.*
+    ...    *Error: strict mode violation: "//select" resolved to 3 elements*
     ...    Deselect Options    //select
     Set Strict Mode    False
     Deselect Options    //select

@@ -137,7 +137,7 @@ class Interaction(LibraryComponent):
         found by ``selector``.
 
         This keyword does not log secret in Robot Framework logs, if keyword resolves
-        the variable valu internally. If ``enable_playwright_debug`` is enabled in
+        the variable value internally. If ``enable_playwright_debug`` is enabled in
         the library import, secret will be always visible as plain text in the playwright
         debug logs, regardless of the Robot Framework log level.
 
@@ -162,7 +162,7 @@ class Interaction(LibraryComponent):
 
         Example
         | `Type Secret`    input#username_field    $username      # Keyword resolves ${username} variable value from Robot Framework variables
-        | `Type Secret`    input#username_field    %username      # Keyword resolves $USERANME/%USERANME% variable value from environment variables
+        | `Type Secret`    input#username_field    %username      # Keyword resolves $USERNAME/%USERNAME% variable value from environment variables
         | `Type Secret`    input#username_field    ${username}    # Robot Framework resolves the variable value, but secrect can leak to Robot framework output files.
         """
         originals = self._get_original_values(locals())
@@ -839,9 +839,9 @@ class Interaction(LibraryComponent):
         Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
         the top left corner of the pages viewport.
 
-        ``from_x`` & ``from_y`` identify the the start-point.
+        ``from_x`` & ``from_y`` identify the start-point.
 
-        ``to_x`` & ``to_y`` identify the the end-point.
+        ``to_x`` & ``to_y`` identify the end-point.
 
         ``steps`` defines how many intermediate mouse move events are sent.
 

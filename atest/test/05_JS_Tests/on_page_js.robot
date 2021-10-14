@@ -22,7 +22,7 @@ JS Execute Without Element On Strict Mode
 
 JS Execute With Element On Strict Mode
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 4 elements.*
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
     ...    Execute JavaScript    () => {return false;}    //input
     Set Strict Mode    False
     ${result} =    Execute JavaScript    () => {return false;}    //input
@@ -85,5 +85,5 @@ Highlight Element with element selector
     Get Element Count    .robotframework-browser-highlight    ==    1
 
 Page state
-    [Tags]    Not-Implemented
+    [Tags]    not-implemented
     #Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123

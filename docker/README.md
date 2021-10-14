@@ -14,15 +14,14 @@ The image comes with latest robotframework-browser and robotframework, and with 
 
 Example usage:
 ``` bash
-docker run --rm \
-  -v $(pwd)/atest/test/:/test \
-    marketsquare/robotframework-browser:v2.5.0 \
-      bash -c "robot --outputdir /test/output /test"
+docker run --rm -v $(pwd)/atest/test/:/test --ipc=host --user pwuser --security-opt seccomp=seccomp_profile.json marketsquare/robotframework-browser:latest bash -c "robot --outputdir /test/output /test"
 ```
 
 `docker run -v` is used to mount the directory containing tests on the supervising machine. In this example robot output will also be output inside the test directory
 
 
-When testing with chrome we recommend downloading a copy of `chrome.json` security settings and using the following docker run flags ```--ipc=host --security-opt seccomp=chrome.json``` for best compatibility. [Explanations and the chrome.json can be found here](https://github.com/microsoft/playwright/tree/main/docs/docker#run-the-image)
+When testing with chrome we recommend downloading a copy of `seccomp_profile.json` security settings and using the following docker run flags ```--ipc=host --security-opt seccomp=seccomp_profile.json``` for best compatibility. [Explanations and the seccomp_profile.json can be found here](https://github.com/microsoft/playwright/blob/master/docs/src/docker.md#crawling-and-scraping)
+
+(Get it directly with `wget https://raw.githubusercontent.com/microsoft/playwright/master/utils/docker/seccomp_profile.json` )
 
 All dependencies are installed to support running tests as `pwuser` in the docker image. Running tests as root or other non `pwuser` can cause problems.

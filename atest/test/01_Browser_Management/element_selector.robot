@@ -15,7 +15,7 @@ Get Element
 
 Get Element With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: selector resolved to 12 elements.*
+    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
     ...    Get Element    //input
     Set Strict Mode    False
     ${element} =    Get Element    //input

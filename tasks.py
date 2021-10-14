@@ -391,7 +391,7 @@ def atest_robot(c):
         "-m",
         "robot",
         "--exclude",
-        "Not-Implemented",
+        "not-implemented",
         "--loglevel",
         "DEBUG",
         "--xunit",
@@ -400,7 +400,7 @@ def atest_robot(c):
         str(ATEST_OUTPUT),
     ]
     if platform.platform().startswith("Windows"):
-        command_args.extend(["--exclude", "No-Windows-Support"])
+        command_args.extend(["--exclude", "no-windows-support"])
     command_args.append("atest/test")
     env = os.environ.copy()
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
@@ -471,7 +471,7 @@ def _run_pabot(extra_args=None):
         "--xunit",
         "robot_xunit.xml",
         "--exclude",
-        "Not-Implemented",
+        "not-implemented",
         "--loglevel",
         "DEBUG",
         "--report",
@@ -482,7 +482,7 @@ def _run_pabot(extra_args=None):
         str(ATEST_OUTPUT),
     ]
     if platform.platform().startswith("Windows"):
-        default_args.extend(["--exclude", "No-Windows-Support"])
+        default_args.extend(["--exclude", "no-windows-support"])
     default_args.append("atest/test")
     process = subprocess.Popen(
         pabot_args + (extra_args or []) + default_args, env=os.environ
@@ -531,6 +531,8 @@ def lint_robot(c):
         "unix",
         "--configure",
         "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
+        "--configure",
+        "NormalizeAssignments:equal_sign_type_variables=space_and_equal_sign",
     ]
     if in_ci:
         command.insert(1, "--check")
@@ -556,14 +558,14 @@ def lint(c):
 @task
 def docker_base(c):
     c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Dockerfile.playwright20.04 ."
+        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file docker/Dockerfile.playwright20.04 ."
     )
 
 
 @task
 def docker_builder(c):
     c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file atest/docker/Dockerfile ."
+        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file docker/Dockerfile ."
     )
 
 
@@ -572,7 +574,7 @@ def docker_stable_image(c):
     from Browser.version import __version__ as VERSION
 
     c.run(
-        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file atest/docker/Dockerfile.latest_release ."
+        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
     )
 
 
@@ -583,12 +585,12 @@ def docker_test(c):
         """docker run\
 	    --rm \
 	    --ipc=host\
-	    --security-opt seccomp=atest/docker/chrome.json \
+	    --security-opt seccomp=docker/seccomp_profile.json \
 	    -v $(pwd)/atest/:/app/atest \
 	    -v $(pwd)/node/:/app/node/ \
 	    --workdir /app \
 	    rfbrowser \
-	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /app/atest/output /app/atest/test"
+	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude not-implemented --outputdir /app/atest/output /app/atest/test"
           """
     )
 
@@ -602,7 +604,7 @@ def docker_run_tmp_tests(c):
         """docker run\
         --rm \
         --ipc=host\
-        --security-opt seccomp=atest/docker/chrome.json \
+        --security-opt seccomp=docker/seccomp_profile.json \
         -v $(pwd)/tmp/:/app/tmp \
         -v $(pwd)/node/:/app/node/ \
         --workdir /app \
