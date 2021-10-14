@@ -183,11 +183,8 @@ export async function getViewportSize(page: Page): Promise<Response.Json> {
 export async function getBoundingBox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const elem = await determineElement(state, selector, strictMode);
-    if (!elem) {
-        throw new Error(`No element matching ${selector} found`);
-    }
-    const boundingBox = await elem.boundingBox();
+    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const boundingBox = await locator.boundingBox();
     return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box succesfully.');
 }
 
