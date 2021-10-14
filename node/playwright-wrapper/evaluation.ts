@@ -91,13 +91,16 @@ export async function getPageState(page: Page): Promise<Response.JavascriptExecu
 
 export async function waitForElementState(
     request: Request.ElementSelectorWithOptions,
-    state: PlaywrightState,
+    pwState: PlaywrightState,
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
-    const options = JSON.parse(request.getOptions());
+    const { state, timeout } = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
-    await invokePlaywrightMethod(state, 'waitForSelector', selector, strictMode, options);
-    return emptyWithLog('Wait for Element with selector: ' + selector);
+    const locator = await findLocator(pwState, selector, strictMode, undefined, false);
+    const element = await locator.elementHandle();
+    exists(element, `Could not find element with ${selector}`);
+    await element.waitForElementState(state, timeout);
+    return emptyWithLog(`Wait for Element with selector: ${selector}`);
 }
 
 export async function waitForFunction(
@@ -118,7 +121,8 @@ export async function waitForFunction(
         logger.info(`On waitForFunction, supress ${error} for eval.`);
     }
     if (selector) {
-        elem = await determineElement(state, selector, strictMode);
+        const locator = await findLocator(state, selector, strictMode, undefined, false);
+        elem = await locator.elementHandle();
         script = eval(script);
     }
 
