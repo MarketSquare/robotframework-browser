@@ -1,6 +1,7 @@
 import pytest
 
-from Browser.utils.deprecated import _method_to_keyword, _is_deprecated_attribute
+from Browser.utils.deprecated import (_is_deprecated_attribute,
+                                      _method_to_keyword)
 
 
 class DummyClass:

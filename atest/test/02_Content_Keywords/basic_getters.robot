@@ -30,6 +30,15 @@ Get Property and Assert
     Get Property    h1    innerText    ==    Login Page
     Get Property    h1    innerText    !=    ${None}
 
+Get Property With Strict Mode
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Property    //input    id
+    Set Strict Mode    False
+    ${property} =    Get Property    //input    id
+    Should Not Be Empty    ${property}
+    [Teardown]    Set Strict Mode    True
+
 Get Property Default Error
     Run Keyword And Expect Error
     ...    Property innerText 'Login Page' (str) should not be 'Login Page' (str)
@@ -49,7 +58,7 @@ Get Property size
 
 Get Property For Element Property Which Does Not Exist
     Run Keyword And Expect Error
-    ...    Property 'not_here' not found!
+    ...    *Property 'not_here' not found!
     ...    Get Property    ${UserNameLabel}    not_here
     ${attribute} =    Get Property    ${UserNameLabel}    not_here    ==    ${None}
 
@@ -67,9 +76,22 @@ Get Attribute
     ${type} =    Get Attribute    id=login_button    type
     Should Be Equal    ${type}    submit
 
+Get Attribute With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Attribute    //input    id
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Attribute    //input    id    equal    nothere
+    Set Strict Mode    False
+    ${id} =    Get Attribute    //input    id
+    Should Be Equal    ${id}    username_field
+    Get Attribute    //input    id    equal    username_field
+    [Teardown]    Set Strict Mode    True
+
 Get Attribute Default Error
     Run Keyword And Expect Error
-    ...    Attribute 'disabled' not found!
+    ...    *Attribute 'disabled' not found!
     ...    Get Attribute    id=login_button    disabled
 
 Get Attribute Custom Error
@@ -93,6 +115,16 @@ Get Attribute Names
         Log    ${attr}=${value}
     END
     [Teardown]    Close Page
+
+Get Attribute Names With Strict
+    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
+    ...    Get Attribute Names    //input
+    Set Strict Mode    False
+    ${attrs} =    Get Attribute Names    //input
+    Should Not Be Empty    ${attrs}
+    [Teardown]    Set Strict Mode    True
 
 Get Attribute Names Default Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
@@ -121,6 +153,15 @@ Get Attribute Names and Assert single and multiple
 Get Classes
     ${classes} =    Get Classes    id=draggable
     Should Be Equal    ${classes}    ${{["box", "react-draggable"]}}
+
+Get Classes With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//button" resolved to 11 elements*
+    ...    Get Classes    //button
+    Set Strict Mode    False
+    ${classes} =    Get Classes    //button
+    Should Be Equal    ${classes}    ${None}
+    [Teardown]    Set Strict Mode    True
 
 Get Classes and Assert
     Get Classes    id=draggable    contains    react-draggable

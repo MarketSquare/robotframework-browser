@@ -57,6 +57,8 @@ class Waiter(LibraryComponent):
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
         The `{function}` formatter is same ``state`` argument value.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Example:
         | `Wait For Elements State`    //h1    visible    timeout=2 s
         | `Wait For Elements State`    //hi    focused    1s
@@ -86,7 +88,9 @@ class Waiter(LibraryComponent):
             end += time.monotonic()
             while True:
                 try:
-                    return self._wait_for_elements_state(selector, state, timeout)
+                    return self._wait_for_elements_state(
+                        selector, state, timeout, self.strict_mode
+                    )
                 except Exception as error:
                     if end > time.monotonic():
                         logger.debug(f"Suppress error: {error}")
@@ -101,7 +105,10 @@ class Waiter(LibraryComponent):
                         raise
         else:
             self.wait_for_function(
-                funct[state], selector=selector, timeout=timeout, message=message
+                funct[state],
+                selector=selector,
+                timeout=timeout,
+                message=message,
             )
 
     def _wait_for_elements_state(
@@ -109,6 +116,7 @@ class Waiter(LibraryComponent):
         selector: str,
         state: ElementState = ElementState.visible,
         timeout: Optional[timedelta] = None,
+        strict: bool = True,
     ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
@@ -117,7 +125,7 @@ class Waiter(LibraryComponent):
             options_json = json.dumps(options)
             response = stub.WaitForElementsState(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+                    selector=selector, options=options_json, strict=strict
                 )
             )
             logger.info(response.log)
@@ -150,6 +158,8 @@ class Waiter(LibraryComponent):
         argument accepts `{selector}`, `{function}`, and `{timeout}`
         [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Example usage:
         | ${promise}      `Promise To`      `Wait For Function`    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
         | `Click`         \\#progress_bar
@@ -162,7 +172,9 @@ class Waiter(LibraryComponent):
         end += time.monotonic()
         while True:
             try:
-                return self._wait_for_function(function, selector, polling, timeout)
+                return self._wait_for_function(
+                    function, selector, polling, timeout, self.strict_mode
+                )
             except Exception as error:
                 if end > time.monotonic():
                     logger.debug(f"Suppress {error}")
@@ -180,6 +192,7 @@ class Waiter(LibraryComponent):
         selector: str = "",
         polling: Union[str, timedelta] = "raf",
         timeout: Optional[timedelta] = None,
+        strict: bool = True,
     ):
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
@@ -193,6 +206,7 @@ class Waiter(LibraryComponent):
                     script=function,
                     selector=selector,
                     options=options_json,
+                    strict=strict,
                 )
             )
             logger.debug(response.json)

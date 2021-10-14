@@ -76,16 +76,17 @@ export function jsResponse(result: string, logMessage: string) {
     return response;
 }
 
-export function errorResponse(e: Error) {
+export function errorResponse(e: unknown) {
     console.log('================= Original suppressed error =================');
     console.log(e);
     console.log('=============================================================');
+    if (!(e instanceof Error)) return null;
     const errorMessage: string = e.toString().substring(0, 5000);
     let errorCode = status.RESOURCE_EXHAUSTED;
     if (e instanceof errors.TimeoutError) {
         errorCode = status.DEADLINE_EXCEEDED;
     }
-    return { code: status.DEADLINE_EXCEEDED, message: errorMessage };
+    return { code: errorCode, message: errorMessage };
 }
 
 export function keywordsResponse(keywords: string[], logMessage: string) {

@@ -177,6 +177,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that the text matches the specified assertion. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
 
@@ -185,11 +187,13 @@ class Getters(LibraryComponent):
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetText(Request().ElementSelector(selector=selector))
-            logger.debug(response.log)
-            return verify_assertion(
-                response.body, assertion_operator, assertion_expected, "Text", message
+            response = stub.GetText(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
+        logger.debug(response.log)
+        return verify_assertion(
+            response.body, assertion_operator, assertion_expected, "Text", message
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -214,6 +218,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that the property value matches the expected value. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
 
@@ -226,22 +232,24 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
-                Request().ElementProperty(selector=selector, property=property)
+                Request().ElementProperty(
+                    selector=selector, property=property, strict=self.strict_mode
+                )
             )
-            logger.debug(response.log)
-            if response.body:
-                value = json.loads(response.body)
-            elif assertion_operator is not None:
-                value = None
-            else:
-                raise AttributeError(f"Property '{property}' not found!")
-            return verify_assertion(
-                value,
-                assertion_operator,
-                assertion_expected,
-                f"Property {property}",
-                message,
-            )
+        logger.debug(response.log)
+        if response.body:
+            value = json.loads(response.body)
+        elif assertion_operator is not None:
+            value = None
+        else:
+            raise AttributeError(f"Property '{property}' not found!")
+        return verify_assertion(
+            value,
+            assertion_operator,
+            assertion_expected,
+            f"Property {property}",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -266,6 +274,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that the attribute value matches the expected value. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -274,8 +284,6 @@ class Getters(LibraryComponent):
         the keyword fails. If an assertion operator is set and the attribute is not present,
         the returned value is ``None``. This can be used to assert check the presents or
         the absents of an attribute.
-
-        ``message`` overrides the default error message.
 
         Example Element:
         | <button class="login button active" id="enabled_button" something>Login</button>
@@ -288,20 +296,22 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
-                Request().ElementProperty(selector=selector, property=attribute)
+                Request().ElementProperty(
+                    selector=selector, property=attribute, strict=self.strict_mode
+                )
             )
-            logger.debug(response.log)
-            value = json.loads(response.body)
-            if assertion_operator is None and value is None:
-                raise AttributeError(f"Attribute '{attribute}' not found!")
-            logger.debug(f"Attribute is: {value}")
-            return verify_assertion(
-                value,
-                assertion_operator,
-                assertion_expected,
-                f"Attribute {selector}",
-                message,
-            )
+        logger.debug(response.log)
+        value = json.loads(response.body)
+        if assertion_operator is None and value is None:
+            raise AttributeError(f"Attribute '{attribute}' not found!")
+        logger.debug(f"Attribute is: {value}")
+        return verify_assertion(
+            value,
+            assertion_operator,
+            assertion_expected,
+            f"Attribute {selector}",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -322,6 +332,8 @@ class Getters(LibraryComponent):
         ``expected_value`` Expected value for the state
 
         ``message`` overrides the default error message for assertion.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that attribute names do match to the expected value. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -366,6 +378,8 @@ class Getters(LibraryComponent):
         ``expected_value`` Expected value for the state
 
         ``message`` overrides the default error message for assertion.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -414,6 +428,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that these match the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -425,25 +441,25 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
-                Request().ElementSelector(selector=selector)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
-            logger.info(response)
-            result = [
-                {
-                    "index": index,
-                    "value": sel.value,
-                    "label": sel.label,
-                    "selected": bool(sel.selected),
-                }
-                for index, sel in enumerate(response.entry)
-            ]
-            return verify_assertion(
-                result,
-                assertion_operator,
-                assertion_expected,
-                "Select Options:",
-                message,
-            )
+        logger.info(response)
+        result = [
+            {
+                "index": index,
+                "value": sel.value,
+                "label": sel.label,
+                "selected": bool(sel.selected),
+            }
+            for index, sel in enumerate(response.entry)
+        ]
+        return verify_assertion(
+            result,
+            assertion_operator,
+            assertion_expected,
+            "Select Options:",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -461,6 +477,8 @@ class Getters(LibraryComponent):
 
         ``option_attribute`` Which attribute shall be returned/verified.
         Defaults to label.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
 
@@ -487,27 +505,27 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
-                Request().ElementSelector(selector=selector)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
-            logger.info(response)
-            expected = list(assertion_expected)
-            selected: Union[List[int], List[str]]
-            if option_attribute is SelectAttribute.value:
-                selected = [sel.value for sel in response.entry if sel.selected]
-            elif option_attribute is SelectAttribute.label:
-                selected = [sel.label for sel in response.entry if sel.selected]
-            elif option_attribute is SelectAttribute.index:
-                selected = [
-                    index for index, sel in enumerate(response.entry) if sel.selected
-                ]
-                expected = [int(exp) for exp in expected]
+        logger.info(response)
+        expected = list(assertion_expected)
+        selected: Union[List[int], List[str]]
+        if option_attribute is SelectAttribute.value:
+            selected = [sel.value for sel in response.entry if sel.selected]
+        elif option_attribute is SelectAttribute.label:
+            selected = [sel.label for sel in response.entry if sel.selected]
+        elif option_attribute is SelectAttribute.index:
+            selected = [
+                index for index, sel in enumerate(response.entry) if sel.selected
+            ]
+            expected = [int(exp) for exp in expected]
 
-            return list_verify_assertion(
-                selected,
-                assertion_operator,
-                expected,
-                "Selected Options:",
-            )
+        return list_verify_assertion(
+            selected,
+            assertion_operator,
+            expected,
+            "Selected Options:",
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -529,6 +547,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -545,25 +565,25 @@ class Getters(LibraryComponent):
         - ``checked`` => ``True``
         - ``unchecked`` => ``False``
 
-        ``message`` overrides the default error message.
-
         Example:
         | `Get Checkbox State`    [name=can_send_email]    ==    checked
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
-                Request().ElementProperty(selector=selector, property="checked")
+                Request().ElementProperty(
+                    selector=selector, property="checked", strict=self.strict_mode
+                )
             )
-            logger.info(response.log)
-            value: bool = response.body
-            logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
-            return bool_verify_assertion(
-                value,
-                assertion_operator,
-                expected_state,
-                f"Checkbox {selector} is",
-                message,
-            )
+        logger.info(response.log)
+        value: bool = response.body
+        logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
+        return bool_verify_assertion(
+            value,
+            assertion_operator,
+            expected_state,
+            f"Checkbox {selector} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -594,7 +614,7 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
-                Request().ElementSelector(selector=selector)
+                Request().ElementSelector(selector=selector, strict=False)
             )
             count = response.body
             return float_str_verify_assertion(
@@ -669,12 +689,16 @@ class Getters(LibraryComponent):
         ``selector`` Selector from which shall be retrieved .
         See the `Finding elements` section for details about the selectors.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Example:
         | ${element} =    `Get Element`    \\#username_field
         | ${option_value} =    `Get Property`    ${element} >> option    value
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetElement(Request().ElementSelector(selector=selector))
+            response = stub.GetElement(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
             return response.body
 
     @keyword(tags=("Getter", "PageContent"))
@@ -692,7 +716,7 @@ class Getters(LibraryComponent):
         try:
             with self.playwright.grpc_channel(original_error=True) as stub:
                 response = stub.GetElements(
-                    Request().ElementSelector(selector=selector)
+                    Request().ElementSelector(selector=selector, strict=False)
                 )
                 return json.loads(response.json)
         except grpc.RpcError as error:
@@ -729,33 +753,37 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that the style matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetStyle(Request().ElementSelector(selector=selector))
-            parsed = json.loads(response.json)
+            response = stub.GetStyle(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+        parsed = json.loads(response.json)
 
-            if key == "ALL":
-                return dict_verify_assertion(
-                    parsed,
-                    assertion_operator,
-                    assertion_expected,
-                    "Computed style is",
-                    message,
-                )
-            else:
-                item = parsed.get(key, "NOT_FOUND")
-                logger.info(f"Value of key: {key}")
-                logger.info(f"Value of selected property: {item}")
-                return verify_assertion(
-                    item,
-                    assertion_operator,
-                    assertion_expected,
-                    f"Style value for {key} is",
-                    message,
-                )
+        if key == "ALL":
+            return dict_verify_assertion(
+                parsed,
+                assertion_operator,
+                assertion_expected,
+                "Computed style is",
+                message,
+            )
+        else:
+            item = parsed.get(key, "NOT_FOUND")
+            logger.info(f"Value of key: {key}")
+            logger.info(f"Value of selected property: {item}")
+            return verify_assertion(
+                item,
+                assertion_operator,
+                assertion_expected,
+                f"Style value for {key} is",
+                message,
+            )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
     def get_boundingbox(
@@ -783,6 +811,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -797,22 +827,24 @@ class Getters(LibraryComponent):
         | `Get BoundingBox`     id=element         ALL           validate    value['x'] > value['y']*2
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))
-            parsed = json.loads(response.json)
-            logger.debug(f"BoundingBox: {parsed}")
-            if key == BoundingBoxFields.ALL:
-                return int_dict_verify_assertion(
-                    parsed, assertion_operator, assertion_expected, "BoundingBox is"
-                )
-            else:
-                logger.info(f"Value of '{key}'': {parsed[key.name]}")
-                return float_str_verify_assertion(
-                    parsed[key.name],
-                    assertion_operator,
-                    assertion_expected,
-                    f"BoundingBox {key.name} is",
-                    message,
-                )
+            response = stub.GetBoundingBox(
+                Request.ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+        parsed = json.loads(response.json)
+        logger.debug(f"BoundingBox: {parsed}")
+        if key == BoundingBoxFields.ALL:
+            return int_dict_verify_assertion(
+                parsed, assertion_operator, assertion_expected, "BoundingBox is"
+            )
+        else:
+            logger.info(f"Value of '{key}'': {parsed[key.name]}")
+            return float_str_verify_assertion(
+                parsed[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"BoundingBox {key.name} is",
+                message,
+            )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     def get_scroll_size(
@@ -838,6 +870,8 @@ class Getters(LibraryComponent):
         ``expected_value`` Expected value for the counting
 
         ``message`` overrides the default error message for assertion.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -903,6 +937,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -957,6 +993,8 @@ class Getters(LibraryComponent):
         ``expected_value`` Expected value for the counting
 
         ``message`` overrides the default error message for assertion.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the value matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -1022,6 +1060,8 @@ class Getters(LibraryComponent):
 
         ``message`` overrides the default error message for assertion.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
@@ -1045,6 +1085,7 @@ class Getters(LibraryComponent):
                             script=funct[state],
                             selector=selector,
                             options=json.dumps({"timeout": 100}),
+                            strict=self.strict_mode,
                         )
                     )
                 else:
@@ -1052,6 +1093,7 @@ class Getters(LibraryComponent):
                         Request().ElementSelectorWithOptions(
                             selector=selector,
                             options=json.dumps({"state": state.name, "timeout": 100}),
+                            strict=self.strict_mode,
                         )
                     )
                 result = True

@@ -73,6 +73,12 @@ app.post('/posted.html', (req, res) => {
     }, 100);
 });
 
+app.get('/api/get/bad_binary', (req, res) => {
+    const data = Buffer.from([123120349139516]);
+    // res.contentType('image/jpeg');
+    res.end(data, 'binary');
+});
+
 app.use(express.static(path.join(__dirname, '..')));
 app.use(express.static(path.join(__dirname, '..', 'static')));
 

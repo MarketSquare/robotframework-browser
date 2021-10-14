@@ -48,8 +48,9 @@ class Control(LibraryComponent):
         """Navigates to the given ``url``.
 
         ``url`` <str> URL to be navigated to.
+
         ``timeout`` <str> time to wait page to load. If not defined
-        will use the the library default timeout.
+        will use the library default timeout.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(
@@ -113,6 +114,9 @@ class Control(LibraryComponent):
         Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout.
         The default value can be changed by using the `Set Browser Timeout` keyword.
 
+        Keyword uses strict mode if selector is defined. See `Finding elements` for more details
+        about strict mode.
+
         Example
         | `Take Screenshot`                                 # Takes screenshot from page with default filename
         | `Take Screenshot`   selector=id=username_field    # Captures element in image
@@ -124,7 +128,7 @@ class Control(LibraryComponent):
         else:
             logger.debug(f"Using {filename} to take screenshot.")
         file_path = self._take_screenshot(
-            filename, selector, fullPage, fileType, quality, timeout
+            filename, selector, fullPage, fileType, quality, timeout, self.strict_mode
         )
         if self._is_embed(filename):
             return self._embed_to_log(file_path)
@@ -165,6 +169,7 @@ class Control(LibraryComponent):
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
         quality: str = "",
         timeout: Optional[timedelta] = None,
+        strict: bool = True,
     ) -> str:
         string_path_no_extension = str(
             self._get_screenshot_path(filename, fileType.name)
@@ -178,6 +183,7 @@ class Control(LibraryComponent):
                     fileType=fileType.name,
                     quality=quality,
                     timeout=int(self.get_timeout(timeout)),
+                    strict=strict,
                 )
             )
         logger.debug(response.log)

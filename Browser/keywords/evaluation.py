@@ -36,17 +36,22 @@ class Evaluation(LibraryComponent):
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
 
+        Keyword uses strict mode if selector is defined. See `Finding elements` for more details
+        about strict mode.
+
         [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
-                Request().JavascriptCode(script=function, selector=selector)
+                Request().JavascriptCode(
+                    script=function, selector=selector, strict=self.strict_mode
+                )
             )
-            if response.log:
-                logger.info(response.log)
-            if response.result:
-                return json.loads(response.result)
-            return response.result
+        if response.log:
+            logger.info(response.log)
+        if response.result:
+            return json.loads(response.result)
+        return response.result
 
     @keyword(tags=("Setter", "PageContent"))
     def highlight_elements(
@@ -83,6 +88,7 @@ class Evaluation(LibraryComponent):
                     width=width,
                     style=style,
                     color=color,
+                    strict=False,
                 )
             )
             logger.info(response.log)

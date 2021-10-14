@@ -17,6 +17,10 @@ syntax = "proto3";
 message Request {
   message Empty {}
 
+  message Label {
+    string label = 1;
+  }
+
   message ScreenshotOptions {
     string path = 1;
     string selector = 2;
@@ -24,6 +28,7 @@ message Request {
     string fileType = 4;
     string quality = 5;
     int32 timeout = 6;
+    bool strict = 7;
   }
 
   message KeywordCall {
@@ -57,8 +62,7 @@ message Request {
 
   message Browser {
     string browser = 1;
-    bool headless = 2;
-    string rawOptions = 3;
+    string rawOptions = 2;
   }
 
   message Context {
@@ -92,6 +96,7 @@ message Request {
   message ElementProperty {
     string selector = 1;
     string property = 2;
+    bool strict = 3;
   }
 
   message TypeText {
@@ -99,24 +104,29 @@ message Request {
     string text = 2;
     int32 delay = 3;
     bool clear = 4;
+    bool strict = 5;
   }
 
   message FillText {
     string selector = 1;
     string text = 2;
+    bool strict = 3;
   }
 
   message ClearText {
     string selector = 1;
+    bool strict = 2;
   }
 
   message PressKeys {
     string selector = 1;
-    repeated string key = 2;
+    bool strict = 2;
+    repeated string key = 3;
   }
 
   message ElementSelector {
     string selector = 1;
+    bool strict = 2;
   }
 
   message Timeout {
@@ -138,6 +148,7 @@ message Request {
   message ElementSelectorWithOptions {
     string selector = 1;
     string options = 2;
+    bool strict = 3;
   }
 
   message ElementSelectorWithDuration {
@@ -146,22 +157,26 @@ message Request {
     string width = 3;
     string style = 4;
     string color = 5;
+    bool strict = 6;
   }
 
   message SelectElementSelector {
     string selector = 1;
     string matcherJson = 2;
+    bool strict = 3;
   }
 
   message JavascriptCode {
     string script = 1;
     string selector = 2;
+    bool strict = 3;
   }
 
   message WaitForFunctionOptions {
     string script = 1;
     string selector = 2;
     string options = 3;
+    bool strict = 4;
   }
 
   message PlaywrightObject {
@@ -286,8 +301,6 @@ service  Playwright {
   rpc GetTitle(Request.Empty) returns (Response.String);
   /* Returns the count of elements found with selector */
   rpc GetElementCount(Request.ElementSelector) returns (Response.Int);
-  /* Wraps playwrights page.fill to input text into input specified with selector */
-  rpc InputText(Request.TextInput) returns (Response.Empty);
    /* Wraps playwrights page.type to type text into input specified with selector */
   rpc TypeText(Request.TypeText) returns (Response.Empty);
   /* Wraps playwrights page.fill to fill text of input specified with selector */
@@ -345,7 +358,7 @@ service  Playwright {
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
   /* Executes javascript on the active page */
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
-  rpc RecordSelector(Request.Empty) returns (Response.JavascriptExecutionResult);
+  rpc RecordSelector(Request.Label) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);

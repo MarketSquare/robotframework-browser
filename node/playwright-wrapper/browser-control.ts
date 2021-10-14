@@ -37,11 +37,12 @@ export async function takeScreenshot(
     const quality = request.getQuality();
     const timeout = request.getTimeout();
     const options: Record<string, any> = { path: path, type: fileType, timeout: timeout };
+    const strictMode = request.getStrict();
     if (quality) {
         options.quality = parseInt(quality);
     }
     if (selector) {
-        const elem = await determineElement(state, selector);
+        const elem = await determineElement(state, selector, strictMode);
         exists(elem, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
         await elem.screenshot(options);
     } else {

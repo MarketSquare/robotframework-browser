@@ -3,7 +3,7 @@
  https://github.com/antonmedv/finder
  Static copy because of ease of installation
  */
-var Limit;
+let Limit;
 (function (a) {
     a[a.All = 0] = "All", a[a.Two = 1] = "Two", a[a.One = 2] = "One"
 })(Limit || (Limit = {}));
@@ -72,10 +72,10 @@ function penalty(a) {
     return a.map(a => a.penalty).reduce((a, b) => a + b, 0)
 }
 
-function unique(a) {
-    switch (rootDocument.querySelectorAll(selector(a)).length) {
+function unique(candidate) {
+    switch (rootDocument.querySelectorAll(selector(candidate)).length) {
         case 0:
-            throw new Error(`Can't select any node with this selector: ${selector(a)}`);
+            throw new Error(`Can't select any node with this selector: ${selector(candidate)}`);
         case 1:
             return !0;
         default:
@@ -186,75 +186,301 @@ function cssesc(a, b = {}) {
 /* Cool work ends and Browser library work begins */
 
 const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
+const BROWSER_LIBRARY_HEADER_ID = "browser-library-selector-recorder-header";
 const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
+const BROWSER_LIBRARY_SELECT_BUTTON_ID = "browser-library-select-selector";
+const BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID = "browser-library-cancel-selector";
+const BROWSER_LIBRARY_DESCRIPTION = "browser-library-selector-recorder-description-text";
+const BROWSER_LIBRARY_SELECTION = "browser-library-selection-id";
+const BROWSER_LIBRARY_SELECTION_OK_BUTTON = "browser-library-selection-ok-button";
+const BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON = "browser-library-selection-cancel-button"
 
-function addElement () {
-  const newDiv = document.createElement("div");
-  newDiv.style.display = "flex";
-  newDiv.style.flexDirection = "column";
-  newDiv.style.border = "2px solid blue";
-  newDiv.style.borderRadius = "5px";
-  newDiv.style.background = "white";
-  newDiv.style.color = "black";
-  newDiv.style.zIndex = "9000";
-  newDiv.style.position = "fixed";
-  newDiv.style.top = "16px";
-  newDiv.style.left = "16px";
-  newDiv.style.padding = "8px";
-  newDiv.id = BROWSER_LIBRARY_ID;
-  const header = document.createElement("h5");
-  header.textContent = "Selector recorder";
-  newDiv.appendChild(header);
-  const targetSpan = document.createElement("span");
-  targetSpan.id = BROWSER_LIBRARY_TEXT_ID;
-  targetSpan.textContent = "NOTSET";
-  newDiv.appendChild(targetSpan);
-  const desc = document.createElement("span");
-  desc.textContent = "Click focus to page and press (s) to record a selector.";
-  newDiv.appendChild(desc);
-  document.body.appendChild(newDiv);
+function htmlToElement(html) {
+    var template = document.createElement('template');
+    html = html.trim(); // Never return a text node of whitespace as the result
+    template.innerHTML = html;
+    return template.content.firstChild;
 }
 
-window.selectorRecorderFindSelector = function() {
-    return new Promise((resolve) => {
-        let currentTarget = "NOTSET";
+function addElement (label) {
+    const newDiv = htmlToElement(`
+    <div style="display: flex;
+    flex-direction: column;
+    border: 2px solid blue;
+    border-radius: 5px;
+    z-index: 2147483647;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    background: white;
+    padding: 8px;" id="${BROWSER_LIBRARY_ID}">
+        <h5 id="${BROWSER_LIBRARY_HEADER_ID}" style="cursor: move; background: rgb(178,227,227)">
+        ${"Selector recorder" + (label && label.length ? " for " + label : "")}
+        </h5>
+        <span id="${BROWSER_LIBRARY_TEXT_ID}">NOTSET</span>
+        <span id="${BROWSER_LIBRARY_DESCRIPTION}"></span>
+        <span style="max-width: 300px">Move mouse and Hover over an element to record a selector.</span>
+    </div>
+    `)
+  const elem = document.body.appendChild(newDiv);
+  dragElement(elem, document.getElementById(BROWSER_LIBRARY_HEADER_ID));
+  setTimeout(() => elem.focus(), 300);
+}
 
-        function updateTexts() {
-            document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = currentTarget;
+function dragElement(elmnt, header) {
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  header.onmousedown = dragMouseDown;
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // get the mouse cursor position at startup:
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    // call a function whenever the cursor moves:
+    document.onmousemove = elementDrag;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // calculate the new cursor position:
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    // set the element's new position:
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+  }
+
+  function closeDragElement() {
+    // stop moving when mouse button is released:
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }
+}
+
+function elementSelectorFromPointInFrame(x, y) {
+    const subelementFromPoint = (parentElement) => {
+        const element = parentElement.elementFromPoint(x, y);
+        if (!element) {
+            return '???';
+        }
+        if (element.shadowRoot) {
+            const parentSelector = finder(element, {root:parentElement})
+            const [childSelector, rect] = subelementFromPoint(element.shadowRoot);
+            return [childSelector.map(s => parentSelector + " >> " + s), rect];
+        }
+        const rect = element.getBoundingClientRect();
+        const left = parseFloat(window.getComputedStyle(element, null).getPropertyValue('padding-left')) || 0;
+        const top =  parseFloat(window.getComputedStyle(element, null).getPropertyValue('padding-top')) || 0;
+        const selectors = [];
+        const selector1 = finder(element, {root:parentElement})
+        selectors.push(selector1);
+        const selector2 = finder(element, {root:parentElement,
+            className: (c) => !selector1.includes("."+c),
+        });
+        if (!selectors.includes(selector2)) selectors.push(selector2);
+        const selector3 = finder(element, {
+            root: parentElement,
+            idName: (id) => !selector1.includes('#'+id)
+        });
+        if (!selectors.includes(selector3)) selectors.push(selector3);
+        const selector4 = finder(element, {
+            root: parentElement,
+            className: (c) => !selector1.includes("."+c),
+            idName: (id) => !selector1.includes('#'+id),
+        });
+        if (!selectors.includes(selector4)) selectors.push(selector4);
+        return [selectors, {top: rect.top, left: rect.left, height: rect.height, width: rect.width, paddingLeft: left, paddingTop: top}];
+    }
+    return subelementFromPoint(document);
+}
+
+window.subframeSelectorRecorderFindSelector = function(myid) {
+
+    let currentCssSelector = "NOTSET";
+
+    function mouseMoveListener(e) {
+        const cssselector = elementSelectorFromPointInFrame(e.pageX - window.scrollX, e.pageY - window.scrollY);
+        if (cssselector && cssselector !== currentCssSelector) {
+            window.setRecordedSelector(myid, cssselector);
+            currentCssSelector = cssselector;
+        }
+    }
+
+    document.addEventListener('mousemove', mouseMoveListener);
+}
+
+window.selectorRecorderFindSelector = function(label) {
+    return new Promise((resolve) => {
+        let currentCssSelector = "NOTSET";
+        let lastTotalRecord = [];
+        let lastDisplayedRecord = "NOTSET";
+        let lastTotalRecordTime = new Date().getTime();
+        let findingElement = true;
+
+        async function updateTexts() {
+            if (findingElement) {
+                const selectors = ((await window.getRecordedSelectors()) || []);
+                const recorded = selectors.map(i => i[0]);
+                const displayed = recorded.map(i => i[0]).join(" >>> ");
+                if (lastDisplayedRecord !== displayed) {
+                    document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = displayed;
+                    lastTotalRecord = recorded;
+                    lastDisplayedRecord = displayed;
+                    lastTotalRecordTime = new Date().getTime();
+                } else {
+                    const timediff = new Date().getTime() - lastTotalRecordTime;
+                    if (timediff > 3000) {
+                        findingElement = false;
+                        const rect = selectors.map(i => i[1]).reduce((acc, cur) => {
+                            return {
+                                top: acc.top+cur.top+acc.paddingTop, left: acc.left+cur.left+acc.paddingLeft, width: cur.width, height: cur.height,
+                                paddingLeft: cur.paddingLeft, paddingTop: cur.paddingTop
+                            }
+                        }, {
+                            top: 0, left: 0, width: 0, height: 0, paddingTop: 0, paddingLeft: 0
+                        });
+                        const div = htmlToElement(`<div style="
+position: absolute;
+top: ${rect.top-window.scrollY}px;
+left: ${rect.left-window.scrollX}px;
+width: ${rect.width}px;
+height: ${rect.height}px;
+border: 3px solid green;
+z-index: 2147483646;
+">
+<style>
+#${BROWSER_LIBRARY_SELECT_BUTTON_ID} {
+    background: white;
+    border: 3px solid green;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 0.5rem;
+    box-shadow: 2px 2px 5px darkolivegreen;
+}
+#${BROWSER_LIBRARY_SELECT_BUTTON_ID}:hover {
+    background: silver;
+    border-color: greenyellow;
+}
+#${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID} {
+    background: white;
+    border: 3px solid green;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 0.5rem;
+    box-shadow: 2px 2px 5px darkolivegreen;
+}
+#${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID}:hover {
+    background: silver;
+    border-color: greenyellow;
+}
+</style>
+<div
+style="
+position: relative;
+display: flex;
+flex-wrap: wrap;
+top: ${rect.height}px;
+"
+>
+<button id="${BROWSER_LIBRARY_SELECT_BUTTON_ID}"
+>Select</button>
+<button id="${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID}"
+>Cancel</button>
+</div>
+</div>`);
+                        document.body.appendChild(div);
+                        const selectButton = document.getElementById(BROWSER_LIBRARY_SELECT_BUTTON_ID);
+                        const cancelButton = document.getElementById(BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID);
+                        selectButton.onclick = () => {
+                            cancelButton.remove();
+                            selectButton.remove();
+                            displaySelection(div);
+                        };
+                        cancelButton.onclick = () => {
+                            div.remove();
+                            findingElement = true;
+                        };
+                    }
+                    document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = `${Math.round(300 - timediff / 10) / 100} s`;
+                }
+            }
+        }
+
+        function displaySelection(focusDiv) {
+            const maxit = Math.min(...lastTotalRecord.map(i => i.length));
+            const options = [];
+            for (let i = 0; i < maxit; i++) {
+                const item = lastTotalRecord.map(j => j[i]).join(" >>> ");
+                options.push(item);
+            }
+            const oldelement = document.getElementById(BROWSER_LIBRARY_ID);
+            const div = htmlToElement(`<div style="
+    display: flex;
+    flex-direction: column;
+    border: 2px solid blue;
+    border-radius: 5px;
+    z-index: 2147483647;
+    position: fixed;
+    top: ${oldelement.style.top};
+    left: ${oldelement.style.left};
+    background: white;
+    padding: 8px;">
+<span>Select selector pattern to use:</span>
+<select id="${BROWSER_LIBRARY_SELECTION}">
+${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
+</select>
+<button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">OK</button>
+<button id="${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON}">Cancel</button>
+</div>`);
+            oldelement.style.visibility = 'hidden';
+            document.body.appendChild(div);
+            const selection = document.getElementById(BROWSER_LIBRARY_SELECTION)
+            document.getElementById(BROWSER_LIBRARY_SELECTION_OK_BUTTON).onclick = () => {
+                cleanup();
+                focusDiv.remove();
+                div.remove();
+                resolve(selection.value);
+            };
+            document.getElementById(BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON).onclick = () => {
+                oldelement.style.visibility = 'visible';
+                focusDiv.remove();
+                div.remove();
+                findingElement = true;
+            };
         }
 
         function mouseMoveListener(e) {
-            console.log(e.pageY);
-            const target = document.elementFromPoint(e.pageX, e.pageY);
-            if (target) {
-                currentTarget = finder(target);
+            const elem = document.getElementById(BROWSER_LIBRARY_ID);
+            const rect = elem.getBoundingClientRect()
+            const xmin = rect.left + window.scrollX;
+            const xmax = xmin + rect.width;
+            const ymin = rect.top + window.scrollY;
+            const ymax = ymin + rect.height;
+            if (e.pageX >= xmin && e.pageX <= xmax &&
+                e.pageY >= ymin && e.pageY <= ymax) {
+                return;
+            }
+            const target = elementSelectorFromPointInFrame(e.pageX - window.scrollX, e.pageY - window.scrollY);
+            if (target && target !== currentCssSelector) {
+                window.setRecordedSelector(0, target);
+                currentCssSelector = target;
                 updateTexts();
             }
-            const elem = document.getElementById(BROWSER_LIBRARY_ID);
-            if (e.pageY < 120) {
-                elem.style.top = null;
-                elem.style.bottom = "16px";
-            } else {
-                elem.style.top = "16px";
-                elem.style.bottom = null;
-            }
         }
 
-        function keydownListener(e) {
-            const keyName = e.key;
-            console.log(keyName);
-            if (keyName === 's' || keyName === 'S') {
-                document.removeEventListener('mousemove', mouseMoveListener);
-                document.removeEventListener('keydown', keydownListener);
-                document.getElementById(BROWSER_LIBRARY_ID).remove();
-                clearInterval(intervalTimer);
-                resolve(currentTarget);
-            }
+        function cleanup() {
+            document.removeEventListener('mousemove', mouseMoveListener);
+            document.getElementById(BROWSER_LIBRARY_ID).remove();
+            clearInterval(intervalTimer);
         }
 
-        document.addEventListener('keydown', keydownListener);
         document.addEventListener('mousemove', mouseMoveListener);
-        addElement();
+        addElement(label);
         const intervalTimer = setInterval(updateTexts, 150);
     });
 }

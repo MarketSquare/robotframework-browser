@@ -37,7 +37,7 @@ def is_same_keyword(first: str, second: str) -> bool:
 
 
 def get_normalized_keyword(keyword: str) -> str:
-    return keyword.lower().replace(" ", "").replace("_", "")
+    return keyword.lower().replace(" ", "_")
 
 
 def keyword(name: Any = None, tags: Tuple = (), types: Tuple = ()):

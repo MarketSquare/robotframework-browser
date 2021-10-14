@@ -31,7 +31,9 @@ source .venv/bin/activate  # On linux and OSX
 
 [Invoke](http://www.pyinvoke.org/index.html) is used as a task runner / build tool.
 
-Other dependencies can be installed/updated with `inv deps`. This command installs and updated both Python and nodejs dependencies.
+Other dependencies can be installed/updated with `inv deps`. This command installs and updates both Python and nodejs dependencies.
+After dependencies are installed, run `inv build` to compile node code and gRPC protocol. Also this invoke command will create
+Python stub file.
 
 Run `inv -l` to get list of current build commands.
 
@@ -41,6 +43,8 @@ There are both unit tests written with pytest and acceptance tests written with
 Robot Framework. These can be run manually with `inv utest` and `inv atest`.
 To run continuously pytests in a watch mode `inv utest-watch`.
 To rerun failed tests you can use `inv atest-failed` The tests are also executed in a pre-push hook.
+
+If there changes inv TypeScript side, remember to run `inv build` before executing unit or acceptance tests.
 
 ## Running tests in docker container
 
@@ -68,7 +72,7 @@ milestone to the [issue tracker](https://github.com/MarketSquare/robotframework-
 git add Browser/version.py
 git add package.json
 git add setup.py
-git commit -m "Updateverstion to: $VERSION"
+git commit -m "Updateversion to: $VERSION"
 ```
 
 Invoke command also creates old docs add the doc to the repo:

@@ -39,6 +39,18 @@ Drag and Drop
     Should Be True    ${obj_center}[x] - ${dest_center}[x] < 1 or ${obj_center}[x] - ${dest_center}[x] > -1
     Should Be True    ${obj_center}[y] - ${dest_center}[y] < 1 or ${obj_center}[y] - ${dest_center}[y] > -1
 
+Drag And Drop With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Drag And Drop    //input    id=clickWithOptions
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Drag And Drop    id=draggable    //input
+    Set Strict Mode    False
+    Drag And Drop    id=draggable    //input
+    Drag And Drop    //input    id=clickWithOptions
+    [Teardown]    Set Strict Mode    True
+
 Drag and Drop with coordinates
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
     ${dest_center} =    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
@@ -59,6 +71,15 @@ Hover and Drop to Hover
     Mouse Button    up
     Get Text    \#dragX    ==    20
     Get Text    \#dragY    ==    30
+
+Hover With Strict
+    Set Strict Mode    True
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Hover    //input
+    Set Strict Mode    False
+    Hover    //input
+    [Teardown]    Set Strict Mode    True
 
 Drag and Drop with Move Relative
     Relative DnD    32    64    32    64
@@ -87,6 +108,23 @@ Left Right and Middle Click
     Get Text    \#mouse_button    ==    middle
     Mouse Button    click    ${x}    ${y}    button=left
     Get Text    \#mouse_button    ==    left
+
+Get Boundingbox With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Boundingbox    //input
+    Set Strict Mode    False
+    ${x} =    Get Boundingbox    //input    x
+    Should Be True    ${x}
+    [Teardown]    Set Strict Mode    True
+
+Mouse Move Relative To With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Mouse Move Relative To    //input    4    2
+    Set Strict Mode    False
+    Mouse Move Relative To    //input    4    2
+    [Teardown]    Set Strict Mode    True
 
 *** Keywords ***
 Relative DnD

@@ -201,7 +201,8 @@
       "avatar_url": "https://avatars1.githubusercontent.com/u/993527?v=4",
       "profile": "https://github.com/emanlove",
       "contributions": [
-        "doc"
+        "doc",
+        "bug"
       ]
     },
     {
@@ -422,6 +423,44 @@
       "name": "AllanMedeiros",
       "avatar_url": "https://avatars.githubusercontent.com/u/34678196?v=4",
       "profile": "https://github.com/AllanMedeiros",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "ealap",
+      "name": "Emmanuel Alap",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15620712?v=4",
+      "profile": "https://github.com/ealap",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "ankurbhalla-gmail",
+      "name": "ankurbhalla-gmail",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90744440?v=4",
+      "profile": "https://github.com/ankurbhalla-gmail",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "UliSei",
+      "name": "UliSei",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89480399?v=4",
+      "profile": "https://github.com/UliSei",
+      "contributions": [
+        "ideas",
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "tomekTieto",
+      "name": "Tomasz Pawlak",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39945193?v=4",
+      "profile": "https://github.com/tomekTieto",
       "contributions": [
         "bug"
       ]

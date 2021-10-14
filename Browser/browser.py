@@ -27,6 +27,7 @@ from assertionengine import AssertionOperator
 from overrides import overrides
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.result.model import TestCase as TestCaseResult  # type: ignore
+from robot.running.arguments import PythonArgumentParser  # type: ignore
 from robot.running.model import TestCase as TestCaseRunning  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
@@ -44,12 +45,13 @@ from .keywords import (
     PlaywrightState,
     Promises,
     RunOnFailureKeywords,
+    StrictMode,
     Waiter,
     WebAppState,
 )
 from .keywords.crawling import Crawling
 from .playwright import Playwright
-from .utils import AutoClosingLevel, is_falsy, is_same_keyword, keyword, logger
+from .utils import AutoClosingLevel, get_normalized_keyword, is_falsy, keyword, logger
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import DelayedKeyword, SupportedBrowsers
@@ -149,11 +151,23 @@ class Browser(DynamicCore):
     Each Browser, Context and Page has a unique ID with which they can be addressed.
     A full catalog of what is open can be received by `Get Browser Catalog` as dictionary.
 
+    = Automatic page and context closing =
+
+    %AUTO_CLOSING_LEVEL%
+
     = Finding elements =
 
     All keywords in the library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
-    how to find the element.
+    how to find the element. Keywords can find elements with strict mode. If
+    strict mode is true and locator finds multiple elements from the page, keyword
+    will fail. If keyword finds one element, keyword does not fail because of
+    strict mode. If strict mode is false, keyword does not fail if selector points
+    many elements. Strict mode is enabled by default, but can be changed in library
+    `importing` or `Set Strict Mode` keyword. Keyword documentation states if keyword
+    uses strict mode. If keyword does not state that is used strict mode, then strict
+    mode is not applied for the keyword. For more details, see Playwright
+    [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
 
     Selector strategies that are supported by default are listed in the table
     below.
@@ -443,7 +457,7 @@ class Browser(DynamicCore):
     syntax `element=` like this:
 
     | ${ref}=    Get Element    .some_class
-    |            Click          element=${ref} >> .some_child
+    |            Click          ${ref} >> .some_child
 
     The `.some_child` selector in the example is relative to the element referenced by ${ref}.
 
@@ -526,9 +540,6 @@ class Browser(DynamicCore):
     | Get Title                                           validate              value == "Login Page"
     | Get Title                                           evaluate              value if value == "some value" else "something else"
 
-    = Automatic page and context closing =
-
-    %AUTO_CLOSING_LEVEL%
 
     = Implicit waiting =
 
@@ -624,7 +635,6 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     _context_cache = ContextCache()
     _suite_cleanup_done = False
-    run_on_failure_keyword: Optional[DelayedKeyword] = None
 
     def __init__(
         self,
@@ -637,6 +647,7 @@ class Browser(DynamicCore):
         jsextension: Optional[str] = None,
         enable_presenter_mode: bool = False,
         playwright_process_port: Optional[int] = None,
+        strict: bool = True,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -668,6 +679,10 @@ class Browser(DynamicCore):
           Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
         - ``enable_presenter_mode`` <bool>
           Automatic highlights to interacted components, slowMo and a small pause at the end.
+        - ``strict`` <bool>
+          If keyword selector points multiple elements and keywords should interact with one element,
+          keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords
+          or by ```et Strict Mode`` keyword.
         """
         self.timeout = self.convert_timeout(timeout)
         self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
@@ -675,7 +690,6 @@ class Browser(DynamicCore):
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self._pause_on_failure: Set["Browser"] = set()
-        self.run_on_failure_keyword = self._parse_run_on_failure_keyword(run_on_failure)
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             external_browser_executable or {}
         )
@@ -692,6 +706,7 @@ class Browser(DynamicCore):
             Getters(self),
             Network(self),
             RunOnFailureKeywords(self),
+            StrictMode(self),
             Promises(self),
             Waiter(self),
             WebAppState(self),
@@ -704,18 +719,30 @@ class Browser(DynamicCore):
         if jsextension is not None:
             libraries.append(self._initialize_jsextension(jsextension))
         self.presenter_mode = enable_presenter_mode
+        self.strict_mode = strict
         DynamicCore.__init__(self, libraries)
+        # Parsing needs keywords to be discovered.
+        self.run_on_failure_keyword = self._parse_run_on_failure_keyword(run_on_failure)
 
-    @staticmethod
     def _parse_run_on_failure_keyword(
-        keyword_with_args: str,
-    ) -> Optional[DelayedKeyword]:
-        if is_falsy(keyword_with_args):
-            return None
-        parts = keyword_with_args.split("  ")
-        if len(parts) < 1:
-            return None
-        return {"name": parts[0], "args": tuple(parts[1:])}
+        self, keyword_name: Union[str, None]
+    ) -> DelayedKeyword:
+        if keyword_name is None or is_falsy(keyword_name):
+            return DelayedKeyword(None, None, tuple())
+        parts = keyword_name.split("  ")
+        keyword_name = parts[0]
+        normalized_keyword_name = get_normalized_keyword(keyword_name)
+        args = parts[1:]
+        if normalized_keyword_name not in self.keywords:
+            return DelayedKeyword(keyword_name, keyword_name, tuple(args))
+        spec = PythonArgumentParser().parse(self.keywords[normalized_keyword_name])
+        converted_args = []
+        for arg in spec.resolve(args):
+            for item in arg:
+                converted_args.append(item)
+        return DelayedKeyword(
+            normalized_keyword_name, keyword_name, tuple(converted_args)
+        )
 
     def _initialize_jsextension(self, jsextension: str) -> LibraryComponent:
         component = LibraryComponent(self)
@@ -869,26 +896,24 @@ class Browser(DynamicCore):
                 self.screenshot_on_failure(test.name)
 
     def keyword_error(self):
-        """Runs keyword on failure.
-
-        Only works during testing since this uses robot's outputdir for output.
-        """
-        if self._running_on_failure_keyword or not self.run_on_failure_keyword:
+        """Runs keyword on failure."""
+        if self._running_on_failure_keyword or not self.run_on_failure_keyword.name:
             return
+        self._running_on_failure_keyword = True
+        args = self.run_on_failure_keyword.args
         try:
-            self._running_on_failure_keyword = True
-            if is_same_keyword(self.run_on_failure_keyword["name"], "Take Screenshot"):
-                args = self.run_on_failure_keyword["args"]
-                path = args[0] if args else self._failure_screenshot_path()
-                self.take_screenshot(path)
+            if self.run_on_failure_keyword.name in self.keywords:
+                if self.run_on_failure_keyword.name == "take_screenshot" and not args:
+                    args = [self._failure_screenshot_path()]
+                self.keywords[self.run_on_failure_keyword.name](*args)
             else:
                 BuiltIn().run_keyword(
-                    self.run_on_failure_keyword["name"],
-                    *self.run_on_failure_keyword["args"],
+                    self.run_on_failure_keyword.name,
+                    *args,
                 )
         except Exception as err:
             logger.warn(
-                f"Keyword '{self.run_on_failure_keyword['name']}' could not be run on failure:\n{err}"
+                f"Keyword '{self.run_on_failure_keyword}' could not be run on failure:\n{err}"
             )
         finally:
             self._running_on_failure_keyword = False

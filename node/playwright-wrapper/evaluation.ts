@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { ElementHandle, Page } from 'playwright';
+import { ElementHandle, Frame, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -36,8 +36,9 @@ declare global {
  * RF keywords.
  */
 export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
-    await waitUntilElementExists(state, request.getSelector());
-    const handle = await invokePlaywrightMethod(state, '$', request.getSelector());
+    const strictMode = request.getStrict();
+    await waitUntilElementExists(state, request.getSelector(), strictMode);
+    const handle = await invokePlaywrightMethod(state, '$', request.getSelector(), strictMode);
     const id = uuidv4();
     state.addElement(id, handle);
     return stringResponse(`element=${id}`, 'Element found successfully.');
@@ -48,8 +49,9 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
  * in RF keywords.
  */
 export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
-    await waitUntilElementExists(state, request.getSelector());
-    const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', request.getSelector());
+    const strictMode = request.getStrict();
+    await waitUntilElementExists(state, request.getSelector(), strictMode);
+    const handles: ElementHandle[] = await invokePlaywrightMethod(state, '$$', request.getSelector(), strictMode);
 
     const response: string[] = handles.map((handle) => {
         const id = uuidv4();
@@ -65,6 +67,7 @@ export async function executeJavascript(
     page: Page,
 ): Promise<Response.JavascriptExecutionResult> {
     const selector = request.getSelector();
+    const strictMode = request.getStrict();
     let script = request.getScript();
     let elem;
     try {
@@ -73,7 +76,7 @@ export async function executeJavascript(
         logger.info(`On executeJavascript, supress ${error} for eval.`);
     }
     if (selector) {
-        elem = await determineElement(state, selector);
+        elem = await determineElement(state, selector, strictMode);
     }
     const result = await page.evaluate(script, elem);
     return jsResponse(result as string, 'JavaScript executed successfully.');
@@ -90,7 +93,8 @@ export async function waitForElementState(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
-    await invokePlaywrightMethod(state, 'waitForSelector', selector, options);
+    const strictMode = request.getStrict();
+    await invokePlaywrightMethod(state, 'waitForSelector', selector, strictMode, options);
     return emptyWithLog('Wait for Element with selector: ' + selector);
 }
 
@@ -102,6 +106,7 @@ export async function waitForFunction(
     let script = request.getScript();
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
+    const strictMode = request.getStrict();
     logger.info(`unparsed args: ${script}, ${request.getSelector()}, ${request.getOptions()}`);
 
     let elem;
@@ -111,7 +116,7 @@ export async function waitForFunction(
         logger.info(`On waitForFunction, supress ${error} for eval.`);
     }
     if (selector) {
-        elem = await determineElement(state, selector);
+        elem = await determineElement(state, selector, strictMode);
         script = eval(script);
     }
 
@@ -126,13 +131,81 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
     return emptyWithLog('added Style: ' + content);
 }
 
-export async function recordSelector(request: Request.Empty, page: Page): Promise<Response.JavascriptExecutionResult> {
-    await page.addScriptTag({
-        type: 'module',
-        path: path.join(__dirname, '/static/selector-finder.js'),
-    });
+export async function recordSelector(
+    request: Request.Label,
+    state: PlaywrightState,
+): Promise<Response.JavascriptExecutionResult> {
+    if (state.getActiveBrowser().headless) {
+        throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
+    }
+    const page = state.getActivePage() as Page;
     await page.bringToFront();
-    const result = await page.evaluate(() => {
+    const myselectors: unknown[] = [];
+    page.exposeFunction('setRecordedSelector', (index: number, item: unknown) => {
+        while (myselectors.length > index) {
+            myselectors.pop();
+        }
+        myselectors.push(item);
+    });
+    page.exposeFunction('getRecordedSelectors', () => {
+        return myselectors;
+    });
+    const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
+    return jsResponse(result, 'Selector recorded.');
+}
+
+async function attachSelectorFinderScript(frame: Frame): Promise<void> {
+    try {
+        await frame.addScriptTag({
+            type: 'module',
+            path: path.join(__dirname, '/static/selector-finder.js'),
+        });
+    } catch (e) {
+        throw Error(
+            `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.\nOriginal error:${e}`,
+        );
+    }
+    await Promise.all(frame.childFrames().map((child) => attachSelectorFinderScript(child)));
+}
+
+async function attachSubframeListeners(subframe: Frame, index: number): Promise<void> {
+    await subframe.evaluate((index) => {
+        function rafAsync() {
+            return new Promise((resolve) => {
+                requestAnimationFrame(resolve); //faster than set time out
+            });
+        }
+
+        // @ts-ignore
+        function waitUntilRecorderAvailable() {
+            // @ts-ignore
+            if (!window.subframeSelectorRecorderFindSelector) {
+                return rafAsync().then(() => waitUntilRecorderAvailable());
+            } else {
+                // @ts-ignore
+                return Promise.resolve(window.subframeSelectorRecorderFindSelector(index));
+            }
+        }
+
+        return waitUntilRecorderAvailable();
+    }, index);
+    await Promise.all(
+        subframe
+            .childFrames()
+            .filter((f) => f.parentFrame() === subframe)
+            .map((child) => attachSubframeListeners(child, index + 1)),
+    );
+}
+
+async function recordSelectorIterator(label: string, frame: Frame): Promise<string> {
+    await attachSelectorFinderScript(frame);
+    await Promise.all(
+        frame
+            .childFrames()
+            .filter((f) => f.parentFrame() === frame)
+            .map((child) => attachSubframeListeners(child, 1)),
+    );
+    return await frame.evaluate((label) => {
         function rafAsync() {
             return new Promise((resolve) => {
                 requestAnimationFrame(resolve); //faster than set time out
@@ -146,13 +219,12 @@ export async function recordSelector(request: Request.Empty, page: Page): Promis
                 return rafAsync().then(() => waitUntilRecorderAvailable());
             } else {
                 // @ts-ignore
-                return Promise.resolve(window.selectorRecorderFindSelector());
+                return Promise.resolve(window.selectorRecorderFindSelector(label));
             }
         }
 
         return waitUntilRecorderAvailable();
-    });
-    return jsResponse(result as string, 'Selector recorded.');
+    }, label);
 }
 
 export async function highlightElements(
@@ -164,6 +236,7 @@ export async function highlightElements(
     const width = request.getWidth();
     const style = request.getStyle();
     const color = request.getColor();
+    const strictMode = request.getStrict();
     const highlighter = (elements: Array<Element>, options: any) => {
         elements.forEach((e: Element) => {
             const d = document.createElement('div');
@@ -171,6 +244,7 @@ export async function highlightElements(
             d.appendChild(document.createTextNode(''));
             d.style.position = 'fixed';
             const rect = e.getBoundingClientRect();
+            d.style.zIndex = '2147483647';
             d.style.top = `${rect.top}px`;
             d.style.left = `${rect.left}px`;
             d.style.width = `${rect.width}px`;
@@ -182,7 +256,7 @@ export async function highlightElements(
             }, options?.dur ?? 5000);
         });
     };
-    await invokePlaywrightMethod(state, '$$eval', selector, highlighter, {
+    await invokePlaywrightMethod(state, '$$eval', selector, strictMode, highlighter, {
         dur: duration,
         wdt: width,
         stl: style,

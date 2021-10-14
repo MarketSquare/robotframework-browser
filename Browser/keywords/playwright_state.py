@@ -67,6 +67,7 @@ class PlaywrightState(LibraryComponent):
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = False,
         pause_on_failure: bool = True,
+        bypassCSP=True,
     ):
         """Opens a new browser instance. Use this keyword for quick experiments or debugging sessions.
         Use `New Page` directly instead of `Open Browser` for production and automated execution.
@@ -88,12 +89,14 @@ class PlaywrightState(LibraryComponent):
         ``headless`` If set to False, a GUI is provided otherwise it is hidden. Defaults to False.
 
         ``pause_on_failure`` Stop execution when failure detected and leave browser open. Defaults to True.
+
+        ``bypassCSP`` Defaults to bypassing CSP and enabling custom script attach to the page.
         """
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
         )
         browser_id = self.new_browser(browser, headless=headless)
-        self.new_context()
+        self.new_context(bypassCSP=bypassCSP)
         self.new_page(url)
         if pause_on_failure:
             self.library._pause_on_failure.add(browser_id)
@@ -1071,7 +1074,12 @@ class PlaywrightState(LibraryComponent):
         return response.log
 
     def set_peer_id(self, new_id) -> str:
-        """Sets the peer_id for the current GRPC connection to browser's backend. Useful for sharing the same browsers or even pages among multiple separate python processes. Meaningful usage requires the port of both Browser library instances to be configured the same."""
+        """Sets the peer_id for the current GRPC connection to browser's backend.
+
+        Useful for sharing the same browsers or even pages among multiple separate
+        python processes. Meaningful usage requires the port of both Browser library
+        instances to be configured the same.
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetPeerId(Request().Index(index=new_id))
             return response.body
