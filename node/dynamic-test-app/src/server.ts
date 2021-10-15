@@ -1,10 +1,9 @@
-import * as bodyParser from 'body-parser';
 import * as express from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const app = express.default();
-app.use(bodyParser.json());
+app.use(express.json());
 const port = parseInt(process.argv[2]) || 7272;
 
 app.set('etag', false);
