@@ -56,6 +56,8 @@ class RunOnFailureKeywords(LibraryComponent):
         | `Register Keyword To Run On Failure`    Take Screenshot
         | ${previous kw}=    `Register Keyword To Run On Failure`    NONE
         | `Register Keyword To Run On Failure`    ${previous kw}
+        | `Register Keyword To Run On Failure`    Take Screenshot    fullPage=True
+        | `Register Keyword To Run On Failure`    Take Screenshot    failure-{index}    fullPage=True
 
         """
         old_keyword = self.library.run_on_failure_keyword

@@ -728,20 +728,24 @@ class Browser(DynamicCore):
         self, keyword_name: Union[str, None]
     ) -> DelayedKeyword:
         if keyword_name is None or is_falsy(keyword_name):
-            return DelayedKeyword(None, None, tuple())
+            return DelayedKeyword(None, None, tuple(), {})
         parts = keyword_name.split("  ")
         keyword_name = parts[0]
         normalized_keyword_name = get_normalized_keyword(keyword_name)
         args = parts[1:]
         if normalized_keyword_name not in self.keywords:
-            return DelayedKeyword(keyword_name, keyword_name, tuple(args))
+            return DelayedKeyword(keyword_name, keyword_name, tuple(args), {})
         spec = PythonArgumentParser().parse(self.keywords[normalized_keyword_name])
-        converted_args = []
+        varargs = []
+        kwargs = {}
         for arg in spec.resolve(args):
             for item in arg:
-                converted_args.append(item)
+                if isinstance(item, tuple):
+                    kwargs[item[0]] = item[1]
+                else:
+                    varargs.append(item)
         return DelayedKeyword(
-            normalized_keyword_name, keyword_name, tuple(converted_args)
+            normalized_keyword_name, keyword_name, tuple(varargs), kwargs
         )
 
     def _initialize_jsextension(self, jsextension: str) -> LibraryComponent:
@@ -900,16 +904,19 @@ class Browser(DynamicCore):
         if self._running_on_failure_keyword or not self.run_on_failure_keyword.name:
             return
         self._running_on_failure_keyword = True
-        args = self.run_on_failure_keyword.args
+        varargs = self.run_on_failure_keyword.args
+        kwargs = self.run_on_failure_keyword.kwargs
         try:
             if self.run_on_failure_keyword.name in self.keywords:
-                if self.run_on_failure_keyword.name == "take_screenshot" and not args:
-                    args = [self._failure_screenshot_path()]
-                self.keywords[self.run_on_failure_keyword.name](*args)
+                if (
+                    self.run_on_failure_keyword.name == "take_screenshot"
+                    and not varargs
+                ):
+                    varargs = [self._failure_screenshot_path()]
+                self.keywords[self.run_on_failure_keyword.name](*varargs, **kwargs)
             else:
                 BuiltIn().run_keyword(
-                    self.run_on_failure_keyword.name,
-                    *args,
+                    self.run_on_failure_keyword.name, *varargs, **kwargs
                 )
         except Exception as err:
             logger.warn(
