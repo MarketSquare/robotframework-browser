@@ -60,15 +60,21 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
 
 class DelayedKeyword:
     def __init__(
-        self, name: Union[str, None], original_name: Union[str, None], args: tuple
+        self,
+        name: Union[str, None],
+        original_name: Union[str, None],
+        args: tuple,
+        kwargs: dict,
     ):
         self.name = name
         self.original_name = original_name
         self.args = args
+        self.kwargs = kwargs
 
     def __str__(self):
         args = [str(arg) for arg in self.args]
-        return f"{self.original_name}  {'  '.join(args)}".strip()
+        kwargs = [f"{key}={value}" for key, value in self.kwargs.items()]
+        return f"{self.original_name}  {'  '.join(args)}  {'  '.join(kwargs)}".strip()
 
 
 class BoundingBox(TypedDict, total=False):
