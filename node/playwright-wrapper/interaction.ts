@@ -62,11 +62,12 @@ export async function typeText(request: Request.TypeText, state: PlaywrightState
     const delay = request.getDelay();
     const clear = request.getClear();
     const strictMode = request.getStrict();
+    let locator = findLocator(state, selector, strictMode, undefined, true);
     if (clear) {
-        await invokePlaywrightMethod(state, 'fill', selector, strictMode, '');
+        (await locator).fill('');
     }
-    await invokePlaywrightMethod(state, 'type', selector, strictMode, text, { delay: delay });
-    return emptyWithLog('Typed text: ' + text);
+    await (await locator).type(text, { delay: delay });
+    return emptyWithLog(`Typed text "${text}" on ${selector}`);
 }
 
 export async function fillText(request: Request.FillText, state: PlaywrightState): Promise<Response.Empty> {
