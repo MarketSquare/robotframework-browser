@@ -17,14 +17,7 @@ import { ElementHandle, Locator, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import {
-    determineElement,
-    exists,
-    findLocator,
-    findLocatorCount,
-    invokePlaywrightMethod,
-    waitUntilElementExists,
-} from './playwirght-invoke';
+import { exists, findLocator, findLocatorCount } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -161,7 +154,6 @@ export async function getStyle(request: Request.ElementSelector, state: Playwrig
 
     logger.info('Getting css of element on page');
     const element = await findLocator(state, selector, strictMode, undefined, false);
-    logger.info(`HERE:::${strictMode}`);
     await element.elementHandle();
     const result = await element.evaluate(function (element: Element) {
         const rawStyle = window.getComputedStyle(element);
