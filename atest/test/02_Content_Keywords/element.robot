@@ -5,13 +5,13 @@ Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Normal Selector
-    Tidii    css=input#login_button
+    Click    css=input#login_button
     Get Text    text=Login failed. Invalid user name and/or password.
 
 Normal With Strict Mode
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: "//button" resolved to 11 elements:*
-    ...    Tidii    //button
+    ...    Click    //button
     Set Strict Mode    False
     Click    //button
     [Teardown]    Set Strict Mode    True
@@ -49,7 +49,7 @@ Get Element And Get Elements
     END
 
 Click With Element ID
-    ${element} =    Tidii Get Element    //tbody/tr[2]
+    ${element} =    Get Element    //tbody/tr[2]
     Run Keyword And Expect Error
     ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
     ...    Click    ${element} >> css=input#login_button

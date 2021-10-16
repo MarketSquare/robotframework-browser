@@ -13,18 +13,11 @@
 // limitations under the License.
 
 import { Dialog, Page } from 'playwright';
-import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
-import {
-    findLocator,
-    findLocatorCount,
-    invokeOnKeyboard,
-    invokeOnMouse,
-    invokePlaywrightMethod,
-} from './playwirght-invoke';
+import { emptyWithLog, stringResponse } from './response-util';
+import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
