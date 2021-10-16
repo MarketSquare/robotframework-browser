@@ -62,7 +62,7 @@ export async function typeText(request: Request.TypeText, state: PlaywrightState
     const delay = request.getDelay();
     const clear = request.getClear();
     const strictMode = request.getStrict();
-    let locator = findLocator(state, selector, strictMode, undefined, true);
+    const locator = findLocator(state, selector, strictMode, undefined, true);
     if (clear) {
         (await locator).fill('');
     }
