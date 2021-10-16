@@ -62,11 +62,11 @@ export async function typeText(request: Request.TypeText, state: PlaywrightState
     const delay = request.getDelay();
     const clear = request.getClear();
     const strictMode = request.getStrict();
-    const locator = findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
     if (clear) {
-        (await locator).fill('');
+        await locator.fill('');
     }
-    await (await locator).type(text, { delay: delay });
+    await locator.type(text, { delay: delay });
     return emptyWithLog(`Typed text "${text}" on ${selector}`);
 }
 
@@ -74,16 +74,17 @@ export async function fillText(request: Request.FillText, state: PlaywrightState
     const selector = request.getSelector();
     const text = request.getText();
     const strictMode = request.getStrict();
-    const locator = findLocator(state, selector, strictMode, undefined, true);
-    await (await locator).fill(text);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.fill(text);
     return emptyWithLog(`Fill text ${text} on ${selector}`);
 }
 
 export async function clearText(request: Request.ClearText, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    await invokePlaywrightMethod(state, 'fill', selector, strictMode, '');
-    return emptyWithLog('Text field cleared.');
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.fill('');
+    return emptyWithLog(`Text ${selector} field cleared.`);
 }
 
 export async function press(request: Request.PressKeys, state: PlaywrightState): Promise<Response.Empty> {
