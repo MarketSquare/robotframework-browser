@@ -91,10 +91,11 @@ export async function press(request: Request.PressKeys, state: PlaywrightState):
     const selector = request.getSelector();
     const keyList = request.getKeyList();
     const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
     for (const i of keyList) {
-        await invokePlaywrightMethod(state, 'press', selector, strictMode, i);
+        await locator.press(i);
     }
-    return emptyWithLog('Pressed keys: ' + keyList);
+    return emptyWithLog(`Pressed keys: "${keyList}" on ${selector} `);
 }
 
 export async function click(
@@ -104,7 +105,8 @@ export async function click(
     const selector = request.getSelector();
     const options = request.getOptions();
     const strictMode = request.getStrict();
-    await invokePlaywrightMethod(state, 'click', selector, strictMode, JSON.parse(options));
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.click(JSON.parse(options));
     return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
 }
 
