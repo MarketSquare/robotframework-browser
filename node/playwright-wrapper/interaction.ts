@@ -133,8 +133,9 @@ export async function focus(request: Request.ElementSelector, state: PlaywrightS
 export async function checkCheckbox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    await invokePlaywrightMethod(state, 'check', selector, strictMode);
-    return emptyWithLog('Checked checkbox: ' + selector);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.check();
+    return emptyWithLog(`Checked checkbox: ${selector}`);
 }
 
 export async function uncheckCheckbox(
@@ -143,8 +144,9 @@ export async function uncheckCheckbox(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    await invokePlaywrightMethod(state, 'uncheck', selector, strictMode);
-    return emptyWithLog('Unchecked checkbox: ' + selector);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.uncheck();
+    return emptyWithLog(`Unchecked checkbox: ${selector}`);
 }
 
 export async function uploadFile(request: Request.FilePath, page: Page): Promise<Response.Empty> {
