@@ -192,7 +192,6 @@ async function _newPage(context: BrowserContext): Promise<IndexedPage> {
 export class PlaywrightState {
     constructor() {
         this.browserStack = [];
-        this.elementHandles = new Map();
         this.locatorHandles = new Map();
     }
     extension: unknown;
@@ -200,7 +199,6 @@ export class PlaywrightState {
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
-    elementHandles: Map<string, ElementHandle>;
     locatorHandles: Map<string, LocatorCount>;
     public getActiveBrowser = (): BrowserState => {
         const currentBrowser = this.activeBrowser;
@@ -300,10 +298,6 @@ export class PlaywrightState {
         return this.activeBrowser?.page?.p;
     };
 
-    public addElement(id: string, handle: ElementHandle): void {
-        this.elementHandles.set(id, handle);
-    }
-
     public addLocator(id: string, pwLocator: Locator, nth: number): void {
         this.locatorHandles.set(id, { locator: pwLocator, nth: nth });
     }
@@ -314,14 +308,6 @@ export class PlaywrightState {
             return locator;
         }
         throw new Error(`No locator handle found with "${id}"`);
-    }
-
-    public getElement(id: string): ElementHandle {
-        const elem = this.elementHandles.get(id);
-        if (elem) {
-            return elem;
-        }
-        throw new Error(`No element handle found with id \`${id}\`.`);
     }
 }
 
