@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Dialog, Locator, Page, selectors } from 'playwright';
+import { Dialog, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -36,8 +36,8 @@ export async function selectOption(
     const selector = request.getSelector();
     const matcher = JSON.parse(request.getMatcherjson());
     const strictMode = request.getStrict();
-    const result = await invokePlaywrightMethod(state, 'selectOption', selector, strictMode, matcher);
-
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const result = await locator.selectOption(matcher);
     if (result.length == 0) {
         logger.info("Couldn't select any options");
         throw new Error(`No options matched ${matcher}`);
@@ -51,7 +51,8 @@ export async function deSelectOption(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    await invokePlaywrightMethod(state, 'selectOption', selector, strictMode, []);
+    const locator = findLocator(state, selector, strictMode, undefined, true);
+    await (await locator).selectOption([]);
     return emptyWithLog(`Deselected options in element ${selector}`);
 }
 

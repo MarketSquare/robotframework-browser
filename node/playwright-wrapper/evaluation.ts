@@ -13,13 +13,13 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { ElementHandle, Frame, Locator, Page } from 'playwright';
+import { Frame, Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, exists, findLocator, findLocatorCount, invokePlaywrightMethod } from './playwirght-invoke';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
+import { exists, findLocator, findLocatorCount } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -96,7 +96,7 @@ export async function waitForElementState(
     const selector = request.getSelector();
     const { state, timeout } = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
-    const locator = await findLocator(pwState, selector, strictMode, undefined, false);
+    const locator = await findLocator(pwState, selector, strictMode, undefined, true);
     const element = await locator.elementHandle();
     exists(element, `Could not find element with ${selector}`);
     await element.waitForElementState(state, timeout);
@@ -121,7 +121,7 @@ export async function waitForFunction(
         logger.info(`On waitForFunction, supress ${error} for eval.`);
     }
     if (selector) {
-        const locator = await findLocator(state, selector, strictMode, undefined, false);
+        const locator = await findLocator(state, selector, strictMode, undefined, true);
         elem = await locator.elementHandle();
         script = eval(script);
     }
