@@ -15,9 +15,7 @@
 import json
 from datetime import timedelta
 from time import sleep
-from typing import Any, Dict, List, Optional
-
-import grpc  # type: ignore
+from typing import Any, Dict, Optional
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -341,73 +339,6 @@ class Interaction(LibraryComponent):
                 )
             )
             logger.debug(response.log)
-
-    @keyword
-    def tidii(
-        self,
-        selector: str,
-        button: MouseButton = MouseButton.left,
-        clickCount: int = 1,
-        delay: Optional[timedelta] = None,
-        position_x: Optional[float] = None,
-        position_y: Optional[float] = None,
-        force: bool = False,
-        noWaitAfter: bool = False,
-        *modifiers: KeyboardModifier,
-    ):
-        """Doc here"""
-        options = {
-            "button": button.name,
-            "clickCount": clickCount,
-            "force": force,
-            "noWaitAfter": noWaitAfter,
-        }
-        if delay:
-            options["delay"] = self.get_timeout(delay)
-        # Without the != None 0 being falsy causes issues
-        if position_x is not None and position_y is not None:
-            positions: Dict[str, object] = {"x": position_x, "y": position_y}
-            options["position"] = positions
-        if modifiers:
-            options["modifiers"] = [m.name for m in modifiers]
-        options_json = json.dumps(options)
-        logger.debug(f"Click options are: {options_json}")
-        with self.playwright.grpc_channel() as stub:
-            response = stub.Tidii(
-                Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json, strict=self.strict_mode
-                )
-            )
-        logger.debug(response.log)
-
-    @keyword
-    def tidii_get_element(self, selector: str) -> str:
-        """Doc here"""
-        with self.playwright.grpc_channel() as stub:
-            response = stub.TidiiGetElement(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
-            )
-        logger.info(response.log)
-        return response.body
-
-    @keyword
-    def tidii_get_elements(self, selector: str) -> List[str]:
-        """Doc here"""
-        try:
-            with self.playwright.grpc_channel(original_error=True) as stub:
-                response = stub.TidiiGetElements(
-                    Request().ElementSelector(selector=selector, strict=False)
-                )
-                logger.info(response.log)
-                return json.loads(response.json)
-        except grpc.RpcError as error:
-            logger.info(error)
-            if (
-                error.code() == grpc.StatusCode.DEADLINE_EXCEEDED
-                and error.details().startswith("TimeoutError: page.waitForSelector:")
-            ):
-                return []
-            raise error
 
     @keyword(tags=("PageContent",))
     def record_selector(

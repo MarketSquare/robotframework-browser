@@ -413,9 +413,4 @@ service  Playwright {
   rpc CallExtensionKeyword(Request.KeywordCall) returns (stream Response.Json);
 
   rpc SetPeerId(Request.Index) returns (Response.String);
-
-  /* Remove this */
-  rpc Tidii(Request.ElementSelectorWithOptions) returns (Response.Empty);
-  rpc TidiiGetElement(Request.ElementSelector) returns (Response.String);
-  rpc TidiiGetElements(Request.ElementSelector) returns (Response.Json);
 }
