@@ -41,7 +41,7 @@ export async function findLocator(
     if (isFramePiercingSelector(selector)) {
         return await findInFrames(activePage, selector, strictMode, nthLocator);
     }
-    if (nthLocator) {
+    if (nthLocator !== undefined) {
         return await findNthLocator(activePage, selector, nthLocator, locator);
     } else if (strictMode) {
         if (locator?.locator) {

@@ -39,6 +39,7 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
     const strictMode = request.getStrict();
     const selector = request.getSelector();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
     const id = uuidv4();
     state.addLocator(id, locator, 0);
     return stringResponse(`element=${id}`, 'Locator found successfully.');
