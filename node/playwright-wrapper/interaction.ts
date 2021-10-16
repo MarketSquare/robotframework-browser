@@ -74,8 +74,9 @@ export async function fillText(request: Request.FillText, state: PlaywrightState
     const selector = request.getSelector();
     const text = request.getText();
     const strictMode = request.getStrict();
-    await invokePlaywrightMethod(state, 'fill', selector, strictMode, text);
-    return emptyWithLog('Fill text: ' + text);
+    const locator = findLocator(state, selector, strictMode, undefined, true);
+    await (await locator).fill(text);
+    return emptyWithLog(`Fill text ${text} on ${selector}`);
 }
 
 export async function clearText(request: Request.ClearText, state: PlaywrightState): Promise<Response.Empty> {
