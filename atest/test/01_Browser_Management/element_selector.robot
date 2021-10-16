@@ -24,15 +24,15 @@ Get Element With Strict
 
 Get Element With Nonmatching child selector
     ${ref} =    Get Element    select[name="preferred_channel"]
-    Run Keyword And Expect Error    *Timeout 3000ms exceeded.*waiting for selector ".notamatch"*
+    Run Keyword And Expect Error    *TimeoutError: locator.elementHandle: Timeout 3000ms exceeded.*
     ...    Get Property    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
     Run Keyword And Expect Error
-    ...    Error: No element handle found with id `1234-4321`.
+    ...    Error: No locator handle found with "1234-4321".
     ...    Click    element=1234-4321
     Run Keyword And Expect Error
-    ...    Error: No element handle found with id `1234-4321`.
+    ...    Error: No locator handle found with "1234-4321".
     ...    Click    element=1234-4321 >> .css
 
 Get Element From Frame

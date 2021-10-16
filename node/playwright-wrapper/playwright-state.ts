@@ -307,7 +307,7 @@ export class PlaywrightState {
         if (locator) {
             return locator;
         }
-        throw new Error(`No locator handle found with "${id}"`);
+        throw new Error(`No locator handle found with "${id}".`);
     }
 }
 
