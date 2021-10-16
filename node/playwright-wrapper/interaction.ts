@@ -125,8 +125,9 @@ export async function hover(
 export async function focus(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    await invokePlaywrightMethod(state, 'focus', selector, strictMode);
-    return emptyWithLog('Focused element: ' + selector);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.focus();
+    return emptyWithLog(`Focused element: ${selector}`);
 }
 
 export async function checkCheckbox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
