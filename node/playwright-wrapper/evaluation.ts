@@ -97,9 +97,9 @@ export async function waitForElementState(
     const { state, timeout } = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
     const locator = await findLocator(pwState, selector, strictMode, undefined, true);
-    const element = await locator.elementHandle();
-    exists(element, `Could not find element with ${selector}`);
-    await element.waitForElementState(state, timeout);
+    const element = await locator.elementHandle({ timeout: timeout });
+    exists(element, `Could not find element with ${selector} within ${timeout}.`);
+    await element.waitForElementState(state, { timeout: timeout });
     return emptyWithLog(`Wait for Element with selector: ${selector}`);
 }
 
