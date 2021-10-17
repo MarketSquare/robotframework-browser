@@ -12,12 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ElementHandle, Frame, Locator, Page, selectors } from 'playwright';
+import { Frame, Locator, Page } from 'playwright';
 
 import { LocatorCount, PlaywrightState } from './playwright-state';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+
+/** 
+ * Resolve the playwright Locator on active page, frame or elementHandle.
+ *  
+ * @param state A reference to current PlaywrightState object.
+ * @param selector A valid Playwright selector, Frame piercing selector "#iframe >>> //button"
+ *  or selector containing Locator handle in the front. element=123-456-789 >> css=input
+ * @param strictMode Used with combination on firstOnly param. When strictMode is false, firstOnly is applied.
+ * @param nthLocator Find nth locator from the page, frame, locator: https://playwright.dev/docs/api/class-locator#locator-nth
+ * @param firstOnly If True locator matching to first element returned else locator can point to multiple elements. 
+ * */ 
 
 export async function findLocator(
     state: PlaywrightState,
@@ -118,35 +129,6 @@ async function findLocatorNotStrict(
             return (locator?.locator || activePage).locator(selector);
         }
     }
-}
-
-export async function findLocatorCount(state: PlaywrightState, selector: string): Promise<number> {
-    const activePage = state.getActivePage();
-    exists(activePage, 'Could not find active page');
-    let count = -1;
-    if (isElementHandleSelector(selector)) {
-        const { elementHandleId, subSelector } = splitElementHandleAndElementSelector(selector);
-        const locator = state.getLocator(elementHandleId);
-        selector = subSelector;
-        if (!selector) {
-            logger.info('Only locator handle defined, return cached Locator.');
-            return await locator.locator.count();
-        }
-    }
-    if (isFramePiercingSelector(selector)) {
-        let selectors = splitFrameAndElementSelector(selector);
-        let frame = await findFrame(activePage, selectors.frameSelector, false);
-        while (isFramePiercingSelector(selectors.elementSelector)) {
-            selectors = splitFrameAndElementSelector(selectors.elementSelector);
-            frame = await findFrame(frame, selectors.frameSelector, false);
-        }
-        count = await frame.locator(selectors.elementSelector).count();
-        logger.info(`Selector from frame found ${count} elements`);
-        return count;
-    }
-    count = await activePage.locator(selector).count();
-    logger.info(`Selector found ${count} elements`);
-    return count;
 }
 
 export async function invokeOnMouse<T>(

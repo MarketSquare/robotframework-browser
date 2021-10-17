@@ -52,14 +52,15 @@ export async function deSelectOption(
 export async function typeText(request: Request.TypeText, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const text = request.getText();
-    const delay = request.getDelay();
+    const delayValue = request.getDelay();
     const clear = request.getClear();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const element = await locator.elementHandle();
     if (clear) {
-        await locator.fill('');
+        await element?.fill('');
     }
-    await locator.type(text, { delay: delay });
+    await element?.type(text, { delay: delayValue });
     return emptyWithLog(`Typed text "${text}" on ${selector}`);
 }
 
