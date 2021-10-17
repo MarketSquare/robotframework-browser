@@ -146,8 +146,9 @@ Wait For Elements State to hide with Promise
 Wait For Elements State to hide fails with Promise
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
     ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    200ms
-    Run Keyword and Expect Error    *Timeout 200ms exceeded.*waiting for selector "#victim" to be hidden*    Wait for
-    ...    ${promise}
+    Run Keyword and Expect Error
+    ...    *TimeoutError: elementHandle.waitForElementState: Timeout 200ms exceeded.*
+    ...    Wait for    ${promise}
 
 Wait For Elements State to hide with Promise and wait for all promises
     [Tags]    no-windows-support
