@@ -13,17 +13,7 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import {
-    Browser,
-    BrowserContext,
-    ConsoleMessage,
-    ElementHandle,
-    Locator,
-    Page,
-    chromium,
-    firefox,
-    webkit,
-} from 'playwright';
+import { Browser, BrowserContext, ConsoleMessage, Locator, Page, chromium, firefox, webkit } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';

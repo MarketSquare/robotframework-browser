@@ -17,7 +17,7 @@ import { ElementHandle, Locator, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { exists, findLocator, findLocatorCount } from './playwirght-invoke';
+import { exists, findLocator } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -35,7 +35,8 @@ export async function getUrl(page: Page): Promise<Response.String> {
 export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const count: number = await findLocatorCount(state, selector);
+    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const count = await locator.count();
     return intResponse(count, `Found ${count} element(s).`);
 }
 

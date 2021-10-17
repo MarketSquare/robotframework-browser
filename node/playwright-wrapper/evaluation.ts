@@ -19,7 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
-import { exists, findLocator, findLocatorCount } from './playwirght-invoke';
+import { findLocator } from './playwirght-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -52,7 +52,8 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
 export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const strictMode = request.getStrict();
     const selector = request.getSelector();
-    const count = await findLocatorCount(state, selector);
+    const allLocators = await findLocator(state, selector, strictMode, undefined, false);
+    const count = await allLocators.count();
     const response: string[] = [];
     for (let i = 0; i < count; i++) {
         const id = uuidv4();
@@ -243,8 +244,8 @@ export async function highlightElements(
     const style = request.getStyle();
     const color = request.getColor();
     const strictMode = request.getStrict();
-    const count = await findLocatorCount(state, selector);
     const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const count = locator.count();
     await locator.evaluateAll(
         (elements: Array<Element>, options: any) => {
             elements.forEach((e: Element) => {
