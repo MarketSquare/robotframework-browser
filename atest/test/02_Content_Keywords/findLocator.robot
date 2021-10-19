@@ -1,7 +1,7 @@
 *** Settings ***
 Resource        imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Test Setup      findLocator Setup
 
 *** Test Cases ***
 Normal Selector
@@ -64,3 +64,8 @@ Frames With Element ID
     Run Keyword And Expect Error
     ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
     ...    Click    ${element} >>> "foo"
+
+*** Keywords ***
+findLocator Setup
+    Set Browser Timeout    3 seconds
+    New Page    ${LOGIN_URL}
