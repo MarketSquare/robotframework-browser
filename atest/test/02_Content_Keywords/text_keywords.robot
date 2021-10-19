@@ -65,7 +65,7 @@ Fill Secret Direct Value
     [Documentation]    ...
     ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    Type Secret    css=input#username_field    Direct Value 1    200 ms    True
+    Type Secret    css=input#username_field    Direct Value 1    100 ms    True
     Get Text    css=input#username_field    ==    Direct Value 1
     Fill Secret    css=input#password_field    Direct Value 2
     Get Text    css=input#password_field    ==    Direct Value 2
