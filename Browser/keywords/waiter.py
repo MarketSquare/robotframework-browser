@@ -67,7 +67,6 @@ class Waiter(LibraryComponent):
         funct = {
             ElementState.attached: "e => e.isConnected",
             ElementState.detached: "e => !e.isConnected",
-            ElementState.editable: "e => !e.readOnly",
             ElementState.readonly: "e => e.readOnly",
             ElementState.selected: "e => e.selected",
             ElementState.deselected: "e => !e.selected",
@@ -79,6 +78,7 @@ class Waiter(LibraryComponent):
         if state in [
             ElementState.visible,
             ElementState.hidden,
+            ElementState.stable,
             ElementState.enabled,
             ElementState.disabled,
             ElementState.editable,

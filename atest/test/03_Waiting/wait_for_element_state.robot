@@ -10,6 +10,11 @@ Wait For Elements State attached
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    attached    1s
 
+Wait For Elements State stable
+    Select Options By    \#dropdown    value    True    attached
+    Click    \#submit    noWaitAfter=True
+    Wait For Elements State    \#victim    stable    2s
+
 Wait For Elements State attached With Strict On WaitForElementsState
     Run Keyword And Expect Error
     ...    *Error: strict mode violation: "//div" resolved to 2 elements*

@@ -458,6 +458,7 @@ class ElementState(Enum):
     | ``defocused``  | to not be the ``activeElement``. |
     | ``checked``    | to be ``checked``. Can be used on <input>. |
     | ``unchecked``  | to not be ``checked``. |
+    | ``stable``     | to be both ``visible`` and ``stable``. |
 
     Used by: `Wait For Elements State`"""
 
@@ -475,6 +476,7 @@ class ElementState(Enum):
     defocused = auto()
     checked = auto()
     unchecked = auto()
+    stable = auto()
 
 
 class ElementStateKey(Enum):

@@ -19,16 +19,16 @@ import { LocatorCount, PlaywrightState } from './playwright-state';
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
 
-/** 
+/**
  * Resolve the playwright Locator on active page, frame or elementHandle.
- *  
+ *
  * @param state A reference to current PlaywrightState object.
  * @param selector A valid Playwright selector, Frame piercing selector "#iframe >>> //button"
  *  or selector containing Locator handle in the front. element=123-456-789 >> css=input
  * @param strictMode Used with combination on firstOnly param. When strictMode is false, firstOnly is applied.
  * @param nthLocator Find nth locator from the page, frame, locator: https://playwright.dev/docs/api/class-locator#locator-nth
- * @param firstOnly If True locator matching to first element returned else locator can point to multiple elements. 
- * */ 
+ * @param firstOnly If True locator matching to first element returned else locator can point to multiple elements.
+ * */
 
 export async function findLocator(
     state: PlaywrightState,
