@@ -464,6 +464,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mtoskamp",
+      "name": "mtoskamp",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58772827?v=4",
+      "profile": "https://github.com/mtoskamp",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
