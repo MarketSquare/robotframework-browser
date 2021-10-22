@@ -97,7 +97,7 @@ def _check_trace_process(process: subprocess.Popen):
 
 
 def check_trace_process(prcess: subprocess.Popen, out_file: Path):
-    end_time = time.monotonic() + 30
+    end_time = time.monotonic() + 60
     while end_time > time.monotonic():
         if _check_trace_process(prcess):
             return True
