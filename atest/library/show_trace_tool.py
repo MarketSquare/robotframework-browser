@@ -46,9 +46,9 @@ def start_show_trace(zip_file: str):
         )
     logger.info("Give process time to start")
     time.sleep(3)
-    logger.info(out_file.read_text())
+    logger.info(f"Trace viewer output: {out_file.read_text()}")
     assert process.returncode is None, "Process should be still running, but it was not."
-    return process
+    return process, out_file
 
 
 def _check_trace_process(process: subprocess.Popen):
@@ -74,8 +74,7 @@ def _check_trace_process(process: subprocess.Popen):
         if "trace_1.zip" in cmd:
             trace_zip = True
     if binary and show_trace and file_arg and trace_zip:
-        logger.info("Main process found")
-        logger.info("Check child process")
+        logger.info("Main process found, check child process")
         node = False
         chromium = False
         for child_proc in proc.children(recursive=True):
@@ -97,12 +96,13 @@ def _check_trace_process(process: subprocess.Popen):
         return False
 
 
-def check_trace_process(prcess: subprocess.Popen):
+def check_trace_process(prcess: subprocess.Popen, out_file: Path):
     end_time = time.monotonic() + 30
     while end_time > time.monotonic():
         if _check_trace_process(prcess):
             return True
         logger.info("Sleep 1s and retry.")
+        logger.info(f"Trace file output: {out_file.read_text()}")
         time.sleep(1)
     raise ValueError("No valid trace process found")
 
