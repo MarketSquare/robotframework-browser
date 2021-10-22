@@ -44,6 +44,6 @@ Check Show-Trace Command
     ELSE
         ${help} =    Run Rfbrowser Help
         Should Contain    ${help}    Possible commands are
-        ${process} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
-        Check Trace Process    ${process}
+        ${process}    ${procss_stdout_file} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
+        Check Trace Process    ${process}    ${procss_stdout_file}
     END
