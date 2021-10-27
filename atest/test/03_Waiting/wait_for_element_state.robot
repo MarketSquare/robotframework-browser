@@ -23,14 +23,6 @@ Wait For Elements State attached With Strict On WaitForElementsState
     Wait For Elements State    //div    attached    0.5s
     [Teardown]    Set Strict Mode    True
 
-Wait For Elements State attached With Strict On WaitForElementsState
-    Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//div" resolved to 2 elements*
-    ...    Wait For Elements State    //div    attached    0.5s
-    Set Strict Mode    False
-    Wait For Elements State    //div    attached    0.5s
-    [Teardown]    Set Strict Mode    True
-
 Wait For Elements State enabled With Strict On wait_for_function
     Select Options By    \#dropdown    value    True    enabled
     Click    \#submit    noWaitAfter=True
