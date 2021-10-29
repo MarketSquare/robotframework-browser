@@ -65,8 +65,6 @@ class Waiter(LibraryComponent):
         """
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
-            ElementState.attached: "e => e.isConnected",
-            ElementState.detached: "e => !e.isConnected",
             ElementState.readonly: "e => e.readOnly",
             ElementState.selected: "e => e.selected",
             ElementState.deselected: "e => !e.selected",
@@ -76,6 +74,8 @@ class Waiter(LibraryComponent):
             ElementState.unchecked: "e => !e.checked",
         }
         if state in [
+            ElementState.attached,
+            ElementState.detached,
             ElementState.visible,
             ElementState.hidden,
             ElementState.stable,
