@@ -99,10 +99,10 @@ export async function waitForElementState(
     const { state, timeout } = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
     const locator = await findLocator(pwState, selector, strictMode, undefined, true);
-    const element = await locator.elementHandle({ timeout: timeout });
-    if (state === 'detached' || state === 'attached') {
-        await locator.waitFor(state);
+    if (state === 'detached' || state === 'attached' || state === 'hidden' || state === 'visible') {
+        await locator.waitFor({ state: state, timeout: timeout });
     } else {
+        const element = await locator.elementHandle({ timeout: timeout });
         await element?.waitForElementState(state, { timeout: timeout });
     }
     return emptyWithLog(`Waited for Element with selector ${selector} at state ${state}`);
