@@ -43,6 +43,27 @@ Wait For Elements State visible
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    1s
 
+Wait For Elements State hidden
+    Select Options By    \#dropdown    value    True    visible
+    Click    \#submit    noWaitAfter=True
+    Wait For Elements State    \#victim    hidden    1s
+
+Wait For Elements State hidden Not Strict
+    Set Strict Mode    False
+    Select Options By    \#dropdown    value    True    hidden
+    Click    \#submit    noWaitAfter=True
+    Wait For Elements State    \#victim    hidden    1s
+
+Wait For Elements State From attached To hidden Not Strict
+    Set Strict Mode    False
+    Select Options By    \#dropdown    value    True    attached
+    Click    \#submit    noWaitAfter=True
+    Wait For Elements State    \#victim    attached    1s
+    Select Options By    \#dropdown    value    True    detached
+    Click    \#submit    noWaitAfter=True
+    Wait For Elements State    \#victim    hidden    1s
+    [Teardown]    Set Strict Mode    True
+
 Wait For Elements State enabled
     Select Options By    \#dropdown    value    True    enabled
     Click    \#submit    noWaitAfter=True
@@ -144,7 +165,7 @@ Wait For Elements State to hide fails with Promise
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
     ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    200ms
     Run Keyword and Expect Error
-    ...    *TimeoutError: elementHandle.waitForElementState: Timeout 200ms exceeded.*
+    ...    *TimeoutError: locator.waitFor: Timeout 200ms exceeded.*
     ...    Wait for    ${promise}
 
 Wait For Elements State to hide with Promise and wait for all promises
