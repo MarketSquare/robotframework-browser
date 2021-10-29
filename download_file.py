@@ -38,10 +38,13 @@ class Artifact:
 
 
 def get_artifacts(url: str) -> dict:
-    response = requests.get(f"{url}/actions/artifacts")
+    params = {"per_page": 90}
+    response = requests.get(f"{url}/actions/artifacts", params=params)
     response.raise_for_status()
     data = response.json()
-    return data["artifacts"]
+    artifacts = data["artifacts"]
+    print(f"Found {len(artifacts)}")
+    return artifacts
 
 
 def get_artifact(
