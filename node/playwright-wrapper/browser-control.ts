@@ -17,7 +17,7 @@ import { BrowserContext, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
-import { exists, findLocator } from './playwirght-invoke';
+import { exists, findLocator } from './playwright-invoke';
 
 export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
     const url = request.getUrl();
