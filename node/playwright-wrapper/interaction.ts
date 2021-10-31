@@ -17,7 +17,7 @@ import { Dialog, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
-import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwirght-invoke';
+import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });

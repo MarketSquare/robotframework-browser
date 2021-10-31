@@ -19,7 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
-import { findLocator } from './playwirght-invoke';
+import { findLocator } from './playwright-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
