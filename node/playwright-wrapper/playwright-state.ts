@@ -102,6 +102,27 @@ async function _newBrowser(
     };
 }
 
+async function _newBrowserPersistentContext(
+    userDataDir: string,
+    browserType?: string,
+    headless?: boolean,
+    options?: Record<string, unknown>,
+): Promise<[Browser, string]> {
+    browserType = browserType || 'chromium';
+    headless = headless || true;
+    let browser;
+    if (browserType === 'firefox') {
+        browser = await firefox.launchPersistentContext(userDataDir, { headless: headless, ...options });
+    } else if (browserType === 'chromium') {
+        browser = await chromium.launchPersistentContext(userDataDir, { headless: headless, ...options });
+    } else if (browserType === 'webkit') {
+        browser = await webkit.launchPersistentContext(userDataDir, { headless: headless, ...options });
+    } else {
+        throw new Error('unsupported browser');
+    }
+    return [browser, browserType];
+}
+
 async function _connectBrowser(browserType: string, url: string): Promise<BrowserAndConfs> {
     browserType = browserType || 'chromium';
     let browser;
@@ -508,6 +529,16 @@ export async function newBrowser(request: Request.Browser, openBrowsers: Playwri
     const browserAndConfs = await _newBrowser(browserType, options['headless'] as boolean, options);
     const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
+}
+
+export async function newBrowserPersistentContext(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
+    const userDataDir = request.getUserdatadir();
+    const browserType = request.getBrowser();
+    const headless = request.getHeadless();
+    const options = JSON.parse(request.getRawoptions());
+    const [browser, name] = await _newBrowserPersistentContext(userDataDir, browserType, headless, options);
+    const browserState = openBrowsers.addBrowser(name, browser);
+    return stringResponse(browserState.id, 'Successfully created browser with persistent context and options: ' + JSON.stringify(options));
 }
 
 export async function connectToBrowser(

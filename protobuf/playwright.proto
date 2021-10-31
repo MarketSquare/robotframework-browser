@@ -63,6 +63,7 @@ message Request {
   message Browser {
     string browser = 1;
     string rawOptions = 2;
+    string userDataDir = 3;
   }
 
   message Context {
@@ -194,12 +195,12 @@ message Request {
      string body = 3;
      string headers = 4;
   }
-  
+
   message HttpCapture {
     string urlOrPredicate = 1;
     float timeout = 2;
   }
-  
+
   message Device {
     string name = 1;
   }
@@ -364,7 +365,7 @@ service  Playwright {
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
   rpc GetStyle(Request.ElementSelector) returns (Response.Json);
-  /* Gets elements x, y coordinates and width, height as json object */ 
+  /* Gets elements x, y coordinates and width, height as json object */
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
@@ -400,6 +401,7 @@ service  Playwright {
   rpc NewPage(Request.Url) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
+  rpc NewBrowserPersistentContext(Request.Browser) returns (Response.String);
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
