@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-52-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-53-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -215,6 +215,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     <td align="center"><a href="https://github.com/tomekTieto"><img src="https://avatars.githubusercontent.com/u/39945193?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tomasz Pawlak</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AtomekTieto" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/mtoskamp"><img src="https://avatars.githubusercontent.com/u/58772827?v=4?s=100" width="100px;" alt=""/><br /><sub><b>mtoskamp</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amtoskamp" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/zastress"><img src="https://avatars.githubusercontent.com/u/37159441?v=4?s=100" width="100px;" alt=""/><br /><sub><b>zastress</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Azastress" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://paazmaya.fi"><img src="https://avatars.githubusercontent.com/u/369881?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Juga Paazmaya</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=paazmaya" title="Code">💻</a></td>
   </tr>
 </table>
 
