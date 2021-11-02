@@ -26,7 +26,7 @@ class Devices(LibraryComponent):
         """Returns a dict of all playwright device descriptors.
 
         See Playwright's
-        [https://github.com/microsoft/playwright/blob/master/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json]
+        [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json]
         for a formatted list.
         """
         with self.playwright.grpc_channel() as stub:
