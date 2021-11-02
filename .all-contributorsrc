@@ -500,6 +500,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "Pakkanen1",
+      "name": "Antti Pakkanen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5936882?v=4",
+      "profile": "https://github.com/Pakkanen1",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
