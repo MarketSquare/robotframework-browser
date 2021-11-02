@@ -509,6 +509,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "luchoagomezt",
+      "name": "Luis A Gomez-Tinoco",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4672517?v=4",
+      "profile": "https://github.com/luchoagomezt",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
