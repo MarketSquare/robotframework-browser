@@ -28,7 +28,7 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-draggable": "^4.4.4",
-    "react-router-dom": "^5.3.0",
+    "react-router-dom": "^6.0.0",
     "ts-loader": "^9.2.6",
     "ts-node": "^9.1.1",
     "tslint": "^6.1.3",
