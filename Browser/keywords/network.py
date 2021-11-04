@@ -210,7 +210,7 @@ class Network(LibraryComponent):
 
         ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
 
-        ``waitUntil`` <"load"|"domcontentloaded"|"networkidle"> When to consider operation succeeded, defaults to load.
+        ``wait_until`` <"load"|"domcontentloaded"|"networkidle"> When to consider operation succeeded, defaults to load.
         Events can be either:
         'domcontentloaded' - consider operation to be finished when the DOMContentLoaded event is fired.
         'load' - consider operation to be finished when the load event is fired.
