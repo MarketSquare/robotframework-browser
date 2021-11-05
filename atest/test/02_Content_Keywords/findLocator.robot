@@ -65,6 +65,10 @@ Frames With Element ID
     ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
     ...    Click    ${element} >>> "foo"
 
+Get Element Count In iFrame
+    Go To    ${FRAMES_URL}
+    Get Element Count    iframe[name="left"] >>> //input    ==    2
+
 *** Keywords ***
 findLocator Setup
     Set Browser Timeout    3 seconds
