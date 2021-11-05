@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-58-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-59-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -223,6 +223,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
   <tr>
     <td align="center"><a href="https://github.com/ePlanLori"><img src="https://avatars.githubusercontent.com/u/61252623?v=4?s=100" width="100px;" alt=""/><br /><sub><b>ePlanLori</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AePlanLori" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/laguna357"><img src="https://avatars.githubusercontent.com/u/86680503?v=4?s=100" width="100px;" alt=""/><br /><sub><b>laguna357</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Alaguna357" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/GavinRodgers-EN0055"><img src="https://avatars.githubusercontent.com/u/72198546?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gavin Rodgers</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AGavinRodgers-EN0055" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 
