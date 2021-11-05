@@ -53,7 +53,15 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     const strictMode = request.getStrict();
     const selector = request.getSelector();
     const allLocators = await findLocator(state, selector, strictMode, undefined, false);
+    logger.info(`Wait element to reach attached state.`);
+    const firstLocator = allLocators.first();
+    try {
+        await firstLocator.waitFor({ state: 'attached' });
+    } catch (e) {
+        logger.info(`Attached state not reached, supress error: ${e}.`);
+    }
     const count = await allLocators.count();
+    logger.info(`Found ${count} elements.`);
     const response: string[] = [];
     for (let i = 0; i < count; i++) {
         const id = uuidv4();
