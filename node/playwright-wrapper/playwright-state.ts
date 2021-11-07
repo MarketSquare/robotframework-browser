@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, ConsoleMessage, Locator, Page, chromium, firefox, webkit } from 'playwright';
+import { Browser, BrowserContext, ConsoleMessage, Locator, Page, chromium, firefox, webkit, LaunchOptions } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -100,7 +100,7 @@ async function _newBrowser(
         browser,
         browserType,
         headless,
-        options
+        options,
     };
 }
 
@@ -342,7 +342,7 @@ export class BrowserState {
     name?: string;
     id: Uuid;
     headless: boolean;
-    options?: Record<string, unknown>;
+    options?: playwright.LaunchOptions;
 
     public async close(): Promise<void> {
         this._contextStack = [];
@@ -506,57 +506,41 @@ export async function newContext(
     return response;
 }
 
-// source: https://stackoverflow.com/a/16788517
+function equalOptions(x: playwright.LaunchOptions, y: playwright.LaunchOptions): boolean {
+    // TODO: array equality without order mattering
+    if (!arrayEqual(x['args'], y['args'])) return false;
+    if (!objectEqual(x['proxy'], y['proxy'])) return false;
+    return false;
+}
 
-function deepEqual(x: any, y: any): boolean {
+function arrayEqual<T>(x?: Array<T>, y?: Array<T>) {
     if (x === null || x === undefined || y === null || y === undefined) {
         return x === y;
     }
-    // after this just checking type of one would be enough
-    if (x.constructor !== y.constructor) {
-        return false;
-    }
-    // if they are functions, they should exactly refer to same one (because of closures)
-    if (x instanceof Function) {
-        return x === y;
-    }
-    // if they are regexps, they should exactly refer to same one (it is hard to better equality check on current ES)
-    if (x instanceof RegExp) {
-        return x === y;
-    }
-    if (x === y || x.valueOf() === y.valueOf()) {
-        return true;
-    }
-    if (Array.isArray(x) && x.length !== y.length) {
-        return false;
-    }
-
-    // if they are dates, they must had equal valueOf
-    if (x instanceof Date) {
-        return false;
-    }
-
-    // if they are strictly equal, they both need to be object at least
-    if (!(x instanceof Object)) {
-        return false;
-    }
-    if (!(y instanceof Object)) {
-        return false;
-    }
-
-    // recursive object equality check
-    const p = Object.keys(x);
-    return Object.keys(y).every((i) => p.indexOf(i) !== -1) && p.every((i) => deepEqual(x[i], y[i]));
+    if (x.length !== y.length) return false;
+    return x.every((i) => {
+        i in y;
+    });
 }
 
-function omit<T>(key: string, obj: Record<string, T>) {
+function objectEqual(x?: Record<string, string>, y?: Record<string, string>): boolean {
+    if (x === null || x === undefined || y === null || y === undefined) {
+        return x === y;
+    }
+    // recursive object equality check
+    const p = Object.keys(x);
+    return Object.keys(y).every((i) => p.indexOf(i) !== -1);
+}
+
+function omit(key: keyof LaunchOptions, obj: LaunchOptions) {
     const { [key]: omitted, ...rest } = obj;
     return rest;
 }
 
-function removeUnnecessaryOptions<T>(obj: Record<string, T>): Record<string, T> {
+function removeUnnecessaryOptions(obj: playwright.LaunchOptions): LaunchOptions {
     // We need to omit all options here that do not affect equality.
     // Could also do this by implementing browserOptions as it's own class and implementing a custom .equals method
+    // This is not strictly playwright.LaunchOptions because the rfbrowser python side might give us basically anything as input
     return omit('skip_if_exists', omit('tracesDir', obj));
 }
 
@@ -564,7 +548,7 @@ export async function newBrowser(request: Request.Browser, openBrowsers: Playwri
     const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
     const matchingBrowser = openBrowsers.browserStack.find((browser: BrowserState) => {
-        return deepEqual(removeUnnecessaryOptions(browser.options ?? {}), removeUnnecessaryOptions(options));
+        return equalOptions(removeUnnecessaryOptions(browser.options ?? {}), removeUnnecessaryOptions(options));
     });
 
     let extraWarning = '';
