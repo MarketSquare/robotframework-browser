@@ -39,11 +39,12 @@ Enable Tracing To File With Two Browsers
     File Should Not Be Empty    ${OUTPUT_DIR}/trace_2.zip
 
 Check Show-Trace Command
+    [Timeout]    90s
     IF    '${SYS_VAR_CI}' == 'False'
         Log    This is only for CI when installation is done.
     ELSE
         ${help} =    Run Rfbrowser Help
         Should Contain    ${help}    Possible commands are
-        ${process} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
-        Check Trace Process    ${process}
+        ${process}    ${procss_stdout_file} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
+        Check Trace Process    ${process}    ${procss_stdout_file}
     END

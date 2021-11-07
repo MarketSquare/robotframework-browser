@@ -65,9 +65,6 @@ class Waiter(LibraryComponent):
         """
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
-            ElementState.enabled: "e => !e.disabled",
-            ElementState.disabled: "e => e.disabled",
-            ElementState.editable: "e => !e.readOnly",
             ElementState.readonly: "e => e.readOnly",
             ElementState.selected: "e => e.selected",
             ElementState.deselected: "e => !e.selected",
@@ -81,6 +78,10 @@ class Waiter(LibraryComponent):
             ElementState.detached,
             ElementState.visible,
             ElementState.hidden,
+            ElementState.stable,
+            ElementState.enabled,
+            ElementState.disabled,
+            ElementState.editable,
         ]:
             end = float(
                 self.convert_timeout(timeout, False) if timeout else self.timeout / 1000

@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, ConsoleMessage, ElementHandle, Page, chromium, firefox, webkit } from 'playwright';
+import { Browser, BrowserContext, ConsoleMessage, Locator, Page, chromium, firefox, webkit } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse, keywordsResponse, pageReportResponse, stringResponse } from './response-util';
-import { exists } from './playwirght-invoke';
+import { exists } from './playwright-invoke';
 
 import * as pino from 'pino';
 import { ServerWritableStream } from '@grpc/grpc-js';
@@ -37,6 +37,11 @@ interface IBrowserState {
 interface IIndexedContext {
     context: IndexedContext;
     newContext: boolean;
+}
+
+export interface LocatorCount {
+    locator: Locator;
+    nth: number;
 }
 
 export async function initializeExtension(
@@ -177,14 +182,14 @@ async function _newPage(context: BrowserContext): Promise<IndexedPage> {
 export class PlaywrightState {
     constructor() {
         this.browserStack = [];
-        this.elementHandles = new Map();
+        this.locatorHandles = new Map();
     }
     extension: unknown;
     private browserStack: BrowserState[];
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
-    elementHandles: Map<string, ElementHandle>;
+    locatorHandles: Map<string, LocatorCount>;
     public getActiveBrowser = (): BrowserState => {
         const currentBrowser = this.activeBrowser;
         if (currentBrowser === undefined) {
@@ -283,16 +288,16 @@ export class PlaywrightState {
         return this.activeBrowser?.page?.p;
     };
 
-    public addElement(id: string, handle: ElementHandle): void {
-        this.elementHandles.set(id, handle);
+    public addLocator(id: string, pwLocator: Locator, nth: number): void {
+        this.locatorHandles.set(id, { locator: pwLocator, nth: nth });
     }
 
-    public getElement(id: string): ElementHandle {
-        const elem = this.elementHandles.get(id);
-        if (elem) {
-            return elem;
+    public getLocator(id: string): LocatorCount {
+        const locator = this.locatorHandles.get(id);
+        if (locator) {
+            return locator;
         }
-        throw new Error(`No element handle found with id \`${id}\`.`);
+        throw new Error(`No locator handle found with "${id}".`);
     }
 }
 

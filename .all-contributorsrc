@@ -464,6 +464,88 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mtoskamp",
+      "name": "mtoskamp",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58772827?v=4",
+      "profile": "https://github.com/mtoskamp",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "zastress",
+      "name": "zastress",
+      "avatar_url": "https://avatars.githubusercontent.com/u/37159441?v=4",
+      "profile": "https://github.com/zastress",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "paazmaya",
+      "name": "Juga Paazmaya",
+      "avatar_url": "https://avatars.githubusercontent.com/u/369881?v=4",
+      "profile": "https://paazmaya.fi",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Leemur89",
+      "name": "Raphael Smadja",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26330630?v=4",
+      "profile": "https://github.com/Leemur89",
+      "contributions": [
+        "ideas",
+        "code"
+      ]
+    },
+    {
+      "login": "Pakkanen1",
+      "name": "Antti Pakkanen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5936882?v=4",
+      "profile": "https://github.com/Pakkanen1",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "luchoagomezt",
+      "name": "Luis A Gomez-Tinoco",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4672517?v=4",
+      "profile": "https://github.com/luchoagomezt",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "ePlanLori",
+      "name": "ePlanLori",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61252623?v=4",
+      "profile": "https://github.com/ePlanLori",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "laguna357",
+      "name": "laguna357",
+      "avatar_url": "https://avatars.githubusercontent.com/u/86680503?v=4",
+      "profile": "https://github.com/laguna357",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "GavinRodgers-EN0055",
+      "name": "Gavin Rodgers",
+      "avatar_url": "https://avatars.githubusercontent.com/u/72198546?v=4",
+      "profile": "https://github.com/GavinRodgers-EN0055",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,

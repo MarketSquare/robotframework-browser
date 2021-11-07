@@ -44,7 +44,19 @@ Register kw with custom path
 
 Register Keyword With Arguments
     Type Text    css=input#username_field    username
-    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}    ${EMPTY}    True
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    image-{index}    ${EMPTY}    True
+    Run Keyword And Expect Error
+    ...    *'username' (str) should be 'not_username' (str)
+    ...    Get Text    css=input#username_field    ==    not_username
+    File Should Exist    ${OUTPUT_DIR}/browser/screenshot/image-1.png
+    Register Keyword To Run On Failure    ${prev}
+    [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/image-1.png
+
+Register Keyword With Named Arguments
+    Type Text    css=input#username_field    username
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}    fullPage=True
+    ${with_args} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}    fullPage=True
+    Register Keyword To Run On Failure    ${with_args}
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
@@ -77,10 +89,12 @@ Register None
     Should Not Be Empty    ${prev1.name}
     Should Not Be Empty    ${prev1.args}
     Should Not Be Empty    ${prev1.original_name}
+    Should Be Empty    ${prev1.kwargs}
     ${prev2} =    Register Keyword To Run On Failure    ${prev1}
     Should Not Be True    ${prev2.name}
     Should Not Be True    ${prev2.args}
     Should Not Be True    ${prev2.original_name}
+    Should Not Be True    ${prev2.kwargs}
     Log    ${prev2}
     Log    ${prev1}
 

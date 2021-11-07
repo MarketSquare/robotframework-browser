@@ -10,7 +10,7 @@ GRPC Message Overflow Should Not Happen Event The Message Exceeds Default Size
     ${msg} =    Run Keyword And Expect Error
     ...    *
     ...    Get Attribute    //${aabbcc * 1500}    foo    equal    tidii
-    Should Contain    ${msg}    TimeoutError: page.waitForSelector: Timeout 2000ms exceeded.
+    Should Contain    ${msg}    TimeoutError: locator.elementHandle: Timeout 2000ms exceeded.
     Should Contain    ${msg}    =========================== logs ===========================
     Should Contain    ${msg}    waiting for selector "//${aabbcc * 100}
     [Teardown]    Set Browser Timeout    ${timeout}

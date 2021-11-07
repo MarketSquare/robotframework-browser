@@ -16,8 +16,8 @@ import { BrowserContext, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, exists } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
+import { exists, findLocator } from './playwright-invoke';
 
 export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
     const url = request.getUrl();
@@ -42,9 +42,8 @@ export async function takeScreenshot(
         options.quality = parseInt(quality);
     }
     if (selector) {
-        const elem = await determineElement(state, selector, strictMode);
-        exists(elem, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
-        await elem.screenshot(options);
+        const locator = await findLocator(state, selector, strictMode, undefined, true);
+        await locator.screenshot(options);
     } else {
         const page = state.getActivePage();
         exists(page, 'Tried to take screenshot, but no page was open.');
