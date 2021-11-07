@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ElementHandle, Page } from 'playwright';
+import { ElementHandle, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { exists, findLocator } from './playwright-invoke';
 
 import * as pino from 'pino';
 const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -35,8 +35,9 @@ export async function getUrl(page: Page): Promise<Response.String> {
 export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const response: Array<ElementHandle> = await invokePlaywrightMethod(state, '$$', selector, strictMode);
-    return intResponse(response.length, 'Found ' + response.length + 'element(s).');
+    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const count = await locator.count();
+    return intResponse(count, `Found ${count} element(s).`);
 }
 
 export async function getSelectContent(
@@ -45,34 +46,24 @@ export async function getSelectContent(
 ): Promise<Response.Select> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    await waitUntilElementExists(state, selector, strictMode);
-
-    type Value = [string, string, boolean];
-
-    const content: Value[] = await invokePlaywrightMethod(
-        state,
-        '$eval',
-        selector,
-        strictMode,
-        (select: HTMLSelectElement) => {
-            const options: Value[] = [];
-            for (let i = 0; i < select.options.length; i++) {
-                const elem: HTMLOptionElement = select.options[i];
-                options.push([elem.label, elem.value, elem.selected]);
-            }
-            return options;
-        },
-    );
-
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
+    const locatorOptions = locator.locator('option');
+    const locatorOptionsCount = await locatorOptions.count();
     const response = new Response.Select();
-    content.forEach((option) => {
-        const [label, value, selected] = [option[0], option[1], option[2]];
+
+    for (let i = 0; i < locatorOptionsCount; i++) {
+        const element = await locatorOptions.nth(i).elementHandle();
+        exists(element, `The ${i} option element did not exist.`);
+        const label = await element.getProperty('label');
+        const value = await element.getProperty('value');
+        const selected = await element.getProperty('selected');
         const entry = new Types.SelectEntry();
-        entry.setLabel(label);
-        entry.setValue(value);
-        entry.setSelected(selected);
+        entry.setLabel(String(label));
+        entry.setValue(String(value));
+        entry.setSelected(JSON.parse(String(selected)));
         response.addEntry(entry);
-    });
+    }
     return response;
 }
 
@@ -84,7 +75,9 @@ export async function getDomProperty(
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
-async function getTextContent(element: ElementHandle<Node>): Promise<string> {
+async function getTextContent(locator: Locator): Promise<string> {
+    const element = await locator.elementHandle();
+    exists(element, 'Locator did not resolve to elementHandle.');
     const tag = await (await element.getProperty('tagName')).jsonValue();
     if (tag === 'INPUT' || tag === 'TEXTAREA') {
         return await (await element.getProperty('value')).jsonValue();
@@ -95,10 +88,10 @@ async function getTextContent(element: ElementHandle<Node>): Promise<string> {
 export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const selector = request.getSelector();
     const strict = request.getStrict();
-    const element = await waitUntilElementExists(state, selector, strict);
+    const locator = await findLocator(state, selector, strict, undefined, true);
     let content: string;
     try {
-        content = await getTextContent(element);
+        content = await getTextContent(locator);
         logger.info(`Retrieved text for element ${selector} containing ${content}`);
     } catch (e) {
         if (e instanceof Error) {
@@ -121,11 +114,12 @@ export async function getBoolProperty(
 async function getProperty<T>(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const element = await waitUntilElementExists(state, selector, strictMode);
+    const locator = findLocator(state, selector, strictMode, undefined, true);
     try {
+        const element = await (await locator).elementHandle();
         const propertyName = request.getProperty();
-        const property = await element.getProperty(propertyName);
-        const content = await property.jsonValue();
+        const property = await element?.getProperty(propertyName);
+        const content = await property?.jsonValue();
         logger.info(`Retrieved dom property for element ${selector} containing ${content}`);
         return content;
     } catch (e) {
@@ -147,9 +141,10 @@ export async function getElementAttribute(
 async function getAttributeValue(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const element = await waitUntilElementExists(state, selector, strictMode);
     const attributeName = request.getProperty();
-    const attribute = await element.getAttribute(attributeName);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
+    const attribute = await locator.getAttribute(attributeName);
     logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
     return attribute;
 }
@@ -159,7 +154,9 @@ export async function getStyle(request: Request.ElementSelector, state: Playwrig
     const strictMode = request.getStrict();
 
     logger.info('Getting css of element on page');
-    const result = await invokePlaywrightMethod(state, '$eval', selector, strictMode, function (element: Element) {
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
+    const result = await locator.evaluate(function (element: Element) {
         const rawStyle = window.getComputedStyle(element);
         const mapped: Record<string, string> = {};
         // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
@@ -180,11 +177,8 @@ export async function getViewportSize(page: Page): Promise<Response.Json> {
 export async function getBoundingBox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const elem = await determineElement(state, selector, strictMode);
-    if (!elem) {
-        throw new Error(`No element matching ${selector} found`);
-    }
-    const boundingBox = await elem.boundingBox();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const boundingBox = await locator.boundingBox();
     return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box succesfully.');
 }
 

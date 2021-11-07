@@ -54,7 +54,7 @@ Highlight Element on page
     Sleep    200ms
     Get Element Count    .robotframework-browser-highlight    ==    0
     Set Strict Mode    False
-    Highlight Elements    .pure-button    duration=200ms
+    Highlight Elements    .pure-button    duration=500ms
     Set Strict Mode    True
     Get Element Count    .robotframework-browser-highlight    ==    5
     Sleep    400ms
@@ -71,7 +71,7 @@ Highlight Element with style
     Get Style    .robotframework-browser-highlight    border-bottom-style    ==    dotted
     Get Style    .robotframework-browser-highlight    border-bottom-color    ==    rgb(0, 0, 255)
     Sleep    400ms
-    Highlight Elements    input#login_button    duration=200ms    width=4px    style=solid    color=\#FF00FF
+    Highlight Elements    input#login_button    duration=400ms    width=4px    style=solid    color=\#FF00FF
     ${style} =    Get Style    .robotframework-browser-highlight
     Should Be True    "${style}[border-bottom-width]" == "4px"
     Should Be True    "${style}[border-bottom-style]" == "solid"

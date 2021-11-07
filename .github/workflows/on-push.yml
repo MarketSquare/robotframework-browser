@@ -47,9 +47,12 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install python dependencies
+      # flaky-tests-detection only in here because Spicy install problem on Apple M1 chip.
+      # https://github.com/scipy/scipy/issues/13409
       run: |
         python -m pip install --upgrade pip
         pip install -r Browser/dev-requirements.txt
+        pip install flaky-tests-detection
     - name: Build Protos and check with tsc
       run: |
         inv node-build
@@ -94,14 +97,14 @@ jobs:
         name: rfbrowser-wheel 
         path: dist/robotframework_browser-*-py3-none-any.whl
     - name: Artifacts download for flaky test analysis
-      if: ${{ failure() && matrix.os != 'windows-latest' }}
+      if: ${{ failure() }}
       run : |
         python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
         inv copy-xunit
-    - uses: F-Secure/flaky-tests-detection@master
-      if: ${{ failure() && matrix.os != 'windows-latest' }}
-      with:
-        args: --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
+    - name: Flaky tests detection
+      if: ${{ failure() }}
+      run: |
+        flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
     - name: Package demoapp
       run: |
         inv demo-app
@@ -178,14 +181,17 @@ jobs:
         run: |
           inv atest-global-pythonpath
       - name: Artifacts download for flaky test analysis
-        if: ${{ failure() && matrix.os != 'windows-latest' }}
+        if: ${{ failure() }}
+        # flaky-tests-detection only in here because Spicy install problem on Apple M1 chip.
+        # https://github.com/scipy/scipy/issues/13409
         run: |
+          pip install flaky-tests-detection
           python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
           inv copy-xunit
-      - uses: F-Secure/flaky-tests-detection@master
-        if: ${{ failure() && matrix.os != 'windows-latest' }}
-        with:
-          args: --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
+      - name: Flaky tests detection
+        if: ${{ failure() }}
+        run: |
+          flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
       - name: Uninstall on Linux
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
