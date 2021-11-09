@@ -63,7 +63,7 @@ Wait For Navigation Fails With Wrong wait_until
 
 Wait For Navigation Works With wait_until
     ${old timeout} =    Set Browser Timeout    4s
-    FOR    ${wait_until}    IN    domcontentloaded    load    networkidle
+    FOR    ${wait_until}    IN    domcontentloaded    networkidle    load
         Go To    ${ROOT_URL}/redirector.html
         Wait for navigation    ${ROOT_URL}/posted.html    wait_until=${wait_until}
         Get Url    contains    posted
