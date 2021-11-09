@@ -69,7 +69,7 @@ app.get('/redirector2.html', (req, res) => {
 app.post('/posted.html', (req, res) => {
     setTimeout(() => {
         res.send('<html lang="en"><head><title>Posted</title></head><body>Posted HELLO!!</body></html>');
-    }, 100);
+    }, 500);
 });
 
 app.get('/api/get/bad_binary', (req, res) => {
