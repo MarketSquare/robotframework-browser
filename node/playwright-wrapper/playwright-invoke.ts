@@ -93,7 +93,7 @@ async function findInFrames(
             );
             return frame.locator(selectors.elementSelector).first();
         } else {
-            logger.info(`Strict mode is disabled and firstOnly is disbaled, return Locator: ${selector} in frame.`);
+            logger.info(`Strict mode is disabled and firstOnly is disabled, return Locator: ${selector} in frame.`);
             return frame.locator(selectors.elementSelector);
         }
     }
@@ -122,18 +122,18 @@ async function findLocatorNotStrict(
 ): Promise<Locator> {
     if (locator?.locator) {
         if (firstOnly) {
-            logger.info(`Strict mode is disbaled, return first Locator: ${selector} with locator.`);
+            logger.info(`Strict mode is disabled, return first Locator: ${selector} with locator.`);
             return locator.locator.locator(selector).first();
         } else {
-            logger.info(`Strict mode is disbaled, return Locator: ${selector} with locator.`);
+            logger.info(`Strict mode is disabled, return Locator: ${selector} with locator.`);
             return locator.locator.locator(selector);
         }
     } else {
         if (firstOnly) {
-            logger.info(`Strict mode is disbaled, return first Locator: ${selector} in page.`);
+            logger.info(`Strict mode is disabled, return first Locator: ${selector} in page.`);
             return (locator?.locator || activePage).locator(selector).first();
         } else {
-            logger.info(`Strict mode is disbaled, return Locator: ${selector} in page.`);
+            logger.info(`Strict mode is disabled, return Locator: ${selector} in page.`);
             return (locator?.locator || activePage).locator(selector);
         }
     }
