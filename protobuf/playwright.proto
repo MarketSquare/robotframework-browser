@@ -39,6 +39,11 @@ message Request {
   message FilePath {
     string path = 1;
   }
+  message FileBySelector {
+    string path = 1;
+    string selector = 2;
+    bool strict = 3;
+  }
 
   message Json {
     string body = 1;
@@ -389,6 +394,7 @@ service  Playwright {
   rpc KeyboardInput(Request.KeyboardInputOptions) returns (Response.Empty);
 
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
+  rpc UploadFileBySelector(Request.FileBySelector) returns (Response.Empty);
 
   rpc SetOffline(Request.Bool) returns (Response.Empty);
   rpc Reload(Request.Empty) returns (Response.Empty);

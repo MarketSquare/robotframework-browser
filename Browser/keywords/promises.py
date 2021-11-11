@@ -145,7 +145,9 @@ class Promises(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def promise_to_upload_file(self, path: PathLike):
-        """Returns a promise that resolves when file from ``path`` has been uploaded.
+        """*!!DEPRECATED!!* Use keyword `Upload File By Selector` instead.
+
+        Returns a promise that resolves when file from ``path`` has been uploaded.
 
         Fails if the upload has not happened during timeout.
 

@@ -14,6 +14,7 @@
 
 import json
 from datetime import timedelta
+from os import PathLike
 from time import sleep
 from typing import Any, Dict, Optional
 
@@ -978,3 +979,10 @@ class Interaction(LibraryComponent):
                 )
             )
             logger.debug(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def upload_file_by_selector(self, selector: str, path: PathLike):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.UploadFileBySelector(
+                        Request().FileBySelector(path=path, selector=selector, strict=self.library.strict_mode)
+                    )
