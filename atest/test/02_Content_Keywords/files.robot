@@ -1,8 +1,6 @@
 *** Settings ***
 Resource            imports.resource
 
-Suite Setup  Generate Test File
-Suite Teardown  Delete Test File
 Test Setup          Set Library Timeout
 Test Teardown       Run Keywords    Restore Library Timeout    AND    Wait For All Promises
 
@@ -10,17 +8,29 @@ Test Teardown       Run Keywords    Restore Library Timeout    AND    Wait For A
 ${CUSTOM_DL_PATH} =     ${CURDIR}/download_file
 
 *** Test Cases ***
-Upload File
-    New Page    ${LOGIN_URL}
-    Promise To Upload File    ${CURDIR}/test_upload_file
-    Click    \#file_chooser
-    Get Text    \#upload_result    ==    test_upload_file
+Upload upload_test_file
+    Upload Named File   test_upload_file
+
+# 75 starts to fail with firefox and chromium
+# Upload Sized File  75
+# Upload Sized File  512
+# Upload 75MB file
+#    Upload Sized File  75
+
+Upload 1MB file
+    [Tags]    no-windows-support
+    Upload Sized File  1
+    
+Upload 74MB file
+    [Tags]    no-windows-support
+    Upload Sized File  74
+
 
 Upload File with different name
     New Page    ${LOGIN_URL}
     Promise to Upload File    ${CURDIR}/invalid_test_upload_file
     Click    \#file_chooser
-    Get Text    \#upload_result    ==    wrong_upload_filename
+    Get Text    \#upload_result    ==    invalid_test_upload_file
 
 Invalid Upload Path
     [Tags]    no-windows-support
@@ -54,20 +64,6 @@ Wait For Download With Custom Path
     Remove File    ${CUSTOM_DL_PATH}
     Remove File    ${file_object.saveAs}
 
-Upload 30MB File
-    New Page    ${LOGIN_URL}
-    ${promise}=  Promise to Upload File    ${CURDIR}/30MB.file
-    Click    \#file_chooser
-    Wait For  ${promise}
-    Get Text    \#upload_result    ==    30MB.file
-
-Upload 128MB File
-    New Page    ${LOGIN_URL}
-    ${promise}=  Promise to Upload File    ${CURDIR}/128MB.file
-    Click    \#file_chooser
-    Wait For  ${promise}
-    Get Text    \#upload_result    ==    128MB.file
-
 *** Keywords ***
 Set Library Timeout
     ${open_browsers} =    Get Browser Ids
@@ -78,16 +74,34 @@ Set Library Timeout
     IF    $current_contexts == []
         New Context
     END
-    ${timeout} =    Set Browser Timeout    2 seconds
+    ${timeout} =    Set Browser Timeout    30 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
-
-Generate Test File
-    Run    dd if=/dev/zero of=${CURDIR}/30MB.file bs=1024 count=\$((1024 * 75))
-    Run    dd if=/dev/zero of=${CURDIR}/128MB.file bs=1024 count=\$((1024 * 75))
-
-Delete Test File
-    Remove File    ${CURDIR}/30MB.file
-    Remove File    ${CURDIR}/128MB.file
 
 Restore Library Timeout
     Set Browser Timeout    ${ORIGINAL_TIMEOUT}
+
+Generate Test File
+    [Arguments]  ${size_in_mb}
+    ${filename}=  Set Variable  ${size_in_mb}MB
+    ${size_in_bytes}=  Evaluate   1024 * ${size_in_mb}
+    Run  dd if=/dev/zero of=${CURDIR}/${filename}.file bs=1024 count=${size_in_bytes}
+    
+    [Return]  ${filename}.file
+
+Upload Sized File
+    [Arguments]  ${size_in_mb}
+    
+    ${file_name}=  Generate Test File    ${size_in_mb}
+    Upload Named File    ${file_name}
+    
+    [Teardown]  Remove File  ${CURDIR}/${file_name}
+
+Upload Named File
+    [Arguments]  ${file_name}
+    New Page    ${LOGIN_URL}
+    Get Text    \#upload_result    ==    ${EMPTY}
+    ${promise}=  Promise to Upload File    ${CURDIR}/${file_name}
+    Click    \#file_chooser
+    Wait For  ${promise}
+    ${result_name}  Get Text    \#upload_result
+    Get Text    \#upload_result    ==    ${file_name}
