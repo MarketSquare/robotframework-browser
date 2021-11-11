@@ -21,8 +21,8 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 import { findLocator } from './playwright-invoke';
 
-import * as pino from 'pino';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 declare global {
     interface Window {
