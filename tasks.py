@@ -241,13 +241,14 @@ def clean_atest(c):
 
 
 @task(clean_atest)
-def atest(c, suite=None, include=None, zip=None):
+def atest(c, suite=None, include=None, zip=None, debug=False):
     """Runs Robot Framework acceptance tests.
 
     Args:
         suite: Select which suite to run.
         include: Select test by tag
         zip: Create zip file from output files.
+        debug: Use robotframework-debugger as test listener
     """
     args = [
         "--pythonpath",
@@ -257,6 +258,8 @@ def atest(c, suite=None, include=None, zip=None):
         args.extend(["--suite", suite])
     if include:
         args.extend(["--include", include])
+    if debug:
+        args.extend(["--listener", "Debugger"])
     os.mkdir(ATEST_OUTPUT)
     logfile = open(Path(ATEST_OUTPUT, "playwright-log.txt"), "w")
     os.environ["DEBUG"] = "pw:api"

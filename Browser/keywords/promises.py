@@ -153,6 +153,8 @@ class Promises(LibraryComponent):
 
         ``path`` Path to file to be uploaded.
 
+        !! Due to a certain problem with Playwright library currently files over 74 MB will fail to upload. !!
+
         Example use:
 
         | ${promise}=    `Promise To Upload File`    ${CURDIR}/test_upload_file
