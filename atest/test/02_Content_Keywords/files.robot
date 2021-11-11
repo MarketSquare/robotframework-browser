@@ -1,6 +1,8 @@
 *** Settings ***
 Resource            imports.resource
 
+Suite Setup  Generate Test File
+Suite Teardown  Delete Test File
 Test Setup          Set Library Timeout
 Test Teardown       Run Keywords    Restore Library Timeout    AND    Wait For All Promises
 
@@ -52,6 +54,20 @@ Wait For Download With Custom Path
     Remove File    ${CUSTOM_DL_PATH}
     Remove File    ${file_object.saveAs}
 
+Upload 30MB File
+    New Page    ${LOGIN_URL}
+    ${promise}=  Promise to Upload File    ${CURDIR}/30MB.file
+    Click    \#file_chooser
+    Wait For  ${promise}
+    Get Text    \#upload_result    ==    30MB.file
+
+Upload 128MB File
+    New Page    ${LOGIN_URL}
+    ${promise}=  Promise to Upload File    ${CURDIR}/128MB.file
+    Click    \#file_chooser
+    Wait For  ${promise}
+    Get Text    \#upload_result    ==    128MB.file
+
 *** Keywords ***
 Set Library Timeout
     ${open_browsers} =    Get Browser Ids
@@ -64,6 +80,14 @@ Set Library Timeout
     END
     ${timeout} =    Set Browser Timeout    2 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
+
+Generate Test File
+    Run    dd if=/dev/zero of=${CURDIR}/30MB.file bs=1024 count=\$((1024 * 75))
+    Run    dd if=/dev/zero of=${CURDIR}/128MB.file bs=1024 count=\$((1024 * 75))
+
+Delete Test File
+    Remove File    ${CURDIR}/30MB.file
+    Remove File    ${CURDIR}/128MB.file
 
 Restore Library Timeout
     Set Browser Timeout    ${ORIGINAL_TIMEOUT}
