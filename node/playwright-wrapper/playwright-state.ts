@@ -20,10 +20,10 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse, keywordsResponse, pageReportResponse, stringResponse } from './response-util';
 import { exists } from './playwright-invoke';
 
-import * as pino from 'pino';
 import { ServerWritableStream } from '@grpc/grpc-js';
+import { pino } from 'pino';
 
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
