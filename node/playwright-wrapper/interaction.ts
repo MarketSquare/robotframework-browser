@@ -127,6 +127,7 @@ export async function checkCheckbox(request: Request.ElementSelector, state: Pla
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.waitFor({ state: 'attached' });
     await locator.check();
     return emptyWithLog(`Checked checkbox: ${selector}`);
 }
@@ -138,6 +139,7 @@ export async function uncheckCheckbox(
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.waitFor({ state: 'attached' });
     await locator.uncheck();
     return emptyWithLog(`Unchecked checkbox: ${selector}`);
 }

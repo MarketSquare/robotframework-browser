@@ -15,6 +15,12 @@
                     case "attached":
                         // no victim yet
                         break;
+                    case "attached-checked":
+                        // no victim yet
+                        break;
+                    case "attached-unchecked":
+                        // no victim yet
+                        break;
                     case "detached":
                         document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
                         break;
@@ -67,6 +73,16 @@
                     case "attached":
                         document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
                         break;
+                    case "attached-checked":
+                        document.getElementById("place").innerHTML = "<input checked hidden type='checkbox' id='victim' />"
+                        await sleep(50);
+                        document.getElementById("victim").removeAttribute("hidden");
+                        break;
+                    case "attached-unchecked":
+                        document.getElementById("place").innerHTML = "<input hidden type='checkbox' id='victim' />"
+                        await sleep(50);
+                        document.getElementById("victim").removeAttribute("hidden");
+                        break;
                     case "detached":
                         document.getElementById("place").innerHTML = "";
                         break;
@@ -112,11 +128,12 @@
                 }
             }
         </script>
-        <!--form onsubmit="submit.call(this, event)"-->
             <label for="dropdown">Choose a Wait for element state:</label>
             <select name="dd" id="dropdown" onchange="waiter.call(this, event)">
                 <option value="--">--</option>
               <option value="attached">attached</option>
+              <option value="attached-checked">attached-checked</option>
+              <option value="attached-unchecked">attached-unchecked</option>
               <option value="detached">detached</option>
               <option value="visible">visible</option>
               <option value="hidden">hidden</option>
@@ -134,7 +151,6 @@
             </select>
             <br><br>
             <button id="submit" type="submit" value="Submit" onclick="submit.call(this, event)">Go</button>
-        <!--/form-->
         <div>Timeout is 700 ms</div>
         <div id="place"></div>
     </body>
