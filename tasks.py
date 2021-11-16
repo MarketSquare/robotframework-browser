@@ -567,9 +567,7 @@ def docker_base(c):
 
 @task
 def docker_builder(c):
-    c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file docker/Dockerfile ."
-    )
+    c.run("DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file docker/Dockerfile .")
 
 
 @task
@@ -660,7 +658,9 @@ def docs(c, version=None):
     with output.open("w") as file:
         file.write(str(soup))
     if version is not None:
-        target = ROOT_DIR / "docs" / "versions" / f"Browser-{version.replace('v', '')}.html"
+        target = (
+            ROOT_DIR / "docs" / "versions" / f"Browser-{version.replace('v', '')}.html"
+        )
         output.rename(target)
 
 
