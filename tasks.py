@@ -623,8 +623,14 @@ def run_test_app(c):
 
 
 @task
-def docs(c):
-    """Generate library keyword documentation."""
+def docs(c, version=None):
+    """Generate library keyword documentation.
+
+    Args:
+        version: Creates keyword documentation with version
+        suffix in the name. Documentation is moved to docs/vesions
+        folder.
+    """
     output = ROOT_DIR / "docs" / "Browser.html"
     libdoc("Browser", str(output))
     with output.open("r") as file:
@@ -653,6 +659,9 @@ def docs(c):
     soup.head.append(script_data)
     with output.open("w") as file:
         file.write(str(soup))
+    if version is not None:
+        target = ROOT_DIR / "docs" / "versions" / f"Browser-{version.replace('v', '')}.html"
+        output.rename(target)
 
 
 @task
@@ -709,11 +718,8 @@ def release(c):
     c.run("python -m twine upload --repository pypi dist/*")
 
 
-@task(docs)
+@task()
 def version(c, version):
-    from Browser.version import __version__ as VERSION
-
-    os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}.html")
     if not version:
         print("Give version with inv version <version>")
     py_version_file = ROOT_DIR / "Browser" / "version.py"
