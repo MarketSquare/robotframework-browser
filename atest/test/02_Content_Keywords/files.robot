@@ -18,11 +18,9 @@ Upload upload_test_file
 #    Upload Sized File    75
 
 Upload 1MB file
-    [Tags]    no-windows-support
     Upload Sized File    1
 
 Upload 74MB file
-    [Tags]    no-windows-support
     Upload Sized File    74
 
 Upload File with different name
@@ -32,7 +30,6 @@ Upload File with different name
     Get Text    \#upload_result    ==    invalid_test_upload_file
 
 Invalid Upload Path
-    [Tags]    no-windows-support
     ${promise} =    Promise to Upload File    NonExistentFile
     Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
     ...    ${promise}
@@ -50,7 +47,6 @@ Wait For Download
     Remove File    ${file_object}[saveAs]
 
 Wait For Download With Custom Path
-    [Tags]    no-windows-support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
     ${dl_promise} =    Promise To Wait For Download    saveAs=${CUSTOM_DL_PATH}
