@@ -64,3 +64,17 @@ Get Checkbox State With Nonmatching Selector
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "xpath=//notamatch"*
     ...    Get Checkbox State    xpath=//notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
+
+Check Checkbox With Waiting
+    New Page    ${WAIT_URL}
+    Select Options By    \#dropdown    value    True    attached-unchecked
+    Click    \#submit    noWaitAfter=True
+    Check Checkbox    \#victim
+    Get Checkbox State    \#victim    ==    ${True}
+
+Uncheck Checkbox With Waiting
+    New Page    ${WAIT_URL}
+    Select Options By    \#dropdown    value    True    attached-checked
+    Click    \#submit    noWaitAfter=True
+    Uncheck Checkbox    \#victim
+    Get Checkbox State    \#victim    ==    ${False}

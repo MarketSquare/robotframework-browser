@@ -9,18 +9,18 @@ ${CUSTOM_DL_PATH} =     ${CURDIR}/download_file
 
 *** Test Cases ***
 Upload upload_test_file
-    Upload Named File   test_upload_file
+    Upload Named File    test_upload_file
 
 # 75 starts to fail with firefox and chromium
-# Upload Sized File  75
-# Upload Sized File  512
+# Upload Sized File    75
+# Upload Sized File    512
 # Upload 75MB file
-#    Upload Sized File  75
+#    Upload Sized File    75
 
 Upload 1MB file
     [Tags]    no-windows-support
-    Upload Sized File  1
-    
+    Upload Sized File    1
+
 Upload 74MB file
     [Tags]    no-windows-support
     Upload Sized File  74
@@ -87,27 +87,27 @@ Restore Library Timeout
     Set Browser Timeout    ${ORIGINAL_TIMEOUT}
 
 Generate Test File
-    [Arguments]  ${size_in_mb}
-    ${filename}=  Set Variable  ${size_in_mb}MB
-    ${size_in_bytes}=  Evaluate   1024 * ${size_in_mb}
-    Run  dd if=/dev/zero of=${CURDIR}/${filename}.file bs=1024 count=${size_in_bytes}
-    
-    [Return]  ${filename}.file
+    [Arguments]    ${size_in_mb}
+    ${filename} =    Set Variable    ${size_in_mb}MB
+    ${size_in_bytes} =    Evaluate    1024 * ${size_in_mb}
+    Run    dd if=/dev/zero of=${CURDIR}/${filename}.file bs=1024 count=${size_in_bytes}
+
+    [Return]    ${filename}.file
 
 Upload Sized File
-    [Arguments]  ${size_in_mb}
-    
-    ${file_name}=  Generate Test File    ${size_in_mb}
+    [Arguments]    ${size_in_mb}
+
+    ${file_name} =    Generate Test File    ${size_in_mb}
     Upload Named File    ${file_name}
-    
-    [Teardown]  Remove File  ${CURDIR}/${file_name}
+
+    [Teardown]    Remove File    ${CURDIR}/${file_name}
 
 Upload Named File
-    [Arguments]  ${file_name}
+    [Arguments]    ${file_name}
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
-    ${promise}=  Promise to Upload File    ${CURDIR}/${file_name}
+    ${promise} =    Promise to Upload File    ${CURDIR}/${file_name}
     Click    \#file_chooser
-    Wait For  ${promise}
-    ${result_name}  Get Text    \#upload_result
+    Wait For    ${promise}
+    ${result_name} =    Get Text    \#upload_result
     Get Text    \#upload_result    ==    ${file_name}

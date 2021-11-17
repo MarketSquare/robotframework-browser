@@ -16,8 +16,8 @@ import { Frame, Locator, Page } from 'playwright';
 
 import { LocatorCount, PlaywrightState } from './playwright-state';
 
-import * as pino from 'pino';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 /**
  * Resolve the playwright Locator on active page, frame or elementHandle.
