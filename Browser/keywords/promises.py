@@ -145,7 +145,7 @@ class Promises(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def promise_to_upload_file(self, path: PathLike):
-        """*!!DEPRECATED!!* Use keyword `Upload File By Selector` instead.
+        """*!!DEPRECATED!!* Use keyword `Upload File By Selector` instead if possible. If your use case _needs_ promise to upload file please let the Browser team know by creating an issue.
 
         Returns a promise that resolves when file from ``path`` has been uploaded.
 

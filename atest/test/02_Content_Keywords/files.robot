@@ -24,14 +24,14 @@ Upload 1MB file
 
 Upload 74MB file
     [Tags]    no-windows-support
-    Upload Sized File  74
+    Upload Sized File    74
 
 Upload Synchronously
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
     Generate Test File    74
-    Upload File By Selector    \#file_chooser  ${CURDIR}/74MB.file
-    Remove File  ${CURDIR}/74MB.file
+    Upload File By Selector    \#file_chooser    ${CURDIR}/74MB.file
+    Remove File    ${CURDIR}/74MB.file
 
 Upload File with different name
     New Page    ${LOGIN_URL}

@@ -982,7 +982,17 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def upload_file_by_selector(self, selector: str, path: PathLike):
+        """Uploads file from `path` to file input matched by selector.
+
+        Fails if upload is not done before library timeout.
+
+        Example:
+        | `Upload File By Selector`    \\#file_input_id    big_file.zip
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.UploadFileBySelector(
-                        Request().FileBySelector(path=path, selector=selector, strict=self.library.strict_mode)
-                    )
+                Request().FileBySelector(
+                    path=str(path), selector=selector, strict=self.library.strict_mode
+                )
+            )
+            logger.debug(response.log)
