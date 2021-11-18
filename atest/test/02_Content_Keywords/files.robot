@@ -11,11 +11,12 @@ ${CUSTOM_DL_PATH} =     ${CURDIR}/download_file
 Upload upload_test_file
     Upload Named File    test_upload_file
 
-# 75 starts to fail with firefox and chromium
-# Upload Sized File    75
-# Upload Sized File    512
-# Upload 75MB file
-#    Upload Sized File    75
+Upload 75MB file
+    [Tags]    no-windows-support
+    Run Keyword And Expect Error    Error: fileChooser.setFiles: fileChooser.setFiles: Target closed
+    ...    Upload Sized File    75
+    # The browser actually gets a bit stuck so it needs to be cleaned up properly here.
+    Close Browser
 
 Upload 1MB file
     Upload Sized File    1
@@ -99,6 +100,7 @@ Upload Sized File
 
 Upload Named File
     [Arguments]    ${file_name}
+    New Context
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
     ${promise} =    Promise to Upload File    ${CURDIR}/${file_name}
