@@ -81,7 +81,11 @@ Set Library Timeout
     IF    $current_contexts == []
         New Context
     END
-    ${timeout} =    Set Browser Timeout    30 seconds
+    IF    os.sys.platform.startswith('win32')
+        ${timeout} =    Set Browser Timeout    60 seconds
+    ELSE
+        ${timeout} =    Set Browser Timeout    30 seconds
+    END
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
 Restore Library Timeout
