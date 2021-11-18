@@ -27,6 +27,7 @@ Upload 74MB file
     Upload Sized File    74
 
 Upload Synchronously
+    [Timeout]    1 minute
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
     Generate Test File    74
