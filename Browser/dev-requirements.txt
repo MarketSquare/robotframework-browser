@@ -21,6 +21,8 @@ psutil >= 5.8.0
 coverage >= 5.5
 robotframework-tidy >= 1.6.0
 python-dateutil >= 2.8.2
+# Remove this when https://github.com/approvals/ApprovalTests.Python/issues/100 is fixed
+empty-files >= 0.0.3
 # Include normal dependencies from requirements.txt. Makes it possible to use
 # requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
 -r requirements.txt
