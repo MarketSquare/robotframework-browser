@@ -5,7 +5,7 @@ Resource    imports.resource
 Enable Tracing To File
     New Context    tracing=trace_0.zip
     New Page    ${LOGIN_URL}
-    Click    button
+    Click    id=goes_hidden
     Close Context
     ${count} =    Glob Files Count    ${OUTPUT_DIR}/browser/traces
     Should Be True    ${count} == ${0}
@@ -30,7 +30,7 @@ Enable Tracing To File With Two Browsers
     Close Context
     Switch Browser    ${browser1}
     New Page    ${LOGIN_URL}
-    Click    button
+    Click    id=goes_hidden
     Close Context
     Close Browser    ALL
     ${count} =    Glob Files Count    ${OUTPUT_DIR}/browser/traces
@@ -39,11 +39,12 @@ Enable Tracing To File With Two Browsers
     File Should Not Be Empty    ${OUTPUT_DIR}/trace_2.zip
 
 Check Show-Trace Command
+    [Timeout]    90s
     IF    '${SYS_VAR_CI}' == 'False'
         Log    This is only for CI when installation is done.
     ELSE
         ${help} =    Run Rfbrowser Help
         Should Contain    ${help}    Possible commands are
-        ${process} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
-        Check Trace Process    ${process}
+        ${process}    ${procss_stdout_file} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
+        Check Trace Process    ${process}    ${procss_stdout_file}
     END

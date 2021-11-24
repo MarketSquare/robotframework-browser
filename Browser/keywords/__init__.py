@@ -22,6 +22,7 @@ from .network import Network
 from .playwright_state import PlaywrightState
 from .promises import Promises
 from .runonfailure import RunOnFailureKeywords
+from .strict_mode import StrictMode
 from .waiter import Waiter
 from .webapp_state import WebAppState
 
@@ -36,6 +37,7 @@ __all__ = [
     "PlaywrightState",
     "Promises",
     "RunOnFailureKeywords",
+    "StrictMode",
     "Waiter",
     "WebAppState",
 ]

@@ -9,6 +9,14 @@ Press Keys Generate Characters
     Press Keys    input[name="name"]    H    e    l    l    o    Space    W    o    r    l    d    !
     Get Text    input[name="name"]    ==    Hello World!
 
+Press Keys With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
+    ...    Press Keys    //input    Foo
+    Set Strict Mode    False
+    Press Keys    //input    T    i    d    i    i
+    [Teardown]    Set Strict Mode    True
+
 Press Key Combinations of Keystrokes in TextField
     Press Keys    input[name="email"]    Home    Shift+End    Delete
     Press Keys    input[name="email"]    Shift+KeyA    KeyA

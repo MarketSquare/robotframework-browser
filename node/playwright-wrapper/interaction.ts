@@ -17,10 +17,10 @@ import { Dialog, Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
-import { invokeOnKeyboard, invokeOnMouse, invokePlaywrightMethod } from './playwirght-invoke';
+import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
 
-import * as pino from 'pino';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import pino from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function selectOption(
     request: Request.SelectElementSelector,
@@ -28,8 +28,9 @@ export async function selectOption(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const matcher = JSON.parse(request.getMatcherjson());
-    const result = await invokePlaywrightMethod(state, 'selectOption', selector, matcher);
-
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const result = await locator.selectOption(matcher);
     if (result.length == 0) {
         logger.info("Couldn't select any options");
         throw new Error(`No options matched ${matcher}`);
@@ -42,51 +43,52 @@ export async function deSelectOption(
     state: PlaywrightState,
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'selectOption', selector, []);
+    const strictMode = request.getStrict();
+    const locator = findLocator(state, selector, strictMode, undefined, true);
+    await (await locator).selectOption([]);
     return emptyWithLog(`Deselected options in element ${selector}`);
-}
-
-export async function inputText(request: Request.TextInput, state: PlaywrightState): Promise<Response.Empty> {
-    const inputText = request.getInput();
-    const selector = request.getSelector();
-    const type = request.getType();
-    const methodName = type ? 'type' : 'fill';
-    await invokePlaywrightMethod(state, methodName, selector, inputText);
-    return emptyWithLog('Input text: ' + inputText);
 }
 
 export async function typeText(request: Request.TypeText, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const text = request.getText();
-    const delay = request.getDelay();
+    const delayValue = request.getDelay();
     const clear = request.getClear();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
     if (clear) {
-        await invokePlaywrightMethod(state, 'fill', selector, '');
+        await locator.fill('');
     }
-    await invokePlaywrightMethod(state, 'type', selector, text, { delay: delay });
-    return emptyWithLog('Typed text: ' + text);
+    await locator.type(text, { delay: delayValue });
+    return emptyWithLog(`Typed text "${text}" on "${selector}"`);
 }
 
 export async function fillText(request: Request.FillText, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const text = request.getText();
-    await invokePlaywrightMethod(state, 'fill', selector, text);
-    return emptyWithLog('Fill text: ' + text);
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.fill(text);
+    return emptyWithLog(`Fill text ${text} on ${selector}`);
 }
 
 export async function clearText(request: Request.ClearText, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'fill', selector, '');
-    return emptyWithLog('Text field cleared.');
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.fill('');
+    return emptyWithLog(`Text ${selector} field cleared.`);
 }
 
 export async function press(request: Request.PressKeys, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const keyList = request.getKeyList();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
     for (const i of keyList) {
-        await invokePlaywrightMethod(state, 'press', selector, i);
+        await locator.press(i);
     }
-    return emptyWithLog('Pressed keys: ' + keyList);
+    return emptyWithLog(`Pressed keys: "${keyList}" on ${selector} `);
 }
 
 export async function click(
@@ -95,7 +97,9 @@ export async function click(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const options = request.getOptions();
-    await invokePlaywrightMethod(state, 'click', selector, JSON.parse(options));
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.click(JSON.parse(options));
     return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
 }
 
@@ -105,20 +109,27 @@ export async function hover(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const options = request.getOptions();
-    await invokePlaywrightMethod(state, 'hover', selector, JSON.parse(options));
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.hover(JSON.parse(options));
     return emptyWithLog(`Hovered element: '${selector}' With options: '${options}'`);
 }
 
 export async function focus(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'focus', selector);
-    return emptyWithLog('Focused element: ' + selector);
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.focus();
+    return emptyWithLog(`Focused element: ${selector}`);
 }
 
 export async function checkCheckbox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'check', selector);
-    return emptyWithLog('Checked checkbox: ' + selector);
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.waitFor({ state: 'attached' });
+    await locator.check();
+    return emptyWithLog(`Checked checkbox: ${selector}`);
 }
 
 export async function uncheckCheckbox(
@@ -126,8 +137,23 @@ export async function uncheckCheckbox(
     state: PlaywrightState,
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
-    await invokePlaywrightMethod(state, 'uncheck', selector);
-    return emptyWithLog('Unchecked checkbox: ' + selector);
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.waitFor({ state: 'attached' });
+    await locator.uncheck();
+    return emptyWithLog(`Unchecked checkbox: ${selector}`);
+}
+
+export async function uploadFileBySelector(
+    request: Request.FileBySelector,
+    state: PlaywrightState,
+): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const path = request.getPath();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.setInputFiles(path);
+    return emptyWithLog('Succesfully uploaded file');
 }
 
 export async function uploadFile(request: Request.FilePath, page: Page): Promise<Response.Empty> {

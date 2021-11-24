@@ -16,14 +16,14 @@ import { BrowserContext, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, exists } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
+import { exists, findLocator } from './playwright-invoke';
 
 export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
     const url = request.getUrl();
     const timeout = request.getDefaulttimeout();
     await page.goto(url, { timeout });
-    return emptyWithLog(`Succesfully opened URL ${url}`);
+    return emptyWithLog(`Successfully opened URL ${url}`);
 }
 
 export async function takeScreenshot(
@@ -37,13 +37,13 @@ export async function takeScreenshot(
     const quality = request.getQuality();
     const timeout = request.getTimeout();
     const options: Record<string, any> = { path: path, type: fileType, timeout: timeout };
+    const strictMode = request.getStrict();
     if (quality) {
         options.quality = parseInt(quality);
     }
     if (selector) {
-        const elem = await determineElement(state, selector);
-        exists(elem, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
-        await elem.screenshot(options);
+        const locator = await findLocator(state, selector, strictMode, undefined, true);
+        await locator.screenshot(options);
     } else {
         const page = state.getActivePage();
         exists(page, 'Tried to take screenshot, but no page was open.');

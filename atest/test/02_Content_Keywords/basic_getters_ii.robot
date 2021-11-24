@@ -79,6 +79,16 @@ Get Client Size
 
 Get Client Size Element
     ${size} =    Get Client Size    \#progress_bar    width    >    0
+    Should Be True    ${size}
+
+Get Client Size With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Client Size    //input
+    Set Strict Mode    False
+    ${size} =    Get Client Size    //input
+    Should Be True    ${size}[width] > 0
+    [Teardown]    Set Strict Mode    True
 
 Get Client Size Element Default Error
     Run Keyword And Expect Error
@@ -109,6 +119,15 @@ Get Scroll Position
 Get Scroll Position Element
     Get Scroll Position    h1    top    >=    0
 
+Get Scroll Position With Strict
+    Get Scroll Position
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Scroll Position    //input
+    Set Strict Mode    False
+    Get Scroll Position    //input
+    [Teardown]    Set Strict Mode    True
+
 Get Scroll Position Element Default Error
     Run Keyword And Expect Error
     ...    Scroll position top is '0' (int) should be less than '0.0' (float)
@@ -132,6 +151,19 @@ Get Scroll Size
     Should Be True    ${size}[width] >= 0
     Should Be True    ${size}[height] >= 0
     Length Should Be    ${size}    2
+
+Get Scroll Size With Strict No Element
+    ${size} =    Get Scroll Size
+    Should Be True    ${size}[width] >= 0
+
+Get Scroll Size With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Get Scroll Size    //input
+    Set Strict Mode    False
+    ${size} =    Get Scroll Size    //input
+    Should Be True    ${size}[width] >= 0
+    [Teardown]    Set Strict Mode    True
 
 Get Scroll Size Element
     ${size} =    Get Scroll Size    h1    width    >=    0
@@ -183,6 +215,24 @@ Get Element State
     Should Be True    ${state}
     ${state} =    Get Element State    h1
     Should Be True    ${state}
+
+Get Element State With Strict On ElementSelectorWithOptions
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//div" resolved to 18 elements*
+    ...    Get Element State    //div
+    Set Strict Mode    False
+    ${state} =    Get Element State    //div
+    Should Be True    ${state}
+    [Teardown]    Set Strict Mode    True
+
+Get Element State With Strict On WaitForFunctionOptions
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//div" resolved to 18 elements*
+    ...    Get Element State    //div    state=disabled
+    Set Strict Mode    False
+    ${state} =    Get Element State    //div    state=disabled
+    Should Not Be True    ${state}
+    [Teardown]    Set Strict Mode    True
 
 Get Element State With Assertion
     Get Element State    h1    readonly    ==    False

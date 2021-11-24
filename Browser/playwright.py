@@ -39,11 +39,16 @@ class Playwright(LibraryComponent):
 
     port: Optional[str]
 
-    def __init__(self, library: "Browser", enable_playwright_debug: bool):
+    def __init__(
+        self,
+        library: "Browser",
+        enable_playwright_debug: bool,
+        port: Optional[int] = None,
+    ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
         self.ensure_node_dependencies()
-        self.port = None
+        self.port = str(port) if port else None
 
     @cached_property
     def _playwright_process(self) -> Optional[Popen]:
@@ -77,7 +82,7 @@ class Playwright(LibraryComponent):
         )
 
     def start_playwright(self) -> Optional[Popen]:
-        existing_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
+        existing_port = self.port or os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
         if existing_port is not None:
             self.port = existing_port
             logger.info(
@@ -93,7 +98,8 @@ class Playwright(LibraryComponent):
             os.environ["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
         return Popen(
             ["node", str(playwright_script), port],
             shell=False,

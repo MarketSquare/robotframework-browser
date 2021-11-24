@@ -26,7 +26,7 @@ class Devices(LibraryComponent):
         """Returns a dict of all playwright device descriptors.
 
         See Playwright's
-        [https://github.com/microsoft/playwright/blob/master/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json]
+        [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json]
         for a formatted list.
         """
         with self.playwright.grpc_channel() as stub:
@@ -49,10 +49,10 @@ class Devices(LibraryComponent):
         before using ensure your active page is on that context.
         Usage:
 
-        | ${device}=          Get Device       iPhone X
-        | New Context         &{device}
-        | New Page
-        | Get Viewport Size   # returns { "width": 375, "height": 812 }
+        | ${device}=          `Get Device`       iPhone X
+        | `New Context`         &{device}
+        | `New Page`
+        | `Get Viewport Size`   # returns { "width": 375, "height": 812 }
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevice(Request().Device(name=name))

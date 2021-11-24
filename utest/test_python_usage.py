@@ -1,7 +1,7 @@
-import pytest
 import subprocess
 from unittest.mock import Mock
 
+import pytest
 from assertionengine import AssertionOperator
 
 

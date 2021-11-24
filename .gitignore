@@ -19,6 +19,8 @@ __pycache__
 robotframework_browser.egg-info/
 .venv
 zip_results
+utest/output
+flip_rate
 
 node/.linted
 node/.built

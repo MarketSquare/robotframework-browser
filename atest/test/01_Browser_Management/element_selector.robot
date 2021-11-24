@@ -8,20 +8,31 @@ Test Setup          New Page    ${FORM_URL}
 *** Test Cases ***
 Get Element
     ${ref} =    Get Element    select[name="preferred_channel"]
+    Set Strict Mode    False
     ${option_value} =    Get Property    ${ref} >> option    value
     Should Be Equal    ${option_value}    email
+    [Teardown]    Set Strict Mode    True
+
+Get Element With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
+    ...    Get Element    //input
+    Set Strict Mode    False
+    ${element} =    Get Element    //input
+    Should Start With    ${element}    element=
+    [Teardown]    Set Strict Mode    True
 
 Get Element With Nonmatching child selector
     ${ref} =    Get Element    select[name="preferred_channel"]
-    Run Keyword And Expect Error    *Timeout 3000ms exceeded.*waiting for selector ".notamatch"*
+    Run Keyword And Expect Error    *TimeoutError: locator.elementHandle: Timeout 3000ms exceeded.*
     ...    Get Property    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
     Run Keyword And Expect Error
-    ...    Error: No element handle found with id `1234-4321`.
+    ...    Error: No locator handle found with "1234-4321".
     ...    Click    element=1234-4321
     Run Keyword And Expect Error
-    ...    Error: No element handle found with id `1234-4321`.
+    ...    Error: No locator handle found with "1234-4321".
     ...    Click    element=1234-4321 >> .css
 
 Get Element From Frame
@@ -38,8 +49,10 @@ Using Element Handle directly as selector
 Get Elements when only 1 match
     ${refs} =    Get Elements    select[name="preferred_channel"]
     ${elem} =    Get From List    ${refs}    0
+    Set Strict Mode    False
     ${option_value} =    Get Property    ${elem} >> option    value
     Should Be Equal    ${option_value}    email
+    [Teardown]    Set Strict Mode    True
 
 Get Elements Include Hidden
     ${refs} =    Get Elements    input

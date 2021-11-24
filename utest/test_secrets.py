@@ -13,21 +13,34 @@ WARN_MESSAGE = (
 )
 
 
+class Response:
+    log = "log message"
+
+
 def test_fill_secret_in_plain_text(caplog):
-    secrerts = interaction.Interaction(MagicMock())
+    ctx = MagicMock()
+    ctx.presenter_mode = False
+    secrerts = interaction.Interaction(ctx)
+    secrerts._fill_text = MagicMock(return_value=Response())
     secrerts.fill_secret("selector", "password")
     assert caplog.text == WARN_MESSAGE
 
 
 def test_type_secret_in_plain_text(caplog):
-    secrerts = interaction.Interaction(MagicMock())
+    ctx = MagicMock()
+    ctx.presenter_mode = False
+    secrerts = interaction.Interaction(ctx)
+    secrerts._type_text = MagicMock(return_value=Response())
     secrerts.type_secret("selector", "password")
     assert caplog.text == WARN_MESSAGE
 
 
 def test_type_secret_with_prefix(caplog):
-    secrerts = interaction.Interaction(MagicMock())
+    ctx = MagicMock()
+    ctx.presenter_mode = False
+    secrerts = interaction.Interaction(ctx)
     secrerts._replace_placeholder_variables = MagicMock(return_value="123")
+    secrerts._type_text = MagicMock(return_value=Response())
     secrerts.type_secret("selector", "$password")
     assert caplog.text == ""
     secrerts.type_secret("selector", "%password")
@@ -35,7 +48,10 @@ def test_type_secret_with_prefix(caplog):
 
 
 def test_fill_secret_with_prefix(caplog):
-    secrerts = interaction.Interaction(MagicMock())
+    ctx = MagicMock()
+    ctx.presenter_mode = False
+    secrerts = interaction.Interaction(ctx)
+    secrerts._fill_text = MagicMock(return_value=Response())
     secrerts._replace_placeholder_variables = MagicMock(return_value="123")
     secrerts.fill_secret("selector", "$password")
     assert caplog.text == ""

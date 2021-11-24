@@ -67,6 +67,7 @@ class PlaywrightState(LibraryComponent):
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = False,
         pause_on_failure: bool = True,
+        bypassCSP=True,
     ):
         """Opens a new browser instance. Use this keyword for quick experiments or debugging sessions.
         Use `New Page` directly instead of `Open Browser` for production and automated execution.
@@ -88,25 +89,35 @@ class PlaywrightState(LibraryComponent):
         ``headless`` If set to False, a GUI is provided otherwise it is hidden. Defaults to False.
 
         ``pause_on_failure`` Stop execution when failure detected and leave browser open. Defaults to True.
+
+        ``bypassCSP`` Defaults to bypassing CSP and enabling custom script attach to the page.
         """
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
         )
         browser_id = self.new_browser(browser, headless=headless)
-        self.new_context()
+        self.new_context(bypassCSP=bypassCSP)
         self.new_page(url)
         if pause_on_failure:
             self.library._pause_on_failure.add(browser_id)
 
     @keyword(tags=("Setter", "BrowserControl"))
     def close_browser(self, browser: str = "CURRENT"):
-        """Closes the current browser. Activated browser is set to first active browser.
-        Closes all context and pages belonging to this browser.
-        See `Browser, Context and Page` for more information about Browser and related concepts.
+        """Closes the current browser.
+
+        Active browser is set to the browser that was active before this one. Closes all context and pages belonging
+        to this browser. See `Browser, Context and Page` for more information about Browser and
+        related concepts.
 
         ``browser`` < ``CURRENT`` | ``ALL`` | str > If value is not ``CURRENT``
         it should be a string referencing the id of the browser to be closed.
         If ``ALL`` is provided `Close All Browsers` is executed.
+
+        Example:
+        | `Close Browser`    ALL        # Closes all browsers
+        | `Close Browser`    CURRENT    # Close current browser
+        | `Close Browser`               # Close current browser
+        | `Close Browser`    ${id}      # Close browser matching id
         """
         with self.playwright.grpc_channel() as stub:
             if browser == "ALL":
@@ -124,15 +135,22 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def close_context(self, context: str = "CURRENT", browser: str = "CURRENT"):
-        """Closes a Context. Activated context is set to first active context.
-        Closes pages belonging to this context.
+        """Closes a Context.
+
+        Active context is set to the context that was active before this one. Closes pages belonging to this context.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
         ``context`` < ``CURRENT`` | ``ALL`` | str > Close context with specified id. If ``ALL``
         is passed, all contexts of the specified browser are closed. Defaults to CURRENT.
 
-        ``browser`` < ``CURRENT`` | ``ALL`` | str > Close context in specified browser. If value is not "CURRENT"
-        it should be a string referencing the id of the browser where to close context.
+        ``browser`` < ``CURRENT`` | ``ALL`` | str > Close context in specified browser. If value
+        is not "CURRENT" it should be a string referencing the id of the browser where to close context.
+
+        Example:
+        | `Close Context`                          #  Closes current context and current browser
+        | `Close Context`    CURRENT    CURRENT    #  Closes current context and current browser
+        | `Close Context`    ALL        CURRENT    #  Closes all context from current browser and current browser
+        | `Close Context`    ALL        ALL        #  Closes all context from current browser and all browser
         """
         for browser_instance in self._get_browser_instances(browser):
             if browser_instance["id"] == "NO BROWSER OPEN":
@@ -176,8 +194,9 @@ class PlaywrightState(LibraryComponent):
     def close_page(
         self, page: str = "CURRENT", context: str = "CURRENT", browser: str = "CURRENT"
     ):
-        """Closes the ``page`` in ``context`` in ``browser``. Defaults to current for all three.
-        Activated page is set to first active page.
+        """Closes the ``page`` in ``context`` in ``browser``.
+
+        Defaults to current for all three. Active page is set to the page that was active before this one.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
         ``page`` < ``CURRENT`` | ``ALL`` | str > Id of the page to close. If value is not "CURRENT"
@@ -192,6 +211,11 @@ class PlaywrightState(LibraryComponent):
         Defaults to CURRENT.
 
         Returns a list of dictionaries containing id, errors and console messages from the page.
+
+        Example
+        | `Close Page`                                       # Closes current page, context and browser
+        | `Close Page`    CURRENT     CURRENT     CURRENT    # Closes current page, context and browser
+        | `Close Page`    ALL         ALL         ALL        # Closes all pages, context and browsers
         """
         result = []
         with self.playwright.grpc_channel() as stub:
@@ -250,6 +274,7 @@ class PlaywrightState(LibraryComponent):
         self, wsEndpoint: str, browser: SupportedBrowsers = SupportedBrowsers.chromium
     ):
         """Connect to a playwright Browser.
+
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
         Returns a stable identifier for the connected browser.
@@ -286,6 +311,7 @@ class PlaywrightState(LibraryComponent):
     ) -> str:
 
         """Create a new playwright Browser with specified options.
+
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
         Returns a stable identifier for the created browser.
@@ -686,6 +712,7 @@ class PlaywrightState(LibraryComponent):
         message: Optional[str] = None,
     ) -> Dict:
         """Returns all browsers, open contexts in them and open pages in these contexts.
+
         See `Browser, Context and Page` for more information about these concepts.
 
         ``message`` overrides the default error message.
@@ -769,6 +796,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_browser(self, id: str) -> str:
         """Switches the currently active Browser to another open Browser.
+
         Returns a stable identifier for the previous browser.
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
@@ -782,6 +810,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_context(self, id: str, browser: str = "CURRENT") -> str:
         """Switches the active BrowserContext to another open context.
+
         Returns a stable identifier for the previous context.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
@@ -789,6 +818,13 @@ class PlaywrightState(LibraryComponent):
 
         ``browser`` < ``CURRENT`` | str> Switch context in specified browser. If value is not "CURRENT"
         it should be an the id of the browser where to switch context.
+
+        Example:
+        | ${first_context} =     `New Context`
+        | `New Page`             ${URL1}
+        | ${second_context} =    `New Context`
+        | `New Page`             ${URL2}
+        | `Switch Context`       ${first_context}    # Switches back to first context and page.
         """
         with self.playwright.grpc_channel() as stub:
             self._correct_browser(browser)
@@ -801,6 +837,7 @@ class PlaywrightState(LibraryComponent):
         self, id: str, context: str = "CURRENT", browser: str = "CURRENT"
     ) -> str:
         """Switches the active browser page to another open page by ``id`` or ``NEW``.
+
         Returns a stable identifier ``id`` for the previous page.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
@@ -811,12 +848,15 @@ class PlaywrightState(LibraryComponent):
 
         With ``CURRENT`` you can get the ``id`` of the "CURRENT" page
 
-
         ``context`` < ``CURRENT`` | str> Switch page in specified context. If value is not "CURRENT"
         it should be the id of the context where to switch page.
 
         ``browser`` < ``CURRENT`` | str> Switch page in specified browser. If value is not "CURRENT"
         it should be the id of the browser where to switch page.
+
+        Example:
+        | `Click`           button#pops_up    # Open new page
+        | ${previous} =    `Switch Page`      NEW
         """
         with self.playwright.grpc_channel() as stub:
             if context.upper() == "ALL":
@@ -926,9 +966,9 @@ class PlaywrightState(LibraryComponent):
         | Test Case
         |     `New Page`    http://www.imbus.de
         |     `New Page`    http://www.reaktor.com
-        |     ${current_page}=   Get Page IDs    ACTIVE    ACTIVE    ACTIVE
+        |     ${current_page}=   `Get Page IDs`    ACTIVE    ACTIVE    ACTIVE
         |     Log                Current page ID is: ${current_page}[0]
-        |     ${all_pages}=      Get Page IDs    CURRENT   CURRENT   ALL
+        |     ${all_pages}=      `Get Page IDs`    CURRENT   CURRENT   ALL
         |     Log Many           These are all Page IDs    @{all_pages}
 
         The ACTIVE page of the ACTIVE context of the ACTIVE Browser is the ``Current`` Page.
@@ -998,7 +1038,7 @@ class PlaywrightState(LibraryComponent):
         save it to disk. Then `New Context` can be created with prepopulated
         state.
 
-        Please note state file contains secrets and should not be shared
+        Please note state file may contains secrets and should not be shared
         with people outside of your organisation.
 
         The file is created in ${OUTPUTDIR}/browser/state folder and file(s)
@@ -1032,3 +1072,14 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SaveStorageState(Request().FilePath(path=path))
         return response.log
+
+    def set_peer_id(self, new_id) -> str:
+        """Sets the peer_id for the current GRPC connection to browser's backend.
+
+        Useful for sharing the same browsers or even pages among multiple separate
+        python processes. Meaningful usage requires the port of both Browser library
+        instances to be configured the same.
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetPeerId(Request().Index(index=new_id))
+            return response.body

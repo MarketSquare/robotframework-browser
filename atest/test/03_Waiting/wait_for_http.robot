@@ -14,7 +14,6 @@ Wait For Request synchronous
 
 Wait For Request async
     ${promise} =    Promise To    Wait For Request    matcher=    timeout=3s
-    # Go To    http://localhost:7272/api/get/json
     Click    \#delayed_request
     Wait For    ${promise}
 
@@ -25,6 +24,10 @@ Wait For Response synchronous
 Wait For Response synchronous with default timeout
     Click    \#delayed_request
     Wait For Response
+
+Wait For Response synchronous with regex matcher
+    Click    \#delayed_request
+    Wait For Response    matcher=\\/\\/local\\w+\\:\\d+\\/api
 
 Wait For Response async
     ${promise} =    Promise To    Wait For Response    matcher=    timeout=3s
@@ -59,8 +62,10 @@ Wait For Navigation Fails With Wrong wait_until
     ...    Wait for navigation    ${ROOT_URL}/posted.html    wait_until=foobar
 
 Wait For Navigation Works With wait_until
-    FOR    ${wait_until}    IN    domcontentloaded    load    networkidle
+    ${old timeout} =    Set Browser Timeout    4s
+    FOR    ${wait_until}    IN    domcontentloaded    networkidle    load
         Go To    ${ROOT_URL}/redirector.html
         Wait for navigation    ${ROOT_URL}/posted.html    wait_until=${wait_until}
         Get Url    contains    posted
     END
+    [Teardown]    Set Browser Timeout    ${old timeout}

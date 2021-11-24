@@ -64,10 +64,10 @@ async function delayedRequest() {
 
 function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
-    if (files && files[0].name === 'test_upload_file') {
-        uploadResultElement.current!.innerHTML = 'test_upload_file';
+    if (files) {
+        uploadResultElement.current!.innerHTML = files[0].name;
     } else {
-        uploadResultElement.current!.innerHTML = 'wrong_upload_filename';
+        uploadResultElement.current!.innerHTML = 'no uploaded file';
     }
 }
 
