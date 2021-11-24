@@ -23,7 +23,7 @@ GET with json response
 
 GET with error
     &{response} =    HTTP    /api/get/doesntexist
-    Should Be Equal    ${response.status}    ${500}
+    Should Be Equal    ${response.status}    ${404}
 
 POST
     &{response} =    HTTP    /api/post    POST    {"name": "John"}
