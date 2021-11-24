@@ -19,15 +19,16 @@ Wait For Request async
 
 Wait For Request url
     Click    \#delayed_request
-    Wait For Request  matcher=${ROOT_URL}/api/get/json  timeout=1s
+    Wait For Request    matcher=${ROOT_URL}/api/get/json    timeout=1s
 
 Wait For Request regex
     Click    \#delayed_request
-    Wait For Request  matcher=\\/\\/local\\w+\\:\\d+\\/api  timeout=1s
-    
+    Wait For Request    matcher=\\/\\/local\\w+\\:\\d+\\/api    timeout=1s
+
 Wait For Request predicate
     Click    \#delayed_request
-    Wait For Request  matcher=request => request.url().endsWith('api/get/json') && request.method() === 'GET'  timeout=1s      
+    Wait For Request    matcher=request => request.url().endsWith('api/get/json') && request.method() === 'GET'
+    ...    timeout=1s
 
 Wait For Response synchronous
     Click    \#delayed_request
