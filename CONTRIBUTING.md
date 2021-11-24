@@ -63,23 +63,33 @@ Docker container builds a clean install package. This can be used to check that 
 ### Install dependencies
 Ensure generated code and types are up to date with `inv build`
 
-### Set version number
-Set `VERSION=<version>` and run `inv version <new_version>` to update the version
-information to both Python and Node components. Version number should match to the
-milestone to the [issue tracker](https://github.com/MarketSquare/robotframework-browser/milestones)
+### Create previous version docs
+Set `VERSION=<version>`. Version number should match to the milestone to the 
+[issue tracker](https://github.com/MarketSquare/robotframework-browser/milestones)
+
+Checkout preciously released tag, generate the keyword documentation from the
+previous release and add the keyword documentation to the repository main branch.
 
 ```
+VERSION=<version>
+git describe --tags --abbrev=0 | xargs git checkout
+git describe --tags --abbrev=0 | xargs inv docs -v
+git checkout main
+git add docs/versions/Browser-$VERSION.html
+git commit -m "Add VERSION keyword documentation to repository."
+git push
+```
+
+### Set version number
+Run `inv version $VERSION` to update the version information to both Python
+and Node components.
+
+```
+inv version $VERSION
 git add Browser/version.py
 git add package.json
 git add setup.py
 git commit -m "Updateversion to: $VERSION"
-```
-
-Invoke command also creates old docs add the doc to the repo:
-```
-git add  docs/versions/Browser-*.html
-git commit -m "Add old docs to repo."
-git push
 ```
 
 ### Generate release notes

@@ -11,19 +11,26 @@ ${CUSTOM_DL_PATH} =     ${CURDIR}/download_file
 Upload upload_test_file
     Upload Named File    test_upload_file
 
-# 75 starts to fail with firefox and chromium
-# Upload Sized File    75
-# Upload Sized File    512
-# Upload 75MB file
-#    Upload Sized File    75
+Upload 75MB file
+    [Tags]    no-windows-support
+    Run Keyword And Expect Error    Error: fileChooser.setFiles: fileChooser.setFiles: Target closed
+    ...    Upload Sized File    75
+    # The browser actually gets a bit stuck so it needs to be cleaned up properly here.
+    Close Browser
 
 Upload 1MB file
-    [Tags]    no-windows-support
     Upload Sized File    1
 
 Upload 74MB file
-    [Tags]    no-windows-support
+    [Timeout]    1 minute
     Upload Sized File    74
+
+Upload File By Selector
+    New Page    ${LOGIN_URL}
+    Get Text    \#upload_result    ==    ${EMPTY}
+    Generate Test File    5
+    Upload File By Selector    \#file_chooser    ${CURDIR}/5MB.file
+    Remove File    ${CURDIR}/5MB.file
 
 Upload File with different name
     New Page    ${LOGIN_URL}
@@ -32,10 +39,15 @@ Upload File with different name
     Get Text    \#upload_result    ==    invalid_test_upload_file
 
 Invalid Upload Path
-    [Tags]    no-windows-support
     ${promise} =    Promise to Upload File    NonExistentFile
-    Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
-    ...    ${promise}
+    IF    os.sys.platform.startswith('win32')
+        Run Keyword And Expect Error
+        ...    STARTS: FileNotFoundError: [WinError 2] The system cannot find the file specified: 'NonExistentFile'
+        ...    Wait For    ${promise}
+    ELSE
+        Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
+        ...    ${promise}
+    END
     Wait For All Promises
 
 Wait For Download
@@ -50,7 +62,6 @@ Wait For Download
     Remove File    ${file_object}[saveAs]
 
 Wait For Download With Custom Path
-    [Tags]    no-windows-support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
     ${dl_promise} =    Promise To Wait For Download    saveAs=${CUSTOM_DL_PATH}
@@ -73,7 +84,11 @@ Set Library Timeout
     IF    $current_contexts == []
         New Context
     END
-    ${timeout} =    Set Browser Timeout    30 seconds
+    IF    os.sys.platform.startswith('win32')
+        ${timeout} =    Set Browser Timeout    60 seconds
+    ELSE
+        ${timeout} =    Set Browser Timeout    30 seconds
+    END
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
 Restore Library Timeout
@@ -97,6 +112,7 @@ Upload Sized File
 
 Upload Named File
     [Arguments]    ${file_name}
+    New Context
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
     ${promise} =    Promise to Upload File    ${CURDIR}/${file_name}
