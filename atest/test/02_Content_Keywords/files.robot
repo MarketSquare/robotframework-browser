@@ -27,12 +27,11 @@ Upload 74MB file
     Upload Sized File    74
 
 Upload Synchronously
-    [Timeout]    1 minute
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
-    Generate Test File    74
-    Upload File By Selector    \#file_chooser    ${CURDIR}/74MB.file
-    Remove File    ${CURDIR}/74MB.file
+    Generate Test File    5
+    Upload File By Selector    \#file_chooser    ${CURDIR}/5MB.file
+    Remove File    ${CURDIR}/5MB.file
 
 Upload File with different name
     New Page    ${LOGIN_URL}
