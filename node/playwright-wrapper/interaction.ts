@@ -144,6 +144,18 @@ export async function uncheckCheckbox(
     return emptyWithLog(`Unchecked checkbox: ${selector}`);
 }
 
+export async function uploadFileBySelector(
+    request: Request.FileBySelector,
+    state: PlaywrightState,
+): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const path = request.getPath();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.setInputFiles(path);
+    return emptyWithLog('Succesfully uploaded file');
+}
+
 export async function uploadFile(request: Request.FilePath, page: Page): Promise<Response.Empty> {
     const path = request.getPath();
     const fileChooser = await page.waitForEvent('filechooser');
