@@ -20,8 +20,8 @@ import * as getters from './getters';
 import * as interaction from './interaction';
 import * as network from './network';
 import * as playwrightState from './playwright-state';
+import { BrowserContext, Page } from 'playwright';
 import { IPlaywrightServer } from './generated/playwright_grpc_pb';
-import { Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
@@ -49,9 +49,20 @@ export class PlaywrightServer implements IPlaywrightServer {
             return this.createState(p);
         }
     };
-    private getActiveBrowser = (peer: ServerSurfaceCall) => this.getState(peer).getActiveBrowser();
-    private getActiveContext = (peer: ServerSurfaceCall) => this.getState(peer).getActiveContext();
-    private getActivePage = (peer: ServerSurfaceCall) => {
+
+    private getActiveBrowser = (peer: ServerSurfaceCall): playwrightState.BrowserState => {
+        const browser = this.getState(peer).getActiveBrowser();
+        if (!browser) throw Error('No browser open.');
+        return browser;
+    };
+
+    private getActiveContext = (peer: ServerSurfaceCall): BrowserContext => {
+        const context = this.getState(peer).getActiveContext();
+        if (!context) throw Error('No context open.');
+        return context;
+    };
+
+    private getActivePage = (peer: ServerSurfaceCall): Page => {
         const page = this.getState(peer).getActivePage();
         if (!page) throw Error('No page open.');
         return page;
@@ -126,7 +137,6 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         try {
             const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
             const result = await cookie.getCookies(context);
             callback(null, result);
         } catch (e) {
@@ -142,7 +152,6 @@ export class PlaywrightServer implements IPlaywrightServer {
             const request = call.request;
             if (request === null) throw Error('No request');
             const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
             const result = await cookie.addCookie(request, context);
             callback(null, result);
         } catch (e) {
@@ -156,7 +165,6 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         try {
             const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
             const result = await cookie.deleteAllCookies(context);
             callback(null, result);
         } catch (e) {
