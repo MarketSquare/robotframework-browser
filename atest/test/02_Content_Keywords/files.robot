@@ -25,7 +25,7 @@ Upload 74MB file
     [Timeout]    1 minute
     Upload Sized File    74
 
-Upload Synchronously
+Upload File By Selector
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
     Generate Test File    5
@@ -40,7 +40,7 @@ Upload File with different name
 
 Invalid Upload Path
     ${promise} =    Promise to Upload File    NonExistentFile
-    IF    os.sep == '/'
+    IF    os.sys.platform.startswith('win32')
         Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
         ...    ${promise}
     ELSE
