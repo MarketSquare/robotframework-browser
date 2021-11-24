@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-60-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-61-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -225,6 +225,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     <td align="center"><a href="https://github.com/laguna357"><img src="https://avatars.githubusercontent.com/u/86680503?v=4?s=100" width="100px;" alt=""/><br /><sub><b>laguna357</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Alaguna357" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/GavinRodgers-EN0055"><img src="https://avatars.githubusercontent.com/u/72198546?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gavin Rodgers</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AGavinRodgers-EN0055" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/pokaalinkanssayohon"><img src="https://avatars.githubusercontent.com/u/34340500?v=4?s=100" width="100px;" alt=""/><br /><sub><b>pokaalinkanssayohon</b></sub></a><br /><a href="#ideas-pokaalinkanssayohon" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/rsandbach"><img src="https://avatars.githubusercontent.com/u/8907955?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ryan Sandbach</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Arsandbach" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 
