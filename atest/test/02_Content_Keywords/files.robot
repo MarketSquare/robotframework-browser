@@ -26,6 +26,13 @@ Upload 74MB file
     [Tags]    no-windows-support
     Upload Sized File    74
 
+Upload Synchronously
+    New Page    ${LOGIN_URL}
+    Get Text    \#upload_result    ==    ${EMPTY}
+    Generate Test File    5
+    Upload File By Selector    \#file_chooser    ${CURDIR}/5MB.file
+    Remove File    ${CURDIR}/5MB.file
+
 Upload File with different name
     New Page    ${LOGIN_URL}
     Promise to Upload File    ${CURDIR}/invalid_test_upload_file
@@ -74,7 +81,11 @@ Set Library Timeout
     IF    $current_contexts == []
         New Context
     END
-    ${timeout} =    Set Browser Timeout    30 seconds
+    IF    os.sys.platform.startswith('win32')
+        ${timeout} =    Set Browser Timeout    60 seconds
+    ELSE
+        ${timeout} =    Set Browser Timeout    30 seconds
+    END
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
 Restore Library Timeout

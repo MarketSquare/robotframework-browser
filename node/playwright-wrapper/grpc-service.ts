@@ -415,6 +415,18 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
+    async uploadFileBySelector(
+        call: ServerUnaryCall<Request.FileBySelector, Response.Empty>,
+        callback: sendUnaryData<Response.Empty>,
+    ): Promise<void> {
+        try {
+            const result = await interaction.uploadFileBySelector(call.request, this.getState(call));
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
     uploadFile = this.wrappingPage(interaction.uploadFile);
     handleAlert = this.wrappingPage(interaction.handleAlert);
     waitForAlert = this.wrappingPage(interaction.waitForAlert);
