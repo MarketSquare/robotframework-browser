@@ -14,6 +14,7 @@
 
 import json
 from datetime import timedelta
+from os import PathLike
 from time import sleep
 from typing import Any, Dict, Optional
 
@@ -975,6 +976,23 @@ class Interaction(LibraryComponent):
             response = stub.KeyboardInput(
                 Request().KeyboardInputOptions(
                     action=action.name, input=input, delay=delay
+                )
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def upload_file_by_selector(self, selector: str, path: PathLike):
+        """Uploads file from `path` to file input matched by selector.
+
+        Fails if upload is not done before library timeout.
+
+        Example:
+        | `Upload File By Selector`    \\#file_input_id    big_file.zip
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.UploadFileBySelector(
+                Request().FileBySelector(
+                    path=str(path), selector=selector, strict=self.library.strict_mode
                 )
             )
             logger.debug(response.log)

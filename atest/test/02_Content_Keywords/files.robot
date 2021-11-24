@@ -25,6 +25,13 @@ Upload 74MB file
     [Timeout]    1 minute
     Upload Sized File    74
 
+Upload Synchronously
+    New Page    ${LOGIN_URL}
+    Get Text    \#upload_result    ==    ${EMPTY}
+    Generate Test File    5
+    Upload File By Selector    \#file_chooser    ${CURDIR}/5MB.file
+    Remove File    ${CURDIR}/5MB.file
+
 Upload File with different name
     New Page    ${LOGIN_URL}
     Promise to Upload File    ${CURDIR}/invalid_test_upload_file
