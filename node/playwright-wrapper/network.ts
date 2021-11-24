@@ -50,8 +50,23 @@ export async function httpRequest(request: pb.Request.HttpRequest, page: Page): 
     return jsonResponse(JSON.stringify(response), 'Request performed succesfully.');
 }
 
+export function deserializeUrlOrPredicate(request: pb.Request.HttpCapture): RegExp|any {
+    let urlOrPredicate = request.getUrlorpredicate();
+
+    // if the matcher is a function or arrow function, wrap it in parens and evauluate.
+    if ( /^function.*{.*}$/.test(urlOrPredicate) || /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/.test(urlOrPredicate)) {        
+        urlOrPredicate = `(${urlOrPredicate})`;
+        const fn = eval(urlOrPredicate);
+        if (typeof fn === 'function' || Object.prototype.toString.call(fn) === '[object Function]') {            
+            return fn;
+        }
+    }
+        
+    return new RegExp(`${urlOrPredicate}`);
+}
+
 export async function waitForResponse(request: pb.Request.HttpCapture, page: Page): Promise<pb.Response.Json> {
-    const urlOrPredicate = new RegExp(`.*${request.getUrlorpredicate()}`);
+    const urlOrPredicate = deserializeUrlOrPredicate(request);
     const timeout = request.getTimeout();
     const data = await page.waitForResponse(urlOrPredicate, { timeout });
     return jsonResponse(
@@ -72,10 +87,10 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page: Pag
     );
 }
 export async function waitForRequest(request: pb.Request.HttpCapture, page: Page): Promise<pb.Response.String> {
-    const urlOrPredicate = request.getUrlorpredicate();
+    const urlOrPredicate = deserializeUrlOrPredicate(request);
     const timeout = request.getTimeout();
     const result = await page.waitForRequest(urlOrPredicate, { timeout });
-    return stringResponse(result.url(), 'Requested compeleted withing timeout.');
+    return stringResponse(result.url(), 'Request completed within timeout.');
 }
 
 export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: Page): Promise<pb.Response.Empty> {
