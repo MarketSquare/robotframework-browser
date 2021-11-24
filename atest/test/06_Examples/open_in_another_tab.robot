@@ -1,6 +1,9 @@
 *** Settings ***
-Library     OperatingSystem
-Resource    imports.resource
+Library             OperatingSystem
+Resource            imports.resource
+
+Test Setup          Open Browser To No Page
+Test Teardown       Close Browser
 
 *** Test Cases ***
 Open PDF in another tab and download it
@@ -38,6 +41,9 @@ Download with no acceptDownloads fails
     Run keyword and expect error
     ...    Error: Context acceptDownloads is false
     ...    Download    ${WELCOME_URL}
+    Close Browser
+    New Browser
+    [Teardown]    NONE
 
 Open html in another tab
     New Page    ${WELCOME_URL}
