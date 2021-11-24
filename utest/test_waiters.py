@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 
 from Browser import ElementState
 from Browser.keywords import Waiter
@@ -10,7 +10,7 @@ class Response:
 
 def test_wait_for_state(ctx: MagicMock, response: MagicMock):
     wait = Waiter(ctx)
-    wait._wait_for_elements_state = MagicMock(return_value=Response())
+    wait._wait_for_elements_state = MagicMock(return_value=Response())  # type: ignore
     wait.wait_for_elements_state("id=myText")
 
 
