@@ -7,7 +7,7 @@ Test Setup      Open Browser To Form Page
 Cookies From Closed Context
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Error: no open context.
+    ...    Error: No context open.
     ...    Get Cookies
 
 Get Cookies Should Return Empty List When No Cookies Are Available
@@ -34,7 +34,7 @@ Add Cookie Should Fail If Context Is Not Open
     ${url} =    Get Url
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Error: no open context.
+    ...    Error: No context open.
     ...    Add Cookie    Foo    Bar    url=${url}
 
 Add Cookie With Url
@@ -167,7 +167,7 @@ Delete All Cookies
 Delete All Cookies From Closed Context
     Close Browser    ALL
     Run Keyword And Expect Error
-    ...    Error: no open context.
+    ...    Error: No context open.
     ...    Delete All Cookies
 
 Delete All Cookies When Cookies Does Not Exist
