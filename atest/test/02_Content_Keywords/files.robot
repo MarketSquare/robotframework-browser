@@ -19,14 +19,13 @@ Upload 75MB file
     Close Browser
 
 Upload 1MB file
-    [Tags]    no-windows-support
     Upload Sized File    1
 
 Upload 74MB file
-    [Tags]    no-windows-support
+    [Timeout]    1 minute
     Upload Sized File    74
 
-Upload Synchronously
+Upload File By Selector
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
     Generate Test File    5
@@ -40,10 +39,15 @@ Upload File with different name
     Get Text    \#upload_result    ==    invalid_test_upload_file
 
 Invalid Upload Path
-    [Tags]    no-windows-support
     ${promise} =    Promise to Upload File    NonExistentFile
-    Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
-    ...    ${promise}
+    IF    os.sys.platform.startswith('win32')
+        Run Keyword And Expect Error
+        ...    STARTS: FileNotFoundError: [WinError 2] The system cannot find the file specified: 'NonExistentFile'
+        ...    Wait For    ${promise}
+    ELSE
+        Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
+        ...    ${promise}
+    END
     Wait For All Promises
 
 Wait For Download
@@ -58,7 +62,6 @@ Wait For Download
     Remove File    ${file_object}[saveAs]
 
 Wait For Download With Custom Path
-    [Tags]    no-windows-support
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
     ${dl_promise} =    Promise To Wait For Download    saveAs=${CUSTOM_DL_PATH}
