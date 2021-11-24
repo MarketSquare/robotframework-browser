@@ -98,7 +98,11 @@ Generate Test File
     [Arguments]    ${size_in_mb}
     ${filename} =    Set Variable    ${size_in_mb}MB
     ${size_in_bytes} =    Evaluate    1024 * ${size_in_mb}
-    Run    dd if=/dev/zero of=${CURDIR}/${filename}.file bs=1024 count=${size_in_bytes}
+    IF    os.sys.platform.startswith('win32')
+        Run    fsutil file createNew ${CURDIR}/${filename}.file ${${size_in_bytes}*1024}
+    ELSE
+        Run    dd if=/dev/zero of=${CURDIR}/${filename}.file bs=1024 count=${size_in_bytes}
+    END
 
     [Return]    ${filename}.file
 
