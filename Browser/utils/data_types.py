@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from enum import Enum, auto
-from typing import Dict, Tuple, Union
+from typing import Dict, Union
 
 from typing_extensions import TypedDict
 
@@ -59,9 +58,23 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
     return params
 
 
-class DelayedKeyword(TypedDict):
-    name: str
-    args: Tuple[str, ...]
+class DelayedKeyword:
+    def __init__(
+        self,
+        name: Union[str, None],
+        original_name: Union[str, None],
+        args: tuple,
+        kwargs: dict,
+    ):
+        self.name = name
+        self.original_name = original_name
+        self.args = args
+        self.kwargs = kwargs
+
+    def __str__(self):
+        args = [str(arg) for arg in self.args]
+        kwargs = [f"{key}={value}" for key, value in self.kwargs.items()]
+        return f"{self.original_name}  {'  '.join(args)}  {'  '.join(kwargs)}".strip()
 
 
 class BoundingBox(TypedDict, total=False):
@@ -88,6 +101,13 @@ class ViewportDimensions(TypedDict):
 
 
 class RecordVideo(TypedDict, total=False):
+    """Enables Video recording
+
+    Examples:
+    |  New Context  recordVideo={'dir':'videos', 'size':{'width':400, 'height':200}}
+    |  New Context  recordVideo={'dir': '${OUTPUT_DIR}/video'}
+    """
+
     dir: str
     size: ViewportDimensions
 
@@ -438,6 +458,7 @@ class ElementState(Enum):
     | ``defocused``  | to not be the ``activeElement``. |
     | ``checked``    | to be ``checked``. Can be used on <input>. |
     | ``unchecked``  | to not be ``checked``. |
+    | ``stable``     | to be both ``visible`` and ``stable``. |
 
     Used by: `Wait For Elements State`"""
 
@@ -455,6 +476,7 @@ class ElementState(Enum):
     defocused = auto()
     checked = auto()
     unchecked = auto()
+    stable = auto()
 
 
 class ElementStateKey(Enum):

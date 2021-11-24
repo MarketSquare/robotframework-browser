@@ -1,10 +1,9 @@
-import * as bodyParser from 'body-parser';
 import * as express from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const app = express.default();
-app.use(bodyParser.json());
+app.use(express.json());
 const port = parseInt(process.argv[2]) || 7272;
 
 app.set('etag', false);
@@ -70,7 +69,13 @@ app.get('/redirector2.html', (req, res) => {
 app.post('/posted.html', (req, res) => {
     setTimeout(() => {
         res.send('<html lang="en"><head><title>Posted</title></head><body>Posted HELLO!!</body></html>');
-    }, 100);
+    }, 500);
+});
+
+app.get('/api/get/bad_binary', (req, res) => {
+    const data = Buffer.from([123120349139516]);
+    // res.contentType('image/jpeg');
+    res.end(data, 'binary');
 });
 
 app.use(express.static(path.join(__dirname, '..')));

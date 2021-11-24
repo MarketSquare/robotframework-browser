@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build prerequisite Playwright-focal image
         run: |
-          DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Dockerfile.playwright20.04 .
+          DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file docker/Dockerfile.playwright20.04 .
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v1
         with:
@@ -22,7 +22,7 @@ jobs:
           # Weirdly the image "name" is required and has to be here
           repository: marketsquare/robotframework-browser/rfbrowser-stable
           tag_with_ref: true
-          dockerfile: atest/docker/Dockerfile.latest_release
+          dockerfile: docker/Dockerfile.latest_release
       - name: Push tag :version_number to Docker Hub
         uses: docker/build-push-action@v1
         with:
@@ -30,7 +30,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
           repository: marketsquare/robotframework-browser
           tag_with_ref: true
-          dockerfile: atest/docker/Dockerfile.latest_release
+          dockerfile: docker/Dockerfile.latest_release
       - name: Push tag :latest to Docker Hub
         uses: docker/build-push-action@v1
         with:
@@ -39,7 +39,7 @@ jobs:
           repository: marketsquare/robotframework-browser
           tag_with_ref: false
           tags: latest
-          dockerfile: atest/docker/Dockerfile.latest_release
+          dockerfile: docker/Dockerfile.latest_release
 
   gh-pages:
     runs-on: ubuntu-latest

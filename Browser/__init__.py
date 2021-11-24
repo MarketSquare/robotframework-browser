@@ -15,10 +15,15 @@ from assertionengine import AssertionOperator
 
 from .browser import Browser
 from .utils.data_types import (
+    BoundingBox,
     ColorScheme,
+    DialogAction,
     ElementState,
+    GeoLocation,
     KeyboardModifier,
     MouseButton,
+    RecordHar,
+    RecordVideo,
     RequestMethod,
     SelectAttribute,
     SupportedBrowsers,
@@ -29,9 +34,14 @@ from .version import __version__ as VERSION
 __version__ = VERSION
 __all__ = [
     "AssertionOperator",
-    "ElementState",
+    "BoundingBox",
     "ColorScheme",
+    "DialogAction",
+    "ElementState",
+    "GeoLocation",
     "ViewportDimensions",
+    "RecordHar",
+    "RecordVideo",
     "SupportedBrowsers",
     "SelectAttribute",
     "KeyboardModifier",

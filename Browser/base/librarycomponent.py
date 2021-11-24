@@ -18,6 +18,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Set, Union
 
 from ..utils import get_variable_value, logger
+from ..utils.data_types import DelayedKeyword
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -129,3 +130,16 @@ class LibraryComponent:
             logger.warn("Given variable placeholder could not be resolved.")
             return placeholder
         return value
+
+    @property
+    def strict_mode(self) -> bool:
+        return self.library.strict_mode
+
+    @strict_mode.setter
+    def strict_mode(self, mode: bool):
+        self.library.strict_mode = mode
+
+    def parse_run_on_failure_keyword(
+        self, keyword_name: Union[str, None]
+    ) -> DelayedKeyword:
+        return self.library._parse_run_on_failure_keyword(keyword_name)

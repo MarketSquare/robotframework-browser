@@ -14,12 +14,14 @@
 import argparse
 import os
 import platform
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
+NODE_MODULES = INSTALLATION_DIR / "node_modules"
 # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
 # But shell=True breaks our linux CI
 SHELL = True if platform.platform().startswith("Windows") else False
@@ -60,7 +62,8 @@ def rfbrowser_init(skip_browser_install: bool):
     if skip_browser_install:
         os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
     else:
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
 
     process = Popen(
         "npm install --production",
@@ -84,9 +87,17 @@ def rfbrowser_init(skip_browser_install: bool):
     print("rfbrowser init completed")
 
 
+def rfbrowser_clean_node():
+    if not NODE_MODULES.is_dir():
+        print(f"Could not find {NODE_MODULES}, nothing to delete.")
+        return
+    print("Delete library node dependencies...")
+    shutil.rmtree(NODE_MODULES)
+
+
 def show_trace(file: str):
     print(f"Opening file: {file}")
-    playwright = INSTALLATION_DIR / "node_modules" / "playwright"
+    playwright = NODE_MODULES / "playwright"
     local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
     env["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
@@ -119,11 +130,17 @@ def run():
     parser.add_argument(
         "command",
         help=(
-            "Possible commands are:\ninit\nshow-trace\n\ninit command will install the required node dependencies. "
-            "init command is needed when library is installed or updated.\n\nshow-trace command will start the "
-            "Playwright trace viewer tool.\n\nSee the each command argument group for more details what (optional) "
-            "arguments that command supports."
+            "Possible commands are:\ninit\nclean-node\nshow-trace\n\ninit command will install the required node "
+            "dependencies. init command is needed when library is installed or updated.\n\nclean-node is used to delete"
+            "node side dependencies and installed browser binaries from the library default installation location. "
+            "When upgrading browser library, it is recommended to clean old node side binaries after upgrading the "
+            "Python side. Example:\n1) pip install -U robotframework-browser\n2) rfbrowser clean-node\n3)rfbrowser "
+            "init.\nRun rfbrowser clean-node command also before uninstalling the library with pip. This makes sure "
+            "that playwright browser binaries are not left in the disk after the pip uninstall command."
+            "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nSee the each command argument "
+            "group for more details what (optional) arguments that command supports."
         ),
+        type=str,
     )
     install = parser.add_argument_group("init options")
     install.add_argument(
@@ -143,15 +160,18 @@ def run():
         default=False,
     )
     args = parser.parse_args()
-    if args.command == "init":
+    command = args.command.lower()
+    if command == "init":
         rfbrowser_init(args.skip_browsers)
-    elif args.command == "show-trace":
+    elif command == "clean-node":
+        rfbrowser_clean_node()
+    elif command == "show-trace":
         if not args.file:
             raise Exception("show-trace needs also --file argument")
         show_trace(args.file)
     else:
         raise Exception(
-            f"Command should be init or show-trace, but it was {args.command}"
+            f"Command should be init, clean-node or show-trace, but it was {command}"
         )
 
 

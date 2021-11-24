@@ -4,42 +4,9 @@ Resource        imports.resource
 Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
-${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot2} =     ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
-${FailureScreenshot3} =     ${OUTPUT_DIR}${/}myfailure_screenshot.png
-${TestScreenshot} =         ${OUTPUT_DIR}${/}test_screenshot
+${TestScreenshot} =     ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
-Register Keyword To Run On Failure
-    Type Text    css=input#username_field    username
-    ${prev} =    Register Keyword To Run On Failure    Take Screenshot
-    Run Keyword And Expect Error
-    ...    *'username' (str) should be 'not_username' (str)
-    ...    Get Text    css=input#username_field    ==    not_username
-    File Should Exist    ${FailureScreenshot}
-    Register Keyword To Run On Failure    ${prev}
-    [Teardown]    Remove File    ${FailureScreenshot}
-
-Register KåWä On Failure with unicode " 💩 "
-    Type Text    css=input#username_field    username
-    ${prev} =    Register Keyword To Run On Failure    Take Screenshot
-    Run Keyword And Expect Error
-    ...    *'username' (str) should be 'not_username' (str)
-    ...    Get Text    css=input#username_field    ==    not_username
-    File Should Exist    ${FailureScreenshot2}
-    Register Keyword To Run On Failure    ${prev}
-    [Teardown]    Remove File    ${FailureScreenshot2}
-
-Register kw with custom path
-    Type Text    css=input#username_field    username
-    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
-    Run Keyword And Expect Error
-    ...    *'username' (str) should be 'not_username' (str)
-    ...    Get Text    css=input#username_field    ==    not_username
-    File Should Exist    ${FailureScreenshot3}
-    Register Keyword To Run On Failure    ${prev}
-    [Teardown]    Remove File    ${FailureScreenshot3}
-
 Screenshot By Default Filename
     Take Screenshot
     File Should Exist    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.png
@@ -81,7 +48,7 @@ Screenshotting With Jpeg Extension And Quality
 
 If Element Not Found Screenshot Should Fail
     Run Keyword And Expect Error
-    ...    Error: Tried to capture element screenshot, element '#not_there' wasn't found.
+    ...    TimeoutError: locator.screenshot: Timeout 3000ms exceeded.*waiting for selector "#not_there"*
     ...    Take Screenshot    selector=\#not_there
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
@@ -90,6 +57,15 @@ ElementHandle Screenshotting
     Take screenshot    ${TestScreenshot}    ${ref}
     File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}.png
+
+Take Take screenshot With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    Take screenshot    selector=//input
+    Set Strict Mode    False
+    ${path} =    Take screenshot    browser-strict    selector=//input
+    Set Strict Mode    True
+    [Teardown]    Remove File    ${path}
 
 Screenshotting Without Path
     Remove File    ${OUTPUT_DIR}/*.png

@@ -33,12 +33,15 @@ class WebAppState(LibraryComponent):
         assertion_expected: Any = None,
         message: Optional[str] = None,
     ) -> Any:
-        """
-        Get saved data from the local storage.
+        """Get saved data from the local storage.
 
         ``key`` Named key of the item in the storage.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        Example:
+        | `Local Storage Get Item`    Key    ==    Value    My error
+        | ${value} =    `Local Storage Get Item`    Key
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -55,12 +58,14 @@ class WebAppState(LibraryComponent):
 
     @keyword(name="localStorage set Item", tags=("Setter", "PageContent"))
     def local_storage_set_item(self, key: str, value: str):
-        """
-        Save data to the local storage.
+        """Save data to the local storage.
 
         ``key`` The name of the key under which it should be saved.
 
         ``value`` The value which shall be saved as a string.
+
+        Example:
+        | `Local Storage Set Item`    Key    Value
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -72,10 +77,15 @@ class WebAppState(LibraryComponent):
 
     @keyword(name="localStorage remove Item", tags=("Setter", "PageContent"))
     def local_storage_remove_item(self, key: str):
-        """
-        Remove saved data with key from the local storage.
+        """Remove saved data with key from the local storage.
 
         ``key`` Name of the item which shall be deleted.
+
+        Example:
+        | `Local Storage Set Item`      Foo    bar
+        | `LocalStorage Remove Item`    Foo
+        | ${item} =    `Local Storage Get Item`    Foo
+        | Should Be Equal    ${item}    ${None}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -87,8 +97,13 @@ class WebAppState(LibraryComponent):
 
     @keyword(name="localStorage clear", tags=("Setter", "PageContent"))
     def local_storage_clear(self):
-        """
-        Remove all saved data from the local storage.
+        """Remove all saved data from the local storage.
+
+        Example:
+        | `Local Storage Set Item`      Foo    bar
+        | `LocalStorage Clear`
+        | ${item} =    `Local Storage Get Item`    Foo
+        | Should Be Equal    ${item}    ${None}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -106,12 +121,16 @@ class WebAppState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ) -> Any:
-        """
-        Get saved data from from session storage.
+        """Get saved data from from session storage.
 
         ``key`` Named key of the item in the storage.
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
+
+        Example:
+        | `SessionStorage Set Item`    key2    value2
+        | ${item} =    `SessionStorage Get Item`    key1
+        | Should Be Equal    ${item}    value2
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -129,12 +148,14 @@ class WebAppState(LibraryComponent):
 
     @keyword(name="sessionStorage set Item", tags=("Setter", "PageContent"))
     def session_storage_set_item(self, key: str, value: str):
-        """
-        Save data to session storage.
+        """Save data to session storage.
 
         ``key`` The name of the key under which it should be saved.
 
         ``value`` The value which shall be saved as a string.
+
+        Example:
+        | `SessionStorage Set Item`    key2    value2
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -150,6 +171,11 @@ class WebAppState(LibraryComponent):
         Remove saved data with key from the session storage.
 
         ``key`` Name of the item which shall be deleted.
+
+        Example:
+        | `SessionStorage Set Item`       mykey2    myvalue2
+        | `SessionStorage Remove Item`    mykey2
+        | `SessionStorage Get Item`       mykey2    ==    ${None}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -161,8 +187,12 @@ class WebAppState(LibraryComponent):
 
     @keyword(name="sessionStorage clear", tags=("Setter", "PageContent"))
     def session_storage_clear(self):
-        """
-        Remove all saved data from the session storage.
+        """Remove all saved data from the session storage.
+
+        Example:
+        | `SessionStorage Set Item`    mykey3    myvalue3
+        |  `SessionStorage Clear`
+        | `SessionStorage Get Item`    mykey3    ==    ${None}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(

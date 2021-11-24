@@ -17,8 +17,8 @@ import { Page } from 'playwright';
 
 import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 
-import * as pino from 'pino';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function httpRequest(request: pb.Request.HttpRequest, page: Page): Promise<pb.Response.Json> {
     const opts: { [k: string]: any } = {

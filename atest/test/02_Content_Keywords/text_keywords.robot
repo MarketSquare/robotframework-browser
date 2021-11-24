@@ -14,8 +14,9 @@ Type Text with Clearing
 
 Type Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Type Text    notamatch
-    ...    text
+    Run Keyword And Expect Error
+    ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
+    ...    Type Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Clear Text
@@ -26,10 +27,19 @@ Clear Text
     Type Text    input#username_field    username    clear=No
     Get Text    css=input#username_field    ==    username
 
+Clear Text With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    Clear Text    //input
+    Set Strict Mode    False
+    Clear Text    //input
+    [Teardown]    Set Strict Mode    True
+
 Clear Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Clear Text
-    ...    notamatch
+    Run Keyword And Expect Error
+    ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
+    ...    Clear Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill with css selector
@@ -38,18 +48,43 @@ Fill with css selector
 
 Fill Text With Nonmatching Selector
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Text    notamatch
-    ...    text
+    Run Keyword And Expect Error
+    ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
+    ...    Fill Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
+
+Fill Text With Secret
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    Fill Text    //input    something
+    Set Strict Mode    False
+    Fill Text    //input    something
+    [Teardown]    Set Strict Mode    True
 
 Fill Secret Direct Value
     [Documentation]    ...
     ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    Type Secret    css=input#username_field    Direct Value    200 ms    True
-    Get Text    css=input#username_field    ==    Direct Value
-    Fill Secret    css=input#password_field    Direct Value
-    Get Text    css=input#password_field    ==    Direct Value
+    Type Secret    css=input#username_field    Direct Value 1    100 ms    True
+    Get Text    css=input#username_field    ==    Direct Value 1
+    Fill Secret    css=input#password_field    Direct Value 2
+    Get Text    css=input#password_field    ==    Direct Value 2
+
+Fill Secret With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    Fill Secret    //input    $LOGIN_URL
+    Set Strict Mode    False
+    Fill Secret    //input    $LOGIN_URL
+    [Teardown]    Set Strict Mode    True
+
+Type Secret With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    Type Secret    //input    $LOGIN_URL
+    Set Strict Mode    False
+    Type Secret    //input    $LOGIN_URL
+    [Teardown]    Set Strict Mode    True
 
 Fill Secret placeholder-env-var
     Set Environment Variable    PH_ENV_VAR    password11
@@ -162,6 +197,14 @@ Fill Secret With Nonmatching Selector
 Type Text with Delay
     Type Text    input#username_field    username    delay=10 ms
     Get Text    css=input#username_field    ==    username
+
+Type Text With Strict
+    Run Keyword And Expect Error
+    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    Type Text    //input    username
+    Set Strict Mode    False
+    Type Text    //input    username
+    [Teardown]    Set Strict Mode    True
 
 Type and Fill Text with text selector
     Type Text    input#username_field    Text field

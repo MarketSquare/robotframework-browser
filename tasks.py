@@ -4,11 +4,13 @@ import site
 import subprocess
 import sys
 import zipfile
+from datetime import datetime
 from pathlib import Path, PurePath
 import platform
 import re
 import traceback
 import shutil
+from xml.etree import ElementTree as ET
 
 from invoke import task, Exit
 
@@ -28,6 +30,8 @@ except ModuleNotFoundError:
 
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
+UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
+FLIP_RATE = ROOT_DIR / "flip_rate"
 dist_dir = ROOT_DIR / "dist"
 build_dir = ROOT_DIR / "build"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
@@ -38,6 +42,7 @@ node_dir = ROOT_DIR / "node"
 node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = python_src_dir / ".linted"
+ATEST_TIMEOUT = 600
 
 ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
@@ -84,7 +89,14 @@ def deps(c):
 
 @task
 def clean(c):
-    for target in [dist_dir, build_dir, python_protobuf_dir, node_protobuf_dir]:
+    for target in [
+        dist_dir,
+        build_dir,
+        python_protobuf_dir,
+        node_protobuf_dir,
+        UTEST_OUTPUT,
+        FLIP_RATE,
+    ]:
         if target.exists():
             shutil.rmtree(target)
     for timestamp_file in [
@@ -206,7 +218,7 @@ def utest(c, reporter=None, suite=None):
         suite:    Defines which test suite file to run. Same as: pytest path/to/test.py
                   Must be path to the test suite file
     """
-    args = ["--showlocals"]
+    args = ["--showlocals", "--junitxml=utest/output/pytest_xunit.xml", "--tb=long"]
     if reporter:
         args.append(f"--approvaltests-add-reporter={reporter}")
     if suite:
@@ -229,13 +241,14 @@ def clean_atest(c):
 
 
 @task(clean_atest)
-def atest(c, suite=None, include=None, zip=None):
+def atest(c, suite=None, include=None, zip=None, debug=False):
     """Runs Robot Framework acceptance tests.
 
     Args:
         suite: Select which suite to run.
         include: Select test by tag
         zip: Create zip file from output files.
+        debug: Use robotframework-debugger as test listener
     """
     args = [
         "--pythonpath",
@@ -245,7 +258,8 @@ def atest(c, suite=None, include=None, zip=None):
         args.extend(["--suite", suite])
     if include:
         args.extend(["--include", include])
-    exit = False if zip else True
+    if debug:
+        args.extend(["--listener", "Debugger"])
     os.mkdir(ATEST_OUTPUT)
     logfile = open(Path(ATEST_OUTPUT, "playwright-log.txt"), "w")
     os.environ["DEBUG"] = "pw:api"
@@ -261,11 +275,11 @@ def atest(c, suite=None, include=None, zip=None):
         stderr=subprocess.STDOUT,
     )
     os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-    rc = _run_pabot(args, exit)
+    rc = _run_pabot(args)
     process.kill()
     if zip:
         _clean_zip_dir()
-        print(f"Zip file created to: {_create_zip()}")
+        print(f"Zip file created to: {_create_zip(rc)}")
     sys.exit(rc)
 
 
@@ -274,20 +288,40 @@ def _clean_zip_dir():
         shutil.rmtree(ZIP_DIR)
 
 
-def _create_zip():
+def _clean_pabot_results(rc: int):
+    if rc == 0:
+
+        def on_error(function, path, excinfo):
+            print(f"Could not delete {path} with excinfo: {excinfo}")
+
+        pabot_results = ATEST_OUTPUT / "pabot_results"
+        shutil.rmtree(pabot_results, onerror=on_error)
+    else:
+        print(f"Not deleting pabot_results on error")
+
+
+def _create_zip(rc: int):
     zip_dir = ZIP_DIR / "output"
     zip_dir.mkdir(parents=True)
+    _clean_pabot_results(rc)
     python_version = platform.python_version()
     zip_name = f"{sys.platform}-rf-{robot_version}-python-{python_version}.zip"
     zip_path = zip_dir / zip_name
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
     for file in ATEST_OUTPUT.glob("**/*.*"):
-        file = PurePath(file)
-        arc_name = file.relative_to(str(ATEST_OUTPUT))
-        zip_file.write(file, arc_name)
+        zip_file = _files_to_zip(zip_file, file, ATEST_OUTPUT)
+    for file in UTEST_OUTPUT.glob("*.*"):
+        zip_file = _files_to_zip(zip_file, file, UTEST_OUTPUT)
     zip_file.close()
     return zip_path
+
+
+def _files_to_zip(zip_file, file, relative_to):
+    file = PurePath(file)
+    arc_name = file.relative_to(str(relative_to))
+    zip_file.write(file, arc_name)
+    return zip_file
 
 
 @task()
@@ -324,6 +358,34 @@ def sitecustomize(c):
         sitecustomize.write_text(use_coverage)
 
 
+@task()
+def copy_xunit(c):
+    """Copies local xunit files for flaky test analysis"""
+    xunit_dest = FLIP_RATE / "xunit"
+    xunit_dest.mkdir(parents=True, exist_ok=True)
+    try:
+        shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", xunit_dest)
+    except Exception as error:
+        print(f"\nWhen copying robot xunit got error: {error}")
+        robot_copy = False
+    else:
+        robot_copy = True
+    try:
+        shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", xunit_dest)
+    except Exception as error:
+        print(f"\nWhen copying pytest xunit got error: {error}")
+        pass
+    if robot_copy:
+        robot_xunit = xunit_dest / "robot_xunit.xml"
+        tree = ET.parse(robot_xunit)
+        root = tree.getroot()
+        now = datetime.now()
+        root.attrib["timestamp"] = now.strftime("%Y-%m-%dT%H:%M:%S.000000")
+        new_root = ET.Element("testsuites")
+        new_root.insert(0, root)
+        ET.ElementTree(new_root).write(robot_xunit)
+
+
 @task(clean_atest)
 def atest_robot(c):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
@@ -332,30 +394,41 @@ def atest_robot(c):
         "-m",
         "robot",
         "--exclude",
-        "Not-Implemented",
+        "not-implemented",
         "--loglevel",
         "DEBUG",
+        "--xunit",
+        "robot_xunit.xml",
         "--outputdir",
         str(ATEST_OUTPUT),
     ]
     if platform.platform().startswith("Windows"):
-        command_args.extend(["--exclude", "No-Windows-Support"])
+        command_args.extend(["--exclude", "no-windows-support"])
     command_args.append("atest/test")
     env = os.environ.copy()
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(command_args, env=env)
-    sys.exit(process.wait(600))
+    process.wait(ATEST_TIMEOUT)
+    output_xml = str(ATEST_OUTPUT / "output.xml")
+    print(f"Process {output_xml}")
+    robotstatuschecker.process_output(output_xml, verbose=False)
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
+    _clean_pabot_results(rc)
+    print(f"DONE rc=({rc})")
+    sys.exit(rc)
 
 
 @task(clean_atest)
 def atest_global_pythonpath(c):
-    sys.exit(_run_pabot(["--variable", "SYS_VAR_CI:True"]))
+    rc = _run_pabot(["--variable", "SYS_VAR_CI:True"])
+    _clean_pabot_results(rc)
+    sys.exit(rc)
 
 
 # Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
 @task()
 def atest_failed(c):
-    _run_pabot(["--rerunfailed", "atest/output/output.xml"])
+    sys.exit(_run_pabot(["--rerunfailed", "atest/output/output.xml"]))
 
 
 @task()
@@ -366,13 +439,24 @@ def run_tests(c, tests):
     env = os.environ.copy()
     env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(
-        [sys.executable, "-m", "robot", "--loglevel", "DEBUG", "-d", "outs", tests],
+        [
+            sys.executable,
+            "-m",
+            "robot",
+            "--xunit",
+            "robot_xunit.xml",
+            "--loglevel",
+            "DEBUG",
+            "-d",
+            "outs",
+            tests,
+        ],
         env=env,
     )
-    return process.wait(600)
+    return process.wait(ATEST_TIMEOUT)
 
 
-def _run_pabot(extra_args=None, exit=True):
+def _run_pabot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     os.environ["COVERAGE_PROCESS_START"] = ".coveragerc"
     pabot_args = [
@@ -387,8 +471,10 @@ def _run_pabot(extra_args=None, exit=True):
         "--artifactsinsubfolders",
     ]
     default_args = [
+        "--xunit",
+        "robot_xunit.xml",
         "--exclude",
-        "Not-Implemented",
+        "not-implemented",
         "--loglevel",
         "DEBUG",
         "--report",
@@ -399,17 +485,17 @@ def _run_pabot(extra_args=None, exit=True):
         str(ATEST_OUTPUT),
     ]
     if platform.platform().startswith("Windows"):
-        default_args.extend(["--exclude", "No-Windows-Support"])
+        default_args.extend(["--exclude", "no-windows-support"])
     default_args.append("atest/test")
     process = subprocess.Popen(
         pabot_args + (extra_args or []) + default_args, env=os.environ
     )
-    process.wait(600)
+    process.wait(ATEST_TIMEOUT)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml, verbose=False)
-    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=exit)
-    print("DONE")
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
+    print(f"DONE rc=({rc})")
     return rc
 
 
@@ -419,7 +505,7 @@ def lint_python(c):
         (ROOT_DIR / "utest").glob("**/*.py")
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
-        c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
+        c.run("mypy --show-error-codes --config-file Browser/mypy.ini Browser/ utest/")
         c.run("black --config Browser/pyproject.toml Browser/")
         c.run("flake8 --config Browser/.flake8 Browser/ utest/")
         c.run("isort Browser/")
@@ -448,6 +534,8 @@ def lint_robot(c):
         "unix",
         "--configure",
         "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
+        "--configure",
+        "NormalizeAssignments:equal_sign_type_variables=space_and_equal_sign",
     ]
     if in_ci:
         command.insert(1, "--check")
@@ -473,15 +561,13 @@ def lint(c):
 @task
 def docker_base(c):
     c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Dockerfile.playwright20.04 ."
+        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file docker/Dockerfile.playwright20.04 ."
     )
 
 
 @task
 def docker_builder(c):
-    c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file atest/docker/Dockerfile ."
-    )
+    c.run("DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file docker/Dockerfile .")
 
 
 @task
@@ -489,7 +575,7 @@ def docker_stable_image(c):
     from Browser.version import __version__ as VERSION
 
     c.run(
-        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file atest/docker/Dockerfile.latest_release ."
+        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
     )
 
 
@@ -500,12 +586,12 @@ def docker_test(c):
         """docker run\
 	    --rm \
 	    --ipc=host\
-	    --security-opt seccomp=atest/docker/chrome.json \
+	    --security-opt seccomp=docker/seccomp_profile.json \
 	    -v $(pwd)/atest/:/app/atest \
 	    -v $(pwd)/node/:/app/node/ \
 	    --workdir /app \
 	    rfbrowser \
-	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude Not-Implemented --outputdir /app/atest/output /app/atest/test"
+	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude not-implemented --outputdir /app/atest/output /app/atest/test"
           """
     )
 
@@ -519,7 +605,7 @@ def docker_run_tmp_tests(c):
         """docker run\
         --rm \
         --ipc=host\
-        --security-opt seccomp=atest/docker/chrome.json \
+        --security-opt seccomp=docker/seccomp_profile.json \
         -v $(pwd)/tmp/:/app/tmp \
         -v $(pwd)/node/:/app/node/ \
         --workdir /app \
@@ -535,8 +621,14 @@ def run_test_app(c):
 
 
 @task
-def docs(c):
-    """Generate library keyword documentation."""
+def docs(c, version=None):
+    """Generate library keyword documentation.
+
+    Args:
+        version: Creates keyword documentation with version
+        suffix in the name. Documentation is moved to docs/vesions
+        folder.
+    """
     output = ROOT_DIR / "docs" / "Browser.html"
     libdoc("Browser", str(output))
     with output.open("r") as file:
@@ -565,6 +657,11 @@ def docs(c):
     soup.head.append(script_data)
     with output.open("w") as file:
         file.write(str(soup))
+    if version is not None:
+        target = (
+            ROOT_DIR / "docs" / "versions" / f"Browser-{version.replace('v', '')}.html"
+        )
+        output.rename(target)
 
 
 @task
@@ -621,11 +718,8 @@ def release(c):
     c.run("python -m twine upload --repository pypi dist/*")
 
 
-@task(docs)
+@task()
 def version(c, version):
-    from Browser.version import __version__ as VERSION
-
-    os.rename("docs/Browser.html", f"docs/versions/Browser-{VERSION}.html")
     if not version:
         print("Give version with inv version <version>")
     py_version_file = ROOT_DIR / "Browser" / "version.py"

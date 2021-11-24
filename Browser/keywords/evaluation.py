@@ -36,17 +36,22 @@ class Evaluation(LibraryComponent):
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
 
-        [https://github.com/MarketSquare/robotframework-browser/tree/master/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
+        Keyword uses strict mode if selector is defined. See `Finding elements` for more details
+        about strict mode.
+
+        [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
-                Request().JavascriptCode(script=function, selector=selector)
+                Request().JavascriptCode(
+                    script=function, selector=selector, strict=self.strict_mode
+                )
             )
-            if response.log:
-                logger.info(response.log)
-            if response.result:
-                return json.loads(response.result)
-            return response.result
+        if response.log:
+            logger.info(response.log)
+        if response.result:
+            return json.loads(response.result)
+        return response.result
 
     @keyword(tags=("Setter", "PageContent"))
     def highlight_elements(
@@ -71,6 +76,8 @@ class Evaluation(LibraryComponent):
         ``color`` Sets the color of the border. Valid colors i.e. are:
         ``red``, ``blue``, ``yellow``, ``pink``, ``black``
 
+        Keyword does not fail if selector resolves to multiple elements.
+
         Example:
         | `Highlight Elements`    input#login_button    duration=200ms
         | `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF
@@ -83,6 +90,7 @@ class Evaluation(LibraryComponent):
                     width=width,
                     style=style,
                     color=color,
+                    strict=False,
                 )
             )
             logger.info(response.log)

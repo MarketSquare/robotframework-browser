@@ -14,6 +14,7 @@
 
 import json
 from datetime import timedelta
+from os import PathLike
 from time import sleep
 from typing import Any, Dict, Optional
 
@@ -69,6 +70,8 @@ class Interaction(LibraryComponent):
         ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         See `Fill Text` for direct filling of the full text at once.
 
         Example
@@ -76,7 +79,7 @@ class Interaction(LibraryComponent):
         | `Type Text`    input#username_field    user    delay=10 ms    clear=No
         """
         logger.info(f"Types the text '{txt}' in the given field.")
-        self._type_text(selector, txt, delay, clear)
+        self._type_text(selector, txt, delay, clear, strict=self.strict_mode)
 
     @keyword(tags=("Setter", "PageContent"))
     def fill_text(self, selector: str, txt: str):
@@ -95,13 +98,15 @@ class Interaction(LibraryComponent):
 
         ``txt`` Text for the text field.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         See `Type Text` for emulating typing text character by character.
 
         Example:
         | `Fill Text`    css=input#username_field    username
         """
         logger.info(f"Fills the text '{txt}' in the given field.")
-        self._fill_text(selector, txt)
+        self._fill_text(selector, txt, strict=self.strict_mode)
 
     @keyword(tags=("Setter", "PageContent"))
     def clear_text(self, selector: str):
@@ -110,11 +115,15 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ClearText(Request().ClearText(selector=selector))
+            response = stub.ClearText(
+                Request().ClearText(selector=selector, strict=self.strict_mode)
+            )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
@@ -129,7 +138,7 @@ class Interaction(LibraryComponent):
         found by ``selector``.
 
         This keyword does not log secret in Robot Framework logs, if keyword resolves
-        the variable valu internally. If ``enable_playwright_debug`` is enabled in
+        the variable value internally. If ``enable_playwright_debug`` is enabled in
         the library import, secret will be always visible as plain text in the playwright
         debug logs, regardless of the Robot Framework log level.
 
@@ -148,18 +157,22 @@ class Interaction(LibraryComponent):
         ``clear`` Set to false, if the field shall not be cleared before typing.
         Defaults to true.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         See `Type Text` for details.
 
         Example
         | `Type Secret`    input#username_field    $username      # Keyword resolves ${username} variable value from Robot Framework variables
-        | `Type Secret`    input#username_field    %username      # Keyword resolves $USERANME/%USERANME% variable value from environment variables
+        | `Type Secret`    input#username_field    %username      # Keyword resolves $USERNAME/%USERNAME% variable value from environment variables
         | `Type Secret`    input#username_field    ${username}    # Robot Framework resolves the variable value, but secrect can leak to Robot framework output files.
         """
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
             secret, originals.get("secret") or secret, "secret"
         )
-        self._type_text(selector, secret, delay, clear, log_response=False)
+        self._type_text(
+            selector, secret, delay, clear, log_response=False, strict=self.strict_mode
+        )
 
     def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
         originals = locals_to_params(local_args)
@@ -203,17 +216,19 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         See `Fill Text` for other details.
 
         Example:
-        | Fill Secret    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
-        | Fill Secret    input#username_field    %username    # Keyword resolves variable value from environment variables
+        | `Fill Secret`    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
+        | `Fill Secret`    input#username_field    %username    # Keyword resolves variable value from environment variables
         """
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
             secret, originals.get("secret") or secret, "secret"
         )
-        self._fill_text(selector, secret, log_response=False)
+        self._fill_text(selector, secret, log_response=False, strict=self.strict_mode)
 
     @keyword(tags=("Setter", "PageContent"))
     def press_keys(self, selector: str, *keys: str):
@@ -221,6 +236,8 @@ class Interaction(LibraryComponent):
 
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Supports values like "a, b" which will be automatically typed.
         .
@@ -233,11 +250,15 @@ class Interaction(LibraryComponent):
         [https://playwright.dev/docs/api/class-page#pagepressselector-key-options | Playwright docs for press.]
 
         Example:
-        | # Keyword       Selector                    *Keys
-        | Press Keys      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
+        | # Keyword         Selector                    *Keys
+        | `Press Keys`      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
         """  # noqa
         with self.playwright.grpc_channel() as stub:
-            response = stub.Press(Request().PressKeys(selector=selector, key=keys))
+            response = stub.Press(
+                Request().PressKeys(
+                    selector=selector, strict=self.strict_mode, key=keys
+                )
+            )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
@@ -281,6 +302,8 @@ class Interaction(LibraryComponent):
         for pages to start loading. You can opt out of waiting via setting this flag. You would only need
         this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         ``*modifiers``
         Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
         current modifiers back. If not specified, currently pressed modifiers are used.
@@ -313,28 +336,35 @@ class Interaction(LibraryComponent):
             logger.debug(f"Click options are: {options_json}")
             response = stub.Click(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+                    selector=selector, options=options_json, strict=self.strict_mode
                 )
             )
             logger.debug(response.log)
 
     @keyword(tags=("PageContent",))
-    def record_selector(self):
+    def record_selector(
+        self,
+        label: Optional[str] = None,
+    ):
         """Record the selector that is under mouse.
 
+        ``label`` text to show when on the box in the page while recording.
+
         Focus on the page and move mouse over the element you want to select.
-        Press 's' to store the elements selector.
 
         Example:
-        | ${recording} =    `Promise To`    `Record Selector`
-        | `Hover`    h1
-        | `Keyboard Key`    press    s
-        | ${selector} =    `Wait For`    ${recording}
+        | ${selector} =    `Record Selector`   Button
+        | `Click`  ${selector}
+        | ${selector2} =    `Record Selector`  Page header
+        | `Get Text`  ${selector2}  ==  Expected text
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.RecordSelector(Request.Empty())
+            response = stub.RecordSelector(Request.Label(label=label or ""))
             selector_repr = response.result.replace("#", "\\#")
-            logger.info(f"Selector: {selector_repr}")
+            logger.console(
+                f"\nSelector{' for ' + label if label else ''}: {selector_repr}"
+            )
+            logger.info(f"Selector{' for ' + label if label else ''}: {selector_repr}")
             return json.loads(response.result)
 
     @keyword(tags=("Setter", "PageContent"))
@@ -364,6 +394,8 @@ class Interaction(LibraryComponent):
 
         ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
         pressed during the hover, and then restores current modifiers back.
         If not specified, currently pressed modifiers are used.
@@ -383,7 +415,7 @@ class Interaction(LibraryComponent):
             logger.debug(f"Hover Options are: {options_json}")
             response = stub.Hover(
                 Request().ElementSelectorWithOptions(
-                    selector=selector, options=options_json
+                    selector=selector, options=options_json, strict=self.strict_mode
                 )
             )
             logger.debug(response.log)
@@ -395,11 +427,15 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the element.
         See the `Finding elements` section for details about the selectors.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         If there's no element matching selector, the method waits until a
         matching element appears in the DOM. Timeouts after 10 seconds.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.Focus(Request().ElementSelector(selector=selector))
+            response = stub.Focus(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
@@ -427,6 +463,8 @@ class Interaction(LibraryComponent):
         Works same as vertical but defines < ``left`` | ``right`` > as start and end.
 
         ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         """
         scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
@@ -472,6 +510,8 @@ class Interaction(LibraryComponent):
         ``width`` defines to scroll exactly one visible range to the right.
 
         ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         """
         scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
@@ -498,11 +538,15 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Does nothing if the element is already checked/selected.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.CheckCheckbox(Request().ElementSelector(selector=selector))
-            logger.debug(response.log)
+            response = stub.CheckCheckbox(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+        logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
     def uncheck_checkbox(self, selector: str):
@@ -511,16 +555,23 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Does nothing if the element is not checked/selected.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(
-                Request().ElementSelector(selector=selector)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
-            logger.debug(response.log)
+        logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def select_options_by(self, selector: str, attribute: SelectAttribute, *values):
+    def select_options_by(
+        self,
+        selector: str,
+        attribute: SelectAttribute,
+        *values,
+    ):
         """Selects options from select element found by ``selector``.
 
         ``selector`` Selector of the select tag.
@@ -530,10 +581,15 @@ class Interaction(LibraryComponent):
         Possible attributes to match options by:
         ``attribute``
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         If no values to select are passed will deselect options in element.
 
         Example:
-        | `Select Options By`   \\#dropdown    value    attached
+        | `Select Options By`    select[name=preferred_channel]    label    Direct mail
+        | `Select Options By`    select[name=interests]    value    males    females    others
+        | `Select Options By`    select[name=possible_channels]    index    0    2
+        | `Select Options By`    select[name=interests]    text     Males    Females
         """
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
@@ -548,7 +604,9 @@ class Interaction(LibraryComponent):
             matchers = json.dumps([{"index": int(s)} for s in values])
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
-                Request().SelectElementSelector(selector=selector, matcherJson=matchers)
+                Request().SelectElementSelector(
+                    selector=selector, matcherJson=matchers, strict=self.strict_mode
+                )
             )
             logger.debug(response.log)
 
@@ -558,18 +616,26 @@ class Interaction(LibraryComponent):
 
         ``selector`` Selector of the select tag.
         See the `Finding elements` section for details about the selectors.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.DeselectOption(Request().ElementSelector(selector=selector))
-            logger.debug(response.log)
+            response = stub.DeselectOption(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+        logger.debug(response.log)
 
-    def _fill_text(self, selector: str, txt: str, log_response: bool = True):
+    def _fill_text(
+        self, selector: str, txt: str, log_response: bool = True, strict: bool = True
+    ):
         if self.library.presenter_mode:
-            self.hover(selector)
+            self.hover(selector, strict)
             self.library.highlight_elements(selector, duration=timedelta(seconds=2))
             sleep(2)
         with self.playwright.grpc_channel() as stub:
-            response = stub.FillText(Request().FillText(selector=selector, text=txt))
+            response = stub.FillText(
+                Request().FillText(selector=selector, text=txt, strict=strict)
+            )
             if log_response:
                 logger.debug(response.log)
 
@@ -580,16 +646,21 @@ class Interaction(LibraryComponent):
         delay: timedelta = timedelta(microseconds=0),
         clear: bool = True,
         log_response: bool = True,
+        strict: bool = True,
     ):
         if self.library.presenter_mode:
-            self.hover(selector)
+            self.hover(selector, strict)
             self.library.highlight_elements(selector, duration=timedelta(seconds=2))
             sleep(2)
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
             response = stub.TypeText(
                 Request().TypeText(
-                    selector=selector, text=txt, delay=int(delay_ms), clear=clear
+                    selector=selector,
+                    text=txt,
+                    delay=int(delay_ms),
+                    clear=clear,
+                    strict=strict,
                 )
             )
             if log_response:
@@ -611,8 +682,8 @@ class Interaction(LibraryComponent):
             ``action`` equals accept. Defaults to empty string.
 
         Example:
-        | Handle Future Dialogs    action=accept
-        | Click                    \\#alerts
+        | `Handle Future Dialogs`    action=accept
+        | `Click`                    \\#alerts
         """
 
         with self.playwright.grpc_channel() as stub:
@@ -640,10 +711,10 @@ class Interaction(LibraryComponent):
 
         Example with returning text:
 
-        | ${promise} =       Promise To    Wait For Alert    action=accept
-        | Click              id=alerts
-        | ${text} =          Wait For      ${promise}
-        | Should Be Equal    ${text}       Am an alert
+        | ${promise} =         `Promise To`    `Wait For Alert`    action=accept
+        | `Click`              id=alerts
+        | ${text} =            `Wait For`      ${promise}
+        | Should Be Equal      ${text}         Am an alert
 
         Example with text verify:
 
@@ -688,6 +759,12 @@ class Interaction(LibraryComponent):
         Can only be set if the action is click.
 
         Moving the mouse between holding down and releasing it, is possible with `Mouse Move`.
+
+        Example:
+        | `Hover`                     "Obstacle"           # Move mouse over the element
+        | `Mouse Button`              down                 # Press mouse button down
+        | `Mouse Move Relative To`    "Obstacle"    500    # Drag mouse
+        | `Mouse Button`              up                   # Release mouse button
         """
         with self.playwright.grpc_channel() as stub:
             if x and y:
@@ -712,9 +789,15 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def drag_and_drop(self, selector_from: str, selector_to: str, steps: int = 1):
+    def drag_and_drop(
+        self,
+        selector_from: str,
+        selector_to: str,
+        steps: int = 1,
+    ):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
+
         See the `Finding elements` section for details about the selectors.
 
         First it moves the mouse to the start-point,
@@ -729,6 +812,11 @@ class Interaction(LibraryComponent):
         ``selector_to`` identifies the element, which center is the end-point.
 
         ``steps`` defines how many intermediate mouse move events are sent.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Example
+        | `Drag And Drop`    "Circle"    "Goal"
         """
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
@@ -752,11 +840,16 @@ class Interaction(LibraryComponent):
         Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
         the top left corner of the pages viewport.
 
-        ``from_x`` & ``from_y`` identify the the start-point.
+        ``from_x`` & ``from_y`` identify the start-point.
 
-        ``to_x`` & ``to_y`` identify the the end-point.
+        ``to_x`` & ``to_y`` identify the end-point.
 
         ``steps`` defines how many intermediate mouse move events are sent.
+
+        Example:
+        | `Drag And Drop By Coordinates`
+        | ...    from_x=30    from_y=30
+        | ...    to_x=10    to_y=10    steps=200
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
@@ -771,7 +864,11 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def mouse_move_relative_to(
-        self, selector: str, x: float = 0.0, y: float = 0.0, steps: int = 1
+        self,
+        selector: str,
+        x: float = 0.0,
+        y: float = 0.0,
+        steps: int = 1,
     ):
         """Moves the mouse cursor relative to the selected element.
 
@@ -779,6 +876,11 @@ class Interaction(LibraryComponent):
 
         ``steps`` Number of intermediate steps for the mouse event.
         This is sometime needed for websites to recognize the movement.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Example:
+        | `Mouse Move Relative To`    id=indicator    -100
         """
         with self.playwright.grpc_channel() as stub:
             bbox = self.library.get_boundingbox(selector)
@@ -807,6 +909,9 @@ class Interaction(LibraryComponent):
         of the page.
 
         ``steps`` Number of intermediate steps for the mouse event.
+
+        Example:
+        | `Mouse Move`    400    400
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
@@ -834,11 +939,11 @@ class Interaction(LibraryComponent):
         ``Shift``, ``Control``, ``Alt``, ``Meta``, ``ShiftLeft``
 
         Example excecution:
-        | Keyboard Key    press    S
-        | Keyboard Key    down     Shift
-        | Keyboard Key    press    ArrowLeft
-        | Keyboard Key    press    Delete
-        | Keyboard Key    up       Shift
+        | `Keyboard Key`    press    S
+        | `Keyboard Key`    down     Shift
+        | `Keyboard Key`    press    ArrowLeft
+        | `Keyboard Key`    press    Delete
+        | `Keyboard Key`    up       Shift
 
         Note: Capital letters don't need to be written by the help of Shift. You can type them in directly.
         """
@@ -863,11 +968,31 @@ class Interaction(LibraryComponent):
         Note: To press a special key, like Control or ArrowDown, use keyboard.press.
         Modifier keys DO NOT effect these methods. For testing modifier effects use single key
         presses with ``Keyboard Key  press``
+
+        Example:
+        | `Keyboard Input`    insertText    0123456789
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardInput(
                 Request().KeyboardInputOptions(
                     action=action.name, input=input, delay=delay
+                )
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def upload_file_by_selector(self, selector: str, path: PathLike):
+        """Uploads file from `path` to file input matched by selector.
+
+        Fails if upload is not done before library timeout.
+
+        Example:
+        | `Upload File By Selector`    \\#file_input_id    big_file.zip
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.UploadFileBySelector(
+                Request().FileBySelector(
+                    path=str(path), selector=selector, strict=self.library.strict_mode
                 )
             )
             logger.debug(response.log)
