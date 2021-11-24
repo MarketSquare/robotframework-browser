@@ -186,14 +186,17 @@ class Getters(LibraryComponent):
         | ${text} =    `Get Text`    id=important                            # Returns element text without assertion.
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetText(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
-            )
+        response = self._get_text(selector)
         logger.debug(response.log)
         return verify_assertion(
             response.body, assertion_operator, assertion_expected, "Text", message
         )
+
+    def _get_text(self, selector: str):  # To ease unit testing
+        with self.playwright.grpc_channel() as stub:
+            return stub.GetText(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling

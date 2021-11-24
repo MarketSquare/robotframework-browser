@@ -12,7 +12,7 @@ robotframework-pabot >= 2.0.0
 twine >= 3.4.1
 robotstatuschecker >= 2.1.0
 rellu >= 0.7
-approvaltests >= 0.3.2
+approvaltests == 3.1.0
 pytest-approvaltests >= 0.1.0
 pytest-mock==3.6.1
 # Required for injecting google analytics tags on release
@@ -21,6 +21,8 @@ psutil >= 5.8.0
 coverage >= 5.5
 robotframework-tidy >= 1.6.0
 python-dateutil >= 2.8.2
+# Remove this when https://github.com/approvals/ApprovalTests.Python/issues/100 is fixed
+empty-files >= 0.0.3
 # Include normal dependencies from requirements.txt. Makes it possible to use
 # requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
 -r requirements.txt

@@ -505,7 +505,7 @@ def lint_python(c):
         (ROOT_DIR / "utest").glob("**/*.py")
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
-        c.run("mypy --config-file Browser/mypy.ini Browser/ utest/")
+        c.run("mypy --show-error-codes --config-file Browser/mypy.ini Browser/ utest/")
         c.run("black --config Browser/pyproject.toml Browser/")
         c.run("flake8 --config Browser/.flake8 Browser/ utest/")
         c.run("isort Browser/")
