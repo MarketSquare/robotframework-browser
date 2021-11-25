@@ -50,18 +50,21 @@ export async function httpRequest(request: pb.Request.HttpRequest, page: Page): 
     return jsonResponse(JSON.stringify(response), 'Request performed succesfully.');
 }
 
-export function deserializeUrlOrPredicate(request: pb.Request.HttpCapture): RegExp|any {
+export function deserializeUrlOrPredicate(request: pb.Request.HttpCapture): RegExp | any {
     let urlOrPredicate = request.getUrlorpredicate();
 
     // if the matcher is a function or arrow function, wrap it in parens and evaluate.
-    if ( /^function.*{.*}$/.test(urlOrPredicate) || /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/.test(urlOrPredicate)) {        
+    if (
+        /^function.*{.*}$/.test(urlOrPredicate) ||
+        /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/.test(urlOrPredicate)
+    ) {
         urlOrPredicate = `(${urlOrPredicate})`;
         const fn = eval(urlOrPredicate);
-        if (typeof fn === 'function' || Object.prototype.toString.call(fn) === '[object Function]') {            
+        if (typeof fn === 'function' || Object.prototype.toString.call(fn) === '[object Function]') {
             return fn;
         }
     }
-        
+
     return new RegExp(`${urlOrPredicate}`);
 }
 
