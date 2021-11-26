@@ -35,13 +35,13 @@ FLIP_RATE = ROOT_DIR / "flip_rate"
 dist_dir = ROOT_DIR / "dist"
 build_dir = ROOT_DIR / "build"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
-python_src_dir = ROOT_DIR / "Browser"
-python_protobuf_dir = python_src_dir / "generated"
+PYTHON_SRC_DIR = ROOT_DIR / "Browser"
+python_protobuf_dir = PYTHON_SRC_DIR / "generated"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
 node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
-python_lint_timestamp_file = python_src_dir / ".linted"
+python_lint_timestamp_file = PYTHON_SRC_DIR / ".linted"
 ATEST_TIMEOUT = 600
 
 ZIP_DIR = ROOT_DIR / "zip_results"
@@ -96,18 +96,27 @@ def clean(c):
         node_protobuf_dir,
         UTEST_OUTPUT,
         FLIP_RATE,
+        Path("./htmlcov"),
+        ATEST_OUTPUT,
+        ZIP_DIR,
+        Path("./.mypy_cache"),
+        PYTHON_SRC_DIR / "wrapper"
     ]:
         if target.exists():
             shutil.rmtree(target)
-    for timestamp_file in [
+    pyi_file = PYTHON_SRC_DIR / "__init__.pyi"
+    for file in [
         node_timestamp_file,
         node_lint_timestamp_file,
         python_lint_timestamp_file,
+        Path("./playwright-log.txt"),
+        Path("./.coverage"),
+        pyi_file,
     ]:
         try:
             # python 3.7 doesn't support missing_ok so we need a try catch
-            timestamp_file.unlink()
-        except OSError as e:
+            file.unlink()
+        except OSError:
             pass
 
 
@@ -501,7 +510,7 @@ def _run_pabot(extra_args=None):
 
 @task
 def lint_python(c):
-    all_py_sources = list(python_src_dir.glob("**/*.py")) + list(
+    all_py_sources = list(PYTHON_SRC_DIR.glob("**/*.py")) + list(
         (ROOT_DIR / "utest").glob("**/*.py")
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
