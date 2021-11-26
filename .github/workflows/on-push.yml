@@ -36,12 +36,12 @@ jobs:
           */*/node_modules
           /home/runner/.cache/ms-playwright
           C:\Users\runneradmin\AppData\Local\ms-playwright
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-node-and-pw
+        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-node-and-pw
     - name: Install nodejs dependencies
       env:
         PLAYWRIGHT_BROWSERS_PATH: 0
       run: |
-        yarn --frozen-lockfile install
+        npm ci
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:

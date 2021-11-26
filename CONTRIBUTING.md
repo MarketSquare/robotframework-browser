@@ -13,10 +13,9 @@ These are the directories containing source code and tests:
 
 ## Development environment
 
-Install Python, nodejs and yarn.
+Install Python and nodejs.
 - https://www.python.org/downloads/
 - https://nodejs.org/
-- https://classic.yarnpkg.com/en/docs/install
 
 N.B. The minimum Python version is 3.7.
 
