@@ -217,6 +217,8 @@ def utest(c, reporter=None, suite=None):
                   https://github.com/approvals/ApprovalTests.Python
         suite:    Defines which test suite file to run. Same as: pytest path/to/test.py
                   Must be path to the test suite file
+
+    To create coverage use: coverage run -m invoke utest
     """
     args = ["--showlocals", "--junitxml=utest/output/pytest_xunit.xml", "--tb=long"]
     if reporter:
@@ -323,41 +325,6 @@ def _files_to_zip(zip_file, file, relative_to):
     zip_file.write(file, arc_name)
     return zip_file
 
-
-@task()
-def sitecustomize(c):
-    """Add sitecustomize.py for coverage and subprocess.
-
-    Creates sitecustomize.py file and adds these lines:
-    import coverage
-    coverage.process_startup()
-
-    To run coverage use:
-    coverage run -m invoke utest
-    coverage run -a -m invoke atest-robot
-    coverage report
-
-    For some reason, coverage calculation does not work with pabot.
-    Therefore coverage run -a -m invoke atest does not provide correct
-    coverage report.
-    """
-    sitepackages = site.getsitepackages()
-    sitepackages = Path(sitepackages.pop())
-    sitecustomize = sitepackages / "sitecustomize.py"
-    use_coverage = "import coverage\ncoverage.process_startup()\n"
-    if sitecustomize.is_file():
-        data = sitecustomize.read_text()
-        if "import coverage" in data and "coverage.process_startup()" in data:
-            print("coverage already in place, do nothing")
-        else:
-            print("Found sitecustomize.py file, but no coverage in place.")
-            print(f"Add:\n{use_coverage}")
-            sitecustomize.write_text(f"{data}\n{use_coverage}")
-    else:
-        print(f"Creating {sitecustomize} file.")
-        sitecustomize.write_text(use_coverage)
-
-
 @task()
 def copy_xunit(c):
     """Copies local xunit files for flaky test analysis"""
@@ -388,6 +355,7 @@ def copy_xunit(c):
 
 @task(clean_atest)
 def atest_robot(c):
+    """Run atest"""
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     command_args = [
         sys.executable,
@@ -406,7 +374,6 @@ def atest_robot(c):
         command_args.extend(["--exclude", "no-windows-support"])
     command_args.append("atest/test")
     env = os.environ.copy()
-    env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(command_args, env=env)
     process.wait(ATEST_TIMEOUT)
     output_xml = str(ATEST_OUTPUT / "output.xml")
@@ -433,11 +400,11 @@ def atest_failed(c):
 
 @task()
 def run_tests(c, tests):
-    """
-    Run robot with dev Browser. Parameter [tests] is the path to tests to run.
+    """Run robot with dev Browser.
+
+    Parameter [tests] is the path to tests to run.
     """
     env = os.environ.copy()
-    env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(
         [
             sys.executable,
@@ -456,9 +423,28 @@ def run_tests(c, tests):
     return process.wait(ATEST_TIMEOUT)
 
 
+@task()
+def atest_coverage(c):
+    """Run atest with robot.run
+
+    To run coverage use:
+    coverage run -m invoke utest
+    coverage run --append -m invoke atest-coverage
+    coverage report
+    coverage html
+    """
+    import robot
+    robot_args = {
+        "xunit": "robot_xunit.xml",
+        "exclude": "not-implemented",
+        "loglevel": "DEBUG",
+        "outputdir": str(ATEST_OUTPUT),
+    }
+    robot.run("atest/test", **robot_args)
+
+
 def _run_pabot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    os.environ["COVERAGE_PROCESS_START"] = ".coveragerc"
     pabot_args = [
         sys.executable,
         "-m",
