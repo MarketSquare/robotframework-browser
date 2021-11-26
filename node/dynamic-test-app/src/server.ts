@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const app = express.default();
-app.use(express.json());
+app.use(express.json() as unknown as any); // TODO: This type signature just suddenly broke. Related issues: https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/57382 https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/56683
 const port = parseInt(process.argv[2]) || 7272;
 
 app.set('etag', false);
