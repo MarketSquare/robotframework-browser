@@ -25,18 +25,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
-    - name: restore node_modules and playwright drivers
-      uses: actions/cache@v2
-      with:
-        path: |
-          node_modules
-          */*/node_modules
-          /home/runner/.cache/ms-playwright
-          C:\Users\runneradmin\AppData\Local\ms-playwright
-        key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-node-and-pw
+        cache: 'npm'
     - name: Install nodejs dependencies
       env:
         PLAYWRIGHT_BROWSERS_PATH: 0

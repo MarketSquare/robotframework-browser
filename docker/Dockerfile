@@ -2,7 +2,7 @@ FROM python:3.8-buster AS BrowserBuilder
 RUN mkdir /app
 WORKDIR /app
 RUN \
-    echo "deb https://deb.nodesource.com/node_12.x buster main" > /etc/apt/sources.list.d/nodesource.list && \
+    echo "deb https://deb.nodesource.com/node_14.x buster main" > /etc/apt/sources.list.d/nodesource.list && \
     wget -qO- https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
     apt-get update && \
     apt-get install -yqq nodejs && \
@@ -15,6 +15,7 @@ RUN pip install -r dev-requirements.txt
 
 COPY package.json /app/package.json
 COPY package-lock.json /app/package-lock.json
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN npm ci
 
 COPY . /app
