@@ -667,6 +667,7 @@ def docs(c, version=None):
 @task
 def create_package(c):
     shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
+    shutil.copy(ROOT_DIR / "package-lock.json", ROOT_DIR / "Browser" / "wrapper")
     c.run("python setup.py sdist bdist_wheel")
 
 
