@@ -26,8 +26,12 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
+import { class_async_logger } from './keyword-decorators';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
+@class_async_logger
 export class PlaywrightServer implements IPlaywrightServer {
     private states: { [peer: string]: PlaywrightState } = {};
     peerMap: { [peer: string]: string } = {};
@@ -75,9 +79,12 @@ export class PlaywrightServer implements IPlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
+                logger.info(`Start of node method ${func.name}`);
                 const response = await func(request, this.getState(call));
+                logger.info(`End of node method ${func.name}`);
                 callback(null, response);
             } catch (e) {
+                logger.info(`Error of node method  ${func.name}`);
                 callback(errorResponse(e), null);
             }
         };
@@ -88,9 +95,12 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
         return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
             try {
+                logger.info(`Start of node method ${func.name}`);
                 const response = await func(this.getState(call));
+                logger.info(`End of node method ${func.name}`);
                 callback(null, response);
             } catch (e) {
+                logger.info(`Error of node method ${func.name}`);
                 callback(errorResponse(e), null);
             }
         };
@@ -103,9 +113,12 @@ export class PlaywrightServer implements IPlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
+                logger.info(`Start of node method ${func.name}`);
                 const response = await func(request, this.getActivePage(call));
+                logger.info(`End of node method ${func.name}`);
                 callback(null, response);
             } catch (e) {
+                logger.info(`Error of node method ${func.name}`);
                 callback(errorResponse(e), null);
             }
         };

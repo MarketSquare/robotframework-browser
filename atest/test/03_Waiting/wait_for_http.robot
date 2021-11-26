@@ -42,6 +42,10 @@ Wait For Response synchronous with regex matcher
     Click    \#delayed_request
     Wait For Response    matcher=\\/\\/local\\w+\\:\\d+\\/api
 
+Wait For Response synchronous with predicate
+    Click    \#delayed_request
+    Wait For Response    response => response.url().endsWith('json') && response.request().method() === 'GET'
+
 Wait For Response async
     ${promise} =    Promise To    Wait For Response    matcher=    timeout=3s
     Click    \#delayed_request
