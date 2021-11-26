@@ -129,7 +129,7 @@ class Network(LibraryComponent):
         """Waits for request matching matcher to be made.
 
         ``matcher`` Request URL string, JavaScript regex or JavaScript function to match request by.
-        By default (with empty string) matches first available request.
+        By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page/#page-wait-for-request|waitForRequest documentation].
 
         ``timeout`` Timeout supports Robot Framework time format. Uses default timeout if not set.
 
@@ -137,10 +137,14 @@ class Network(LibraryComponent):
         | `Click`               \\#delayed_request
         | `Wait For Request`    timeout=1s
 
-        Async example:
+        Async Example:
         | ${promise} =    `Promise To`         `Wait For Request`    matcher=\\\\/\\\\/local\\\\w+\\\\:\\\\d+\\\\/api    timeout=3s
         | `Click`         \\#delayed_request
         | `Wait For`      ${promise}
+
+        JavaScript Function Example:
+        | `Click`               \\#delayed_request    # Creates response which should be waited before pressing save.
+        | `Wait For Request`    [https://playwright.dev/docs/api/class-request|request] => request.url().endsWith('api/get/json') && request.method() === 'GET'
         """
         return self._wait_for_http("Request", matcher, timeout)
 
@@ -151,7 +155,7 @@ class Network(LibraryComponent):
         """Waits for response matching matcher and returns python dict with contents.
 
         ``matcher`` Request URL string, JavaScript regex or JavaScript function to match request by.
-        By default (with empty string) matches first available request.
+        By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page/#page-wait-for-response|waitForResponse documentation].
 
         ``timeout`` Timeout in seconds. Uses default timeout if not set.
 
@@ -175,6 +179,10 @@ class Network(LibraryComponent):
         | `Click`           \\#next
         | `Wait For`        ${promise}            # Waits for the response
         | `Click`           \\#save
+
+        JavaScript Function Example:
+        | `Click`               \\#delayed_request    # Creates response which should be waited before pressing save.
+        | `Wait For Response`   [https://playwright.dev/docs/api/class-response/|response] => response.url().endsWith('json') && response.request().method() === 'GET'
         """
         return self._wait_for_http("Response", matcher, timeout)
 
