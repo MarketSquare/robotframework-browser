@@ -154,11 +154,6 @@ jobs:
         run: |
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
-      - name: Needed step for some reason
-        run: |
-          echo "nothing happening here"
-        env:
-          blank: ""
       - name: Test on unix-like os - serial mode
         if: matrix.os != 'windows-latest'
         run: |
