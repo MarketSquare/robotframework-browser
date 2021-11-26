@@ -13,15 +13,9 @@ RUN pip install -r requirements.txt
 COPY Browser/dev-requirements.txt /app/dev-requirements.txt
 RUN pip install -r dev-requirements.txt
 
-RUN \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list && \
-    wget -qO- https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
-    apt-get update && \
-    apt-get install -yqq yarn && \
-    rm -rf /var/lib/apt/lists/*
 COPY package.json /app/package.json
-COPY yarn.lock /app/yarn.lock
-RUN yarn install
+COPY package-lock.json /app/package-lock.json
+RUN npm install
 
 COPY . /app
 RUN inv package
