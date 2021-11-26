@@ -47,6 +47,7 @@
   "scripts": {
     "build": "webpack --config node/webpack.config.js",
     "watch": "webpack --config node/webpack.config.js --watch",
-    "lint": "eslint 'node/**/*.{ts,tsx}' --quiet --fix"
+    "lint": "eslint 'node/**/*.{ts,tsx}' --quiet --fix",
+    "grpc_tools_node_protoc": "grpc_tools_node_protoc"
   }
 }
