@@ -59,7 +59,7 @@ jobs:
         python -m Browser.gen_stub
     - name: Check types with mypy
       run: |
-        mypy --config-file Browser/mypy.ini Browser
+        inv lint-python
     - name: Lint atest
       run: |
         inv lint-robot
