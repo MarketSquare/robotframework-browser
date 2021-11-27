@@ -26,7 +26,7 @@ Timeouting Go To
     New Page    ${LOGIN_URL}
     ${timeout} =    Set Browser Timeout    7ms
     Run KeyWord and Expect Error
-    ...    TimeoutError: page.goto: Timeout 7   ms exceeded.*
+    ...    TimeoutError: page.goto: Timeout 7    ms exceeded.*
     ...    Go To    ${WELCOME_URL}
     [Teardown]    Teardown For Timeouting Go To    ${timeout}
 

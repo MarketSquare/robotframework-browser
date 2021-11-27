@@ -23,6 +23,7 @@ from .data_types import (
     ElementState,
     GeoLocation,
     HttpCredentials,
+    NewPageDetails,
     Proxy,
     RecordHar,
     RecordVideo,
