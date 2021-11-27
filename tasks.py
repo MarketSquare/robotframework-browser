@@ -36,6 +36,7 @@ build_dir = ROOT_DIR / "build"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
 PYTHON_SRC_DIR = ROOT_DIR / "Browser"
 python_protobuf_dir = PYTHON_SRC_DIR / "generated"
+wrapper_dir = PYTHON_SRC_DIR / "wrapper"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
 testapp_dir = ROOT_DIR / "node" / "dynamic-test-app"
@@ -192,6 +193,8 @@ def node_build(c):
         node_dir.glob("**/*.[tj]s"), node_timestamp_file
     ) or _sources_changed(node_dir.glob("**/*.tsx"), node_timestamp_file):
         c.run("npm run build")
+        shutil.rmtree(wrapper_dir / "static", ignore_errors=True)
+        shutil.copytree(node_dir / "playwright-wrapper" / "static", wrapper_dir / "static")
         node_timestamp_file.touch()
     else:
         print("no changes in .ts files, skipping node build")

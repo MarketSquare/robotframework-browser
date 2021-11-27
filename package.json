@@ -48,7 +48,7 @@
   "scripts": {
     "build-test-app": "webpack --config node/webpack.testapp.config.js",
     "watch-test-app": "webpack --config node/webpack.testapp.config.js --watch",
-    "build": "node ./node/build.wrapper.js && rm -rf Browser/wrapper/static && cp -r ./node/playwright-wrapper/static Browser/wrapper",
+    "build": "node ./node/build.wrapper.js",
     "lint": "eslint \"node/**/*.{ts,tsx}\" --quiet --fix",
     "grpc_tools_node_protoc": "grpc_tools_node_protoc"
   }
