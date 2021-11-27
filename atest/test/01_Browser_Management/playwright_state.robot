@@ -78,7 +78,8 @@ Browser, Context and Page UUIDs
     ${page} =    New Page
     Should Start With    ${browser}    browser=
     Should Start With    ${context}    context=
-    Should Start With    ${page}    page=
+    Should Start With    ${page}[page_id]    page=
+    Should Be Empty    ${page}[video_path]
     [Teardown]    Close Browser
 
 Switch Context
@@ -130,7 +131,7 @@ Page Index is stable when other pages closed
     Close Page
     Close Page
     ${last} =    Switch Page    ${first}
-    Should Be Equal    ${first}    ${last}
+    Should Be Equal    ${first}[page_id]    ${last}
 
 Context Index is stable when other contexts closed
     ${first} =    New Context
@@ -148,13 +149,13 @@ Page indices are unique
     Should Not Be Equal    ${first}    ${second}
 
 Close Page gets errors and console log
-    ${id} =    New Page    ${ERROR_URL}
+    ${page} =    New Page    ${ERROR_URL}
     Click    "Crash click"
     ${response} =    Close Page
     Log    ${response}
     Should be equal    ${response}[0][console][0][text]    Hello from warning
     Should match    ${response}[0][errors][0]    *Error: a is not defined*
-    Should be equal    ${response}[0][id]    ${id}
+    Should be equal    ${response}[0][id]    ${page}[page_id]
 
 Context indices are unique
     ${first} =    New Context

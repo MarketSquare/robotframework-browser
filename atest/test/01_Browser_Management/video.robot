@@ -22,10 +22,12 @@ Create Video With Relative Path
     Should Be Equal    ${0}    ${files}
     ${record_video} =    Create Dictionary    dir    my_video
     New Context    recordVideo=${record_video}
-    New Page    ${LOGIN_URL}
+    ${details} =    New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Close Context
     Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    ${1}
+    Should Start With    ${details}[video_path]    ${OUTPUT_DIR}/browser/video/my_video
+    Should End With    ${details}[video_path]    .webm
 
 Create Video With videoSize
     [Documentation]
