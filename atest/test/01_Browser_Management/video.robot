@@ -26,7 +26,7 @@ Create Video With Relative Path
     Go To    ${FRAMES_URL}
     Close Context
     Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    ${1}
-    Should Start With    ${details}[video_path]    ${OUTPUT_DIR}/browser/video/my_video
+    Should Start With    ${details}[video_path]    ${OUTPUT_DIR}${/}browser${/}video${/}my_video
     Should End With    ${details}[video_path]    .webm
 
 Create Video With videoSize
