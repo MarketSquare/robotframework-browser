@@ -14,10 +14,7 @@ export function class_async_logger(target: Function) {
     }
 }
 
-export function async_logger(
-    propertyKey: string,
-    propertyDescriptor: PropertyDescriptor,
-): PropertyDescriptor {
+export function async_logger(propertyKey: string, propertyDescriptor: PropertyDescriptor): PropertyDescriptor {
     const originalMethod = propertyDescriptor.value;
     propertyDescriptor.value = async function (...args: any[]) {
         try {
