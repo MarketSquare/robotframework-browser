@@ -58,6 +58,9 @@ jobs:
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser
+    - name: Build test app
+      run: |
+        inv create-test-app
     - name: Start xvfb on Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
