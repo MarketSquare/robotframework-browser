@@ -39,6 +39,8 @@ PYTHON_SRC_DIR = ROOT_DIR / "Browser"
 python_protobuf_dir = PYTHON_SRC_DIR / "generated"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
+testapp_dir = ROOT_DIR / "node" / "dynamic-test-app"
+testapp_timestamp_file = testapp_dir / ".built"
 node_timestamp_file = node_dir / ".built"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = PYTHON_SRC_DIR / ".linted"
@@ -210,8 +212,8 @@ def _sources_changed(source_files, timestamp_file):
 
 
 @task(build)
-def watch(c):
-    c.run("npm run watch")
+def watch_testapp(c):
+    c.run("npm run watch-test-app")
 
 
 @task
@@ -250,8 +252,16 @@ def clean_atest(c):
     if ZIP_DIR.exists():
         shutil.rmtree(ZIP_DIR)
 
+@task
+def create_test_app(c):
+    if _sources_changed(testapp_dir.glob("**/*.ts[x]"), testapp_timestamp_file):
+        c.run("npm run build-test-app")
+        testapp_timestamp_file.touch()
+    else:
+        print("no changes in test app files, skipping test app build")
 
-@task(clean_atest)
+
+@task(clean_atest, create_test_app)
 def atest(c, suite=None, include=None, zip=None, debug=False):
     """Runs Robot Framework acceptance tests.
 
@@ -362,7 +372,7 @@ def copy_xunit(c):
         ET.ElementTree(new_root).write(robot_xunit)
 
 
-@task(clean_atest)
+@task(clean_atest, create_test_app)
 def atest_robot(c):
     """Run atest"""
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
@@ -394,7 +404,7 @@ def atest_robot(c):
     sys.exit(rc)
 
 
-@task(clean_atest)
+@task(clean_atest, create_test_app)
 def atest_global_pythonpath(c):
     rc = _run_pabot(["--variable", "SYS_VAR_CI:True"])
     _clean_pabot_results(rc)
@@ -574,7 +584,7 @@ def docker_stable_image(c):
     )
 
 
-@task(clean_atest, build)
+@task(clean_atest, create_test_app, build)
 def docker_test(c):
     c.run("mkdir atest/output")
     c.run(
