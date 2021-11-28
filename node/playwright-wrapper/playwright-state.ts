@@ -54,7 +54,7 @@ export async function initializeExtension(
     return keywordsResponse(
         Object.keys(extension),
         Object.values(extension).map(
-            (v) => v.rfdoc || 'TODO: Add rfdoc string to exposed function to create documentation',
+            (v: {rfdoc?: string}) => v.rfdoc || 'TODO: Add rfdoc string to exposed function to create documentation',
         ),
         'ok',
     );
