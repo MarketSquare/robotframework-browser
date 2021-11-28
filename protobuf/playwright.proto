@@ -217,6 +217,12 @@ message Request {
   message Bool {
     bool value = 1;
   }
+  message StartCoverage {
+    string coverageType = 1;
+    bool CSSresetOnNavigation = 2;
+    bool JSreportAnonymousScripts = 3;
+    bool JSresetOnNavigation = 4;
+  }
 }
 
 message Types {
@@ -420,4 +426,8 @@ service  Playwright {
   rpc CallExtensionKeyword(Request.KeywordCall) returns (stream Response.Json);
 
   rpc SetPeerId(Request.Index) returns (Response.String);
+
+  /* Coverage keywords */
+  rpc StartCoverage(Request.StartCoverage) returns (Response.Empty);
+  rpc StopCoverage(Request.Empty) returns (Response.Json);
 }

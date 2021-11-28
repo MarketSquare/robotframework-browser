@@ -14,6 +14,7 @@
 
 import * as browserControl from './browser-control';
 import * as cookie from './cookie';
+import * as coverage from './coverage'
 import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
@@ -342,6 +343,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     waitForResponse = this.wrappingPage(network.waitForResponse);
     waitUntilNetworkIsIdle = this.wrappingPage(network.waitUntilNetworkIsIdle);
     waitForNavigation = this.wrappingPage(network.waitForNavigation);
+    startCoverage = this.wrapping(coverage.startCoverage);
+    stopCoverage = this.wrapping(coverage.stopCoverage);
 
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions, Response.Json>,

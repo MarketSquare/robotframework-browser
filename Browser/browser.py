@@ -37,6 +37,7 @@ from .generated.playwright_pb2 import Request
 from .keywords import (
     Control,
     Cookie,
+    Coverage,
     Devices,
     Evaluation,
     Getters,
@@ -700,6 +701,7 @@ class Browser(DynamicCore):
             self._playwright_state,
             Control(self),
             Cookie(self),
+            Coverage(self),
             Crawling(self),
             Devices(self),
             Evaluation(self),

@@ -14,6 +14,7 @@
 
 from .browser_control import Control
 from .cookie import Cookie
+from .coverage import Coverage
 from .device_descriptors import Devices
 from .evaluation import Evaluation
 from .getters import Getters
@@ -29,6 +30,7 @@ from .webapp_state import WebAppState
 __all__ = [
     "Control",
     "Cookie",
+    "Coverage",
     "Devices",
     "Getters",
     "Evaluation",

@@ -216,6 +216,15 @@ class NewPageDetails(TypedDict):
     video_path: str
 
 
+class CoverageType(Enum):
+    """Defines which coverage is started.
+
+    Playwright supports two coverage types ``js`` or ``css``.
+    """
+    js = "js"
+    css = 'css'
+
+
 class SelectionType(Enum):
     """Enum that defines if the current id or all ids shall be returned.
 
