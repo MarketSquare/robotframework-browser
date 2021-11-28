@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import zipfile
 from datetime import datetime
 from pathlib import Path, PurePath
@@ -349,22 +350,25 @@ def _files_to_zip(zip_file, file, relative_to):
 @task()
 def copy_xunit(c):
     """Copies local xunit files for flaky test analysis"""
-    xunit_dest = FLIP_RATE / "xunit"
-    xunit_dest.mkdir(parents=True, exist_ok=True)
+    xunit_dest_dir = FLIP_RATE / "xunit"
+    xunit_dest_dir.mkdir(parents=True, exist_ok=True)
+    robot_xunit = xunit_dest_dir / f"robot_xunit-{time.monotonic()}.xml"
     try:
-        shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", xunit_dest)
+        shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", robot_xunit)
     except Exception as error:
         print(f"\nWhen copying robot xunit got error: {error}")
         robot_copy = False
     else:
         robot_copy = True
+    pytest_xunit = xunit_dest_dir / f"pytest_xunit-{time.monotonic()}.xml"
     try:
-        shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", xunit_dest)
+        shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", pytest_xunit)
     except Exception as error:
         print(f"\nWhen copying pytest xunit got error: {error}")
         pass
+    else:
+        print(f"Copied {pytest_xunit}")
     if robot_copy:
-        robot_xunit = xunit_dest / "robot_xunit.xml"
         tree = ET.parse(robot_xunit)
         root = tree.getroot()
         now = datetime.now()
@@ -372,6 +376,9 @@ def copy_xunit(c):
         new_root = ET.Element("testsuites")
         new_root.insert(0, root)
         ET.ElementTree(new_root).write(robot_xunit)
+        print(f"Copied {robot_xunit}")
+    else:
+        print("Not modifying RF xunit output.")
 
 
 @task(clean_atest, create_test_app)
