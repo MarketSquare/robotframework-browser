@@ -47,7 +47,7 @@ from ..utils import (
 class PlaywrightState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages."""
 
-    """ Helpers for Switch_ and Close_ keywords """
+    # Helpers for Switch_ and Close_ keywords
 
     def _correct_browser(self, browser: str):
         if browser == "ALL":
