@@ -19,12 +19,14 @@ from ..utils import CoverageType, keyword, logger
 class Coverage(LibraryComponent):
     @keyword(tags=("Setter", "PageContent"))
     def start_coverage(self, coverage_type=CoverageType.js):
+        """Start coverage"""
         with self.playwright.grpc_channel() as stub:
             response = stub.StartCoverage(Request().StartCoverage())
         logger.info(f"Coverage: {response.log}")
 
     @keyword(tags=("Getter", "PageContent"))
     def stop_coverage(self):
+        """Stop coverage"""
         with self.playwright.grpc_channel() as stub:
             response = stub.StopCoverage(Request().Json())
         logger.info(f"Coverage: {response.log}")
