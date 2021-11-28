@@ -48,14 +48,15 @@ export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
-    const extension: unknown = eval('require')(request.getPath());
+    const extension: Record<string, unknown> = eval('require')(request.getPath());
     state.extension = extension;
-    // @ts-ignore
     return keywordsResponse(
         Object.keys(extension),
-        Object.values(extension).map(
-            (v: {rfdoc?: string}) => v.rfdoc || 'TODO: Add rfdoc string to exposed function to create documentation',
-        ),
+        Object.values(extension).map((v) => {
+            if (!v) return '';
+            const typedV = v as { rfdoc?: string };
+            return typedV.rfdoc ?? 'TODO: Add rfdoc string to exposed function to create documentation';
+        }),
         'ok',
     );
 }
