@@ -240,6 +240,7 @@ message Response {
   message Keywords {
     string log = 1;
     repeated string keywords = 2;
+    repeated string keywordDocumentations = 3;
   }
 
   message Bool {
