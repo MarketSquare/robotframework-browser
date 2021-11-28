@@ -221,8 +221,9 @@ class CoverageType(Enum):
 
     Playwright supports two coverage types ``js`` or ``css``.
     """
+
     js = "js"
-    css = 'css'
+    css = "css"
 
 
 class SelectionType(Enum):

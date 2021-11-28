@@ -13,16 +13,14 @@
 # limitations under the License.
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import keyword, CoverageType, logger
+from ..utils import CoverageType, keyword, logger
 
 
 class Coverage(LibraryComponent):
     @keyword(tags=("Setter", "PageContent"))
     def start_coverage(self, coverage_type=CoverageType.js):
         with self.playwright.grpc_channel() as stub:
-            response = stub.StartCoverage(
-                Request().StartCoverage()
-            )
+            response = stub.StartCoverage(Request().StartCoverage())
         logger.info(f"Coverage: {response.log}")
 
     @keyword(tags=("Getter", "PageContent"))
