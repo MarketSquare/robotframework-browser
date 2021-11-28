@@ -755,11 +755,11 @@ class Browser(DynamicCore):
             response = stub.InitializeExtension(
                 Request().FilePath(path=os.path.abspath(jsextension))
             )
-            for name in response.keywords:
-                setattr(component, name, self._jskeyword_call(name))
+            for name, doc in zip(response.keywords, response.keywordDocumentations):
+                setattr(component, name, self._jskeyword_call(name, doc))
         return component
 
-    def _jskeyword_call(self, name: str):
+    def _jskeyword_call(self, name: str, doc: str):
         @keyword
         def func(*args):
             with self.playwright.grpc_channel() as stub:
@@ -771,6 +771,8 @@ class Browser(DynamicCore):
                 if response.json == "":
                     return
                 return json.loads(response.json)
+
+        func.__doc__ = doc
 
         return func
 

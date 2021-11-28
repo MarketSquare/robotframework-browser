@@ -51,7 +51,13 @@ export async function initializeExtension(
     const extension: unknown = eval('require')(request.getPath());
     state.extension = extension;
     // @ts-ignore
-    return keywordsResponse(Object.keys(extension), 'ok');
+    return keywordsResponse(
+        Object.keys(extension),
+        Object.values(extension).map(
+            (v) => v.rfdoc || 'TODO: Add rfdoc string to exposed function to create documentation',
+        ),
+        'ok',
+    );
 }
 
 export async function extensionKeywordCall(
