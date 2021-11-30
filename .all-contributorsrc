@@ -567,6 +567,15 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "Kahiis",
+      "name": "Niko Kahilainen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26903759?v=4",
+      "profile": "https://github.com/Kahiis",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
