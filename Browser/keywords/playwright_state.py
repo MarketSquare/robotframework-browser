@@ -15,7 +15,7 @@
 import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
@@ -28,6 +28,7 @@ from ..utils import (
     ColorScheme,
     GeoLocation,
     HttpCredentials,
+    NewPageDetails,
     Proxy,
     RecordHar,
     RecordVideo,
@@ -46,7 +47,7 @@ from ..utils import (
 class PlaywrightState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages."""
 
-    """ Helpers for Switch_ and Close_ keywords """
+    # Helpers for Switch_ and Close_ keywords
 
     def _correct_browser(self, browser: str):
         if browser == "ALL":
@@ -656,10 +657,14 @@ class PlaywrightState(LibraryComponent):
         return {"width": 1280, "height": 720}
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def new_page(self, url: Optional[str] = None) -> str:
-        """Open a new Page. A Page is the Playwright equivalent to a tab.
-        See `Browser, Context and Page` for more information about Page concept.
-        Returns a stable identifier for the created page.
+    def new_page(self, url: Optional[str] = None) -> NewPageDetails:
+        """Open a new Page.
+
+        A Page is the Playwright equivalent to a tab. See `Browser, Context and Page`
+        for more information about Page concept. Returns `NewPageDetails` for created page.
+        NewPageDetails contains page_id and video_path. page_id is a stable identifier for
+        the created page. video_path is path to the created video or empty if video is not
+        created.
 
         When a `New Page` is called without an open browser, `New Browser`
         and `New Context` are executed with default values first.
@@ -684,14 +689,15 @@ class PlaywrightState(LibraryComponent):
                 "No context was open. New context was automatically opened when "
                 "this page is created."
             )
-        self._embed_video(json.loads(response.video))
-        return response.body
+        video_path = self._embed_video(json.loads(response.video))
+        return NewPageDetails(page_id=response.body, video_path=video_path)
 
-    def _embed_video(self, video: dict):
+    def _embed_video(self, video: dict) -> str:
         if not video.get("video_path"):
             logger.debug("Video is not enabled.")
-            return
-        relative_path = get_link_path(video.get("video_path"), self.outputdir)
+            return ""
+        video_path = video.get("video_path")
+        relative_path = get_link_path(video_path, self.outputdir)
         video_size = self.context_cache.get(video["contextUuid"])
         video_width = video_size["width"]
         video_height = video_size["height"]
@@ -702,6 +708,7 @@ class PlaywrightState(LibraryComponent):
             f'<source src="{relative_path}" type="video/{video_type}"></video>',
             html=True,
         )
+        return str(video_path)
 
     @keyword(tags=("Getter", "BrowserControl"))
     @with_assertion_polling
@@ -834,14 +841,17 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_page(
-        self, id: str, context: str = "CURRENT", browser: str = "CURRENT"
+        self,
+        id: Union[NewPageDetails, str],
+        context: str = "CURRENT",
+        browser: str = "CURRENT",
     ) -> str:
         """Switches the active browser page to another open page by ``id`` or ``NEW``.
 
         Returns a stable identifier ``id`` for the previous page.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
-        ``id`` < ``CURRENT`` | ``NEW `` | str> Id of the page to be changed to or
+        ``id`` < ``CURRENT`` | ``NEW `` | str | `NewPageDetails` > Id of the page to be changed to or
 
         ``NEW`` for a page opened after the current page. This may timeout if no new pages
         exists before library timeout. See `Set Browser Timeout` for how to change the timeout.
@@ -858,16 +868,19 @@ class PlaywrightState(LibraryComponent):
         | `Click`           button#pops_up    # Open new page
         | ${previous} =    `Switch Page`      NEW
         """
+        if context.upper() == "ALL":
+            raise NotImplementedError
+        if browser.upper() == "ALL":
+            raise NotImplementedError
+        try:
+            id = id["page_id"]  # type: ignore[index]
+        except TypeError:
+            pass
         with self.playwright.grpc_channel() as stub:
-            if context.upper() == "ALL":
-                raise NotImplementedError
-            if browser.upper() == "ALL":
-                raise NotImplementedError
-
             self._correct_browser(browser)
             self._correct_context(context)
             response = stub.SwitchPage(
-                Request().IdWithTimeout(id=id, timeout=self.timeout)
+                Request().IdWithTimeout(id=str(id), timeout=self.timeout)
             )
             logger.info(response.log)
             return response.body

@@ -25,23 +25,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
-    - name: restore node_modules and playwright drivers
-      uses: actions/cache@v2
-      with:
-        path: |
-          node_modules
-          */*/node_modules
-          /home/runner/.cache/ms-playwright
-          C:\Users\runneradmin\AppData\Local\ms-playwright
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-node-and-pw
+        cache: 'npm'
     - name: Install nodejs dependencies
       env:
         PLAYWRIGHT_BROWSERS_PATH: 0
       run: |
-        yarn --frozen-lockfile install
+        npm ci
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -59,13 +51,16 @@ jobs:
         python -m Browser.gen_stub
     - name: Check types with mypy
       run: |
-        mypy --config-file Browser/mypy.ini Browser
+        inv lint-python
     - name: Lint atest
       run: |
         inv lint-robot
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser
+    - name: Build test app
+      run: |
+        inv create-test-app
     - name: Start xvfb on Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -162,11 +157,6 @@ jobs:
         run: |
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
-      - name: Needed step for some reason
-        run: |
-          echo "nothing happening here"
-        env:
-          blank: ""
       - name: Test on unix-like os - serial mode
         if: matrix.os != 'windows-latest'
         run: |
@@ -174,7 +164,6 @@ jobs:
           rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          inv sitecustomize
           xvfb-run --auto-servernum invoke atest-robot
       - name: Run Robot Framework tests on windows
         if: ${{ matrix.os == 'windows-latest' }}

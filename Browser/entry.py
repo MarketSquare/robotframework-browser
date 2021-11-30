@@ -66,7 +66,7 @@ def rfbrowser_init(skip_browser_install: bool):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
 
     process = Popen(
-        "npm install --production",
+        "npm ci --production",
         shell=True,
         cwd=INSTALLATION_DIR,
         stdout=PIPE,
