@@ -46,8 +46,7 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "build-test-app": "webpack --config node/webpack.testapp.config.js",
-    "watch-test-app": "webpack --config node/webpack.testapp.config.js --watch",
+    "build-test-app": "node ./node/build.testapp.js",
     "build": "node ./node/build.wrapper.js",
     "lint": "tsc --project node/tsconfig.json --noEmit && eslint \"node/**/*.{ts,tsx}\" --quiet --fix",
     "grpc_tools_node_protoc": "grpc_tools_node_protoc"

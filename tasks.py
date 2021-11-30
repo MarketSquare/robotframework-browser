@@ -214,11 +214,6 @@ def _sources_changed(source_files, timestamp_file):
     return True
 
 
-@task(build)
-def watch_testapp(c):
-    c.run("npm run watch-test-app")
-
-
 @task
 def utest(c, reporter=None, suite=None):
     """Run utest.
