@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 import time
+from typing import Iterable, List
 import zipfile
 from datetime import datetime
 from pathlib import Path, PurePath
@@ -42,7 +43,8 @@ node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
 testapp_dir = ROOT_DIR / "node" / "dynamic-test-app"
 testapp_timestamp_file = testapp_dir / ".built"
-node_timestamp_file = node_dir / ".built"
+npm_deps_timestamp_file = ROOT_DIR / "node_modules" / ".installed"
+python_deps_timestamp_file = ROOT_DIR / "Browser" / ".installed"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = PYTHON_SRC_DIR / ".linted"
 ATEST_TIMEOUT = 600
@@ -83,11 +85,22 @@ tested with Playwright REPLACE_PW_VERSION
 
 @task
 def deps(c):
-    c.run("pip install -U pip")
-    c.run("pip install -r Browser/dev-requirements.txt")
+
+    if _sources_changed([ROOT_DIR / "Browser/dev-requirements.txt"], python_deps_timestamp_file):
+        c.run("pip install -U pip")
+        c.run("pip install -r Browser/dev-requirements.txt")
+        python_deps_timestamp_file.touch()
+    else:
+        print("no changes in Browser/dev-requirements.txt, skipping pip install")
     if os.environ.get("CI"):
         shutil.rmtree("node_modules")
-    c.run("npm install", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
+
+    if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
+        c.run("npm install", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
+        npm_deps_timestamp_file.touch()
+    else:
+        print("no changes in package-lock.json, skipping npm install")
+
 
 
 @task
@@ -109,9 +122,10 @@ def clean(c):
             shutil.rmtree(target)
     pyi_file = PYTHON_SRC_DIR / "__init__.pyi"
     for file in [
-        node_timestamp_file,
+        npm_deps_timestamp_file,
         node_lint_timestamp_file,
         python_lint_timestamp_file,
+        python_deps_timestamp_file,
         Path("./playwright-log.txt"),
         Path("./.coverage"),
         pyi_file,
@@ -190,15 +204,9 @@ def _node_protobuf_gen(c):
 
 @task(protobuf)
 def node_build(c):
-    if _sources_changed(
-        node_dir.glob("**/*.[tj]s"), node_timestamp_file
-    ) or _sources_changed(node_dir.glob("**/*.tsx"), node_timestamp_file):
-        c.run("npm run build")
-        shutil.rmtree(wrapper_dir / "static", ignore_errors=True)
-        shutil.copytree(node_dir / "playwright-wrapper" / "static", wrapper_dir / "static")
-        node_timestamp_file.touch()
-    else:
-        print("no changes in .ts files, skipping node build")
+    c.run("npm run build")
+    shutil.rmtree(wrapper_dir / "static", ignore_errors=True)
+    shutil.copytree(node_dir / "playwright-wrapper" / "static", wrapper_dir / "static")
 
 
 @task(deps, protobuf, node_build)
@@ -206,7 +214,7 @@ def build(c):
     c.run("python -m Browser.gen_stub")
 
 
-def _sources_changed(source_files, timestamp_file):
+def _sources_changed(source_files: Iterable[Path], timestamp_file: Path):
     if timestamp_file.exists():
         last_built = timestamp_file.lstat().st_mtime
         src_last_modified = [f.lstat().st_mtime for f in source_files]
