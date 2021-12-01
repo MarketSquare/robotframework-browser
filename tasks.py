@@ -41,8 +41,7 @@ python_protobuf_dir = PYTHON_SRC_DIR / "generated"
 wrapper_dir = PYTHON_SRC_DIR / "wrapper"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
-testapp_dir = ROOT_DIR / "node" / "dynamic-test-app"
-testapp_timestamp_file = testapp_dir / ".built"
+# testapp_dir = ROOT_DIR / "node" / "dynamic-test-app"
 npm_deps_timestamp_file = ROOT_DIR / "node_modules" / ".installed"
 python_deps_timestamp_file = ROOT_DIR / "Browser" / ".installed"
 node_lint_timestamp_file = node_dir / ".linted"
@@ -260,11 +259,7 @@ def clean_atest(c):
 
 @task
 def create_test_app(c):
-    if _sources_changed(testapp_dir.glob("**/*.ts[x]"), testapp_timestamp_file):
-        c.run("npm run build-test-app")
-        testapp_timestamp_file.touch()
-    else:
-        print("no changes in test app files, skipping test app build")
+    c.run("npm run build-test-app")
 
 
 @task(clean_atest, create_test_app)
