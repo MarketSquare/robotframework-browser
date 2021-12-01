@@ -39,6 +39,7 @@ Enable Tracing To File With Two Browsers
     File Should Not Be Empty    ${OUTPUT_DIR}/trace_2.zip
 
 Check Show-Trace Command
+    [Tags]    no-windows-support    # Is not stable in Windows
     [Timeout]    90s
     IF    '${SYS_VAR_CI}' == 'False'
         Log    This is only for CI when installation is done.
