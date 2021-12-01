@@ -411,7 +411,7 @@ def atest_robot(c):
     sys.exit(rc)
 
 
-@task(clean_atest, create_test_app)
+@task(clean_atest)
 def atest_global_pythonpath(c):
     rc = _run_pabot(["--variable", "SYS_VAR_CI:True"])
     _clean_pabot_results(rc)
