@@ -791,7 +791,7 @@ def gh_pages_index(c):
         f.write(index_contents)
 
 
-@task
+@task(create_test_app)
 def demo_app(c):
     """Zip demo application to OS specific package for CI"""
     _clean_zip_dir()
