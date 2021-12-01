@@ -5,6 +5,16 @@ const { nodeExternalsPlugin } = require('esbuild-node-externals');
 const fs = require('fs');
 const path = require('path')
 
+const distPath = path.resolve(__dirname, './dynamic-test-app/dist')
+
+if (!fs.existsSync(distPath)) {
+  fs.mkdirSync(distPath);
+}
+
+const indexHtmlSource = path.resolve(__dirname, './dynamic-test-app/static/index.html')
+const indexHtmlTarget = path.resolve(distPath, './index.html')
+fs.copyFileSync(indexHtmlSource,  indexHtmlTarget)
+
 /* Build testApp frontend */
 esbuild.build(
   {
@@ -15,8 +25,6 @@ esbuild.build(
     outfile: "./node/dynamic-test-app/dist/index.js",
   }
 ).catch(() => process.exit(1));
-
-fs.copyFileSync(path.resolve(__dirname, './dynamic-test-app/static/index.html'),  path.resolve(__dirname, './dynamic-test-app/dist/index.html'))
 
 /* Build testApp backend */
 esbuild.build(
