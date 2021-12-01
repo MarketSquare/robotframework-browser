@@ -3,6 +3,7 @@
 const esbuild = require('esbuild');
 const { nodeExternalsPlugin } = require('esbuild-node-externals');
 const fs = require('fs');
+const path = require('path')
 
 /* Build testApp frontend */
 esbuild.build(
@@ -15,7 +16,7 @@ esbuild.build(
   }
 ).catch(() => process.exit(1));
 
-fs.copyFileSync('./node/dynamic-test-app/static/index.html', './node/dynamic-test-app/dist/index.html')
+fs.copyFileSync(path.resolve(__dirname, './dynamic-test-app/static/index.html'),  path.resolve(__dirname, './dynamic-test-app/dist/index.html'))
 
 /* Build testApp backend */
 esbuild.build(
