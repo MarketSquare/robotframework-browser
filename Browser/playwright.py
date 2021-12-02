@@ -100,8 +100,9 @@ class Playwright(LibraryComponent):
         self.port = port
         if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        # FIXME: we should probably get rid of unhandled rejections
         return Popen(
-            ["node", str(playwright_script), port],
+            ["node", "--unhandled-rejections=warn", str(playwright_script), port],
             shell=False,
             cwd=workdir,
             env=os.environ,
