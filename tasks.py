@@ -411,7 +411,7 @@ def atest_robot(c):
     sys.exit(rc)
 
 
-@task(clean_atest)
+@task(clean_atest, create_test_app)
 def atest_global_pythonpath(c):
     rc = _run_pabot(["--variable", "SYS_VAR_CI:True"])
     _clean_pabot_results(rc)
@@ -791,7 +791,8 @@ def gh_pages_index(c):
         f.write(index_contents)
 
 
-@task(create_test_app)
+# TODO: should this depend on `create_test_app` ?
+@task
 def demo_app(c):
     """Zip demo application to OS specific package for CI"""
     _clean_zip_dir()
