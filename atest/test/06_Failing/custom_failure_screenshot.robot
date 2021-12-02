@@ -5,9 +5,8 @@ Resource    imports.resource
 
 *** Test Cases ***
 Failing with custom screenshot
-    [Documentation]    FAIL STARTS: TimeoutError
     New Page    ${ERROR_URL}
-    Click    .nonexisting4
+    Run Keyword And Expect Error    STARTS: TimeoutError    Click    .nonexisting4
 
 Check screenshot
     file should exist    ${OUTPUT DIR}/browser/screenshot/custom-fail.png
