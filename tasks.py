@@ -208,7 +208,12 @@ def node_build(c):
     shutil.copytree(node_dir / "playwright-wrapper" / "static", wrapper_dir / "static")
 
 
-@task(deps, protobuf, node_build)
+@task
+def create_test_app(c):
+    c.run("npm run build-test-app")
+
+
+@task(deps, protobuf, node_build, create_test_app)
 def build(c):
     c.run("python -m Browser.gen_stub")
 
@@ -256,10 +261,6 @@ def clean_atest(c):
         shutil.rmtree(ATEST_OUTPUT)
     if ZIP_DIR.exists():
         shutil.rmtree(ZIP_DIR)
-
-@task
-def create_test_app(c):
-    c.run("npm run build-test-app")
 
 
 @task(clean_atest, create_test_app)
@@ -379,7 +380,7 @@ def copy_xunit(c):
         print("Not modifying RF xunit output.")
 
 
-@task(clean_atest, create_test_app)
+@task(clean_atest)
 def atest_robot(c):
     """Run atest"""
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
@@ -411,7 +412,7 @@ def atest_robot(c):
     sys.exit(rc)
 
 
-@task(clean_atest, create_test_app)
+@task(clean_atest)
 def atest_global_pythonpath(c):
     rc = _run_pabot(["--variable", "SYS_VAR_CI:True"])
     _clean_pabot_results(rc)
