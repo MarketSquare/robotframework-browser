@@ -37,9 +37,9 @@ Check Checkbox
     Should Be True    ${state}
 
 Check Checkbox With Strict
-    Run Keyword And Expect Error
-    ...    *strict mode violation*//input[@type*resolved to*2 elements*    # TODO: Change: "*2" to correct value after PW update
-    ...    Check Checkbox    //input[@type="checkbox"]
+    # TODO: Change: "*2" to correct value after PW update
+    Run Keyword And Expect Error    *strict mode violation*//input[@type*resolved to*2 elements*    Check Checkbox
+    ...    //input[@type="checkbox"]
     Set Strict Mode    False
     Check Checkbox    //input[@type="checkbox"]
     [Teardown]    Set Strict Mode    True
