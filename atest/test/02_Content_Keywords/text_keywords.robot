@@ -29,7 +29,7 @@ Clear Text
 
 Clear Text With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    *strict mode violation*//input*resolved to 4 elements:*
     ...    Clear Text    //input
     Set Strict Mode    False
     Clear Text    //input
@@ -55,7 +55,7 @@ Fill Text With Nonmatching Selector
 
 Fill Text With Secret
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    *strict mode violation*//input*resolved to 4 elements:*
     ...    Fill Text    //input    something
     Set Strict Mode    False
     Fill Text    //input    something
@@ -72,7 +72,7 @@ Fill Secret Direct Value
 
 Fill Secret With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    *strict mode violation*//input*resolved to 4 elements:*
     ...    Fill Secret    //input    $LOGIN_URL
     Set Strict Mode    False
     Fill Secret    //input    $LOGIN_URL
@@ -80,7 +80,7 @@ Fill Secret With Strict
 
 Type Secret With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    *strict mode violation*//input*resolved to 4 elements:*
     ...    Type Secret    //input    $LOGIN_URL
     Set Strict Mode    False
     Type Secret    //input    $LOGIN_URL
@@ -200,7 +200,7 @@ Type Text with Delay
 
 Type Text With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements:*
+    ...    *strict mode violation:*//input*resolved to 4 elements:*
     ...    Type Text    //input    username
     Set Strict Mode    False
     Type Text    //input    username
