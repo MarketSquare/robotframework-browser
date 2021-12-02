@@ -34,7 +34,7 @@ esbuild.build(
     bundle: true,
     platform: "node",
     outfile: "./node/dynamic-test-app/dist/server.js",
-    plugins: [nodeExternalsPlugin()],
+    /* plugins: [nodeExternalsPlugin()], */
 
   }
 ).catch(() => process.exit(1));
