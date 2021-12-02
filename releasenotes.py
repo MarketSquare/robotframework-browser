@@ -8,7 +8,8 @@ Manual actions needed to clean up for changelog:
 
 import shlex
 import re
-from typing import Optional, Tuple, List
+import sys
+from typing import Optional, Tuple, List, Literal
 from subprocess import run as _run, STDOUT, PIPE
 from dataclasses import dataclass
 
@@ -17,6 +18,9 @@ class CommitMsg:
     type: str
     subtype: str
     msg: str
+
+
+CommitType = Literal["ci", "bump", "docs", "fix", "unknown"]
 
 
 @dataclass
@@ -30,11 +34,6 @@ class Commit:
         """Generates links from commit and issue references (like 0c14d77, #123) to correct repo and such"""
         s = self.msg
         s = re.sub(
-            r"[^(-]https://github.com/MarketSquare/([\-\w\d]+)/(issues|pulls)/(\d+)",
-            r"[#\3](https://github.com/MarketSquare/\1/issues/\3)",
-            s,
-        )
-        s = re.sub(
             r"#(\d+)",
             rf"[#\1](https://github.com/MarketSquare/{self.repo}/issues/\1)",
             s,
@@ -46,35 +45,30 @@ class Commit:
         )
         return s
 
-    def parse_type(self) -> Optional[Tuple[str, str]]:
-        # Needs to handle '!' indicating breaking change
+    def parse_type(self) -> CommitType:
 
         if self.msg.startswith(
             "docs: update .all-contributorsrc"
         ) or self.msg.startswith("docs: update README.md [skip ci]"):
-            return "ci", ""
+            return "ci"
         elif self.msg.startswith("Bump "):
-            return "bump", ""
+            return "bump"
         elif self.msg.startswith("docs:"):
-            return "docs", ""
+            return "docs"
         elif self.msg.startswith("Fix "):
-            return "fix", ""
+            return "fix"
 
-        return None
+        return "unknown"
 
     @property
-    def type(self) -> Optional[str]:
-        type, _ = self.parse_type() or (None, None)
+    def type(self) -> CommitType:
+        type = self.parse_type()
         return type
 
     @property
-    def subtype(self) -> Optional[str]:
-        _, subtype = self.parse_type() or (None, None)
-        return subtype
+    def labels(self) -> List[str]:
 
-    def type_str(self) -> str:
-        type, subtype = self.parse_type() or (None, None)
-        return f"{type}" + (f"({subtype})" if subtype else "")
+        return [""]
 
     def format(self) -> str:
         commit_link = commit_linkify(self.id, self.repo) if self.id else ""
@@ -110,17 +104,18 @@ def wrap_details(title, body, wraplines=5):
     return out
 
 
-def summary_repo(path: str, commitrange: str, filter_types: List[str]) -> str:
-    if commitrange.endswith("0000000"):
-        # Happens when a submodule has been removed
-        return ""
+def summary_repo(
+    title: str, intro: str, path: str, commitrange: str, filter_types: List[str]
+) -> str:
     dirname = run("bash -c 'basename $(pwd)'", cwd=path).strip()
-    out = f"\n## {dirname}"
+    out = f"\n## {title}"
+    out += intro
 
     feats = ""
     fixes = ""
     docs = ""
-    misc = ""
+    unknown = ""
+    repo = Github().get_repo("MarketSquare/robotframework-browser")
 
     summary_bundle = run(f"git log {commitrange} --oneline --no-decorate", cwd=path)
     for line in summary_bundle.split("\n"):
@@ -129,6 +124,7 @@ def summary_repo(path: str, commitrange: str, filter_types: List[str]) -> str:
                 id=line.split(" ")[0],
                 msg=" ".join(line.split(" ")[1:]),
                 repo=dirname,
+                repo_data=repo,
             )
 
             entry = f"\n - {commit.format()}"
@@ -139,13 +135,13 @@ def summary_repo(path: str, commitrange: str, filter_types: List[str]) -> str:
             elif commit.type == "docs":
                 docs += entry
             elif commit.type not in filter_types:
-                misc += entry
+                unknown += entry
 
     for name, entries in (
         ("✨ Features", feats),
         ("🐛 Fixes", fixes),
         ("📝 Docs", docs),
-        ("🔨 Misc", misc),
+        ("🔨 Unknown / Misc", unknown),
     ):
         if entries:
             _count = len(entries.strip().split("\n"))
@@ -162,16 +158,19 @@ def summary_repo(path: str, commitrange: str, filter_types: List[str]) -> str:
     return out
 
 
-def generate_release_notes(filter_types=["bump", "ci"]):
-    # FIXME: figure this out dynamically
+def generate_release_notes(
+    title: str, intro: str, version: str, filter_types=["bump", "ci"]
+):
     prev_release = run("git describe --tags --abbrev=0").strip()
-    # prev_release = "v10.0.3"
-    next_release = "main"
     output = summary_repo(
-        ".", commitrange=f"{prev_release}...{next_release}", filter_types=filter_types
+        title,
+        intro,
+        ".",
+        commitrange=f"{prev_release}...main",
+        filter_types=filter_types,
     )
-    print(output)
+    return output
 
 
 if __name__ == "__main__":
-    generate_release_notes()
+    print(generate_release_notes(sys.argv[1]))

@@ -14,6 +14,8 @@ from xml.etree import ElementTree as ET
 
 from invoke import task, Exit
 
+from releasenotes import generate_release_notes
+
 try:
     from robot import rebot_cli
     from robot import __version__ as robot_version
@@ -45,23 +47,7 @@ python_lint_timestamp_file = python_src_dir / ".linted"
 ATEST_TIMEOUT = 600
 
 ZIP_DIR = ROOT_DIR / "zip_results"
-RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
-RELEASE_NOTES_TITLE = "Browser library {version}"
-REPOSITORY = "MarketSquare/robotframework-browser"
 VERSION_PATH = Path("Browser/version.py")
-RELEASE_NOTES_INTRO = """
-Release notes for _Browser library {version}.
-
-For installation see _update instructions.
- 
-Browser library {version} was released on {date}. Browser supports
-Python 3.7+, Node 12/14 LTS and Robot Framework 3.2+. Library was
-tested with Playwright REPLACE_PW_VERSION
-
-.. _Browser: https://github.com/MarketSquare/robotframework-browser
-.. _update instructions https://robotframework-browser.org/#Update
-"""
-
 
 @task
 def deps(c):
@@ -677,17 +663,35 @@ def release_notes(c, version=None, username=None, password=None, write=False):
     specified at all, communication with GitHub is anonymous and typically
     pretty slow.
     """
+
+    RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
+    REPOSITORY = "MarketSquare/robotframework-browser"
+    RELEASE_NOTES_TITLE = "Browser library {version}"
+    RELEASE_NOTES_INTRO = """
+    Release notes for (Browser)[https://github.com/MarketSquare/robotframework-browser] library {version}.
+
+    For installation see (update instructions)[https://robotframework-browser.org/#Update].
+     
+    Browser library {version} was released on {date}. Browser supports
+    Python 3.7+, Node 12/14 LTS and Robot Framework 3.2+. Library was
+    tested with Playwright REPLACE_PW_VERSION
+
+    """.replace("REPLACE_PW_VERSION", _get_pw_version())
+
+
     pattern = '__version__ = "(.*)"'
     if write and not RELEASE_NOTES_PATH.parent.is_dir():
         RELEASE_NOTES_PATH.parent.mkdir(parents=True)
     version = Version(version, VERSION_PATH, pattern)
-    file = RELEASE_NOTES_PATH if write else sys.stdout
-    generator = ReleaseNotesGenerator(
-        REPOSITORY,
-        RELEASE_NOTES_TITLE,
-        RELEASE_NOTES_INTRO.replace("REPLACE_PW_VERSION", _get_pw_version()),
-    )
-    generator.generate(version, username, password, file)
+
+
+    raw_notes = generate_release_notes(RELEASE_NOTES_TITLE, RELEASE_NOTES_INTRO, str(version))
+    if write:
+        file = RELEASE_NOTES_PATH 
+        with open(file) as f:
+            f.write(raw_notes)
+    else:
+        print(raw_notes)
 
 
 def _get_pw_version() -> str:
