@@ -11,13 +11,13 @@ the Playwright_ tool internally. Browser library 11.0.0 is a new release with
 enhancements to JS extension documentation, version binding to Playwright and other
 enhancement and bug fixes. All issues targeted for Browser library v11.0.0 can be found
 from the `issue tracker`_.
-If you have pip_ installed, just run
-::
+If you have pip_ installed, just run::
+
    pip install --upgrade robotframework-browser
    rfbrowser init
 
-to install the latest available release or use
-::
+to install the latest available release or use::
+
    pip install robotframework-browser==11.0.0
    rfbrowser init
 
@@ -42,12 +42,14 @@ tested with Playwright 1.17.1
 Most important enhancements
 ===========================
 
-- Crawler fails if site has a link to a pdf (`#1463`_)
+Crawler fails if site has a link to a pdf (`#1463`_)
 ------------------------------------------------------
+
 Crawling site did fail if there was link to pwf in the page. This is fixed in this release.
 
 Add version binding between Playwright and Browser (`#591`_)
 ------------------------------------------------------------
+
 In previous releases we did only tell minimum required Playwright version, which caused
 problems with environment setups and sometimes some backwards incompatible issues. Starting
 from this release, Playwright version is bind and library supports only one version of
@@ -55,6 +57,7 @@ Playwright.
 
 Enable keyword documentation for JsExtentions (`#775`_)
 -------------------------------------------------------
+
 In previous releases we did support extending library by adding new keywords trough JS plugin,
 but creating keyword documentation of the JS keywords not very well supported. This is now enhanced
 and library also produces documentation from JS extension keywords.
