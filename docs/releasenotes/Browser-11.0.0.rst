@@ -15,6 +15,7 @@ If you have pip_ installed, just run
 ::
    pip install --upgrade robotframework-browser
    rfbrowser init
+
 to install the latest available release or use
 ::
    pip install robotframework-browser==11.0.0
