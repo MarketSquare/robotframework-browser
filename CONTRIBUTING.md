@@ -74,8 +74,8 @@ VERSION=<version>
 git describe --tags --abbrev=0 | xargs git checkout
 git describe --tags --abbrev=0 | xargs inv docs -v
 git checkout main
-git add docs/versions/Browser-$VERSION.html
-git commit -m "Add VERSION keyword documentation to repository."
+git add docs/versions/Browser-*.html
+git commit -m "Add `git describe --tags --abbrev=0` keyword documentation to repository."
 git push
 ```
 
