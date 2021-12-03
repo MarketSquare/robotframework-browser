@@ -33,13 +33,11 @@ tested with Playwright 1.16.3
 
 Most important enhancements
 ===========================
+Upload File By Selector keyword (`#1499`_)
+------------------------------------------
+There is new keyword to upload files.
 
-New Features:
-- Upload File By Selector keyword (`#1499`_)
-
-
-Fixes:
-- Unable to pass "Predicate" argument to ``wait for`` keywords (`#1486`_)
+Unable to pass "Predicate" argument to ``wait for`` keywords (`#1486`_)
 - Chromium: Check Checkbox KW fails sometimes with Element is not attached to the DOM (`#1492`_)
 - Release process saves wrong version from old KW docs (`#1494`_)
 - Improve playwright trace log reading (`#1448`_)
