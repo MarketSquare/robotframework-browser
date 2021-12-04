@@ -74,9 +74,12 @@ browser.close_browser()
 async function myGoToKeyword(page, args) {
   return await page.goto(args[0]);
 }
+myGoToKeyword.rfdoc = "This is my own go to keyword"
 exports.__esModule = true;
 exports.myGoToKeyword = myGoToKeyword;
 ```
+
+See example at [https://github.com/MarketSquare/robotframework-browser/tree/main/docs/examples/babelES2015].
 
 ```RobotFramework
 *** Settings ***
