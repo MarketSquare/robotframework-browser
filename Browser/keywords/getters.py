@@ -169,6 +169,8 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
 
+        Keyword can also return `input` or `textarea` value property text.
+
         See the `Finding elements` section for details about the selectors.
 
         ``assertion_operator`` See `Assertions` for further details. Defaults to None.
@@ -180,11 +182,12 @@ class Getters(LibraryComponent):
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the text matches the specified assertion. See `Assertions`
-        for further details for the assertion arguments. By default assertion is not done.
+        for further details for the assertion arguments. By default, assertion is not done.
 
         Example:
         | ${text} =    `Get Text`    id=important                            # Returns element text without assertion.
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
+        | ${text} =    `Get Text`    //input         ==    root              # Returns input element text with assertion.
         """
         response = self._get_text(selector)
         logger.debug(response.log)
