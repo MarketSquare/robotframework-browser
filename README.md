@@ -79,7 +79,7 @@ exports.__esModule = true;
 exports.myGoToKeyword = myGoToKeyword;
 ```
 
-See example at [https://github.com/MarketSquare/robotframework-browser/tree/main/docs/examples/babelES2015].
+See [example](https://github.com/MarketSquare/robotframework-browser/tree/main/docs/examples/babelES2015).
 
 ```RobotFramework
 *** Settings ***
