@@ -74,12 +74,10 @@ browser.close_browser()
 async function myGoToKeyword(page, args) {
   return await page.goto(args[0]);
 }
-myGoToKeyword.rfdoc = "This is my own go to keyword"
+myGoToKeyword.rfdoc = "This is my own go to keyword";
 exports.__esModule = true;
 exports.myGoToKeyword = myGoToKeyword;
 ```
-
-See [example](https://github.com/MarketSquare/robotframework-browser/tree/main/docs/examples/babelES2015).
 
 ```RobotFramework
 *** Settings ***
@@ -91,6 +89,7 @@ Example Test
    myGoToKeyword   https://www.robotframework.org
 ```
 
+See [example](https://github.com/MarketSquare/robotframework-browser/tree/main/docs/examples/babelES2015).
 Ready made extensions and a place to share your own at [robotframework-browser-extensions](https://github.com/MarketSquare/robotframework-browser-extensions).
 
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
