@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import { ElementHandle, Locator, Page } from 'playwright';
+import { errors } from 'playwright';
+
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
@@ -147,6 +149,67 @@ async function getAttributeValue(request: Request.ElementProperty, state: Playwr
     const attribute = await locator.getAttribute(attributeName);
     logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
     return attribute;
+}
+
+const stateEnum = {
+    attached: 1,
+    detached: 2,
+    visible: 4,
+    hidden: 8,
+    enabled: 16,
+    disabled: 32,
+    editable: 64,
+    readonly: 128,
+    selected: 256,
+    deselected: 512,
+    focused: 1024,
+    defocused: 2048,
+    checked: 4096,
+    unchecked: 8192,
+    stable: 16384,
+    animating: 32768
+}
+
+export async function getElementStates(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    let states = 0;
+    try {
+        await locator.waitFor({ state: "attached", timeout: 100 });
+        states = stateEnum.attached;
+        states += ((await locator.isVisible()) ? stateEnum.visible : stateEnum.hidden);
+        states += ((await locator.isEnabled()) ? stateEnum.enabled : stateEnum.disabled);
+        states += ((await locator.isEditable()) ? stateEnum.editable : stateEnum.readonly);
+        try {
+            const element = await locator.elementHandle()
+            exists(element, 'Locator did not resolve to elementHandle.');
+            if (await element.evaluate(e => 'selected' in e)) {
+                states += ((await element.evaluate(e => e.selected)) ? stateEnum.selected : stateEnum.deselected);
+            }
+            states += ((await element.evaluate(e => document.activeElement === e)) ? stateEnum.focused : stateEnum.defocused);
+        } catch { }
+        try {
+            states += ((await locator.isChecked()) ? stateEnum.checked : stateEnum.unchecked);
+        } catch { }
+        try {
+            await (await locator.elementHandle())?.waitForElementState('stable', { timeout: 100 })
+            states += stateEnum.stable;
+        } catch (e) {
+            if (e instanceof errors.TimeoutError) {
+                states += stateEnum.animating;
+            }
+        }
+    } catch (e) {
+        states = stateEnum.detached;
+        if (e instanceof errors.TimeoutError) {
+            states = stateEnum.detached;
+        } else if (e instanceof Error) {
+            logger.error(e);
+            throw e;
+        }
+    }
+    return jsonResponse(JSON.stringify(states), 'Returned state.');
 }
 
 export async function getStyle(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
