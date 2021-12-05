@@ -16,7 +16,7 @@ import { Dialog, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
 
 import pino from 'pino';
@@ -25,7 +25,7 @@ const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 export async function selectOption(
     request: Request.SelectElementSelector,
     state: PlaywrightState,
-): Promise<Response.Empty> {
+): Promise<Response.Json> {
     const selector = request.getSelector();
     const matcher = JSON.parse(request.getMatcherjson());
     const strictMode = request.getStrict();
@@ -35,7 +35,7 @@ export async function selectOption(
         logger.info("Couldn't select any options");
         throw new Error(`No options matched ${matcher}`);
     }
-    return emptyWithLog(`Selected options ${result} in element ${selector}`);
+    return jsonResponse(JSON.stringify(result), `Selected options ${result} in element ${selector}`);
 }
 
 export async function deSelectOption(

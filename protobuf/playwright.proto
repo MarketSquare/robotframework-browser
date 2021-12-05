@@ -331,7 +331,7 @@ service  Playwright {
   /* Gets the Select element specified by selector and returns the contents */
   rpc GetSelectContent(Request.ElementSelector) returns (Response.Select);
   /* Selects option matching matcher in Select element matching selector */
-  rpc SelectOption(Request.SelectElementSelector) returns (Response.Empty);
+  rpc SelectOption(Request.SelectElementSelector) returns (Response.Json);
   /* Deselects options in Select element matching selector */
   rpc DeselectOption(Request.ElementSelector) returns (Response.Empty);
   /* Checks checkbox specified by selector */
