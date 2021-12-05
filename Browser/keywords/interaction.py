@@ -571,11 +571,13 @@ class Interaction(LibraryComponent):
         selector: str,
         attribute: SelectAttribute,
         *values,
-    ):
+    ) -> list:
         """Selects options from select element found by ``selector``.
 
         ``selector`` Selector of the select tag.
         See the `Finding elements` section for details about the selectors.
+
+        Returns list of options which keyword was able to select.
 
         Matches based on the chosen attribute with list of ``values``.
         Possible attributes to match options by:
@@ -594,7 +596,7 @@ class Interaction(LibraryComponent):
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
             self.deselect_options(selector)
-            return
+            return []
 
         if attribute is SelectAttribute.value:
             matchers = json.dumps([{"value": s} for s in values])
@@ -608,7 +610,8 @@ class Interaction(LibraryComponent):
                     selector=selector, matcherJson=matchers, strict=self.strict_mode
                 )
             )
-            logger.debug(response.log)
+        logger.debug(response.log)
+        return json.loads(response.json)
 
     @keyword(tags=("Setter", "PageContent"))
     def deselect_options(self, selector: str):
