@@ -577,7 +577,10 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the select tag.
         See the `Finding elements` section for details about the selectors.
 
-        Returns list of options which keyword was able to select.
+        Returns list of options which keyword was able to select. The type of
+        list item matches to ``attribute`` definition. Example if ``attribute``
+        equals to `label` returned list contains label values. Or in case of
+        `index` it contains list of selected indexes.
 
         Matches based on the chosen attribute with list of ``values``.
         Possible attributes to match options by:
@@ -588,10 +591,19 @@ class Interaction(LibraryComponent):
         If no values to select are passed will deselect options in element.
 
         Example:
-        | `Select Options By`    select[name=preferred_channel]    label    Direct mail
+        | ${selected} =    `Select Options By`    select[name=preferred_channel]    label    Direct mail
+        | List Should Contain Value    ${selected}    Direct mail
         | `Select Options By`    select[name=interests]    value    males    females    others
-        | `Select Options By`    select[name=possible_channels]    index    0    2
-        | `Select Options By`    select[name=interests]    text     Males    Females
+        | List Should Contain Value    ${selected}    males
+        | List Should Contain Value    ${selected}    females
+        | List Should Contain Value    ${selected}    others
+        | Length Should Be    ${selected}    3
+        | ${selected} =    `Select Options By`    select[name=possible_channels]    index    0    2
+        | List Should Contain Value    ${selected}    0
+        | List Should Contain Value    ${selected}    2
+        | ${selected} =    `Select Options By`    select[name=interests]    text     Males    Females
+        | List Should Contain Value    ${selected}    Males
+        | List Should Contain Value    ${selected}    Females
         """
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
@@ -610,8 +622,8 @@ class Interaction(LibraryComponent):
                     selector=selector, matcherJson=matchers, strict=self.strict_mode
                 )
             )
-            logger.debug(response.log)
-            return json.loads(response.json)
+        logger.debug(response.log)
+        return json.loads(response.json)
 
     @keyword(tags=("Setter", "PageContent"))
     def deselect_options(self, selector: str):
