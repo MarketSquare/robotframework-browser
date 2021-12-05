@@ -34,6 +34,7 @@ from ..utils.data_types import (
     AreaFields,
     BoundingBoxFields,
     ElementStateKey,
+    ElementState,
     SelectAttribute,
     SizeFields,
 )
@@ -1177,3 +1178,23 @@ class Getters(LibraryComponent):
                 f"State '{state.name}' of '{selector}' is",
                 message,
             )
+
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
+    def get_element_states(
+            self,
+            selector: str,
+            assertion_operator: Optional[AssertionOperator] = None,
+            assertion_expected: Optional[ElementState] = None,
+            message: Optional[str] = None,
+    ) -> Any:
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetElementStates(
+                Request.ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+        parsed = json.loads(response.json)
+        logger.debug(f"States: {parsed}")
+        return verify_assertion(
+            ElementState(parsed), assertion_operator, assertion_expected, "States are", message
+        )
+
+

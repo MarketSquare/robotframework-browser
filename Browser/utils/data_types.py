@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from enum import Enum, auto
+from enum import Enum, auto, IntFlag
 from typing import Dict, Union
 
 from typing_extensions import TypedDict
@@ -463,7 +463,7 @@ class AutoClosingLevel(Enum):
     MANUAL = auto()
 
 
-class ElementState(Enum):
+class ElementState(IntFlag):
     """Enum that defines the state an element can have.
 
     The following ``states`` are possible:
@@ -485,21 +485,22 @@ class ElementState(Enum):
     | ``stable``     | to be both ``visible`` and ``stable``. |
     """
 
-    attached = auto()
-    detached = auto()
-    visible = auto()
-    hidden = auto()
-    enabled = auto()
-    disabled = auto()
-    editable = auto()
-    readonly = auto()
-    selected = auto()
-    deselected = auto()
-    focused = auto()
-    defocused = auto()
-    checked = auto()
-    unchecked = auto()
-    stable = auto()
+    attached = 1
+    detached = 2
+    visible = 4
+    hidden = 8
+    enabled = 16
+    disabled = 32
+    editable = 64
+    readonly = 128
+    selected = 256
+    deselected = 512
+    focused = 1024
+    defocused = 2048
+    checked = 4096
+    unchecked = 8192
+    stable = 16384
+    animating = 32768
 
 
 class ElementStateKey(Enum):
