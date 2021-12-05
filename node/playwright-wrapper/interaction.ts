@@ -16,8 +16,8 @@ import { Dialog, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
-import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
+import { emptyWithLog, stringResponse, jsonResponse } from './response-util';
+import { findLocator, invokeOnKeyboard, invokeOnMouse, exists } from './playwright-invoke';
 
 import pino from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -35,7 +35,15 @@ export async function selectOption(
         logger.info("Couldn't select any options");
         throw new Error(`No options matched ${matcher}`);
     }
-    return jsonResponse(JSON.stringify(result), `Selected options ${result} in element ${selector}`);
+    const attributeName = Object.keys(matcher[0])[0]
+    let selectedOptions = []
+    for (const selectedOption of result) {
+        const locatorOptions = locator.locator(`option[value="${selectedOption}"]`);
+        const element = await locatorOptions.elementHandle();
+        exists(element, `The ${selectedOption} option element did not exist.`);
+        selectedOptions.push(String(await element.getProperty(attributeName)));
+    }
+    return jsonResponse(JSON.stringify(selectedOptions), `Selected options [${selectedOptions}] in element ${selector}`);
 }
 
 export async function deSelectOption(

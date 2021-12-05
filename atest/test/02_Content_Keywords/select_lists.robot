@@ -71,24 +71,23 @@ Get Selected Options With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Option By label
-    ${selected} =    Select Option And Verify Selection    label    select[name=preferred_channel]    Direct mail
-    ${selection} =    Create List    directmail
+    ${selection} =    Create List    Direct mail
+    ${selected} =    Select Option And Verify Selection    label    select[name=preferred_channel]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By value
-    ${selected} =    Select Option And Verify Selection    value    select[name=interests]    males    females
-    ...    others
     ${selection} =    Create List    males    females    others
+    ${selected} =    Select Option And Verify Selection    value    select[name=interests]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By index
-    ${selected} =    Select Option And Verify Selection    index    select[name=possible_channels]    0    2
-    ${selection} =    Create List    email    directmail
+    ${selection} =    Create List    0    2
+    ${selected} =    Select Option And Verify Selection    index    select[name=possible_channels]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By text
-    ${selected} =    Select Option And Verify Selection    text    select[name=interests]    Males    Females
-    ${selection} =    Create List    males    females
+    ${selection} =    Create List    Males    Females
+    ${selected} =    Select Option And Verify Selection    text    select[name=interests]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By With Nonmatching Selector

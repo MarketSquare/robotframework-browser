@@ -610,8 +610,8 @@ class Interaction(LibraryComponent):
                     selector=selector, matcherJson=matchers, strict=self.strict_mode
                 )
             )
-        logger.debug(response.log)
-        return json.loads(response.json)
+            logger.debug(response.log)
+            return json.loads(response.json)
 
     @keyword(tags=("Setter", "PageContent"))
     def deselect_options(self, selector: str):
