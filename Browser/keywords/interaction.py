@@ -593,7 +593,7 @@ class Interaction(LibraryComponent):
         Example:
         | ${selected} =    `Select Options By`    select[name=preferred_channel]    label    Direct mail
         | List Should Contain Value    ${selected}    Direct mail
-        | `Select Options By`    select[name=interests]    value    males    females    others
+        | ${selected} =    `Select Options By`    select[name=interests]    value    males    females    others
         | List Should Contain Value    ${selected}    males
         | List Should Contain Value    ${selected}    females
         | List Should Contain Value    ${selected}    others
