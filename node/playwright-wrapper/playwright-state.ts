@@ -280,8 +280,8 @@ export class PlaywrightState {
         return browserState;
     }
 
-    public popBrowser(): void {
-        this.browserStack.pop();
+    public popBrowser(): BrowserState | undefined {
+        return this.browserStack.pop();
     }
 
     public getActiveContext = (): BrowserContext | undefined => {
@@ -422,8 +422,8 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     if (currentBrowser === undefined) {
         return stringResponse('no-browser', 'No browser open, doing nothing');
     }
-    await currentBrowser.close();
     openBrowsers.popBrowser();
+    await currentBrowser.close();
     return stringResponse(currentBrowser.id, 'Closed browser');
 }
 
