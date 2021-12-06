@@ -210,7 +210,7 @@ New Context with defaultBrowserType ff
     ${old_timeout} =    Set Browser Timeout    80s
     New Context    defaultBrowserType=firefox
     Verify Browser Type    firefox
-    [Teardown]    Set Browser Timeout    ${old_timeout}
+    Set Browser Timeout    ${old_timeout}
 
 New Context with defaultBrowserType chromium
     New Context    defaultBrowserType=chromium
