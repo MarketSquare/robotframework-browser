@@ -20,6 +20,7 @@ When Not Enabled No Trace File
     Wait File Count In Directory    ${OUTPUT_DIR}    1    trace*.zip
 
 Enable Tracing To File With Two Browsers
+    [Timeout]    90s
     ${browser1} =    New Browser
     New Context    tracing=trace_1.zip
     New Page    ${LOGIN_URL}
