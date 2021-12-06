@@ -79,12 +79,12 @@ jobs:
       run: |
        coverage run -m invoke utest
        coverage report
-    - name: Run Robot Framework tests on linux or macOS
-      if: matrix.os != 'windows-latest'
+    - name: Run Robot Framework tests on linux
+      if: matrix.os == 'ubuntu-latest'
       run: |
         xvfb-run --auto-servernum inv atest  -z true
-    - name: Run Robot Framework tests on Windows
-      if: matrix.os == 'windows-latest'
+    - name: Run Robot Framework tests on Windows or macOS
+      if: matrix.os != 'ubuntu-latest'
       run: |
         inv atest -z true
     - name: Create Distributable Package
@@ -177,15 +177,15 @@ jobs:
           rfbrowser init
           pip install -r Browser/dev-requirements.txt
       - name: Test on unix-like os - serial mode
-        if: matrix.os != 'windows-latest'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           echo ${{ matrix.os }}
           rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum invoke atest-robot
-      - name: Run Robot Framework tests on windows
-        if: ${{ matrix.os == 'windows-latest' }}
+      - name: Run Robot Framework tests on windows or macOS
+        if: ${{ matrix.os != 'ubuntu-latest' }}
         run: |
           inv atest-global-pythonpath
       - name: Artifacts download for flaky test analysis
@@ -200,7 +200,7 @@ jobs:
         if: ${{ failure() }}
         run: |
           flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
-      - name: Uninstall on Linux
+      - name: Uninstall on Linux or MacOS
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           rfbrowser clean-node
@@ -210,24 +210,3 @@ jobs:
         with:
           name: ${{ matrix.os }} ${{ matrix.node-version }} Clean install results
           path: atest/output
-  automerge:
-    name: Automerge Dependabot
-    runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
-    needs: test-install
-    steps:
-      - name: 'Wait for status checks'
-        id: waitforstatuschecks
-        uses: "WyriHaximus/github-action-wait-for-status@v1.2"
-        with:
-          ignoreActions: Automerge Dependabot
-          checkInterval: 13
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Merge pull requests
-        uses: pascalgn/automerge-action@v0.12.0
-        if: steps.waitforstatuschecks.outputs.status == 'success'
-        env:
-          MERGE_METHOD: "squash"
-          MERGE_LABELS: ""
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
