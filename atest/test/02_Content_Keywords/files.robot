@@ -13,18 +13,18 @@ Upload upload_test_file
 
 Upload 75MB file
     [Tags]    no-windows-support
-    [Timeout]    1 minute
+    [Timeout]    2 minute
     Run Keyword And Expect Error    Error: fileChooser.setFiles: *closed*
     ...    Upload Sized File    75
     # The browser actually gets a bit stuck so it needs to be cleaned up properly here.
     [Teardown]    Close Browser
 
 Upload 1MB file
-    [Timeout]    1 minute
+    [Timeout]    2 minute
     Upload Sized File    1
 
 Upload 74MB file
-    [Timeout]    1 minute
+    [Timeout]    2 minute
     Upload Sized File    74
 
 Upload File By Selector
@@ -86,7 +86,7 @@ Set Library Timeout
     IF    $current_contexts == []
         New Context
     END
-    ${timeout} =    Set Browser Timeout    60 seconds
+    ${timeout} =    Set Browser Timeout    90 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
 Restore Library Timeout
