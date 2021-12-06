@@ -79,12 +79,12 @@ jobs:
       run: |
        coverage run -m invoke utest
        coverage report
-    - name: Run Robot Framework tests on linux
-      if: matrix.os == 'ubuntu-latest'
+    - name: Run Robot Framework tests on linux or macOS
+      if: matrix.os != 'windows-latest'
       run: |
         xvfb-run --auto-servernum inv atest  -z true
     - name: Run Robot Framework tests on Windows
-      if: matrix.os != 'ubuntu-latest'
+      if: matrix.os == 'windows-latest'
       run: |
         inv atest -z true
     - name: Create Distributable Package
@@ -146,8 +146,8 @@ jobs:
         with:
           name: demoapp
           path: zip_results/demoapp
-      - name: Unzip demoapp in linux
-        if: matrix.os == 'ubuntu-latest'
+      - name: Unzip demoapp in linux or MacOS
+        if: matrix.os != 'windows-latest'
         run: |
           ls -l zip_results/demoapp
           unzip -o zip_results/demoapp/demo-app-linux.zip
