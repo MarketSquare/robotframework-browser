@@ -20,11 +20,11 @@ Upload 75MB file
     [Teardown]    Close Browser
 
 Upload 1MB file
+    [Timeout]    1 minute
     Upload Sized File    1
 
 Upload 74MB file
     [Timeout]    1 minute
-
     Upload Sized File    74
 
 Upload File By Selector
