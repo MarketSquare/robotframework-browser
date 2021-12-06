@@ -103,6 +103,7 @@ jobs:
     - name: Artifacts download for flaky test analysis
       if: ${{ failure() }}
       run : |
+        pip install flaky-tests-detection
         python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
         inv copy-xunit
     - name: Flaky tests detection
