@@ -24,6 +24,7 @@ Upload 1MB file
 
 Upload 74MB file
     [Timeout]    1 minute
+
     Upload Sized File    74
 
 Upload File By Selector
@@ -85,11 +86,7 @@ Set Library Timeout
     IF    $current_contexts == []
         New Context
     END
-    IF    os.sys.platform.startswith('win32')
-        ${timeout} =    Set Browser Timeout    60 seconds
-    ELSE
-        ${timeout} =    Set Browser Timeout    45 seconds
-    END
+    ${timeout} =    Set Browser Timeout    60 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
 Restore Library Timeout
