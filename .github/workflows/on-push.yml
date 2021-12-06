@@ -53,11 +53,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install wheel
         pip install -r Browser/dev-requirements.txt
-    - name: Update glibc on ubuntu
-      if: ${{ matrix.os }} == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install libc6
     - name: Build Protos and check with tsc
       run: |
         inv node-build
@@ -161,11 +156,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Update glibc on ubuntu
-        if: ${{ matrix.os }} == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install libc6
       - name: Install Robot Framework Browser on unix-like
         run: |
           pip install ./robotframework_browser-*-py3-none-any.whl
