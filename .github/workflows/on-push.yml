@@ -123,19 +123,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
         node-version: [12.x, 14.x, 16.x]
-        exclude:
-          # Exclude some configurations to make the matrix smaller
-          - python-version: 3.8
-            node-version: 12.x
-          - os: windows-latest
-            node-version: 12.x
-          - os: macos-latest
-            python-version: 3.7
-          - os: ubuntu-latest
-            python-version: 3.8
     steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
@@ -166,7 +156,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
       - name: Install Robot Framework Browser on unix-like
         run: |
           pip install ./robotframework_browser-*-py3-none-any.whl
