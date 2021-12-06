@@ -27,8 +27,10 @@ New Context does not open a page
     Should Be Equal    ${no_page_id}    NO PAGE OPEN
 
 Open Browser opens everything
+    ${old_timeout} =    Set Browser timeout    30 seconds
     Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
+    Set Browser timeout    ${old_timeout}
 
 Open Browser with invalid browser fails on RF side
     Run Keyword and Expect Error
@@ -207,8 +209,10 @@ Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
 
 New Context with defaultBrowserType ff
     [Timeout]    80s    # Because FF is just slow sometimes
+    ${old_timeout} =    Set Browser Timeout    80s
     New Context    defaultBrowserType=firefox
     Verify Browser Type    firefox
+    Set Browser Timeout    ${old_timeout}
 
 New Context with defaultBrowserType chromium
     New Context    defaultBrowserType=chromium
