@@ -207,8 +207,10 @@ Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
 
 New Context with defaultBrowserType ff
     [Timeout]    80s    # Because FF is just slow sometimes
+    ${old_timeout}=  Set Browser Timeout    80s
     New Context    defaultBrowserType=firefox
     Verify Browser Type    firefox
+    [Teardown]    Set Browser Timeout    ${old_timeout}
 
 New Context with defaultBrowserType chromium
     New Context    defaultBrowserType=chromium
