@@ -158,7 +158,7 @@ Wait For Elements State to hide with Promise
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
     Wait for    ${promise}
-    Max elapsed    ${start}    1.4
+    Max elapsed    ${start}    2.0
 
 Wait For Elements State to hide fails with Promise
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
@@ -177,7 +177,7 @@ Wait For Elements State to hide with Promise and wait for all promises
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
     Wait For All Promises
-    Max elapsed    ${start}    1.1
+    Max elapsed    ${start}    2.0
 
 *** Keywords ***
 Max elapsed
