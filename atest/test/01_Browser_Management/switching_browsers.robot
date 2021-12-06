@@ -10,7 +10,7 @@ Switch Browser
     New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
     ${first_url} =    Get Url
-    ${second_browser} =    New Browser    firefox
+    ${second_browser} =    New Browser    firefox    timeout=1 minute
     New Context
     ${timeout} =    Set Browser Timeout    10s
     New Page    ${FORM_URL}
