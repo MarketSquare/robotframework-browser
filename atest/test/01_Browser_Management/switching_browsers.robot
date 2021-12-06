@@ -5,7 +5,7 @@ Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Switch Browser
-    [Timeout]   1 minute
+    [Timeout]    1 minute
     ${first_browser} =    New Browser    chromium
     New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
