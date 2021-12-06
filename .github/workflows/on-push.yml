@@ -161,10 +161,12 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
       - name: Install Robot Framework Browser on unix-like
         run: |
           pip install ./robotframework_browser-*-py3-none-any.whl
@@ -176,6 +178,7 @@ jobs:
       - name: Install node deps and python deps for test running
         run: |
           rfbrowser init
+          pip install wheel
           pip install -r Browser/dev-requirements.txt
       - name: Test on unix-like os - serial mode
         if: matrix.os == 'ubuntu-latest'

@@ -14,7 +14,7 @@ Upload upload_test_file
 Upload 75MB file
     [Tags]    no-windows-support
     [Timeout]    1 minute
-    Run Keyword And Expect Error    Error: fileChooser.setFiles: fileChooser.setFiles: * closed
+    Run Keyword And Expect Error    Error: fileChooser.setFiles: *closed*
     ...    Upload Sized File    75
     # The browser actually gets a bit stuck so it needs to be cleaned up properly here.
     [Teardown]    Close Browser
