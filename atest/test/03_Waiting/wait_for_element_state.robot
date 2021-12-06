@@ -36,7 +36,7 @@ Wait For Elements State enabled With Strict On wait_for_function
 Wait For Elements State detached
     Select Options By    \#dropdown    value    True    detached
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    detached    1s
+    Wait For Elements State    \#victim    detached    2s
 
 Wait For Elements State visible
     Select Options By    \#dropdown    value    True    visible
