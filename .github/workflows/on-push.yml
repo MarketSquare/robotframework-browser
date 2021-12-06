@@ -164,8 +164,8 @@ jobs:
       - name: Update glibc on ubuntu
         if: ${{ matrix.os }} == 'ubuntu-latest'
         run: |
-          apt-get update
-          apt-get install libc6
+          sudo apt-get update
+          sudo apt-get install libc6
       - name: Install Robot Framework Browser on unix-like
         run: |
           pip install ./robotframework_browser-*-py3-none-any.whl
