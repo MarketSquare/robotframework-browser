@@ -124,14 +124,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9]
-        node-version: [12.x, 14.x, 16.x]
-        exclude:
-          # Exclude some configurations to make the matrix smaller
-          - os: windows-latest
-            python-version: 3.8
-          - os: ubuntu-latest
-            node-version: 14.x
+        python-version: [3.7, 3.9]
+        node-version: [12.x, 16.x]
     steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
