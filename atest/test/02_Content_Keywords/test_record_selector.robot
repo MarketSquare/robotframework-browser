@@ -7,6 +7,7 @@ Suite Teardown      Close Browser
 
 *** Test Cases ***
 Finds a selector
+    [Timeout]   2 minutes
     New Page    ${LOGIN_URL}
     ${recording} =    promise to    record selector
     Hover    \#browser-library-selector-recorder >> h5
