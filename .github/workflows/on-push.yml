@@ -47,6 +47,7 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
     - name: Install python dependencies
       # flaky-tests-detection only in here because Spicy install problem on Apple M1 chip.
       # https://github.com/scipy/scipy/issues/13409
@@ -58,7 +59,8 @@ jobs:
       run: |
         inv node-build
         python -m Browser.gen_stub
-    - name: Check types with mypy
+    - name: Check types with mypy on Linux
+      if: matrix.os == 'ubuntu-latest'
       run: |
         inv lint-python
     - name: Lint atest
