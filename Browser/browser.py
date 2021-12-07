@@ -119,6 +119,9 @@ class Browser(DynamicCore):
     Robot Framework Browser about 10 times faster than with Selenium by
     just opening a `New Context` within the opened browser.
 
+    To make pages in the same suite share state, use the same context by opening the
+    context with `New Context` on suite setup.
+
     The context layer is useful e.g. for testing different users sessions on the
     same webpage without opening a whole new browser context.
     Contexts can also have detailed configurations, such as geo-location, language settings,
