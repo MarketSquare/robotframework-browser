@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 import time
-from typing import Iterable, List
+from typing import Iterable
 import zipfile
 from datetime import datetime
 from pathlib import Path, PurePath
@@ -24,7 +24,7 @@ try:
     from robot.libdoc import libdoc
     import robotstatuschecker
     import bs4
-    from Browser.utils import find_free_port
+    from Browser.utils import spawn_node_process
 except ModuleNotFoundError:
     traceback.print_exc()
     print('Assuming that this is for "inv deps" command and ignoring error.')
@@ -284,22 +284,15 @@ def atest(c, suite=None, include=None, zip=None, debug=False):
     if debug:
         args.extend(["--listener", "Debugger"])
     os.mkdir(ATEST_OUTPUT)
-    logfile = open(Path(ATEST_OUTPUT, "playwright-log.txt"), "w")
-    os.environ["DEBUG"] = "pw:api"
-    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
-    port = str(find_free_port())
-    process = subprocess.Popen(
-        [
-            "node",
-            "Browser/wrapper/index.js",
-            port,
-        ],
-        stdout=logfile,
-        stderr=subprocess.STDOUT,
-    )
-    os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-    rc = _run_pabot(args)
-    process.kill()
+    
+    rc = 1
+    background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
+    try:
+        os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
+        rc = _run_pabot(args)
+    finally:
+        background_process.kill()
+
     if zip:
         _clean_zip_dir()
         print(f"Zip file created to: {_create_zip(rc)}")
