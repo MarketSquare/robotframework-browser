@@ -128,6 +128,27 @@ Get Viewport Size  # returns { "width": 375, "height": 812 }
 &{response}=    HTTP    /api/post    POST    {"name": "John"}
 Should Be Equal    ${response.status}    ${200}
 ```
+
+### Parallel test execution using Pabot
+
+
+You can let RF Browser spawn separate processes for every pabot thread. This is very simple, just run the tests normally using pabot (see https://github.com/mkorpela/pabot#basic-use ). However if you have small tests do not use `--testlevelsplit`, it will cause lots of overhead because tests cannot share the browsers in any case.
+
+You can share the node side RF Browser processes by using the `ROBOT_FRAMEWORK_BROWSER_NODE_PORT` environment variable, and `from Browser.utils import spawn_node_process` helper ([see the docs for the helper](https://github.com/MarketSquare/robotframework-browser/blob/a7d3e59a1e8e3e75f64b9146a088385445a5af30/Browser/utils/misc.py#L35) ). This saves some overhead based on how many splits of tests you are running. Remember to kill the process afterwards.
+
+### Re-using authentication credentials
+
+- Figure out how the page is storing authentication
+    - TODO: helpful blog post (about ifguring out localstorage vs cookies vs cache?)
+
+- If it is localstorage or cookies `Save Storage State` should work
+    - Basic example: https://marketsquare.github.io/robotframework-browser/Browser.html#Save%20Storage%20State
+- Else:
+    - 
+
+
+
+
 # Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
