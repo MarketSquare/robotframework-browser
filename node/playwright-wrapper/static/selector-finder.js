@@ -321,30 +321,31 @@ window.selectorRecorderFindSelector = function(label) {
         let lastDisplayedRecord = "NOTSET";
         let lastTotalRecordTime = new Date().getTime();
         let findingElement = true;
+        let updatingTexts = true;
 
-        async function updateTexts() {
-            if (findingElement) {
-                const selectors = ((await window.getRecordedSelectors()) || []);
-                const recorded = selectors.map(i => i[0]);
-                const displayed = recorded.map(i => i[0]).join(" >>> ");
-                if (lastDisplayedRecord !== displayed) {
-                    document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = displayed;
-                    lastTotalRecord = recorded;
-                    lastDisplayedRecord = displayed;
-                    lastTotalRecordTime = new Date().getTime();
-                } else {
-                    const timediff = new Date().getTime() - lastTotalRecordTime;
-                    if (timediff > 3000) {
-                        findingElement = false;
-                        const rect = selectors.map(i => i[1]).reduce((acc, cur) => {
-                            return {
-                                top: acc.top+cur.top+acc.paddingTop, left: acc.left+cur.left+acc.paddingLeft, width: cur.width, height: cur.height,
-                                paddingLeft: cur.paddingLeft, paddingTop: cur.paddingTop
-                            }
-                        }, {
-                            top: 0, left: 0, width: 0, height: 0, paddingTop: 0, paddingLeft: 0
-                        });
-                        const div = htmlToElement(`<div style="
+        async function findingElementUpdateText() {
+            if (!findingElement) return;
+            const selectors = ((await window.getRecordedSelectors()) || []);
+            const recorded = selectors.map(i => i[0]);
+            const displayed = recorded.map(i => i[0]).join(" >>> ");
+            if (lastDisplayedRecord !== displayed) {
+                document.getElementById(BROWSER_LIBRARY_TEXT_ID).textContent = displayed;
+                lastTotalRecord = recorded;
+                lastDisplayedRecord = displayed;
+                lastTotalRecordTime = new Date().getTime();
+            } else {
+                const timediff = new Date().getTime() - lastTotalRecordTime;
+                if (timediff > 3000) {
+                    findingElement = false;
+                    const rect = selectors.map(i => i[1]).reduce((acc, cur) => {
+                        return {
+                            top: acc.top+cur.top+acc.paddingTop, left: acc.left+cur.left+acc.paddingLeft, width: cur.width, height: cur.height,
+                            paddingLeft: cur.paddingLeft, paddingTop: cur.paddingTop
+                        }
+                    }, {
+                        top: 0, left: 0, width: 0, height: 0, paddingTop: 0, paddingLeft: 0
+                    });
+                    const div = htmlToElement(`<div style="
 position: absolute;
 top: ${rect.top-window.scrollY}px;
 left: ${rect.left-window.scrollX}px;
@@ -393,22 +394,29 @@ top: ${rect.height}px;
 >Cancel</button>
 </div>
 </div>`);
-                        document.body.appendChild(div);
-                        const selectButton = document.getElementById(BROWSER_LIBRARY_SELECT_BUTTON_ID);
-                        const cancelButton = document.getElementById(BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID);
-                        selectButton.onclick = () => {
-                            cancelButton.remove();
-                            selectButton.remove();
-                            displaySelection(div);
-                        };
-                        cancelButton.onclick = () => {
-                            div.remove();
-                            findingElement = true;
-                        };
-                    }
-                    document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = `${Math.round(300 - timediff / 10) / 100} s`;
+                    document.body.appendChild(div);
+                    const selectButton = document.getElementById(BROWSER_LIBRARY_SELECT_BUTTON_ID);
+                    const cancelButton = document.getElementById(BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID);
+                    selectButton.onclick = () => {
+                        cancelButton.remove();
+                        selectButton.remove();
+                        displaySelection(div);
+                    };
+                    cancelButton.onclick = () => {
+                        div.remove();
+                        findingElement = true;
+                    };
                 }
+                document.getElementById(BROWSER_LIBRARY_DESCRIPTION).textContent = `${Math.round(300 - timediff / 10) / 100} s`;
             }
+        }
+
+        async function updateTexts() {
+            await findingElementUpdateText()
+            setTimeout(() => {
+            if (updatingTexts) {
+                window.requestAnimationFrame(updateTexts);
+            }}, 100);
         }
 
         function displaySelection(focusDiv) {
@@ -454,7 +462,7 @@ ${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
             };
         }
 
-        function mouseMoveListener(e) {
+        async function mouseMoveListener(e) {
             const elem = document.getElementById(BROWSER_LIBRARY_ID);
             const rect = elem.getBoundingClientRect()
             const xmin = rect.left + window.scrollX;
@@ -469,18 +477,18 @@ ${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
             if (target && target !== currentCssSelector) {
                 window.setRecordedSelector(0, target);
                 currentCssSelector = target;
-                updateTexts();
+                await findingElementUpdateText();
             }
         }
 
         function cleanup() {
             document.removeEventListener('mousemove', mouseMoveListener);
             document.getElementById(BROWSER_LIBRARY_ID).remove();
-            clearInterval(intervalTimer);
+            updatingTexts = false;
         }
 
         document.addEventListener('mousemove', mouseMoveListener);
         addElement(label);
-        const intervalTimer = setInterval(updateTexts, 150);
+        window.requestAnimationFrame(updateTexts);
     });
 }
