@@ -114,12 +114,22 @@ class Evaluation(LibraryComponent):
 
         Keyword returns dictionary which contains downloaded file path
         and suggested filename as keys (saveAs and suggestedFilename).
-        See `Wait For Download` for more details. Keyword requires
-        that current active page has loaded valid html webpage.
+        If the file URL cannot be found (the download is triggered by event handlers)
+        use `Wait For Download`keyword.
+
+        This keyword requires that there is currently an open page. The keyword uses
+        the current pages local state (cookies, sessionstorage, localstorage) for the
+        download to avoid authentication problems.
 
         Example:
-        | ${path}=    `Download`    ${url}
-        | ${actual_size}=    Get File Size    ${path.saveAs}
+        | ${file_object}=    `Download`    ${url}
+        | ${actual_size}=    Get File Size    ${file_object.saveAs}
+
+        Example 2:
+        | ${elem}=         Get Element   text="Download File"
+        | ${href}=         Get Property  ${elem}  href
+        | ${file_object}=  Download  ${href}
+        | ${file_path}=     Set Variable  ${file_object.saveAs}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Download(Request().Url(url=url))
