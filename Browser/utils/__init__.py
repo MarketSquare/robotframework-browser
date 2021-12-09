@@ -47,5 +47,6 @@ from .misc import (
     get_variable_value,
     is_same_keyword,
     keyword,
+    spawn_node_process,
 )
 from .robot_booleans import is_falsy, is_truthy
