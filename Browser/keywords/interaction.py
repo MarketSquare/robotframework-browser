@@ -15,6 +15,7 @@
 import json
 from datetime import timedelta
 from os import PathLike
+from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional
 
@@ -1005,6 +1006,8 @@ class Interaction(LibraryComponent):
         | `Upload File By Selector`    \\#file_input_id    big_file.zip
         """
         with self.playwright.grpc_channel() as stub:
+            if not Path(path).is_file():
+                raise ValueError("Nonexistent input file path")
             response = stub.UploadFileBySelector(
                 Request().FileBySelector(
                     path=str(path), selector=selector, strict=self.library.strict_mode
