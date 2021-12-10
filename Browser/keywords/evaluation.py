@@ -126,9 +126,9 @@ class Evaluation(LibraryComponent):
         | ${actual_size}=    Get File Size    ${file_object.saveAs}
 
         Example 2:
-        | ${elem}=         Get Element   text="Download File"
-        | ${href}=         Get Property  ${elem}  href
-        | ${file_object}=  Download  ${href}
+        | ${elem}=          Get Element   text="Download File"
+        | ${href}=          Get Property  ${elem}  href
+        | ${file_object}=   Download  ${href}
         | ${file_path}=     Set Variable  ${file_object.saveAs}
         """
         with self.playwright.grpc_channel() as stub:
