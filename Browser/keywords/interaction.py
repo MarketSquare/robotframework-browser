@@ -17,7 +17,7 @@ from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -572,7 +572,7 @@ class Interaction(LibraryComponent):
         selector: str,
         attribute: SelectAttribute,
         *values,
-    ) -> list:
+    ) -> List[str]:
         """Selects options from select element found by ``selector``.
 
         ``selector`` Selector of the select tag.
