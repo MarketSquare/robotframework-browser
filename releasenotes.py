@@ -47,13 +47,19 @@ class Commit:
 
     def parse_type(self) -> CommitType:
 
-        if self.msg.startswith(
-            "docs: update .all-contributorsrc"
-        ) or self.msg.startswith("docs: update README.md [skip ci]"):
+        if (
+            self.msg.startswith("docs: update .all-contributorsrc")
+            or self.msg.startswith("docs: update README.md [skip ci]")
+            # TODO: should these by type "skip" instead of type "ci"
+        ):
             return "ci"
         elif self.msg.startswith("Bump "):
             return "bump"
-        elif self.msg.startswith("docs:"):
+        elif (
+            self.msg.startswith("docs:")
+            or self.msg.startswith("Docs:")
+            or self.msg.startswith("Update README.md")
+        ):
             return "docs"
         elif self.msg.startswith("Fix "):
             return "fix"
@@ -115,7 +121,6 @@ def summary_repo(
     fixes = ""
     docs = ""
     unknown = ""
-    repo = Github().get_repo("MarketSquare/robotframework-browser")
 
     summary_bundle = run(f"git log {commitrange} --oneline --no-decorate", cwd=path)
     for line in summary_bundle.split("\n"):
@@ -124,7 +129,8 @@ def summary_repo(
                 id=line.split(" ")[0],
                 msg=" ".join(line.split(" ")[1:]),
                 repo=dirname,
-                repo_data=repo,
+                # Needed if we need to be able to figure out related PR / issue and labels
+                # repo_data=repo,
             )
 
             entry = f"\n - {commit.format()}"
