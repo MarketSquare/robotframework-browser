@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-61-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-62-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -19,7 +19,7 @@ See [keyword documentation](https://marketsquare.github.io/robotframework-browse
 
 Only Python 3.7 or newer is supported.
 
-1. Install node.js e.g. from https://nodejs.org/en/download/ (only < v15 supported; if unsure, use 14.15.0 LTS)
+1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Update pip `pip install -U pip` to ensure latest version is used
 3. Install robotframework-browser from the commandline: `pip install robotframework-browser`
 4. Install the node dependencies: run `rfbrowser init` in your shell
@@ -74,6 +74,7 @@ browser.close_browser()
 async function myGoToKeyword(page, args) {
   return await page.goto(args[0]);
 }
+myGoToKeyword.rfdoc = "This is my own go to keyword";
 exports.__esModule = true;
 exports.myGoToKeyword = myGoToKeyword;
 ```
@@ -88,6 +89,7 @@ Example Test
    myGoToKeyword   https://www.robotframework.org
 ```
 
+See [example](https://github.com/MarketSquare/robotframework-browser/tree/main/docs/examples/babelES2015).
 Ready made extensions and a place to share your own at [robotframework-browser-extensions](https://github.com/MarketSquare/robotframework-browser-extensions).
 
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
@@ -126,6 +128,18 @@ Get Viewport Size  # returns { "width": 375, "height": 812 }
 &{response}=    HTTP    /api/post    POST    {"name": "John"}
 Should Be Equal    ${response.status}    ${200}
 ```
+
+### Parallel test execution using Pabot
+
+You can let RF Browser spawn separate processes for every pabot process. This is very simple, just run the tests normally using pabot (see https://github.com/mkorpela/pabot#basic-use ). However if you have small tests do not use `--testlevelsplit`, it will cause lots of overhead because tests cannot share the browsers in any case.
+
+You can share the node side RF Browser processes by using the `ROBOT_FRAMEWORK_BROWSER_NODE_PORT` environment variable, and `from Browser.utils import spawn_node_process` helper ([see the docs for the helper](https://github.com/MarketSquare/robotframework-browser/blob/a7d3e59a1e8e3e75f64b9146a088385445a5af30/Browser/utils/misc.py#L35) ). This saves some overhead based on how many splits of tests you are running. Clean up the process afterwards.
+
+### Re-using authentication credentials
+
+- Figure out how the page is storing authentication
+- If it is localstorage or cookies `Save Storage State` should work. See usage example: https://marketsquare.github.io/robotframework-browser/Browser.html#Save%20Storage%20State
+
 # Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development instructions.
@@ -226,6 +240,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     <td align="center"><a href="https://github.com/GavinRodgers-EN0055"><img src="https://avatars.githubusercontent.com/u/72198546?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gavin Rodgers</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AGavinRodgers-EN0055" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/pokaalinkanssayohon"><img src="https://avatars.githubusercontent.com/u/34340500?v=4?s=100" width="100px;" alt=""/><br /><sub><b>pokaalinkanssayohon</b></sub></a><br /><a href="#ideas-pokaalinkanssayohon" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/rsandbach"><img src="https://avatars.githubusercontent.com/u/8907955?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ryan Sandbach</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Arsandbach" title="Bug reports">🐛</a> <a href="https://github.com/MarketSquare/robotframework-browser/commits?author=rsandbach" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/Kahiis"><img src="https://avatars.githubusercontent.com/u/26903759?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Niko Kahilainen</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AKahiis" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 

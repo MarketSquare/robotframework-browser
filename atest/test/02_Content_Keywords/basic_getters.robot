@@ -32,7 +32,7 @@ Get Property and Assert
 
 Get Property With Strict Mode
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Get Property    //input    id
     Set Strict Mode    False
     ${property} =    Get Property    //input    id
@@ -78,10 +78,10 @@ Get Attribute
 
 Get Attribute With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    *strict mode violation*"//input*resolved to 4 elements*
     ...    Get Attribute    //input    id
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Get Attribute    //input    id    equal    nothere
     Set Strict Mode    False
     ${id} =    Get Attribute    //input    id
@@ -119,7 +119,7 @@ Get Attribute Names
 Get Attribute Names With Strict
     [Setup]    New Page    ${ELEMENT_STATE_URL}
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
+    ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Get Attribute Names    //input
     Set Strict Mode    False
     ${attrs} =    Get Attribute Names    //input
@@ -156,7 +156,7 @@ Get Classes
 
 Get Classes With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//button" resolved to 11 elements*
+    ...    *strict mode violation*//button*resolved to 11 elements*
     ...    Get Classes    //button
     Set Strict Mode    False
     ${classes} =    Get Classes    //button

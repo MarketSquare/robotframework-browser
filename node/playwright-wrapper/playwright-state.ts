@@ -48,10 +48,17 @@ export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
-    const extension: unknown = eval('require')(request.getPath());
+    const extension: Record<string, unknown> = eval('require')(request.getPath());
     state.extension = extension;
-    // @ts-ignore
-    return keywordsResponse(Object.keys(extension), 'ok');
+    return keywordsResponse(
+        Object.keys(extension),
+        Object.values(extension).map((v) => {
+            if (!v) return '';
+            const typedV = v as { rfdoc?: string };
+            return typedV.rfdoc ?? 'TODO: Add rfdoc string to exposed function to create documentation';
+        }),
+        'ok',
+    );
 }
 
 export async function extensionKeywordCall(
@@ -82,10 +89,11 @@ interface BrowserAndConfs {
 async function _newBrowser(
     browserType: 'chromium' | 'firefox' | 'webkit',
     headless: boolean,
+    timeout: number,
     options?: Record<string, unknown>,
 ): Promise<BrowserAndConfs> {
     let browser;
-    const launchOptions = { ...options, headless };
+    const launchOptions: playwright.LaunchOptions = { ...options, headless, timeout };
     if (browserType === 'firefox') {
         browser = await firefox.launch(launchOptions);
     } else if (browserType === 'chromium') {
@@ -206,11 +214,14 @@ export class PlaywrightState {
         return this.getActiveBrowser();
     };
 
-    public async getOrCreateActiveBrowser(browserType?: 'chromium' | 'firefox' | 'webkit'): Promise<IBrowserState> {
+    public async getOrCreateActiveBrowser(
+        browserType: 'chromium' | 'firefox' | 'webkit' | null,
+        timeout: number,
+    ): Promise<IBrowserState> {
         const currentBrowser = this.activeBrowser;
         logger.info('currentBrowser: ' + currentBrowser);
         if (currentBrowser === undefined) {
-            const browserAndConfs = await _newBrowser(browserType || 'chromium', true);
+            const browserAndConfs = await _newBrowser(browserType || 'chromium', true, timeout);
             const newState = new BrowserState(browserAndConfs);
             this.browserStack.push(newState);
             return { browser: newState, newBrowser: true };
@@ -273,8 +284,8 @@ export class PlaywrightState {
         return browserState;
     }
 
-    public popBrowser(): void {
-        this.browserStack.pop();
+    public popBrowser(): BrowserState | undefined {
+        return this.browserStack.pop();
     }
 
     public getActiveContext = (): BrowserContext | undefined => {
@@ -415,8 +426,8 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     if (currentBrowser === undefined) {
         return stringResponse('no-browser', 'No browser open, doing nothing');
     }
-    await currentBrowser.close();
     openBrowsers.popBrowser();
+    await currentBrowser.close();
     return stringResponse(currentBrowser.id, 'Closed browser');
 }
 
@@ -445,9 +456,9 @@ export async function closePage(openBrowsers: PlaywrightState): Promise<Response
 }
 
 export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {
-    const browserState = await openBrowsers.getOrCreateActiveBrowser();
-    const newBrowser = browserState.newBrowser;
     const defaultTimeout = request.getDefaulttimeout();
+    const browserState = await openBrowsers.getOrCreateActiveBrowser(null, defaultTimeout);
+    const newBrowser = browserState.newBrowser;
     const context = await browserState.browser.getOrCreateActiveContext(defaultTimeout);
 
     const page = await _newPage(context.context.c);
@@ -477,8 +488,8 @@ export async function newContext(
 ): Promise<Response.NewContextResponse> {
     const hideRfBrowser = request.getHiderfbrowser();
     const options = JSON.parse(request.getRawoptions());
-    const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType);
     const defaultTimeout = request.getDefaulttimeout();
+    const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType, defaultTimeout);
     const traceFile = request.getTracefile();
     logger.info(`Trace file: ${traceFile}`);
     const context = await _newBrowserContext(
@@ -505,7 +516,12 @@ export async function newContext(
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
     const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
-    const browserAndConfs = await _newBrowser(browserType, options['headless'] as boolean, options);
+    const browserAndConfs = await _newBrowser(
+        browserType,
+        options['headless'] as boolean,
+        options['timeout'] as number,
+        options,
+    );
     const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
 }

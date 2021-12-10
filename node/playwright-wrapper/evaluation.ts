@@ -300,6 +300,10 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
         throw new Error('Download requires an active page');
     }
     const urlString = request.getUrl();
+    const fromUrl = page.url();
+    if (fromUrl === 'about:blank') {
+        throw new Error('Download requires that the page has been navigated to an url');
+    }
     const script = (urlString: string): Promise<string | void> => {
         return fetch(urlString)
             .then((resp) => {

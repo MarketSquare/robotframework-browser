@@ -13,42 +13,32 @@ Upload upload_test_file
 
 Upload 75MB file
     [Tags]    no-windows-support
-    Run Keyword And Expect Error    Error: fileChooser.setFiles: fileChooser.setFiles: Target closed
+    [Timeout]    2 minute
+    Run Keyword And Expect Error    STARTS: Error: locator.setInputFiles: Target closed
     ...    Upload Sized File    75
     # The browser actually gets a bit stuck so it needs to be cleaned up properly here.
-    Close Browser
+    [Teardown]    Close Browser
 
 Upload 1MB file
+    [Timeout]    30 seconds
     Upload Sized File    1
 
 Upload 74MB file
-    [Timeout]    1 minute
+    [Timeout]    2 minute
     Upload Sized File    74
 
-Upload File By Selector
-    New Page    ${LOGIN_URL}
-    Get Text    \#upload_result    ==    ${EMPTY}
-    Generate Test File    5
-    Upload File By Selector    \#file_chooser    ${CURDIR}/5MB.file
-    Remove File    ${CURDIR}/5MB.file
+Upload 5MB file
+    [Timeout]    30 seconds
+    Upload Sized File    5
 
 Upload File with different name
-    New Page    ${LOGIN_URL}
-    Promise to Upload File    ${CURDIR}/invalid_test_upload_file
-    Click    \#file_chooser
-    Get Text    \#upload_result    ==    invalid_test_upload_file
+    Upload Named File    invalid_test_upload_file
 
 Invalid Upload Path
-    ${promise} =    Promise to Upload File    NonExistentFile
-    IF    os.sys.platform.startswith('win32')
-        Run Keyword And Expect Error
-        ...    STARTS: FileNotFoundError: [WinError 2] The system cannot find the file specified: 'NonExistentFile'
-        ...    Wait For    ${promise}
-    ELSE
-        Run Keyword And Expect Error    STARTS: FileNotFoundError: [Errno 2] No such file or directory:    Wait For
-        ...    ${promise}
-    END
-    Wait For All Promises
+    New Page    ${LOGIN_URL}
+    Run Keyword And Expect Error
+    ...    Nonexistent input file path
+    ...    Upload File By Selector    \#file_chooser    NonExistentFile
 
 Wait For Download
     New Context    acceptDownloads=True
@@ -84,11 +74,7 @@ Set Library Timeout
     IF    $current_contexts == []
         New Context
     END
-    IF    os.sys.platform.startswith('win32')
-        ${timeout} =    Set Browser Timeout    60 seconds
-    ELSE
-        ${timeout} =    Set Browser Timeout    30 seconds
-    END
+    ${timeout} =    Set Browser Timeout    90 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
 Restore Library Timeout
@@ -119,8 +105,6 @@ Upload Named File
     New Context
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
-    ${promise} =    Promise to Upload File    ${CURDIR}/${file_name}
-    Click    \#file_chooser
-    Wait For    ${promise}
+    Upload File By Selector    \#file_chooser    ${CURDIR}/${file_name}
     ${result_name} =    Get Text    \#upload_result
     Get Text    \#upload_result    ==    ${file_name}

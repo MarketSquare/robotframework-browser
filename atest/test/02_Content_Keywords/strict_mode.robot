@@ -16,7 +16,7 @@ Use Strict Mode
     New Page    ${FORM_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
+    ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Get Text    //input
 
 When Strict Is False Should Not Fail
@@ -28,7 +28,7 @@ Strict Mode In invokePlaywrightMethodStrict With Frames
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//iframe" resolved to 2 elements*
+    ...    *strict mode violation*//iframe*resolved to 2 elements*
     ...    Get Style    //iframe >>> //p    width
     Set Strict Mode    False
     ${width} =    Get Style    //iframe >>> //p    width
@@ -38,7 +38,7 @@ Strict Mode In invokePlaywrightMethodStrict With Frame Element
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 2 elements*
+    ...    *strict mode violation*//input*resolved to 2 elements*
     ...    Get Style    id=left >>> //input    width
     Set Strict Mode    False
     ${width} =    Get Style    id=left >>> //input    width
@@ -48,7 +48,7 @@ Stirct Mode In invokePlaywrightMethodStrict Without Frame
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//iframe" resolved to 2 elements*
+    ...    *strict mode violation*//iframe*resolved to 2 elements*
     ...    Get Style    //iframe    width
     Set Strict Mode    False
     ${width} =    Get Style    //iframe    width
@@ -58,7 +58,7 @@ Stirct Mode In invokePlaywrightMethodStrict Without Frame And
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//iframe" resolved to 2 elements*
+    ...    *strict mode violation*//iframe*resolved to 2 elements*
     ...    Click    //iframe
     Set Strict Mode    False
     Click    //iframe

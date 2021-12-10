@@ -24,7 +24,9 @@ flip_rate
 
 node/.linted
 node/.built
+node/dynamic-test-app/.built
 Browser/.linted
+Browser/.installed
 
 # Robot Framework outputs
 log.html

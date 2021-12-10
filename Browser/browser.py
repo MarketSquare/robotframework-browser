@@ -119,6 +119,9 @@ class Browser(DynamicCore):
     Robot Framework Browser about 10 times faster than with Selenium by
     just opening a `New Context` within the opened browser.
 
+    To make pages in the same suite share state, use the same context by opening the
+    context with `New Context` on suite setup.
+
     The context layer is useful e.g. for testing different users sessions on the
     same webpage without opening a whole new browser context.
     Contexts can also have detailed configurations, such as geo-location, language settings,
@@ -755,11 +758,11 @@ class Browser(DynamicCore):
             response = stub.InitializeExtension(
                 Request().FilePath(path=os.path.abspath(jsextension))
             )
-            for name in response.keywords:
-                setattr(component, name, self._jskeyword_call(name))
+            for name, doc in zip(response.keywords, response.keywordDocumentations):
+                setattr(component, name, self._jskeyword_call(name, doc))
         return component
 
-    def _jskeyword_call(self, name: str):
+    def _jskeyword_call(self, name: str, doc: str):
         @keyword
         def func(*args):
             with self.playwright.grpc_channel() as stub:
@@ -771,6 +774,8 @@ class Browser(DynamicCore):
                 if response.json == "":
                     return
                 return json.loads(response.json)
+
+        func.__doc__ = doc
 
         return func
 

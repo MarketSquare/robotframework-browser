@@ -205,6 +205,17 @@ class DownloadedFile(TypedDict):
     suggestedFilename: str
 
 
+class NewPageDetails(TypedDict):
+    """Return value of New Page keyword.
+
+    ``page_id`` is the UUID of the opened page.
+    ``video_path`` path to the video or empty string if video is not created.
+    """
+
+    page_id: str
+    video_path: str
+
+
 class SelectionType(Enum):
     """Enum that defines if the current id or all ids shall be returned.
 
