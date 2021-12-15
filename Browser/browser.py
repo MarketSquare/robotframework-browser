@@ -30,6 +30,7 @@ from robot.result.model import TestCase as TestCaseResult  # type: ignore
 from robot.running.arguments import PythonArgumentParser  # type: ignore
 from robot.running.model import TestCase as TestCaseRunning  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
+from robot.utils.robottypes3 import PathLike  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .base import ContextCache, LibraryComponent
@@ -652,6 +653,7 @@ class Browser(DynamicCore):
         enable_presenter_mode: bool = False,
         playwright_process_port: Optional[int] = None,
         strict: bool = True,
+        custom_output_dir: Optional[PathLike] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -687,6 +689,8 @@ class Browser(DynamicCore):
           If keyword selector points multiple elements and keywords should interact with one element,
           keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords
           or by ```et Strict Mode`` keyword.
+        - ``custom_output_dir`` <PathLike>
+          Create Browser library's own artifacts (failure screenshots, node side debug log) in custom directory
         """
         self.timeout = self.convert_timeout(timeout)
         self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
@@ -727,6 +731,7 @@ class Browser(DynamicCore):
         DynamicCore.__init__(self, libraries)
         # Parsing needs keywords to be discovered.
         self.run_on_failure_keyword = self._parse_run_on_failure_keyword(run_on_failure)
+        self._custom_output_dir = Path(custom_output_dir) if custom_output_dir else None
 
     def _parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]
@@ -781,7 +786,10 @@ class Browser(DynamicCore):
 
     @property
     def outputdir(self) -> str:
-        if EXECUTION_CONTEXTS.current:
+        if self._custom_output_dir is not None:
+            self._custom_output_dir.mkdir(parents=True, exist_ok=True)
+            return str(self._custom_output_dir)
+        elif EXECUTION_CONTEXTS.current:
             return BuiltIn().get_variable_value("${OUTPUTDIR}")
         else:
             return "."
