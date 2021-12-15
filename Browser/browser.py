@@ -20,6 +20,7 @@ import sys
 import time
 from concurrent.futures._base import Future
 from datetime import timedelta
+from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
@@ -30,7 +31,6 @@ from robot.result.model import TestCase as TestCaseResult  # type: ignore
 from robot.running.arguments import PythonArgumentParser  # type: ignore
 from robot.running.model import TestCase as TestCaseRunning  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
-from robot.utils.robottypes3 import PathLike  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
 from .base import ContextCache, LibraryComponent
