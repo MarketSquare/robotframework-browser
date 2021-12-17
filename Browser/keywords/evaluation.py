@@ -117,6 +117,12 @@ class Evaluation(LibraryComponent):
         If the file URL cannot be found (the download is triggered by event handlers)
         use `Wait For Download`keyword.
 
+        To enable downloads context's ``acceptDownloads`` needs to be true.
+
+        To configure download directory use New Browser's ``downloadsPath`` settings
+
+        With default filepath downloaded files are deleted when Context the download happened in is closed.
+
         This keyword requires that there is currently an open page. The keyword uses
         the current pages local state (cookies, sessionstorage, localstorage) for the
         download to avoid authentication problems.
