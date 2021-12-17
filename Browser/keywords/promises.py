@@ -70,6 +70,8 @@ class Promises(LibraryComponent):
 
         To enable downloads context's ``acceptDownloads`` needs to be true.
 
+        To configure download directory use New Browser's ``downloadsPath`` settings
+
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 
         ``saveAs`` defines path where the file is saved. File will also temporarily be saved in playwright context's
