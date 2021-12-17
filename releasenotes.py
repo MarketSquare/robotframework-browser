@@ -152,7 +152,7 @@ def summary_repo(
         if entries:
             _count = len(entries.strip().split("\n"))
             title = f"{name} ({_count})"
-            if "Misc" in name or "Fixes" in name:
+            if _count > 5:
                 out += wrap_details(title, entries)
             else:
                 out += f"\n\n#### {title}"
