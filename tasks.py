@@ -17,7 +17,7 @@ from invoke import task, Exit
 
 try:
     from robot import rebot_cli
-    from robot import __version__ as robot_version
+    from robot import __version__ as rf_version
     from pabot import pabot
     import pytest
     from rellu import ReleaseNotesGenerator, Version
@@ -85,7 +85,9 @@ tested with Playwright REPLACE_PW_VERSION
 @task
 def deps(c):
 
-    if _sources_changed([ROOT_DIR / "Browser/dev-requirements.txt"], python_deps_timestamp_file):
+    if _sources_changed(
+        [ROOT_DIR / "Browser/dev-requirements.txt"], python_deps_timestamp_file
+    ):
         c.run("pip install -U pip")
         c.run("pip install -r Browser/dev-requirements.txt")
         python_deps_timestamp_file.touch()
@@ -101,7 +103,6 @@ def deps(c):
         print("no changes in package-lock.json, skipping npm install")
 
 
-
 @task
 def clean(c):
     for target in [
@@ -115,7 +116,7 @@ def clean(c):
         ATEST_OUTPUT,
         ZIP_DIR,
         Path("./.mypy_cache"),
-        PYTHON_SRC_DIR / "wrapper"
+        PYTHON_SRC_DIR / "wrapper",
     ]:
         if target.exists():
             shutil.rmtree(target)
@@ -259,8 +260,7 @@ def utest_watch(c):
 def clean_atest(c):
     if ATEST_OUTPUT.exists():
         shutil.rmtree(ATEST_OUTPUT)
-    if ZIP_DIR.exists():
-        shutil.rmtree(ZIP_DIR)
+    _clean_zip_dir()
 
 
 @task(clean_atest, create_test_app)
@@ -284,7 +284,7 @@ def atest(c, suite=None, include=None, zip=None, debug=False):
     if debug:
         args.extend(["--listener", "Debugger"])
     os.mkdir(ATEST_OUTPUT)
-    
+
     rc = 1
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
@@ -320,8 +320,10 @@ def _create_zip(rc: int):
     zip_dir = ZIP_DIR / "output"
     zip_dir.mkdir(parents=True)
     _clean_pabot_results(rc)
-    python_version = platform.python_version()
-    zip_name = f"{sys.platform}-rf-{robot_version}-python-{python_version}.zip"
+    py_version = platform.python_version()
+    node_process = subprocess.run(["node", "--version"], capture_output=True)
+    node_version = node_process.stdout.strip().decode("utf-8")
+    zip_name = f"{sys.platform}-rf-{rf_version}-py-{py_version}-node-{node_version}.zip"
     zip_path = zip_dir / zip_name
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
@@ -338,6 +340,7 @@ def _files_to_zip(zip_file, file, relative_to):
     arc_name = file.relative_to(str(relative_to))
     zip_file.write(file, arc_name)
     return zip_file
+
 
 @task()
 def copy_xunit(c):
@@ -454,6 +457,7 @@ def atest_coverage(c):
     coverage html
     """
     import robot
+
     robot_args = {
         "xunit": "robot_xunit.xml",
         "exclude": "not-implemented",
@@ -512,7 +516,7 @@ def lint_python(c):
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
         c.run("mypy --show-error-codes --config-file Browser/mypy.ini Browser/ utest/")
-        c.run("black --config Browser/pyproject.toml Browser/")
+        c.run("black --config Browser/pyproject.toml tasks.py Browser/")
         c.run("flake8 --config Browser/.flake8 Browser/ utest/")
         c.run("isort Browser/")
         python_lint_timestamp_file.touch()
