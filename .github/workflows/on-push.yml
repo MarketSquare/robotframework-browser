@@ -200,5 +200,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
-          name: ${{ matrix.os }} ${{ matrix.node-version }} Clean install results
+          name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
           path: atest/output
