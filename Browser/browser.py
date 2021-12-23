@@ -23,7 +23,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
-from assertionengine import AssertionOperator
+from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.result.model import TestCase as TestCaseResult  # type: ignore
@@ -706,6 +706,7 @@ class Browser(DynamicCore):
             Crawling(self),
             Devices(self),
             Evaluation(self),
+            Formatter(self),
             Interaction(self),
             Getters(self),
             Network(self),
@@ -724,6 +725,7 @@ class Browser(DynamicCore):
             libraries.append(self._initialize_jsextension(jsextension))
         self.presenter_mode = enable_presenter_mode
         self.strict_mode = strict
+        self._keyword_formatters = {}
         DynamicCore.__init__(self, libraries)
         # Parsing needs keywords to be discovered.
         self.run_on_failure_keyword = self._parse_run_on_failure_keyword(run_on_failure)
@@ -962,4 +964,8 @@ class Browser(DynamicCore):
         if name == "__intro__":
             doc = doc.replace("%ASSERTION_TABLE%", AssertionOperator.__doc__)
             doc = doc.replace("%AUTO_CLOSING_LEVEL%", AutoClosingLevel.__doc__)
+        elif name == "set_assertion_formatters":
+            doc = doc.replace('"Keyword Name"', '"Get Text"')
+            doc = f"{doc}\n    | ${{value}} =    `Get Text`    //div    ==    ${{SPACE}}Expected${{SPACE * 2}}Text"
+            doc = f"{doc}\n    | Should Be Equal    ${{value}}    Expected Text\n"
         return doc
