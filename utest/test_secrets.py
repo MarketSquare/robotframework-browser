@@ -59,6 +59,38 @@ def test_fill_secret_with_prefix(caplog):
     assert caplog.text == ""
 
 
+def test_fill_secret_reformat_error():
+    ctx = MagicMock()
+    secrets = interaction.Interaction(ctx)
+
+    def raiser(*args, **kwargs):
+        raise Exception("Failure filling: PWD")
+
+    secrets._fill_text = raiser
+    secrets.resolve_secret = lambda *args: "PWD"
+
+    with pytest.raises(Exception) as excinfo:
+        secrets.fill_secret("selector", "$password")
+
+    assert "Failure filling: ***" == str(excinfo.value)
+
+
+def test_type_secret_reformat_error():
+    ctx = MagicMock()
+    secrets = interaction.Interaction(ctx)
+
+    def raiser(*args, **kwargs):
+        raise Exception("Failure typing: PWD")
+
+    secrets._type_text = raiser
+    secrets.resolve_secret = lambda *args: "PWD"
+
+    with pytest.raises(Exception) as excinfo:
+        secrets.type_secret("selector", "$password")
+
+    assert "Failure typing: ***" == str(excinfo.value)
+
+
 @pytest.mark.skipif(sys.version_info.minor == 7, reason="Does not work with Python 3.7")
 def test_http_credentials_in_new_context():
     class Response:
@@ -66,6 +98,7 @@ def test_http_credentials_in_new_context():
         log = "Something here"
         newBrowser = True
         id = 123
+
     ctx = MagicMock()
     dummy_new_context = MagicMock(return_value=Response())
     pw = PlaywrightState(ctx)
