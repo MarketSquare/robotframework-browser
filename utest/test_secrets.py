@@ -20,42 +20,42 @@ class Response:
 def test_fill_secret_in_plain_text(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False
-    secrerts = interaction.Interaction(ctx)
-    secrerts._fill_text = MagicMock(return_value=Response())
-    secrerts.fill_secret("selector", "password")
+    secrets = interaction.Interaction(ctx)
+    secrets._fill_text = MagicMock(return_value=Response())
+    secrets.fill_secret("selector", "password")
     assert caplog.text == WARN_MESSAGE
 
 
 def test_type_secret_in_plain_text(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False
-    secrerts = interaction.Interaction(ctx)
-    secrerts._type_text = MagicMock(return_value=Response())
-    secrerts.type_secret("selector", "password")
+    secrets = interaction.Interaction(ctx)
+    secrets._type_text = MagicMock(return_value=Response())
+    secrets.type_secret("selector", "password")
     assert caplog.text == WARN_MESSAGE
 
 
 def test_type_secret_with_prefix(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False
-    secrerts = interaction.Interaction(ctx)
-    secrerts._replace_placeholder_variables = MagicMock(return_value="123")
-    secrerts._type_text = MagicMock(return_value=Response())
-    secrerts.type_secret("selector", "$password")
+    secrets = interaction.Interaction(ctx)
+    secrets._replace_placeholder_variables = MagicMock(return_value="123")
+    secrets._type_text = MagicMock(return_value=Response())
+    secrets.type_secret("selector", "$password")
     assert caplog.text == ""
-    secrerts.type_secret("selector", "%password")
+    secrets.type_secret("selector", "%password")
     assert caplog.text == ""
 
 
 def test_fill_secret_with_prefix(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False
-    secrerts = interaction.Interaction(ctx)
-    secrerts._fill_text = MagicMock(return_value=Response())
-    secrerts._replace_placeholder_variables = MagicMock(return_value="123")
-    secrerts.fill_secret("selector", "$password")
+    secrets = interaction.Interaction(ctx)
+    secrets._fill_text = MagicMock(return_value=Response())
+    secrets._replace_placeholder_variables = MagicMock(return_value="123")
+    secrets.fill_secret("selector", "$password")
     assert caplog.text == ""
-    secrerts.fill_secret("selector", "%password")
+    secrets.fill_secret("selector", "%password")
     assert caplog.text == ""
 
 
