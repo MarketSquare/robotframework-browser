@@ -171,9 +171,17 @@ class Interaction(LibraryComponent):
         secret = self.resolve_secret(
             secret, originals.get("secret") or secret, "secret"
         )
-        self._type_text(
-            selector, secret, delay, clear, log_response=False, strict=self.strict_mode
-        )
+        try:
+            self._type_text(
+                selector,
+                secret,
+                delay,
+                clear,
+                log_response=False,
+                strict=self.strict_mode,
+            )
+        except Exception as e:
+            raise Exception(str(e).replace(secret, "***"))
 
     def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
         originals = locals_to_params(local_args)
@@ -229,7 +237,12 @@ class Interaction(LibraryComponent):
         secret = self.resolve_secret(
             secret, originals.get("secret") or secret, "secret"
         )
-        self._fill_text(selector, secret, log_response=False, strict=self.strict_mode)
+        try:
+            self._fill_text(
+                selector, secret, log_response=False, strict=self.strict_mode
+            )
+        except Exception as e:
+            raise Exception(str(e).replace(secret, "***"))
 
     @keyword(tags=("Setter", "PageContent"))
     def press_keys(self, selector: str, *keys: str):

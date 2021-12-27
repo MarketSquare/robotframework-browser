@@ -20,43 +20,75 @@ class Response:
 def test_fill_secret_in_plain_text(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False
-    secrerts = interaction.Interaction(ctx)
-    secrerts._fill_text = MagicMock(return_value=Response())
-    secrerts.fill_secret("selector", "password")
+    secrets = interaction.Interaction(ctx)
+    secrets._fill_text = MagicMock(return_value=Response())
+    secrets.fill_secret("selector", "password")
     assert caplog.text == WARN_MESSAGE
 
 
 def test_type_secret_in_plain_text(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False
-    secrerts = interaction.Interaction(ctx)
-    secrerts._type_text = MagicMock(return_value=Response())
-    secrerts.type_secret("selector", "password")
+    secrets = interaction.Interaction(ctx)
+    secrets._type_text = MagicMock(return_value=Response())
+    secrets.type_secret("selector", "password")
     assert caplog.text == WARN_MESSAGE
 
 
 def test_type_secret_with_prefix(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False
-    secrerts = interaction.Interaction(ctx)
-    secrerts._replace_placeholder_variables = MagicMock(return_value="123")
-    secrerts._type_text = MagicMock(return_value=Response())
-    secrerts.type_secret("selector", "$password")
+    secrets = interaction.Interaction(ctx)
+    secrets._replace_placeholder_variables = MagicMock(return_value="123")
+    secrets._type_text = MagicMock(return_value=Response())
+    secrets.type_secret("selector", "$password")
     assert caplog.text == ""
-    secrerts.type_secret("selector", "%password")
+    secrets.type_secret("selector", "%password")
     assert caplog.text == ""
 
 
 def test_fill_secret_with_prefix(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False
-    secrerts = interaction.Interaction(ctx)
-    secrerts._fill_text = MagicMock(return_value=Response())
-    secrerts._replace_placeholder_variables = MagicMock(return_value="123")
-    secrerts.fill_secret("selector", "$password")
+    secrets = interaction.Interaction(ctx)
+    secrets._fill_text = MagicMock(return_value=Response())
+    secrets._replace_placeholder_variables = MagicMock(return_value="123")
+    secrets.fill_secret("selector", "$password")
     assert caplog.text == ""
-    secrerts.fill_secret("selector", "%password")
+    secrets.fill_secret("selector", "%password")
     assert caplog.text == ""
+
+
+def test_fill_secret_reformat_error():
+    ctx = MagicMock()
+    secrets = interaction.Interaction(ctx)
+
+    def raiser(*args, **kwargs):
+        raise Exception("Failure filling: PWD")
+
+    secrets._fill_text = raiser
+    secrets.resolve_secret = lambda *args: "PWD"
+
+    with pytest.raises(Exception) as excinfo:
+        secrets.fill_secret("selector", "$password")
+
+    assert "Failure filling: ***" == str(excinfo.value)
+
+
+def test_type_secret_reformat_error():
+    ctx = MagicMock()
+    secrets = interaction.Interaction(ctx)
+
+    def raiser(*args, **kwargs):
+        raise Exception("Failure typing: PWD")
+
+    secrets._type_text = raiser
+    secrets.resolve_secret = lambda *args: "PWD"
+
+    with pytest.raises(Exception) as excinfo:
+        secrets.type_secret("selector", "$password")
+
+    assert "Failure typing: ***" == str(excinfo.value)
 
 
 @pytest.mark.skipif(sys.version_info.minor == 7, reason="Does not work with Python 3.7")
@@ -66,6 +98,7 @@ def test_http_credentials_in_new_context():
         log = "Something here"
         newBrowser = True
         id = 123
+
     ctx = MagicMock()
     dummy_new_context = MagicMock(return_value=Response())
     pw = PlaywrightState(ctx)
