@@ -189,10 +189,16 @@ class Getters(LibraryComponent):
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         | ${text} =    `Get Text`    //input         ==    root              # Returns input element text with assertion.
         """
+        formatter = self.library._keyword_formatters.get(self.get_text)
         response = self._get_text(selector)
         logger.debug(response.log)
         return verify_assertion(
-            response.body, assertion_operator, assertion_expected, "Text", message
+            response.body,
+            assertion_operator,
+            assertion_expected,
+            "Text",
+            message,
+            formatter,
         )
 
     def _get_text(self, selector: str):  # To ease unit testing

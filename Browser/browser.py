@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
 from assertionengine import AssertionOperator
+from assertionengine.formatter import Formatter
 from overrides import overrides
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.result.model import TestCase as TestCaseResult  # type: ignore
@@ -477,6 +478,11 @@ class Browser(DynamicCore):
 
     %ASSERTION_TABLE%
 
+    Please refer to `Set Assertion Formatters` for usage.
+
+    As of now, these keywords can be used with formatters:
+    - `Get Text`
+
     By default keywords will provide an error message if an assertion fails.
     Default error message can be overwritten with a ``message`` argument.
     The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
@@ -699,6 +705,7 @@ class Browser(DynamicCore):
         )
         self._unresolved_promises: Set[Future] = set()
         self._playwright_state = PlaywrightState(self)
+        self._keyword_formatters: Dict[str, List[str]] = {}
         libraries = [
             self._playwright_state,
             Control(self),
@@ -706,6 +713,7 @@ class Browser(DynamicCore):
             Crawling(self),
             Devices(self),
             Evaluation(self),
+            Formatter(self),
             Interaction(self),
             Getters(self),
             Network(self),

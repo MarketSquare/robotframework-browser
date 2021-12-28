@@ -11,6 +11,7 @@ ${LOGIN_URL} =                  ${ROOT_URL}/dist/#/
 ${DRAGGAME_URL} =               ${ROOT_URL}/dist/#/draggame
 ${DOG_AND_CAT_URL} =            ${ROOT_URL}/dogandcat.html
 ${SHELLGAME_URL} =              ${ROOT_URL}/shell_game.html
+${FORMATTER_URL} =              ${ROOT_URL}/formatter.html
 ${FORM_URL} =                   ${ROOT_URL}/prefilled_email_form.html
 ${DIALOGS_URL} =                ${ROOT_URL}/dialogs.html
 ${ELEMENT_STATE_URL} =          ${ROOT_URL}/enabled_disabled_fields_form.html
