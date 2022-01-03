@@ -212,8 +212,8 @@ class Interaction(LibraryComponent):
          If ``secret`` variable is prefixed with `%`, library will resolve
          corresponding environment variable. Example `$Password`` will
          resolve to ``${Password}`` Robot Framework variable. Also
-         ``%ENV_PWD``will resolve to ``%{ENV_PWD}`` environment variable.
-         Using normal Robt Framework variables or plain text will also work,
+         ``%ENV_PWD`` will resolve to ``%{ENV_PWD}`` environment variable.
+         Using normal Robot Framework variables or plain text will also work,
          but then library can not prevent Robot Framework leaking the secrets
          in the output files. Also library will log a warning if library
          can not resolve the secret internally.
