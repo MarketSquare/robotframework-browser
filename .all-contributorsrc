@@ -576,6 +576,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "GuillaumeGautierLA",
+      "name": "Guillaume Gautier",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29864642?v=4",
+      "profile": "http://www.loire-atlantique.fr/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
