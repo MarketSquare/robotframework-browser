@@ -65,8 +65,9 @@ class Getters(LibraryComponent):
             response = stub.GetUrl(Request().Empty())
             logger.debug(response.log)
             value = response.body
+            formatter = self.keyword_formatters.get(self.get_url)
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "URL", message
+                value, assertion_operator, assertion_expected, "URL", message, formatter
             )
 
     # @keyword(tags=("Getter", "Assertion", "BrowserControl"))
@@ -98,8 +99,14 @@ class Getters(LibraryComponent):
             response = stub.GetPageState(Request().Empty())
             logger.debug(response.log)
             value = json.loads(response.result)
+            formatter = self.keyword_formatters.get(self.get_page_state)
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "State", message
+                value,
+                assertion_operator,
+                assertion_expected,
+                "State",
+                message,
+                formatter,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -125,8 +132,14 @@ class Getters(LibraryComponent):
             response = stub.GetPageSource(Request().Empty())
             logger.debug(response.log)
             value = json.loads(response.body)
+            formatter = self.keyword_formatters.get(self.get_page_source)
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "HTML:", message
+                value,
+                assertion_operator,
+                assertion_expected,
+                "HTML:",
+                message,
+                formatter,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -154,8 +167,14 @@ class Getters(LibraryComponent):
             response = stub.GetTitle(Request().Empty())
             logger.debug(response.log)
             value = response.body
+            formatter = self.keyword_formatters.get(self.get_title)
             return verify_assertion(
-                value, assertion_operator, assertion_expected, "Title", message
+                value,
+                assertion_operator,
+                assertion_expected,
+                "Title",
+                message,
+                formatter,
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -191,8 +210,14 @@ class Getters(LibraryComponent):
         """
         response = self._get_text(selector)
         logger.debug(response.log)
+        formatter = self.keyword_formatters.get(self.get_text)
         return verify_assertion(
-            response.body, assertion_operator, assertion_expected, "Text", message
+            response.body,
+            assertion_operator,
+            assertion_expected,
+            "Text",
+            message,
+            formatter,
         )
 
     def _get_text(self, selector: str):  # To ease unit testing
@@ -249,12 +274,14 @@ class Getters(LibraryComponent):
             value = None
         else:
             raise AttributeError(f"Property '{property}' not found!")
+        formatter = self.keyword_formatters.get(self.get_property)
         return verify_assertion(
             value,
             assertion_operator,
             assertion_expected,
             f"Property {property}",
             message,
+            formatter,
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -311,12 +338,14 @@ class Getters(LibraryComponent):
         if assertion_operator is None and value is None:
             raise AttributeError(f"Attribute '{attribute}' not found!")
         logger.debug(f"Attribute is: {value}")
+        formatter = self.keyword_formatters.get(self.get_attribute)
         return verify_assertion(
             value,
             assertion_operator,
             assertion_expected,
             f"Attribute {selector}",
             message,
+            formatter,
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -361,6 +390,8 @@ class Getters(LibraryComponent):
             "(element) => element.getAttributeNames()", selector
         )
         expected = list(assertion_expected)
+        if self.keyword_formatters.get(self.get_attribute_names):
+            logger.warn("Formatter is not supported by Get Attribute Names keyword.")
         return list_verify_assertion(
             attribute_names, assertion_operator, expected, "Attribute names", message
         )
@@ -403,6 +434,8 @@ class Getters(LibraryComponent):
         """
         class_dict = self.get_property(selector, "classList")
         expected = list(assertion_expected)
+        if self.keyword_formatters.get(self.get_classes):
+            logger.warn("Formatter is not supported by Get Classes keyword.")
         return list_verify_assertion(
             list(class_dict.values()),
             assertion_operator,
@@ -459,12 +492,14 @@ class Getters(LibraryComponent):
             }
             for index, sel in enumerate(response.entry)
         ]
+        formatter = self.keyword_formatters.get(self.get_select_options)
         return verify_assertion(
             result,
             assertion_operator,
             assertion_expected,
             "Select Options:",
             message,
+            formatter,
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -525,7 +560,8 @@ class Getters(LibraryComponent):
                 index for index, sel in enumerate(response.entry) if sel.selected
             ]
             expected = [int(exp) for exp in expected]
-
+        if self.keyword_formatters.get(self.get_selected_options):
+            logger.warn("Formatter is not supported by Get Selected Options keyword.")
         return list_verify_assertion(
             selected,
             assertion_operator,
@@ -583,6 +619,8 @@ class Getters(LibraryComponent):
         logger.info(response.log)
         value: bool = response.body
         logger.info(f"Checkbox is {'checked' if value else 'unchecked'}")
+        if self.keyword_formatters.get(self.get_checkbox_state):
+            logger.warn("Formatter is not supported by Get Checkbox State keyword.")
         return bool_verify_assertion(
             value,
             assertion_operator,
@@ -623,6 +661,8 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector, strict=False)
             )
             count = response.body
+            if self.keyword_formatters.get(self.get_element_count):
+                logger.warn("Formatter is not supported by Get Element Count keyword.")
             return float_str_verify_assertion(
                 int(count),
                 assertion_operator,
@@ -668,6 +708,8 @@ class Getters(LibraryComponent):
             logger.info(response.log)
             parsed = json.loads(response.json)
             logger.debug(parsed)
+            if self.keyword_formatters.get(self.get_viewport_size):
+                logger.warn("Formatter is not supported by Get Viewport Size keyword.")
             if key == SizeFields.ALL:
                 return int_dict_verify_assertion(
                     parsed,
@@ -773,8 +815,12 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
         parsed = json.loads(response.json)
-
+        formatter = self.keyword_formatters.get(self.get_style)
         if key == "ALL":
+            if formatter:
+                logger.warn(
+                    "Formatter is not supported by Get Style keyword with key 'ALL'."
+                )
             return dict_verify_assertion(
                 parsed,
                 assertion_operator,
@@ -792,6 +838,7 @@ class Getters(LibraryComponent):
                 assertion_expected,
                 f"Style value for {key} is",
                 message,
+                formatter,
             )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
@@ -841,6 +888,8 @@ class Getters(LibraryComponent):
             )
         parsed = json.loads(response.json)
         logger.debug(f"BoundingBox: {parsed}")
+        if self.keyword_formatters.get(self.get_boundingbox):
+            logger.warn("Formatter is not supported by Get Boundingbox keyword.")
         if key == BoundingBoxFields.ALL:
             return int_dict_verify_assertion(
                 parsed, assertion_operator, assertion_expected, "BoundingBox is"
@@ -897,6 +946,8 @@ class Getters(LibraryComponent):
         scroll_size = dict()
         scroll_size["width"] = exec_scroll_function(self, "scrollWidth", selector)
         scroll_size["height"] = exec_scroll_function(self, "scrollHeight", selector)
+        if self.keyword_formatters.get(self.get_scroll_size):
+            logger.warn("Formatter is not supported by Get Scroll Size keyword.")
         if key == SizeFields.ALL:
             return int_dict_verify_assertion(
                 scroll_size,
@@ -960,6 +1011,8 @@ class Getters(LibraryComponent):
         client_size = self.get_client_size(selector)
         scroll_position["bottom"] = scroll_position["top"] + client_size["height"]
         scroll_position["right"] = scroll_position["left"] + client_size["width"]
+        if self.keyword_formatters.get(self.get_scroll_position):
+            logger.warn("Formatter is not supported by Get Scroll Position keyword.")
         if key == AreaFields.ALL:
             return int_dict_verify_assertion(
                 scroll_position,
@@ -1014,6 +1067,8 @@ class Getters(LibraryComponent):
         client_size = dict()
         client_size["width"] = exec_scroll_function(self, "clientWidth", selector)
         client_size["height"] = exec_scroll_function(self, "clientHeight", selector)
+        if self.keyword_formatters.get(self.get_client_size):
+            logger.warn("Formatter is not supported by Get Clinet Size keyword.")
         if key == SizeFields.ALL:
             return int_dict_verify_assertion(
                 client_size,
@@ -1111,6 +1166,8 @@ class Getters(LibraryComponent):
                     result = False
                 else:
                     raise e
+            if self.keyword_formatters.get(self.get_element_state):
+                logger.warn("Formatter is not supported by Get Element State keyword.")
             return bool_verify_assertion(
                 result,
                 assertion_operator,

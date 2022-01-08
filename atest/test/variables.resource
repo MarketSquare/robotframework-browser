@@ -26,5 +26,6 @@ ${PLAYWRIGHT_TIMEOUT} =         3 second
 ${SLOW_PAGE} =                  ${ROOT_URL}/slowpage.html
 ${WEBCOMPONENT_PAGE} =          ${ROOT_URL}/webcomponent.html
 ${LINKER_URL} =                 ${ROOT_URL}/links/link1.html
+${SPACES_URL} =                 ${ROOT_URL}/spaces.html
 ${SYS_VAR_CI} =                 False
 ${SYS_VAR_CLEAN} =              ${True}

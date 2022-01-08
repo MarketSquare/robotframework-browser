@@ -48,12 +48,14 @@ class WebAppState(LibraryComponent):
                 Request().JavascriptCode(script=f'window.localStorage.getItem("{key}")')
             )
             logger.info(response.log)
+            formatter = self.keyword_formatters.get(self.local_storage_get_item)
             return verify_assertion(
                 json.loads(response.result),
                 assertion_operator,
                 assertion_expected,
                 "localStorage",
                 message,
+                formatter,
             )
 
     @keyword(name="localStorage set Item", tags=("Setter", "PageContent"))
@@ -139,11 +141,13 @@ class WebAppState(LibraryComponent):
                 )
             )
             logger.info(response.log)
+            formatter = self.keyword_formatters.get(self.session_storage_get_item)
             return verify_assertion(
                 json.loads(response.result),
                 assertion_operator,
                 assertion_expected,
                 "sessionStorage ",
+                formatter,
             )
 
     @keyword(name="sessionStorage set Item", tags=("Setter", "PageContent"))
