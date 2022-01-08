@@ -792,12 +792,14 @@ class PlaywrightState(LibraryComponent):
             response = stub.GetBrowserCatalog(Request().Empty())
             parsed = json.loads(response.json)
             logger.info(json.dumps(parsed))
+            formatter = self.keyword_formatters.get(self.get_browser_catalog)
             return verify_assertion(
                 parsed,
                 assertion_operator,
                 assertion_expected,
                 "Browser Catalog",
                 message,
+                formatter,
             )
 
     @keyword(tags=("Setter", "BrowserControl"))

@@ -9,6 +9,35 @@ Equal
     Get Title    equal    Login Page
     Get Title    should be    Login Page
 
+Equal With Formatter:
+    [Setup]    Go To    ${SPACES_URL}
+    Set Assertion Formatters    {"Get Text": ["strip"]}
+    Get Text    id=two    ==    two spaces
+    [Teardown]    Formatter TearDown
+
+Get Attribute Names Does Not Support Formatter:
+    [Documentation]
+    ...    LOG 2:2    WARN    Formatter is not supported by Get Attribute Names keyword.
+    [Setup]    Go To    ${SPACES_URL}
+    Set Assertion Formatters    {"Get Attribute Names": ["strip"]}
+    Get Attribute Names    id=two    ==    id
+    [Teardown]    Formatter TearDown
+
+Get Attribute Names Does Not Support Formatter:
+    [Documentation]
+    ...    LOG 1:2    DEBUG    GLOB:    Assertion polling statistics:*
+    [Setup]    Go To    ${SPACES_URL}
+    Get Attribute Names    id=two    ==    id
+    [Teardown]    Formatter TearDown
+
+Get Element Count Does Not Support Formatter:
+    [Documentation]
+    ...    LOG 2:2    WARN    Formatter is not supported by Get Element Count keyword.
+    [Setup]    Go To    ${SPACES_URL}
+    Set Assertion Formatters    {"Get Element Count": ["strip"]}
+    Get Element Count    id=two    ==    1
+    [Teardown]    Formatter TearDown
+
 InEqual
     Get Title    !=    Cool Page
     Get Title    inequal    Cool Page
@@ -47,3 +76,8 @@ Validate
 Evaluate
     Get Title    then    value if value == value else value
     Get Title    evaluate    value if value == value else value
+
+*** Keywords ***
+Formatter TearDown
+    Set Assertion Formatters    {}
+    Go To    ${LOGIN_URL}

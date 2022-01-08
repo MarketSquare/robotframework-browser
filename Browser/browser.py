@@ -725,7 +725,7 @@ class Browser(DynamicCore):
             libraries.append(self._initialize_jsextension(jsextension))
         self.presenter_mode = enable_presenter_mode
         self.strict_mode = strict
-        self._keyword_formatters = {}
+        self._keyword_formatters: dict = {}
         DynamicCore.__init__(self, libraries)
         # Parsing needs keywords to be discovered.
         self.run_on_failure_keyword = self._parse_run_on_failure_keyword(run_on_failure)
