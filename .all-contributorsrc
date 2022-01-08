@@ -585,6 +585,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "robinmatz",
+      "name": "Robin Matz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/76647407?v=4",
+      "profile": "https://github.com/robinmatz",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
