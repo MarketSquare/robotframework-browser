@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-63-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-64-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -242,6 +242,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     <td align="center"><a href="https://github.com/rsandbach"><img src="https://avatars.githubusercontent.com/u/8907955?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Ryan Sandbach</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Arsandbach" title="Bug reports">🐛</a> <a href="https://github.com/MarketSquare/robotframework-browser/commits?author=rsandbach" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/Kahiis"><img src="https://avatars.githubusercontent.com/u/26903759?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Niko Kahilainen</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AKahiis" title="Bug reports">🐛</a></td>
     <td align="center"><a href="http://www.loire-atlantique.fr/"><img src="https://avatars.githubusercontent.com/u/29864642?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Guillaume Gautier</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=GuillaumeGautierLA" title="Documentation">📖</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/robinmatz"><img src="https://avatars.githubusercontent.com/u/76647407?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Robin Matz</b></sub></a><br /><a href="#ideas-robinmatz" title="Ideas, Planning, & Feedback">🤔</a></td>
   </tr>
 </table>
 
