@@ -167,6 +167,7 @@ class Network(LibraryComponent):
           - ``headers`` <dict> A dictionary containing all response headers.
           - ``ok`` <bool> Whether the request was successfull, i.e. the ``status`` is range 200-299.
           - ``request`` <dict> containing ``method`` <str>, ``headers`` <dict> and ``postData`` <dict> | <str>
+          - ``url`` <str> url of the request.
 
         Synchronous Example:
         | `Click`                \\#delayed_request    # Creates response which should be waited before next actions
