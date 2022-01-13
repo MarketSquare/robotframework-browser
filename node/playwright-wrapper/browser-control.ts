@@ -24,13 +24,22 @@ export async function grantPermissions(request: Request.Permissions, state: Play
     if (!browserContext) {
         return emptyWithLog(`No browser context is active. Use 'Open Browser' to open a new one.`);
     }
-    browserContext.grantPermissions(request.getPermissionsList(), {
+    await browserContext.grantPermissions(request.getPermissionsList(), {
         ...(request.getOrigin().length > 0 && { origin: request.getOrigin() }),
     });
     return emptyWithLog(
         `Granted permissions "${request.getPermissionsList().join(', ')}"` +
             (request.getOrigin().length > 0 ? ` for origin "${request.getOrigin()}"` : ''),
     );
+}
+
+export async function clearPermissions(request: Request.Empty, state: PlaywrightState): Promise<Response.Empty> {
+    const browserContext = state.getActiveContext();
+    if (!browserContext) {
+        return emptyWithLog(`No browser context is active. Use 'Open Browser' to open a new one.`);
+    }
+    await browserContext.clearPermissions();
+    return emptyWithLog('Cleared all permissions');
 }
 
 export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {

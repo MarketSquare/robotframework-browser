@@ -329,3 +329,10 @@ class Control(LibraryComponent):
                 )
             )
             logger.info(response.log)
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def clear_permissions(self):
+        """Clears all permissions from the current context."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ClearPermissions(Request().Empty())
+            logger.info(response.log)

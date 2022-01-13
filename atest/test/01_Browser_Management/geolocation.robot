@@ -15,13 +15,19 @@ Enable Geolocation
     [Setup]    Start Context Without Geolocation
     Set Geolocation    11.11    22.22    33.33
     Run Keyword and Expect Error    *    Check Geolocation    11.11    22.22
-    Grant Permissions    geolocation  midi   origin=${GEOLOCATION_URL}
+    Grant Permissions    geolocation    midi    origin=${GEOLOCATION_URL}
     Set Geolocation    72.56    145.89    0.23
     Check Geolocation    72.56    145.89
 
+Clear Geolocation Permission
+    [Setup]    Start Context With Geolocation
+    Clear Permissions
+    Set Geolocation    72.56    145.89    0.23
+    Run Keyword and Expect Error    *    Check Geolocation    72.56    145.89
+
 Enable Geolocation on wrong origin
     [Setup]    Start Context Without Geolocation
-    Grant Permissions    geolocation   origin=http://www.example.com
+    Grant Permissions    geolocation    origin=http://www.example.com
     Set Geolocation    72.56    145.89    0.23
     Run Keyword and Expect Error    *    Check Geolocation    72.56    145.89
 
