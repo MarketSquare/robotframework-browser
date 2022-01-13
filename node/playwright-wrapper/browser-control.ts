@@ -19,21 +19,18 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
 import { exists, findLocator } from './playwright-invoke';
 
-export async function grantPermissions(
-    request: Request.Permissions,
-    state: PlaywrightState
-): Promise<Response.Empty> {
+export async function grantPermissions(request: Request.Permissions, state: PlaywrightState): Promise<Response.Empty> {
     const browserContext = state.getActiveContext();
     if (!browserContext) {
-        return emptyWithLog(
-            `No browser context is active. Use 'Open Browser' to open a new one.`
-        );
+        return emptyWithLog(`No browser context is active. Use 'Open Browser' to open a new one.`);
     }
     browserContext.grantPermissions(request.getPermissionsList(), {
-        ...(request.getOrigin().length > 0 && {origin: request.getOrigin()}),
+        ...(request.getOrigin().length > 0 && { origin: request.getOrigin() }),
     });
-    return emptyWithLog(`Granted permissions "${request.getPermissionsList()}"`+
-        (request.getOrigin().length > 0 ? ` for origin "${request.getOrigin()}"` : ''));
+    return emptyWithLog(
+        `Granted permissions "${request.getPermissionsList().join(', ')}"` +
+            (request.getOrigin().length > 0 ? ` for origin "${request.getOrigin()}"` : ''),
+    );
 }
 
 export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {

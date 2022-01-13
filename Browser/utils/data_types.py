@@ -222,9 +222,7 @@ class SelectionType(Enum):
     ``ACTIVE`` / ``CURRENT`` defines to return only the id of the currently active
     instance of a Browser/Context/Page.
 
-    ``ALL`` / ``ANY`` defines to return ids of all instances.
-
-    Used by: `Get Browser IDs` `Get Context IDs` and `Get Page IDs`."""
+    ``ALL`` / ``ANY`` defines to return ids of all instances."""
 
     ACTIVE = auto()
     CURRENT = ACTIVE
@@ -254,9 +252,7 @@ CookieSameSite = Enum(
 
 
 class RequestMethod(Enum):
-    """Enum that defines the request type.
-
-    Used by: `HTTP` ."""
+    """Enum that defines the request type."""
 
     HEAD = auto()
     GET = auto()
@@ -275,9 +271,7 @@ class MouseButtonAction(Enum):
 
 
 class MouseButton(Enum):
-    """Enum that defines which mouse button to use.
-
-    Used by: `Click` and `Mouse Button`."""
+    """Enum that defines which mouse button to use."""
 
     left = auto()
     middle = auto()
@@ -364,14 +358,39 @@ ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
 
         See [https://playwright.dev/docs/api/class-page?_highlight=emulatemedia#pageemulatemediaparams |emulateMedia(options)]
         for more details.
+"""
 
-        Used by `New Context`. """
+
+class Permission(Enum):
+    """Enum that defines the permission to grant to a context.
+
+    See [https://playwright.dev/docs/api/class-browsercontext#browser-context-grant-permissions |grantPermissions(permissions)]
+    for more details.
+    """
+
+    geolocation = auto()
+    midi = auto()
+    midi_sysex = auto()
+    notifications = auto()
+    push = auto()
+    camera = auto()
+    microphone = auto()
+    background_sync = auto()
+    ambient_light_sensor = auto()
+    accelerometer = auto()
+    gyroscope = auto()
+    magnetometer = auto()
+    accessibility_events = auto()
+    clipboard_read = auto()
+    clipboard_write = auto()
+    payment_handler = auto()
 
 
 ScrollBehavior = Enum("ScrollBehavior", ["auto", "smooth"])
 ScrollBehavior.__doc__ = """Enum that controls the behavior of scrolling.
 
-``smooth`` """
+``smooth``
+"""
 
 
 class SizeFields(Enum):
@@ -379,9 +398,7 @@ class SizeFields(Enum):
 
     ``ALL`` defines that the size is returned as a dictionary. ``{'width': <float>, 'height': <float>}.``
 
-    ``width`` / ``height`` will return a single float value of the chosen dimension.
-
-    Used by: `Get Viewport Size`, `Get Scroll Size` and `Get Client Size`."""
+    ``width`` / ``height`` will return a single float value of the chosen dimension."""
 
     width = auto()
     height = auto()
@@ -390,8 +407,6 @@ class SizeFields(Enum):
 
 class AreaFields(Enum):
     """Enumeration that defines which coordinates of an area should be selected.
-
-    Used by `Get Scroll Position`.
 
     ``ALL`` defines that all fields are selected and a dictionary with all information
     is returned.
@@ -406,8 +421,6 @@ class AreaFields(Enum):
 
 class BoundingBoxFields(Enum):
     """Enumeration that defines which location information of an element should be selected.
-
-    Used by `Get BoundingBox`.
 
     ``x`` / ``y`` defines the position of the top left corner of an element.
 
@@ -470,8 +483,7 @@ class ElementState(Enum):
     | ``checked``    | to be ``checked``. Can be used on <input>. |
     | ``unchecked``  | to not be ``checked``. |
     | ``stable``     | to be both ``visible`` and ``stable``. |
-
-    Used by: `Wait For Elements State`"""
+    """
 
     attached = auto()
     detached = auto()
@@ -495,7 +507,7 @@ class ElementStateKey(Enum):
 
     See `ElementState` for explaination.
 
-    Used by: `Get Element State`"""
+    """
 
     attached = auto()
     visible = auto()
