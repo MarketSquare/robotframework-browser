@@ -12,7 +12,7 @@ Upload upload_test_file
     Upload Named File    test_upload_file
 
 Upload 75MB file
-    [Tags]    no-windows-support
+    [Tags]    no-windows-support    no-mac-support
     [Timeout]    2 minute
     Run Keyword And Expect Error    STARTS: Error: locator.setInputFiles: Target closed
     ...    Upload Sized File    75
