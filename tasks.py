@@ -496,6 +496,8 @@ def _run_pabot(extra_args=None):
     ]
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "no-windows-support"])
+    if platform.platform().startswith("mac"):
+        default_args.extend(["--exclude", "no-mac-support"])
     default_args.append("atest/test")
     process = subprocess.Popen(
         pabot_args + (extra_args or []) + default_args, env=os.environ
