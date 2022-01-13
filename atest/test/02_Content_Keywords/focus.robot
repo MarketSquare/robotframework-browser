@@ -10,7 +10,6 @@ Add Style
     Get Style    \#username_field    background-color    ==    rgb(0, 255, 255)
 
 Focus With Strict
-    [Tags]    not-implemented    # TODO: Enable after https://github.com/microsoft/playwright/issues/10680 is fixed.
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Focus    //input
