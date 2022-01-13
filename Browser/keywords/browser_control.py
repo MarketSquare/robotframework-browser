@@ -309,3 +309,12 @@ class Control(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.Reload(Request().Empty())
             logger.info(response.log)
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def grant_permissions(self, *permissions: str, origin: Optional[str] = None):
+        """Grants permissions to the current context."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GrantPermissions(
+                Request().Permissions(permissions=permissions, origin=origin or "")
+            )
+            logger.info(response.log)
