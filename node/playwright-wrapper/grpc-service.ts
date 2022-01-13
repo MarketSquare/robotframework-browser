@@ -324,6 +324,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     selectOption = this.wrapping(interaction.selectOption);
+    grantPermissions = this.wrapping(browserControl.grantPermissions);
+    clearPermissions = this.wrapping(browserControl.clearPermissions);
     deselectOption = this.wrapping(interaction.deSelectOption);
     typeText = this.wrapping(interaction.typeText);
     fillText = this.wrapping(interaction.fillText);

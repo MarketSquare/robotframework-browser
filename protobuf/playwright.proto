@@ -77,6 +77,11 @@ message Request {
     string traceFile = 4;
   }
 
+  message Permissions {
+    repeated string permissions = 1;
+    string origin = 2;
+  }
+
   message Url {
     string url= 1;
     int32 defaultTimeout = 2;
@@ -414,6 +419,9 @@ service  Playwright {
   rpc ClosePage(Request.Empty) returns (Response.PageReportResponse);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
   rpc SaveStorageState(Request.FilePath) returns (Response.Empty);
+
+  rpc GrantPermissions(Request.Permissions) returns (Response.Empty);
+  rpc ClearPermissions(Request.Empty) returns (Response.Empty);
 
   /* Extension handling */
   rpc InitializeExtension(Request.FilePath) returns (Response.Keywords);
