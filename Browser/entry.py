@@ -17,8 +17,10 @@ import platform
 import shutil
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
+from typing import TextIO
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"
@@ -27,20 +29,88 @@ NODE_MODULES = INSTALLATION_DIR / "node_modules"
 SHELL = True if platform.platform().startswith("Windows") else False
 
 
+def _write_marker(file, first=False):
+    if not first:
+        file.write("\n")
+    file.write("=" * 100)
+    file.write("\n")
+
+
 def rfbrowser_init(skip_browser_install: bool):
+    current_folder = Path(__file__).resolve().parent
+    install_log = current_folder / "rfborwser.log"
+    with open(install_log, "w") as install_file:
+        _write_marker(install_file, True)
+        try:
+            _rfbrowser_init(skip_browser_install, install_file)
+            _write_marker(install_file)
+        except Exception as error:
+            _write_marker(install_file)
+            install_file.write(traceback.format_exc())
+            _python_info(install_file)
+            _node_info(install_file)
+            _log_install_dir(install_file)
+            raise error
+
+
+def _log_install_dir(install_file):
+    install_file.write(
+        f"Installation directory `{INSTALLATION_DIR}` does not contain the required files"
+        "\nPrinting contents:\n"
+    )
+    for line in _walk_install_dir():
+        install_file.write(line)
+    _write_marker(install_file)
+
+
+def _node_info(install_file):
+    process = subprocess.run(
+        ["npm", "-v"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=SHELL
+    )
+    install_file.write("npm version is:\n")
+    install_file.write(process.stdout.decode("UTF-8"))
+    _write_marker(install_file)
+
+
+def _python_info(install_file):
+    _write_marker(install_file)
+    python_version = (
+        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    )
+    install_file.write(f"Used Python is: {sys.executable}\nVersion: {python_version}")
+    _write_marker(install_file)
+    install_file.write("pip freeze output:\n\n")
+    process = subprocess.run(
+        [sys.executable, "-m", "pip", "freeze"],
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+        timeout=60,
+    )
+    install_file.write(process.stdout.decode("UTF-8"))
+    _write_marker(install_file)
+
+
+def _walk_install_dir():
+    lines = []
+    for root, _dirs, files in os.walk(INSTALLATION_DIR):
+        level = root.replace(INSTALLATION_DIR.__str__(), "").count(os.sep)
+        indent = " " * 4 * (level)
+        lines.append("{}{}/\n".format(indent, os.path.basename(root)))
+        subindent = " " * 4 * (level + 1)
+        for file in files:
+            lines.append("{}{}\n".format(subindent, file))
+    return lines
+
+
+def _rfbrowser_init(skip_browser_install: bool, log_file: TextIO):
     print("Installing node dependencies...")
     if not (INSTALLATION_DIR / "package.json").is_file():
         print(
             f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json "
-            + "\nPrinting contents:"
+            + "\nPrinting contents:\n"
         )
-        for root, _dirs, files in os.walk(INSTALLATION_DIR):
-            level = root.replace(INSTALLATION_DIR.__str__(), "").count(os.sep)
-            indent = " " * 4 * (level)
-            print("{}{}/".format(indent, os.path.basename(root)))
-            subindent = " " * 4 * (level + 1)
-            for f in files:
-                print("{}{}".format(subindent, f))
+        for line in _walk_install_dir():
+            print(line)
         raise RuntimeError("Could not find robotframework-browser's package.json")
     if not os.access(INSTALLATION_DIR, os.W_OK):
         sys.tracebacklimit = 0
@@ -57,7 +127,7 @@ def rfbrowser_init(skip_browser_install: bool):
             "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
             "See https://nodejs.org/ for documentation"
         )
-        sys.exit(exception)
+        raise exception
 
     if skip_browser_install:
         os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
@@ -75,8 +145,9 @@ def rfbrowser_init(skip_browser_install: bool):
 
     while process.poll() is None:
         if process.stdout:
-            output = process.stdout.readline()
-            print(output.decode("utf-8"))
+            output = process.stdout.readline().decode("UTF-8")
+            log_file.write(output)
+            print(output)
 
     if process.returncode != 0:
         raise RuntimeError(
@@ -124,7 +195,8 @@ class SmartFormatter(argparse.HelpFormatter):
 
 def run():
     parser = argparse.ArgumentParser(
-        description="Robot Framework Browser library command line tool.",
+        description="Robot Framework Browser library command line tool. If there is error during command, debug "
+        "information is saved to <install dir>/Browser/rfborwser.log file.",
         formatter_class=SmartFormatter,
     )
     parser.add_argument(
