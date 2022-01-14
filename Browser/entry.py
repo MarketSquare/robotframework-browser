@@ -32,7 +32,7 @@ SHELL = True if platform.platform().startswith("Windows") else False
 def _write_marker(file, first=False):
     if not first:
         file.write("\n")
-    file.write("=" * 100)
+    file.write("=" * 110)
     file.write("\n")
 
 
