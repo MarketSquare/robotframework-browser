@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-64-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-65-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -245,6 +245,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/robinmatz"><img src="https://avatars.githubusercontent.com/u/76647407?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Robin Matz</b></sub></a><br /><a href="#ideas-robinmatz" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/stdedos"><img src="https://avatars.githubusercontent.com/u/133706?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stavros Ntentos</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=stdedos" title="Documentation">📖</a></td>
   </tr>
 </table>
 
