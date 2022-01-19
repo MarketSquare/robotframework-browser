@@ -100,7 +100,7 @@ class Browser(DynamicCore):
 
     All these browsers that cover more than 85% of the world wide used browsers,
     can be tested on Windows, Linux and MacOS.
-    Theres is not need for dedicated machines anymore.
+    There is no need for dedicated machines anymore.
 
     A browser process is started ``headless`` (without a GUI) by default.
     Run `New Browser` with specified arguments if a browser with a GUI is requested
@@ -301,7 +301,7 @@ class Browser(DynamicCore):
     Selectors are strings that consists of one or more clauses separated by
     ``>>`` token, e.g. ``clause1 >> clause2 >> clause3``. When multiple clauses
     are present, next one is queried relative to the previous one's result.
-    Browser library supports concatination of different selectors seperated by ``>>``.
+    Browser library supports concatenation of different selectors separated by ``>>``.
 
     For example:
     | `Highlight Elements`    "Hello" >> ../.. >> .select_button
@@ -397,7 +397,7 @@ class Browser(DynamicCore):
     pierces an arbitrary number of open shadow roots, including the implicit descendant combinator
     at the start of the selector.
 
-    That means, it is not nessesary to select each shadow host, open its shadow root and
+    That means, it is not necessary to select each shadow host, open its shadow root and
     select the next shadow host until you reach the element that should be controlled.
 
     === CSS:light ===
@@ -504,8 +504,8 @@ class Browser(DynamicCore):
     These Keywords do automatic conversion for the expected value if a number is returned.
 
     * < less or greater > With Strings*
-    Compairisons of strings with ``greater than`` or ``less than`` compares each character,
-    starting from 0 reagarding where it stands in the code page.
+    Comparisons of strings with ``greater than`` or ``less than`` compares each character,
+    starting from 0 regarding where it stands in the code page.
     Example: ``A < Z``, ``Z < a``, ``ac < dc`
     It does never compare the length of elements. Neither lists nor strings.
     The comparison stops at the first character that is different.
@@ -519,8 +519,8 @@ class Browser(DynamicCore):
     The getters `Get Page State` and `Get Browser Catalog` return a dictionary. Values of the dictionary can directly asserted.
     Pay attention of possible types because they are evaluated in Python. For example:
 
-    | Get Page State    validate    2020 >= value['year']                     # Compairsion of numbers
-    | Get Page State    validate    "IMPORTANT MESSAGE!" == value['message']  # Compairsion of strings
+    | Get Page State    validate    2020 >= value['year']                     # Comparison of numbers
+    | Get Page State    validate    "IMPORTANT MESSAGE!" == value['message']  # Comparison of strings
 
     == The 'then' or 'evaluate' closure ==
 
@@ -611,9 +611,9 @@ class Browser(DynamicCore):
     |   ${title}=  myGoToKeyword  https://playwright.dev
     |   Should be equal  ${title}  Playwright
 
-    Also selector syntax can be extended withm custom selector with a js module
+    Also selector syntax can be extended with a custom selector using a js module
 
-    == Example module keyword for custom selector registerin ==
+    == Example module keyword for custom selector registering ==
 
     | async function registerMySelector(page, args, log, playwright) {
     | playwright.selectors.register("myselector", () => ({
