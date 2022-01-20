@@ -1,8 +1,9 @@
 import json
 import os
-import site
 import subprocess
 import sys
+import time
+from typing import Iterable
 import zipfile
 from datetime import datetime
 from pathlib import Path, PurePath
@@ -16,14 +17,14 @@ from invoke import task, Exit
 
 try:
     from robot import rebot_cli
-    from robot import __version__ as robot_version
+    from robot import __version__ as rf_version
     from pabot import pabot
     import pytest
     from rellu import ReleaseNotesGenerator, Version
     from robot.libdoc import libdoc
     import robotstatuschecker
     import bs4
-    from Browser.utils import find_free_port
+    from Browser.utils import spawn_node_process
 except ModuleNotFoundError:
     traceback.print_exc()
     print('Assuming that this is for "inv deps" command and ignoring error.')
@@ -35,13 +36,16 @@ FLIP_RATE = ROOT_DIR / "flip_rate"
 dist_dir = ROOT_DIR / "dist"
 build_dir = ROOT_DIR / "build"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
-python_src_dir = ROOT_DIR / "Browser"
-python_protobuf_dir = python_src_dir / "generated"
+PYTHON_SRC_DIR = ROOT_DIR / "Browser"
+python_protobuf_dir = PYTHON_SRC_DIR / "generated"
+wrapper_dir = PYTHON_SRC_DIR / "wrapper"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
-node_timestamp_file = node_dir / ".built"
+# testapp_dir = ROOT_DIR / "node" / "dynamic-test-app"
+npm_deps_timestamp_file = ROOT_DIR / "node_modules" / ".installed"
+python_deps_timestamp_file = ROOT_DIR / "Browser" / ".installed"
 node_lint_timestamp_file = node_dir / ".linted"
-python_lint_timestamp_file = python_src_dir / ".linted"
+python_lint_timestamp_file = PYTHON_SRC_DIR / ".linted"
 ATEST_TIMEOUT = 600
 
 ZIP_DIR = ROOT_DIR / "zip_results"
@@ -66,7 +70,7 @@ to install the latest available release or use
 to install exactly this version. Alternatively you can download the source
 distribution from PyPI_ and install it manually.
 Browser library {version} was released on {date}. Browser supports
-Python 3.7+, Node 12/14 LTS and Robot Framework 3.2+. Library was
+Python 3.7+, Node 12/14/16 LTS and Robot Framework 4.0+. Library was
 tested with Playwright REPLACE_PW_VERSION
 
 .. _Robot Framework: http://robotframework.org
@@ -80,11 +84,23 @@ tested with Playwright REPLACE_PW_VERSION
 
 @task
 def deps(c):
-    c.run("pip install -U pip")
-    c.run("pip install -r Browser/dev-requirements.txt")
+
+    if _sources_changed(
+        [ROOT_DIR / "Browser/dev-requirements.txt"], python_deps_timestamp_file
+    ):
+        c.run("pip install -U pip")
+        c.run("pip install -r Browser/dev-requirements.txt")
+        python_deps_timestamp_file.touch()
+    else:
+        print("no changes in Browser/dev-requirements.txt, skipping pip install")
     if os.environ.get("CI"):
         shutil.rmtree("node_modules")
-    c.run("yarn", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
+
+    if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
+        c.run("npm install", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
+        npm_deps_timestamp_file.touch()
+    else:
+        print("no changes in package-lock.json, skipping npm install")
 
 
 @task
@@ -96,18 +112,28 @@ def clean(c):
         node_protobuf_dir,
         UTEST_OUTPUT,
         FLIP_RATE,
+        Path("./htmlcov"),
+        ATEST_OUTPUT,
+        ZIP_DIR,
+        Path("./.mypy_cache"),
+        PYTHON_SRC_DIR / "wrapper",
     ]:
         if target.exists():
             shutil.rmtree(target)
-    for timestamp_file in [
-        node_timestamp_file,
+    pyi_file = PYTHON_SRC_DIR / "__init__.pyi"
+    for file in [
+        npm_deps_timestamp_file,
         node_lint_timestamp_file,
         python_lint_timestamp_file,
+        python_deps_timestamp_file,
+        Path("./playwright-log.txt"),
+        Path("./.coverage"),
+        pyi_file,
     ]:
         try:
             # python 3.7 doesn't support missing_ok so we need a try catch
-            timestamp_file.unlink()
-        except OSError as e:
+            file.unlink()
+        except OSError:
             pass
 
 
@@ -160,7 +186,7 @@ def _node_protobuf_gen(c):
         ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     )
     c.run(
-        f"yarn run grpc_tools_node_protoc \
+        f"npm run grpc_tools_node_protoc -- \
 		--js_out=import_style=commonjs,binary:{node_protobuf_dir} \
 		--grpc_out=grpc_js:{node_protobuf_dir} \
 		--plugin=protoc-gen-grpc={protoc_plugin} \
@@ -168,7 +194,7 @@ def _node_protobuf_gen(c):
 		protobuf/*.proto"
     )
     c.run(
-        f"yarn run grpc_tools_node_protoc \
+        f"npm run grpc_tools_node_protoc -- \
 		--plugin=protoc-gen-ts={protoc_ts_plugin} \
 		--ts_out={node_protobuf_dir} \
 		-I ./protobuf \
@@ -178,31 +204,27 @@ def _node_protobuf_gen(c):
 
 @task(protobuf)
 def node_build(c):
-    if _sources_changed(
-        node_dir.glob("**/*.[tj]s"), node_timestamp_file
-    ) or _sources_changed(node_dir.glob("**/*.tsx"), node_timestamp_file):
-        c.run("yarn build")
-        node_timestamp_file.touch()
-    else:
-        print("no changes in .ts files, skipping node build")
+    c.run("npm run build")
+    shutil.rmtree(wrapper_dir / "static", ignore_errors=True)
+    shutil.copytree(node_dir / "playwright-wrapper" / "static", wrapper_dir / "static")
 
 
-@task(deps, protobuf, node_build)
+@task
+def create_test_app(c):
+    c.run("npm run build-test-app")
+
+
+@task(deps, protobuf, node_build, create_test_app)
 def build(c):
     c.run("python -m Browser.gen_stub")
 
 
-def _sources_changed(source_files, timestamp_file):
+def _sources_changed(source_files: Iterable[Path], timestamp_file: Path):
     if timestamp_file.exists():
         last_built = timestamp_file.lstat().st_mtime
         src_last_modified = [f.lstat().st_mtime for f in source_files]
         return not all([last_built >= modified for modified in src_last_modified])
     return True
-
-
-@task(build)
-def watch(c):
-    c.run("yarn watch")
 
 
 @task
@@ -217,6 +239,8 @@ def utest(c, reporter=None, suite=None):
                   https://github.com/approvals/ApprovalTests.Python
         suite:    Defines which test suite file to run. Same as: pytest path/to/test.py
                   Must be path to the test suite file
+
+    To create coverage use: coverage run -m invoke utest
     """
     args = ["--showlocals", "--junitxml=utest/output/pytest_xunit.xml", "--tb=long"]
     if reporter:
@@ -236,11 +260,10 @@ def utest_watch(c):
 def clean_atest(c):
     if ATEST_OUTPUT.exists():
         shutil.rmtree(ATEST_OUTPUT)
-    if ZIP_DIR.exists():
-        shutil.rmtree(ZIP_DIR)
+    _clean_zip_dir()
 
 
-@task(clean_atest)
+@task(clean_atest, create_test_app)
 def atest(c, suite=None, include=None, zip=None, debug=False):
     """Runs Robot Framework acceptance tests.
 
@@ -261,22 +284,15 @@ def atest(c, suite=None, include=None, zip=None, debug=False):
     if debug:
         args.extend(["--listener", "Debugger"])
     os.mkdir(ATEST_OUTPUT)
-    logfile = open(Path(ATEST_OUTPUT, "playwright-log.txt"), "w")
-    os.environ["DEBUG"] = "pw:api"
-    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
-    port = str(find_free_port())
-    process = subprocess.Popen(
-        [
-            "node",
-            "Browser/wrapper/index.js",
-            port,
-        ],
-        stdout=logfile,
-        stderr=subprocess.STDOUT,
-    )
-    os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-    rc = _run_pabot(args)
-    process.kill()
+
+    rc = 1
+    background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
+    try:
+        os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
+        rc = _run_pabot(args)
+    finally:
+        background_process.kill()
+
     if zip:
         _clean_zip_dir()
         print(f"Zip file created to: {_create_zip(rc)}")
@@ -304,8 +320,10 @@ def _create_zip(rc: int):
     zip_dir = ZIP_DIR / "output"
     zip_dir.mkdir(parents=True)
     _clean_pabot_results(rc)
-    python_version = platform.python_version()
-    zip_name = f"{sys.platform}-rf-{robot_version}-python-{python_version}.zip"
+    py_version = platform.python_version()
+    node_process = subprocess.run(["node", "--version"], capture_output=True)
+    node_version = node_process.stdout.strip().decode("utf-8")
+    zip_name = f"{sys.platform}-rf-{rf_version}-py-{py_version}-node-{node_version}.zip"
     zip_path = zip_dir / zip_name
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
@@ -325,58 +343,27 @@ def _files_to_zip(zip_file, file, relative_to):
 
 
 @task()
-def sitecustomize(c):
-    """Add sitecustomize.py for coverage and subprocess.
-
-    Creates sitecustomize.py file and adds these lines:
-    import coverage
-    coverage.process_startup()
-
-    To run coverage use:
-    coverage run -m invoke utest
-    coverage run -a -m invoke atest-robot
-    coverage report
-
-    For some reason, coverage calculation does not work with pabot.
-    Therefore coverage run -a -m invoke atest does not provide correct
-    coverage report.
-    """
-    sitepackages = site.getsitepackages()
-    sitepackages = Path(sitepackages.pop())
-    sitecustomize = sitepackages / "sitecustomize.py"
-    use_coverage = "import coverage\ncoverage.process_startup()\n"
-    if sitecustomize.is_file():
-        data = sitecustomize.read_text()
-        if "import coverage" in data and "coverage.process_startup()" in data:
-            print("coverage already in place, do nothing")
-        else:
-            print("Found sitecustomize.py file, but no coverage in place.")
-            print(f"Add:\n{use_coverage}")
-            sitecustomize.write_text(f"{data}\n{use_coverage}")
-    else:
-        print(f"Creating {sitecustomize} file.")
-        sitecustomize.write_text(use_coverage)
-
-
-@task()
 def copy_xunit(c):
     """Copies local xunit files for flaky test analysis"""
-    xunit_dest = FLIP_RATE / "xunit"
-    xunit_dest.mkdir(parents=True, exist_ok=True)
+    xunit_dest_dir = FLIP_RATE / "xunit"
+    xunit_dest_dir.mkdir(parents=True, exist_ok=True)
+    robot_xunit = xunit_dest_dir / f"robot_xunit-{time.monotonic()}.xml"
     try:
-        shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", xunit_dest)
+        shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", robot_xunit)
     except Exception as error:
         print(f"\nWhen copying robot xunit got error: {error}")
         robot_copy = False
     else:
         robot_copy = True
+    pytest_xunit = xunit_dest_dir / f"pytest_xunit-{time.monotonic()}.xml"
     try:
-        shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", xunit_dest)
+        shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", pytest_xunit)
     except Exception as error:
         print(f"\nWhen copying pytest xunit got error: {error}")
         pass
+    else:
+        print(f"Copied {pytest_xunit}")
     if robot_copy:
-        robot_xunit = xunit_dest / "robot_xunit.xml"
         tree = ET.parse(robot_xunit)
         root = tree.getroot()
         now = datetime.now()
@@ -384,10 +371,14 @@ def copy_xunit(c):
         new_root = ET.Element("testsuites")
         new_root.insert(0, root)
         ET.ElementTree(new_root).write(robot_xunit)
+        print(f"Copied {robot_xunit}")
+    else:
+        print("Not modifying RF xunit output.")
 
 
 @task(clean_atest)
 def atest_robot(c):
+    """Run atest"""
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     command_args = [
         sys.executable,
@@ -406,7 +397,6 @@ def atest_robot(c):
         command_args.extend(["--exclude", "no-windows-support"])
     command_args.append("atest/test")
     env = os.environ.copy()
-    env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(command_args, env=env)
     process.wait(ATEST_TIMEOUT)
     output_xml = str(ATEST_OUTPUT / "output.xml")
@@ -433,11 +423,11 @@ def atest_failed(c):
 
 @task()
 def run_tests(c, tests):
-    """
-    Run robot with dev Browser. Parameter [tests] is the path to tests to run.
+    """Run robot with dev Browser.
+
+    Parameter [tests] is the path to tests to run.
     """
     env = os.environ.copy()
-    env["COVERAGE_PROCESS_START"] = ".coveragerc"
     process = subprocess.Popen(
         [
             sys.executable,
@@ -456,9 +446,29 @@ def run_tests(c, tests):
     return process.wait(ATEST_TIMEOUT)
 
 
+@task()
+def atest_coverage(c):
+    """Run atest with robot.run
+
+    To run coverage use:
+    coverage run -m invoke utest
+    coverage run --append -m invoke atest-coverage
+    coverage report
+    coverage html
+    """
+    import robot
+
+    robot_args = {
+        "xunit": "robot_xunit.xml",
+        "exclude": "not-implemented",
+        "loglevel": "DEBUG",
+        "outputdir": str(ATEST_OUTPUT),
+    }
+    robot.run("atest/test", **robot_args)
+
+
 def _run_pabot(extra_args=None):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    os.environ["COVERAGE_PROCESS_START"] = ".coveragerc"
     pabot_args = [
         sys.executable,
         "-m",
@@ -486,6 +496,8 @@ def _run_pabot(extra_args=None):
     ]
     if platform.platform().startswith("Windows"):
         default_args.extend(["--exclude", "no-windows-support"])
+    if platform.platform().startswith("mac"):
+        default_args.extend(["--exclude", "no-mac-support"])
     default_args.append("atest/test")
     process = subprocess.Popen(
         pabot_args + (extra_args or []) + default_args, env=os.environ
@@ -501,12 +513,12 @@ def _run_pabot(extra_args=None):
 
 @task
 def lint_python(c):
-    all_py_sources = list(python_src_dir.glob("**/*.py")) + list(
+    all_py_sources = list(PYTHON_SRC_DIR.glob("**/*.py")) + list(
         (ROOT_DIR / "utest").glob("**/*.py")
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
         c.run("mypy --show-error-codes --config-file Browser/mypy.ini Browser/ utest/")
-        c.run("black --config Browser/pyproject.toml Browser/")
+        c.run("black --config Browser/pyproject.toml tasks.py Browser/")
         c.run("flake8 --config Browser/.flake8 Browser/ utest/")
         c.run("isort Browser/")
         python_lint_timestamp_file.touch()
@@ -517,7 +529,7 @@ def lint_python(c):
 @task
 def lint_node(c):
     if _sources_changed(node_dir.glob("**/*.ts"), node_lint_timestamp_file):
-        c.run("yarn run lint")
+        c.run("npm run lint")
         node_lint_timestamp_file.touch()
     else:
         print("no changes in .ts files, skipping node lint")
@@ -579,7 +591,7 @@ def docker_stable_image(c):
     )
 
 
-@task(clean_atest, build)
+@task(clean_atest, create_test_app, build)
 def docker_test(c):
     c.run("mkdir atest/output")
     c.run(
@@ -667,6 +679,7 @@ def docs(c, version=None):
 @task
 def create_package(c):
     shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
+    shutil.copy(ROOT_DIR / "package-lock.json", ROOT_DIR / "Browser" / "wrapper")
     c.run("python setup.py sdist bdist_wheel")
 
 
@@ -778,6 +791,7 @@ def gh_pages_index(c):
         f.write(index_contents)
 
 
+# TODO: should this depend on `create_test_app` ?
 @task
 def demo_app(c):
     """Zip demo application to OS specific package for CI"""

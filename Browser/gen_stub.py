@@ -85,8 +85,6 @@ def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
             default_value = argument[1]
             arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
             if arg_type_str:
-                if default_value is None:
-                    arg_type_str = f"Optional[{arg_type_str}]"
                 arg_str = f"{arg_str}: {arg_type_str}"
             if isinstance(default_value, str):
                 default_value = f"'{default_value}'"

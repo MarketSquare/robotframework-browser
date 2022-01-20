@@ -11,7 +11,7 @@ Add Style
 
 Focus With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Focus    //input
     Set Strict Mode    False
     Focus    //input

@@ -32,7 +32,7 @@ Download without page URL fails
     New Context    acceptDownloads=${TRUE}
     New Page
     Run Keyword And Expect Error
-    ...    Error: page.evaluate:*
+    ...    Error: Download requires that the page has been navigated to an url
     ...    Download    ${WELCOME_URL}
 
 Download with no acceptDownloads fails

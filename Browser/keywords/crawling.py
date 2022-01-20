@@ -67,7 +67,11 @@ class Crawling(LibraryComponent):
             logger.console(
                 f"{len(crawled) + 1} / {len(crawled) + 1 + len(hrefs_to_crawl)} : Crawling url {href}"
             )
-            self.library.go_to(href)
+            try:
+                self.library.go_to(href)
+            except Exception as e:
+                logger.warn(f"Exception while crawling {href}: {e}")
+                continue
             BuiltIn().run_keyword(page_crawl_keyword)
             child_hrefs = self._gather_links(depth)
             crawled.add(href)

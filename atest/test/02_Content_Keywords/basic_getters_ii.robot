@@ -83,7 +83,7 @@ Get Client Size Element
 
 Get Client Size With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Get Client Size    //input
     Set Strict Mode    False
     ${size} =    Get Client Size    //input
@@ -122,7 +122,7 @@ Get Scroll Position Element
 Get Scroll Position With Strict
     Get Scroll Position
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Get Scroll Position    //input
     Set Strict Mode    False
     Get Scroll Position    //input
@@ -158,7 +158,7 @@ Get Scroll Size With Strict No Element
 
 Get Scroll Size With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Get Scroll Size    //input
     Set Strict Mode    False
     ${size} =    Get Scroll Size    //input
@@ -218,7 +218,7 @@ Get Element State
 
 Get Element State With Strict On ElementSelectorWithOptions
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//div" resolved to 18 elements*
+    ...    *strict mode violation*//div*resolved to 18 elements*
     ...    Get Element State    //div
     Set Strict Mode    False
     ${state} =    Get Element State    //div
@@ -227,7 +227,7 @@ Get Element State With Strict On ElementSelectorWithOptions
 
 Get Element State With Strict On WaitForFunctionOptions
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//div" resolved to 18 elements*
+    ...    *strict mode violation*//div*resolved to 18 elements*
     ...    Get Element State    //div    state=disabled
     Set Strict Mode    False
     ${state} =    Get Element State    //div    state=disabled

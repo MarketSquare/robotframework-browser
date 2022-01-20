@@ -60,7 +60,7 @@ ElementHandle Screenshotting
 
 Take Take screenshot With Strict
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Take screenshot    selector=//input
     Set Strict Mode    False
     ${path} =    Take screenshot    browser-strict    selector=//input

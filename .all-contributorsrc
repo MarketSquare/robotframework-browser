@@ -567,6 +567,42 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "Kahiis",
+      "name": "Niko Kahilainen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26903759?v=4",
+      "profile": "https://github.com/Kahiis",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "GuillaumeGautierLA",
+      "name": "Guillaume Gautier",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29864642?v=4",
+      "profile": "http://www.loire-atlantique.fr/",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "robinmatz",
+      "name": "Robin Matz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/76647407?v=4",
+      "profile": "https://github.com/robinmatz",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "stdedos",
+      "name": "Stavros Ntentos",
+      "avatar_url": "https://avatars.githubusercontent.com/u/133706?v=4",
+      "profile": "https://github.com/stdedos",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -17,7 +17,7 @@ Wait For Elements State stable
 
 Wait For Elements State attached With Strict On WaitForElementsState
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//div" resolved to 2 elements*
+    ...    *strict mode violation*//div*resolved to 2 elements*
     ...    Wait For Elements State    //div    attached    0.5s
     Set Strict Mode    False
     Wait For Elements State    //div    attached    0.5s
@@ -27,7 +27,7 @@ Wait For Elements State enabled With Strict On wait_for_function
     Select Options By    \#dropdown    value    True    enabled
     Click    \#submit    noWaitAfter=True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//div" resolved to 2 elements*
+    ...    *strict mode violation*//div*resolved to 2 elements*
     ...    Wait For Elements State    //div    enabled    0.5s
     Set Strict Mode    False
     Wait For Elements State    //div    enabled    0.5s
@@ -36,7 +36,7 @@ Wait For Elements State enabled With Strict On wait_for_function
 Wait For Elements State detached
     Select Options By    \#dropdown    value    True    detached
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    detached    1s
+    Wait For Elements State    \#victim    detached    2s
 
 Wait For Elements State visible
     Select Options By    \#dropdown    value    True    visible
@@ -158,8 +158,7 @@ Wait For Elements State to hide with Promise
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
     Wait for    ${promise}
-    ${end} =    Evaluate    time.time()
-    Should Be True    ($end - $start) < 1.0
+    Max elapsed    ${start}    2.0
 
 Wait For Elements State to hide fails with Promise
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
@@ -178,5 +177,10 @@ Wait For Elements State to hide with Promise and wait for all promises
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
     Wait For All Promises
+    Max elapsed    ${start}    2.0
+
+*** Keywords ***
+Max elapsed
+    [Arguments]    ${start}    ${elapsed}
     ${end} =    Evaluate    time.time()
-    Should Be True    ($end - $start) < 0.9
+    Should Be True    ($end - $start) < ${elapsed}    ${{$end - $start}} < ${elapsed}

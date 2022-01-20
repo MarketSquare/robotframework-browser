@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -67,3 +68,11 @@ def test_playwright_double_close():
     browser.new_browser()
     browser.playwright.close()
     browser.playwright.close()
+
+
+def test_promise_handling(browser, application_server):
+    file = Path(__file__)
+    browser.new_page("localhost:7272/dist/")
+    browser.promise_to_upload_file(file.resolve())
+    browser.click("#file_chooser")
+    assert browser.get_text("#upload_result") == "test_python_usage.py"

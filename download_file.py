@@ -116,7 +116,7 @@ def _xunit(
             xunit.robot = unique_name
         if name.startswith("pytest"):
             xunit.pytest = unique_name
-    print(f"Xunit: {unique_name}")
+    print(f"Xunit: {Path(unique_name).resolve()}")
     return xunit
 
 

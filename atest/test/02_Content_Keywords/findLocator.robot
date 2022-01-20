@@ -10,7 +10,7 @@ Normal Selector
 
 Normal With Strict Mode
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//button" resolved to 11 elements:*
+    ...    *strict mode violation*//button*resolved to 11 elements:*
     ...    Click    //button
     Set Strict Mode    False
     Click    //button
@@ -20,10 +20,10 @@ Frame With Strict Mode
     Go To    ${FRAMES_URL}
     Click    iframe[name="left"] >>> "foo"
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//iframe" resolved to 2 elements:*
+    ...    *strict mode violation*//iframe*resolved to 2 elements:*
     ...    Click    //iframe >>> "foo"
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 2 elements:*
+    ...    *strict mode violation*//input*resolved to 2 elements:*
     ...    Click    iframe[name="left"] >>> //input
     Set Strict Mode    False
     Click    //iframe >>> "foo"

@@ -23,7 +23,7 @@ from robot.utils import get_link_path  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-from ..utils.data_types import ScreenshotFileTypes
+from ..utils.data_types import Permission, ScreenshotFileTypes
 
 
 class Control(LibraryComponent):
@@ -308,4 +308,31 @@ class Control(LibraryComponent):
         """Reloads current active page."""
         with self.playwright.grpc_channel() as stub:
             response = stub.Reload(Request().Empty())
+            logger.info(response.log)
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def grant_permissions(self, *permissions: Permission, origin: Optional[str] = None):
+        """Grants permissions to the current context.
+
+        ```permissions``` is a list of permissions to grant.
+        Permissions can be one of the following:
+        geolocation, notifications, camera, microphone,
+
+        Example:
+        | `New Context`
+        | `Grant Permissions`    geolocation
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GrantPermissions(
+                Request().Permissions(
+                    permissions=[p.name for p in permissions], origin=origin or ""
+                )
+            )
+            logger.info(response.log)
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def clear_permissions(self):
+        """Clears all permissions from the current context."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ClearPermissions(Request().Empty())
             logger.info(response.log)

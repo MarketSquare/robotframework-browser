@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Frame, Locator, Page } from 'playwright';
+import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
 import { LocatorCount, PlaywrightState } from './playwright-state';
 
@@ -75,10 +75,10 @@ async function findInFrames(
     firstOnly: boolean,
 ): Promise<Locator> {
     let selectors = splitFrameAndElementSelector(selector);
-    let frame = await findFrame(activePage, selectors.frameSelector, strictMode);
+    let frame = await findFrameLocator(activePage, selectors.frameSelector, strictMode);
     while (isFramePiercingSelector(selectors.elementSelector)) {
         selectors = splitFrameAndElementSelector(selectors.elementSelector);
-        frame = await findFrame(frame, selectors.frameSelector, strictMode);
+        frame = await findFrameLocator(frame, selectors.frameSelector, strictMode);
     }
     if (nthLocator) {
         logger.info(`Find ${nthLocator} locator in frame.`);
@@ -198,11 +198,16 @@ function splitElementHandleAndElementSelector<T>(selector: string): { elementHan
     throw new Error(`Invalid element selector \`${selector}\`.`);
 }
 
-async function findFrame<T>(parent: Page | Frame, frameSelector: string, strictMode: boolean): Promise<Frame> {
-    logger.info(`Find frame with ${frameSelector} and strict mode ${strictMode}`);
-    const contentFrame = await (await parent.$(frameSelector, { strict: strictMode }))?.contentFrame();
-    exists(contentFrame, `Could not find frame with selector ${frameSelector}`);
-    return contentFrame;
+async function findFrameLocator<T>(
+    parent: Page | FrameLocator,
+    frameSelector: string,
+    strictMode: boolean,
+): Promise<FrameLocator> {
+    if (strictMode) {
+        return parent.frameLocator(frameSelector);
+    } else {
+        return parent.frameLocator(frameSelector).first();
+    }
 }
 
 // This is necessary for improved typescript inference

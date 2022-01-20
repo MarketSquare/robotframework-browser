@@ -89,9 +89,10 @@ export function errorResponse(e: unknown) {
     return { code: errorCode, message: errorMessage };
 }
 
-export function keywordsResponse(keywords: string[], logMessage: string) {
+export function keywordsResponse(keywords: string[], keywordDocs: string[], logMessage: string) {
     const response = new Response.Keywords();
     response.setKeywordsList(keywords);
+    response.setKeyworddocumentationsList(keywordDocs);
     response.setLog(logMessage);
     return response;
 }

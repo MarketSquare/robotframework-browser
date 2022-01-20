@@ -143,3 +143,7 @@ class LibraryComponent:
         self, keyword_name: Union[str, None]
     ) -> DelayedKeyword:
         return self.library._parse_run_on_failure_keyword(keyword_name)
+
+    @property
+    def keyword_formatters(self) -> dict:
+        return self.library._keyword_formatters

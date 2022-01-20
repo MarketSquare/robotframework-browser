@@ -124,4 +124,8 @@ Check Context IDs
 Check Page IDs
     [Arguments]    ${page}    ${context}    ${browser}    ${exp_ids}
     ${current} =    Get Page Ids    ${page}    ${context}    ${browser}
-    Run Keyword And Continue On Failure    Lists Should Be Equal    ${exp_ids}    ${current}    ignore_order=True
+    ${page_ids} =    Create List
+    FOR    ${page}    IN    @{exp_ids}
+        Append To List    ${page_ids}    ${page}[page_id]
+    END
+    Run Keyword And Continue On Failure    Lists Should Be Equal    ${page_ids}    ${current}    ignore_order=True

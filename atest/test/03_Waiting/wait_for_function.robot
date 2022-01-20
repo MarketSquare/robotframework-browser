@@ -40,6 +40,6 @@ Failed Wait For Function Promise
 
 Succesful Wait For Function Promise
     ${promise} =    Promise To    Wait For Function    (selector) => document.activeElement === selector
-    ...    selector=\#username_field    timeout=500ms
+    ...    selector=\#username_field    timeout=750ms
     Click    \#username_field
     Wait For    ${promise}

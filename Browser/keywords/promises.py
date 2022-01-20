@@ -66,7 +66,11 @@ class Promises(LibraryComponent):
     def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
         """Returns a promise that waits for next download event on page.
 
+        If you can get the URL for the file to download, ``Download`` keyword should be a consistent way to download the file.
+
         To enable downloads context's ``acceptDownloads`` needs to be true.
+
+        To configure download directory use New Browser's ``downloadsPath`` settings
 
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 

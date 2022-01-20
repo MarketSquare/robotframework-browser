@@ -23,6 +23,8 @@ from .data_types import (
     ElementState,
     GeoLocation,
     HttpCredentials,
+    NewPageDetails,
+    Permission,
     Proxy,
     RecordHar,
     RecordVideo,
@@ -46,5 +48,6 @@ from .misc import (
     get_variable_value,
     is_same_keyword,
     keyword,
+    spawn_node_process,
 )
 from .robot_booleans import is_falsy, is_truthy

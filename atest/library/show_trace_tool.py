@@ -51,7 +51,7 @@ def start_show_trace(zip_file: str):
     return process, out_file
 
 
-def _check_trace_process(process: subprocess.Popen):
+def _check_trace_process(process: subprocess.Popen, out_file: Path):
     pid = process.pid
     try:
         psutil.pid_exists(pid)
@@ -79,6 +79,8 @@ def _check_trace_process(process: subprocess.Popen):
         chromium = False
         for child_proc in proc.children(recursive=True):
             logger.info(child_proc)
+            if not child_proc.is_running():
+                logger.info(f"Trace file output: {out_file.read_text()}")
             if "node" in child_proc.name().lower():
                 logger.info(child_proc.name())
                 node = True
@@ -99,7 +101,7 @@ def _check_trace_process(process: subprocess.Popen):
 def check_trace_process(prcess: subprocess.Popen, out_file: Path):
     end_time = time.monotonic() + 60
     while end_time > time.monotonic():
-        if _check_trace_process(prcess):
+        if _check_trace_process(prcess, out_file):
             return True
         logger.info("Sleep 1s and retry.")
         logger.info(f"Trace file output: {out_file.read_text()}")

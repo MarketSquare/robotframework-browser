@@ -77,6 +77,11 @@ message Request {
     string traceFile = 4;
   }
 
+  message Permissions {
+    repeated string permissions = 1;
+    string origin = 2;
+  }
+
   message Url {
     string url= 1;
     int32 defaultTimeout = 2;
@@ -240,6 +245,7 @@ message Response {
   message Keywords {
     string log = 1;
     repeated string keywords = 2;
+    repeated string keywordDocumentations = 3;
   }
 
   message Bool {
@@ -330,7 +336,7 @@ service  Playwright {
   /* Gets the Select element specified by selector and returns the contents */
   rpc GetSelectContent(Request.ElementSelector) returns (Response.Select);
   /* Selects option matching matcher in Select element matching selector */
-  rpc SelectOption(Request.SelectElementSelector) returns (Response.Empty);
+  rpc SelectOption(Request.SelectElementSelector) returns (Response.Json);
   /* Deselects options in Select element matching selector */
   rpc DeselectOption(Request.ElementSelector) returns (Response.Empty);
   /* Checks checkbox specified by selector */
@@ -413,6 +419,9 @@ service  Playwright {
   rpc ClosePage(Request.Empty) returns (Response.PageReportResponse);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
   rpc SaveStorageState(Request.FilePath) returns (Response.Empty);
+
+  rpc GrantPermissions(Request.Permissions) returns (Response.Empty);
+  rpc ClearPermissions(Request.Empty) returns (Response.Empty);
 
   /* Extension handling */
   rpc InitializeExtension(Request.FilePath) returns (Response.Keywords);
