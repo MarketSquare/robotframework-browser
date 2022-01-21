@@ -508,7 +508,7 @@ def _run_pabot(extra_args=None):
 
 
 def _add_skips(default_args):
-    if platform.platform().lower().startswith("Windows"):
+    if platform.platform().lower().startswith("windows"):
         print("Running in Windows exclude no-windows-support tags")
         default_args.extend(["--exclude", "no-windows-support"])
     if platform.platform().lower().startswith("mac") or platform.platform().lower().startswith("darwin"):
