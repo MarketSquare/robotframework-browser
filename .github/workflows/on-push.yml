@@ -53,6 +53,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install wheel
         pip install -r Browser/dev-requirements.txt
+        python -c "print('HERE')"
+        python -c "import platform;print(platform.platform())"
+        python -c "print('AFTER')"
     - name: Build Protos and check with tsc
       run: |
         inv node-build
