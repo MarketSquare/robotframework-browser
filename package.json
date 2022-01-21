@@ -39,7 +39,7 @@
     "@medv/finder": "^2.1.0",
     "google-protobuf": "3.19.3",
     "pino": "^7.6.4",
-    "playwright": "^1.17.2",
+    "playwright": "^1.18.0",
     "uuid": "^8.3.2"
   },
   "scripts": {
