@@ -494,10 +494,11 @@ def _run_pabot(extra_args=None):
         "--outputdir",
         str(ATEST_OUTPUT),
     ]
-    if platform.platform().startswith("Windows"):
+    print(f"DEBUG:::{platform.platform()}")
+    if platform.platform().lower().startswith("Windows"):
         print("Running in Windows exclude no-windows-support tags")
         default_args.extend(["--exclude", "no-windows-support"])
-    if platform.platform().startswith("mac"):
+    if platform.platform().lower().startswith("mac"):
         print("Running in Mac exclude no-mac-support tags")
         default_args.extend(["--exclude", "no-mac-support"])
     default_args.append("atest/test")
