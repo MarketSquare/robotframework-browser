@@ -674,6 +674,7 @@ class Browser(DynamicCore):
           It can be the name of any keyword. If the keyword has arguments those must be separated with
           two spaces for example ``My keyword \\ arg1 \\ arg2``.
           If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value.
+          Run on failure is not applied when library methods are executed directly from Python.
         - ``external_browser_executable`` <Dict <SupportedBrowsers, Path>>
           Dict mapping name of browser to path of executable of a browser.
           Will make opening new browsers of the given type use the set executablePath.
