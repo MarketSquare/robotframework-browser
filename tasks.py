@@ -393,8 +393,7 @@ def atest_robot(c):
         "--outputdir",
         str(ATEST_OUTPUT),
     ]
-    if platform.platform().startswith("Windows"):
-        command_args.extend(["--exclude", "no-windows-support"])
+    command_args = _add_skips(command_args)
     command_args.append("atest/test")
     env = os.environ.copy()
     process = subprocess.Popen(command_args, env=env)
@@ -494,12 +493,7 @@ def _run_pabot(extra_args=None):
         "--outputdir",
         str(ATEST_OUTPUT),
     ]
-    if platform.platform().startswith("Windows"):
-        print("Running in Windows exclude no-windows-support tags")
-        default_args.extend(["--exclude", "no-windows-support"])
-    if platform.platform().startswith("mac"):
-        print("Running in Mac exclude no-mac-support tags")
-        default_args.extend(["--exclude", "no-mac-support"])
+    default_args = _add_skips(default_args)
     default_args.append("atest/test")
     process = subprocess.Popen(
         pabot_args + (extra_args or []) + default_args, env=os.environ
@@ -512,6 +506,15 @@ def _run_pabot(extra_args=None):
     print(f"DONE rc=({rc})")
     return rc
 
+
+def _add_skips(default_args):
+    if platform.platform().lower().startswith("windows"):
+        print("Running in Windows exclude no-windows-support tags")
+        default_args.extend(["--exclude", "no-windows-support"])
+    if platform.platform().lower().startswith("mac") or platform.platform().lower().startswith("darwin"):
+        print("Running in Mac exclude no-mac-support tags")
+        default_args.extend(["--exclude", "no-mac-support"])
+    return default_args
 
 @task
 def lint_python(c):
