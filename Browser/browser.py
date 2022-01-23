@@ -381,6 +381,9 @@ class Browser(DynamicCore):
 
     The selectors on the left and right side of ``>>>`` can be any valid selectors.
     The selector clause directly before the frame opener ``>>>`` must select the frame element.
+    Frame selection is the only place where Library modifies the selector, as explained in above.
+    In all cases, library does not alter selector in any way, instead it is passed as is to
+    Playwright side.
 
     == WebComponents and Shadow DOM ==
 
@@ -455,15 +458,19 @@ class Browser(DynamicCore):
 
     == Element reference syntax ==
 
-    It is possible to get a reference to an element by using `Get Element` keyword. This
-    reference can be used as a *first* part of a selector by using a special selector
+    It is possible to get a reference to a Locator by using `Get Element` and `Get Elements` keywords.
+    Keywords do not save reference to an element in the HTML document, instead it saves reference to a Playwright
+    [https://playwright.dev/docs/api/class-locator|Locator]. In nutshell Locator captures the logic of how to
+    retrieve that element from the page. Each time action is performed, locator re-searches the elements
+    in the page. This reference can be used as a *first* part of a selector by using a special selector
     syntax `element=`. like this:
 
     | ${ref}=    Get Element    .some_class
-    |            Click          ${ref} >> .some_child
+    |            Click          ${ref} >> .some_child     # Locator searches an element from the page.
+    |            Click          ${ref} >> .other_child    # Locator searches again an element from the page.
 
-    The `.some_child` selector in the example is relative to the element referenced by ${ref}.
-    Please note that frame piercing is not possible with element reference.
+    The `.some_child` and `.other_child` selectors in the example are relative to the element referenced
+    by ${ref}. Please note that frame piercing is not possible with element reference.
 
     = Assertions =
 
@@ -477,7 +484,7 @@ class Browser(DynamicCore):
 
     %ASSERTION_TABLE%
 
-    By default keywords will provide an error message if an assertion fails.
+    By default, keywords will provide an error message if an assertion fails.
     Default error message can be overwritten with a ``message`` argument.
     The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
     `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
