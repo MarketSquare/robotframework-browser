@@ -511,10 +511,13 @@ def _add_skips(default_args):
     if platform.platform().lower().startswith("windows"):
         print("Running in Windows exclude no-windows-support tags")
         default_args.extend(["--exclude", "no-windows-support"])
-    if platform.platform().lower().startswith("mac") or platform.platform().lower().startswith("darwin"):
+    if platform.platform().lower().startswith(
+        "mac"
+    ) or platform.platform().lower().startswith("darwin"):
         print("Running in Mac exclude no-mac-support tags")
         default_args.extend(["--exclude", "no-mac-support"])
     return default_args
+
 
 @task
 def lint_python(c):
