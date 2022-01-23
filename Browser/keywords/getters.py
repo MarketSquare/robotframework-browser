@@ -730,7 +730,7 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "PageContent"))
     def get_element(self, selector: str) -> str:
-        """Returns a reference to a Playwright element handle.
+        """Returns a reference to a Playwright [https://playwright.dev/docs/api/class-locator|Locator].
 
         The reference can be used in subsequent selectors.
 
@@ -741,7 +741,8 @@ class Getters(LibraryComponent):
 
         Example:
         | ${element} =    `Get Element`    \\#username_field
-        | ${option_value} =    `Get Property`    ${element} >> option    value
+        | ${option_value} =    `Get Property`    ${element} >> optionOne    value    # Locator is resolved from the page.
+        | ${option_value} =    `Get Property`    ${element} >> optionTwo    value    # Locator is resolved again from the page.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(
@@ -752,7 +753,8 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "PageContent"))
     def get_elements(self, selector: str) -> List[str]:
-        """Returns a reference to playwright element handle for all matched elements by ``selector``.
+        """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
+        for all matched elements by ``selector``.
 
         ``selector`` Selector from which shall be retrieved.
         See the `Finding elements` section for details about the selectors.
