@@ -583,7 +583,7 @@ class PlaywrightState(LibraryComponent):
         params = locals_to_params(locals())
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
-        reduced_motion = params.get("reducedMotion")
+        reduced_motion = str(params.get("reducedMotion"))
         reduced_motion = reduced_motion.replace("_", "-")
         params["reducedMotion"] = reduced_motion
         if storageState and not Path(storageState).is_file():
