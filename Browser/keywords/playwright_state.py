@@ -396,7 +396,7 @@ class PlaywrightState(LibraryComponent):
     )
     def new_context(
         self,
-        acceptDownloads: bool = False,
+        acceptDownloads: bool = True,
         ignoreHTTPSErrors: bool = False,
         bypassCSP: bool = False,
         viewport: Optional[ViewportDimensions] = None,
@@ -432,7 +432,7 @@ class PlaywrightState(LibraryComponent):
         that can be used in `Switch Context`.
 
         ``acceptDownloads`` Whether to automatically downloads all the attachments.
-        Defaults to False where all the downloads are canceled.
+        Defaults to True where all the downloads are accepted.
 
         ``ignoreHTTPSErrors`` Whether to ignore HTTPS errors during navigation.
         Defaults to False.
