@@ -26,6 +26,7 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     ColorScheme,
+    ForcedColors,
     GeoLocation,
     HttpCredentials,
     NewPageDetails,
@@ -33,6 +34,7 @@ from ..utils import (
     Proxy,
     RecordHar,
     RecordVideo,
+    ReduceMotion,
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
@@ -423,6 +425,8 @@ class PlaywrightState(LibraryComponent):
         tracing: Optional[str] = None,
         screen: Optional[Dict[str, int]] = None,
         storageState: Optional[str] = None,
+        reducedMotion: ReduceMotion = ReduceMotion.no_preference,
+        forcedColors: ForcedColors = ForcedColors.none,
     ) -> str:
         """Create a new BrowserContext with specified options.
 
@@ -557,6 +561,12 @@ class PlaywrightState(LibraryComponent):
         ``storageState`` restores the storage stated created by the `Save Storage State`
         keyword. Must mbe full path to the file.
 
+        ``reduceMotion`` emulates `prefers-reduced-motion` media feature, supported
+        values are `reduce`, `no-preference`.
+
+        ``forcedColors`` emulates `forced-colors` media feature, supported values are
+        `active` and `none`.
+
         Example:
         | Test an iPhone
         |     ${device}=    `Get Device`    iPhone X
@@ -573,6 +583,9 @@ class PlaywrightState(LibraryComponent):
         params = locals_to_params(locals())
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
+        reduced_motion = params.get("reducedMotion")
+        reduced_motion = reduced_motion.replace("_", "-")
+        params["reducedMotion"] = reduced_motion
         if storageState and not Path(storageState).is_file():
             raise ValueError(
                 f"storageState argument value '{storageState}' is not file, but it should be."
