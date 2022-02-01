@@ -4,6 +4,7 @@ Resource    imports.resource
 
 *** Test Cases ***
 Shows a cat and a dog
+    [Tags]    no-mac-support
     New Page    ${DOG_AND_CAT_URL}
     Get Text    id=texts    ==    Beginning
     ${cat_promise} =    Promise To    Get Text    id=texts    ==    Cat
