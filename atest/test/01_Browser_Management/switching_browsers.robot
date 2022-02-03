@@ -5,6 +5,7 @@ Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Switch Browser
+    [Tags]    no-mac-support
     [Timeout]    2 minutes
     ${first_browser} =    New Browser    chromium
     New Page    ${LOGIN_URL}

@@ -531,3 +531,17 @@ class PageLoadStates(Enum):
     load = auto()
     domcontentloaded = auto()
     networkidle = auto()
+
+
+class ReduceMotion(Enum):
+    """Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`."""
+
+    reduce = auto()
+    no_preference = auto()
+
+
+class ForcedColors(Enum):
+    """Emulates `forced-colors` media feature, supported values are `active`, `none`."""
+
+    active = auto()
+    none = auto()

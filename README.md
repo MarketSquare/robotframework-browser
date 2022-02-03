@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-65-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-67-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -30,7 +30,7 @@ installed in the system. The installation size depends on the operating system, 
 It is possible to skip browser binaries installation with `rfbrowser init --skip-browsers` command, but then user
 is responsible for browser binary installation.
 
-Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/packages). Documented at [docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
+Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/pkgs/container/robotframework-browser%2Frfbrowser-stable). Documented at [docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
 
 ## Update instructions
 
@@ -246,6 +246,8 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
   <tr>
     <td align="center"><a href="https://github.com/robinmatz"><img src="https://avatars.githubusercontent.com/u/76647407?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Robin Matz</b></sub></a><br /><a href="#ideas-robinmatz" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/stdedos"><img src="https://avatars.githubusercontent.com/u/133706?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Stavros Ntentos</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=stdedos" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/Massukio"><img src="https://avatars.githubusercontent.com/u/13176540?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Massukio</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AMassukio" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/Atihinen"><img src="https://avatars.githubusercontent.com/u/5866905?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Atihinen</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AAtihinen" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 

@@ -264,7 +264,7 @@ def clean_atest(c):
 
 
 @task(clean_atest, create_test_app)
-def atest(c, suite=None, include=None, zip=None, debug=False):
+def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None):
     """Runs Robot Framework acceptance tests.
 
     Args:
@@ -272,6 +272,7 @@ def atest(c, suite=None, include=None, zip=None, debug=False):
         include: Select test by tag
         zip: Create zip file from output files.
         debug: Use robotframework-debugger as test listener
+        include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
     """
     args = [
         "--pythonpath",
@@ -289,7 +290,7 @@ def atest(c, suite=None, include=None, zip=None, debug=False):
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-        rc = _run_pabot(args)
+        rc = _run_pabot(args, include_mac)
     finally:
         background_process.kill()
 
@@ -393,8 +394,7 @@ def atest_robot(c):
         "--outputdir",
         str(ATEST_OUTPUT),
     ]
-    if platform.platform().startswith("Windows"):
-        command_args.extend(["--exclude", "no-windows-support"])
+    command_args = _add_skips(command_args)
     command_args.append("atest/test")
     env = os.environ.copy()
     process = subprocess.Popen(command_args, env=env)
@@ -467,7 +467,7 @@ def atest_coverage(c):
     robot.run("atest/test", **robot_args)
 
 
-def _run_pabot(extra_args=None):
+def _run_pabot(extra_args=None, include_mac=False):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
         sys.executable,
@@ -494,10 +494,7 @@ def _run_pabot(extra_args=None):
         "--outputdir",
         str(ATEST_OUTPUT),
     ]
-    if platform.platform().startswith("Windows"):
-        default_args.extend(["--exclude", "no-windows-support"])
-    if platform.platform().startswith("mac"):
-        default_args.extend(["--exclude", "no-mac-support"])
+    default_args = _add_skips(default_args, include_mac)
     default_args.append("atest/test")
     process = subprocess.Popen(
         pabot_args + (extra_args or []) + default_args, env=os.environ
@@ -509,6 +506,19 @@ def _run_pabot(extra_args=None):
     rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
     print(f"DONE rc=({rc})")
     return rc
+
+
+def _add_skips(default_args, include_mac=False):
+    if platform.platform().lower().startswith("windows"):
+        print("Running in Windows exclude no-windows-support tags")
+        default_args.extend(["--exclude", "no-windows-support"])
+    if not include_mac:
+        if platform.platform().lower().startswith(
+            "mac"
+        ) or platform.platform().lower().startswith("darwin"):
+            print("Running in Mac exclude no-mac-support tags")
+            default_args.extend(["--exclude", "no-mac-support"])
+    return default_args
 
 
 @task
