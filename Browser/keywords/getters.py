@@ -25,6 +25,7 @@ from assertionengine import (
     list_verify_assertion,
     verify_assertion,
 )
+from assertionengine.assertion_engine import flag_verify_assertion
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
@@ -33,8 +34,8 @@ from ..utils import exec_scroll_function, keyword, logger
 from ..utils.data_types import (
     AreaFields,
     BoundingBoxFields,
-    ElementStateKey,
     ElementState,
+    ElementStateKey,
     SelectAttribute,
     SizeFields,
 )
@@ -1181,20 +1182,25 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     def get_element_states(
-            self,
-            selector: str,
-            assertion_operator: Optional[AssertionOperator] = None,
-            assertion_expected: Optional[ElementState] = None,
-            message: Optional[str] = None,
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[str] = None,
+        message: Optional[str] = None,
+        return_names=True,
     ) -> Any:
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementStates(
                 Request.ElementSelector(selector=selector, strict=self.strict_mode)
             )
-        parsed = json.loads(response.json)
-        logger.debug(f"States: {parsed}")
-        return verify_assertion(
-            ElementState(parsed), assertion_operator, assertion_expected, "States are", message
+        states = ElementState(json.loads(response.json))
+        logger.debug(f"States: {states}")
+        result = flag_verify_assertion(
+            states, assertion_operator, assertion_expected, "Elements states ", message
         )
-
-
+        if return_names and isinstance(result, ElementState):
+            state_list = [flag.name for flag in ElementState if flag in result]
+            logger.info(f"States are: {state_list}")
+            return state_list
+        else:
+            return result
