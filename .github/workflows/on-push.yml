@@ -51,7 +51,7 @@ jobs:
       run: |
         npm ci
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v2.3.2
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
