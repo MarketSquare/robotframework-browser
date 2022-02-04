@@ -630,6 +630,11 @@ class Interaction(LibraryComponent):
             matchers = json.dumps([{"label": s} for s in values])
         elif attribute is SelectAttribute.index:
             matchers = json.dumps([{"index": int(s)} for s in values])
+        else:
+            raise TypeError(
+                'Invalid type for `attribute`. Please specify SelectAttribute["value"], "label" or "index"'
+            )
+
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
                 Request().SelectElementSelector(
