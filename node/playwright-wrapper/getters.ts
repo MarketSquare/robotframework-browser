@@ -15,7 +15,6 @@
 import { ElementHandle, Locator, Page } from 'playwright';
 import { errors } from 'playwright';
 
-
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
@@ -167,33 +166,40 @@ const stateEnum = {
     checked: 4096,
     unchecked: 8192,
     stable: 16384,
-    animating: 32768
-}
+    animating: 32768,
+};
 
-export async function getElementStates(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
+export async function getElementStates(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Json> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     let states = 0;
     try {
-        await locator.waitFor({ state: "attached", timeout: 100 });
+        await locator.waitFor({ state: 'attached', timeout: 100 });
         states = stateEnum.attached;
-        states += ((await locator.isVisible()) ? stateEnum.visible : stateEnum.hidden);
-        states += ((await locator.isEnabled()) ? stateEnum.enabled : stateEnum.disabled);
-        states += ((await locator.isEditable()) ? stateEnum.editable : stateEnum.readonly);
+        states += (await locator.isVisible()) ? stateEnum.visible : stateEnum.hidden;
+        states += (await locator.isEnabled()) ? stateEnum.enabled : stateEnum.disabled;
+        states += (await locator.isEditable()) ? stateEnum.editable : stateEnum.readonly;
         try {
-            const element = await locator.elementHandle()
+            const element = await locator.elementHandle();
             exists(element, 'Locator did not resolve to elementHandle.');
-            if (await element.evaluate(e => 'selected' in e)) {
-                states += ((await element.evaluate(e => e.selected)) ? stateEnum.selected : stateEnum.deselected);
+            if (await element.evaluate((e) => 'selected' in e)) {
+                states += (await element.evaluate((e) => (e as HTMLOptionElement).selected))
+                    ? stateEnum.selected
+                    : stateEnum.deselected;
             }
-            states += ((await element.evaluate(e => document.activeElement === e)) ? stateEnum.focused : stateEnum.defocused);
-        } catch { }
+            states += (await element.evaluate((e) => document.activeElement === e))
+                ? stateEnum.focused
+                : stateEnum.defocused;
+        } catch {}
         try {
-            states += ((await locator.isChecked()) ? stateEnum.checked : stateEnum.unchecked);
-        } catch { }
+            states += (await locator.isChecked()) ? stateEnum.checked : stateEnum.unchecked;
+        } catch {}
         try {
-            await (await locator.elementHandle())?.waitForElementState('stable', { timeout: 100 })
+            await (await locator.elementHandle())?.waitForElementState('stable', { timeout: 100 });
             states += stateEnum.stable;
         } catch (e) {
             if (e instanceof errors.TimeoutError) {

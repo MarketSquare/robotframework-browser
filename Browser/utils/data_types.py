@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from enum import Enum, auto, IntFlag
+from enum import Enum, IntFlag, auto
 from typing import Dict, Union
 
 from typing_extensions import TypedDict
