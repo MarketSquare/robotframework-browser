@@ -169,6 +169,37 @@ const stateEnum = {
     animating: 32768,
 };
 
+async function getCheckedState(locator: Locator) {
+    try {
+        return (await locator.isChecked()) ? stateEnum.checked : stateEnum.unchecked;
+    } catch {
+        return 0;
+    }
+}
+
+async function getSelectState(element: ElementHandle) {
+    if (await element.evaluate((e) => 'selected' in e)) {
+        return (await element.evaluate((e) => (e as HTMLOptionElement).selected))
+            ? stateEnum.selected
+            : stateEnum.deselected;
+    } else {
+        return 0;
+    }
+}
+
+async function getAnimationState(element: ElementHandle) {
+    try {
+        await element.waitForElementState('stable', { timeout: 100 });
+        return stateEnum.stable;
+    } catch (e) {
+        if (e instanceof errors.TimeoutError) {
+            return stateEnum.animating;
+        } else {
+            return 0;
+        }
+    }
+}
+
 export async function getElementStates(
     request: Request.ElementSelector,
     state: PlaywrightState,
@@ -183,34 +214,20 @@ export async function getElementStates(
         states += (await locator.isVisible()) ? stateEnum.visible : stateEnum.hidden;
         states += (await locator.isEnabled()) ? stateEnum.enabled : stateEnum.disabled;
         states += (await locator.isEditable()) ? stateEnum.editable : stateEnum.readonly;
+        states += await getCheckedState(locator);
         try {
             const element = await locator.elementHandle();
             exists(element, 'Locator did not resolve to elementHandle.');
-            if (await element.evaluate((e) => 'selected' in e)) {
-                states += (await element.evaluate((e) => (e as HTMLOptionElement).selected))
-                    ? stateEnum.selected
-                    : stateEnum.deselected;
-            }
+            states += await getSelectState(element);
             states += (await element.evaluate((e) => document.activeElement === e))
                 ? stateEnum.focused
                 : stateEnum.defocused;
+            states += await getAnimationState(element);
         } catch {}
-        try {
-            states += (await locator.isChecked()) ? stateEnum.checked : stateEnum.unchecked;
-        } catch {}
-        try {
-            await (await locator.elementHandle())?.waitForElementState('stable', { timeout: 100 });
-            states += stateEnum.stable;
-        } catch (e) {
-            if (e instanceof errors.TimeoutError) {
-                states += stateEnum.animating;
-            }
-        }
     } catch (e) {
-        states = stateEnum.detached;
         if (e instanceof errors.TimeoutError) {
             states = stateEnum.detached;
-        } else if (e instanceof Error) {
+        } else {
             logger.error(e);
             throw e;
         }

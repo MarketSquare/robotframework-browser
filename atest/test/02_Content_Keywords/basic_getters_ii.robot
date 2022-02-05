@@ -1,7 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Suite Setup     New Page    ${LOGIN_URL}
+Suite Setup         Setup
+Suite Teardown      Set Retry Assertions For    ${assert_timeout}
 
 *** Test Cases ***
 Get Style and Assert
@@ -211,12 +212,14 @@ Get Viewport Size Custom Error
     ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}
 
 Get Element State
+    [Tags]    deprecated
     ${state} =    Get Element State    h1    assertion_operator=equal    assertion_expected=True
     Should Be True    ${state}
     ${state} =    Get Element State    h1
     Should Be True    ${state}
 
 Get Element State With Strict On ElementSelectorWithOptions
+    [Tags]    deprecated
     Run Keyword And Expect Error
     ...    *strict mode violation*//div*resolved to 18 elements*
     ...    Get Element State    //div
@@ -226,6 +229,7 @@ Get Element State With Strict On ElementSelectorWithOptions
     [Teardown]    Set Strict Mode    True
 
 Get Element State With Strict On WaitForFunctionOptions
+    [Tags]    deprecated
     Run Keyword And Expect Error
     ...    *strict mode violation*//div*resolved to 18 elements*
     ...    Get Element State    //div    state=disabled
@@ -235,14 +239,17 @@ Get Element State With Strict On WaitForFunctionOptions
     [Teardown]    Set Strict Mode    True
 
 Get Element State With Assertion
+    [Tags]    deprecated
     Get Element State    h1    readonly    ==    False
 
 Get Element State Default Error
+    [Tags]    deprecated
     Run Keyword And Expect Error
     ...    State 'readonly' of 'h1' is 'False' (bool) should be 'True' (bool)
     ...    Get Element State    h1    readonly    ==    True
 
 Get Element State Custom Error
+    [Tags]    deprecated
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Element State    h1    readonly    ==    True    Tidii
@@ -256,3 +263,62 @@ Get Url Custom Error
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Url    contains    Valid    Tidii
+
+Get Element States
+    ${state} =    Get Element States    h1
+    Sort List    ${state}
+    ${expected} =    Create List    attached    defocused    editable    enabled    stable    visible
+    FOR    ${state}    ${exp}    IN ZIP    ${state}    ${expected}
+        Should Be Equal    ${state}    ${exp}
+    END
+
+Get Element States Check hidden and retry
+    ${org} =    Set Retry Assertions For    2 sec
+    Click    id=goes_hidden
+    Get Element States    id=goes_hidden    *=    hidden
+    [Teardown]    Set Retry Assertions For    ${org}
+
+Get Element States Checkboxes and RadioButton checked
+    Go To    ${FORM_URL}
+    Get Element States    [name='can_send_sms']    *=    unchecked
+    Get Element States    [name='can_send_email']    *=    checked
+    Get Element States    [name='can_send_email']    not contains    unchecked
+    Get Element States    [name='can_send_sms']    not contains    checked
+    Get Element States    [name="sex"][value="female"]    contains    checked
+    Get Element States    [name="sex"][value="male"]    not contains    checked
+
+Get Element States Focused
+    Focus    textarea[name="comment"]
+    Get Element States    textarea[name="comment"]    contains    focused
+    Get Element States    textarea[name="comment"]    not contains    defocused
+    Get Element States    [name='can_send_sms']    contains    defocused
+    Get Element States    [name='can_send_sms']    not contains    focused
+    Focus    [name='can_send_sms']
+    Get Element States    textarea[name="comment"]    contains    defocused
+    Get Element States    textarea[name="comment"]    not contains    focused
+    Get Element States    [name='can_send_sms']    contains    focused
+    Get Element States    [name='can_send_sms']    not contains    defocused
+
+Get Element States readonly disabled
+    GoTo    ${ELEMENT_STATE_URL}
+    Get Element States    [name="enabled_input"]
+    Get Element States    [name="enabled_input"]    contains    enabled    editable
+    Get Element States    [name="readonly_input"]    contains    enabled    readonly
+    Get Element States    [name="disabled_input"]    contains    disabled    readonly
+    Get Element States    [name="enabled_input_button"]    contains    enabled    editable
+    Get Element States    [name="disabled_input_button"]    contains    disabled    readonly
+    Get Element States    [name="select"]    contains    enabled    editable
+    Get Element States    id=enabled_option    contains    selected
+    Get Element States    id=disabled_option    contains    deselected
+    Get Element States    [name='disabled_button']    contains    disabled    readonly
+    Get Element States    [name='disabled_only']    contains    disabled    readonly
+
+Get Element States Then Flag Operations
+    Get Element States
+
+*** Keywords ***
+Setup
+    Close Page    ALL
+    New Page    ${LOGIN_URL}
+    ${assert_timeout} =    Set Retry Assertions For    0
+    Set Suite Variable    $assert_timeout
