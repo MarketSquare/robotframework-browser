@@ -20,12 +20,12 @@ from assertionengine import (
     AssertionOperator,
     bool_verify_assertion,
     dict_verify_assertion,
+    flag_verify_assertion,
     float_str_verify_assertion,
     int_dict_verify_assertion,
     list_verify_assertion,
     verify_assertion,
 )
-from assertionengine.assertion_engine import flag_verify_assertion
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
@@ -846,6 +846,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_boundingbox(
         self,
         selector: str,
@@ -909,6 +910,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_scroll_size(
         self,
         selector: Optional[str] = None,
@@ -971,6 +973,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_scroll_position(
         self,
         selector: Optional[str] = None,
@@ -1036,6 +1039,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_client_size(
         self,
         selector: Optional[str] = None,
@@ -1092,6 +1096,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_element_state(
         self,
         selector: str,
@@ -1181,11 +1186,12 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_element_states(
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[str] = None,
+        *assertion_expected,
         message: Optional[str] = None,
         return_names=True,
     ) -> Any:

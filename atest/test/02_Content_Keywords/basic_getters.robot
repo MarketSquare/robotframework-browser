@@ -1,7 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Suite Setup     New Page    ${LOGIN_URL}
+Suite Setup         Setup
+Suite Teardown      Set Retry Assertions For    ${assert_timeout}
 
 *** Variables ***
 ${UserNameLabel} =      label[for="username_field"]
@@ -205,3 +206,10 @@ Get Element Count Custom Error
     Run Keyword And Expect Error
     ...    My Errör
     ...    Get Element Count    h1    <    1    My Errör
+
+*** Keywords ***
+Setup
+    Close Page    ALL
+    New Page    ${LOGIN_URL}
+    ${assert_timeout} =    Set Retry Assertions For    0
+    Set Suite Variable    $assert_timeout
