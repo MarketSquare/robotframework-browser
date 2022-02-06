@@ -1188,7 +1188,6 @@ class Getters(LibraryComponent):
         | `Get Element States`    id=invisible_elem    contains    hidden    attached
         | `Get Element States`    id=disabled_elem     contains    visible    disabled    readonly
 
-
         Elements do return the positive and negative values if applicable.
         As example, a checkbox does return either ``checked`` or ``unchecked`` while a text input
         element has non of those two states.
