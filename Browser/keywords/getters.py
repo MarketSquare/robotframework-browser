@@ -35,7 +35,6 @@ from ..utils.data_types import (
     AreaFields,
     BoundingBoxFields,
     ElementState,
-    ElementStateKey,
     SelectAttribute,
     SizeFields,
 )
@@ -1114,14 +1113,7 @@ class Getters(LibraryComponent):
         ``selector`` Selector of the corresponding object.
         See the `Finding elements` section for details about the selectors.
 
-        ``state`` Defaults to visible. Possible states are:
-        - ``attached`` : to be present in DOM.
-        - ``visible`` : to have non-empty bounding box and no visibility:hidden.
-        - ``disabled`` : to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
-        - ``readonly`` : to be ``readOnly``. Can be used on <input> and <textarea>.
-        - ``selected`` : to be ``selected``. Can be used on <option>.
-        - ``focused`` : to be the ``activeElement``.
-        - ``checked`` : to be ``checked`` . Can be used on <input>.
+        ``state`` Defaults to visible. Possible states are
 
         Note that element must be attached to DOM to be able to fetch the state of ``readonly`` , ``selected`` and ``checked``.
         The other states are false if the requested element is not attached.
@@ -1170,6 +1162,10 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Get the active states from the element found by ``selector``.
 
+        This Keyword returns a list of states that are valid for the selected element.
+        If Argument ``return_names=False`` is set the keyword does return an IntFlag]
+        object instead of a list.
+
         This keyword internally works with Python IntFlag.
         Flags can be processed using bitwise operators like & (bitwise AND) and | (bitwise OR).
         When using the assertion operators ``then``, ``evaluate`` or ``validate`` the ``value``
@@ -1177,8 +1173,25 @@ class Getters(LibraryComponent):
 
         Example:
         | `Get Element States`    h1    validate    value | visible
-        | `Get Element States`    h1    then    value & (visible | hidden)
+        | `Get Element States`    h1    then    value & (visible | hidden)  # returns either ``['visible']`` or ``['hidden']``
+        | `Get Element States`    h1    then    bool(value & visible)  # Returns ``${True}`` if element is visible
 
+        The most typical use case would be to verify if an element contains a specific state or multiple states.
+
+        Example:
+        | `Get Element States`    id=checked_elem      *=    checked
+        | `Get Element States`    id=checked_elem      not contains    checked
+        | `Get Element States`    id=invisible_elem    contains    hidden    attached
+        | `Get Element States`    id=disabled_elem     contains    visible    disabled    readonly
+
+
+        Elements do return the positive and negative values if applicable.
+        As example, a checkbox does return either ``checked`` or ``unchecked`` while a text input
+        element has non of those two states.
+        Select elements have also either ``selected`` or ``unselected``.
+
+        If an element is not attached to the dom, so it can not be found within 100ms
+        it is marked as ``detached`` as the only state.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1204,7 +1217,7 @@ class Getters(LibraryComponent):
             states,
             assertion_operator,
             assertion_expected_str,
-            "Elements states ",
+            "Elements states",
             message,
         )
         if return_names and isinstance(result, ElementState):
