@@ -189,7 +189,7 @@ async function getSelectState(element: ElementHandle) {
 
 async function getAnimationState(element: ElementHandle) {
     try {
-        await element.waitForElementState('stable', { timeout: 100 });
+        await element.waitForElementState('stable', { timeout: 250 });
         return stateEnum.stable;
     } catch (e) {
         if (e instanceof errors.TimeoutError) {

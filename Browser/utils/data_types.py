@@ -483,6 +483,7 @@ class ElementState(IntFlag):
     | ``checked``    | to be ``checked``. Can be used on <input>. |
     | ``unchecked``  | to not be ``checked``. |
     | ``stable``     | to be both ``visible`` and ``stable``. |
+    | ``animating``  | to be ``visible`` but not ``stable``. |
     """
 
     attached = 1
