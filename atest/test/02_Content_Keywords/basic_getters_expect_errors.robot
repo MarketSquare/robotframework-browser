@@ -274,26 +274,31 @@ Get Element Count Custom Error
     ...    Get Element Count    h1    <    1    My Errör
 
 Get Element States and check Error Message Equal
+    Wait For Elements State    h1
     Run Keyword And Expect Error
     ...    EQUALS:Elements states '['attached', 'defocused', 'editable', 'enabled', 'stable', 'visible']' (list) should be '['attached', 'enabled', 'readonly', 'visible']' (list)
     ...    Get Element States    h1    ==    visible    attached    enabled    readonly
 
 Get Element States and check Error Message contains
+    Wait For Elements State    h1
     Run Keyword And Expect Error
     ...    EQUALS:Elements states '['attached', 'defocused', 'editable', 'enabled', 'stable', 'visible']' (list) should contain '['detached', 'enabled', 'readonly', 'visible']' (list)
     ...    Get Element States    h1    *=    visible    detached    enabled    readonly
 
 Get Element States and check Error Message validate
+    Wait For Elements State    h1
     Run Keyword And Expect Error
-    ...    EQUALS:Elements states 'ElementState.stable|defocused|editable|enabled|visible|attached' (elementstate) should validate to true with 'value & detached == detached' (str)
+    ...    Elements states '*' (elementstate) should validate to true with 'value & detached == detached' (str)
     ...    Get Element States    h1    validate    value & detached == detached
 
 Get Element States and check custom Error
+    Wait For Elements State    h1
     Run Keyword And Expect Error
     ...    EQUALS:Oh NOO!
     ...    Get Element States    h1    *=    selected    message=Oh NOO!
 
 Get Element States and check custom Error with values
+    Wait For Elements State    h1
     Run Keyword And Expect Error
     ...    EQUALS:Oh NOO! <h1> should contain ['selected'] but the states where ['attached', 'defocused', 'editable', 'enabled', 'stable', 'visible']
     ...    Get Element States    h1    *=    selected
