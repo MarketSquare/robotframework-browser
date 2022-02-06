@@ -1100,12 +1100,14 @@ class Getters(LibraryComponent):
     def get_element_state(
         self,
         selector: str,
-        state: ElementStateKey = ElementStateKey.visible,
+        state: ElementState = ElementState.visible,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[str] = None,
         message: Optional[str] = None,
     ):
-        """Get the given state from the element found by ``selector``.
+        """*DEPRECATED!!* Use keyword `Get Element States` instead.
+
+        Get the given state from the element found by ``selector``.
 
         If the selector does satisfy the expected state it will return ``True`` otherwise ``False``.
 
@@ -1142,48 +1144,19 @@ class Getters(LibraryComponent):
         Example:
         | `Get Element State`    h1    readonly    ==    False
         """
-        funct = {
-            ElementStateKey.disabled: "e => e.disabled",
-            ElementStateKey.readonly: "e => e.readOnly",
-            ElementStateKey.selected: "e => e.selected",
-            ElementStateKey.focused: "e => document.activeElement === e",
-            ElementStateKey.checked: "e => e.checked",
-        }
+        result = self.get_element_states(
+            selector, AssertionOperator["evaluate"], f"bool(value & {state.name})"
+        )
 
-        with self.playwright.grpc_channel() as stub:
-            try:
-                if state in funct:
-                    stub.WaitForFunction(
-                        Request().WaitForFunctionOptions(
-                            script=funct[state],
-                            selector=selector,
-                            options=json.dumps({"timeout": 100}),
-                            strict=self.strict_mode,
-                        )
-                    )
-                else:
-                    stub.WaitForElementsState(
-                        Request().ElementSelectorWithOptions(
-                            selector=selector,
-                            options=json.dumps({"state": state.name, "timeout": 100}),
-                            strict=self.strict_mode,
-                        )
-                    )
-                result = True
-            except Exception as e:
-                if "Timeout 100ms exceeded." in e.args[0].details:
-                    result = False
-                else:
-                    raise e
-            if self.keyword_formatters.get(self.get_element_state):
-                logger.warn("Formatter is not supported by Get Element State keyword.")
-            return bool_verify_assertion(
-                result,
-                assertion_operator,
-                assertion_expected,
-                f"State '{state.name}' of '{selector}' is",
-                message,
-            )
+        if self.keyword_formatters.get(self.get_element_state):
+            logger.warn("Formatter is not supported by Get Element State keyword.")
+        return bool_verify_assertion(
+            result,
+            assertion_operator,
+            assertion_expected,
+            f"State '{state.name}' of '{selector}' is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1191,10 +1164,36 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        *assertion_expected,
+        *assertion_expected: Union[ElementState, str],
         message: Optional[str] = None,
         return_names=True,
     ) -> Any:
+        """Get the active states from the element found by ``selector``.
+
+        This keyword internally works with Python IntFlag.
+        Flags can be processed using bitwise operators like & (bitwise AND) and | (bitwise OR).
+        When using the assertion operators ``then``, ``evaluate`` or ``validate`` the ``value``
+        contain the states as `ElementState`.
+
+        Example:
+        | `Get Element States`    h1    validate    value | visible
+        | `Get Element States`    h1    then    value & (visible | hidden)
+
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
+
+        Example:
+        | `Get Element State`    h1    readonly    ==    False
+        """
+
+        def convert_str(f):
+            return f.name if isinstance(f, ElementState) else f
+
+        assertion_expected_str = [convert_str(flag) for flag in assertion_expected]
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementStates(
                 Request.ElementSelector(selector=selector, strict=self.strict_mode)
@@ -1202,7 +1201,11 @@ class Getters(LibraryComponent):
         states = ElementState(json.loads(response.json))
         logger.debug(f"States: {states}")
         result = flag_verify_assertion(
-            states, assertion_operator, assertion_expected, "Elements states ", message
+            states,
+            assertion_operator,
+            assertion_expected_str,
+            "Elements states ",
+            message,
         )
         if return_names and isinstance(result, ElementState):
             state_list = [flag.name for flag in ElementState if flag in result]

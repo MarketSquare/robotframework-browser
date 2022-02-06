@@ -503,20 +503,9 @@ class ElementState(IntFlag):
     animating = 32768
 
 
-class ElementStateKey(Enum):
-    """Enum that defines the state an element can have directly.
-
-    See `ElementState` for explaination.
-
-    """
-
-    attached = auto()
-    visible = auto()
-    disabled = auto()
-    readonly = auto()
-    selected = auto()
-    focused = auto()
-    checked = auto()
+ElementStateKey = (
+    ElementState  # Deprecated. Remove after `Get Element State` is removed.
+)
 
 
 class ScreenshotFileTypes(Enum):

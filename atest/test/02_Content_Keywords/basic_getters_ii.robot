@@ -280,6 +280,7 @@ Get Element States Check hidden and retry
 
 Get Element States Checkboxes and RadioButton checked
     Go To    ${FORM_URL}
+    Wait For Elements State    [name='can_send_sms']
     Get Element States    [name='can_send_sms']    *=    unchecked
     Get Element States    [name='can_send_email']    *=    checked
     Get Element States    [name='can_send_email']    not contains    unchecked
@@ -301,6 +302,7 @@ Get Element States Focused
 
 Get Element States readonly disabled
     GoTo    ${ELEMENT_STATE_URL}
+    Wait For Elements State    [name="enabled_input"]
     Get Element States    [name="enabled_input"]
     Get Element States    [name="enabled_input"]    contains    enabled    editable
     Get Element States    [name="readonly_input"]    contains    enabled    readonly
@@ -314,7 +316,9 @@ Get Element States readonly disabled
     Get Element States    [name='disabled_only']    contains    disabled    readonly
 
 Get Element States Then Flag Operations
-    Get Element States
+    ${filtered}=    Get Element States    [name="enabled_input"]    evaluate    value & (visible | attached)
+    ${exp}=    Create List    attached    visible
+    Lists Should Be Equal    ${filtered}    ${exp}
 
 *** Keywords ***
 Setup
