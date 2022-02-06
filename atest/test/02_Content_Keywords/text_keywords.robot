@@ -244,6 +244,13 @@ Type and Fill Secret with text selector
     Fill Secret    text=Password:    another text
     Get Text    input#password_field    ==    another text
 
+Secret With Empty Value
+    [Documentation]
+    ...    LOG  1:2  WARN  Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG  2:2  WARN  Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    Type Secret    css=input#password_field    ${EMPTY}
+    Fill Secret    css=input#password_field    ${EMPTY}
+
 Fill Text with Clearing
     Fill Text    input#username_field    Wrong Text
     Fill Text    input#username_field    username
