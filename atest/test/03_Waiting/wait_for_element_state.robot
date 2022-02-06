@@ -123,7 +123,7 @@ Wait For Elements State fails On Too Short Timeout
 
 Wait For Elements State fails On Too Short Global Timeout
     ${timeout} =    Set Browser Timeout    0.3 s
-    Run Keyword and Expect Error    Custom Error #submit, ElementState.hidden and 300 milliseconds
+    Run Keyword and Expect Error    Custom Error #submit, hidden and 300 milliseconds
     ...    Wait For Elements State    \#submit    hidden    ${None}
     ...    Custom Error {selector}, {function} and {timeout}
     [Teardown]    Set Browser Timeout    ${timeout}
@@ -146,7 +146,7 @@ Wait For Elements State Fails On Too Short Timeout Custom Error And Hidden
     Select Options By    \#dropdown    value    True    unchecked
     Click    \#submit    noWaitAfter=True
     Run Keyword and Expect Error
-    ...    Custom Error #victim, ElementState.hidden and 300 milliseconds
+    ...    Custom Error #victim, hidden and 300 milliseconds
     ...    Wait For Elements State    \#victim    hidden    300ms    Custom Error {selector}, {function} and {timeout}
 
 Wait For Elements State to hide with Promise
