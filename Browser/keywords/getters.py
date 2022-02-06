@@ -1166,6 +1166,10 @@ class Getters(LibraryComponent):
         If Argument ``return_names=False`` is set the keyword does return an IntFlag]
         object instead of a list.
 
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
+
         This keyword internally works with Python IntFlag.
         Flags can be processed using bitwise operators like & (bitwise AND) and | (bitwise OR).
         When using the assertion operators ``then``, ``evaluate`` or ``validate`` the ``value``
@@ -1194,13 +1198,6 @@ class Getters(LibraryComponent):
         it is marked as ``detached`` as the only state.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
-
-        Optionally asserts that the state matches the specified assertion. See
-        `Assertions` for further details for the assertion arguments. By default assertion
-        is not done.
-
-        Example:
-        | `Get Element State`    h1    readonly    ==    False
         """
 
         def convert_str(f):
