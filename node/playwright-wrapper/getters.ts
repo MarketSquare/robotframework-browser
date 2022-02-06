@@ -21,6 +21,7 @@ import { boolResponse, intResponse, jsonResponse, stringResponse } from './respo
 import { exists, findLocator } from './playwright-invoke';
 
 import { pino } from 'pino';
+import {response} from "express";
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function getTitle(page: Page): Promise<Response.String> {
@@ -203,36 +204,50 @@ async function getAnimationState(element: ElementHandle) {
 export async function getElementStates(
     request: Request.ElementSelector,
     state: PlaywrightState,
-): Promise<Response.Json> {
+): Promise<Response.ElementStates> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
-    let states = 0;
+    const states = new Response.ElementStates();
     try {
         await locator.waitFor({ state: 'attached', timeout: 100 });
-        states = stateEnum.attached;
-        states += (await locator.isVisible()) ? stateEnum.visible : stateEnum.hidden;
-        states += (await locator.isEnabled()) ? stateEnum.enabled : stateEnum.disabled;
-        states += (await locator.isEditable()) ? stateEnum.editable : stateEnum.readonly;
-        states += await getCheckedState(locator);
+        states.setAttached(true);
+        states.setVisible(await locator.isVisible());
+        states.setEnabled(await locator.isEnabled());
+        states.setEditable(await locator.isEditable());
+        const checked = await getCheckedState(locator);
+        if (checked === stateEnum.checked) {
+            states.setChecked(true);
+        } else if (checked === stateEnum.unchecked) {
+            states.setUnchecked(true);
+        }
         try {
             const element = await locator.elementHandle();
             exists(element, 'Locator did not resolve to elementHandle.');
-            states += await getSelectState(element);
-            states += (await element.evaluate((e) => document.activeElement === e))
-                ? stateEnum.focused
-                : stateEnum.defocused;
-            states += await getAnimationState(element);
+            const selectState = await getSelectState(element);
+            if (selectState === stateEnum.selected) {
+                states.setSelected(true);
+            } else if (selectState === stateEnum.deselected) {
+                states.setDeselected(true);
+            }
+            states.setFocused((await element.evaluate((e) => document.activeElement === e)));
+            const animationState = await getAnimationState(element);
+            if (animationState === stateEnum.stable) {
+                states.setStable(true);
+            } else if (animationState === stateEnum.animating) {
+                states.setAnimating(true);
+            }
         } catch {}
     } catch (e) {
         if (e instanceof errors.TimeoutError) {
-            states = stateEnum.detached;
+            states.setDetached(true);
         } else {
             logger.error(e);
             throw e;
         }
     }
-    return jsonResponse(JSON.stringify(states), 'Returned state.');
+    states.setLog('Returned state.');
+    return states;
 }
 
 export async function getStyle(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {

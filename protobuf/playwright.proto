@@ -253,6 +253,26 @@ message Response {
     bool body = 2;
   }
 
+  message ElementStates {
+    string log = 1;
+    bool attached = 2;
+    bool detached = 3;
+    bool visible = 4;
+    bool hidden = 5;
+    bool enabled = 6;
+    bool disabled = 7;
+    bool editable = 8;
+    bool readonly = 9;
+    bool selected = 10;
+    bool deselected = 11;
+    bool focused = 12;
+    bool defocused = 13;
+    bool checked = 14;
+    bool unchecked = 15;
+    bool stable = 16;
+    bool animating = 17;
+  }
+
   message Int {
     string log = 1;
     int32 body = 2;
@@ -350,7 +370,7 @@ service  Playwright {
   /* Returns references to multiple Playwirght element handles.*/
   rpc GetElements(Request.ElementSelector) returns (Response.Json);
   /* Returns all Element states as IntFlag */
-  rpc GetElementStates(Request.ElementSelector) returns (Response.Json);
+  rpc GetElementStates(Request.ElementSelector) returns (Response.ElementStates);
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */

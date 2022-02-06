@@ -20,7 +20,6 @@ from assertionengine import (
     AssertionOperator,
     bool_verify_assertion,
     dict_verify_assertion,
-    flag_verify_assertion,
     float_str_verify_assertion,
     int_dict_verify_assertion,
     list_verify_assertion,
@@ -1213,16 +1212,16 @@ class Getters(LibraryComponent):
             )
         states = ElementState(json.loads(response.json))
         logger.debug(f"States: {states}")
-        result = flag_verify_assertion(
-            states,
-            assertion_operator,
-            assertion_expected_str,
-            "Elements states",
-            message,
-        )
-        if return_names and isinstance(result, ElementState):
-            state_list = [flag.name for flag in ElementState if flag in result]
-            logger.info(f"States are: {state_list}")
-            return state_list
-        else:
-            return result
+        #result = flag_verify_assertion(
+        #    states,
+        #    assertion_operator,
+        ##    assertion_expected_str,
+        #    "Elements states",
+        #  message,
+        #)
+        #if return_names and isinstance(result, ElementState):
+        #    state_list = [flag.name for flag in ElementState if flag in result]
+        #    logger.info(f"States are: {state_list}")
+        #    return state_list
+        #else:
+        #    return result
