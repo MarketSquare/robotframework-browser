@@ -8,12 +8,12 @@ Test Setup      New Page    ${WAIT_URL}
 Wait For Elements State attached
     Select Options By    \#dropdown    value    True    attached
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    attached    1s
+    Wait For Elements State    \#victim    attached    1.5 sec
 
 Wait For Elements State stable
     Select Options By    \#dropdown    value    True    attached
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    stable    2s
+    Wait For Elements State    \#victim    stable    1.5 sec
 
 Wait For Elements State attached With Strict On WaitForElementsState
     Run Keyword And Expect Error
@@ -36,53 +36,53 @@ Wait For Elements State enabled With Strict On wait_for_function
 Wait For Elements State detached
     Select Options By    \#dropdown    value    True    detached
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    detached    2s
+    Wait For Elements State    \#victim    detached    1.5 sec
 
 Wait For Elements State visible
     Select Options By    \#dropdown    value    True    visible
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    visible    1s
+    Wait For Elements State    \#victim    visible    1.5 sec
 
 Wait For Elements State hidden
     Select Options By    \#dropdown    value    True    visible
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    hidden    1s
+    Wait For Elements State    \#victim    hidden    1.5 sec
 
 Wait For Elements State hidden Not Strict
     Set Strict Mode    False
     Select Options By    \#dropdown    value    True    hidden
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    hidden    1s
+    Wait For Elements State    \#victim    hidden    1.5 sec
 
 Wait For Elements State From attached To hidden Not Strict
     Set Strict Mode    False
     Select Options By    \#dropdown    value    True    attached
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    attached    1s
+    Wait For Elements State    \#victim    attached    1.5 sec
     Select Options By    \#dropdown    value    True    detached
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    hidden    1s
+    Wait For Elements State    \#victim    hidden    1.5 sec
     [Teardown]    Set Strict Mode    True
 
 Wait For Elements State enabled
     Select Options By    \#dropdown    value    True    enabled
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    enabled    1s
+    Wait For Elements State    \#victim    enabled    1.5 sec
 
 Wait For Elements State disabled
     Select Options By    \#dropdown    value    True    disabled
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    disabled    1s
+    Wait For Elements State    \#victim    disabled    1.5 sec
 
 Wait For Elements State editable
     Select Options By    \#dropdown    value    True    editable
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    editable    1s
+    Wait For Elements State    \#victim    editable    1.5 sec
 
 Wait For Elements State readonly
     Select Options By    \#dropdown    value    True    readonly
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    readonly    1s
+    Wait For Elements State    \#victim    readonly    1.5 sec
 
 Wait For Elements State selected
     Select Options By    \#dropdown    value    True    selected
@@ -97,22 +97,22 @@ Wait For Elements State deselected
 Wait For Elements State focused
     Select Options By    \#dropdown    value    True    focused
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    focused    1s
+    Wait For Elements State    \#victim    focused    1.5 sec
 
 Wait For Elements State defocused
     Select Options By    \#dropdown    value    True    defocused
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    defocused    1s
+    Wait For Elements State    \#victim    defocused    1.5 sec
 
 Wait For Elements State checked
     Select Options By    \#dropdown    value    True    checked
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    checked    1s
+    Wait For Elements State    \#victim    checked    1.5 sec
 
 Wait For Elements State unchecked
     Select Options By    \#dropdown    value    True    unchecked
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#victim    unchecked    1s
+    Wait For Elements State    \#victim    unchecked    1.5 sec
 
 Wait For Elements State fails On Too Short Timeout
     Select Options By    \#dropdown    value    True    unchecked
