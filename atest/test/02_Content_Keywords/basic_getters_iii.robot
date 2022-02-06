@@ -82,7 +82,7 @@ Setup
 
 Ensure URL
     [Arguments]    ${url}
-    ${cur}=    Get Url
-    IF     $cur != $url
+    ${cur} =    Get Url
+    IF    $cur != $url
         Go To    ${url}
     END
