@@ -296,7 +296,8 @@ Get Element States and check custom Error
 Get Element States and check custom Error with values
     Run Keyword And Expect Error
     ...    EQUALS:Oh NOO! <h1> should contain ['selected'] but the states where ['attached', 'defocused', 'editable', 'enabled', 'stable', 'visible']
-    ...    Get Element States    h1    *=    selected    message=Oh NOO! <h1> should contain {expected} but the states where {value}
+    ...    Get Element States    h1    *=    selected
+    ...    message=Oh NOO! <h1> should contain {expected} but the states where {value}
 
 *** Keywords ***
 Setup
