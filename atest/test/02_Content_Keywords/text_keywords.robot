@@ -236,8 +236,8 @@ Type and Fill Text with text selector
 
 Type and Fill Secret with text selector
     [Documentation]
-    ...    LOG 1:2  WARN  Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    ...    LOG 4:2  WARN  Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Type Secret    input#password_field    pwfield
     Type Secret    text=Password:    some text
     Get Text    input#password_field    ==    some text
@@ -246,8 +246,8 @@ Type and Fill Secret with text selector
 
 Secret With Empty Value
     [Documentation]
-    ...    LOG  1:2  WARN  Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    ...    LOG  2:2  WARN  Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG    1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG    2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Type Secret    css=input#password_field    ${EMPTY}
     Fill Secret    css=input#password_field    ${EMPTY}
 
