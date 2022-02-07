@@ -209,7 +209,7 @@ export async function getElementStates(
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     let states = 0;
     try {
-        await locator.waitFor({ state: 'attached', timeout: 100 });
+        await locator.waitFor({ state: 'attached', timeout: 250 });
         states = stateEnum.attached;
         states += (await locator.isVisible()) ? stateEnum.visible : stateEnum.hidden;
         states += (await locator.isEnabled()) ? stateEnum.enabled : stateEnum.disabled;
