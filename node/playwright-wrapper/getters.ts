@@ -166,7 +166,6 @@ const stateEnum = {
     checked: 4096,
     unchecked: 8192,
     stable: 16384,
-    animating: 32768,
 };
 
 async function getCheckedState(locator: Locator) {
@@ -184,19 +183,6 @@ async function getSelectState(element: ElementHandle) {
             : stateEnum.deselected;
     } else {
         return 0;
-    }
-}
-
-async function getAnimationState(element: ElementHandle) {
-    try {
-        await element.waitForElementState('stable', { timeout: 250 });
-        return stateEnum.stable;
-    } catch (e) {
-        if (e instanceof errors.TimeoutError) {
-            return stateEnum.animating;
-        } else {
-            return 0;
-        }
     }
 }
 
@@ -222,7 +208,6 @@ export async function getElementStates(
             states += (await element.evaluate((e) => document.activeElement === e))
                 ? stateEnum.focused
                 : stateEnum.defocused;
-            states += await getAnimationState(element);
         } catch {}
     } catch (e) {
         if (e instanceof errors.TimeoutError) {

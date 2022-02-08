@@ -1196,8 +1196,10 @@ class Getters(LibraryComponent):
         The state of ``animating`` will be set if an element is not considered ``stable``
         within 300 ms.
 
-        If an element is not attached to the dom, so it can not be found within 100ms
+        If an element is not attached to the dom, so it can not be found within 250ms
         it is marked as ``detached`` as the only state.
+
+        ``stable`` state is not returned, because it would cause too high delay in that keyword.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         """
