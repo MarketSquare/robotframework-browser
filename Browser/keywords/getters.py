@@ -20,6 +20,7 @@ from assertionengine import (
     AssertionOperator,
     bool_verify_assertion,
     dict_verify_assertion,
+    flag_verify_assertion,
     float_str_verify_assertion,
     int_dict_verify_assertion,
     list_verify_assertion,
@@ -33,7 +34,7 @@ from ..utils import exec_scroll_function, keyword, logger
 from ..utils.data_types import (
     AreaFields,
     BoundingBoxFields,
-    ElementStateKey,
+    ElementState,
     SelectAttribute,
     SizeFields,
 )
@@ -844,6 +845,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_boundingbox(
         self,
         selector: str,
@@ -907,6 +909,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_scroll_size(
         self,
         selector: Optional[str] = None,
@@ -969,6 +972,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_scroll_position(
         self,
         selector: Optional[str] = None,
@@ -1034,6 +1038,7 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_client_size(
         self,
         selector: Optional[str] = None,
@@ -1090,29 +1095,25 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
     def get_element_state(
         self,
         selector: str,
-        state: ElementStateKey = ElementStateKey.visible,
+        state: ElementState = ElementState.visible,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[str] = None,
         message: Optional[str] = None,
     ):
-        """Get the given state from the element found by ``selector``.
+        """*DEPRECATED!!* Use keyword `Get Element States` instead.
+
+        Get the given state from the element found by ``selector``.
 
         If the selector does satisfy the expected state it will return ``True`` otherwise ``False``.
 
         ``selector`` Selector of the corresponding object.
         See the `Finding elements` section for details about the selectors.
 
-        ``state`` Defaults to visible. Possible states are:
-        - ``attached`` : to be present in DOM.
-        - ``visible`` : to have non-empty bounding box and no visibility:hidden.
-        - ``disabled`` : to be ``disabled``. Can be used on <button>, <fieldset>, <input>, <optgroup>, <option>, <select> and <textarea>.
-        - ``readonly`` : to be ``readOnly``. Can be used on <input> and <textarea>.
-        - ``selected`` : to be ``selected``. Can be used on <option>.
-        - ``focused`` : to be the ``activeElement``.
-        - ``checked`` : to be ``checked`` . Can be used on <input>.
+        ``state`` Defaults to visible. Possible states are
 
         Note that element must be attached to DOM to be able to fetch the state of ``readonly`` , ``selected`` and ``checked``.
         The other states are false if the requested element is not attached.
@@ -1135,45 +1136,94 @@ class Getters(LibraryComponent):
         Example:
         | `Get Element State`    h1    readonly    ==    False
         """
-        funct = {
-            ElementStateKey.disabled: "e => e.disabled",
-            ElementStateKey.readonly: "e => e.readOnly",
-            ElementStateKey.selected: "e => e.selected",
-            ElementStateKey.focused: "e => document.activeElement === e",
-            ElementStateKey.checked: "e => e.checked",
-        }
+        result = self.get_element_states(
+            selector, AssertionOperator["evaluate"], f"bool(value & {state.name})"
+        )
 
+        if self.keyword_formatters.get(self.get_element_state):
+            logger.warn("Formatter is not supported by Get Element State keyword.")
+        return bool_verify_assertion(
+            result,
+            assertion_operator,
+            assertion_expected,
+            f"State '{state.name}' of '{selector}' is",
+            message,
+        )
+
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
+    def get_element_states(
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected: Union[ElementState, str],
+        message: Optional[str] = None,
+        return_names=True,
+    ) -> Any:
+        """Get the active states from the element found by ``selector``.
+
+        This Keyword returns a list of states that are valid for the selected element.
+        If Argument ``return_names=False`` is set the keyword does return an IntFlag]
+        object instead of a list.
+
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
+
+        This keyword internally works with Python IntFlag.
+        Flags can be processed using bitwise operators like & (bitwise AND) and | (bitwise OR).
+        When using the assertion operators ``then``, ``evaluate`` or ``validate`` the ``value``
+        contain the states as `ElementState`.
+
+        Example:
+        | `Get Element States`    h1    validate    value | visible
+        | `Get Element States`    h1    then    value & (visible | hidden)  # returns either ``['visible']`` or ``['hidden']``
+        | `Get Element States`    h1    then    bool(value & visible)  # Returns ``${True}`` if element is visible
+
+        The most typical use case would be to verify if an element contains a specific state or multiple states.
+
+        Example:
+        | `Get Element States`    id=checked_elem      *=    checked
+        | `Get Element States`    id=checked_elem      not contains    checked
+        | `Get Element States`    id=invisible_elem    contains    hidden    attached
+        | `Get Element States`    id=disabled_elem     contains    visible    disabled    readonly
+
+        Elements do return the positive and negative values if applicable.
+        As example, a checkbox does return either ``checked`` or ``unchecked`` while a text input
+        element has non of those two states.
+        Select elements have also either ``selected`` or ``unselected``.
+
+        The state of ``animating`` will be set if an element is not considered ``stable``
+        within 300 ms.
+
+        If an element is not attached to the dom, so it can not be found within 250ms
+        it is marked as ``detached`` as the only state.
+
+        ``stable`` state is not returned, because it would cause too high delay in that keyword.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+        """
+
+        def convert_str(f):
+            return f.name if isinstance(f, ElementState) else f
+
+        assertion_expected_str = [convert_str(flag) for flag in assertion_expected]
         with self.playwright.grpc_channel() as stub:
-            try:
-                if state in funct:
-                    stub.WaitForFunction(
-                        Request().WaitForFunctionOptions(
-                            script=funct[state],
-                            selector=selector,
-                            options=json.dumps({"timeout": 100}),
-                            strict=self.strict_mode,
-                        )
-                    )
-                else:
-                    stub.WaitForElementsState(
-                        Request().ElementSelectorWithOptions(
-                            selector=selector,
-                            options=json.dumps({"state": state.name, "timeout": 100}),
-                            strict=self.strict_mode,
-                        )
-                    )
-                result = True
-            except Exception as e:
-                if "Timeout 100ms exceeded." in e.args[0].details:
-                    result = False
-                else:
-                    raise e
-            if self.keyword_formatters.get(self.get_element_state):
-                logger.warn("Formatter is not supported by Get Element State keyword.")
-            return bool_verify_assertion(
-                result,
-                assertion_operator,
-                assertion_expected,
-                f"State '{state.name}' of '{selector}' is",
-                message,
+            response = stub.GetElementStates(
+                Request.ElementSelector(selector=selector, strict=self.strict_mode)
             )
+        states = ElementState(json.loads(response.json))
+        logger.debug(f"States: {states}")
+        result = flag_verify_assertion(
+            states,
+            assertion_operator,
+            assertion_expected_str,
+            "Elements states",
+            message,
+        )
+        if return_names and isinstance(result, ElementState):
+            state_list = [flag.name for flag in ElementState if flag in result]
+            logger.info(f"States are: {state_list}")
+            return state_list
+        else:
+            return result

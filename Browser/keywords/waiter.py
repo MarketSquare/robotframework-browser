@@ -99,7 +99,7 @@ class Waiter(LibraryComponent):
                         if message:
                             message = message.format(
                                 selector=selector,
-                                function=state,
+                                function=state.name,
                                 timeout=timeout_as_str,
                             )
                             raise AssertionError(message)

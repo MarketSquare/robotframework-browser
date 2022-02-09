@@ -349,6 +349,8 @@ service  Playwright {
   rpc GetElement(Request.ElementSelector) returns (Response.String);
   /* Returns references to multiple Playwirght element handles.*/
   rpc GetElements(Request.ElementSelector) returns (Response.Json);
+  /* Returns all Element states as IntFlag */
+  rpc GetElementStates(Request.ElementSelector) returns (Response.Json);
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */
