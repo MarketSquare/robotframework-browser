@@ -87,12 +87,12 @@ Wait For Elements State readonly
 Wait For Elements State selected
     Select Options By    \#dropdown    value    True    selected
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#person >> option[value=victim]    selected    1s
+    Wait For Elements State    \#person >> option[value=victim]    selected    1.5 sec
 
 Wait For Elements State deselected
     Select Options By    \#dropdown    value    True    deselected
     Click    \#submit    noWaitAfter=True
-    Wait For Elements State    \#person >> option[value=victim]    deselected    1s
+    Wait For Elements State    \#person >> option[value=victim]    deselected    1.5 sec
 
 Wait For Elements State focused
     Select Options By    \#dropdown    value    True    focused
