@@ -371,8 +371,9 @@ def copy_xunit(c):
         root.attrib["timestamp"] = now.strftime("%Y-%m-%dT%H:%M:%S.000000")
         new_root = ET.Element("testsuites")
         new_root.insert(0, root)
-        ET.ElementTree(new_root).write(robot_xunit)
-        print(f"Copied {robot_xunit}")
+        ET.ElementTree(new_root).write(robot_xunit.resolve())
+        print(f"Copied {robot_xunit.resolve()}")
+        print(robot_xunit.read_text())
     else:
         print("Not modifying RF xunit output.")
 
