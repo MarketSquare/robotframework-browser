@@ -439,7 +439,6 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
 }
 
 export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<Response.Empty> {
-    const x = openBrowsers.getTraceFile();
     await openBrowsers.closeAll();
     return emptyWithLog('Closed all browsers');
 }
