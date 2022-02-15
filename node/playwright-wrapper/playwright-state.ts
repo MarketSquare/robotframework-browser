@@ -357,6 +357,7 @@ export class BrowserState {
             if (traceFile) {
                 await context.c.tracing.stop({ path: traceFile });
             }
+            await context.c.close();
         }
         this._contextStack = [];
         await this.browser.close();
