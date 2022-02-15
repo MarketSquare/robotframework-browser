@@ -232,8 +232,18 @@ export class PlaywrightState {
 
     public async closeAll(): Promise<void> {
         const browsers = this.browserStack;
-        for (const b of browsers) {
-            await b.close();
+        for (const browser of browsers) {
+            for (const context of browser.browser.contexts()) {
+                for (const page of context.pages()) {
+                    await page.close();
+                }
+                const traceFile = browser.context?.traceFile;
+                if (traceFile) {
+                    await context.tracing.stop({ path: traceFile });
+                }
+                await context.close();
+            }
+            await browser.close();
         }
         this.browserStack = [];
     }
@@ -432,6 +442,7 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
 }
 
 export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<Response.Empty> {
+    const x = openBrowsers.getTraceFile();
     await openBrowsers.closeAll();
     return emptyWithLog('Closed all browsers');
 }

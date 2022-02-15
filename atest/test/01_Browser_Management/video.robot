@@ -67,6 +67,15 @@ Create Video With Deprecated Options
     Go To    ${FRAMES_URL}
     Verify Video Files    4
 
+Video Must Be Created When Close Browser Is Called
+    [Setup]    OperatingSystem.Remove Directory    ${OUTPUT_DIR}/video    recursive=True
+    ${record_video} =    Create Dictionary    dir    ${OUTPUT_DIR}/video
+    New Context    ${True}    recordVideo=${record_video}
+    New Page    ${LOGIN_URL}
+    Go To    ${FRAMES_URL}
+    Close Browser    ALL
+    Wait File Count In Directory    ${OUTPUT_DIR}/video    ${1}
+
 *** Keywords ***
 Video Setup
     New Browser
