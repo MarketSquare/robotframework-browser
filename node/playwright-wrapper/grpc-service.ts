@@ -309,6 +309,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     getText = this.wrapping(getters.getText);
     getBoolProperty = this.wrapping(getters.getBoolProperty);
     getElementAttribute = this.wrapping(getters.getElementAttribute);
+    getElementStates = this.wrapping(getters.getElementStates);
     getStyle = this.wrapping(getters.getStyle);
 
     async getViewportSize(

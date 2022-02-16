@@ -50,3 +50,27 @@ Check Show-Trace Command
         ${process}    ${procss_stdout_file} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
         Check Trace Process    ${process}    ${procss_stdout_file}
     END
+
+Tracing And Closing All Browsers
+    [Timeout]    90s
+    New Browser
+    New Context    tracing=trace_10.zip
+    New Page    ${LOGIN_URL}
+    Click    id=login_button
+    New Page    ${LOGIN_URL}
+    Click    id=login_button
+    Close Browser    ALL
+    File Should Not Be Empty    ${OUTPUT_DIR}/trace_10.zip
+
+Tracing And Closing Current Browsers
+    [Timeout]    90s
+    New Browser
+    New Context    tracing=trace_20.zip
+    New Context    tracing=trace_21.zip
+    New Page    ${LOGIN_URL}
+    Click    id=login_button
+    New Page    ${LOGIN_URL}
+    Click    id=login_button
+    Close Browser    CURRENT
+    File Should Not Be Empty    ${OUTPUT_DIR}/trace_20.zip
+    File Should Not Be Empty    ${OUTPUT_DIR}/trace_21.zip

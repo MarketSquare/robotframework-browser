@@ -53,7 +53,7 @@ Fill Text With Nonmatching Selector
     ...    Fill Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Fill Text With Secret
+Fill Text With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements:*
     ...    Fill Text    //input    something
@@ -87,6 +87,9 @@ Type Secret With Strict
     [Teardown]    Set Strict Mode    True
 
 Fill Secret placeholder-env-var
+    [Documentation]    ...
+    ...    LOG 2:2    NONE
+    ...    LOG 4:2    NONE
     Set Environment Variable    PH_ENV_VAR    password11
     Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.2}    ${TRUE}
     Get Text    css=input#username_field    ==    password11
@@ -94,6 +97,9 @@ Fill Secret placeholder-env-var
     Get Text    css=input#password_field    ==    password11
 
 Fill Secret robot-env-var
+    [Documentation]    ...
+    ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 5:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Set Environment Variable    WAITTIMER    100 ms
     Set Environment Variable    ENV_VAR    password12
     Type Secret    css=input#username_field    %{ENV_VAR}    %{WAITTIMER}    clear=True
@@ -102,6 +108,9 @@ Fill Secret robot-env-var
     Get Text    css=input#password_field    ==    password12
 
 Fill Secret robot-env-var mixed
+    [Documentation]    ...
+    ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Set Environment Variable    ENV_VAR    password13
     Type Secret    css=input#username_field    %{ENV_VAR}XXX
     Get Text    css=input#username_field    ==    password13XXX
@@ -116,6 +125,9 @@ Fill Secret robot-env-var mixed2
     Get Text    css=input#password_field    ==    XXXpassword13XXX
 
 Fill Secret placeholder-robot-var
+    [Documentation]
+    ...    LOG 2:2    NONE
+    ...    LOG 4:2    NONE
     ${var} =    Set Variable    password123
     Type Secret    css=input#username_field    $var
     Get Text    css=input#username_field    ==    password123
@@ -123,6 +135,9 @@ Fill Secret placeholder-robot-var
     Get Text    css=input#password_field    ==    password123
 
 Fill Secret robot var
+    [Documentation]
+    ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ${var} =    Set Variable    password321
     Type Secret    css=input#username_field    ${var}
     Get Text    css=input#username_field    ==    password321
@@ -130,6 +145,8 @@ Fill Secret robot var
     Get Text    css=input#password_field    ==    password321
 
 Fill Secret robot var mixed
+    [Documentation]
+    ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ${var} =    Set Variable    password321
     Type Secret    css=input#username_field    ${var}XXX
     Get Text    css=input#username_field    ==    password321XXX
@@ -178,11 +195,15 @@ Fill Secret fails when env variable is not set
     ...    css=input#password_field    %{NONE_EXISTING_ENV_VARIABLE}
 
 Type Secret env
+    [Documentation]
+    ...    LOG 2:2    NONE
     Set Environment Variable    TYPE_SECRET    password22
     Type Secret    css=input#password_field    %TYPE_SECRET
     Get Text    css=input#password_field    ==    password22
 
 Type Secret local
+    [Documentation]
+    ...    LOG 2:2    NONE
     ${var} =    Set Variable    password321
     Type Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password321
@@ -214,11 +235,21 @@ Type and Fill Text with text selector
     Get Text    input#username_field    ==    another text
 
 Type and Fill Secret with text selector
+    [Documentation]
+    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Type Secret    input#password_field    pwfield
     Type Secret    text=Password:    some text
     Get Text    input#password_field    ==    some text
     Fill Secret    text=Password:    another text
     Get Text    input#password_field    ==    another text
+
+Secret With Empty Value
+    [Documentation]
+    ...    LOG    1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    ...    LOG    2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
+    Type Secret    css=input#password_field    ${EMPTY}
+    Fill Secret    css=input#password_field    ${EMPTY}
 
 Fill Text with Clearing
     Fill Text    input#username_field    Wrong Text

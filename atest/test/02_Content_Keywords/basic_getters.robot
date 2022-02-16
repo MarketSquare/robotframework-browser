@@ -1,7 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Suite Setup     New Page    ${LOGIN_URL}
+Suite Setup         Setup
+Suite Teardown      Set Retry Assertions For    ${assert_timeout}
 
 *** Variables ***
 ${UserNameLabel} =      label[for="username_field"]
@@ -39,16 +40,6 @@ Get Property With Strict Mode
     Should Not Be Empty    ${property}
     [Teardown]    Set Strict Mode    True
 
-Get Property Default Error
-    Run Keyword And Expect Error
-    ...    Property innerText 'Login Page' (str) should not be 'Login Page' (str)
-    ...    Get Property    h1    innerText    !=    Login Page
-
-Get Property Custom Error
-    Run Keyword And Expect Error
-    ...    Tidii
-    ...    Get Property    h1    innerText    !=    Login Page    Tidii
-
 Get Property innerText
     ${inner_text} =    Get Property    ${UserNameLabel}    innerText
     Should Be Equal    ${inner_text}    User Name:
@@ -66,37 +57,14 @@ Get Property and Then .. (Closure)
     ${text} =    Get Property    h1    innerText    then    value.replace('g', 'k')
     Should be equal    ${text}    Lokin Pake
 
-Get Property With Nonmatching Selector
-    [Setup]    Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Property
-    ...    notamatch    attributeName
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
-
 Get Attribute
     ${type} =    Get Attribute    id=login_button    type
     Should Be Equal    ${type}    submit
-
-Get Attribute With Strict
-    Run Keyword And Expect Error
-    ...    *strict mode violation*"//input*resolved to 4 elements*
-    ...    Get Attribute    //input    id
-    Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
-    ...    Get Attribute    //input    id    equal    nothere
-    Set Strict Mode    False
-    ${id} =    Get Attribute    //input    id
-    Should Be Equal    ${id}    username_field
-    Get Attribute    //input    id    equal    username_field
-    [Teardown]    Set Strict Mode    True
 
 Get Attribute Default Error
     Run Keyword And Expect Error
     ...    *Attribute 'disabled' not found!
     ...    Get Attribute    id=login_button    disabled
-
-Get Attribute Custom Error
-    Run Keyword And Expect Error    None, nonetype, True, bool    Get Attribute    id=login_button    disabled    ==
-    ...    ${True}    message={value}, {value_type}, {expected}, {expected_type}
 
 Get Attribute and Verify absense
     Get Attribute    id=login_button    disabled    ==    ${None}
@@ -126,23 +94,6 @@ Get Attribute Names With Strict
     Should Not Be Empty    ${attrs}
     [Teardown]    Set Strict Mode    True
 
-Get Attribute Names Default Error
-    [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${expected} =    Create List    1    3
-    Run Keyword And Expect Error
-    ...    Attribute names '*' (list) should be '?'1', '3'?' (list)
-    ...    Get Attribute Names    [name="readonly_input"]    ==    ${expected}
-    [Teardown]    Close Page
-
-Get Attribute Names Custom Error
-    [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${expected} =    Create List    1    3
-    Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
-    ...    ==    ${expected}    message=Custom error {expected} {expected_type}
-    Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
-    ...    ==    1    3    message=Custom error {expected} {expected_type}
-    [Teardown]    Close Page
-
 Get Attribute Names and Assert single and multiple
     [Setup]    New Page    ${ELEMENT_STATE_URL}
     Get Attribute Names    [name="readonly_input"]    ==    type    name    value    readonly
@@ -168,16 +119,6 @@ Get Classes and Assert
     Get Classes    id=draggable    ==    react-draggable    box
     Get Classes    id=draggable    validate    "react-draggable-dragged" not in value
 
-Get Classes Default Error
-    Run Keyword And Expect Error
-    ...    Classes of id=draggable '[[]'box', 'react-draggable'[]]' (list) should contain 'not-here' (str)
-    ...    Get Classes    id=draggable    contains    not-here
-
-Get Classes Custom Error
-    Run Keyword And Expect Error
-    ...    My Custom Error
-    ...    Get Classes    id=draggable    contains    not-here    message=My Custom Error
-
 Get Element Count
     ${count} =    Get Element Count    h1
     Should Be Equal    ${count}    ${1}
@@ -196,12 +137,9 @@ Get Element Count and Assert
     ${count} =    Wait for    ${promise}
     should be equal    ${count}    ${2}
 
-Get Element Count Default Error
-    Run Keyword And Expect Error
-    ...    Element count for selector `h1` is '1' (int) should be less than '1.0' (float)
-    ...    Get Element Count    h1    <    1
-
-Get Element Count Custom Error
-    Run Keyword And Expect Error
-    ...    My Errör
-    ...    Get Element Count    h1    <    1    My Errör
+*** Keywords ***
+Setup
+    Close Page    ALL
+    New Page    ${LOGIN_URL}
+    ${assert_timeout} =    Set Retry Assertions For    2 sec
+    Set Suite Variable    $assert_timeout

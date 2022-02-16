@@ -232,8 +232,8 @@ export class PlaywrightState {
 
     public async closeAll(): Promise<void> {
         const browsers = this.browserStack;
-        for (const b of browsers) {
-            await b.close();
+        for (const browser of browsers) {
+            await browser.close();
         }
         this.browserStack = [];
     }
@@ -352,6 +352,13 @@ export class BrowserState {
     headless: boolean;
 
     public async close(): Promise<void> {
+        for (const context of this.contextStack) {
+            const traceFile = context.traceFile;
+            if (traceFile) {
+                await context.c.tracing.stop({ path: traceFile });
+            }
+            await context.c.close();
+        }
         this._contextStack = [];
         await this.browser.close();
     }
