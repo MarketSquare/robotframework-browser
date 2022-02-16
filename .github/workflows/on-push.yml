@@ -187,7 +187,7 @@ jobs:
       - name: Run Robot Framework tests on windows or macOS
         if: ${{ matrix.os != 'ubuntu-latest' }}
         run: |
-          inv atest-global-pythonpath
+          invoke atest-global-pythonpath
       - name: Artifacts download for flaky test analysis
         if: ${{ failure() }}
         # flaky-tests-detection here because it is huge and not needed for the test-install
