@@ -1,29 +1,30 @@
 import json
 import os
+import platform
+import re
+import shutil
 import subprocess
 import sys
 import time
-from typing import Iterable
+import traceback
 import zipfile
 from datetime import datetime
 from pathlib import Path, PurePath
-import platform
-import re
-import traceback
-import shutil
+from typing import Iterable
 from xml.etree import ElementTree as ET
 
-from invoke import task, Exit
+from invoke import Exit, task
 
 try:
-    from robot import rebot_cli
-    from robot import __version__ as rf_version
-    from pabot import pabot
-    import pytest
-    from rellu import ReleaseNotesGenerator, Version
-    from robot.libdoc import libdoc
-    import robotstatuschecker
     import bs4
+    import pytest
+    import robotstatuschecker
+    from pabot import pabot
+    from rellu import ReleaseNotesGenerator, Version
+    from robot import __version__ as rf_version
+    from robot import rebot_cli
+    from robot.libdoc import libdoc
+
     from Browser.utils import spawn_node_process
 except ModuleNotFoundError:
     traceback.print_exc()
@@ -41,12 +42,13 @@ python_protobuf_dir = PYTHON_SRC_DIR / "generated"
 wrapper_dir = PYTHON_SRC_DIR / "wrapper"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
-# testapp_dir = ROOT_DIR / "node" / "dynamic-test-app"
 npm_deps_timestamp_file = ROOT_DIR / "node_modules" / ".installed"
 python_deps_timestamp_file = ROOT_DIR / "Browser" / ".installed"
 node_lint_timestamp_file = node_dir / ".linted"
 python_lint_timestamp_file = PYTHON_SRC_DIR / ".linted"
-ATEST_TIMEOUT = 600
+ATEST_TIMEOUT = 900
+cpu_count = os.cpu_count() or 1
+EXECUTOR_COUNT = str(cpu_count - 1 or 1)
 
 ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
@@ -389,6 +391,10 @@ def atest_robot(c):
         "not-implemented",
         "--loglevel",
         "DEBUG",
+        "--report",
+        "NONE",
+        "--log",
+        "NONE",
         "--xunit",
         "robot_xunit.xml",
         "--outputdir",
@@ -476,6 +482,8 @@ def _run_pabot(extra_args=None, include_mac=False):
         "--pabotlib",
         "--pabotlibport",
         "0",
+        "--processes",
+        EXECUTOR_COUNT,
         "--artifacts",
         "png,webm,zip",
         "--artifactsinsubfolders",

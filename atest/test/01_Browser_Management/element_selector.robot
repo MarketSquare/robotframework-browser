@@ -24,8 +24,9 @@ Get Element With Strict
 
 Get Element With Nonmatching child selector
     ${ref} =    Get Element    select[name="preferred_channel"]
-    Run Keyword And Expect Error    *TimeoutError: locator.elementHandle: Timeout 3000ms exceeded.*
-    ...    Get Property    ${ref}>> .notamatch    value
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.elementHandle: Timeout ${PLAYWRIGHT_TIMEOUT_ERROR} exceeded.*    Get Property
+    ...    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
     Run Keyword And Expect Error
