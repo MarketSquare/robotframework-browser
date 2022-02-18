@@ -630,6 +630,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "laurihelkkula",
+      "name": "Lauri Helkkula",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26920007?v=4",
+      "profile": "https://github.com/laurihelkkula",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
