@@ -38,7 +38,7 @@ export async function selectOption(
     const attributeName = Object.keys(matcher[0])[0];
     const selectedOptions = [];
     for (const selectedOption of result) {
-        const locatorOptions = locator.locator(`option[value="${selectedOption}"]`);
+        const locatorOptions = locator.locator(`//option[@value="${selectedOption}" or text()="${selectedOption}"]`);
         const element = await locatorOptions.elementHandle();
         exists(element, `The ${selectedOption} option element did not exist.`);
         selectedOptions.push(String(await element.getProperty(attributeName)));

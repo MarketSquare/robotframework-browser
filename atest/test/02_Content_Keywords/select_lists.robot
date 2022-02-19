@@ -21,7 +21,7 @@ Get Select Options
 
 Get Select Options Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 3 elements*
+    ...    *strict mode violation*//select*resolved to 4 elements*
     ...    Get Select Options    //select
     Set Strict Mode    False
     ${options} =    Get Select Options    //select
@@ -97,6 +97,9 @@ Select Options By With Nonmatching Selector
     ...    notamatch    label    False    Label
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
+Select Options By Text When Select Does Not Have Value Attribute
+    Select Options By    id=noValue    text    Option 2
+
 Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
 
@@ -106,7 +109,7 @@ Deselect Options Explicitly
 
 Deselect Options With Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 3 elements*
+    ...    *strict mode violation*//select*resolved to 4 elements*
     ...    Deselect Options    //select
     Set Strict Mode    False
     Deselect Options    //select
