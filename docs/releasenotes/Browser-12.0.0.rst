@@ -23,7 +23,7 @@ to install exactly this version. Alternatively you can download the source
 distribution from PyPI_ and install it manually.
 Browser library 12.0.0 was released on Tuesday February 22, 2022. Browser supports
 Python 3.7+, Node 12/14/16 LTS and Robot Framework 4.0+. Library was
-tested with Playwright 1.18.1
+tested with Playwright 1.19.1
 
 .. _Robot Framework: http://robotframework.org
 .. _Browser: https://github.com/MarketSquare/robotframework-browser
