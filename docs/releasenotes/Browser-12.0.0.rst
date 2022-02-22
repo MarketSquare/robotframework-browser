@@ -82,14 +82,10 @@ Full list of fixes and enhancements
       - enhancement
       - high
       - Raise minimum required RF version to 4.1.3
-    * - `#1621`_
-      - ---
-      - ---
-      - Add custom_output_dir input param
+
 
 Altogether 4 issues. View on the `issue tracker <https://github.com/MarketSquare/robotframework-browser/issues?q=milestone%3Av12.0.0>`__.
 
 .. _#1133: https://github.com/MarketSquare/robotframework-browser/issues/1133
 .. _#1622: https://github.com/MarketSquare/robotframework-browser/issues/1622
 .. _#1769: https://github.com/MarketSquare/robotframework-browser/issues/1769
-.. _#1621: https://github.com/MarketSquare/robotframework-browser/issues/1621
