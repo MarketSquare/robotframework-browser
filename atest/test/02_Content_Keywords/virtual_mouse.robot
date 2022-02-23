@@ -5,8 +5,8 @@ Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${Center_Func} =    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
-${Dim_Func} =    {'width': value["width"], 'height': value["height"]}
-${tol} =    1
+${Dim_Func} =       {'width': value["width"], 'height': value["height"]}
+${tol} =            1
 
 *** Test Cases ***
 Click With coordinates
@@ -82,13 +82,13 @@ Drag and Drop with coordinates
     ${y5} =    Set Variable    ${height}
     ${steps} =    Set Variable    200
     Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    False
-    Assert Position                                   ${x2}    ${y2}    ${tol}
+    Assert Position    ${x2}    ${y2}    ${tol}
     Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    False
     Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    False
-    Assert Position                                   ${x4}    ${y4}    ${tol}
+    Assert Position    ${x4}    ${y4}    ${tol}
     Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    False
     Drag And Drop By Coordinates    ${x3}    ${y3}    ${x1}    ${y1}    ${steps}    True
-    Assert Position                                   ${x1}    ${y1}    ${tol}
+    Assert Position    ${x1}    ${y1}    ${tol}
     
 Hover and Drop to Hover
     Hover    id=draggable    10    10
