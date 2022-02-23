@@ -21,7 +21,7 @@ Get Select Options
 
 Get Select Options Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 4 elements*
+    ...    *strict mode violation*//select*resolved to 5 elements*
     ...    Get Select Options    //select
     Set Strict Mode    False
     ${options} =    Get Select Options    //select
@@ -100,6 +100,9 @@ Select Options By With Nonmatching Selector
 Select Options By Text When Select Does Not Have Value Attribute
     Select Options By    id=noValue    text    Option 2
 
+Select Options By Text When Select Value And Text Are Different
+    Select Options By    id=ValueAndTextDifferent    text    0
+
 Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
 
@@ -109,7 +112,7 @@ Deselect Options Explicitly
 
 Deselect Options With Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 4 elements*
+    ...    *strict mode violation*//select*resolved to 5 elements*
     ...    Deselect Options    //select
     Set Strict Mode    False
     Deselect Options    //select
