@@ -100,6 +100,9 @@ Select Options By With Nonmatching Selector
 Select Options By Text When Select Does Not Have Value Attribute
     Select Options By    id=noValue    text    Option 2
 
+Select Options By Text When Select Value And Text Are Different
+    Select Options By    id=ValueAndTextDifferent    text    0
+
 Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
 

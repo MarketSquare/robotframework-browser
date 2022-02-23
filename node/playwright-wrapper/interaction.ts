@@ -38,10 +38,15 @@ export async function selectOption(
     const attributeName = Object.keys(matcher[0])[0];
     const selectedOptions = [];
     for (const selectedOption of result) {
-        const locatorOptions = locator.locator(
-            `xpath=./option[@value="${selectedOption}" or text()="${selectedOption}"]`,
-        );
-        const element = await locatorOptions.elementHandle();
+        let element = undefined;
+        const locatorOptionsValue = locator.locator(`option[value="${selectedOption}"]`);
+        try {
+            element = await locatorOptionsValue.elementHandle();
+        } catch {
+            logger.info(`Could not find option element with ${selectedOption} value, try with text.`);
+            const locatorOptionsText = locator.locator(`xpath=./option[text()="${selectedOption}"]`);
+            element = await locatorOptionsText.elementHandle();
+        }
         exists(element, `The ${selectedOption} option element did not exist.`);
         selectedOptions.push(String(await element.getProperty(attributeName)));
     }
