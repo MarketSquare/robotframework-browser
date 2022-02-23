@@ -21,7 +21,7 @@ Get Select Options
 
 Get Select Options Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 4 elements*
+    ...    *strict mode violation*//select*resolved to 5 elements*
     ...    Get Select Options    //select
     Set Strict Mode    False
     ${options} =    Get Select Options    //select
@@ -109,7 +109,7 @@ Deselect Options Explicitly
 
 Deselect Options With Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 4 elements*
+    ...    *strict mode violation*//select*resolved to 5 elements*
     ...    Deselect Options    //select
     Set Strict Mode    False
     Deselect Options    //select
