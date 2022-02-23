@@ -60,6 +60,17 @@ Verify Browser Type
     [Arguments]    ${expectedType}
     Get Browser Catalog    validate    value[0]['type'] == $expectedType
 
+Assert Position
+    [Documentation]    Compare the real cursor position to the expected location with given tolerance
+    [Arguments]    ${expect_x}    ${expect_y}    ${tol}
+    ${Center_Func} =    Set Variable    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
+    ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
+    ${x_diff} =    Evaluate    ${obj_center}[x] - ${expect_x}
+    ${y_diff} =    Evaluate    ${obj_center}[y] - ${expect_y}
+    Log    X-Diff: ${x_diff}, Y-Diff: ${y_diff}, tolerance: ${tol}
+    Should Be True    -${tol} < ${x_diff} and ${x_diff} < ${tol}
+    Should Be True    -${tol} < ${y_diff} and ${y_diff} < ${tol}
+
 Suite Cleanup
     IF    "${SUITE STATUS}" == "PASS" and "${SYS_VAR_CLEAN}" == "${True}"
         Delete Files On Teardown
