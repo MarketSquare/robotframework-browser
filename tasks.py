@@ -267,7 +267,7 @@ def clean_atest(c):
 
 @task(clean_atest, create_test_app)
 def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None):
-    """Runs Robot Framework acceptance tests.
+    """Runs Robot Framework acceptance tests with pabot.
 
     Args:
         suite: Select which suite to run.
@@ -380,8 +380,12 @@ def copy_xunit(c):
 
 
 @task(clean_atest)
-def atest_robot(c):
-    """Run atest"""
+def atest_robot(c, zip=None):
+    """Run atest with Robot Framework
+
+    Arguments:
+        zip: Create zip file from output files.
+    """
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     command_args = [
         sys.executable,
@@ -409,6 +413,9 @@ def atest_robot(c):
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml, verbose=False)
     rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
+    if zip:
+        _clean_zip_dir()
+        print(f"Zip file created to: {_create_zip(rc)}")
     _clean_pabot_results(rc)
     print(f"DONE rc=({rc})")
     sys.exit(rc)
