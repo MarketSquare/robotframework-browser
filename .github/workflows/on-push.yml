@@ -90,8 +90,12 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         xvfb-run --auto-servernum inv atest  -z true
-    - name: Run Robot Framework tests on Windows or macOS
-      if: matrix.os != 'ubuntu-latest'
+    - name: Run Robot Framework tests on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        inv atest-robot -z true
+    - name: Run Robot Framework tests on macOS
+      if: matrix.os == 'macos-latest'
       run: |
         inv atest -z true
     - name: Create Distributable Package
