@@ -393,6 +393,8 @@ def atest_robot(c, zip=None):
         "robot",
         "--exclude",
         "not-implemented",
+        "--console",
+        "dotted",
         "--loglevel",
         "DEBUG",
         "--report",
