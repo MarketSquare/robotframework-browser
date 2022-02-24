@@ -76,3 +76,8 @@ def test_promise_handling(browser, application_server):
     browser.promise_to_upload_file(file.resolve())
     browser.click("#file_chooser")
     assert browser.get_text("#upload_result") == "test_python_usage.py"
+
+
+def test_wait_for_promise_to(browser):
+    browser.new_page(url='http://www.google.com')
+    promise = browser.promise_to('Wait For Response')
