@@ -68,7 +68,8 @@ Assert Position
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
     ${x_diff} =    Evaluate    ${obj_center}[x] - ${expect_x}
     ${y_diff} =    Evaluate    ${obj_center}[y] - ${expect_y}
-    Log    X-Diff: ${x_diff}, Y-Diff: ${y_diff}, tolerance: ${tol}
+    Log Many    \nObject x,y: \t${obj_center}[x],\t${obj_center}[y]\nExpected xy \t${expect_x},\t${expect_y}
+    ...  \nX-Diff: ${x_diff}, Y-Diff: ${y_diff}, tolerance: ${tol}"
     Should Be True    -${tol} < ${x_diff} and ${x_diff} < ${tol}
     Should Be True    -${tol} < ${y_diff} and ${y_diff} < ${tol}
 

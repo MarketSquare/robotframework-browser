@@ -64,6 +64,7 @@ Drag and Drop with coordinates
     Drag And Drop By Coordinates
     ...    from_x=${dest_center}[x]    from_y=${dest_center}[y]
     ...    to_x=${obj_center}[x]    to_y=${obj_center}[y]    steps=200
+    Assert Position    ${obj_center}[x]    ${obj_center}[y]    ${tol}
     # Tests with explicit values True or False for argument drop
     # "Start coordinates" of draggable object:
     ${x1} =    Set Variable    ${obj_center}[x]
@@ -83,12 +84,13 @@ Drag and Drop with coordinates
     ${steps} =    Set Variable    200
     Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    False
     Assert Position    ${x2}    ${y2}    ${tol}
-    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    False
-    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    True
+    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    True
+    Assert Position    ${x3}    ${y3}    ${tol}
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    False
     Assert Position    ${x4}    ${y4}    ${tol}
     Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    False
-    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x1}    ${y1}    ${steps}    True
-    Assert Position    ${x1}    ${y1}    ${tol}
+    Assert Position    ${x5}    ${y5}    ${tol}
+    Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}    True
 
 Hover and Drop to Hover
     Hover    id=draggable    10    10
