@@ -28,6 +28,7 @@ from ..utils import DownloadedFile, logger
 
 class Promises(LibraryComponent):
     def __init__(self, library):
+        self.library = library
         LibraryComponent.__init__(self, library)
         self._executor = ThreadPoolExecutor(max_workers=256)
 
@@ -47,6 +48,18 @@ class Promises(LibraryComponent):
         | `Click`           \\#delayed_request
         | ${body}=        `Wait For`              ${promise}
         """
+        dict = {'Wait For Response': self.library.wait_for_response}
+        if EXECUTION_CONTEXTS.current:
+            promise = self._robot_promise_to(kw, args)
+        elif kw.strip() in dict:
+            promise = self._executor.submit(dict[kw.strip()], *args)
+
+        self.unresolved_promises.add(promise)
+        while not (promise.running() or promise.done()):
+            sleep(0.01)
+        return promise
+
+    def _robot_promise_to(self, kw: str, *args) -> Future:
         browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
             self.library
         )
@@ -56,11 +69,7 @@ class Promises(LibraryComponent):
         )
         named = dict(named)
 
-        promise = self._executor.submit(handler.current_handler(), *positional, **named)
-        self.unresolved_promises.add(promise)
-        while not (promise.running() or promise.done()):
-            sleep(0.01)
-        return promise
+        return self._executor.submit(handler.current_handler(), *positional, **named)
 
     @keyword(tags=("Wait", "BrowserControl"))
     def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
