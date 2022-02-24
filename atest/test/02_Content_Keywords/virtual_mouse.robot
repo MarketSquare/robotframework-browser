@@ -74,7 +74,7 @@ Drag and Drop with coordinates
     # coordinates where to drag in relative values:
     ${x2} =    Evaluate    ${x1} + 0.1 * ${width}
     ${y2} =    Evaluate    ${y1} - 1.0 * ${height}
-    ${x3} =    Evaluate    ${x2} + 0.15 * ${width}
+    ${x3} =    Evaluate    ${x2} + 0.06 * ${width}
     ${y3} =    Evaluate    ${y2} + 1.2 * ${height}
     ${x4} =    Evaluate    ${x3} + 0.08 * ${width}
     ${y4} =    Set Variable    ${y3}
@@ -84,7 +84,7 @@ Drag and Drop with coordinates
     Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    False
     Assert Position    ${x2}    ${y2}    ${tol}
     Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    False
-    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    False
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    True
     Assert Position    ${x4}    ${y4}    ${tol}
     Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    False
     Drag And Drop By Coordinates    ${x3}    ${y3}    ${x1}    ${y1}    ${steps}    True
