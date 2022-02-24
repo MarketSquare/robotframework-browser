@@ -89,7 +89,7 @@ Drag and Drop with coordinates
     Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    False
     Drag And Drop By Coordinates    ${x3}    ${y3}    ${x1}    ${y1}    ${steps}    True
     Assert Position    ${x1}    ${y1}    ${tol}
-    
+
 Hover and Drop to Hover
     Hover    id=draggable    10    10
     Mouse Button    down

@@ -63,7 +63,8 @@ Verify Browser Type
 Assert Position
     [Documentation]    Compare the real cursor position to the expected location with given tolerance
     [Arguments]    ${expect_x}    ${expect_y}    ${tol}
-    ${Center_Func} =    Set Variable    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
+    ${Center_Func} =    Set Variable
+    ...    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
     ${x_diff} =    Evaluate    ${obj_center}[x] - ${expect_x}
     ${y_diff} =    Evaluate    ${obj_center}[y] - ${expect_y}

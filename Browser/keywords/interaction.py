@@ -862,7 +862,13 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def drag_and_drop_by_coordinates(
-        self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1, drop: bool = True
+        self,
+        from_x: float,
+        from_y: float,
+        to_x: float,
+        to_y: float,
+        steps: int = 1,
+        drop: bool = True,
     ):
         """Executes a Drag&Drop operation from a coordinate to another coordinate.
 
