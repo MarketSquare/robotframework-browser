@@ -69,7 +69,7 @@ Assert Position
     ${x_diff} =    Evaluate    ${obj_center}[x] - ${expect_x}
     ${y_diff} =    Evaluate    ${obj_center}[y] - ${expect_y}
     Log Many    \nObject x,y: \t${obj_center}[x],\t${obj_center}[y]\nExpected xy \t${expect_x},\t${expect_y}
-    ...  \nX-Diff: ${x_diff}, Y-Diff: ${y_diff}, tolerance: ${tol}"
+    ...    \nX-Diff: ${x_diff}, Y-Diff: ${y_diff}, tolerance: ${tol}
     Should Be True    -${tol} < ${x_diff} and ${x_diff} < ${tol}
     Should Be True    -${tol} < ${y_diff} and ${y_diff} < ${tol}
 
