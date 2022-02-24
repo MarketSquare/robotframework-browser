@@ -74,8 +74,8 @@ Drag and Drop with coordinates
     # coordinates where to drag in relative values:
     ${x2} =    Evaluate    ${x1} + 0.1 * ${width}
     ${y2} =    Evaluate    ${y1} - 1.0 * ${height}
-    ${x3} =    Evaluate    ${x2} + 0.25 * ${width}
-    ${y3} =    Evaluate    ${y2} + 2.0 * ${height}
+    ${x3} =    Evaluate    ${x2} + 0.15 * ${width}
+    ${y3} =    Evaluate    ${y2} + 1.2 * ${height}
     ${x4} =    Evaluate    ${x3} + 0.08 * ${width}
     ${y4} =    Set Variable    ${y3}
     ${x5} =    Set Variable    ${x4}
