@@ -75,12 +75,12 @@ Wait For Navigation Fails With Wrong Regex
 Wait For Navigation Fails With Wrong wait_until
     Go To    ${ROOT_URL}/redirector.html
     Run Keyword And Expect Error
-    ...    *PageLoadStates does not have member 'foobar'. Available: 'domcontentloaded', 'load' and 'networkidle'*
+    ...    *PageLoadStates does not have member 'foobar'. Available: 'commit', 'domcontentloaded', 'load' and 'networkidle'*
     ...    Wait for navigation    ${ROOT_URL}/posted.html    wait_until=foobar
 
 Wait For Navigation Works With wait_until
     ${old timeout} =    Set Browser Timeout    4s
-    FOR    ${wait_until}    IN    domcontentloaded    networkidle    load
+    FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit
         Go To    ${ROOT_URL}/redirector.html
         Wait for navigation    ${ROOT_URL}/posted.html    wait_until=${wait_until}
         Get Url    contains    posted
