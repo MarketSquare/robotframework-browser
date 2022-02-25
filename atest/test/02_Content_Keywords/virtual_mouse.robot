@@ -82,7 +82,63 @@ Drag and Drop with coordinates
     ${x5} =    Set Variable    ${x4}
     ${y5} =    Set Variable    ${height}
     ${steps} =    Set Variable    200
+
+    Log    0a) Easiest Moves with no assert breaks and no drop argument
+    Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}
+    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}
+    Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}
+    Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}
+    # Assert Position    ${x1}    ${y1}    ${tol}
+    Log    0b) Repeat: Easiest Moves with no assert breaks and no drop argument
+    Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}
+    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}
+    Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}
+    Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}
+
+    Log    1a) Easiest Moves "True" with no assert breaks
+    Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    True
+    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    True
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    True
+    Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    True
+    Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}    True
+    # Assert Position    ${x1}    ${y1}    ${tol}
+    Log    1b) Repeat: Easiest Moves "True" with no assert breaks
+    Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    True
+    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    True
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    True
+    Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    True
+    Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}    True
+
+    Log    1c) Easiest Moves "True" with no assert breaks
     Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    False
+    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    False
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    False
+    Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    False
+    Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}    True
+
+    Log    2) Easiest Moves "True" with assert breaks
+    Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    True
+    Assert Position    ${x2}    ${y2}    ${tol}
+    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    True
+    Assert Position    ${x3}    ${y3}    ${tol}
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    True
+    Assert Position    ${x4}    ${y4}    ${tol}
+    Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    True
+    Assert Position    ${x5}    ${y5}    ${tol}
+    Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}    True
+    Assert Position    ${x1}    ${y1}    ${tol}
+
+    Log    3a) Mix of "True" and "False"
+    Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    True
+    Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    True
+    Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}    False
+    Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    False
+    Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}    True
+
+    Log    3b) Mix of "True" and "False" with asserts
+    Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}    True
     Assert Position    ${x2}    ${y2}    ${tol}
     Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}    True
     Assert Position    ${x3}    ${y3}    ${tol}
@@ -91,6 +147,7 @@ Drag and Drop with coordinates
     Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}    False
     Assert Position    ${x5}    ${y5}    ${tol}
     Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}    True
+    Assert Position    ${x1}    ${y1}    ${tol}
 
 Hover and Drop to Hover
     Hover    id=draggable    10    10
