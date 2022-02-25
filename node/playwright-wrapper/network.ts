@@ -47,7 +47,7 @@ export async function httpRequest(request: pb.Request.HttpRequest, page: Page): 
             });
         });
     }, opts);
-    return jsonResponse(JSON.stringify(response), 'Request performed succesfully.');
+    return jsonResponse(JSON.stringify(response), 'Request performed successfully.');
 }
 
 export function deserializeUrlOrPredicate(request: pb.Request.HttpCapture): RegExp | any {

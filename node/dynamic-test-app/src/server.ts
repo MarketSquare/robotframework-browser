@@ -102,4 +102,4 @@ app.use(express.static(path.join(__dirname, '..', 'static')));
 });
 */
 
-app.listen(port, () => console.log(`Succesfully started server on http://localhost:${port}`));
+app.listen(port, () => console.log(`Successfully started server on http://localhost:${port}`));
