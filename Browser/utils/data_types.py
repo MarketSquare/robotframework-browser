@@ -520,6 +520,7 @@ class PageLoadStates(Enum):
     load = auto()
     domcontentloaded = auto()
     networkidle = auto()
+    commit = auto()
 
 
 class ReduceMotion(Enum):
