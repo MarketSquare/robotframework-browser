@@ -868,7 +868,7 @@ class Interaction(LibraryComponent):
         to_x: float,
         to_y: float,
         steps: int = 1,
-        # drop: bool = True,
+        drop: bool = True,
     ):
         """Executes a Drag&Drop operation from a coordinate to another coordinate.
 
@@ -896,8 +896,8 @@ class Interaction(LibraryComponent):
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
-        # if drop:
-        self.mouse_button(MouseButtonAction.up)
+        if drop:
+            self.mouse_button(MouseButtonAction.up)
 
     @staticmethod
     def _center_of_boundingbox(boundingbox: BoundingBox) -> Coordinates:
