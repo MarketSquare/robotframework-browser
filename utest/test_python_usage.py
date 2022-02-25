@@ -80,4 +80,8 @@ def test_promise_handling(browser, application_server):
 
 def test_wait_for_promise_to(browser):
     browser.new_page(url='http://www.google.com')
+    promise = browser.promise_to('Wait For')
+    promise = browser.promise_to('wait for alert  ')
+    promise = browser.promise_to('Wait For Navigation')
+    promise = browser.promise_to('Wait For Request')
     promise = browser.promise_to('Wait For Response')

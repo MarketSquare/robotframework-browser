@@ -48,11 +48,18 @@ class Promises(LibraryComponent):
         | `Click`           \\#delayed_request
         | ${body}=        `Wait For`              ${promise}
         """
-        dict = {'Wait For Response': self.library.wait_for_response}
+        library_method = {
+            'wait for':  self.library.wait_for,
+            'wait for alert':  self.library.wait_for_alert,
+            'wait for function':  self.library.wait_for,
+            'wait for navigation':  self.library.wait_for_navigation,
+            'wait for request':  self.library.wait_for_request,
+            'wait for response': self.library.wait_for_response
+        }
         if EXECUTION_CONTEXTS.current:
             promise = self._robot_promise_to(kw, args)
-        elif kw.strip() in dict:
-            promise = self._executor.submit(dict[kw.strip()], *args)
+        elif kw.strip().lower() in library_method:
+            promise = self._executor.submit(library_method[kw.strip().lower()], *args)
 
         self.unresolved_promises.add(promise)
         while not (promise.running() or promise.done()):
