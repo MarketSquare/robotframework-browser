@@ -51,7 +51,7 @@ class Promises(LibraryComponent):
         library_method = {
             'wait for':  self.library.wait_for,
             'wait for alert':  self.library.wait_for_alert,
-            'wait for function':  self.library.wait_for,
+            'wait for function':  self.library.wait_for_function,
             'wait for navigation':  self.library.wait_for_navigation,
             'wait for request':  self.library.wait_for_request,
             'wait for response': self.library.wait_for_response
