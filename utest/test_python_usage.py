@@ -79,9 +79,15 @@ def test_promise_handling(browser, application_server):
 
 
 def test_wait_for_promise_to(browser):
+    arguments = [
+        'Wait For',
+        'wait for alert  ',
+        'wait for function',
+        'Wait For Navigation',
+        'Wait For Request',
+        'Wait For Response']
+
     browser.new_page(url='http://www.google.com')
-    promise = browser.promise_to('Wait For')
-    promise = browser.promise_to('wait for alert  ')
-    promise = browser.promise_to('Wait For Navigation')
-    promise = browser.promise_to('Wait For Request')
-    promise = browser.promise_to('Wait For Response')
+    for argument in arguments:
+        promise = browser.promise_to(argument)
+        assert promise is not None
