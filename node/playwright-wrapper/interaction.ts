@@ -171,14 +171,14 @@ export async function uploadFileBySelector(
     const path = request.getPath();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.setInputFiles(path);
-    return emptyWithLog('Succesfully uploaded file');
+    return emptyWithLog('Successfully uploaded file');
 }
 
 export async function uploadFile(request: Request.FilePath, page: Page): Promise<Response.Empty> {
     const path = request.getPath();
     const fileChooser = await page.waitForEvent('filechooser');
     await fileChooser.setFiles(path);
-    return emptyWithLog('Succesfully uploaded file');
+    return emptyWithLog('Successfully uploaded file');
 }
 
 export async function handleAlert(request: Request.AlertAction, page: Page): Promise<Response.Empty> {
@@ -206,26 +206,26 @@ export async function waitForAlert(request: Request.AlertAction, page: Page): Pr
     } else {
         dialogObject.dismiss();
     }
-    return stringResponse(message, 'Next alert was handeled succesfully.');
+    return stringResponse(message, 'Next alert was handeled successfully.');
 }
 
 export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'click' | 'up' | 'down';
     const params = JSON.parse(request.getJson());
     await invokeOnMouse(page, action, params);
-    return emptyWithLog(`Succesfully executed ${action}`);
+    return emptyWithLog(`Successfully executed ${action}`);
 }
 
 export async function mouseMove(request: Request.Json, page?: Page): Promise<Response.Empty> {
     const params = JSON.parse(request.getBody());
     await invokeOnMouse(page, 'move', params);
-    return emptyWithLog(`Succesfully moved mouse to ${params.x}, ${params.y}`);
+    return emptyWithLog(`Successfully moved mouse to ${params.x}, ${params.y}`);
 }
 export async function keyboardKey(request: Request.KeyboardKeypress, page: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'down' | 'up' | 'press';
     const key = request.getKey();
     await invokeOnKeyboard(page, action, key);
-    return emptyWithLog(`Succesfully did ${action} for ${key}`);
+    return emptyWithLog(`Successfully did ${action} for ${key}`);
 }
 
 export async function keyboardInput(request: Request.KeyboardInputOptions, page: Page): Promise<Response.Empty> {
@@ -234,5 +234,5 @@ export async function keyboardInput(request: Request.KeyboardInputOptions, page:
     const input = request.getInput();
 
     await invokeOnKeyboard(page, action, input, { delay: delay });
-    return emptyWithLog(`Succesfully did virtual keyboard action ${action} with input ${input}`);
+    return emptyWithLog(`Successfully did virtual keyboard action ${action} with input ${input}`);
 }
