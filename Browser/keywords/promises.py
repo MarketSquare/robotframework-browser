@@ -49,12 +49,12 @@ class Promises(LibraryComponent):
         | ${body}=        `Wait For`              ${promise}
         """
         library_method = {
-            'wait for':  self.library.wait_for,
-            'wait for alert':  self.library.wait_for_alert,
-            'wait for function':  self.library.wait_for_function,
-            'wait for navigation':  self.library.wait_for_navigation,
-            'wait for request':  self.library.wait_for_request,
-            'wait for response': self.library.wait_for_response
+            "wait for": self.library.wait_for,
+            "wait for alert": self.library.wait_for_alert,
+            "wait for function": self.library.wait_for_function,
+            "wait for navigation": self.library.wait_for_navigation,
+            "wait for request": self.library.wait_for_request,
+            "wait for response": self.library.wait_for_response,
         }
         if EXECUTION_CONTEXTS.current:
             promise = self._robot_promise_to(kw, args)
