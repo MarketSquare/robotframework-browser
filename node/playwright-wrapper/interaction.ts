@@ -18,6 +18,7 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
 import { exists, findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
+import { getSelections } from "./getters";
 
 import pino from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -25,7 +26,7 @@ const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 export async function selectOption(
     request: Request.SelectElementSelector,
     state: PlaywrightState,
-): Promise<Response.Json> {
+): Promise<Response.Select> {
     const selector = request.getSelector();
     const matcher = JSON.parse(request.getMatcherjson());
     const strictMode = request.getStrict();
@@ -35,25 +36,7 @@ export async function selectOption(
         logger.info("Couldn't select any options");
         throw new Error(`No options matched ${matcher}`);
     }
-    const attributeName = Object.keys(matcher[0])[0];
-    const selectedOptions = [];
-    for (const selectedOption of result) {
-        let element = undefined;
-        const locatorOptionsValue = locator.locator(`option[value="${selectedOption}"]`);
-        try {
-            element = await locatorOptionsValue.elementHandle();
-        } catch {
-            logger.info(`Could not find option element with ${selectedOption} value, try with text.`);
-            const locatorOptionsText = locator.locator(`xpath=./option[text()="${selectedOption}"]`);
-            element = await locatorOptionsText.elementHandle();
-        }
-        exists(element, `The ${selectedOption} option element did not exist.`);
-        selectedOptions.push(String(await element.getProperty(attributeName)));
-    }
-    return jsonResponse(
-        JSON.stringify(selectedOptions),
-        `Selected options [${selectedOptions}] in element ${selector}`,
-    );
+    return await getSelections(locator);
 }
 
 export async function deSelectOption(

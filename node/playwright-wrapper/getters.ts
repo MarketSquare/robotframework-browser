@@ -41,21 +41,14 @@ export async function getElementCount(request: Request.ElementSelector, state: P
     return intResponse(count, `Found ${count} element(s).`);
 }
 
-export async function getSelectContent(
-    request: Request.ElementSelector,
-    state: PlaywrightState,
-): Promise<Response.Select> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
-    await locator.elementHandle();
+export async function getSelections(locator: Locator) {
     const locatorOptions = locator.locator('option');
     const locatorOptionsCount = await locatorOptions.count();
     const response = new Response.Select();
 
     for (let i = 0; i < locatorOptionsCount; i++) {
         const element = await locatorOptions.nth(i).elementHandle();
-        exists(element, `The ${i} option element did not exist.`);
+        exists(element, `The ${i}. option element does not longer exist.`);
         const label = await element.getProperty('label');
         const value = await element.getProperty('value');
         const selected = await element.getProperty('selected');
@@ -66,6 +59,17 @@ export async function getSelectContent(
         response.addEntry(entry);
     }
     return response;
+}
+
+export async function getSelectContent(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Select> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
+    return await getSelections(locator);
 }
 
 export async function getDomProperty(
