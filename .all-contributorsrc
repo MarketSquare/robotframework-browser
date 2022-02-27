@@ -240,7 +240,8 @@
       "profile": "http://www.elabit.de",
       "contributions": [
         "userTesting",
-        "bug"
+        "bug",
+        "test"
       ]
     },
     {
