@@ -84,44 +84,6 @@ Drag and Drop with coordinates
     ${steps} =    Set Variable    200
     ${time} =    Set Variable    1
 
-    # Temporary deactivated. The very next call of "Drag And Drop By Coordinates" would make MacOS fail.
-    # The limit for Ubuntu and Windows is higher. E.g. 5 further calls of the keyword would PASS for Windows.
-    #Log    1a Easiest Moves 5x with no assert breaks and no drop argument, then repeat.
-    #Drag And Drop By Coordinates    ${x1}    ${y1}    ${x5}    ${y5}    ${steps}
-    #Sleep    ${time}
-    #Drag And Drop By Coordinates    ${x5}    ${y5}    ${x4}    ${y4}    ${steps}
-    #Sleep    ${time}
-    #Drag And Drop By Coordinates    ${x4}    ${y4}    ${x3}    ${y3}    ${steps}
-    #Sleep    ${time}
-    #Drag And Drop By Coordinates    ${x3}    ${y3}    ${x2}    ${y2}    ${steps}
-    #Sleep    ${time}
-    #Drag And Drop By Coordinates    ${x2}    ${y2}    ${x1}    ${y1}    ${steps}
-    #Sleep    ${time}
-    # Assert Position    ${x1}    ${y1}    ${tol}
-    # Log    1b) Repeat: Easiest Moves with no assert breaks and no drop argument
-    #Drag And Drop By Coordinates    ${x1}    ${y1}    ${x5}    ${y5}    ${steps}
-    #Sleep    ${time}
-    #Drag And Drop By Coordinates    ${x5}    ${y5}    ${x4}    ${y4}    ${steps}
-    #Sleep    ${time}
-    #Drag And Drop By Coordinates    ${x4}    ${y4}    ${x3}    ${y3}    ${steps}
-    #Sleep    ${time}
-    #Drag And Drop By Coordinates    ${x3}    ${y3}    ${x2}    ${y2}    ${steps}
-    #Sleep    ${time}
-    #Drag And Drop By Coordinates    ${x2}    ${y2}    ${x1}    ${y1}    ${steps}
-    #Sleep    ${time}
-
-    #Log    2) Easiest Moves with assert breaks and no drop argument
-    #Drag And Drop By Coordinates    ${x1}    ${y1}    ${x2}    ${y2}    ${steps}
-    #Assert Position    ${x2}    ${y2}    ${tol}
-    #Drag And Drop By Coordinates    ${x2}    ${y2}    ${x3}    ${y3}    ${steps}
-    #Assert Position    ${x3}    ${y3}    ${tol}
-    #Drag And Drop By Coordinates    ${x3}    ${y3}    ${x4}    ${y4}    ${steps}
-    #Assert Position    ${x4}    ${y4}    ${tol}
-    #Drag And Drop By Coordinates    ${x4}    ${y4}    ${x5}    ${y5}    ${steps}
-    #Assert Position    ${x5}    ${y5}    ${tol}
-    #Drag And Drop By Coordinates    ${x5}    ${y5}    ${x1}    ${y1}    ${steps}
-    #Assert Position    ${x1}    ${y1}    ${tol}
-
 Hover and Drop to Hover
     Hover    id=draggable    10    10
     Mouse Button    down
