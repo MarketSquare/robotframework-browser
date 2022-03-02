@@ -241,7 +241,7 @@ export async function getStyle(request: Request.ElementSelector, state: Playwrig
         }
         return JSON.stringify(mapped);
     });
-    return jsonResponse(result, 'Style get succesfully.');
+    return jsonResponse(result, 'Style get successfully.');
 }
 
 export async function getViewportSize(page: Page): Promise<Response.Json> {
@@ -254,11 +254,11 @@ export async function getBoundingBox(request: Request.ElementSelector, state: Pl
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     const boundingBox = await locator.boundingBox();
-    return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box succesfully.');
+    return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box successfully.');
 }
 
 export async function getPageSource(page: Page): Promise<Response.String> {
     const result = await page.content();
     logger.info(result);
-    return stringResponse(JSON.stringify(result), 'Page source obtained succesfully.');
+    return stringResponse(JSON.stringify(result), 'Page source obtained successfully.');
 }

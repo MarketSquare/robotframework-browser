@@ -502,7 +502,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             if (request === null) throw Error('No request');
             const oldPeer = this.peerMap[call.getPeer()];
             this.peerMap[call.getPeer()] = request.getIndex();
-            callback(null, stringResponse(oldPeer, 'Succesfully overrode peer id'));
+            callback(null, stringResponse(oldPeer, 'Successfully overrode peer id'));
         } catch (e) {
             callback(errorResponse(e), null);
         }

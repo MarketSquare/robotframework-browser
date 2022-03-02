@@ -13,7 +13,7 @@ Switch Browser
     ${first_url} =    Get Url
     ${second_browser} =    New Browser    firefox    timeout=1 minute
     New Context
-    ${timeout} =    Set Browser Timeout    10s
+    ${timeout} =    Set Browser Timeout    30s
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     ${second_url} =    Get Url

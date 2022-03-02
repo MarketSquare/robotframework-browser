@@ -60,6 +60,23 @@ Verify Browser Type
     [Arguments]    ${expectedType}
     Get Browser Catalog    validate    value[0]['type'] == $expectedType
 
+Assert Position
+    [Documentation]    Compare the real cursor position to the expected location with given tolerance
+    [Arguments]    ${expect_x}    ${expect_y}    ${tol}
+    ${Center_Func} =    Set Variable
+    ...    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
+    ${Node_Func} =    Set Variable
+    ...    {'x': (value["x"]), 'y': (value["y"])}
+    ${obj_node} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Node_Func}
+    ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
+    ${x_diff} =    Evaluate    ${obj_center}[x] - ${expect_x}
+    ${y_diff} =    Evaluate    ${obj_center}[y] - ${expect_y}
+    Log Many    Node x,y: \t${obj_node}[x],\t${obj_node}[y]
+    ...    Center x,y: \t${obj_center}[x],\t${obj_center}[y]\nExpected xy \t${expect_x},\t${expect_y}
+    ...    X-Diff: ${x_diff}, Y-Diff: ${y_diff}, tolerance: ${tol}
+    Should Be True    -${tol} < ${x_diff} and ${x_diff} < ${tol}
+    Should Be True    -${tol} < ${y_diff} and ${y_diff} < ${tol}
+
 Suite Cleanup
     IF    "${SUITE STATUS}" == "PASS" and "${SYS_VAR_CLEAN}" == "${True}"
         Delete Files On Teardown

@@ -5,6 +5,8 @@ Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${Center_Func} =    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
+${Dim_Func} =       {'width': value["width"], 'height': value["height"]}
+${tol} =            1
 
 *** Test Cases ***
 Click With coordinates
@@ -36,8 +38,7 @@ Drag and Drop
     Drag And Drop    id=draggable    id=clickWithOptions
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
     ${dest_center} =    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
-    Should Be True    ${obj_center}[x] - ${dest_center}[x] < 1 or ${obj_center}[x] - ${dest_center}[x] > -1
-    Should Be True    ${obj_center}[y] - ${dest_center}[y] < 1 or ${obj_center}[y] - ${dest_center}[y] > -1
+    Assert Position    ${dest_center}[x]    ${dest_center}[y]    ${tol}
 
 Drag And Drop With Strict
     Run Keyword And Expect Error
@@ -53,16 +54,35 @@ Drag And Drop With Strict
 
 Drag and Drop with coordinates
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
+    ${obj_dim} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Dim_Func}
     ${dest_center} =    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
+    # Tests with implicit argument drop=True
     Drag And Drop By Coordinates
     ...    from_x=${obj_center}[x]    from_y=${obj_center}[y]
     ...    to_x=${dest_center}[x]    to_y=${dest_center}[y]    steps=200
-    ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
-    ${x_diff} =    Evaluate    ${obj_center}[x] - ${dest_center}[x]
-    ${y_diff} =    Evaluate    ${obj_center}[y] - ${dest_center}[y]
-    Log    X-Diff: ${x_diff}, Y-Diff: ${y_diff}
-    Should Be True    ${x_diff} < 1 or ${x_diff} > -1
-    Should Be True    ${y_diff} < 1 or ${y_diff} > -1
+    Assert Position    ${dest_center}[x]    ${dest_center}[y]    ${tol}
+    Drag And Drop By Coordinates
+    ...    from_x=${dest_center}[x]    from_y=${dest_center}[y]
+    ...    to_x=${obj_center}[x]    to_y=${obj_center}[y]    steps=200
+    Assert Position    ${obj_center}[x]    ${obj_center}[y]    ${tol}
+    # Tests with explicit values True or False for argument drop
+    # "Start coordinates" of draggable object:
+    ${x1} =    Set Variable    ${obj_center}[x]
+    ${y1} =    Set Variable    ${obj_center}[y]
+    ${width} =    Set Variable    ${obj_dim}[width]
+    ${height} =    Set Variable    ${obj_dim}[height]
+    Log    Draggable object: ${obj_center}
+    # coordinates where to drag in relative values:
+    ${x2} =    Evaluate    ${x1} + 0.1 * ${width}
+    ${y2} =    Evaluate    ${y1} - 1.0 * ${height}
+    ${x3} =    Evaluate    ${x2} + 0.06 * ${width}
+    ${y3} =    Evaluate    ${y2} + 1.2 * ${height}
+    ${x4} =    Evaluate    ${x3} + 0.08 * ${width}
+    ${y4} =    Set Variable    ${y3}
+    ${x5} =    Set Variable    ${x4}
+    ${y5} =    Set Variable    ${height}
+    ${steps} =    Set Variable    200
+    ${time} =    Set Variable    1
 
 Hover and Drop to Hover
     Hover    id=draggable    10    10

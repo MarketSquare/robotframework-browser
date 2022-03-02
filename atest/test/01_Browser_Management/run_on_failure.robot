@@ -76,7 +76,7 @@ Register User Keyword
 
 Register Get Page Source
     [Documentation]
-    ...    LOG 3.1:4    DEBUG    Page source obtained succesfully.
+    ...    LOG 3.1:4    DEBUG    Page source obtained successfully.
     ${prev} =    Register Keyword To Run On Failure    Get Page Source
     Type Text    css=input#username_field    username
     Run Keyword And Expect Error
