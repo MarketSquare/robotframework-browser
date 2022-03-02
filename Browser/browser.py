@@ -54,7 +54,7 @@ from .playwright import Playwright
 from .utils import AutoClosingLevel, get_normalized_keyword, is_falsy, keyword, logger
 
 # Importing this directly from .utils break the stub type checks
-from .utils.data_types import DelayedKeyword, SupportedBrowsers
+from .utils.data_types import DelayedKeyword, HighLightElement, SupportedBrowsers
 from .version import __version__ as VERSION
 
 
@@ -656,7 +656,7 @@ class Browser(DynamicCore):
         run_on_failure: str = "Take Screenshot  fail-screenshot-{index}",
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Optional[str] = None,
-        enable_presenter_mode: bool = False,
+        enable_presenter_mode: Union[HighLightElement, bool] = False,
         playwright_process_port: Optional[int] = None,
         strict: bool = True,
     ):

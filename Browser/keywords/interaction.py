@@ -327,10 +327,7 @@ class Interaction(LibraryComponent):
         | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
 
         """
-        if self.library.presenter_mode:
-            self.hover(selector)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        self._presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             options = {
                 "button": button.name,
@@ -671,16 +668,26 @@ class Interaction(LibraryComponent):
     def _fill_text(
         self, selector: str, txt: str, log_response: bool = True, strict: bool = True
     ):
-        if self.library.presenter_mode:
-            self.hover(selector, strict)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        self._presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(
                 Request().FillText(selector=selector, text=txt, strict=strict)
             )
             if log_response:
                 logger.debug(response.log)
+
+    def _presenter_mode(self, selector, strict):
+        if self.library.presenter_mode:
+            mode = self.get_presenter_mode
+            self.hover(selector, strict)
+            self.library.highlight_elements(
+                selector,
+                duration=mode["duration"],
+                width=mode["width"],
+                style=mode["style"],
+                color=mode["color"],
+            )
+            sleep(mode["duration"].seconds)
 
     def _type_text(
         self,
@@ -691,10 +698,7 @@ class Interaction(LibraryComponent):
         log_response: bool = True,
         strict: bool = True,
     ):
-        if self.library.presenter_mode:
-            self.hover(selector, strict)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        self._presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
             response = stub.TypeText(
