@@ -13,12 +13,14 @@
 # limitations under the License.
 import os
 from concurrent.futures._base import Future
-from copy import deepcopy
+from copy import copy, deepcopy
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Set, Union
 
+from robot.utils import timestr_to_secs  # type: ignore
+
 from ..utils import get_variable_value, logger
-from ..utils.data_types import DelayedKeyword
+from ..utils.data_types import DelayedKeyword, HighLightElement
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -149,3 +151,14 @@ class LibraryComponent:
     @property
     def keyword_formatters(self) -> dict:
         return self.library._keyword_formatters
+
+    @property
+    def get_presenter_mode(self) -> HighLightElement:
+        mode: dict = {}
+        if isinstance(self.library.presenter_mode, dict):
+            mode = copy(self.library.presenter_mode)  # type: ignore
+        duration = timedelta(seconds=timestr_to_secs(mode.get("duration", "2 seconds")))
+        width = mode.get("width", "2px")
+        style = mode.get("style", "dotted")
+        color = mode.get("color", "blue")
+        return {"duration": duration, "width": width, "style": style, "color": color}

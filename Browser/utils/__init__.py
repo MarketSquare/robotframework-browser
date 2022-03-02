@@ -23,6 +23,7 @@ from .data_types import (
     ElementState,
     ForcedColors,
     GeoLocation,
+    HighLightElement,
     HttpCredentials,
     NewPageDetails,
     Permission,
