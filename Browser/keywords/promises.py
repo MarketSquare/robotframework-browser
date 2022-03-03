@@ -25,8 +25,6 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadedFile, logger
 
-#from Browser.browser import Browser
-
 
 class Promises(LibraryComponent):
     def __init__(self, library):
@@ -146,7 +144,6 @@ class Promises(LibraryComponent):
         """
         self.unresolved_promises -= {*promises}
         if len(promises) == 1:
-            logger.debug(f'promises[0] {promises[0]}')
             return promises[0].result()
         return [promise.result() for promise in promises]
 
