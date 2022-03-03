@@ -25,10 +25,11 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadedFile, logger
 
+#from Browser.browser import Browser
+
 
 class Promises(LibraryComponent):
     def __init__(self, library):
-        self.library = library
         LibraryComponent.__init__(self, library)
         self._executor = ThreadPoolExecutor(max_workers=256)
 
@@ -48,35 +49,33 @@ class Promises(LibraryComponent):
         | `Click`           \\#delayed_request
         | ${body}=        `Wait For`              ${promise}
         """
-        library_method = {
-            "wait for": self.library.wait_for,
-            "wait for alert": self.library.wait_for_alert,
-            "wait for function": self.library.wait_for_function,
-            "wait for navigation": self.library.wait_for_navigation,
-            "wait for request": self.library.wait_for_request,
-            "wait for response": self.library.wait_for_response,
-        }
-        if EXECUTION_CONTEXTS.current:
-            promise = self._robot_promise_to(kw, args)
-        elif kw.strip().lower() in library_method:
-            promise = self._executor.submit(library_method[kw.strip().lower()], *args)
+        promise = None
+        keyword_name = kw.strip().lower().replace(" ", "_")
 
-        self.unresolved_promises.add(promise)
-        while not (promise.running() or promise.done()):
-            sleep(0.01)
+        if keyword_name in self.library.get_keyword_names():
+            positional, named = self.resolve_arguments(*args)
+            promise = self._executor.submit(self.library.keywords[keyword_name], *positional, **(named or {}))
+            self.unresolved_promises.add(promise)
+            while not (promise.running() or promise.done()):
+                sleep(0.01)
+
         return promise
 
-    def _robot_promise_to(self, kw: str, *args) -> Future:
-        browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
-            self.library
-        )
-        handler = browser_lib.handlers[kw]
-        positional, named = handler.resolve_arguments(
-            args, EXECUTION_CONTEXTS.current.variables
-        )
-        named = dict(named)
+    @staticmethod
+    def resolve_arguments(*args):
+        positional = []
+        named = {}
+        logger.debug(f'*args {args}')
 
-        return self._executor.submit(handler.current_handler(), *positional, **named)
+        for arg in args:
+            parts = arg.split("=")
+            if len(parts) == 2:
+                named[parts[0]] = parts[1]
+            else:
+                positional.append(arg)
+
+        logger.debug(f'resolve arguments {named}, positional: {tuple(positional)}')
+        return tuple(positional), named
 
     @keyword(tags=("Wait", "BrowserControl"))
     def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
@@ -147,6 +146,7 @@ class Promises(LibraryComponent):
         """
         self.unresolved_promises -= {*promises}
         if len(promises) == 1:
+            logger.debug(f'promises[0] {promises[0]}')
             return promises[0].result()
         return [promise.result() for promise in promises]
 

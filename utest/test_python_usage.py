@@ -78,16 +78,13 @@ def test_promise_handling(browser, application_server):
     assert browser.get_text("#upload_result") == "test_python_usage.py"
 
 
-def test_wait_for_promise_to(browser):
-    arguments = [
-        'Wait For',
-        'wait for alert  ',
-        'wait for function',
-        'Wait For Navigation',
-        'Wait For Request',
-        'Wait For Response']
-
+def test_promise_to_wait_for_response_with_name_arguments(browser):
     browser.new_page(url='http://www.google.com')
-    for argument in arguments:
-        promise = browser.promise_to(argument)
-        assert promise is not None
+    promise = browser.promise_to('Wait For Response', "timeout=3", "matcher='\\/\\/local\\w+\\:\\d+\\/api'")
+    assert promise is not None
+
+
+def test_promise_to_not_a_keyword(browser):
+    browser.new_page(url='http://www.google.com')
+    promise = browser.promise_to('Wait For Requestt', "timeout=3", "matcher='\\/\\/local\\w+\\:\\d+\\/api'")
+    assert promise is None
