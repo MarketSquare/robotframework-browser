@@ -190,6 +190,8 @@ class Control(LibraryComponent):
         return response.body
 
     def _is_embed(self, filename: str) -> bool:
+        if self.library.failure_screenshot_embedding:
+            return True
         return True if filename.upper() == "EMBED" else False
 
     @keyword(tags=("Setter", "Config"))
