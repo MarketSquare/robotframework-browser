@@ -51,7 +51,7 @@ class Promises(LibraryComponent):
         keyword_name = kw.strip().lower().replace(" ", "_")
 
         if keyword_name in self.library.get_keyword_names():
-            positional, named = self.resolve_arguments(*args)
+            positional, named = self.resolve_arguments(keyword_name, *args)
             promise = self._executor.submit(self.library.keywords[keyword_name], *positional, **(named or {}))
             self.unresolved_promises.add(promise)
             while not (promise.running() or promise.done()):
@@ -59,20 +59,19 @@ class Promises(LibraryComponent):
 
         return promise
 
-    @staticmethod
-    def resolve_arguments(*args):
+    def resolve_arguments(self, kw: str, *args):
         positional = []
         named = {}
         logger.debug(f'*args {args}')
 
         for arg in args:
             parts = arg.split("=")
-            if len(parts) == 2:
+            if len(parts) == 2 and (parts[0] in self.library.get_keyword_arguments(kw)):
                 named[parts[0]] = parts[1]
             else:
                 positional.append(arg)
 
-        logger.debug(f'resolve arguments {named}, positional: {tuple(positional)}')
+        logger.debug(f'resolve arguments named: {named}, positional: {tuple(positional)}')
         return tuple(positional), named
 
     @keyword(tags=("Wait", "BrowserControl"))
