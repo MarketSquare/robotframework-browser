@@ -689,8 +689,12 @@ class Browser(DynamicCore):
           chromium and Edge executables all work with recent versions) works.
         - ``jsextension`` <str>
           Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
-        - ``enable_presenter_mode`` <bool>
-          Automatic highlights to interacted components, slowMo and a small pause at the end.
+        - ``enable_presenter_mode`` <bool | dict>
+          Automatic highlights to interacted components, slowMo and a small pause at the end. Can be enabled
+          by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px",
+          "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to
+          2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border,
+          defaults to `dotted`. `color` is the color of the marker, defaults to `blue`.
         - ``strict`` <bool>
           If keyword selector points multiple elements and keywords should interact with one element,
           keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords
