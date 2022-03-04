@@ -18,12 +18,13 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
-from robot.utils import get_link_path  # type: ignore
+from robot.utils import get_env_var, get_link_path  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
 from ..utils.data_types import Permission, ScreenshotFileTypes
+from ..utils.robot_booleans import is_truthy
 
 
 class Control(LibraryComponent):
@@ -99,6 +100,11 @@ class Control(LibraryComponent):
 
          The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
+         If environment variable ROBOT_FRAMEWORK_BROWSER_DEFAULT_EMBED_SCREENSHOTS is set to a truthy
+         value, by default screenshots are embedded. If a custom ``filename`` is provided for a Take
+         Screenshot call then the ROBOT_FRAMEWORK_BROWSER_DEFAULT_EMBED_SCREENSHOTS setting is ignored.
+
+
         ``selector`` Take a screenshot of the element matched by selector.
         See the `Finding elements` section for details about the selectors.
         If not provided take a screenshot of current viewport.
@@ -123,6 +129,16 @@ class Control(LibraryComponent):
         | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
         | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
         """
+
+        # If the user does not give custom filename we check the global setting
+        if (
+            filename == "robotframework-browser-screenshot-{index}"
+            or filename == "fail-screenshot-{index}"
+        ) and is_truthy(
+            get_env_var("ROBOT_FRAMEWORK_BROWSER_DEFAULT_EMBED_SCREENSHOTS")
+        ):
+            filename = "EMBED"
+
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
         else:
@@ -190,8 +206,6 @@ class Control(LibraryComponent):
         return response.body
 
     def _is_embed(self, filename: str) -> bool:
-        if self.library.failure_screenshot_embedding:
-            return True
         return True if filename.upper() == "EMBED" else False
 
     @keyword(tags=("Setter", "Config"))

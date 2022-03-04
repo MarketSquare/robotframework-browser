@@ -706,11 +706,6 @@ class Browser(DynamicCore):
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             external_browser_executable or {}
         )
-        self.failure_screenshot_embedding = (
-            embed_failure_screenshots
-            if embed_failure_screenshots is not None
-            else bool(os.environ.get("RFBROWSER_EMBED_FAILURE_SCREENSHOTS", False))
-        )
         self._unresolved_promises: Set[Future] = set()
         self._playwright_state = PlaywrightState(self)
         libraries = [
@@ -948,7 +943,6 @@ class Browser(DynamicCore):
             self._running_on_failure_keyword = False
 
     def _failure_screenshot_path(self):
-
         valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
         test_name = BuiltIn().get_variable_value("${TEST NAME}", "GENERIC")
         return os.path.join(
