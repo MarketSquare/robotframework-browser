@@ -76,13 +76,6 @@ Get Element Should Wait For Attached State
     ${locator} =    Get Element    id=victim
     Should Not Be Empty    ${locator}
 
-Get Element Should Wait For Attached State
-    New Page    ${WAIT_URL}
-    Select Options By    \#dropdown    value    True    attached
-    Click    \#submit    noWaitAfter=True
-    ${locator} =    Get Elements    id=victim
-    Should Not Be Empty    ${locator}
-
 *** Keywords ***
 findLocator Setup
     Set Browser Timeout    3 seconds
