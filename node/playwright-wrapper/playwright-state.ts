@@ -22,6 +22,7 @@ import { exists } from './playwright-invoke';
 
 import { ServerWritableStream } from '@grpc/grpc-js';
 import { pino } from 'pino';
+import arg from '@captemulation/get-parameter-names';
 
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
@@ -54,6 +55,10 @@ export async function initializeExtension(
         Object.keys(extension),
         Object.values(extension).map((v) => {
             if (!v) return '';
+            if (v instanceof Function) {
+                const data = arg(v) as string[];
+                return data.join(', ');
+            }
             const typedV = v as { rfdoc?: string };
             return typedV.rfdoc ?? 'TODO: Add rfdoc string to exposed function to create documentation';
         }),
