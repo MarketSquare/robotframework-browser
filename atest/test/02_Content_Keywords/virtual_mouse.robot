@@ -107,6 +107,12 @@ Drag and Drop with Move Relative
     Relative DnD    -20    0    12    0
     Relative DnD    -22    -20    -10    -20
 
+Drag and Drop Relative To
+    DnD Relative To    32    64    32    64
+    DnD Relative To    0    -64    32    0
+    DnD Relative To    -20    0    12    0
+    DnD Relative To    -22    -20    -10    -20
+
 Click Count
     ${x} =    Get Boundingbox    \#clickWithOptions    x
     ${y} =    Get Boundingbox    \#clickWithOptions    y
@@ -155,3 +161,9 @@ Relative DnD
     Mouse Button    up
     Get Text    \#dragX    ==    ${txt_x}
     Get Text    \#dragY    ==    ${txt_y}
+
+DnD Relative To
+    [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}
+    Drag And Drop Relative To    id=draggable    ${x}    ${y}    steps=2
+    Get Text    id=dragX    ==    ${txt_x}
+    Get Text    id=dragY    ==    ${txt_y}
