@@ -60,17 +60,15 @@ export async function initializeExtension(
 ): Promise<Response.Keywords> {
     const extension: Record<string, unknown> = eval('require')(request.getPath());
     state.extension = extension;
+    const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
     return keywordsResponse(
-        Object.keys(extension),
-        Object.values(extension).map((v) => {
-            if (v instanceof Function) {
-                return extractArgumentsStringFromJavascript(v.toString());
-            }
-            return '*args';
+        kws,
+        kws.map((v) => {
+            // @ts-ignore
+            return extractArgumentsStringFromJavascript(extension[v].toString());
         }),
-        Object.values(extension).map((v) => {
-            if (!v) return '';
-            const typedV = v as { rfdoc?: string };
+        kws.map((v) => {
+            const typedV = extension[v] as { rfdoc?: string };
             return typedV.rfdoc ?? 'TODO: Add rfdoc string to exposed function to create documentation';
         }),
         'ok',
@@ -82,8 +80,13 @@ export async function extensionKeywordCall(
     call: ServerWritableStream<Request.KeywordCall, Response.Json>,
     state: PlaywrightState,
 ): Promise<Response.Json> {
+    logger.info('Extension Keyword Call');
+    logger.info(request.getName());
+    logger.info(JSON.parse(request.getArguments()));
     const methodName = request.getName();
-    const args = request.getArgumentsList();
+    call.write(jsonResponse(JSON.stringify(''), methodName));
+    const args = JSON.parse(request.getArguments()) as Record<string, unknown>;
+    call.write(jsonResponse(JSON.stringify(''), request.getArguments()));
     // @ts-ignore
     const result = await state.extension[methodName](
         state.getActivePage(),

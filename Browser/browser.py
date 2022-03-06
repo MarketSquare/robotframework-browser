@@ -18,6 +18,7 @@ import shutil
 import string
 import sys
 import time
+import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
@@ -778,32 +779,59 @@ class Browser(DynamicCore):
                 response.keywordArguments,
                 response.keywordDocumentations,
             ):
-                setattr(component, name, self._jskeyword_call(name, args, doc))
+                self._jskeyword_call(component, name, args, doc)
         return component
 
-    def _jskeyword_call(self, name: str, argument_names: str, doc: str):
-        text = f"def {name}({argument_names}):\n    return\n"
+    def _jskeyword_call(
+        self,
+        component: LibraryComponent,
+        name: str,
+        argument_names_and_default_values: str,
+        doc: str,
+    ):
+        argument_names = (
+            [
+                arg.split("=")[0].strip()
+                for arg in argument_names_and_default_values.split(",")
+            ]
+            if argument_names_and_default_values
+            else []
+        )
+        arg_set_text = "\n    ".join(
+            f'arguments.append(("{n}", {n}))' for n in argument_names
+        )
+        text = f"""
+@keyword
+def {name}(self, {argument_names_and_default_values}):
+    \"\"\"{doc}\"\"\"
+    arguments = []
+    {arg_set_text}
+    print(repr(arguments))
+    args = dict()
+    args["arguments"] = arguments
+    with self.playwright.grpc_channel() as stub:
+        responses = stub.CallExtensionKeyword(
+            Request().KeywordCall(name="{name}", arguments=json.dumps(args))
+        )
+        for response in responses:
+            logger.info(response.log)
+        if response.json == "":
+            return
+        return json.loads(response.json)
+"""
         try:
-            exec(text, globals(), self.__dict__)
+            exec(
+                text,
+                {**globals(), "keyword": keyword, "json": json},
+                component.__dict__,
+            )
+            setattr(
+                component, name, types.MethodType(component.__dict__[name], component)
+            )
         except SyntaxError as e:
-            raise DataError(f"{e.msg} in {name}:\n{text}")
-
-        @keyword
-        def func(*args):
-            with self.playwright.grpc_channel() as stub:
-                responses = stub.CallExtensionKeyword(
-                    Request().KeywordCall(name=name, arguments=args)
-                )
-                for response in responses:
-                    logger.info(response.log)
-                if response.json == "":
-                    return
-                return json.loads(response.json)
-
-        f = getattr(self, name)
-        f.__doc__ = doc
-
-        return keyword(f)
+            raise DataError(
+                f"{e.msg} in {name}:\n{text}\n{argument_names}\n{argument_names_and_default_values}"
+            )
 
     @property
     def outputdir(self) -> str:
