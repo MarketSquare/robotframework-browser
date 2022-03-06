@@ -88,13 +88,13 @@ export async function extensionKeywordCall(
     const args = JSON.parse(request.getArguments()) as Record<string, unknown>;
     call.write(jsonResponse(JSON.stringify(''), request.getArguments()));
     // @ts-ignore
-    const result = await state.extension[methodName](
-        state.getActivePage(),
+    const result = await state.extension[methodName].apply(null,
+        [state.getActivePage(),
         args,
         (msg: string) => {
             call.write(jsonResponse(JSON.stringify(''), msg));
         },
-        playwright,
+        playwright]
     );
     return jsonResponse(JSON.stringify(result), 'ok');
 }
