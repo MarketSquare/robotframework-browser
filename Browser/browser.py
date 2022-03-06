@@ -25,6 +25,7 @@ from typing import Dict, List, Optional, Set, Union
 
 from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
+from robot.errors import DataError  # type: ignore
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.result.model import TestCase as TestCaseResult  # type: ignore
 from robot.running.arguments import PythonArgumentParser  # type: ignore
@@ -782,7 +783,10 @@ class Browser(DynamicCore):
 
     def _jskeyword_call(self, name: str, argument_names: str, doc: str):
         text = f"def {name}({argument_names}):\n    return\n"
-        exec(text, globals(), self.__dict__)
+        try:
+            exec(text, globals(), self.__dict__)
+        except SyntaxError as e:
+            raise DataError(f"{e.msg} in {name}:\n{text}")
 
         @keyword
         def func(*args):
