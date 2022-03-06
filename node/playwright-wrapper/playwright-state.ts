@@ -22,6 +22,7 @@ import { exists } from './playwright-invoke';
 
 import { ServerWritableStream } from '@grpc/grpc-js';
 import { pino } from 'pino';
+import strip from 'strip-comments';
 
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
@@ -48,7 +49,7 @@ const extractArgumentsStringFromJavascript = (javascript: string): string => {
     const regex = /\((.*?)\)/;
     const match = regex.exec(javascript);
     if (match) {
-        return match[1];
+        return strip(match[1]);
     }
     return '*args';
 };
