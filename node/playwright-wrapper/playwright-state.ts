@@ -54,11 +54,13 @@ export async function initializeExtension(
     return keywordsResponse(
         Object.keys(extension),
         Object.values(extension).map((v) => {
-            if (!v) return '';
             if (v instanceof Function) {
-                const data = arg(v) as string[];
-                return data.join(', ');
+                return (arg(v) as string[]).join(', ');
             }
+            return '*args';
+        }),
+        Object.values(extension).map((v) => {
+            if (!v) return '';
             const typedV = v as { rfdoc?: string };
             return typedV.rfdoc ?? 'TODO: Add rfdoc string to exposed function to create documentation';
         }),
