@@ -789,23 +789,26 @@ class Browser(DynamicCore):
         argument_names_and_default_values: str,
         doc: str,
     ):
-        argument_names = (
-            [
-                arg.split("=")[0].strip()
-                for arg in argument_names_and_default_values.split(",")
-            ]
-            if argument_names_and_default_values
-            else []
-        )
-        arg_set_text = "\n    ".join(
-            f'arguments.append(("{n}", {n}))' for n in argument_names
-        )
+        argument_names_and_vals = [
+            [a.strip() for a in arg.split("=")]
+            for arg in (argument_names_and_default_values or "").split(",")
+        ]
+        argument_names_and_default_values_texts = []
+        arg_set_text = ""
+        for item in argument_names_and_vals:
+            arg_name = item[0]
+            if arg_name in ["logger", "playwright", "page"]:
+                arg_set_text += f'\n    arguments.append(("{arg_name}", "RESERVED"))'
+            else:
+                arg_set_text += f'\n    arguments.append(("{arg_name}", {arg_name}))'
+                argument_names_and_default_values_texts.append(
+                    f"{arg_name}={item[1]}" if len(item) == 2 else f"{arg_name}"
+                )
         text = f"""
 @keyword
-def {name}(self, {argument_names_and_default_values}):
+def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     \"\"\"{doc}\"\"\"
-    arguments = []
-    {arg_set_text}
+    arguments = []{arg_set_text}
     args = dict()
     args["arguments"] = arguments
     with self.playwright.grpc_channel() as stub:
@@ -828,9 +831,7 @@ def {name}(self, {argument_names_and_default_values}):
                 component, name, types.MethodType(component.__dict__[name], component)
             )
         except SyntaxError as e:
-            raise DataError(
-                f"{e.msg} in {name}:\n{text}\n{argument_names}\n{argument_names_and_default_values}"
-            )
+            raise DataError(f"{e.msg} in {name}")
 
     @property
     def outputdir(self) -> str:
