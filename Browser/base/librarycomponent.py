@@ -15,6 +15,7 @@ import os
 from concurrent.futures._base import Future
 from copy import copy, deepcopy
 from datetime import timedelta
+from time import sleep
 from typing import TYPE_CHECKING, Any, Set, Union
 
 from robot.utils import timestr_to_secs  # type: ignore
@@ -162,3 +163,16 @@ class LibraryComponent:
         style = mode.get("style", "dotted")
         color = mode.get("color", "blue")
         return {"duration": duration, "width": width, "style": style, "color": color}
+
+    def presenter_mode(self, selector, strict):
+        if self.library.presenter_mode:
+            mode = self.get_presenter_mode
+            self.library.hover(selector, strict)
+            self.library.highlight_elements(
+                selector,
+                duration=mode["duration"],
+                width=mode["width"],
+                style=mode["style"],
+                color=mode["color"],
+            )
+            sleep(mode["duration"].seconds)
