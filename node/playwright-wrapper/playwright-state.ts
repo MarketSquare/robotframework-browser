@@ -22,7 +22,6 @@ import { exists } from './playwright-invoke';
 
 import { ServerWritableStream } from '@grpc/grpc-js';
 import { pino } from 'pino';
-import arg from '@captemulation/get-parameter-names';
 
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 

@@ -35,7 +35,6 @@
     "typescript": "^4.6.2"
   },
   "dependencies": {
-    "@captemulation/get-parameter-names": "^1.4.2",
     "@grpc/grpc-js": "^1.5.7",
     "@medv/finder": "^2.1.0",
     "google-protobuf": "3.19.3",
