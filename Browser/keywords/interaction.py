@@ -912,6 +912,45 @@ class Interaction(LibraryComponent):
         if drop:
             self.mouse_button(MouseButtonAction.up)
 
+    @keyword(tags=("Setter", "PageContent"))
+    def drag_and_drop_relative_to(
+        self,
+        selector_from: str,
+        x: float = 0.0,
+        y: float = 0.0,
+        steps: int = 1,
+    ):
+        """Executes a Drag&Drop operation from the element selected by ``selector_from``
+        to coordinates relative to the center of that element.
+
+        This keyword can be handy to simulate swipe actions.
+
+        See the `Finding elements` section for details about the selectors.
+
+        First it moves the mouse to the start-point (center of boundingbox),
+        then presses the left mouse button,
+        then moves to the relative position with the given intermediate steps,
+        then releases the mouse button.
+
+        ``selector_from`` identifies the element, which center is the start-point.
+
+        ``x`` & ``y`` identifies the end-point which is relative to the start-point.
+
+        ``steps`` defines how many intermediate mouse move events are sent.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Example
+        | `Drag And Drop Relative to`    "Circle"    -20    0     # Slides the element 20 pixel to the left
+        """
+        from_bbox = self.library.get_boundingbox(selector_from)
+        from_xy = self._center_of_boundingbox(from_bbox)
+        to_x = from_xy["x"] + x
+        to_y = from_xy["y"] + y
+        self.mouse_button(MouseButtonAction.down, **from_xy)
+        self.mouse_move(x=to_x, y=to_y, steps=steps)
+        self.mouse_button(MouseButtonAction.up)
+
     @staticmethod
     def _center_of_boundingbox(boundingbox: BoundingBox) -> Coordinates:
         center = Coordinates()
