@@ -45,6 +45,15 @@ export interface LocatorCount {
     nth: number;
 }
 
+const extractArgumentsStringFromJavascript = (javascript: string): string => {
+    const regex = /\((.*?)\)/;
+    const match = regex.exec(javascript);
+    if (match) {
+        return match[1];
+    }
+    return '*args';
+};
+
 export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
@@ -55,7 +64,7 @@ export async function initializeExtension(
         Object.keys(extension),
         Object.values(extension).map((v) => {
             if (v instanceof Function) {
-                return (arg(v) as string[]).join(', ');
+                return extractArgumentsStringFromJavascript(v.toString());
             }
             return '*args';
         }),
