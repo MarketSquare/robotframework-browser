@@ -33,7 +33,7 @@ message Request {
 
   message KeywordCall {
     string name = 1;
-    repeated string arguments = 2;
+    string arguments = 2;
   }
 
   message FilePath {
@@ -246,6 +246,7 @@ message Response {
     string log = 1;
     repeated string keywords = 2;
     repeated string keywordDocumentations = 3;
+    repeated string keywordArguments = 4;
   }
 
   message Bool {

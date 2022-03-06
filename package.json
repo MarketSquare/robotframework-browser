@@ -10,6 +10,7 @@
     "@types/react": "^17.0.39",
     "@types/react-dom": "^17.0.13",
     "@types/react-router-dom": "^5.3.3",
+    "@types/strip-comments": "^2.0.1",
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.13.0",
     "@typescript-eslint/parser": "^5.13.0",
@@ -40,6 +41,7 @@
     "google-protobuf": "3.19.3",
     "pino": "^7.8.0",
     "playwright": "^1.19.2",
+    "strip-comments": "^2.0.1",
     "uuid": "^8.3.2"
   },
   "scripts": {
