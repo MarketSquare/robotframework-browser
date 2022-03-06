@@ -794,13 +794,13 @@ class Browser(DynamicCore):
             for arg in (argument_names_and_default_values or "").split(",")
         ]
         argument_names_and_default_values_texts = []
-        arg_set_text = ""
+        arg_set_texts = []
         for item in argument_names_and_vals:
             arg_name = item[0]
             if arg_name in ["logger", "playwright", "page"]:
-                arg_set_text += f'\n    arguments.append(("{arg_name}", "RESERVED"))'
+                arg_set_texts.append(f'("{arg_name}", "RESERVED")')
             else:
-                arg_set_text += f'\n    arguments.append(("{arg_name}", {arg_name}))'
+                arg_set_texts.append(f'("{arg_name}", {arg_name})')
                 argument_names_and_default_values_texts.append(
                     f"{arg_name}={item[1]}" if len(item) == 2 else f"{arg_name}"
                 )
@@ -808,12 +808,11 @@ class Browser(DynamicCore):
 @keyword
 def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     \"\"\"{doc}\"\"\"
-    arguments = []{arg_set_text}
-    args = dict()
-    args["arguments"] = arguments
+    _args_browser_internal = dict()
+    _args_browser_internal["arguments"] = [{", ".join(arg_set_texts)}]
     with self.playwright.grpc_channel() as stub:
         responses = stub.CallExtensionKeyword(
-            Request().KeywordCall(name="{name}", arguments=json.dumps(args))
+            Request().KeywordCall(name="{name}", arguments=json.dumps(_args_browser_internal))
         )
         for response in responses:
             logger.info(response.log)
