@@ -806,7 +806,6 @@ def {name}(self, {argument_names_and_default_values}):
     \"\"\"{doc}\"\"\"
     arguments = []
     {arg_set_text}
-    print(repr(arguments))
     args = dict()
     args["arguments"] = arguments
     with self.playwright.grpc_channel() as stub:

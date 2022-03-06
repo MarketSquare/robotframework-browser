@@ -58,13 +58,12 @@ export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
-    const extension: Record<string, unknown> = eval('require')(request.getPath());
+    const extension: Record<string, (...args: unknown[]) => unknown> = eval('require')(request.getPath());
     state.extension = extension;
     const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
     return keywordsResponse(
         kws,
         kws.map((v) => {
-            // @ts-ignore
             return extractArgumentsStringFromJavascript(extension[v].toString());
         }),
         kws.map((v) => {
@@ -80,21 +79,24 @@ export async function extensionKeywordCall(
     call: ServerWritableStream<Request.KeywordCall, Response.Json>,
     state: PlaywrightState,
 ): Promise<Response.Json> {
-    logger.info('Extension Keyword Call');
-    logger.info(request.getName());
-    logger.info(JSON.parse(request.getArguments()));
     const methodName = request.getName();
-    call.write(jsonResponse(JSON.stringify(''), methodName));
-    const args = JSON.parse(request.getArguments()) as Record<string, unknown>;
-    call.write(jsonResponse(JSON.stringify(''), request.getArguments()));
-    // @ts-ignore
-    const result = await state.extension[methodName].apply(null,
-        [state.getActivePage(),
-        args,
-        (msg: string) => {
-            call.write(jsonResponse(JSON.stringify(''), msg));
-        },
-        playwright]
+    const args = JSON.parse(request.getArguments()) as { arguments: [string, unknown][] };
+    const func = (state.extension as Record<string, (...args: unknown[]) => unknown>)[methodName];
+    const result = await func(
+        ...args['arguments'].map((v) => {
+            if (v[0] === 'page') {
+                return state.getActivePage();
+            }
+            if (v[0] === 'logger') {
+                return (msg: string) => {
+                    call.write(jsonResponse(JSON.stringify(''), msg));
+                };
+            }
+            if (v[0] === 'playwright') {
+                return playwright;
+            }
+            return v[1];
+        }),
     );
     return jsonResponse(JSON.stringify(result), 'ok');
 }
