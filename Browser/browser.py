@@ -792,6 +792,7 @@ class Browser(DynamicCore):
         argument_names_and_vals = [
             [a.strip() for a in arg.split("=")]
             for arg in (argument_names_and_default_values or "").split(",")
+            if arg
         ]
         argument_names_and_default_values_texts = []
         arg_set_texts = []
@@ -801,9 +802,14 @@ class Browser(DynamicCore):
                 arg_set_texts.append(f'("{arg_name}", "RESERVED")')
             else:
                 arg_set_texts.append(f'("{arg_name}", {arg_name})')
-                argument_names_and_default_values_texts.append(
-                    f"{arg_name}={item[1]}" if len(item) == 2 else f"{arg_name}"
-                )
+                if item[0] == "args":
+                    argument_names_and_default_values_texts.append("*args")
+                elif len(item) > 1:
+                    argument_names_and_default_values_texts.append(
+                        f"{arg_name}={item[1]}"
+                    )
+                else:
+                    argument_names_and_default_values_texts.append(f"{arg_name}")
         text = f"""
 @keyword
 def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
