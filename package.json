@@ -40,6 +40,7 @@
     "google-protobuf": "3.19.3",
     "pino": "^7.8.0",
     "playwright": "^1.19.2",
+    "strip-comments": "^2.0.1",
     "uuid": "^8.3.2"
   },
   "scripts": {
