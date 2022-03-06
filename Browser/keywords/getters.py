@@ -209,6 +209,7 @@ class Getters(LibraryComponent):
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         | ${text} =    `Get Text`    //input         ==    root              # Returns input element text with assertion.
         """
+        self.presenter_mode(selector, self.strict_mode)
         response = self._get_text(selector)
         logger.debug(response.log)
         formatter = self.keyword_formatters.get(self.get_text)
@@ -262,6 +263,7 @@ class Getters(LibraryComponent):
         | `Get Property`    h1    innerText    ==    Login Page
         | ${property} =    `Get Property`    h1    innerText
         """
+        self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
                 Request().ElementProperty(
@@ -328,6 +330,7 @@ class Getters(LibraryComponent):
         | `Get Attribute`   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
         | `Get Attribute`   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
         """
+        self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
                 Request().ElementProperty(
@@ -479,6 +482,7 @@ class Getters(LibraryComponent):
         | `Get Select Options`     //select[2]    validate  [v["label"] for v in value] == ["Email", "Mobile"]
         | `Get Select Options`   select#names     validate  any(v["label"] == "Mikko" for v in value)
         """
+        self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -813,6 +817,7 @@ class Getters(LibraryComponent):
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
         """
+        self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -1208,6 +1213,7 @@ class Getters(LibraryComponent):
             return f.name if isinstance(f, ElementState) else f
 
         assertion_expected_str = [convert_str(flag) for flag in assertion_expected]
+        self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementStates(
                 Request.ElementSelector(selector=selector, strict=self.strict_mode)
