@@ -585,25 +585,31 @@ class Browser(DynamicCore):
     can be also translated to modules that can be used from Node.js. For example TypeScript, PureScript and
     ClojureScript just to mention few.
 
-    | async function myGoToKeyword(page, args, logger, playwright) {
+    | async function myGoToKeyword(url, args, page, logger, playwright) {
     |   logger(args.toString())
     |   playwright.coolNewFeature()
-    |   return await page.goto(args[0]);
+    |   return await page.goto(url);
     | }
+
+    Functions can contain any number of arguments and arguments may have default values.
+
+    There are some reserved arguments that are not accessible from Robot Framework side.
+    They are injected to the function if they are in the arguments:
 
     ``page``: [https://playwright.dev/docs/api/class-page|the playwright Page object].
 
-    ``args``: list of strings from Robot Framework keyword call.
+    ``args``: the rest of values from Robot Framework keyword call ``*args``.
 
-    !! A BIT UNSTABLE AND SUBJECT TO API CHANGES !!
     ``logger``: callback function that takes strings as arguments and writes them to robot log. Can be called multiple times.
 
     ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://playwright.dev/docs/api/class-playwright| API docs]
 
+    also argument name ``self`` can not be used.
+
     == Example module.js ==
 
-    | async function myGoToKeyword(page, args) {
-    |   await page.goto(args[0]);
+    | async function myGoToKeyword(pageUrl, page) {
+    |   await page.goto(pageUrl);
     |   return await page.title();
     | }
     | exports.__esModule = true;
@@ -624,7 +630,7 @@ class Browser(DynamicCore):
 
     == Example module keyword for custom selector registering ==
 
-    | async function registerMySelector(page, args, log, playwright) {
+    | async function registerMySelector(playwright) {
     | playwright.selectors.register("myselector", () => ({
     |    // Returns the first element matching given selector in the root's subtree.
     |    query(root, selector) {

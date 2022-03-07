@@ -71,8 +71,9 @@ browser.close_browser()
 ### and extending with JavaScript
 
 ```JavaScript
-async function myGoToKeyword(page, args) {
-  return await page.goto(args[0]);
+async function myGoToKeyword(url, page, logger) {
+    logger("Going to " + url)
+    return await page.goto(url);
 }
 myGoToKeyword.rfdoc = "This is my own go to keyword";
 exports.__esModule = true;
