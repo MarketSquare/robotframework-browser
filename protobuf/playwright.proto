@@ -402,6 +402,9 @@ service  Playwright {
   rpc KeyboardKey(Request.KeyboardKeypress) returns (Response.Empty);
   rpc KeyboardInput(Request.KeyboardInputOptions) returns (Response.Empty);
 
+  rpc GetTableRowIndex(Request.ElementSelector) returns (Response.Int);
+  rpc GetTableCellIndex(Request.ElementSelector) returns (Response.Int);
+
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
   rpc UploadFileBySelector(Request.FileBySelector) returns (Response.Empty);
 

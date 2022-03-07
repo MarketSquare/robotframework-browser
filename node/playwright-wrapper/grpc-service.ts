@@ -311,6 +311,9 @@ export class PlaywrightServer implements IPlaywrightServer {
     getElementAttribute = this.wrapping(getters.getElementAttribute);
     getElementStates = this.wrapping(getters.getElementStates);
     getStyle = this.wrapping(getters.getStyle);
+    getTableCellIndex = this.wrapping(getters.getTableCellIndex);
+    getTableRowIndex = this.wrapping(getters.getTableRowIndex);
+
 
     async getViewportSize(
         call: ServerUnaryCall<Request.Empty, Response.Json>,

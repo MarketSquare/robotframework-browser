@@ -262,3 +262,33 @@ export async function getPageSource(page: Page): Promise<Response.String> {
     logger.info(result);
     return stringResponse(JSON.stringify(result), 'Page source obtained successfully.');
 }
+
+export async function getTableCellIndex(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const element = await locator.elementHandle();
+    exists(element, 'Locator did not resolve to elementHandle.');
+    let count = -1
+    if (['TD', 'TH'].includes(await element.evaluate(e => e.nodeName))) {
+        count = await element.evaluate(e => Array.prototype.indexOf.call(e.parentNode?.children, e))
+    } else {
+        throw TypeError("Element Type Error")
+    }
+    return intResponse(count, `Cell index in row is ${count}.`);
+}
+
+export async function getTableRowIndex(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const element = await locator.elementHandle();
+    exists(element, 'Locator did not resolve to elementHandle.');
+    let count = -1
+    if ('TR' === await element.evaluate(e => e.nodeName)) {
+        count = await element.evaluate(e => Array.prototype.indexOf.call(e.parentNode?.children, e))
+    } else {
+        throw TypeError("Element Type Error")
+    }
+    return intResponse(count, `Row index in table is ${count}.`);
+}
