@@ -269,11 +269,20 @@ export async function getTableCellIndex(request: Request.ElementSelector, state:
     const locator = await findLocator(state, selector, strictMode, undefined, false);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
-    let count = -1
+    let count
     if (['TD', 'TH'].includes(await element.evaluate(e => e.nodeName))) {
         count = await element.evaluate(e => Array.prototype.indexOf.call(e.parentNode?.children, e))
     } else {
-        throw TypeError("Element Type Error")
+        count = await element.evaluate(element => {
+            while (!['TD', 'TH'].includes(element.nodeName)) {
+                let parent = element.parentElement;
+                if (!parent) {
+                    throw Error("Something wrong");
+                }
+                element = parent;
+            }
+            return Array.prototype.indexOf.call(element.parentNode?.children, element);
+        })
     }
     return intResponse(count, `Cell index in row is ${count}.`);
 }
@@ -284,11 +293,20 @@ export async function getTableRowIndex(request: Request.ElementSelector, state: 
     const locator = await findLocator(state, selector, strictMode, undefined, false);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
-    let count = -1
+    let count
     if ('TR' === await element.evaluate(e => e.nodeName)) {
-        count = await element.evaluate(e => Array.prototype.indexOf.call(e.parentNode?.children, e))
+        count = await element.evaluate(e => Array.prototype.indexOf.call(e.parentNode?.children, e));
     } else {
-        throw TypeError("Element Type Error")
+        count = await element.evaluate(element => {
+            while (element.nodeName !== 'TR') {
+                let parent = element.parentElement;
+                if (!parent) {
+                    throw Error("Something wrong");
+                }
+                element = parent;
+            }
+            return Array.prototype.indexOf.call(element.parentNode?.children, element);
+        })
     }
     return intResponse(count, `Row index in table is ${count}.`);
 }

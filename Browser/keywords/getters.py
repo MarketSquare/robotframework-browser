@@ -733,43 +733,13 @@ class Getters(LibraryComponent):
                     message,
                 )
 
-    # @keyword(tags=("Getter", "PageContent"))
-    # def get_table_cell_element(self, table: str, column: str, row: str) -> str:
-    #     with self.playwright.grpc_channel() as stub:
-    #         table_element = stub.GetElement(
-    #             Request().ElementSelector(selector=table, strict=self.strict_mode)
-    #         )
-    #         column_element = stub.GetElement(
-    #             Request().ElementSelector(selector=f"{table_element.body} >> {column}", strict=self.strict_mode)
-    #         )
-    #         row_element = stub.GetElement(
-    #             Request().ElementSelector(selector=f"{table_element.body} >> {row}", strict=self.strict_mode)
-    #         )
-    #         self.library.highlight_elements(
-    #             table_element.body,
-    #             duration=timedelta(seconds=2),
-    #             width="1px",
-    #             style="dotted",
-    #             color="red",
-    #         )
-    #         self.library.highlight_elements(
-    #             column_element.body,
-    #             duration=timedelta(seconds=2),
-    #             width="1px",
-    #             style="dotted",
-    #             color="blue",
-    #         )
-    #         self.library.highlight_elements(
-    #             row_element.body,
-    #             duration=timedelta(seconds=2),
-    #             width="1px",
-    #             style="dotted",
-    #             color="green",
-    #         )
-    #         # Array.prototype.indexOf.call(node.parentNode.children, node)
-    #
-    #         # logger.info(response.log)
-    #         # return response.body
+    @keyword(tags=("Getter", "PageContent"))
+    def get_table_cell_element(self, table: str, column: str, row: str) -> str:
+        column_idx = self.get_table_cell_index(f"{table} >> {column}")
+        row_idx = self.get_table_row_index(f"{table} >> {row}")
+        return self.get_element(
+            f"{table} > tbody > tr:nth-child({row_idx + 1}) > *:nth-child({column_idx + 1})"
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -780,8 +750,7 @@ class Getters(LibraryComponent):
         expected_value: Union[int, str] = 0,
         message: Optional[str] = None,
     ) -> Any:
-        """
-        """
+        """ """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableCellIndex(
                 Request().ElementSelector(selector=selector, strict=False)
@@ -806,8 +775,7 @@ class Getters(LibraryComponent):
         expected_value: Union[int, str] = 0,
         message: Optional[str] = None,
     ) -> Any:
-        """
-        """
+        """ """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableRowIndex(
                 Request().ElementSelector(selector=selector, strict=False)
