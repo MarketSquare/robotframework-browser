@@ -100,9 +100,8 @@ class Control(LibraryComponent):
 
          The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
-         If environment variable ROBOT_FRAMEWORK_BROWSER_DEFAULT_EMBED_SCREENSHOTS is set to a truthy
-         value, by default screenshots are embedded. If a custom ``filename`` is provided for a Take
-         Screenshot call then the ROBOT_FRAMEWORK_BROWSER_DEFAULT_EMBED_SCREENSHOTS setting is ignored.
+         If environment variable ROBOT_FRAMEWORK_BROWSER_EMBED_SCREENSHOTS is set to a truthy
+         value, all screenshots are embedded, overriding `filename`.
 
 
         ``selector`` Take a screenshot of the element matched by selector.
@@ -131,12 +130,7 @@ class Control(LibraryComponent):
         """
 
         # If the user does not give custom filename we check the global setting
-        if (
-            filename == "robotframework-browser-screenshot-{index}"
-            or filename == "fail-screenshot-{index}"
-        ) and is_truthy(
-            get_env_var("ROBOT_FRAMEWORK_BROWSER_DEFAULT_EMBED_SCREENSHOTS")
-        ):
+        if is_truthy(get_env_var("ROBOT_FRAMEWORK_BROWSER_EMBED_SCREENSHOTS")):
             filename = "EMBED"
 
         if self._is_embed(filename):

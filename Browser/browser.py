@@ -661,7 +661,6 @@ class Browser(DynamicCore):
         enable_presenter_mode: Union[HighLightElement, bool] = False,
         playwright_process_port: Optional[int] = None,
         strict: bool = True,
-        embed_failure_screenshots=None,
     ):
         """Browser library can be taken into use with optional arguments:
 
