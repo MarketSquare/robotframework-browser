@@ -314,7 +314,6 @@ export class PlaywrightServer implements IPlaywrightServer {
     getTableCellIndex = this.wrapping(getters.getTableCellIndex);
     getTableRowIndex = this.wrapping(getters.getTableRowIndex);
 
-
     async getViewportSize(
         call: ServerUnaryCall<Request.Empty, Response.Json>,
         callback: sendUnaryData<Response.Json>,

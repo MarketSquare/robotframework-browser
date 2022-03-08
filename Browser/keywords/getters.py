@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import re
 from typing import Any, List, Optional, Union
 
 import grpc  # type: ignore
@@ -735,10 +736,18 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "PageContent"))
     def get_table_cell_element(self, table: str, column: str, row: str) -> str:
-        column_idx = self.get_table_cell_index(f"{table} >> {column}")
-        row_idx = self.get_table_row_index(f"{table} >> {row}")
+        column_idx = (
+            column
+            if re.fullmatch(r"[-+]?\d+", column)
+            else self.get_table_cell_index(f"{table} >> {column}")
+        )
+        row_idx = (
+            row
+            if re.fullmatch(r"[-+]?\d+", row)
+            else self.get_table_row_index(f"{table} >> {row}")
+        )
         return self.get_element(
-            f"{table} > tbody > tr:nth-child({row_idx + 1}) > *:nth-child({column_idx + 1})"
+            f"{table} >> > * > tr >> nth={row_idx} >> > * >> nth={column_idx}"
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -762,7 +771,7 @@ class Getters(LibraryComponent):
                 int(count),
                 assertion_operator,
                 expected_value,
-                f"Element count for selector `{selector}` is",
+                f"Element cell index for selector `{selector}` is",
                 message,
             )
 
@@ -787,7 +796,7 @@ class Getters(LibraryComponent):
                 int(count),
                 assertion_operator,
                 expected_value,
-                f"Element count for selector `{selector}` is",
+                f"Element row index for selector `{selector}` is",
                 message,
             )
 

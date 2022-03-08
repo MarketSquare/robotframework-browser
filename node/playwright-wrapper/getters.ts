@@ -263,50 +263,50 @@ export async function getPageSource(page: Page): Promise<Response.String> {
     return stringResponse(JSON.stringify(result), 'Page source obtained successfully.');
 }
 
-export async function getTableCellIndex(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
+export async function getTableCellIndex(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, false);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
-    let count
-    if (['TD', 'TH'].includes(await element.evaluate(e => e.nodeName))) {
-        count = await element.evaluate(e => Array.prototype.indexOf.call(e.parentNode?.children, e))
-    } else {
-        count = await element.evaluate(element => {
-            while (!['TD', 'TH'].includes(element.nodeName)) {
-                let parent = element.parentElement;
-                if (!parent) {
-                    throw Error("Something wrong");
-                }
-                element = parent;
+    const count = await element.evaluate((element) => {
+        while (!['TD', 'TH'].includes(element.nodeName)) {
+            const parent = element.parentElement;
+            if (!parent) {
+                throw Error('Selector does not select a table cell!');
             }
-            return Array.prototype.indexOf.call(element.parentNode?.children, element);
-        })
-    }
+            element = parent;
+        }
+        return Array.prototype.indexOf.call(element.parentNode?.children, element);
+    });
     return intResponse(count, `Cell index in row is ${count}.`);
 }
 
-export async function getTableRowIndex(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
+export async function getTableRowIndex(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, false);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
-    let count
-    if ('TR' === await element.evaluate(e => e.nodeName)) {
-        count = await element.evaluate(e => Array.prototype.indexOf.call(e.parentNode?.children, e));
-    } else {
-        count = await element.evaluate(element => {
-            while (element.nodeName !== 'TR') {
-                let parent = element.parentElement;
-                if (!parent) {
-                    throw Error("Something wrong");
-                }
-                element = parent;
+    const count = await element.evaluate((element) => {
+        let table_row = null;
+        while (element.nodeName !== 'TABLE') {
+            if (element.nodeName === 'TR') {
+                table_row = element;
             }
-            return Array.prototype.indexOf.call(element.parentNode?.children, element);
-        })
-    }
+            const parent = element.parentElement;
+            if (!parent) {
+                throw Error('Selector does not select a table cell!');
+            }
+            element = parent;
+        }
+        return Array.prototype.indexOf.call(element.querySelectorAll(':scope > * > tr'), table_row);
+    });
     return intResponse(count, `Row index in table is ${count}.`);
 }
