@@ -765,8 +765,8 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector, strict=False)
             )
             count = response.body
-            if self.keyword_formatters.get(self.get_element_count):
-                logger.warn("Formatter is not supported by Get Element Count keyword.")
+            if self.keyword_formatters.get(self.get_table_cell_index):
+                logger.warn("Formatter is not supported by Get Table Cell Index keyword.")
             return float_str_verify_assertion(
                 int(count),
                 assertion_operator,
@@ -790,8 +790,8 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector, strict=False)
             )
             count = response.body
-            if self.keyword_formatters.get(self.get_element_count):
-                logger.warn("Formatter is not supported by Get Element Count keyword.")
+            if self.keyword_formatters.get(self.get_table_row_index):
+                logger.warn("Formatter is not supported by Get Table Row Index keyword.")
             return float_str_verify_assertion(
                 int(count),
                 assertion_operator,
