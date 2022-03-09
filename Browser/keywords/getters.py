@@ -748,6 +748,8 @@ class Getters(LibraryComponent):
          Indexes are starting from ``0`` and ``-1`` is specific for the last element.
 
 
+        Selectors for ``column`` and ``row`` are directly appended to ``table`` selector like this: ``f"{table} >> {row}" .``
+
         | = GitHub = |   = Slack =      | = Real Name =   |
         | mkorpela   | @mkorpela        | Mikko Korpela   |
         | aaltat     | @aaltat          | Tatu Aalto      |
@@ -756,7 +758,7 @@ class Getters(LibraryComponent):
 
 
         Example:
-        | ${table}=    ``Set Variable``    id=Get Table Cell Element >> div.kw-docs table
+        | ${table}=    Set Variable    id=Get Table Cell Element >> div.kw-docs table
         | ${e}=    `Get Table Cell Element`    ${table}    "Real Name"    "aaltat"   # Returns element with text ``Tatu Aalto``
         | Get Text    ${e}    ==    Tatu Aalto
         | ${e}=    `Get Table Cell Element`    ${table}    "Slack"    "Mikko Korpela"   # Returns element with text ``@mkorpela``
@@ -766,6 +768,11 @@ class Getters(LibraryComponent):
         | ${e}=    `Get Table Cell Element`    ${table}    2    -1   # Index is also directly possible
         | Get Text    ${e}    ==    René Rohner
         """
+        node_name = str(self.library.execute_javascript("e => e.nodeName", table))
+        if node_name != "TABLE":
+            raise ValueError(
+                f"Selector {table} must select a <table> element but selects <{node_name.lower()}>."
+            )
         column_idx = (
             column
             if re.fullmatch(r"-?\d+", column)
@@ -789,7 +796,26 @@ class Getters(LibraryComponent):
         expected_value: Union[int, str] = 0,
         message: Optional[str] = None,
     ) -> Any:
-        """Returns the index (0 based) of a table cell within its row."""
+        """Returns the index (0 based) of a table cell within its row.
+
+        ``selector`` can select any ``<th>`` or ``<td>`` element or one of their descendants.
+        See the `Finding elements` section for details about the selectors.
+
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Example:
+        | ${table}=    Set Variable    id=`Get Table Cell Element` >> div.kw-docs table   #Table of keyword `Get Table Cell Element`
+        | ${idx}=    `Get Table Cell Index`    ${table} >> "Real Name"
+        | Should Be Equal    ${idx}    ${2}
+        | `Get Table Cell Index`    ${table} >> "@aaltat"    ==    1
+
+        Optionally asserts that the index matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments.
+        By default assertion is not done."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableCellIndex(
                 Request().ElementSelector(selector=selector, strict=False)
@@ -816,7 +842,26 @@ class Getters(LibraryComponent):
         expected_value: Union[int, str] = 0,
         message: Optional[str] = None,
     ) -> Any:
-        """Returns the index (0 based) of a tables row."""
+        """Returns the index (0 based) of a table row.
+
+        ``selector`` can select any ``<th>`` or ``<td>`` element or one of their descendants.
+        See the `Finding elements` section for details about the selectors.
+
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Example:
+        | ${table}=    Set Variable    id=`Get Table Cell Element` >> div.kw-docs table   #Table of keyword `Get Table Cell Element`
+        | ${idx}=    `Get Table Row Index`    ${table} >> "@René"
+        | Should Be Equal    ${idx}    ${4}
+        | `Get Table Row Index`    ${table} >> "@aaltat"    ==    2
+
+        Optionally asserts that the index matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments.
+        By default assertion is not done."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableRowIndex(
                 Request().ElementSelector(selector=selector, strict=False)
