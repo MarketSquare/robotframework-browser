@@ -736,14 +736,44 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "PageContent"))
     def get_table_cell_element(self, table: str, column: str, row: str) -> str:
+        """Returns the Web Element that has the same column index and same row index as the selected elements.
+
+        ``table`` selector must select the ``<table>`` element that contains both selected elements
+
+        ``column`` selector can select any ``<th>`` or ``<td>`` element or one of their descendants.
+
+         ``row`` selector can select any ``<tr>`` element or one of their descendant like ``<td>`` elements.
+
+         ``column`` and ``row`` can also consume index numbers instead of selectors.
+         Indexes are starting from ``0`` and ``-1`` is specific for the last element.
+
+
+        | = GitHub = |   = Slack =      | = Real Name =   |
+        | mkorpela   | @mkorpela        | Mikko Korpela   |
+        | aaltat     | @aaltat          | Tatu Aalto      |
+        | xylix      | @Kerkko Pelttari | Kerkko Pelttari |
+        | Snooz82    | @René            | René Rohner     |
+
+
+        Example:
+        | ${table}=    ``Set Variable``    id=Get Table Cell Element >> div.kw-docs table
+        | ${e}=    `Get Table Cell Element`    ${table}    "Real Name"    "aaltat"   # Returns element with text ``Tatu Aalto``
+        | Get Text    ${e}    ==    Tatu Aalto
+        | ${e}=    `Get Table Cell Element`    ${table}    "Slack"    "Mikko Korpela"   # Returns element with text ``@mkorpela``
+        | Get Text    ${e}    ==    @mkorpela
+        | ${e}=    `Get Table Cell Element`    ${table}    "mkorpela"    "Kerkko Pelttari"   # column does not need to be in row 0
+        | Get Text    ${e}    ==    @mkorpela
+        | ${e}=    `Get Table Cell Element`    ${table}    2    -1   # Index is also directly possible
+        | Get Text    ${e}    ==    René Rohner
+        """
         column_idx = (
             column
-            if re.fullmatch(r"[-+]?\d+", column)
+            if re.fullmatch(r"-?\d+", column)
             else self.get_table_cell_index(f"{table} >> {column}")
         )
         row_idx = (
             row
-            if re.fullmatch(r"[-+]?\d+", row)
+            if re.fullmatch(r"-?\d+", row)
             else self.get_table_row_index(f"{table} >> {row}")
         )
         return self.get_element(
@@ -759,14 +789,16 @@ class Getters(LibraryComponent):
         expected_value: Union[int, str] = 0,
         message: Optional[str] = None,
     ) -> Any:
-        """ """
+        """Returns the index (0 based) of a table cell within its row."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableCellIndex(
                 Request().ElementSelector(selector=selector, strict=False)
             )
             count = response.body
             if self.keyword_formatters.get(self.get_table_cell_index):
-                logger.warn("Formatter is not supported by Get Table Cell Index keyword.")
+                logger.warn(
+                    "Formatter is not supported by Get Table Cell Index keyword."
+                )
             return float_str_verify_assertion(
                 int(count),
                 assertion_operator,
@@ -784,14 +816,16 @@ class Getters(LibraryComponent):
         expected_value: Union[int, str] = 0,
         message: Optional[str] = None,
     ) -> Any:
-        """ """
+        """Returns the index (0 based) of a tables row."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableRowIndex(
                 Request().ElementSelector(selector=selector, strict=False)
             )
             count = response.body
             if self.keyword_formatters.get(self.get_table_row_index):
-                logger.warn("Formatter is not supported by Get Table Row Index keyword.")
+                logger.warn(
+                    "Formatter is not supported by Get Table Row Index keyword."
+                )
             return float_str_verify_assertion(
                 int(count),
                 assertion_operator,

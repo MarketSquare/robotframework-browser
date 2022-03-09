@@ -4,12 +4,68 @@ Resource        imports.resource
 Suite Setup     New Page    ${TABLES_URL}
 
 *** Test Cases ***
-Test Table
-    [Timeout]    6000 sec
-    ${cell} =    Get Table Cell Index    id=table1 >> "141g"
-    ${row} =    Get Table Row Index    id=table1 >> "STM32F411"
-    ${elem} =    Get Table Cell Element    id=table1    "Babyhawk"    "Weight"
-    Get Text    ${elem}    ==    141g
-    ${elem} =    Get Table Cell Element    id=table1    2    4
-    ${elem} =    Get Table Cell Element    id=table2    -1    4
-    Highlight Elements    ${elem}
+Get Table Cell Index by Text
+    ${index} =    Get Table Cell Index    id=table1 >> "Babyhawk"
+    Should Be Equal    ${index}    ${2}
+
+Assert Table Cell Index by Text
+    Get Table Cell Index    id=table1 >> "Babyhawk"    ==    2
+    Get Table Cell Index    id=table2 >> "Babyhawk"    ==    2
+    Get Table Cell Index    id=table2 >> "MERICA"    ==    3
+    Get Table Cell Index    id=table2 >> id=drone3    ==    3
+    Get Table Cell Index    *css=td > table >> "two"    ==    3
+
+Get Table Cell Index from subtable
+    Get Table Cell Index    td > table >> "two"    ==    1
+
+Get Table Row Index from cell
+    Get Table Row Index    id=table1 >> "Babyhawk"    ==    0
+    Get Table Row Index    table#table2 > tfoot > tr:nth-child(1)    ==    6
+    Get Table Row Index    td > table >> "2"    ==    1
+
+Get Table Row Index from row
+    Get Table Row Index    table#table2 > thead > tr:nth-child(1)    ==    0
+    Get Table Row Index    table#table2 > tbody > tr:nth-child(1)    ==    1
+    Get Table Row Index    table#table2 > tbody > tr:nth-child(2)    ==    2
+    Get Table Row Index    table#table2 > tbody > tr:nth-child(3)    ==    3
+    Get Table Row Index    table#table2 > tbody > tr:nth-child(4)    ==    4
+    Get Table Row Index    table#table2 > tbody > tr:nth-child(5)    ==    5
+    Get Table Row Index    table#table2 > tfoot > tr:nth-child(1)    ==    6
+    Get Table Row Index    "two"    ==    0
+    Get Table Row Index    "1"    ==    1
+
+Get Table Row Index from table element
+    Get Table Row Index    td > table    ==    -1
+    ${index} =    Get Table Row Index    td > table
+    Should Be Equal    ${index}    ${-1}
+
+Check Return Type
+    Get Table Row Index    id=table2    validate    isinstance(value, int)
+    Get Table Row Index    id=table2 >> "141g"    validate    isinstance(value, int)
+    Get Table Cell Index    id=table2 >> "141g"    validate    isinstance(value, int)
+
+Get Table Cell Element
+    ${e} =    Get Table Cell Element    id=table2    "Babyhawk"    "Weight"
+    Get Text    ${e}    ==    141g
+    ${e} =    Get Table Cell Element    id=table1    "Babyhawk"    "Weight"
+    Get Text    ${e}    ==    141g
+    ${subtable_parent} =    Get Table Cell Element    id=table2    "MERICA"    "Weight"
+    ${e} =    Get Table Cell Element    ${subtable_parent} >> :scope > table    "two"    "1"
+    Get Text    ${e}    ==    2
+    ${e} =    Get Table Cell Element    td > table    1    1
+    Get Text    ${e}    ==    2
+    ${e} =    Get Table Cell Element    td > table    -1    -1
+    Get Text    ${e}    ==    2
+    ${e} =    Get Table Cell Element    td > table    -1    -1
+    Get Text    ${e}    ==    2
+
+Click Table Element
+    ${e} =    Get Table Cell Element    id=table1    "Smart35"    -1
+    Click    ${e} >> input
+    Get Text    id=selection    ==    Smart35
+    ${e} =    Get Table Cell Element    id=table2    "Babyhawk"    -1
+    Click    ${e} >> input
+    Get Text    id=selection    ==    Babyhawk
+    ${e} =    Get Table Cell Element    id=table2    "MERICA"    -1
+    Click    ${e} >> input
+    Get Text    id=selection    ==    MERICA
