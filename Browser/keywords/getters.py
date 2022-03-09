@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import re
 from typing import Any, List, Optional, Union
 
 import grpc  # type: ignore
@@ -732,6 +733,151 @@ class Getters(LibraryComponent):
                     f"{key} is",
                     message,
                 )
+
+    @keyword(tags=("Getter", "PageContent"))
+    def get_table_cell_element(self, table: str, column: str, row: str) -> str:
+        """Returns the Web Element that has the same column index and same row index as the selected elements.
+
+        ``table`` selector must select the ``<table>`` element that contains both selected elements
+
+        ``column`` selector can select any ``<th>`` or ``<td>`` element or one of their descendants.
+
+         ``row`` selector can select any ``<tr>`` element or one of their descendant like ``<td>`` elements.
+
+         ``column`` and ``row`` can also consume index numbers instead of selectors.
+         Indexes are starting from ``0`` and ``-1`` is specific for the last element.
+
+
+        Selectors for ``column`` and ``row`` are directly appended to ``table`` selector like this: ``f"{table} >> {row}" .``
+
+        | = GitHub = |   = Slack =      | = Real Name =   |
+        | mkorpela   | @mkorpela        | Mikko Korpela   |
+        | aaltat     | @aaltat          | Tatu Aalto      |
+        | xylix      | @Kerkko Pelttari | Kerkko Pelttari |
+        | Snooz82    | @René            | René Rohner     |
+
+
+        Example:
+        | ${table}=    Set Variable    id=Get Table Cell Element >> div.kw-docs table
+        | ${e}=    `Get Table Cell Element`    ${table}    "Real Name"    "aaltat"   # Returns element with text ``Tatu Aalto``
+        | Get Text    ${e}    ==    Tatu Aalto
+        | ${e}=    `Get Table Cell Element`    ${table}    "Slack"    "Mikko Korpela"   # Returns element with text ``@mkorpela``
+        | Get Text    ${e}    ==    @mkorpela
+        | ${e}=    `Get Table Cell Element`    ${table}    "mkorpela"    "Kerkko Pelttari"   # column does not need to be in row 0
+        | Get Text    ${e}    ==    @mkorpela
+        | ${e}=    `Get Table Cell Element`    ${table}    2    -1   # Index is also directly possible
+        | Get Text    ${e}    ==    René Rohner
+        """
+        node_name = str(self.library.execute_javascript("e => e.nodeName", table))
+        if node_name != "TABLE":
+            raise ValueError(
+                f"Selector {table} must select a <table> element but selects <{node_name.lower()}>."
+            )
+        column_idx = (
+            column
+            if re.fullmatch(r"-?\d+", column)
+            else self.get_table_cell_index(f"{table} >> {column}")
+        )
+        row_idx = (
+            row
+            if re.fullmatch(r"-?\d+", row)
+            else self.get_table_row_index(f"{table} >> {row}")
+        )
+        return self.get_element(
+            f"{table} >> > * > tr >> nth={row_idx} >> > * >> nth={column_idx}"
+        )
+
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
+    def get_table_cell_index(
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        expected_value: Union[int, str] = 0,
+        message: Optional[str] = None,
+    ) -> Any:
+        """Returns the index (0 based) of a table cell within its row.
+
+        ``selector`` can select any ``<th>`` or ``<td>`` element or one of their descendants.
+        See the `Finding elements` section for details about the selectors.
+
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Example:
+        | ${table}=    Set Variable    id=`Get Table Cell Element` >> div.kw-docs table   #Table of keyword `Get Table Cell Element`
+        | ${idx}=    `Get Table Cell Index`    ${table} >> "Real Name"
+        | Should Be Equal    ${idx}    ${2}
+        | `Get Table Cell Index`    ${table} >> "@aaltat"    ==    1
+
+        Optionally asserts that the index matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments.
+        By default assertion is not done."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetTableCellIndex(
+                Request().ElementSelector(selector=selector, strict=False)
+            )
+            count = response.body
+            if self.keyword_formatters.get(self.get_table_cell_index):
+                logger.warn(
+                    "Formatter is not supported by Get Table Cell Index keyword."
+                )
+            return float_str_verify_assertion(
+                int(count),
+                assertion_operator,
+                expected_value,
+                f"Element cell index for selector `{selector}` is",
+                message,
+            )
+
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
+    def get_table_row_index(
+        self,
+        selector: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        expected_value: Union[int, str] = 0,
+        message: Optional[str] = None,
+    ) -> Any:
+        """Returns the index (0 based) of a table row.
+
+        ``selector`` can select any ``<th>`` or ``<td>`` element or one of their descendants.
+        See the `Finding elements` section for details about the selectors.
+
+        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
+
+        ``expected_value`` Expected value for the counting
+
+        ``message`` overrides the default error message for assertion.
+
+        Example:
+        | ${table}=    Set Variable    id=`Get Table Cell Element` >> div.kw-docs table   #Table of keyword `Get Table Cell Element`
+        | ${idx}=    `Get Table Row Index`    ${table} >> "@René"
+        | Should Be Equal    ${idx}    ${4}
+        | `Get Table Row Index`    ${table} >> "@aaltat"    ==    2
+
+        Optionally asserts that the index matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments.
+        By default assertion is not done."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetTableRowIndex(
+                Request().ElementSelector(selector=selector, strict=False)
+            )
+            count = response.body
+            if self.keyword_formatters.get(self.get_table_row_index):
+                logger.warn(
+                    "Formatter is not supported by Get Table Row Index keyword."
+                )
+            return float_str_verify_assertion(
+                int(count),
+                assertion_operator,
+                expected_value,
+                f"Element row index for selector `{selector}` is",
+                message,
+            )
 
     @keyword(tags=("Getter", "PageContent"))
     def get_element(self, selector: str) -> str:
