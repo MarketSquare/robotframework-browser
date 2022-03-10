@@ -543,6 +543,23 @@ class Interaction(LibraryComponent):
         )
 
     @keyword(tags=("Setter", "PageContent"))
+    def scroll_to_element(self, selector: str):
+        """This method waits for actionability checks, then tries to scroll element into view,
+        unless it is completely visible.
+
+        ``selector`` Selector of the checkbox.
+        See the `Finding elements` section for details about the selectors.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Does nothing if the element is already visible."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ScrollToElement(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
     def check_checkbox(self, selector: str):
         """Checks the checkbox or selects radio button found by ``selector``.
 

@@ -408,6 +408,7 @@ service  Playwright {
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
   rpc UploadFileBySelector(Request.FileBySelector) returns (Response.Empty);
 
+  rpc ScrollToElement(Request.ElementSelector) returns (Response.Empty);
   rpc SetOffline(Request.Bool) returns (Response.Empty);
   rpc Reload(Request.Empty) returns (Response.Empty);
 
