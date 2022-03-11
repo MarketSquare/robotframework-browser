@@ -27,6 +27,7 @@ from assertionengine import (
     list_verify_assertion,
     verify_assertion,
 )
+from robot.utils import DotDict  # type: ignore
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
@@ -712,7 +713,7 @@ class Getters(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
             logger.info(response.log)
-            parsed = json.loads(response.json)
+            parsed = DotDict(json.loads(response.json))
             logger.debug(parsed)
             if self.keyword_formatters.get(self.get_viewport_size):
                 logger.warn("Formatter is not supported by Get Viewport Size keyword.")
@@ -968,7 +969,7 @@ class Getters(LibraryComponent):
             response = stub.GetStyle(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
-        parsed = json.loads(response.json)
+        parsed = DotDict(json.loads(response.json))
         formatter = self.keyword_formatters.get(self.get_style)
         if key == "ALL":
             if formatter:
@@ -1041,7 +1042,7 @@ class Getters(LibraryComponent):
             response = stub.GetBoundingBox(
                 Request.ElementSelector(selector=selector, strict=self.strict_mode)
             )
-        parsed = json.loads(response.json)
+        parsed = DotDict(json.loads(response.json))
         logger.debug(f"BoundingBox: {parsed}")
         if self.keyword_formatters.get(self.get_boundingbox):
             logger.warn("Formatter is not supported by Get Boundingbox keyword.")
@@ -1099,7 +1100,7 @@ class Getters(LibraryComponent):
         | ${scroll_size}=    `Get Scroll Size`    id=keyword-shortcuts-container  # unfiltered element
         | Log                ${scroll_size}                                     # {'width': 253, 'height': 3036}
         """
-        scroll_size = dict()
+        scroll_size = DotDict()
         scroll_size["width"] = exec_scroll_function(self, "scrollWidth", selector)
         scroll_size["height"] = exec_scroll_function(self, "scrollHeight", selector)
         if self.keyword_formatters.get(self.get_scroll_size):
@@ -1162,7 +1163,7 @@ class Getters(LibraryComponent):
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
         """
-        scroll_position = dict()
+        scroll_position = DotDict()
         scroll_position["top"] = exec_scroll_function(self, "scrollTop", selector)
         scroll_position["left"] = exec_scroll_function(self, "scrollLeft", selector)
         client_size = self.get_client_size(selector)
@@ -1222,7 +1223,7 @@ class Getters(LibraryComponent):
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
         """
-        client_size = dict()
+        client_size = DotDict()
         client_size["width"] = exec_scroll_function(self, "clientWidth", selector)
         client_size["height"] = exec_scroll_function(self, "clientHeight", selector)
         if self.keyword_formatters.get(self.get_client_size):
