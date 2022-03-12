@@ -43,8 +43,8 @@ Evaluate Multiline JavaScript with singel element
 
 Evaluate Multiline JavaScript Strict Mode Error
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 11 elements*
-    ...    Evaluate JavaScript    button
+    ...    *strict mode violation*input*resolved to 4 elements*
+    ...    Evaluate JavaScript    input
     ...    (e, arg) => {
     ...    let text = []
     ...    console.log(e.innerText)
