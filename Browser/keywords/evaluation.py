@@ -14,7 +14,7 @@
 
 import json
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from robot.utils import DotDict  # type: ignore
 
@@ -26,7 +26,9 @@ from ..utils import DownloadedFile, keyword, logger
 class Evaluation(LibraryComponent):
     @keyword(name="Execute JavaScript", tags=("Setter", "Getter", "PageContent"))
     def execute_javascript(self, function: str, selector: str = "") -> Any:
-        """Executes given javascript on the page.
+        """*DEPRECATED!!* Use keyword `Evaluate JavaScript` instead.
+
+        Executes given javascript on the page.
 
         ``function`` A valid javascript function or a javascript function body. For example
         ``() => true`` and ``true`` will behave similarly.
@@ -35,6 +37,14 @@ class Evaluation(LibraryComponent):
         argument the function receives. If given a selector a function is necessary, with an argument
         to capture the elementhandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
+
+        Same functionality can be replaced with newer ``Evaluate JavaScript`` Keyword:
+        | -    Execute JavaScript    (elem) => elem.innerText = "abc"    h1
+        | +    Evaluate JavaScript    h1    (elem) => elem.innerText = "abc"
+
+        Example for replacement without Selector:
+        | -    Execute JavaScript    () => document.location.hostname
+        | +    Evaluate JavaScript    ${None}    () => document.location.hostname
 
         Keyword uses strict mode if selector is defined. See `Finding elements` for more details
         about strict mode.
@@ -53,16 +63,19 @@ class Evaluation(LibraryComponent):
             return json.loads(response.result)
         return response.result
 
-    @keyword(
-        name="Evaluate Multiline JavaScript", tags=("Setter", "Getter", "PageContent")
-    )
-    def evaluate_multiline_javascript(
-        self, selector: str = "", *function, arg: Any = None, all_elements: bool = True
+    @keyword(name="Evaluate JavaScript", tags=("Setter", "Getter", "PageContent"))
+    def evaluate_javascript(
+        self,
+        selector: Optional[str] = None,
+        *function,
+        arg: Any = None,
+        all_elements: bool = False,
     ) -> Any:
-        """Executes given javascript on the selected element(s).
+        """Executes given javascript on the selected element(s) or on page.
 
         ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
-        argument the function receives. If given a selector a function is necessary, with an argument
+        argument the function receives if not ``${None}``. ``selector`` is optional and can be omitted.
+        If given a selector, a function is necessary, with an argument
         to capture the elementHandle. For example ``(element) => document.activeElement === element``
         See the `Finding elements` section for details about the selectors.
 
@@ -75,7 +88,7 @@ class Evaluation(LibraryComponent):
         ``all_elements`` defines if only the single elementHandle found by ``selector`` is handed
         over to the function or if set to ``True`` all found elements are handed over as array.
 
-        Example:
+        Example with ``all_elements=True``:
         |  ${texts}=    Evaluate Multiline JavaScript    button
         |  ...    (elements, arg) => {
         |  ...        let text = []
@@ -97,7 +110,7 @@ class Evaluation(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.EvaluateJavascript(
                 Request().EvaluateAll(
-                    selector=selector,
+                    selector=selector or "",
                     script="\n".join(function),
                     arg=json.dumps(arg),
                     allElements=all_elements,
