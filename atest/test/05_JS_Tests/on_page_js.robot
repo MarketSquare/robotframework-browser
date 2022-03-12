@@ -12,6 +12,22 @@ JS execute without and with element
     ${result} =    Execute JavaScript    () => {return false;}    body
     Should Be Equal    ${result}    ${False}
 
+Evaluate Multiline JavaScript
+    ${texts}=    Evaluate Multiline JavaScript    button
+    ...    (elements, arg) => {
+    ...      let text = []
+    ...      for (e of elements) {
+    ...        console.log(e.innerText)
+    ...        text.push(e.innerText)
+    ...      }
+    ...      text.push(arg)
+    ...      return text
+    ...    }
+    ...    all_elements=True
+    ...    arg=${{[1,2,3]}}
+    Length Should Be    ${texts}    12
+    Should Be Equal    ${texts}[-1]    ${{[1,2,3]}}
+
 JS Execute Without Element On Strict Mode
     ${result} =    Execute JavaScript    () => {return false;}
     Should Be Equal    ${result}    ${False}

@@ -366,6 +366,8 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     waitForDownload = this.wrappingPage(network.waitForDownload);
 
+    evaluateJavascript = this.wrapping(evaluation.evaluateJavascript);
+
     async executeJavascript(
         call: ServerUnaryCall<Request.JavascriptCode, Response.JavascriptExecutionResult>,
         callback: sendUnaryData<Response.JavascriptExecutionResult>,

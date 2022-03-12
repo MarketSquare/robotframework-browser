@@ -53,6 +53,63 @@ class Evaluation(LibraryComponent):
             return json.loads(response.result)
         return response.result
 
+    @keyword(
+        name="Evaluate Multiline JavaScript", tags=("Setter", "Getter", "PageContent")
+    )
+    def evaluate_multiline_javascript(
+        self, selector: str = "", *function, arg: Any = None, all_elements: bool = True
+    ) -> Any:
+        """Executes given javascript on the selected element(s).
+
+        ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
+        argument the function receives. If given a selector a function is necessary, with an argument
+        to capture the elementHandle. For example ``(element) => document.activeElement === element``
+        See the `Finding elements` section for details about the selectors.
+
+        ``*function`` A valid javascript function or a javascript function body.
+        These arguments can be used to write readable multiline JavaScript.
+
+        ``arg`` an additional argument that can be handed over to the JavaScript function.
+        This argument must be JSON serializable. ElementHandles are not supported.
+
+        ``all_elements`` defines if only the single elementHandle found by ``selector`` is handed
+        over to the function or if set to ``True`` all found elements are handed over as array.
+
+        Example:
+        |  ${texts}=    Evaluate Multiline JavaScript    button
+        |  ...    (elements, arg) => {
+        |  ...        let text = []
+        |  ...            for (e of elements) {
+        |  ...                console.log(e.innerText)
+        |  ...                text.push(e.innerText)
+        |  ...            }
+        |  ...        text.push(arg)
+        |  ...        return text
+        |  ...    }
+        |  ...    all_elements=True
+        |  ...    arg=Just another Text
+
+        Keyword uses strict mode if ``all_elements`` is ``False``. See `Finding elements` for more details
+        about strict mode.
+
+        [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.EvaluateJavascript(
+                Request().EvaluateAll(
+                    selector=selector,
+                    script="\n".join(function),
+                    arg=json.dumps(arg),
+                    allElements=all_elements,
+                    strict=self.strict_mode,
+                )
+            )
+        if response.log:
+            logger.info(response.log)
+        if response.result:
+            return json.loads(response.result)
+        return response.result
+
     @keyword(tags=("Setter", "PageContent"))
     def highlight_elements(
         self,
