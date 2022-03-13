@@ -103,15 +103,10 @@ export async function evaluateJavascript(
     page: Page,
 ): Promise<Response.JavascriptExecutionResult> {
     const selector = request.getSelector();
-    let script = request.getScript();
+    const script = tryToTransformStringToFunction(request.getScript());
     const strictMode = request.getStrict();
     const arg = JSON.parse(request.getArg());
     const allElements = request.getAllelements();
-    try {
-        script = eval(script);
-    } catch (error) {
-        logger.info(`On evaluateJavascript, suppress ${error} for eval.`);
-    }
 
     async function getJSResult() {
         if (selector !== '') {
