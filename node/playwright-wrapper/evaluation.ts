@@ -107,20 +107,21 @@ export async function evaluateJavascript(
     try {
         script = eval(script);
     } catch (error) {
-        logger.info(`On executeJavascript, supress ${error} for eval.`);
+        logger.info(`On evaluateJavascript, suppress ${error} for eval.`);
     }
-    let result;
-    if (selector !== '') {
-        const locator = await findLocator(state, selector, strictMode, undefined, true);
-        if (allElements) {
-            result = await locator.evaluateAll(script, arg);
-        } else {
-            result = await locator.evaluate(script, arg);
+
+    async function getJSResult() {
+        if (selector !== '') {
+            const locator = await findLocator(state, selector, strictMode, undefined, true);
+            if (allElements) {
+                return await locator.evaluateAll(script, arg);
+            }
+            return await locator.evaluate(script, arg);
         }
-    } else {
-        result = await page.evaluate(script, arg);
+        return await page.evaluate(script, arg);
     }
-    return jsResponse(result as string, 'JavaScript executed successfully.');
+
+    return jsResponse((await getJSResult()) as string, 'JavaScript executed successfully.');
 }
 
 export async function getPageState(page: Page): Promise<Response.JavascriptExecutionResult> {
