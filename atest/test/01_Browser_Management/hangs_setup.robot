@@ -2,7 +2,7 @@
 Library             Browser    run_on_failure=None
 Resource            imports.resource
 
-Suite Setup         Open Browser To Login Page
+Suite Setup
 Suite Teardown      Close Browser
 
 *** Variables ***
@@ -16,6 +16,6 @@ Test GoTo With Short Default Timeout
     Wait For Elements State    //h1    visible    timeout=2 s
 
 Test New Page with short Default Timeout
-    new context
-    set browser timeout    1ms
+    New Context
+    Set Browser Timeout    1ms
     Run Keyword And Expect Error    *${ErrorMessage}*    New Page    ${LOGIN_URL}

@@ -1,6 +1,8 @@
 *** Settings ***
 Resource    imports.resource
 
+Suite Setup    Close Page    ALL
+
 *** Test Cases ***
 No Open Browser Throws
     Run KeyWord and Expect Error
@@ -20,7 +22,7 @@ Open GoTo GoBack GoForward
     Get Url    ==    ${WELCOME_URL}
     Go Forward
     Get Url    ==    ${ERROR_URL}
-    [Teardown]    Close Browser
+    [Teardown]    Close Context
 
 Timeouting Go To
     New Page    ${LOGIN_URL}
@@ -35,7 +37,7 @@ Timeouting Go To With Custom timeout
     Run KeyWord and Expect Error
     ...    TimeoutError: page.goto: Timeout 10ms exceeded.*
     ...    Go To    ${WELCOME_URL}    10 ms
-    [Teardown]    Close Browser
+    [Teardown]     Close Context
 
 *** Keywords ***
 Teardown For Timeouting Go To

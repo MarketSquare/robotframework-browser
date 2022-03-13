@@ -1,7 +1,8 @@
 *** Settings ***
 Resource        imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Suite Setup    Ensure Open Page
+Test Setup      Go To    ${LOGIN_URL}
 
 *** Variables ***
 ${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png

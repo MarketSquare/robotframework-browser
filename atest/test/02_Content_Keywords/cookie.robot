@@ -1,15 +1,11 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Test Setup      Open Browser To Form Page
+Suite Setup         Ensure Open Browser
+Test Setup          Open New Context To Form Page
+Test Teardown       Close Context    ALL
 
 *** Test Cases ***
-Cookies From Closed Context
-    Close Browser    ALL
-    Run Keyword And Expect Error
-    ...    Error: no open context.
-    ...    Get Cookies
-
 Get Cookies Should Return Empty List When No Cookies Are Available
     ${empty_list} =    Create List
     ${cookies} =    Get Cookies    dictionary
@@ -29,13 +25,6 @@ Add Cookie Without Url, Path and Domain
     Run Keyword And Expect Error
     ...    Error: browserContext.addCookies: Cookie should have a url or a domain/path pair
     ...    Add Cookie    Foo    Bar
-
-Add Cookie Should Fail If Context Is Not Open
-    ${url} =    Get Url
-    Close Browser    ALL
-    Run Keyword And Expect Error
-    ...    Error: no open context.
-    ...    Add Cookie    Foo    Bar    url=${url}
 
 Add Cookie With Url
     [Tags]    no-windows-support
@@ -164,12 +153,6 @@ Delete All Cookies
     ${cookies} =    Get Cookies
     Should Be Empty    ${cookies}
 
-Delete All Cookies From Closed Context
-    Close Browser    ALL
-    Run Keyword And Expect Error
-    ...    Error: no open context.
-    ...    Delete All Cookies
-
 Delete All Cookies When Cookies Does Not Exist
     Delete All Cookies
     ${cookies} =    Get Cookies
@@ -249,6 +232,10 @@ Get Cookie And No Expiry
     Get Cookie    tidii    return_type=dict
 
 *** Keywords ***
+Open New Context To Form Page
+    New Context
+    New Page    ${FORM_URL}
+
 Check Cookie
     [Arguments]    ${cookies}    ${len}    ${name}    ${value}
     ${cookies_len} =    Get Length    ${cookies}

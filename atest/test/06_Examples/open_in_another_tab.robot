@@ -41,9 +41,7 @@ Download with no acceptDownloads fails
     Run keyword and expect error
     ...    Error: Context acceptDownloads is false
     ...    Download    ${WELCOME_URL}
-    Close Browser
-    New Browser
-    [Teardown]    NONE
+    [Teardown]    Close Context
 
 Open html in another tab
     New Page    ${WELCOME_URL}

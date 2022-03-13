@@ -76,16 +76,15 @@ Get Attribute and return presents state
     Should Be True    ${present}
 
 Get Attribute Names
-    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    [Setup]    Go To    ${ELEMENT_STATE_URL}
     ${attrs} =    Get Attribute Names    [name="readonly_input"]
     FOR    ${attr}    IN    @{attrs}
         ${value} =    Get Attribute    [name="readonly_input"]    ${attr}
         Log    ${attr}=${value}
     END
-    [Teardown]    Close Page
 
 Get Attribute Names With Strict
-    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    [Setup]    Go To    ${ELEMENT_STATE_URL}
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Get Attribute Names    //input
@@ -95,17 +94,18 @@ Get Attribute Names With Strict
     [Teardown]    Set Strict Mode    True
 
 Get Attribute Names and Assert single and multiple
-    [Setup]    New Page    ${ELEMENT_STATE_URL}
+    [Setup]    Go To    ${ELEMENT_STATE_URL}
     Get Attribute Names    [name="readonly_input"]    ==    type    name    value    readonly
     Get Attribute Names    [name="disabled_input"]    contains    disabled
     Get Attribute Names    [name="disabled_input"]    validate    value[-1] == "disabled"
-    [Teardown]    Close Page
 
 Get Classes
+    [Setup]    Go To    ${LOGIN_URL}
     ${classes} =    Get Classes    id=draggable
     Should Be Equal    ${classes}    ${{["box", "react-draggable"]}}
 
 Get Classes With Strict
+    [Setup]    Go To    ${LOGIN_URL}
     Run Keyword And Expect Error
     ...    *strict mode violation*//button*resolved to 11 elements*
     ...    Get Classes    //button
@@ -115,11 +115,13 @@ Get Classes With Strict
     [Teardown]    Set Strict Mode    True
 
 Get Classes and Assert
+    [Setup]    Go To    ${LOGIN_URL}
     Get Classes    id=draggable    contains    react-draggable
     Get Classes    id=draggable    ==    react-draggable    box
     Get Classes    id=draggable    validate    "react-draggable-dragged" not in value
 
 Get Element Count
+    [Setup]    Go To    ${LOGIN_URL}
     ${count} =    Get Element Count    h1
     Should Be Equal    ${count}    ${1}
     ${count} =    Get Element Count    label
@@ -128,6 +130,7 @@ Get Element Count
     Should Be Equal    ${count}    ${0}
 
 Get Element Count and Assert
+    [Setup]    Go To    ${LOGIN_URL}
     Get Element Count    h1    ==    1
     Get Element Count    h1    ==    ${1}
     Get Element Count    label    validate    value == 2

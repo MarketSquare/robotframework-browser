@@ -1,6 +1,8 @@
 *** Settings ***
 Resource    imports.resource
 
+Suite Setup    Close Browser    ALL
+
 *** Test Cases ***
 Set Geolocation On Browser Startup
     Start Context With Geolocation

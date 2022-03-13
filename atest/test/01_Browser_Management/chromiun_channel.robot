@@ -1,6 +1,8 @@
 *** Settings ***
 Resource    imports.resource
 
+Suite Teardown    Close Browser    ALL
+
 *** Test Cases ***
 Wrong Browser With Channel
     Run Keyword And Expect Error

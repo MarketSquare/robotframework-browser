@@ -89,3 +89,21 @@ Delete Files On Teardown
     Remove File    ${OUTPUT_DIR}/*.png
     Remove File    ${OUTPUT_DIR}/*.zip
     Remove File    ${OUTPUT_DIR}/*.webm
+
+Ensure Open Page
+    [Arguments]    ${url}=${NONE}
+    Ensure Open Browser
+    ${IDs}=    Get Page Ids
+    IF    $IDs == []
+        New Page    ${url}
+    ELSE IF    $url
+        Go To    ${url}
+    END
+
+Ensure Open Browser
+    ${IDs} =    Get Browser Ids
+    IF    $IDs == []
+        New Browser    ${BROWSER}    headless=${HEADLESS}
+    ELSE
+        Switch Browser    ${IDs}[0]
+    END
