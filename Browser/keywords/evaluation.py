@@ -67,7 +67,7 @@ class Evaluation(LibraryComponent):
     def evaluate_javascript(
         self,
         selector: Optional[str] = None,
-        *function,
+        *function: str,
         arg: Any = None,
         all_elements: bool = False,
     ) -> Any:
@@ -89,7 +89,7 @@ class Evaluation(LibraryComponent):
         over to the function or if set to ``True`` all found elements are handed over as array.
 
         Example with ``all_elements=True``:
-        |  ${texts}=    Evaluate Multiline JavaScript    button
+        |  ${texts}=    Evaluate JavaScript    button
         |  ...    (elements, arg) => {
         |  ...        let text = []
         |  ...            for (e of elements) {
