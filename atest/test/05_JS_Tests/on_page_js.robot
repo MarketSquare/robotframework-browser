@@ -118,17 +118,17 @@ Highlight Element With Strict
     [Teardown]    Set Strict Mode    True
 
 Highlight Element with style
-    Highlight Elements    input#login_button    duration=400ms
+    Highlight Elements    input#login_button    duration=600ms
     Get Style    .robotframework-browser-highlight    border-bottom-width    ==    2px
     Get Style    .robotframework-browser-highlight    border-bottom-style    ==    dotted
     Get Style    .robotframework-browser-highlight    border-bottom-color    ==    rgb(0, 0, 255)
-    Sleep    400ms
-    Highlight Elements    input#login_button    duration=400ms    width=4px    style=solid    color=\#FF00FF
+    Sleep    600ms
+    Highlight Elements    input#login_button    duration=600ms    width=4px    style=solid    color=\#FF00FF
     ${style} =    Get Style    .robotframework-browser-highlight
     Should Be True    "${style}[border-bottom-width]" == "4px"
     Should Be True    "${style}[border-bottom-style]" == "solid"
     Should Be True    "${style}[border-bottom-color]" == "rgb(255, 0, 255)"
-    Sleep    400ms
+    Sleep    600ms
 
 Highlight Element with element selector
     New Page    ${LOGIN_URL}
