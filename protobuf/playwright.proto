@@ -222,6 +222,14 @@ message Request {
   message Bool {
     bool value = 1;
   }
+
+  message EvaluateAll {
+    string selector = 1;
+    string script = 2;
+    string arg = 3;
+    bool allElements = 4;
+    bool strict = 5;
+  }
 }
 
 message Types {
@@ -372,6 +380,8 @@ service  Playwright {
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
   /* Executes javascript on the active page */
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
+  rpc EvaluateJavascript(Request.EvaluateAll) returns (Response.JavascriptExecutionResult);
+
   rpc RecordSelector(Request.Label) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);

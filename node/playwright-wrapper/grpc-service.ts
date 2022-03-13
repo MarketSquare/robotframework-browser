@@ -114,6 +114,24 @@ export class PlaywrightServer implements IPlaywrightServer {
         };
     };
 
+    private wrappingStatePage = <T, K>(
+        func: (request: T, state: PlaywrightState, page: Page) => Promise<K>,
+    ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
+        return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
+            try {
+                const request = call.request;
+                if (request === null) throw Error('No request');
+                logger.info(`Start of node method ${func.name}`);
+                const response = await func(request, this.getState(call), this.getActivePage(call));
+                logger.info(`End of node method ${func.name}`);
+                callback(null, response);
+            } catch (e) {
+                logger.info(`Error of node method  ${func.name}`);
+                callback(errorResponse(e), null);
+            }
+        };
+    };
+
     initializeExtension = this.wrapping(playwrightState.initializeExtension);
 
     async callExtensionKeyword(call: ServerWritableStream<Request.KeywordCall, Response.Json>): Promise<void> {
@@ -365,6 +383,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     waitForDownload = this.wrappingPage(network.waitForDownload);
+
+    evaluateJavascript = this.wrappingStatePage(evaluation.evaluateJavascript);
 
     async executeJavascript(
         call: ServerUnaryCall<Request.JavascriptCode, Response.JavascriptExecutionResult>,

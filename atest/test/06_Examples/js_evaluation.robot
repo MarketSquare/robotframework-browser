@@ -8,7 +8,7 @@ Test Setup      New Page    ${LOGIN_URL}
 Mutate Element On Page With ElementHandle
     ${ref} =    Get Element    h1
     Get Property    ${ref}    innerText    ==    Login Page
-    Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
+    Evaluate JavaScript    ${ref}    (elem) => elem.innerText = "abc"
     Get Property    ${ref}    innerText    ==    abc
 
 Wait For Progress Bar

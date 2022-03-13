@@ -94,6 +94,36 @@ export async function executeJavascript(
     return jsResponse(result as string, 'JavaScript executed successfully.');
 }
 
+export async function evaluateJavascript(
+    request: Request.EvaluateAll,
+    state: PlaywrightState,
+    page: Page,
+): Promise<Response.JavascriptExecutionResult> {
+    const selector = request.getSelector();
+    let script = request.getScript();
+    const strictMode = request.getStrict();
+    const arg = JSON.parse(request.getArg());
+    const allElements = request.getAllelements();
+    try {
+        script = eval(script);
+    } catch (error) {
+        logger.info(`On evaluateJavascript, suppress ${error} for eval.`);
+    }
+
+    async function getJSResult() {
+        if (selector !== '') {
+            const locator = await findLocator(state, selector, strictMode, undefined, true);
+            if (allElements) {
+                return await locator.evaluateAll(script, arg);
+            }
+            return await locator.evaluate(script, arg);
+        }
+        return await page.evaluate(script, arg);
+    }
+
+    return jsResponse((await getJSResult()) as string, 'JavaScript executed successfully.');
+}
+
 export async function getPageState(page: Page): Promise<Response.JavascriptExecutionResult> {
     const result = await page.evaluate(() => window.__RFBROWSER__);
     return jsResponse(result, 'Page state evaluated successfully.');
