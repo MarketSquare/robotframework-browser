@@ -16,7 +16,7 @@
     "@typescript-eslint/parser": "^5.14.0",
     "esbuild": "^0.14.25",
     "esbuild-node-externals": "^1.4.1",
-    "eslint": "^8.10.0",
+    "eslint": "^8.11.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
