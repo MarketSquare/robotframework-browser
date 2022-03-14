@@ -71,7 +71,6 @@ Frames With Element ID
     ...    Click    ${element} >>> "foo"
     [Teardown]    Set Browser Timeout    ${Timeout}
 
-
 Get Element Count In iFrame
     [Setup]    Go To    ${FRAMES_URL}
     Get Element Count    iframe[name="left"] >>> //input    ==    2
@@ -82,7 +81,6 @@ Get Element Should Wait For Attached State
     Click    \#submit    noWaitAfter=True
     ${locator} =    Get Element    id=victim
     Should Not Be Empty    ${locator}
-
 
 *** Keywords ***
 Setup Keyword

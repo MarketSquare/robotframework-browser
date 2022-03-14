@@ -1,7 +1,7 @@
 *** Settings ***
-Resource    imports.resource
-Suite Setup        Close Browser    ALL
+Resource        imports.resource
 
+Suite Setup     Close Browser    ALL
 
 *** Test Cases ***
 Cookies From Closed Context

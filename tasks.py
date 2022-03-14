@@ -482,19 +482,27 @@ def atest_coverage(c):
 
 def _run_pabot(extra_args=None, include_mac=False):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    pabot_args = [
-        sys.executable,
-        "-m",
-        "pabot.pabot",
-        "--pabotlib",
-        "--pabotlibport",
-        "0",
-        "--processes",
-        EXECUTOR_COUNT,
-        "--artifacts",
-        "png,webm,zip",
-        "--artifactsinsubfolders",
-    ]
+    pabot_args = (
+        [
+            sys.executable,
+            "-m",
+            "pabot.pabot",
+            "--pabotlib",
+            "--pabotlibport",
+            "0",
+            "--processes",
+            EXECUTOR_COUNT,
+            "--artifacts",
+            "png,webm,zip",
+            "--artifactsinsubfolders",
+        ]
+        if EXECUTOR_COUNT != "1"
+        else [
+            sys.executable,
+            "-m",
+            "robot",
+        ]
+    )
     default_args = [
         "--xunit",
         "robot_xunit.xml",

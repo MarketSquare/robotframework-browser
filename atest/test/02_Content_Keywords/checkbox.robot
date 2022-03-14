@@ -79,7 +79,6 @@ Uncheck Checkbox With Waiting
     Uncheck Checkbox    \#victim
     Get Checkbox State    \#victim    ==    ${False}
 
-
 *** Keywords ***
 Setup To Form Url
     Ensure Open Browser

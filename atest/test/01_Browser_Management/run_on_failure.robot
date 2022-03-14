@@ -1,7 +1,7 @@
 *** Settings ***
 Resource        imports.resource
 
-Suite Setup    Ensure Open Page
+Suite Setup     Ensure Open Page
 Test Setup      Go To    ${LOGIN_URL}
 
 *** Variables ***

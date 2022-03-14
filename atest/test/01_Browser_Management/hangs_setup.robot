@@ -2,7 +2,6 @@
 Library             Browser    run_on_failure=None
 Resource            imports.resource
 
-Suite Setup
 Suite Teardown      Close Browser
 
 *** Variables ***

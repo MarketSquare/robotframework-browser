@@ -93,7 +93,7 @@ Delete Files On Teardown
 Ensure Open Page
     [Arguments]    ${url}=${NONE}
     Ensure Open Browser
-    ${IDs}=    Get Page Ids
+    ${IDs} =    Get Page Ids
     IF    $IDs == []
         New Page    ${url}
     ELSE IF    $url

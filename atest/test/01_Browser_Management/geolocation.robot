@@ -1,7 +1,7 @@
 *** Settings ***
-Resource    imports.resource
+Resource        imports.resource
 
-Suite Setup    Close Browser    ALL
+Suite Setup     Close Browser    ALL
 
 *** Test Cases ***
 Set Geolocation On Browser Startup

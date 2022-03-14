@@ -3,8 +3,8 @@ Documentation       Tests for Get Element and `element=<ref>` selector syntax
 
 Resource            imports.resource
 
-Suite Setup          Ensure Open Page
-Test Setup           Go To    ${FORM_URL}
+Suite Setup         Ensure Open Page
+Test Setup          Go To    ${FORM_URL}
 
 *** Test Cases ***
 Get Element

@@ -1,7 +1,7 @@
 *** Settings ***
-Resource    imports.resource
+Resource        imports.resource
 
-Suite Setup    Close Page    ALL
+Suite Setup     Close Page    ALL
 
 *** Test Cases ***
 No Open Browser Throws
@@ -37,7 +37,7 @@ Timeouting Go To With Custom timeout
     Run KeyWord and Expect Error
     ...    TimeoutError: page.goto: Timeout 10ms exceeded.*
     ...    Go To    ${WELCOME_URL}    10 ms
-    [Teardown]     Close Context
+    [Teardown]    Close Context
 
 *** Keywords ***
 Teardown For Timeouting Go To

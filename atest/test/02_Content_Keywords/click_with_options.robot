@@ -1,5 +1,6 @@
 *** Settings ***
 Resource        imports.resource
+
 Suite Setup     Ensure Open Browser
 Test Setup      Ensure Open Page    ${LOGIN_URL}
 

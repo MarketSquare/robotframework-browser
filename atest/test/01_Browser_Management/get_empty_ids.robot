@@ -1,8 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Suite Setup     Close Browser    ALL
-Test Teardown    Close Browser    ALL
+Suite Setup         Close Browser    ALL
+Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Get Empty Browser IDs
