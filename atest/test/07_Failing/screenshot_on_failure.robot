@@ -22,16 +22,11 @@ Check screenshots
     file should exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-3.png
     file should not exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-4.png
 
-Screenshot is embedded according to env var
-    Set Environment Variable    ROBOT_FRAMEWORK_BROWSER_DEFAULT_EMBED_SCREENSHOTS    ${TRUE}
+Env Var embed for failure screenshot
+    Set Environment Variable    ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE    EMBED
 
     Run Keyword    New Page    https://google.com
-    Run Keyword And Expect Error    STARTS: TimeoutError    Click    non_existent_button
+    Run Keyword And Expect Error    STARTS: TimeoutError    Click    .nonexisting
     File Should Not Exist    ${OUTPUTDIR}/browser/screenshot/fail-screenshot-4.png
     Close Page
-
-    Set Environment Variable    ROBOT_FRAMEWORK_BROWSER_DEFAULT_EMBED_SCREENSHOTS    ${FALSE}
-    Run Keyword    New Page    https://google.com
-    Run Keyword And Expect Error    STARTS: TimeoutError    Click    non_existent_button
-    Close Page
-    File Should Exist    ${OUTPUTDIR}/browser/screenshot/fail-screenshot-4.png
+    Remove Environment Variable    ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE

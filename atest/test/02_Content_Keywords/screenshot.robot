@@ -105,3 +105,22 @@ Screenshot Without Active Page
     Run Keyword And Expect Error
     ...    Error: Tried to take screenshot, but no page was open.
     ...    Take Screenshot
+
+Env Var filename set
+    Remove Environment Variable    ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE
+    Set Environment Variable    ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE    my-custom-{index}
+    New Page    https://google.com
+    ${filename} =    Take Screenshot
+    Should Be Equal    ${filename}    ${OUTPUTDIR}/browser/screenshot/my-custom-1.png
+    Close Page
+    File Should Exist    ${OUTPUTDIR}/browser/screenshot/my-custom-1.png
+    Remove Environment Variable    ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE
+
+Env Var EMBED
+    Set Environment Variable    ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE    EMBED
+
+    New Page    https://google.com
+    ${filename} =    Take Screenshot
+    Should Be Equal    ${filename}    EMBED
+    Close Page
+    Remove Environment Variable    ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE

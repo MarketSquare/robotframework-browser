@@ -24,7 +24,6 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
 from ..utils.data_types import Permission, ScreenshotFileTypes
-from ..utils.robot_booleans import is_truthy
 
 
 class Control(LibraryComponent):
@@ -100,8 +99,9 @@ class Control(LibraryComponent):
 
          The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
 
-         If environment variable ROBOT_FRAMEWORK_BROWSER_EMBED_SCREENSHOTS is set to a truthy
-         value, all screenshots are embedded, overriding `filename`.
+         Environment variable ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE can be used to override
+         ``filename``. For example this can be used to set it to EMBED when debugging but
+         let local filenames through in production.
 
 
         ``selector`` Take a screenshot of the element matched by selector.
@@ -130,8 +130,9 @@ class Control(LibraryComponent):
         """
 
         # If the user does not give custom filename we check the global setting
-        if is_truthy(get_env_var("ROBOT_FRAMEWORK_BROWSER_EMBED_SCREENSHOTS")):
-            filename = "EMBED"
+        env_var_filename = get_env_var("ROBOT_FRAMEWORK_BROWSER_FORCE_SCREENSHOT_FILE")
+        if env_var_filename:
+            filename = env_var_filename
 
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
