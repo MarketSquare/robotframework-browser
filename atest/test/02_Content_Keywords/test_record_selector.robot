@@ -7,7 +7,7 @@ Suite Teardown      Close Browser
 
 *** Test Cases ***
 Finds a selector
-    [Tags]    no-mac-support
+    [Tags]    no-mac-support    slow
     [Timeout]    2 minutes
     New Page    ${LOGIN_URL}
     ${recording} =    promise to    record selector

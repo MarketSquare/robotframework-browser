@@ -27,6 +27,7 @@ New Context does not open a page
     Should Be Equal    ${no_page_id}    NO PAGE OPEN
 
 Open Browser opens everything
+    [Tags]    slow
     ${old_timeout} =    Set Browser timeout    30 seconds
     Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
@@ -45,6 +46,7 @@ New Browser with invalid browser fails on RF side
     [Teardown]    no operation
 
 Create Chain Works
+    [Tags]    slow
     New Browser
     New Context
     ${first} =    New Page    ${LOGIN_URL}
@@ -53,6 +55,7 @@ Create Chain Works
     Get Title    matches    (?i)login
 
 Close Browser switches active page
+    [Tags]    slow
     New Browser
     New Page Login
     New Browser
@@ -61,6 +64,7 @@ Close Browser switches active page
     Get Title    matches    (?i)login
 
 Close Context switches active page
+    [Tags]    slow
     New Context
     New Page Login
     New Context
@@ -69,12 +73,14 @@ Close Context switches active page
     Get Title    matches    (?i)login
 
 Close Page switches active page
+    [Tags]    slow
     New Page Login
     New Page Form
     Close Page
     Get Title    matches    (?i)login
 
 Browser, Context and Page UUIDs
+    [Tags]    slow
     ${browser} =    New Browser
     ${context} =    New Context
     ${page} =    New Page
@@ -85,6 +91,7 @@ Browser, Context and Page UUIDs
     [Teardown]    Close Browser
 
 Switch Context
+    [Tags]    slow
     ${first_context} =    New Context
     New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
@@ -95,10 +102,12 @@ Switch Context
     Get Title    matches    (?i)login
 
 New Page can New Context and browser
+    [Tags]    slow
     New Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
 
 Switch Page after popup
+    [Tags]    slow
     Open Browser and assert Login Page    chromium
     Click    button#pops_up
     ${previous} =    Switch Page    NEW
@@ -107,6 +116,7 @@ Switch Page after popup
     Wait For Elements State    button#pops_up
 
 Switch New Page fails when no new pages
+    [Tags]    slow
     New Page    ${LOGIN_URL}
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
@@ -127,6 +137,7 @@ Set Viewport Size
     Should Be Equal    ${desired_second}    ${second_size}
 
 Page Index is stable when other pages closed
+    [Tags]    slow
     ${first} =    New Page
     ${second} =    New Page
     ${third} =    New Page
@@ -136,6 +147,7 @@ Page Index is stable when other pages closed
     Should Be Equal    ${first}[page_id]    ${last}
 
 Context Index is stable when other contexts closed
+    [Tags]    slow
     ${first} =    New Context
     ${second} =    New Context
     ${third} =    New Context
@@ -145,12 +157,14 @@ Context Index is stable when other contexts closed
     Should Be Equal    ${first}    ${last}
 
 Page indices are unique
+    [Tags]    slow
     ${first} =    New Page
     Close Page
     ${second} =    New Page
     Should Not Be Equal    ${first}    ${second}
 
 Close Page gets errors and console log
+    [Tags]    slow
     ${page} =    New Page    ${ERROR_URL}
     Click    "Crash click"
     ${response} =    Close Page
@@ -160,18 +174,21 @@ Close Page gets errors and console log
     Should be equal    ${response}[0][id]    ${page}[page_id]
 
 Context indices are unique
+    [Tags]    slow
     ${first} =    New Context
     Close Context
     ${second} =    New Context
     Should Not Be Equal    ${first}    ${second}
 
 Browser indices are unique
+    [Tags]    slow
     ${first} =    New Browser
     Close Browser
     ${second} =    New Browser
     Should Not Be Equal    ${first}    ${second}
 
 Close All Contexts
+    [Tags]    slow
     New Context
     New Context
     New Context
@@ -180,6 +197,7 @@ Close All Contexts
     Should Be Equal    ${current}    NO CONTEXT OPEN
 
 Close All Pages
+    [Tags]    slow
     New Page
     New Page
     New Page
@@ -189,6 +207,7 @@ Close All Pages
     Should Be Equal    ${current}    NO PAGE OPEN
 
 Closing Page/Contex/Browser Multiple Times Should Not Cause Errors
+    [Tags]    slow
     New Context
     New Page
     Close Page
@@ -198,6 +217,7 @@ Closing Page/Contex/Browser Multiple Times Should Not Cause Errors
     Close Browser
 
 Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
+    [Tags]    slow
     New Context
     New Page
     Close Page    ALL
@@ -208,6 +228,7 @@ Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
     Close Browser    ALL
 
 New Context with defaultBrowserType ff
+    [Tags]    slow
     [Timeout]    80s    # Because FF is just slow sometimes
     ${old_timeout} =    Set Browser Timeout    80s
     New Context    defaultBrowserType=firefox
@@ -215,6 +236,7 @@ New Context with defaultBrowserType ff
     Set Browser Timeout    ${old_timeout}
 
 New Context with defaultBrowserType chromium
+    [Tags]    slow
     New Context    defaultBrowserType=chromium
     Verify Browser Type    chromium
 
@@ -223,6 +245,7 @@ When Context Without Browser Is Created This Is Logged For User
     ...    LOG    1:5    INFO    No browser was open. New browser was automatically opened when this context is created.
     ...    LOG    1:7    NONE
     ...    LOG    2:6    NONE
+    [Tags]    slow
     [Setup]    Close Browser    ALL
     New Context
     New Context
@@ -234,6 +257,7 @@ When Page Without Browser Is Created This Is Logged For User
     ...    LOG    1:5    NONE
     ...    LOG    2:3    DEBUG    Video is not enabled.
     ...    LOG    2:4    NONE
+    [Tags]    slow
     [Setup]    Close Browser    ALL
     New Page
     New Page
@@ -245,6 +269,7 @@ When Page Without Context Is Created This Is Logged For User
     ...    LOG    2:5    NONE
     ...    LOG    3:3    DEBUG    Video is not enabled.
     ...    LOG    3:4    NONE
+    [Tags]    slow
     [Setup]    Close Browser    ALL
     New Browser
     New Page

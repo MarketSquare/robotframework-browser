@@ -9,14 +9,18 @@ ${timeout_message} =    TimeoutError: page.waitForFunction: Timeout 100ms exceed
 
 *** Test Cases ***
 Wait For Function No Element and fail on timeout
+    ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
     ...    TimeoutError*
     ...    Wait For Function    () => {return false;}
+    Set Browser Timeout    ${timeout}
 
 Wait For Function Element and fail on timeout
+    ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
     ...    TimeoutError*
     ...    Wait For Function    () => {return false;}    body
+    Set Browser Timeout    ${timeout}
 
 Succesful Wait For Function
     Wait For Function    true    timeout=500ms

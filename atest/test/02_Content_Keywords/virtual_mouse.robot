@@ -41,6 +41,7 @@ Drag and Drop
     Assert Position    ${dest_center}[x]    ${dest_center}[y]    ${tol}
 
 Drag And Drop With Strict
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Drag And Drop    //input    id=clickWithOptions
@@ -53,6 +54,7 @@ Drag And Drop With Strict
     [Teardown]    Set Strict Mode    True
 
 Drag and Drop with coordinates
+    [Tags]    slow
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
     ${obj_dim} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Dim_Func}
     ${dest_center} =    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
@@ -122,8 +124,8 @@ Click Count
 Delay click
     ${x} =    Get Boundingbox    \#clickWithOptions    x
     ${y} =    Get Boundingbox    \#clickWithOptions    y
-    Mouse Button    click    ${x}    ${y}    delay=1000
-    Get Text    \#mouse_delay_time    validate    int(value) > 950
+    Mouse Button    click    ${x}    ${y}    delay=100
+    Get Text    \#mouse_delay_time    validate    int(value) > 90
 
 Left Right and Middle Click
     ${x} =    Get Boundingbox    \#clickWithOptions    x
@@ -136,6 +138,7 @@ Left Right and Middle Click
     Get Text    \#mouse_button    ==    left
 
 Get Boundingbox With Strict
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Get Boundingbox    //input
@@ -145,6 +148,7 @@ Get Boundingbox With Strict
     [Teardown]    Set Strict Mode    True
 
 Mouse Move Relative To With Strict
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Mouse Move Relative To    //input    4    2

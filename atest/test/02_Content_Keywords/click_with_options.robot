@@ -14,12 +14,12 @@ Click Count with Delay
     Get Text    \#click_count    ==    2
 
 Delay Click
-    Click    \#clickWithOptions    delay=300 ms
-    Get Text    \#mouse_delay_time    validate    int(value) >= 300
+    Click    \#clickWithOptions    delay=200 ms
+    Get Text    \#mouse_delay_time    validate    int(value) >= 200
 
 Second Delay click
-    Click    \#clickWithOptions    delay=0.3
-    Get Text    \#mouse_delay_time    validate    int(value) >= 300
+    Click    \#clickWithOptions    delay=0.2
+    Get Text    \#mouse_delay_time    validate    int(value) >= 200
 
 Left Right and Middle Click
     Click    \#clickWithOptions    right

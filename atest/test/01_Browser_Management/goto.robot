@@ -10,6 +10,7 @@ No Open Browser Throws
     ...    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
+    [Tags]    slow
     [Setup]    New Page    ${LOGIN_URL}
     Go To    ${WELCOME_URL}
     Get Url    ==    ${WELCOME_URL}
@@ -33,6 +34,7 @@ Timeouting Go To
     [Teardown]    Teardown For Timeouting Go To    ${timeout}
 
 Timeouting Go To With Custom timeout
+    [Tags]    slow
     New Page    ${LOGIN_URL}
     Run KeyWord and Expect Error
     ...    TimeoutError: page.goto: Timeout 10ms exceeded.*

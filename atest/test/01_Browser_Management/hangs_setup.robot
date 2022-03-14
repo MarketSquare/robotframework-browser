@@ -9,6 +9,7 @@ ${ErrorMessage} =       page.goto: Timeout 1ms exceeded.
 
 *** Test Cases ***
 Test GoTo With Short Default Timeout
+    [Tags]    slow
     New Page
     set browser timeout    1ms
     Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}

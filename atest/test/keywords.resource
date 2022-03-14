@@ -107,3 +107,11 @@ Ensure Open Browser
     ELSE
         Switch Browser    ${IDs}[0]
     END
+
+Ensure Location
+    [Arguments]    ${url}
+    Ensure Open Page
+    ${loc} =    Get Url
+    IF    "${url}" not in "${loc}"
+        Go To    ${url}
+    END

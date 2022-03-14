@@ -266,7 +266,7 @@ def clean_atest(c):
 
 
 @task(clean_atest, create_test_app)
-def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None):
+def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None, smoke=False):
     """Runs Robot Framework acceptance tests with pabot.
 
     Args:
@@ -274,6 +274,7 @@ def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None):
         include: Select test by tag
         zip: Create zip file from output files.
         debug: Use robotframework-debugger as test listener
+        smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
     """
     args = [
@@ -286,6 +287,8 @@ def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None):
         args.extend(["--include", include])
     if debug:
         args.extend(["--listener", "Debugger"])
+    if smoke:
+        args.extend(["--exclude", "slow"])
     os.mkdir(ATEST_OUTPUT)
 
     rc = 1
