@@ -5,6 +5,8 @@ Resource            imports.resource
 Test Setup          Open Browser To No Page
 Test Teardown       Close Browser
 
+Force Tags          slow
+
 *** Test Cases ***
 Open PDF in another tab and download it
     [Setup]    New Browser    headless=${FALSE}    downloadsPath=${EXECDIR}
@@ -41,9 +43,7 @@ Download with no acceptDownloads fails
     Run keyword and expect error
     ...    Error: Context acceptDownloads is false
     ...    Download    ${WELCOME_URL}
-    Close Browser
-    New Browser
-    [Teardown]    NONE
+    [Teardown]    Close Context
 
 Open html in another tab
     New Page    ${WELCOME_URL}

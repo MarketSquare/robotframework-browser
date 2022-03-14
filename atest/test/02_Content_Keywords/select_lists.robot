@@ -20,6 +20,7 @@ Get Select Options
     Should be equal    ${options}[1][value]    phone
 
 Get Select Options Strict
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//select*resolved to 6 elements*
     ...    Get Select Options    //select
@@ -34,6 +35,7 @@ Get Selected Options
     ...    Verifying list 'possible_channels' has options [ Email | Telephone ] selected.
     ...    Verifying list 'interests' has no options selected.
     ...    Verifying list 'possible_channels' fails if assert all options selected.
+    [Tags]    slow
     ${selection} =    Get Selected Options    select[name=preferred_channel]    label    ==    Telephone
     Should Be Equal    ${selection}    Telephone
     Get Selected Options    select[name=preferred_channel]    value    ==    phone
@@ -50,11 +52,13 @@ Get Selected Options
     ...    Email    Telephone    Direct mail
 
 Get Selected Options With Not Matching Attribute Value
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    Selected Options: 'phone' (str) should be 'kala' (str)
     ...    Get Selected Options    select[name=preferred_channel]    value    ==    kala
 
 Get Select Options With Not Matching Value
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    Not Here
     ...    Get Select Options    select[name=preferred_channel]    ==    Email    Not Here

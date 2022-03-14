@@ -1,7 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Suite Setup     Close Browser    ALL
+Suite Setup         Close Browser    ALL
+Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Get Empty Browser IDs
@@ -32,6 +33,7 @@ Get Empty Context IDs from Browser
     Check Return Value is Empty List    Get Context Ids    All    All
 
 Get Empty Context ID from Empty Browser
+    [Tags]    slow
     ${browser} =    New Browser
     New Browser
     New Context
@@ -40,6 +42,7 @@ Get Empty Context ID from Empty Browser
     Check Return Value is Empty List    Get Context Ids    All    Active
 
 Get Empty Page ID from Empty Browser and Empty Context
+    [Tags]    slow
     ${browser} =    New Browser
     Check Return Value is Empty List    Get Page Ids    Active    Active    Active
     Check Return Value is Empty List    Get Page Ids    Active    Active    All

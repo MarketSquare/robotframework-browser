@@ -13,6 +13,7 @@ Set Strict Mode
     Should Be True    ${old_mode}
 
 Use Strict Mode
+    [Tags]    slow
     New Page    ${FORM_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
@@ -25,6 +26,7 @@ When Strict Is False Should Not Fail
     Get Text    //input
 
 Strict Mode In invokePlaywrightMethodStrict With Frames
+    [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
@@ -35,6 +37,7 @@ Strict Mode In invokePlaywrightMethodStrict With Frames
     Should End With    ${width}    px
 
 Strict Mode In invokePlaywrightMethodStrict With Frame Element
+    [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
@@ -45,6 +48,7 @@ Strict Mode In invokePlaywrightMethodStrict With Frame Element
     Should End With    ${width}    px
 
 Stirct Mode In invokePlaywrightMethodStrict Without Frame
+    [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error

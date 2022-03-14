@@ -1,5 +1,7 @@
 *** Settings ***
-Resource    imports.resource
+Resource        imports.resource
+
+Suite Setup     Close Browser    ALL
 
 *** Test Cases ***
 Set Geolocation On Browser Startup
@@ -12,6 +14,7 @@ Set Geolocation
     Check Geolocation    72.56    145.89
 
 Enable Geolocation
+    [Tags]    slow
     [Setup]    Start Context Without Geolocation
     Set Geolocation    11.11    22.22    33.33
     Run Keyword and Expect Error    *    Check Geolocation    11.11    22.22
@@ -20,12 +23,14 @@ Enable Geolocation
     Check Geolocation    72.56    145.89
 
 Clear Geolocation Permission
+    [Tags]    slow
     [Setup]    Start Context With Geolocation
     Clear Permissions
     Set Geolocation    72.56    145.89    0.23
     Run Keyword and Expect Error    *    Check Geolocation    72.56    145.89
 
 Enable Geolocation on wrong origin
+    [Tags]    slow
     [Setup]    Start Context Without Geolocation
     Grant Permissions    geolocation    origin=http://www.example.com
     Set Geolocation    72.56    145.89    0.23

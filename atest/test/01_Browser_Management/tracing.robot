@@ -3,6 +3,7 @@ Resource    imports.resource
 
 *** Test Cases ***
 Enable Tracing To File
+    [Tags]    slow
     New Context    tracing=trace_0.zip
     New Page    ${LOGIN_URL}
     Click    id=goes_hidden
@@ -12,6 +13,7 @@ Enable Tracing To File
     File Should Not Be Empty    ${OUTPUT_DIR}/trace_0.zip
 
 When Not Enabled No Trace File
+    [Tags]    slow    # Depends on previous test
     New Context
     New Page    ${LOGIN_URL}
     Close Context
@@ -20,6 +22,7 @@ When Not Enabled No Trace File
     Wait File Count In Directory    ${OUTPUT_DIR}    1    trace*.zip
 
 Enable Tracing To File With Two Browsers
+    [Tags]    slow
     [Timeout]    90s
     ${browser1} =    New Browser
     New Context    tracing=trace_1.zip
@@ -52,6 +55,7 @@ Check Show-Trace Command
     END
 
 Tracing And Closing All Browsers
+    [Tags]    slow
     [Timeout]    90s
     New Browser
     New Context    tracing=trace_10.zip
@@ -63,6 +67,7 @@ Tracing And Closing All Browsers
     File Should Not Be Empty    ${OUTPUT_DIR}/trace_10.zip
 
 Tracing And Closing Current Browsers
+    [Tags]    slow
     [Timeout]    90s
     New Browser
     New Context    tracing=trace_20.zip

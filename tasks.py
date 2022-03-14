@@ -266,7 +266,7 @@ def clean_atest(c):
 
 
 @task(clean_atest, create_test_app)
-def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None):
+def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None, smoke=False):
     """Runs Robot Framework acceptance tests with pabot.
 
     Args:
@@ -274,6 +274,7 @@ def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None):
         include: Select test by tag
         zip: Create zip file from output files.
         debug: Use robotframework-debugger as test listener
+        smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
     """
     args = [
@@ -286,6 +287,8 @@ def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None):
         args.extend(["--include", include])
     if debug:
         args.extend(["--listener", "Debugger"])
+    if smoke:
+        args.extend(["--exclude", "slow"])
     os.mkdir(ATEST_OUTPUT)
 
     rc = 1
@@ -482,19 +485,27 @@ def atest_coverage(c):
 
 def _run_pabot(extra_args=None, include_mac=False):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    pabot_args = [
-        sys.executable,
-        "-m",
-        "pabot.pabot",
-        "--pabotlib",
-        "--pabotlibport",
-        "0",
-        "--processes",
-        EXECUTOR_COUNT,
-        "--artifacts",
-        "png,webm,zip",
-        "--artifactsinsubfolders",
-    ]
+    pabot_args = (
+        [
+            sys.executable,
+            "-m",
+            "pabot.pabot",
+            "--pabotlib",
+            "--pabotlibport",
+            "0",
+            "--processes",
+            EXECUTOR_COUNT,
+            "--artifacts",
+            "png,webm,zip",
+            "--artifactsinsubfolders",
+        ]
+        if EXECUTOR_COUNT != "1"
+        else [
+            sys.executable,
+            "-m",
+            "robot",
+        ]
+    )
     default_args = [
         "--xunit",
         "robot_xunit.xml",

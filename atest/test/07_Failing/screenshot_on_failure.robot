@@ -1,7 +1,9 @@
 *** Settings ***
-Library     Browser    timeout=3s
-Library     OperatingSystem
-Resource    imports.resource
+Library         Browser    timeout=3s
+Library         OperatingSystem
+Resource        imports.resource
+
+Force Tags      slow
 
 *** Test Cases ***
 Failing with screenshot 1

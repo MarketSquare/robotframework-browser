@@ -1,7 +1,7 @@
 *** Settings ***
 Resource        imports.resource
 
-Suite Setup     New Page    ${FORM_URL}
+Suite Setup     Setup To Form Url
 
 *** Test Cases ***
 Get Checkbox State Checked
@@ -11,6 +11,7 @@ Get Checkbox State Unchecked
     Get Checkbox State    [name=can_send_sms]    ==    UnChecked
 
 Get Checkbox State With Strict
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Get Checkbox State    //input
@@ -20,11 +21,13 @@ Get Checkbox State With Strict
     [Teardown]    Set Strict Mode    True
 
 Get Checkbox State Default Error
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    Checkbox ?name=can_send_email? is 'True' (bool) should be 'False' (bool)
     ...    Get Checkbox State    [name=can_send_email]    ==    unchecked
 
 Get Checkbox State Custom Error
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    Kala False bool
     ...    Get Checkbox State    [name=can_send_email]    ==    unchecked    Kala {expected} {expected_type}
@@ -66,6 +69,7 @@ Get Checkbox State With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Check Checkbox With Waiting
+    [Tags]    slow
     New Page    ${WAIT_URL}
     Select Options By    \#dropdown    value    True    attached-unchecked
     Click    \#submit    noWaitAfter=True
@@ -73,8 +77,14 @@ Check Checkbox With Waiting
     Get Checkbox State    \#victim    ==    ${True}
 
 Uncheck Checkbox With Waiting
+    [Tags]    slow
     New Page    ${WAIT_URL}
     Select Options By    \#dropdown    value    True    attached-checked
     Click    \#submit    noWaitAfter=True
     Uncheck Checkbox    \#victim
     Get Checkbox State    \#victim    ==    ${False}
+
+*** Keywords ***
+Setup To Form Url
+    Ensure Open Browser
+    Ensure Open Page    ${FORM_URL}

@@ -1,7 +1,8 @@
 *** Settings ***
 Resource        imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Suite Setup     Ensure Open Browser
+Test Setup      Ensure Open Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Click Button

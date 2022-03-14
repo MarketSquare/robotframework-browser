@@ -101,6 +101,7 @@ Mutate Element On Page With ElementHandle
     Get Property    ${ref}    innerText    ==    abc
 
 Highlight Element on page
+    [Tags]    slow
     Highlight Elements    css=input#login_button    duration=200ms
     Get Element Count    .robotframework-browser-highlight    ==    1
     Sleep    200ms
@@ -118,12 +119,13 @@ Highlight Element With Strict
     [Teardown]    Set Strict Mode    True
 
 Highlight Element with style
-    Highlight Elements    input#login_button    duration=600ms
+    [Tags]    slow
+    Highlight Elements    input#login_button    duration=500ms
     Get Style    .robotframework-browser-highlight    border-bottom-width    ==    2px
     Get Style    .robotframework-browser-highlight    border-bottom-style    ==    dotted
     Get Style    .robotframework-browser-highlight    border-bottom-color    ==    rgb(0, 0, 255)
     Sleep    600ms
-    Highlight Elements    input#login_button    duration=600ms    width=4px    style=solid    color=\#FF00FF
+    Highlight Elements    input#login_button    duration=500ms    width=4px    style=solid    color=\#FF00FF
     ${style} =    Get Style    .robotframework-browser-highlight
     Should Be True    "${style}[border-bottom-width]" == "4px"
     Should Be True    "${style}[border-bottom-style]" == "solid"

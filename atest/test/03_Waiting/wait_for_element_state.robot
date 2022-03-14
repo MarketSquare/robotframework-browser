@@ -4,6 +4,8 @@ Resource        imports.resource
 Suite Setup     Open Browser To No Page
 Test Setup      New Page    ${WAIT_URL}
 
+Force Tags      slow
+
 *** Test Cases ***
 Wait For Elements State attached
     Select Options By    \#dropdown    value    True    attached
