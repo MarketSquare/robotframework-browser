@@ -21,8 +21,14 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
         node-version: [12.x, 14.x, 16.x]
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3]
         exclude:
+          - node-version: 12.x
+            shard: 1
+          - node-version: 14.x
+            shard: 2
+          - node-version: 16.x
+            shard: 3
           # Exclude some configurations to make the matrix smaller
           - python-version: 3.7
             node-version: 12.x
@@ -66,10 +72,11 @@ jobs:
         inv node-build
         python -m Browser.gen_stub
     - name: Check types with mypy on Linux
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest' && matrix.shard == 1
       run: |
         inv lint-python
     - name: Lint atest
+      if: matrix.shard == 1
       run: |
         inv lint-robot
     - name: Check with flake8
@@ -84,6 +91,7 @@ jobs:
         export DISPLAY=:99.0
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
+      if: matrix.shard == 1
       run: |
        coverage run -m invoke utest
        coverage report

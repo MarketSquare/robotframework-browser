@@ -499,12 +499,6 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False):
             "png,webm,zip",
             "--artifactsinsubfolders",
         ] + (["--shard", shard] if shard else [])
-        if EXECUTOR_COUNT != "1"
-        else [
-            sys.executable,
-            "-m",
-            "robot",
-        ]
     )
     default_args = [
         "--xunit",
