@@ -36,15 +36,11 @@ jobs:
             node-version: 14.x
           - os: ubuntu-latest
             python-version: 3.7
-          # Exclude many macOS versions because macOS node's often have long waiting times and seem overprovisioned / buggy
+          # Exclude some macOS versions
           - os: macos-latest
             python-version: 3.8
           - os: macos-latest
             python-version: 3.7
-          - os: macos-latest
-            node-version: 12.x
-          - os: macos-latest
-            node-version: 14.x
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js
@@ -145,7 +141,14 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
         python-version: [3.7, 3.9]
-        node-version: [12.x, 16.x]
+        node-version: [14.x, 16.x]
+        exclude:
+          - python-version: 3.7
+            node-version: 14.x
+          - os: windows-latest
+            python-version: 3.7
+          - os: windows-latest
+            node-version: 14.x
     steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
