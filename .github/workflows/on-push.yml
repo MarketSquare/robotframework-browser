@@ -21,6 +21,7 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
         python-version: [3.7, 3.8, 3.9]
         node-version: [12.x, 14.x, 16.x]
+        shard: [1, 2, 3, 4]
         exclude:
           # Exclude some configurations to make the matrix smaller
           - python-version: 3.7
@@ -89,15 +90,15 @@ jobs:
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-        xvfb-run --auto-servernum inv atest --smoke  -z true
+        xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/4 --smoke -z true
     - name: Run Robot Framework tests on Windows
       if: matrix.os == 'windows-latest'
       run: |
-        inv atest --smoke -z true
+        inv atest --smoke --shard ${{ matrix.shard }}/4 -z true
     - name: Run Robot Framework tests on macOS
       if: matrix.os == 'macos-latest'
       run: |
-        inv atest --smoke -z true
+        inv atest --smoke --shard ${{ matrix.shard }}/4 -z true
     - name: Create Distributable Package
       run: |
         inv docs
