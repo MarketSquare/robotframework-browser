@@ -72,6 +72,14 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     return jsonResponse(JSON.stringify(response), `Found ${count} Locators successfully.`);
 }
 
+const tryToTransformStringToFunction = (str: string): string | (() => unknown) => {
+    try {
+        return new Function('return ' + str)();
+    } catch (ignored) {
+        return str;
+    }
+};
+
 export async function executeJavascript(
     request: Request.JavascriptCode,
     state: PlaywrightState,
@@ -79,19 +87,39 @@ export async function executeJavascript(
 ): Promise<Response.JavascriptExecutionResult> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    let script = request.getScript();
+    const script = tryToTransformStringToFunction(request.getScript());
     let elem;
-    try {
-        script = eval(script);
-    } catch (error) {
-        logger.info(`On executeJavascript, supress ${error} for eval.`);
-    }
     if (selector) {
         const locator = await findLocator(state, selector, strictMode, undefined, true);
         elem = await locator.elementHandle();
     }
     const result = await page.evaluate(script, elem);
     return jsResponse(result as string, 'JavaScript executed successfully.');
+}
+
+export async function evaluateJavascript(
+    request: Request.EvaluateAll,
+    state: PlaywrightState,
+    page: Page,
+): Promise<Response.JavascriptExecutionResult> {
+    const selector = request.getSelector();
+    const script = tryToTransformStringToFunction(request.getScript());
+    const strictMode = request.getStrict();
+    const arg = JSON.parse(request.getArg());
+    const allElements = request.getAllelements();
+
+    async function getJSResult() {
+        if (selector !== '') {
+            const locator = await findLocator(state, selector, strictMode, undefined, true);
+            if (allElements) {
+                return await locator.evaluateAll(script, arg);
+            }
+            return await locator.evaluate(script, arg);
+        }
+        return await page.evaluate(script, arg);
+    }
+
+    return jsResponse((await getJSResult()) as string, 'JavaScript executed successfully.');
 }
 
 export async function getPageState(page: Page): Promise<Response.JavascriptExecutionResult> {
@@ -121,22 +149,16 @@ export async function waitForFunction(
     state: PlaywrightState,
     page: Page,
 ): Promise<Response.Json> {
-    let script = request.getScript();
+    const script = tryToTransformStringToFunction(request.getScript());
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
-    logger.info(`unparsed args: ${script}, ${request.getSelector()}, ${request.getOptions()}`);
+    logger.info(`unparsed args: ${request.getScript()}, ${request.getSelector()}, ${request.getOptions()}`);
 
     let elem;
-    try {
-        script = eval(script);
-    } catch (error) {
-        logger.info(`On waitForFunction, supress ${error} for eval.`);
-    }
     if (selector) {
         const locator = await findLocator(state, selector, strictMode, undefined, true);
         elem = await locator.elementHandle();
-        script = eval(script);
     }
 
     // TODO: This might behave weirdly if element selector points to a different page

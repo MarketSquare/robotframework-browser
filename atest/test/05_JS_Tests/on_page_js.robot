@@ -1,51 +1,103 @@
 *** Settings ***
 Resource            imports.resource
 
-Suite Setup         New Browser
+Suite Setup         New Browser    headless=${HEADLESS}
 Suite Teardown      Close Browser
 Test Setup          New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 JS execute without and with element
-    ${result} =    Execute JavaScript    () => {return false;}
+    ${result} =    Evaluate JavaScript    ${None}    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    ${result} =    Execute JavaScript    () => {return false;}    body
+    ${result} =    Evaluate JavaScript    body    () => {return false;}
     Should Be Equal    ${result}    ${False}
 
+Evaluate Multiline JavaScript with array
+    ${texts} =    Evaluate JavaScript    button
+    ...    (elements, arg) => {
+    ...    let text = []
+    ...    for (e of elements) {
+    ...    console.log(e.innerText)
+    ...    text.push(e.innerText)
+    ...    }
+    ...    text.push(arg)
+    ...    return text
+    ...    }
+    ...    all_elements=True
+    ...    arg=${{[1,2,3]}}
+    Length Should Be    ${texts}    12
+    Should Be Equal    ${texts}[-1]    ${{[1,2,3]}}
+
+Evaluate Multiline JavaScript with singel element
+    ${texts} =    Evaluate JavaScript    button >> nth=0
+    ...    (e, arg) => {
+    ...    let text = []
+    ...    console.log(e.innerText)
+    ...    text.push(e.innerText)
+    ...    text.push(arg)
+    ...    return text
+    ...    }
+    ...    arg=Hello World
+    Length Should Be    ${texts}    2
+    Should Be Equal    ${texts}[-1]    Hello World
+
+Evaluate Multiline JavaScript Strict Mode Error
+    Run Keyword And Expect Error
+    ...    *strict mode violation*input*resolved to 4 elements*
+    ...    Evaluate JavaScript    input
+    ...    (e, arg) => {
+    ...    let text = []
+    ...    console.log(e.innerText)
+    ...    text.push(e.innerText)
+    ...    text.push(arg)
+    ...    return text
+    ...    }
+    ...    arg=Hello World
+
+Evaluate Multiline JavaScript on Page
+    ${arg} =    Create Dictionary    selector=input#login_button    text=-APPENDIX
+    ${texts} =    Evaluate JavaScript    ${NONE}
+    ...    (arg) => {
+    ...    e = document.querySelector(arg.selector);
+    ...    return e.nodeName + arg.text
+    ...    }
+    ...    arg=${arg}
+    Should Be Equal    ${texts}    INPUT-APPENDIX
+
 JS Execute Without Element On Strict Mode
-    ${result} =    Execute JavaScript    () => {return false;}
+    ${result} =    Evaluate JavaScript    ${None}    () => {return false;}
     Should Be Equal    ${result}    ${False}
     Set Strict Mode    False
-    ${result} =    Execute JavaScript    () => {return false;}
+    ${result} =    Evaluate JavaScript    ${None}    () => {return false;}
     Should Be Equal    ${result}    ${False}
     [Teardown]    Set Strict Mode    True
 
 JS Execute With Element On Strict Mode
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
-    ...    Execute JavaScript    () => {return false;}    //input
+    ...    Evaluate JavaScript    //input    () => {return false;}
     Set Strict Mode    False
-    ${result} =    Execute JavaScript    () => {return false;}    //input
+    ${result} =    Evaluate JavaScript    //input    () => {return false;}
     Should Be Equal    ${result}    ${False}
     [Teardown]    Set Strict Mode    True
 
 Results from page
-    ${result} =    Execute JavaScript    "hello from page "+location.href
+    ${result} =    Evaluate JavaScript    ${None}    "hello from page "+location.href
     should be equal    ${result}    hello from page ${LOGIN_URL}
-    ${result2} =    Execute JavaScript    1+2+3
+    ${result2} =    Evaluate JavaScript    ${None}    1+2+3
     should be equal    ${result2}    ${6}
-    ${result3} =    Execute JavaScript    1.3314*3.13432
+    ${result3} =    Evaluate JavaScript    ${None}    1.3314*3.13432
     should be equal    ${result3}    ${4.173033648}
 
 Mutate Element On Page
     Get Property    h1    innerText    ==    Login Page
-    Execute JavaScript    (elem) => elem.innerText = "abc"    h1
+    Evaluate JavaScript    h1    (elem) => elem.innerText = "abc"
     Get Property    h1    innerText    ==    abc
 
 Mutate Element On Page With ElementHandle
     ${ref} =    Get Element    h1
     Get Property    ${ref}    innerText    ==    Login Page
-    Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
+    Evaluate JavaScript    ${ref}    (elem) => elem.innerText = "abc"
     Get Property    ${ref}    innerText    ==    abc
 
 Highlight Element on page
@@ -66,17 +118,17 @@ Highlight Element With Strict
     [Teardown]    Set Strict Mode    True
 
 Highlight Element with style
-    Highlight Elements    input#login_button    duration=400ms
+    Highlight Elements    input#login_button    duration=600ms
     Get Style    .robotframework-browser-highlight    border-bottom-width    ==    2px
     Get Style    .robotframework-browser-highlight    border-bottom-style    ==    dotted
     Get Style    .robotframework-browser-highlight    border-bottom-color    ==    rgb(0, 0, 255)
-    Sleep    400ms
-    Highlight Elements    input#login_button    duration=400ms    width=4px    style=solid    color=\#FF00FF
+    Sleep    600ms
+    Highlight Elements    input#login_button    duration=600ms    width=4px    style=solid    color=\#FF00FF
     ${style} =    Get Style    .robotframework-browser-highlight
     Should Be True    "${style}[border-bottom-width]" == "4px"
     Should Be True    "${style}[border-bottom-style]" == "solid"
     Should Be True    "${style}[border-bottom-color]" == "rgb(255, 0, 255)"
-    Sleep    400ms
+    Sleep    600ms
 
 Highlight Element with element selector
     New Page    ${LOGIN_URL}
@@ -86,4 +138,5 @@ Highlight Element with element selector
 
 Page state
     [Tags]    not-implemented
+    Log    Is that art???
     #Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123

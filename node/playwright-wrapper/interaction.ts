@@ -219,3 +219,14 @@ export async function keyboardInput(request: Request.KeyboardInputOptions, page:
     await invokeOnKeyboard(page, action, input, { delay: delay });
     return emptyWithLog(`Successfully did virtual keyboard action ${action} with input ${input}`);
 }
+
+export async function scrollToElement(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.scrollIntoViewIfNeeded();
+    return emptyWithLog(`Scrolled to ${selector} field if needed.`);
+}

@@ -8,7 +8,7 @@ Suite Teardown      Set Retry Assertions For    ${assert_timeout}
 Get Style Default Error
     [Tags]    expect_error
     Run Keyword And Expect Error
-    ...    Computed style is * (dict) should contain 'tidii' (str)
+    ...    Computed style is * (dotdict) should contain 'tidii' (str)
     ...    Get Style    h1    ALL    *=    tidii
     Run Keyword And Expect Error
     ...    Style value for align-content is 'normal' (str) should not be 'normal' (str)
@@ -96,7 +96,7 @@ Get Scroll Position Element Default Error
     ...    Get Scroll Position    h1    top    <    0
     ${expected} =    Create Dictionary    top=-1    left=-1    bottom=-1    right=-1
     Run Keyword And Expect Error
-    ...    Scroll position is * (dict) should be '{'top': '-1', 'left': '-1', 'bottom': '-1', 'right': '-1'}' (dotdict)
+    ...    Scroll position is * (dotdict) should be '{'top': '-1', 'left': '-1', 'bottom': '-1', 'right': '-1'}' (dotdict)
     ...    Get Scroll Position    h1    all    ==    ${expected}
 
 Get Scroll Position Element Custom Error
@@ -126,7 +126,7 @@ Get Scroll Size Element Default Error
     ...    Get Scroll Size    h1    width    <    0
     ${expected} =    Create Dictionary    top=-1    left=-1
     Run Keyword And Expect Error
-    ...    Scroll size is * (dict) should be '{'top': '-1', 'left': '-1'}' (dotdict)
+    ...    Scroll size is * (dotdict) should be '{'top': '-1', 'left': '-1'}' (dotdict)
     ...    Get Scroll Size    h1    all    ==    ${expected}
 
 Get Scroll Size Element Custom Error
@@ -146,7 +146,7 @@ Get Viewport Size Default Error
     ...    Get Viewport Size    height    <    0
     ${expected} =    Create Dictionary    width=-1    height=-1
     Run Keyword And Expect Error
-    ...    Viewport size is * (dict) should be '{'width': '-1', 'height': '-1'}' (dotdict)
+    ...    Viewport size is * (dotdict) should be '{'width': '-1', 'height': '-1'}' (dotdict)
     ...    Get Viewport Size    all    ==    ${expected}
 
 Get Viewport Size Custom Error

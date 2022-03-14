@@ -649,6 +649,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "eldaduzman",
+      "name": "Eldad Uzman",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55621402?v=4",
+      "profile": "https://medium.com/@eldadu1985",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
