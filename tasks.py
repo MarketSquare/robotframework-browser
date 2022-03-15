@@ -266,12 +266,13 @@ def clean_atest(c):
 
 
 @task(clean_atest, create_test_app)
-def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None, smoke=False):
+def atest(c, suite=None, include=None, shard=None, zip=None, debug=False, include_mac=None, smoke=False):
     """Runs Robot Framework acceptance tests with pabot.
 
     Args:
         suite: Select which suite to run.
         include: Select test by tag
+        shard: Shard tests
         zip: Create zip file from output files.
         debug: Use robotframework-debugger as test listener
         smoke: If true, runs only tests that take less than 500ms.
@@ -291,11 +292,10 @@ def atest(c, suite=None, include=None, zip=None, debug=False, include_mac=None, 
         args.extend(["--exclude", "slow"])
     os.mkdir(ATEST_OUTPUT)
 
-    rc = 1
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-        rc = _run_pabot(args, include_mac)
+        rc = _run_pabot(args, shard, include_mac)
     finally:
         background_process.kill()
 
@@ -483,7 +483,7 @@ def atest_coverage(c):
     robot.run("atest/test", **robot_args)
 
 
-def _run_pabot(extra_args=None, include_mac=False):
+def _run_pabot(extra_args=None, shard=None, include_mac=False):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = (
         [
@@ -498,13 +498,7 @@ def _run_pabot(extra_args=None, include_mac=False):
             "--artifacts",
             "png,webm,zip",
             "--artifactsinsubfolders",
-        ]
-        if EXECUTOR_COUNT != "1"
-        else [
-            sys.executable,
-            "-m",
-            "robot",
-        ]
+        ] + (["--shard", shard] if shard else [])
     )
     default_args = [
         "--xunit",
