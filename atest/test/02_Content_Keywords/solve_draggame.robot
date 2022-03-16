@@ -18,6 +18,7 @@ Move Obstacle away and drag and Drop
     Drag And Drop    "Circle"    "Goal"
 
 Test
+    [Tags]    slow
     [Setup]    New Page
     FOR    ${i}    IN RANGE    20
         Go To    ${SHELLGAME_URL}

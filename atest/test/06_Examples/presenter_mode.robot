@@ -6,6 +6,8 @@ Library             ../../library/presenter_mode.py
 Suite Setup         New Browser    headless=False
 Suite Teardown      Close Browser
 
+Force Tags          slow
+
 *** Test Cases ***
 Filling the text with True
     New Page    ${LOGIN_URL}

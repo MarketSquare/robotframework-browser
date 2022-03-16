@@ -25,6 +25,7 @@ Calling custom js keyword with default value
     Should Be Equal    ${val3}    EVEN
 
 Connecting and creating a remote browser
+    [Tags]    slow
     ${wsEndpoint} =    Create remote browser
     ${browser} =    Connect To Browser    ${wsEndpoint}
     Should Not Be Equal    ${browser}    ${NULL}

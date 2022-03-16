@@ -4,6 +4,7 @@ Resource    imports.resource
 
 *** Test Cases ***
 Toggling Offline disables connection
+    [Tags]    slow
     New Page    ${LOGIN_URL}
     Set Offline
     # The element checking for network pings every 500ms

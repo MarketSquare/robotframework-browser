@@ -3,7 +3,8 @@ Documentation       Tests for Get Element and `element=<ref>` selector syntax
 
 Resource            imports.resource
 
-Test Setup          New Page    ${FORM_URL}
+Suite Setup         Ensure Open Page
+Test Setup          Go To    ${FORM_URL}
 
 *** Test Cases ***
 Get Element
@@ -24,9 +25,11 @@ Get Element With Strict
 
 Get Element With Nonmatching child selector
     ${ref} =    Get Element    select[name="preferred_channel"]
+    ${timeout} =    Set Browser Timeout    100ms
     Run Keyword And Expect Error
-    ...    *TimeoutError: locator.elementHandle: Timeout ${PLAYWRIGHT_TIMEOUT_ERROR} exceeded.*    Get Property
+    ...    *TimeoutError: locator.elementHandle: Timeout 100ms exceeded.*    Get Property
     ...    ${ref}>> .notamatch    value
+    [Teardown]    Set Browser Timeout    ${timeout}
 
 Using Invalid Element Reference Fails
     Run Keyword And Expect Error
@@ -60,8 +63,10 @@ Get Elements Include Hidden
     Should Be Equal As Integers    12    ${{ len(${refs}) }}
 
 Get Elements Should Not Fail If Element Is Not Found
+    ${timeout} =    Set Browser Timeout    100ms
     ${refs} =    Get Elements    xpath=//not_here
     Should Be Empty    ${refs}
+    [Teardown]    Set Browser Timeout    ${timeout}
 
 Get Elements Should Fail With Invalid Selector
     Run Keyword And Expect Error

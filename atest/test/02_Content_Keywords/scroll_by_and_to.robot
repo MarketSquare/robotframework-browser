@@ -5,6 +5,7 @@ Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Scroll By With Strict
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Scroll By    //input
@@ -13,6 +14,7 @@ Scroll By With Strict
     [Teardown]    Set Strict Mode    True
 
 Scroll To With Strict
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Scroll To    //input

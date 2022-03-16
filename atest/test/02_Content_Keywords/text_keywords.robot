@@ -65,7 +65,7 @@ Fill Secret Direct Value
     [Documentation]    ...
     ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    Type Secret    css=input#username_field    Direct Value 1    100 ms    True
+    Type Secret    css=input#username_field    Direct Value 1    10 ms    True
     Get Text    css=input#username_field    ==    Direct Value 1
     Fill Secret    css=input#password_field    Direct Value 2
     Get Text    css=input#password_field    ==    Direct Value 2
@@ -91,7 +91,7 @@ Fill Secret placeholder-env-var
     ...    LOG 2:2    NONE
     ...    LOG 4:2    NONE
     Set Environment Variable    PH_ENV_VAR    password11
-    Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.2}    ${TRUE}
+    Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.02}    ${TRUE}
     Get Text    css=input#username_field    ==    password11
     Fill Secret    css=input#password_field    %PH_ENV_VAR
     Get Text    css=input#password_field    ==    password11
@@ -100,7 +100,7 @@ Fill Secret robot-env-var
     [Documentation]    ...
     ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 5:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    Set Environment Variable    WAITTIMER    100 ms
+    Set Environment Variable    WAITTIMER    10 ms
     Set Environment Variable    ENV_VAR    password12
     Type Secret    css=input#username_field    %{ENV_VAR}    %{WAITTIMER}    clear=True
     Get Text    css=input#username_field    ==    password12
@@ -257,16 +257,20 @@ Fill Text with Clearing
     Get Text    css=input#username_field    ==    username
 
 Get Text Default Error
+    Set Retry Assertions For    100ms
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Text 'Wrong Text' (str) should be 'username' (str)
     ...    Get Text    css=input#username_field    ==    username
+    [Teardown]    Set Retry Assertions For    1s
 
 Get Text Custom Error
+    Set Retry Assertions For    100ms
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Text    css=input#username_field    ==    username    Tidii
+    [Teardown]    Set Retry Assertions For    1s
 
 Text Area access
     Get Text    id=textarea51    ==    Some initial text
