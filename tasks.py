@@ -266,7 +266,16 @@ def clean_atest(c):
 
 
 @task(clean_atest, create_test_app)
-def atest(c, suite=None, include=None, shard=None, zip=None, debug=False, include_mac=None, smoke=False):
+def atest(
+    c,
+    suite=None,
+    include=None,
+    shard=None,
+    zip=None,
+    debug=False,
+    include_mac=None,
+    smoke=False,
+):
     """Runs Robot Framework acceptance tests with pabot.
 
     Args:
@@ -485,21 +494,19 @@ def atest_coverage(c):
 
 def _run_pabot(extra_args=None, shard=None, include_mac=False):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    pabot_args = (
-        [
-            sys.executable,
-            "-m",
-            "pabot.pabot",
-            "--pabotlib",
-            "--pabotlibport",
-            "0",
-            "--processes",
-            EXECUTOR_COUNT,
-            "--artifacts",
-            "png,webm,zip",
-            "--artifactsinsubfolders",
-        ] + (["--shard", shard] if shard else [])
-    )
+    pabot_args = [
+        sys.executable,
+        "-m",
+        "pabot.pabot",
+        "--pabotlib",
+        "--pabotlibport",
+        "0",
+        "--processes",
+        EXECUTOR_COUNT,
+        "--artifacts",
+        "png,webm,zip",
+        "--artifactsinsubfolders",
+    ] + (["--shard", shard] if shard else [])
     default_args = [
         "--xunit",
         "robot_xunit.xml",
