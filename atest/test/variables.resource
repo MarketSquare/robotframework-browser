@@ -17,6 +17,7 @@ ${ELEMENT_STATE_URL} =              ${ROOT_URL}/enabled_disabled_fields_form.htm
 ${FRAMES_URL} =                     ${ROOT_URL}/frames/iframes.html
 ${DEEP_FRAMES_URL} =                ${ROOT_URL}/frames/deep/a.html
 ${DEEP_FRAMES_2ND_URL} =            ${ROOT_URL}/frames/deep/b.html
+${FRAMES_BUG_REPORT} =              ${ROOT_URL}/frames/frame_for_elements.html
 ${WELCOME_URL} =                    ${ROOT_URL}/welcome.html
 ${ERROR_URL} =                      ${ROOT_URL}/error.html
 ${WAIT_URL} =                       ${ROOT_URL}/waitfor.html
