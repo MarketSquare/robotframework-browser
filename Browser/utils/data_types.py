@@ -191,7 +191,7 @@ class Proxy(_Server, total=False):
     """
 
     bypass: str
-    Username: str
+    username: str
     password: str
 
 
