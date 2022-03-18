@@ -16,8 +16,9 @@ import { Dialog, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
-import { exists, findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
+import { emptyWithLog, stringResponse } from './response-util';
+import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
+import { getSelections } from './getters';
 
 import pino from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -25,7 +26,7 @@ const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 export async function selectOption(
     request: Request.SelectElementSelector,
     state: PlaywrightState,
-): Promise<Response.Json> {
+): Promise<Response.Select> {
     const selector = request.getSelector();
     const matcher = JSON.parse(request.getMatcherjson());
     const strictMode = request.getStrict();
@@ -35,25 +36,7 @@ export async function selectOption(
         logger.info("Couldn't select any options");
         throw new Error(`No options matched ${matcher}`);
     }
-    const attributeName = Object.keys(matcher[0])[0];
-    const selectedOptions = [];
-    for (const selectedOption of result) {
-        let element = undefined;
-        const locatorOptionsValue = locator.locator(`option[value="${selectedOption}"]`);
-        try {
-            element = await locatorOptionsValue.elementHandle();
-        } catch {
-            logger.info(`Could not find option element with ${selectedOption} value, try with text.`);
-            const locatorOptionsText = locator.locator(`xpath=./option[text()="${selectedOption}"]`);
-            element = await locatorOptionsText.elementHandle();
-        }
-        exists(element, `The ${selectedOption} option element did not exist.`);
-        selectedOptions.push(String(await element.getProperty(attributeName)));
-    }
-    return jsonResponse(
-        JSON.stringify(selectedOptions),
-        `Selected options [${selectedOptions}] in element ${selector}`,
-    );
+    return await getSelections(locator);
 }
 
 export async function deSelectOption(
@@ -171,14 +154,14 @@ export async function uploadFileBySelector(
     const path = request.getPath();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.setInputFiles(path);
-    return emptyWithLog('Succesfully uploaded file');
+    return emptyWithLog('Successfully uploaded file');
 }
 
 export async function uploadFile(request: Request.FilePath, page: Page): Promise<Response.Empty> {
     const path = request.getPath();
     const fileChooser = await page.waitForEvent('filechooser');
     await fileChooser.setFiles(path);
-    return emptyWithLog('Succesfully uploaded file');
+    return emptyWithLog('Successfully uploaded file');
 }
 
 export async function handleAlert(request: Request.AlertAction, page: Page): Promise<Response.Empty> {
@@ -206,26 +189,26 @@ export async function waitForAlert(request: Request.AlertAction, page: Page): Pr
     } else {
         dialogObject.dismiss();
     }
-    return stringResponse(message, 'Next alert was handeled succesfully.');
+    return stringResponse(message, 'Next alert was handeled successfully.');
 }
 
 export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'click' | 'up' | 'down';
     const params = JSON.parse(request.getJson());
     await invokeOnMouse(page, action, params);
-    return emptyWithLog(`Succesfully executed ${action}`);
+    return emptyWithLog(`Successfully executed ${action}`);
 }
 
 export async function mouseMove(request: Request.Json, page?: Page): Promise<Response.Empty> {
     const params = JSON.parse(request.getBody());
     await invokeOnMouse(page, 'move', params);
-    return emptyWithLog(`Succesfully moved mouse to ${params.x}, ${params.y}`);
+    return emptyWithLog(`Successfully moved mouse to ${params.x}, ${params.y}`);
 }
 export async function keyboardKey(request: Request.KeyboardKeypress, page: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'down' | 'up' | 'press';
     const key = request.getKey();
     await invokeOnKeyboard(page, action, key);
-    return emptyWithLog(`Succesfully did ${action} for ${key}`);
+    return emptyWithLog(`Successfully did ${action} for ${key}`);
 }
 
 export async function keyboardInput(request: Request.KeyboardInputOptions, page: Page): Promise<Response.Empty> {
@@ -234,5 +217,16 @@ export async function keyboardInput(request: Request.KeyboardInputOptions, page:
     const input = request.getInput();
 
     await invokeOnKeyboard(page, action, input, { delay: delay });
-    return emptyWithLog(`Succesfully did virtual keyboard action ${action} with input ${input}`);
+    return emptyWithLog(`Successfully did virtual keyboard action ${action} with input ${input}`);
+}
+
+export async function scrollToElement(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.scrollIntoViewIfNeeded();
+    return emptyWithLog(`Scrolled to ${selector} field if needed.`);
 }

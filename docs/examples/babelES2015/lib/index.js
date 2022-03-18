@@ -5,7 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.funkkari = void 0;
 
-const funkkari = () => {
+const funkkari = (argumentti, argu2, argu3 = 3, // hello
+huu = 'hello') => {
   return 123;
 };
 

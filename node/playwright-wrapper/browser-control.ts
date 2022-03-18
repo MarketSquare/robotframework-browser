@@ -73,7 +73,7 @@ export async function takeScreenshot(
         options.fullPage = fullPage;
         await page.screenshot(options);
     }
-    const message = 'Screenshot succesfully captured to: ' + path;
+    const message = 'Screenshot successfully captured to: ' + path;
     return stringResponse(path, message);
 }
 

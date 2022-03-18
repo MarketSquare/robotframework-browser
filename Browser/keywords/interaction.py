@@ -17,7 +17,7 @@ from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -327,10 +327,7 @@ class Interaction(LibraryComponent):
         | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
 
         """
-        if self.library.presenter_mode:
-            self.hover(selector)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             options = {
                 "button": button.name,
@@ -546,6 +543,23 @@ class Interaction(LibraryComponent):
         )
 
     @keyword(tags=("Setter", "PageContent"))
+    def scroll_to_element(self, selector: str):
+        """This method waits for actionability checks, then tries to scroll element into view,
+        unless it is completely visible.
+
+        ``selector`` Selector of the checkbox.
+        See the `Finding elements` section for details about the selectors.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Does nothing if the element is already visible."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ScrollToElement(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
     def check_checkbox(self, selector: str):
         """Checks the checkbox or selects radio button found by ``selector``.
 
@@ -585,7 +599,7 @@ class Interaction(LibraryComponent):
         selector: str,
         attribute: SelectAttribute,
         *values,
-    ) -> List[str]:
+    ) -> List[Any]:
         """Selects options from select element found by ``selector``.
 
         ``selector`` Selector of the select tag.
@@ -641,8 +655,17 @@ class Interaction(LibraryComponent):
                     selector=selector, matcherJson=matchers, strict=self.strict_mode
                 )
             )
-        logger.debug(response.log)
-        return json.loads(response.json)
+        logger.debug(response)
+        selected: Union[List[int], List[str]]
+        if attribute is SelectAttribute.value:
+            selected = [sel.value for sel in response.entry if sel.selected]
+        elif attribute is SelectAttribute.label:
+            selected = [sel.label for sel in response.entry if sel.selected]
+        else:
+            selected = [
+                index for index, sel in enumerate(response.entry) if sel.selected
+            ]
+        return selected
 
     @keyword(tags=("Setter", "PageContent"))
     def deselect_options(self, selector: str):
@@ -662,10 +685,7 @@ class Interaction(LibraryComponent):
     def _fill_text(
         self, selector: str, txt: str, log_response: bool = True, strict: bool = True
     ):
-        if self.library.presenter_mode:
-            self.hover(selector, strict)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        self.presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(
                 Request().FillText(selector=selector, text=txt, strict=strict)
@@ -682,10 +702,7 @@ class Interaction(LibraryComponent):
         log_response: bool = True,
         strict: bool = True,
     ):
-        if self.library.presenter_mode:
-            self.hover(selector, strict)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        self.presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
             response = stub.TypeText(
@@ -862,14 +879,20 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def drag_and_drop_by_coordinates(
-        self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1
+        self,
+        from_x: float,
+        from_y: float,
+        to_x: float,
+        to_y: float,
+        steps: int = 1,
+        drop: bool = True,
     ):
         """Executes a Drag&Drop operation from a coordinate to another coordinate.
 
         First it moves the mouse to the start-point,
         then presses the left mouse button,
         then moves to the end-point in specified number of steps,
-        then releases the mouse button.
+        then releases the mouse button depending on the drop argument.
 
         Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
         the top left corner of the pages viewport.
@@ -880,12 +903,55 @@ class Interaction(LibraryComponent):
 
         ``steps`` defines how many intermediate mouse move events are sent.
 
+        ``drop`` defines whether the operation ends with a dropped mouse.
+        Defaults to true.
+
         Example:
         | `Drag And Drop By Coordinates`
         | ...    from_x=30    from_y=30
         | ...    to_x=10    to_y=10    steps=200
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
+        self.mouse_move(x=to_x, y=to_y, steps=steps)
+        if drop:
+            self.mouse_button(MouseButtonAction.up)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def drag_and_drop_relative_to(
+        self,
+        selector_from: str,
+        x: float = 0.0,
+        y: float = 0.0,
+        steps: int = 1,
+    ):
+        """Executes a Drag&Drop operation from the element selected by ``selector_from``
+        to coordinates relative to the center of that element.
+
+        This keyword can be handy to simulate swipe actions.
+
+        See the `Finding elements` section for details about the selectors.
+
+        First it moves the mouse to the start-point (center of boundingbox),
+        then presses the left mouse button,
+        then moves to the relative position with the given intermediate steps,
+        then releases the mouse button.
+
+        ``selector_from`` identifies the element, which center is the start-point.
+
+        ``x`` & ``y`` identifies the end-point which is relative to the start-point.
+
+        ``steps`` defines how many intermediate mouse move events are sent.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Example
+        | `Drag And Drop Relative to`    "Circle"    -20    0     # Slides the element 20 pixel to the left
+        """
+        from_bbox = self.library.get_boundingbox(selector_from)
+        from_xy = self._center_of_boundingbox(from_bbox)
+        to_x = from_xy["x"] + x
+        to_y = from_xy["y"] + y
+        self.mouse_button(MouseButtonAction.down, **from_xy)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
         self.mouse_button(MouseButtonAction.up)
 

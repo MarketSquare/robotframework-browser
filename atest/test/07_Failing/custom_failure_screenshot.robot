@@ -1,7 +1,9 @@
 *** Settings ***
-Library     Browser    run_on_failure=Take Screenshot \ custom-fail    timeout=3s
-Library     OperatingSystem
-Resource    imports.resource
+Library         Browser    run_on_failure=Take Screenshot \ custom-fail    timeout=3s
+Library         OperatingSystem
+Resource        imports.resource
+
+Force Tags      slow
 
 *** Test Cases ***
 Failing with custom screenshot

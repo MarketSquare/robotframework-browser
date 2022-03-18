@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from datetime import timedelta
 from enum import Enum, IntFlag, auto
 from typing import Dict, Union
 
@@ -190,7 +191,7 @@ class Proxy(_Server, total=False):
     """
 
     bypass: str
-    Username: str
+    username: str
     password: str
 
 
@@ -214,6 +215,25 @@ class NewPageDetails(TypedDict):
 
     page_id: str
     video_path: str
+
+
+class HighLightElement(TypedDict):
+    """Presenter mode configuration options.
+
+    ``duration`` Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
+
+    ``width`` Sets the width of the higlight border. Defaults to 2px.
+
+    ``style`` Sets the style of the border. Defaults to dotted.
+
+    ``color`` Sets the color of the border, default is blue. Valid colors i.e. are:
+    ``red``, ``blue``, ``yellow``, ``pink``, ``black``
+    """
+
+    duration: timedelta
+    width: str
+    style: str
+    color: str
 
 
 class SelectionType(Enum):
@@ -520,6 +540,7 @@ class PageLoadStates(Enum):
     load = auto()
     domcontentloaded = auto()
     networkidle = auto()
+    commit = auto()
 
 
 class ReduceMotion(Enum):

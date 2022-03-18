@@ -240,7 +240,8 @@
       "profile": "http://www.elabit.de",
       "contributions": [
         "userTesting",
-        "bug"
+        "bug",
+        "test"
       ]
     },
     {
@@ -519,7 +520,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/4672517?v=4",
       "profile": "https://github.com/luchoagomezt",
       "contributions": [
-        "bug"
+        "bug",
+        "example"
       ]
     },
     {
@@ -645,6 +647,24 @@
       "name": "rlall07",
       "avatar_url": "https://avatars.githubusercontent.com/u/20052315?v=4",
       "profile": "https://github.com/rlall07",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "eldaduzman",
+      "name": "Eldad Uzman",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55621402?v=4",
+      "profile": "https://medium.com/@eldadu1985",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "mgarcibu",
+      "name": "mgarcibu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/41591471?v=4",
+      "profile": "https://github.com/mgarcibu",
       "contributions": [
         "bug"
       ]

@@ -35,27 +35,23 @@ Verify Dialogue Text With Wrong Text
     Get Text    id=prompt_result    ==    Kala
 
 Verify Dialogue Text
-    [Setup]    Go To    ${LOGIN_URL}
     ${promise} =    Promise To    Wait For Alert    action=accept    prompt_input=Kalaa tulee    text=Enter a value
     Click    id=prompts
     Wait For    ${promise}
     Get Text    id=prompt_result    ==    Kalaa tulee
 
 Verify Dialogue Text And Dismiss Dialogue
-    [Setup]    Go To    ${LOGIN_URL}
     ${promise} =    Promise To    Wait For Alert    action=dismiss    prompt_input=Kalaa tulee    text=Enter a value
     Click    id=prompts
     Wait For    ${promise}
     Get Text    id=prompt_result    ==    prompt_not_filled
 
 Verify Alert Text And Dismiss Dialogue
-    [Setup]    Go To    ${LOGIN_URL}
     ${promise} =    Promise To    Wait For Alert    action=dismiss    text=Am an alert
     Click    id=alerts
     Wait For    ${promise}
 
 Verify Alert Text And Accept Dialogue
-    [Setup]    Go To    ${LOGIN_URL}
     ${promise} =    Promise To    Wait For Alert    action=accept
     Click    id=alerts
     ${text} =    Wait For    ${promise}

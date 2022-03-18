@@ -15,11 +15,13 @@ Local Storage Get Item Should Fail If Item Does Not Exist
     Should Be Equal    ${item}    ${None}
 
 Local Storage Get Item Default Error
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    localStorage 'None' (nonetype) should be 'Tidii' (str)
     ...    Local Storage Get Item    Kala    ==    Tidii
 
 Local Storage Get Item Custom Error
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    My error
     ...    Local Storage Get Item    Kala    ==    Tidii    My error

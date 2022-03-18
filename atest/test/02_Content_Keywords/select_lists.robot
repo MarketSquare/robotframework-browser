@@ -20,8 +20,9 @@ Get Select Options
     Should be equal    ${options}[1][value]    phone
 
 Get Select Options Strict
+    [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 5 elements*
+    ...    *strict mode violation*//select*resolved to 6 elements*
     ...    Get Select Options    //select
     Set Strict Mode    False
     ${options} =    Get Select Options    //select
@@ -34,6 +35,7 @@ Get Selected Options
     ...    Verifying list 'possible_channels' has options [ Email | Telephone ] selected.
     ...    Verifying list 'interests' has no options selected.
     ...    Verifying list 'possible_channels' fails if assert all options selected.
+    [Tags]    slow
     ${selection} =    Get Selected Options    select[name=preferred_channel]    label    ==    Telephone
     Should Be Equal    ${selection}    Telephone
     Get Selected Options    select[name=preferred_channel]    value    ==    phone
@@ -50,11 +52,13 @@ Get Selected Options
     ...    Email    Telephone    Direct mail
 
 Get Selected Options With Not Matching Attribute Value
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    Selected Options: 'phone' (str) should be 'kala' (str)
     ...    Get Selected Options    select[name=preferred_channel]    value    ==    kala
 
 Get Select Options With Not Matching Value
+    [Tags]    slow
     Run Keyword And Expect Error
     ...    Not Here
     ...    Get Select Options    select[name=preferred_channel]    ==    Email    Not Here
@@ -81,7 +85,7 @@ Select Options By value
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By index
-    ${selection} =    Create List    0    2
+    ${selection} =    Create List    ${0}    ${2}
     ${selected} =    Select Option And Verify Selection    index    select[name=possible_channels]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
@@ -98,10 +102,27 @@ Select Options By With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Options By Text When Select Does Not Have Value Attribute
-    Select Options By    id=noValue    text    Option 2
+    ${selection} =    Select Options By    id=noValue    text    Option 2
+    Should Be Equal    Option 2    ${selection}[0]
+
+Select Options By Index When Select Does Not Have Value Attribute
+    ${selection} =    Select Options By    id=noValue    index    1
+    Should Be Equal    ${1}    ${selection}[0]
 
 Select Options By Text When Select Value And Text Are Different
-    Select Options By    id=ValueAndTextDifferent    text    0
+    ${selection} =    Select Options By    id=ValueAndTextDifferent    text    0
+    Should Be Equal    0    ${selection}[0]
+
+Select Options By Value When Select Value And Text Are Different
+    ${selection} =    Select Options By    id=ValueAndTextDifferent    value    2
+    Should Be Equal    2    ${selection}[0]
+
+Select Options By Text When Select Value is Duplicated
+    ${selection} =    Select Options By    id=ValueDupl    text    2nd Option
+    Should Be Equal    2nd Option    ${selection}[0]
+    Get Selected Options    id=ValueDupl    text    ==    2nd Option
+    Get Selected Options    id=ValueDupl    value    ==    object
+    Get Selected Options    id=ValueDupl    index    ==    ${2}
 
 Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
@@ -112,7 +133,7 @@ Deselect Options Explicitly
 
 Deselect Options With Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 5 elements*
+    ...    *strict mode violation*//select*resolved to 6 elements*
     ...    Deselect Options    //select
     Set Strict Mode    False
     Deselect Options    //select

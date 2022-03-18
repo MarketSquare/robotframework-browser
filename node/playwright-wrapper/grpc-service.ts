@@ -29,6 +29,7 @@ import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc
 import { class_async_logger } from './keyword-decorators';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
 import { pino } from 'pino';
+import { scrollToElement } from './interaction';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 @class_async_logger
@@ -108,6 +109,24 @@ export class PlaywrightServer implements IPlaywrightServer {
                 callback(null, response);
             } catch (e) {
                 logger.info(`Error of node method ${func.name}`);
+                callback(errorResponse(e), null);
+            }
+        };
+    };
+
+    private wrappingStatePage = <T, K>(
+        func: (request: T, state: PlaywrightState, page: Page) => Promise<K>,
+    ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
+        return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
+            try {
+                const request = call.request;
+                if (request === null) throw Error('No request');
+                logger.info(`Start of node method ${func.name}`);
+                const response = await func(request, this.getState(call), this.getActivePage(call));
+                logger.info(`End of node method ${func.name}`);
+                callback(null, response);
+            } catch (e) {
+                logger.info(`Error of node method  ${func.name}`);
                 callback(errorResponse(e), null);
             }
         };
@@ -311,6 +330,9 @@ export class PlaywrightServer implements IPlaywrightServer {
     getElementAttribute = this.wrapping(getters.getElementAttribute);
     getElementStates = this.wrapping(getters.getElementStates);
     getStyle = this.wrapping(getters.getStyle);
+    getTableCellIndex = this.wrapping(getters.getTableCellIndex);
+    getTableRowIndex = this.wrapping(getters.getTableRowIndex);
+    scrollToElement = this.wrapping(interaction.scrollToElement);
 
     async getViewportSize(
         call: ServerUnaryCall<Request.Empty, Response.Json>,
@@ -361,6 +383,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     waitForDownload = this.wrappingPage(network.waitForDownload);
+
+    evaluateJavascript = this.wrappingStatePage(evaluation.evaluateJavascript);
 
     async executeJavascript(
         call: ServerUnaryCall<Request.JavascriptCode, Response.JavascriptExecutionResult>,
@@ -502,7 +526,7 @@ export class PlaywrightServer implements IPlaywrightServer {
             if (request === null) throw Error('No request');
             const oldPeer = this.peerMap[call.getPeer()];
             this.peerMap[call.getPeer()] = request.getIndex();
-            callback(null, stringResponse(oldPeer, 'Succesfully overrode peer id'));
+            callback(null, stringResponse(oldPeer, 'Successfully overrode peer id'));
         } catch (e) {
             callback(errorResponse(e), null);
         }

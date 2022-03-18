@@ -47,9 +47,11 @@ Screenshotting With Jpeg Extension And Quality
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.jpeg
 
 If Element Not Found Screenshot Should Fail
+    ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
-    ...    TimeoutError: locator.screenshot: Timeout ${PLAYWRIGHT_TIMEOUT_ERROR} exceeded.*waiting for selector "#not_there"*
+    ...    TimeoutError: locator.screenshot: Timeout 200ms exceeded.*waiting for selector "#not_there"*
     ...    Take Screenshot    selector=\#not_there
+    Set Browser Timeout    ${timeout}
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
 ElementHandle Screenshotting

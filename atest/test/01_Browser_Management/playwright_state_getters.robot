@@ -5,6 +5,7 @@ Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Get Multiple Browsers
+    [Tags]    slow
     New Browser
     New Page    ${FORM_URL}
     New Context
@@ -26,6 +27,7 @@ Get Closed Browsers
     should be empty    ${browsers}
 
 Get Browser Catalog Default Error
+    [Tags]    slow
     New Browser
     ${expected} =    Create List    1    2
     Run Keyword And Expect Error
@@ -49,6 +51,7 @@ Get Viewport Size
     Get Viewport Size    height    ==    600
 
 Multipage order
+    [Tags]    slow
     New Page    ${FORM_URL}
     Get title    ==    prefilled_email_form.html
     Page encapsulating keyword
@@ -64,6 +67,7 @@ Multicontext order
     [Teardown]    Close Context
 
 Multibrowser order
+    [Tags]    slow
     New Browser    browser=chromium
     New Page    ${ERROR_URL}
     Get title    ==    Error Page

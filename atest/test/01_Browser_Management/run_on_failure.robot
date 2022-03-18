@@ -1,7 +1,9 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Suite Setup         Setup
+Suite Teardown      Set Retry Assertions For    1s
+Test Setup          Go To    ${LOGIN_URL}
 
 *** Variables ***
 ${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
@@ -76,7 +78,7 @@ Register User Keyword
 
 Register Get Page Source
     [Documentation]
-    ...    LOG 3.1:4    DEBUG    Page source obtained succesfully.
+    ...    LOG 3.1:4    DEBUG    Page source obtained successfully.
     ${prev} =    Register Keyword To Run On Failure    Get Page Source
     Type Text    css=input#username_field    username
     Run Keyword And Expect Error
@@ -99,6 +101,10 @@ Register None
     Log    ${prev1}
 
 *** Keywords ***
+Setup
+    Ensure Open Page
+    Set Retry Assertions For    0
+
 Custom User Keyword
     [Arguments]    ${log}
     Create File    ${OUTPUT_DIR}/log_file.log    ${log}

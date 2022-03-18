@@ -80,7 +80,7 @@ async function findInFrames(
         selectors = splitFrameAndElementSelector(selectors.elementSelector);
         frame = await findFrameLocator(frame, selectors.frameSelector, strictMode);
     }
-    if (nthLocator) {
+    if (nthLocator !== undefined) {
         logger.info(`Find ${nthLocator} locator in frame.`);
         return frame.locator(selectors.elementSelector).nth(nthLocator);
     } else if (strictMode) {

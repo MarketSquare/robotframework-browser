@@ -7,5 +7,6 @@ Suite Teardown      Close Browser
 
 *** Test Cases ***
 New Page will not timeout
+    [Tags]    slow
     New Page    ${SLOW_PAGE}
     get title    ==    Slow page

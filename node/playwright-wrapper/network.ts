@@ -47,7 +47,7 @@ export async function httpRequest(request: pb.Request.HttpRequest, page: Page): 
             });
         });
     }, opts);
-    return jsonResponse(JSON.stringify(response), 'Request performed succesfully.');
+    return jsonResponse(JSON.stringify(response), 'Request performed successfully.');
 }
 
 export function deserializeUrlOrPredicate(request: pb.Request.HttpCapture): RegExp | any {
@@ -59,7 +59,7 @@ export function deserializeUrlOrPredicate(request: pb.Request.HttpCapture): RegE
         /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/.test(urlOrPredicate)
     ) {
         urlOrPredicate = `(${urlOrPredicate})`;
-        const fn = eval(urlOrPredicate);
+        const fn = new Function('return ' + urlOrPredicate)();
         if (typeof fn === 'function' || Object.prototype.toString.call(fn) === '[object Function]') {
             return fn;
         }

@@ -33,7 +33,7 @@ message Request {
 
   message KeywordCall {
     string name = 1;
-    repeated string arguments = 2;
+    string arguments = 2;
   }
 
   message FilePath {
@@ -222,6 +222,14 @@ message Request {
   message Bool {
     bool value = 1;
   }
+
+  message EvaluateAll {
+    string selector = 1;
+    string script = 2;
+    string arg = 3;
+    bool allElements = 4;
+    bool strict = 5;
+  }
 }
 
 message Types {
@@ -246,6 +254,7 @@ message Response {
     string log = 1;
     repeated string keywords = 2;
     repeated string keywordDocumentations = 3;
+    repeated string keywordArguments = 4;
   }
 
   message Bool {
@@ -336,7 +345,7 @@ service  Playwright {
   /* Gets the Select element specified by selector and returns the contents */
   rpc GetSelectContent(Request.ElementSelector) returns (Response.Select);
   /* Selects option matching matcher in Select element matching selector */
-  rpc SelectOption(Request.SelectElementSelector) returns (Response.Json);
+  rpc SelectOption(Request.SelectElementSelector) returns (Response.Select);
   /* Deselects options in Select element matching selector */
   rpc DeselectOption(Request.ElementSelector) returns (Response.Empty);
   /* Checks checkbox specified by selector */
@@ -371,6 +380,8 @@ service  Playwright {
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
   /* Executes javascript on the active page */
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
+  rpc EvaluateJavascript(Request.EvaluateAll) returns (Response.JavascriptExecutionResult);
+
   rpc RecordSelector(Request.Label) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
@@ -401,9 +412,13 @@ service  Playwright {
   rpc KeyboardKey(Request.KeyboardKeypress) returns (Response.Empty);
   rpc KeyboardInput(Request.KeyboardInputOptions) returns (Response.Empty);
 
+  rpc GetTableRowIndex(Request.ElementSelector) returns (Response.Int);
+  rpc GetTableCellIndex(Request.ElementSelector) returns (Response.Int);
+
   rpc UploadFile(Request.FilePath) returns (Response.Empty);
   rpc UploadFileBySelector(Request.FileBySelector) returns (Response.Empty);
 
+  rpc ScrollToElement(Request.ElementSelector) returns (Response.Empty);
   rpc SetOffline(Request.Bool) returns (Response.Empty);
   rpc Reload(Request.Empty) returns (Response.Empty);
 

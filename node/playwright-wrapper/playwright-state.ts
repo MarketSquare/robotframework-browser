@@ -22,6 +22,7 @@ import { exists } from './playwright-invoke';
 
 import { ServerWritableStream } from '@grpc/grpc-js';
 import { pino } from 'pino';
+import strip from 'strip-comments';
 
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
@@ -44,17 +45,29 @@ export interface LocatorCount {
     nth: number;
 }
 
+const extractArgumentsStringFromJavascript = (javascript: string): string => {
+    const regex = /\((.*?)\)/;
+    const match = regex.exec(strip(javascript).replace('\n', ''));
+    if (match) {
+        return match[1];
+    }
+    return '*args';
+};
+
 export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
-    const extension: Record<string, unknown> = eval('require')(request.getPath());
+    const extension: Record<string, (...args: unknown[]) => unknown> = eval('require')(request.getPath());
     state.extension = extension;
+    const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
     return keywordsResponse(
-        Object.keys(extension),
-        Object.values(extension).map((v) => {
-            if (!v) return '';
-            const typedV = v as { rfdoc?: string };
+        kws,
+        kws.map((v) => {
+            return extractArgumentsStringFromJavascript(extension[v].toString());
+        }),
+        kws.map((v) => {
+            const typedV = extension[v] as { rfdoc?: string };
             return typedV.rfdoc ?? 'TODO: Add rfdoc string to exposed function to create documentation';
         }),
         'ok',
@@ -67,15 +80,23 @@ export async function extensionKeywordCall(
     state: PlaywrightState,
 ): Promise<Response.Json> {
     const methodName = request.getName();
-    const args = request.getArgumentsList();
-    // @ts-ignore
-    const result = await state.extension[methodName](
-        state.getActivePage(),
-        args,
-        (msg: string) => {
-            call.write(jsonResponse(JSON.stringify(''), msg));
-        },
-        playwright,
+    const args = JSON.parse(request.getArguments()) as { arguments: [string, unknown][] };
+    const func = (state.extension as Record<string, (...args: unknown[]) => unknown>)[methodName];
+    const result = await func(
+        ...args['arguments'].map((v) => {
+            if (v[0] === 'page') {
+                return state.getActivePage();
+            }
+            if (v[0] === 'logger') {
+                return (msg: string) => {
+                    call.write(jsonResponse(JSON.stringify(''), msg));
+                };
+            }
+            if (v[0] === 'playwright') {
+                return playwright;
+            }
+            return v[1];
+        }),
     );
     return jsonResponse(JSON.stringify(result), 'ok');
 }
