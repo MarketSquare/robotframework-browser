@@ -18,7 +18,6 @@ from pathlib import Path
 from time import sleep
 
 from robot.api.deco import keyword  # type: ignore
-from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 from robot.utils import DotDict  # type: ignore
 
 from ..base import LibraryComponent
@@ -47,12 +46,14 @@ class Promises(LibraryComponent):
         | `Click`           \\#delayed_request
         | ${body}=        `Wait For`              ${promise}
         """
-        promise = None
+        promise: Future = Future()
         keyword_name = kw.strip().lower().replace(" ", "_")
 
         if keyword_name in self.library.get_keyword_names():
             positional, named = self.resolve_arguments(keyword_name, *args)
-            promise = self._executor.submit(self.library.keywords[keyword_name], *positional, **(named or {}))
+            promise = self._executor.submit(
+                self.library.keywords[keyword_name], *positional, **(named or {})
+            )
             self.unresolved_promises.add(promise)
             while not (promise.running() or promise.done()):
                 sleep(0.01)
@@ -62,7 +63,7 @@ class Promises(LibraryComponent):
     def resolve_arguments(self, kw: str, *args):
         positional = []
         named = {}
-        logger.debug(f'*args {args}')
+        logger.debug(f"*args {args}")
 
         for arg in args:
             parts = arg.split("=")
@@ -71,7 +72,9 @@ class Promises(LibraryComponent):
             else:
                 positional.append(arg)
 
-        logger.debug(f'resolve arguments named: {named}, positional: {tuple(positional)}')
+        logger.debug(
+            f"resolve arguments named: {named}, positional: {tuple(positional)}"
+        )
         return tuple(positional), named
 
     @keyword(tags=("Wait", "BrowserControl"))
