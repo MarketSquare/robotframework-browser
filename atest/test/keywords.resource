@@ -94,15 +94,18 @@ Ensure Open Page
     [Arguments]    ${url}=${NONE}
     Ensure Open Browser
     ${IDs} =    Get Page Ids
-    IF    $IDs == []
+    IF    len($IDs) == 0
         New Page    ${url}
-    ELSE IF    $url
-        Go To    ${url}
+    ELSE
+        Switch To Page    ${IDs}[0]
+        IF    $url
+            Go To    ${url}
+        END
     END
 
 Ensure Open Browser
     ${IDs} =    Get Browser Ids
-    IF    $IDs == []
+    IF    len($IDs) == 0
         New Browser    ${BROWSER}    headless=${HEADLESS}
     ELSE
         Switch Browser    ${IDs}[0]
@@ -112,6 +115,21 @@ Ensure Location
     [Arguments]    ${url}
     Ensure Open Page
     ${loc} =    Get Url
-    IF    "${url}" not in "${loc}"
+    IF    "${url}" != "${loc}"
         Go To    ${url}
     END
+
+Switch To Page
+    [Arguments]    ${page_id}
+    ${cat} =    Get Browser Catalog
+    FOR    ${br}    IN    @{cat}
+        FOR    ${con}    IN    @{br}[contexts]
+            FOR    ${pa}    IN    @{con}[pages]
+                IF    "${pa}[id]" == "${page_id}"
+                    Switch Page    ${pa}[id]    ${con}[id]    ${br}[id]
+                    Return From Keyword
+                END
+            END
+        END
+    END
+    New Page
