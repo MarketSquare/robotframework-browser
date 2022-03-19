@@ -94,9 +94,10 @@ Ensure Open Page
     [Arguments]    ${url}=${NONE}
     Ensure Open Browser
     ${IDs} =    Get Page Ids
-    IF    $IDs == []
+    IF    len($IDs)
         New Page    ${url}
     ELSE IF    $url
+        Switch Page    ${IDs}[0]
         Go To    ${url}
     END
 
