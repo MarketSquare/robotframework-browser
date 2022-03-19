@@ -126,9 +126,10 @@ Switch To Page
         FOR    ${con}    IN    @{br}[contexts]
             FOR    ${pa}    IN    @{con}[pages]
                 IF    "${pa}[id]" == "${page_id}"
-                    Log Many    Switch Page    ${pa}[id]    ${con}[id]    ${br}[id]
+                    Switch Page    ${pa}[id]    ${con}[id]    ${br}[id]
                     Return From Keyword
                 END
             END
         END
     END
+    New Page
