@@ -96,9 +96,11 @@ Ensure Open Page
     ${IDs} =    Get Page Ids
     IF    len($IDs) == 0
         New Page    ${url}
-    ELSE IF    $url
+    ELSE
         Switch Page    ${IDs}[0]
-        Go To    ${url}
+        IF    $url
+            Go To    ${url}
+        END
     END
 
 Ensure Open Browser
@@ -113,6 +115,6 @@ Ensure Location
     [Arguments]    ${url}
     Ensure Open Page
     ${loc} =    Get Url
-    IF    "${url}" not in "${loc}"
+    IF    "${url}" != "${loc}"
         Go To    ${url}
     END
