@@ -97,7 +97,7 @@ Ensure Open Page
     IF    len($IDs) == 0
         New Page    ${url}
     ELSE
-        Switch Page    ${IDs}[0]
+        Switch To Page    ${IDs}[0]
         IF    $url
             Go To    ${url}
         END
@@ -117,4 +117,18 @@ Ensure Location
     ${loc} =    Get Url
     IF    "${url}" != "${loc}"
         Go To    ${url}
+    END
+
+Switch To Page
+    [Arguments]    ${page_id}
+    ${cat} =    Get Browser Catalog
+    FOR    ${br}    IN    @{cat}
+        FOR    ${con}    IN    @{br}[contexts]
+            FOR    ${pa}    IN    @{con}[pages]
+                IF    "${pa}[id]" == "${page_id}"
+                    Log Many    Switch Page    ${pa}[id]    ${con}[id]    ${br}[id]
+                    Return From Keyword
+                END
+            END
+        END
     END
