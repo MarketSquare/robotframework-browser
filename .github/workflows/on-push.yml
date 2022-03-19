@@ -128,15 +128,15 @@ jobs:
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-        xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/3 --smoke -z true
+        xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/3 -z true
     - name: Run Robot Framework tests on Windows
       if: matrix.os == 'windows-latest'
       run: |
-        inv atest --smoke --shard ${{ matrix.shard }}/3 -z true
+        inv atest --shard ${{ matrix.shard }}/3 -z true
     - name: Run Robot Framework tests on macOS
       if: matrix.os == 'macos-latest'
       run: |
-        inv atest --smoke --shard ${{ matrix.shard }}/3 -z true
+        inv atest --shard ${{ matrix.shard }}/3 -z true
     - name: Create Distributable Package
       run: |
         inv docs
@@ -233,13 +233,13 @@ jobs:
           rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum invoke atest-robot
+          xvfb-run --auto-servernum invoke atest-robot --smoke
       - name: Run Robot Framework tests on windows or macOS
         if: ${{ matrix.os != 'ubuntu-latest' }}
         run: |
           echo ${{ matrix.os }}
           Remove-Item -Path .\Browser -Force -Recurse
-          invoke atest-robot
+          invoke atest-robot --smoke
       - name: Artifacts download for flaky test analysis
         if: ${{ failure() }}
         # flaky-tests-detection here because it is huge and not needed for the test-install

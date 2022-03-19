@@ -392,30 +392,30 @@ def copy_xunit(c):
 
 
 @task(clean_atest)
-def atest_robot(c, zip=None):
+def atest_robot(c, zip=None, smoke=False):
     """Run atest with Robot Framework
 
     Arguments:
         zip: Create zip file from output files.
+        smoke: If true, runs only tests that take less than 500ms.
     """
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    command_args = [
-        sys.executable,
-        "-m",
-        "robot",
-        "--exclude",
-        "not-implemented",
-        "--loglevel",
-        "DEBUG",
-        "--report",
-        "NONE",
-        "--log",
-        "NONE",
-        "--xunit",
-        "robot_xunit.xml",
-        "--outputdir",
-        str(ATEST_OUTPUT),
-    ]
+    command_args = (
+        [sys.executable, "-m", "robot", "--exclude", "not-implemented"]
+        + (["--exclude", "slow"] if smoke else [])
+        + [
+            "--loglevel",
+            "DEBUG",
+            "--report",
+            "NONE",
+            "--log",
+            "NONE",
+            "--xunit",
+            "robot_xunit.xml",
+            "--outputdir",
+            str(ATEST_OUTPUT),
+        ]
+    )
     command_args = _add_skips(command_args)
     command_args.append("atest/test")
     env = os.environ.copy()
