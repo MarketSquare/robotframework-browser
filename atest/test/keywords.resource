@@ -94,7 +94,7 @@ Ensure Open Page
     [Arguments]    ${url}=${NONE}
     Ensure Open Browser
     ${IDs} =    Get Page Ids
-    IF    len($IDs)
+    IF    len($IDs) == 0
         New Page    ${url}
     ELSE IF    $url
         Switch Page    ${IDs}[0]
@@ -103,7 +103,7 @@ Ensure Open Page
 
 Ensure Open Browser
     ${IDs} =    Get Browser Ids
-    IF    $IDs == []
+    IF    len($IDs) == 0
         New Browser    ${BROWSER}    headless=${HEADLESS}
     ELSE
         Switch Browser    ${IDs}[0]
