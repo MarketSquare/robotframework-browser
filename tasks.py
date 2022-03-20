@@ -503,6 +503,7 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False):
         "0",
         "--processes",
         EXECUTOR_COUNT,
+        "--chunk",
         "--artifacts",
         "png,webm,zip",
         "--artifactsinsubfolders",
