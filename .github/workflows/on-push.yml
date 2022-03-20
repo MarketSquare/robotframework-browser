@@ -40,6 +40,7 @@ jobs:
         pip install wheel
         pip install -r Browser/dev-requirements.txt
     - name: Build Protos and check with tsc
+      if: matrix.os == 'ubuntu-latest'
       run: |
         inv node-build
         python -m Browser.gen_stub
@@ -47,15 +48,12 @@ jobs:
       run: |
         inv create-test-app
     - name: Create Distributable Package
+      if: matrix.os == 'ubuntu-latest'
       run: |
         inv docs
         inv create-package
     - uses: actions/upload-artifact@v2
-      if: ${{ always() }}
-      with:
-        name: Test results
-        path: zip_results/output
-    - uses: actions/upload-artifact@v2
+      if: matrix.os == 'ubuntu-latest'
       with:
         name: rfbrowser-wheel
         path: dist/robotframework_browser-*-py3-none-any.whl
