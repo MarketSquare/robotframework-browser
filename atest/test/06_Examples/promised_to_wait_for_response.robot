@@ -5,5 +5,5 @@ Resource    imports.resource
 *** Test Cases ***
 Promise to wait for response
     New Page    url=http://www.google.com
-    ${promise}=  Promise To    Wait For Response
-    ${body}=  Wait For  ${promise}
+    ${promise} =    Promise To    Wait For Response
+    ${body} =    Wait For  ${promise}
