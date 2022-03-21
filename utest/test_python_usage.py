@@ -80,11 +80,11 @@ def test_promise_handling(browser, application_server):
 
 def test_promise_to_wait_for_response_with_name_arguments(browser):
     browser.new_page(url='http://www.google.com')
-    promise = browser.promise_to('Wait For Response', "timeout=3", "matcher='\\/\\/local\\w+\\:\\d+\\/api'")
-    assert promise is not None
+    promise = browser.promise_to('Wait For Response', "", "0.5")
+    assert promise.result() is not None
 
 
 def test_promise_to_not_a_keyword(browser):
     browser.new_page(url='http://www.google.com')
-    promise = browser.promise_to('Wait For Requestt', "timeout=3", "matcher='\\/\\/local\\w+\\:\\d+\\/api'")
-    assert promise is None
+    promise = browser.promise_to('Wait For Responses', "", "0.5")
+    assert promise.cancel()
