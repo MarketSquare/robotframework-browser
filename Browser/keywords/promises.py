@@ -17,6 +17,7 @@ from os import PathLike
 from pathlib import Path
 from time import sleep
 
+from assertionengine import AssertionOperator
 from robot.api.deco import keyword  # type: ignore
 from robot.utils import DotDict  # type: ignore
 
@@ -65,15 +66,19 @@ class Promises(LibraryComponent):
         named = {}
         logger.debug(f"*args {args}")
 
+        keyword_arguments = [argument[0] for argument in self.library.get_keyword_arguments(kw)]
         for arg in args:
             parts = arg.split("=")
-            if len(parts) == 2 and (parts[0] in self.library.get_keyword_arguments(kw)):
-                named[parts[0]] = parts[1]
+            if parts[0].strip() in keyword_arguments:
+                named[parts[0].strip()] = parts[1].strip()
             else:
-                positional.append(arg)
+                if arg.strip() in AssertionOperator.__members__:
+                    positional.append(AssertionOperator[arg.strip()])
+                else:
+                    positional.append(arg)
 
         logger.debug(
-            f"resolve arguments named: {named}, positional: {tuple(positional)}"
+            f"named arguments: {named}, positional arguments: {tuple(positional)}"
         )
         return tuple(positional), named
 
