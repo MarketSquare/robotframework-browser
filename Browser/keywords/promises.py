@@ -24,6 +24,7 @@ from robot.utils import DotDict  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadedFile, logger
+from ..utils.data_types import DialogAction
 
 
 class Promises(LibraryComponent):
@@ -66,11 +67,17 @@ class Promises(LibraryComponent):
         named = {}
         logger.debug(f"*args {args}")
 
-        keyword_arguments = [argument[0] for argument in self.library.get_keyword_arguments(kw)]
+        keyword_arguments = [
+            argument[0] if isinstance(argument, tuple) else argument
+            for argument in self.library.get_keyword_arguments(kw)
+        ]
         for arg in args:
             parts = arg.split("=")
             if parts[0].strip() in keyword_arguments:
-                named[parts[0].strip()] = parts[1].strip()
+                if parts[1].strip() in DialogAction.__members__:
+                    named[parts[0].strip()] = DialogAction[parts[1].strip()]
+                else:
+                    named[parts[0].strip()] = parts[1].strip()
             else:
                 if arg.strip() in AssertionOperator.__members__:
                     positional.append(AssertionOperator[arg.strip()])

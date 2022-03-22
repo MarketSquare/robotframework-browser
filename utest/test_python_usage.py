@@ -82,3 +82,9 @@ def test_promise_to_wait_for_response_with_name_arguments(browser):
     browser.new_page(url='http://www.google.com')
     promise = browser.promise_to('Wait For Response', "matcher =", "timeout = 1s")
     assert promise.result() is not None
+
+
+def test_promise_to_wait_for_alert_with_name_arguments(browser):
+    browser.new_page(url='http://www.google.com')
+    promise = browser.promise_to('Wait For Alert', 'action=ignore', 'prompt_input=Kala', 'text=Wrong Text')
+    assert promise.done() is True
