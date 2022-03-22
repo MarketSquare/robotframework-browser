@@ -13,9 +13,11 @@
 # limitations under the License.
 import json
 from concurrent.futures import Future, ThreadPoolExecutor
+from enum import Enum
 from os import PathLike
 from pathlib import Path
 from time import sleep
+from typing import List, Any
 
 from assertionengine import AssertionOperator
 from robot.api.deco import keyword  # type: ignore
@@ -24,7 +26,7 @@ from robot.utils import DotDict  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadedFile, logger
-from ..utils.data_types import DialogAction
+from ..utils.data_types import DialogAction, ElementState
 
 
 class Promises(LibraryComponent):
@@ -63,7 +65,7 @@ class Promises(LibraryComponent):
         return promise
 
     def resolve_arguments(self, kw: str, *args):
-        positional = []
+        positional: List[Any] = []
         named = {}
         logger.debug(f"*args {args}")
 
@@ -81,6 +83,8 @@ class Promises(LibraryComponent):
             else:
                 if arg.strip() in AssertionOperator.__members__:
                     positional.append(AssertionOperator[arg.strip()])
+                elif arg.strip() in ElementState.__members__:
+                    positional.append(ElementState.__members__[arg.strip()])
                 else:
                     positional.append(arg)
 

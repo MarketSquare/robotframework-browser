@@ -87,4 +87,9 @@ def test_promise_to_wait_for_response_with_name_arguments(browser):
 def test_promise_to_wait_for_alert_with_name_arguments(browser):
     browser.new_page(url='http://www.google.com')
     promise = browser.promise_to('Wait For Alert', 'action=ignore', 'prompt_input=Kala', 'text=Wrong Text')
-    assert promise.done() is True
+    assert (promise.running() or promise.done()) is True
+
+def test_promise_to_wait_for_elements_state(browser):
+    browser.new_page(url='http://www.google.com')
+    promise = browser.promise_to('Wait For Elements State', '#victim', 'hidden', '200ms')
+    assert (promise.running() or promise.done()) is True
