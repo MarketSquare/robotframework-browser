@@ -13,7 +13,6 @@
 # limitations under the License.
 import json
 from concurrent.futures import Future, ThreadPoolExecutor
-from enum import Enum
 from os import PathLike
 from pathlib import Path
 from time import sleep
