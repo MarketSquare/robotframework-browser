@@ -16,7 +16,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import List, Any
+from typing import Any, List
 
 from assertionengine import AssertionOperator
 from robot.api.deco import keyword  # type: ignore
@@ -73,12 +73,12 @@ class Promises(LibraryComponent):
             for argument in self.library.get_keyword_arguments(kw)
         ]
         for arg in args:
-            parts = arg.split("=")
+            parts = arg.partition("=")
             if parts[0].strip() in keyword_arguments:
-                if parts[1].strip() in DialogAction.__members__:
-                    named[parts[0].strip()] = DialogAction[parts[1].strip()]
+                if parts[2].strip() in DialogAction.__members__:
+                    named[parts[0].strip()] = DialogAction[parts[2].strip()]
                 else:
-                    named[parts[0].strip()] = parts[1].strip()
+                    named[parts[0].strip()] = parts[2].strip()
             else:
                 if arg.strip() in AssertionOperator.__members__:
                     positional.append(AssertionOperator[arg.strip()])
