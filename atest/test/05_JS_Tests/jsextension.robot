@@ -33,6 +33,27 @@ Connecting and creating a remote browser
     Get Text    h1    ==    Login Page
     [Teardown]    Close Remote Clean
 
+Defaults in the keyword from Python to JS and back
+    ${result} =    moreDefaults
+    Should Be Equal    ${result}[bTrue]    ${TRUE}
+    Should Be Equal    ${result}[bFalse]    ${FALSE}
+    Should Be Equal    ${result}[integer]    ${123}
+    Should Be Equal    ${result}[floater]    ${1.3}
+    Should Be Equal    ${result}[text]    hello
+    Should Be Equal    ${result}[nothing]    ${NONE}
+    ${result} =    moreDefaults    bFalse=${TRUE}
+    Should Be Equal    ${result}[bFalse]    ${TRUE}
+    ${result} =    moreDefaults    bTrue=${FALSE}
+    Should Be Equal    ${result}[bTrue]    ${FALSE}
+    ${result} =    moreDefaults    integer=${456}
+    Should Be Equal    ${result}[integer]    ${456}
+    ${result} =    moreDefaults    floater=${2.3}
+    Should Be Equal    ${result}[floater]    ${2.3}
+    ${result} =    moreDefaults    text=bye
+    Should Be Equal    ${result}[text]    bye
+    ${result} =    moreDefaults    nothing=${NONE}
+    Should Be Equal    ${result}[nothing]    ${NONE}
+
 Crashing keyword
     Run Keyword And Expect Error    Error: Crash    crashKeyword
 
