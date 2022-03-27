@@ -41,6 +41,7 @@ Defaults in the keyword from Python to JS and back
     Should Be Equal    ${result}[floater]    ${1.3}
     Should Be Equal    ${result}[text]    hello
     Should Be Equal    ${result}[nothing]    ${NONE}
+    Should Be Equal    ${result}[undefineder]    ${NONE}
     ${result} =    moreDefaults    bFalse=${TRUE}
     Should Be Equal    ${result}[bFalse]    ${TRUE}
     ${result} =    moreDefaults    bTrue=${FALSE}
@@ -53,6 +54,8 @@ Defaults in the keyword from Python to JS and back
     Should Be Equal    ${result}[text]    bye
     ${result} =    moreDefaults    nothing=${NONE}
     Should Be Equal    ${result}[nothing]    ${NONE}
+    ${result} =    moreDefaults    undefineder=${NONE}
+    Should Be Equal    ${result}[undefineder]    ${NONE}
 
 Crashing keyword
     Run Keyword And Expect Error    Error: Crash    crashKeyword

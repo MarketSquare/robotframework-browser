@@ -788,6 +788,17 @@ class Browser(DynamicCore):
                 self._jskeyword_call(component, name, args, doc)
         return component
 
+    def _js_value_to_python_value(self, value: str) -> str:
+        return {
+            "true": "True",
+            "false": "False",
+            "null": "None",
+            "undefined": "None",
+            "NaN": "float('nan')",
+            "Infinity": "float('inf')",
+            "-Infinity": "float('-inf')",
+        }.get(value, value)
+
     def _jskeyword_call(
         self,
         component: LibraryComponent,
@@ -811,14 +822,8 @@ class Browser(DynamicCore):
                 if item[0] == "args":
                     argument_names_and_default_values_texts.append("*args")
                 elif len(item) > 1:
-                    if item[1] == "false":
-                        item[1] = "False"
-                    elif item[1] == "true":
-                        item[1] = "True"
-                    elif item[1] == "null":
-                        item[1] = "None"
                     argument_names_and_default_values_texts.append(
-                        f"{arg_name}={item[1]}"
+                        f"{arg_name}={self._js_value_to_python_value(item[1])}"
                     )
                 else:
                     argument_names_and_default_values_texts.append(f"{arg_name}")

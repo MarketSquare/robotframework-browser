@@ -37,14 +37,16 @@ async function moreDefaults(bTrue = true,
                             integer = 123,
                             floater = 1.3,
                             text = "hello",
-                            nothing = null) {
+                            nothing = null,
+                            undefineder = undefined) {
     return {
         bTrue,
         bFalse,
         integer,
         floater,
         text,
-        nothing
+        nothing,
+        undefineder
     };
 }
 
