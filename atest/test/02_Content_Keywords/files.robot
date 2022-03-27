@@ -73,9 +73,7 @@ Set Library Timeout
         New Browser    ${BROWSER}    headless=${HEADLESS}
     END
     ${current_contexts} =    Get Context Ids    Active    Active
-    IF    $current_contexts == []
-        New Context
-    END
+    IF    $current_contexts == []    New Context
     ${timeout} =    Set Browser Timeout    90 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
@@ -91,8 +89,7 @@ Generate Test File
     ELSE
         Run    dd if=/dev/zero of=${CURDIR}/${filename}.file bs=1024 count=${size_in_bytes}
     END
-
-    [Return]    ${filename}.file
+    RETURN    ${filename}.file
 
 Upload Sized File
     [Arguments]    ${size_in_mb}

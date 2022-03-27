@@ -15,7 +15,10 @@ Accept Alert
 Clicking Through Alert Fails
     [Tags]    not-implemented
     # The new close page / context / browser gets broken by this?
-    Run Keyword And Expect Error    Could not find element with selector `#alerts` within timeout.    Click    \#alerts
+    Run Keyword And Expect Error
+    ...    Could not find element with selector `#alerts` within timeout.
+    ...    Click
+    ...    \#alerts
 
 Promptinput works
     Handle Future Dialogs    action=accept    prompt_input=Some Input String
