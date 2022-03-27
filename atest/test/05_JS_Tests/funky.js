@@ -32,7 +32,12 @@ function crashKeyword() {
     throw Error("Crash");
 }
 
-async function moreDefaults(bTrue = true, bFalse = false, integer = 123, floater = 1.3, text = "hello", nothing = null) {
+async function moreDefaults(bTrue = true,
+                            bFalse = false,
+                            integer = 123,
+                            floater = 1.3,
+                            text = "hello",
+                            nothing = null) {
     return {
         bTrue,
         bFalse,

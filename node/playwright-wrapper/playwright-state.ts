@@ -47,7 +47,7 @@ export interface LocatorCount {
 
 const extractArgumentsStringFromJavascript = (javascript: string): string => {
     const regex = /\((.*?)\)/;
-    const match = regex.exec(strip(javascript).replace('\n', ''));
+    const match = regex.exec(strip(javascript).replace(/\n/g, ''));
     if (match) {
         return match[1];
     }
