@@ -150,4 +150,4 @@ Select Option And Verify Selection
     [Arguments]    ${attribute}    ${list_id}    @{selection}
     ${selected} =    Select Options By    ${list_id}    ${attribute}    @{selection}
     Get Selected Options    ${list_id}    ${attribute}    ==    @{selection}
-    [Return]    ${selected}
+    RETURN    ${selected}

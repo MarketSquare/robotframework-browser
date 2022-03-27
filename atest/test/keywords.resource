@@ -98,9 +98,7 @@ Ensure Open Page
         New Page    ${url}
     ELSE
         Switch To Page    ${IDs}[0]
-        IF    $url
-            Go To    ${url}
-        END
+        IF    $url    Go To    ${url}
     END
 
 Ensure Open Browser
@@ -115,9 +113,7 @@ Ensure Location
     [Arguments]    ${url}
     Ensure Open Page
     ${loc} =    Get Url
-    IF    "${url}" != "${loc}"
-        Go To    ${url}
-    END
+    IF    "${url}" != "${loc}"    Go To    ${url}
 
 Switch To Page
     [Arguments]    ${page_id}
@@ -127,7 +123,7 @@ Switch To Page
             FOR    ${pa}    IN    @{con}[pages]
                 IF    "${pa}[id]" == "${page_id}"
                     Switch Page    ${pa}[id]    ${con}[id]    ${br}[id]
-                    Return From Keyword
+                    RETURN
                 END
             END
         END
