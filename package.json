@@ -33,13 +33,13 @@
     "ts-loader": "^9.2.8",
     "ts-node": "^10.7.0",
     "tslint": "^6.1.3",
-    "typescript": "^4.6.2"
+    "typescript": "^4.6.3"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.5.9",
+    "@grpc/grpc-js": "^1.5.10",
     "@medv/finder": "^2.1.0",
     "google-protobuf": "3.19.3",
-    "pino": "^7.9.1",
+    "pino": "^7.9.2",
     "playwright": "^1.20.1",
     "strip-comments": "^2.0.1",
     "uuid": "^8.3.2"

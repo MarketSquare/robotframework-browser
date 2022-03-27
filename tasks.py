@@ -310,7 +310,7 @@ def atest(
 
     if zip:
         _clean_zip_dir()
-        print(f"Zip file created to: {_create_zip(rc)}")
+        print(f"Zip file created to: {_create_zip(rc, shard)}")
     sys.exit(rc)
 
 
@@ -331,14 +331,15 @@ def _clean_pabot_results(rc: int):
         print(f"Not deleting pabot_results on error")
 
 
-def _create_zip(rc: int):
+def _create_zip(rc: int, shard: str):
+    shard = shard.replace("/", "of")
     zip_dir = ZIP_DIR / "output"
     zip_dir.mkdir(parents=True)
     _clean_pabot_results(rc)
     py_version = platform.python_version()
     node_process = subprocess.run(["node", "--version"], capture_output=True)
     node_version = node_process.stdout.strip().decode("utf-8")
-    zip_name = f"{sys.platform}-rf-{rf_version}-py-{py_version}-node-{node_version}.zip"
+    zip_name = f"{sys.platform}-rf-{rf_version}-py-{py_version}-node-{node_version}-shard-{shard}.zip"
     zip_path = zip_dir / zip_name
     print(f"Creating zip  in: {zip_path}")
     zip_file = zipfile.ZipFile(zip_path, "w")
