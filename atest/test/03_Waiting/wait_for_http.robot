@@ -5,12 +5,18 @@ Test Setup      Ensure Location    ${LOGIN_URL}
 
 *** Test Cases ***
 Wait For Fails if no success
-    Run Keyword And Expect Error    GLOB:*Timeout 100ms exceeded while waiting for event "request"*    Wait For Request
-    ...    /api/get/json    timeout=100ms
+    Run Keyword And Expect Error
+    ...    GLOB:*Timeout 100ms exceeded while waiting for event "request"*
+    ...    Wait For Request
+    ...    /api/get/json
+    ...    timeout=100ms
 
 Wait For Request synchronous
     Click    \#delayed_request
-    Wait For Request    timeout=1s
+    Go To    ${ROOT_URL}/redirector.html
+    Run Keyword And Expect Error
+    ...    *PageLoadStates does not have member 'foobar'. Available: 'commit', 'domcontentloaded', 'load' and 'networkidle'*
+    ...    Wait for navigation    ${ROOT_URL}/posted.html    wait_until=foobar
 
 Wait For Request async
     ${promise} =    Promise To    Wait For Request    matcher=    timeout=3s
