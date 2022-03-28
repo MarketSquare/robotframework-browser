@@ -84,6 +84,8 @@ class Promises(LibraryComponent):
                     positional.append(AssertionOperator[arg.strip()])
                 elif arg.strip() in ElementState.__members__:
                     positional.append(ElementState.__members__[arg.strip()])
+                elif arg.strip() in DialogAction.__members__:
+                    positional.append(DialogAction[arg.strip()])
                 else:
                     positional.append(arg)
 
