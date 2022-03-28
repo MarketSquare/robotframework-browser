@@ -201,6 +201,11 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         inv atest --shard ${{ matrix.shard }}/4 -z true
+    - uses: actions/upload-artifact@v2
+      if: ${{ always() }}
+      with:
+        name: Test results
+        path: zip_results/output
     - name: Create Distributable Package
       run: |
         inv docs

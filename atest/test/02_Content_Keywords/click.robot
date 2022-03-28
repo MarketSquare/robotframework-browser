@@ -16,4 +16,7 @@ Click Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${originaltimeout}
 
 Click With Invalid Selector
-    Run Keyword And Expect Error    *input?type="submit"?X' is not a valid selector.*    Click    input[type="submit"]X
+    Run Keyword And Expect Error
+    ...    *input?type="submit"?X' is not a valid selector.*
+    ...    Click
+    ...    input[type="submit"]X
