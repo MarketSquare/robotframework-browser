@@ -46,7 +46,7 @@ async function moreDefaults(bTrue = true,
         floater,
         text,
         nothing,
-        undefineder
+        "undefineder": undefineder || null
     };
 }
 
