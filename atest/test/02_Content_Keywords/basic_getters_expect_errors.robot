@@ -97,7 +97,11 @@ Get Scroll Position Element Default Error
     ${expected} =    Create Dictionary    top=-1    left=-1    bottom=-1    right=-1
     Run Keyword And Expect Error
     ...    Scroll position is * (dotdict) should be '{'top': '-1', 'left': '-1', 'bottom': '-1', 'right': '-1'}' (dotdict)
-    ...    Get Scroll Position    h1    all    ==    ${expected}
+    ...    Get Scroll Position
+    ...    h1
+    ...    all
+    ...    ==
+    ...    ${expected}
 
 Get Scroll Position Element Custom Error
     [Tags]    expect_error
@@ -277,13 +281,25 @@ Get Element States and check Error Message Equal
     Wait For Elements State    h1
     Run Keyword And Expect Error
     ...    EQUALS:Elements states '['attached', 'defocused', 'editable', 'enabled', 'visible']' (list) should be '['attached', 'enabled', 'readonly', 'visible']' (list)
-    ...    Get Element States    h1    ==    visible    attached    enabled    readonly
+    ...    Get Element States
+    ...    h1
+    ...    ==
+    ...    visible
+    ...    attached
+    ...    enabled
+    ...    readonly
 
 Get Element States and check Error Message contains
     Wait For Elements State    h1
     Run Keyword And Expect Error
     ...    EQUALS:Elements states '['attached', 'defocused', 'editable', 'enabled', 'visible']' (list) should contain '['detached', 'enabled', 'readonly', 'visible']' (list)
-    ...    Get Element States    h1    *=    visible    detached    enabled    readonly
+    ...    Get Element States
+    ...    h1
+    ...    *=
+    ...    visible
+    ...    detached
+    ...    enabled
+    ...    readonly
 
 Get Element States and check Error Message validate
     Wait For Elements State    h1
@@ -301,7 +317,10 @@ Get Element States and check custom Error with values
     Wait For Elements State    h1
     Run Keyword And Expect Error
     ...    EQUALS:Oh NOO! <h1> should contain ['selected'] but the states where ['attached', 'defocused', 'editable', 'enabled', 'visible']
-    ...    Get Element States    h1    *=    selected
+    ...    Get Element States
+    ...    h1
+    ...    *=
+    ...    selected
     ...    message=Oh NOO! <h1> should contain {expected} but the states where {value}
 
 *** Keywords ***
