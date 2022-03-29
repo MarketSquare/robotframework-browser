@@ -16,8 +16,8 @@ Get Select Options
     Get Select Options    select[name=preferred_channel]    validate    value[0]['index'] == 0
     Get Select Options    select[name=preferred_channel]    validate    value[2]['label'] == 'Direct mail'
     ${options} =    Get Select Options    select[name=possible_channels]
-    Should be equal    ${options}[0][label]    Email
-    Should be equal    ${options}[1][value]    phone
+    Should Be Equal    ${options}[0][label]    Email
+    Should Be Equal    ${options}[1][value]    phone
 
 Get Select Options Strict
     [Tags]    slow

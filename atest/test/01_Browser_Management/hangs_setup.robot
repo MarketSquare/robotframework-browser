@@ -11,7 +11,7 @@ ${ErrorMessage} =       page.goto: Timeout 1ms exceeded.
 Test GoTo With Short Default Timeout
     [Tags]    slow
     New Page
-    set browser timeout    1ms
+    Set Browser Timeout    1ms
     Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 

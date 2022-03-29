@@ -57,20 +57,20 @@ Wait For Response async
 Wait Until Network Is Idle Works
     [Tags]    slow
     Go To    ${ROOT_URL}/delayed-load.html
-    Get text    \#server_delayed_response    ==    Server response after 400ms
-    Wait until network is idle    timeout=3s
-    Get text    \#server_delayed_response    ==    after some time I respond
+    Get Text    \#server_delayed_response    ==    Server response after 400ms
+    Wait Until Network Is Idle    timeout=3s
+    Get Text    \#server_delayed_response    ==    after some time I respond
 
 Wait For Navigation Works
     [Tags]    slow
     Go To    ${ROOT_URL}/redirector.html
-    Wait for navigation    ${ROOT_URL}/posted.html
+    Wait For Navigation    ${ROOT_URL}/posted.html
     Get Url    ==    ${ROOT_URL}/posted.html
 
 Wait For Navigation Works With Regex
     [Tags]    slow
     Go To    ${ROOT_URL}/redirector.html
-    Wait for navigation    /p[\\w]{4}d/i
+    Wait For Navigation    /p[\\w]{4}d/i
     Get Url    contains    posted
 
 Wait For Navigation Fails With Wrong Regex
@@ -95,7 +95,7 @@ Wait For Navigation Works With wait_until
     ${old timeout} =    Set Browser Timeout    4s
     FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit
         Go To    ${ROOT_URL}/redirector.html
-        Wait for navigation    ${ROOT_URL}/posted.html    wait_until=${wait_until}
+        Wait For Navigation    ${ROOT_URL}/posted.html    wait_until=${wait_until}
         Get Url    contains    posted
     END
     [Teardown]    Set Browser Timeout    ${old timeout}

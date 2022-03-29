@@ -83,11 +83,11 @@ JS Execute With Element On Strict Mode
 
 Results from page
     ${result} =    Evaluate JavaScript    ${None}    "hello from page "+location.href
-    should be equal    ${result}    hello from page ${LOGIN_URL}
+    Should Be Equal    ${result}    hello from page ${LOGIN_URL}
     ${result2} =    Evaluate JavaScript    ${None}    1+2+3
-    should be equal    ${result2}    ${6}
+    Should Be Equal    ${result2}    ${6}
     ${result3} =    Evaluate JavaScript    ${None}    1.3314*3.13432
-    should be equal    ${result3}    ${4.173033648}
+    Should Be Equal    ${result3}    ${4.173033648}
 
 Mutate Element On Page
     Get Property    h1    innerText    ==    Login Page

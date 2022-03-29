@@ -119,13 +119,13 @@ Wait For Elements State unchecked
 Wait For Elements State fails On Too Short Timeout
     Select Options By    \#dropdown    value    True    unchecked
     Click    \#submit    noWaitAfter=True
-    Run Keyword and Expect Error
+    Run Keyword And Expect Error
     ...    STARTS:TimeoutError: page.waitForFunction: Timeout 300ms exceeded.
     ...    Wait For Elements State    \#victim    unchecked    300ms
 
 Wait For Elements State fails On Too Short Global Timeout
     ${timeout} =    Set Browser Timeout    0.3 s
-    Run Keyword and Expect Error    Custom Error #submit, hidden and 300 milliseconds
+    Run Keyword And Expect Error    Custom Error #submit, hidden and 300 milliseconds
     ...    Wait For Elements State    \#submit    hidden    ${None}
     ...    Custom Error {selector}, {function} and {timeout}
     [Teardown]    Set Browser Timeout    ${timeout}
@@ -133,56 +133,56 @@ Wait For Elements State fails On Too Short Global Timeout
 Wait For Elements State Fails On Too Short Timeout Custom Error With Formatting
     Select Options By    \#dropdown    value    True    unchecked
     Click    \#submit    noWaitAfter=True
-    Run Keyword and Expect Error    Custom Error #victim, e => !e.checked and 300 milliseconds
+    Run Keyword And Expect Error    Custom Error #victim, e => !e.checked and 300 milliseconds
     ...    Wait For Elements State    \#victim    unchecked    300ms
     ...    Custom Error {selector}, {function} and {timeout}
 
 Wait For Elements State Fails On Too Short Timeout Custom Error
     Select Options By    \#dropdown    value    True    unchecked
     Click    \#submit    noWaitAfter=True
-    Run Keyword and Expect Error
+    Run Keyword And Expect Error
     ...    Custom Error
     ...    Wait For Elements State    \#victim    unchecked    300ms    Custom Error
 
 Wait For Elements State Fails On Too Short Timeout Custom Error And Hidden
     Select Options By    \#dropdown    value    True    unchecked
     Click    \#submit    noWaitAfter=True
-    Run Keyword and Expect Error
+    Run Keyword And Expect Error
     ...    Custom Error #victim, hidden and 300 milliseconds
     ...    Wait For Elements State    \#victim    hidden    300ms    Custom Error {selector}, {function} and {timeout}
 
 Wait For Elements State to hide with Promise
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
-    ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    3s
+    ${promise} =    Promise To    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms
     Sleep    200 ms    reason=to check that the promise keeps beeing active
     ${start} =    Evaluate    time.time()
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
-    Wait for    ${promise}
-    Max elapsed    ${start}    2.0
+    Wait For    ${promise}
+    Max Elapsed    ${start}    2.0
 
 Wait For Elements State to hide fails with Promise
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
-    ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    200ms
-    Run Keyword and Expect Error
+    ${promise} =    Promise To    Wait For Elements State    \#victim    hidden    200ms
+    Run Keyword And Expect Error
     ...    *TimeoutError: locator.waitFor: Timeout 200ms exceeded.*
     ...    Wait for    ${promise}
 
 Wait For Elements State to hide with Promise and wait for all promises
     [Tags]    no-windows-support
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
-    ${promise} =    Promise to    Wait For Elements State    \#victim    hidden    3s
+    ${promise} =    Promise To    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms
     Sleep    200 ms    reason=to check that the promise keeps beeing active
     ${start} =    Evaluate    time.time()
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    visible    300ms
     Wait For All Promises
-    Max elapsed    ${start}    2.0
+    Max Elapsed    ${start}    2.0
 
 *** Keywords ***
-Max elapsed
+Max Elapsed
     [Arguments]    ${start}    ${elapsed}
     ${end} =    Evaluate    time.time()
     Should Be True    ($end - $start) < ${elapsed}    ${{$end - $start}} < ${elapsed}
