@@ -9,4 +9,4 @@ Suite Teardown      Close Browser
 New Page will not timeout
     [Tags]    slow
     New Page    ${SLOW_PAGE}
-    get title    ==    Slow page
+    Get Title    ==    Slow page

@@ -5,28 +5,28 @@ Resource    imports.resource
 *** Test Cases ***
 Calling custom js keyword
     New Page    ${LOGIN_URL}
-    get text    h1    ==    Login Page
-    myFunkyKeyword    h1
-    get text    h1    ==    Funk yeah!
+    Get Text    h1    ==    Login Page
+    MyFunkyKeyword    h1
+    Get Text    h1    ==    Funk yeah!
 
 Calling new style custom js keyword
     New Page    ${LOGIN_URL}
-    get text    h1    ==    Login Page
-    myNewStyleFunkyKeyword    h1
-    get text    h1    ==    Funk yeah again!
+    Get Text    h1    ==    Login Page
+    MyNewStyleFunkyKeyword    h1
+    Get Text    h1    ==    Funk yeah again!
 
 Calling custom js keyword with default value
     New Page    ${LOGIN_URL}
-    ${val} =    withDefaultValue
+    ${val} =    WithDefaultValue
     Should Be Equal    ${val}    DEFAULT
-    ${val2} =    withDefaultValue    odd
+    ${val2} =    WithDefaultValue    odd
     Should Be Equal    ${val2}    ODD
-    ${val3} =    withDefaultValue    a=even
+    ${val3} =    WithDefaultValue    a=even
     Should Be Equal    ${val3}    EVEN
 
 Connecting and creating a remote browser
     [Tags]    slow
-    ${wsEndpoint} =    Create remote browser
+    ${wsEndpoint} =    Create Remote Browser
     ${browser} =    Connect To Browser    ${wsEndpoint}
     Should Not Be Equal    ${browser}    ${NULL}
     New Page    ${LOGIN_URL}
@@ -42,5 +42,5 @@ Failing import
 
 *** Keywords ***
 Close Remote Clean
-    close browser
-    closeRemoteBrowser
+    Close Browser
+    CloseRemoteBrowser

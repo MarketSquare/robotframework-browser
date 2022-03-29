@@ -45,7 +45,7 @@ Invalid Upload Path
 Wait For Download
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
-    ${dl_promise} =    Promise To Wait for Download
+    ${dl_promise} =    Promise To Wait For Download
     Sleep    0.5
     Click    \#file_download
     ${file_object} =    Wait For    ${dl_promise}

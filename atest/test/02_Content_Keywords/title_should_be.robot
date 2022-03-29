@@ -4,11 +4,11 @@ Resource        imports.resource
 Suite Setup     New Page    ${FORM_URL}
 
 *** Test Cases ***
-test server title
+Test server title
     New Page    ${LOGIN_URL}/
     Get Title    ==    Login Page
 
-about:blank title
+About:blank title
     New Page    about:blank
     Get Title    ==    ${EMPTY}
 

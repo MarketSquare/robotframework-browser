@@ -19,7 +19,7 @@ Failing with screenshot 3
     Run Keyword And Expect Error    STARTS: TimeoutError    Click    .nonexisting3
 
 Check screenshots
-    file should exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-1.png
-    file should exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-2.png
-    file should exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-3.png
-    file should not exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-4.png
+    File Should Exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-1.png
+    File Should Exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-2.png
+    File Should Exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-3.png
+    File Should Not Exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-4.png

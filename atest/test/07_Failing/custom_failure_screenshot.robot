@@ -11,4 +11,4 @@ Failing with custom screenshot
     Run Keyword And Expect Error    STARTS: TimeoutError    Click    .nonexisting4
 
 Check screenshot
-    file should exist    ${OUTPUT DIR}/browser/screenshot/custom-fail.png
+    File Should Exist    ${OUTPUT DIR}/browser/screenshot/custom-fail.png

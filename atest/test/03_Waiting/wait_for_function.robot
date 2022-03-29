@@ -26,7 +26,7 @@ Succesful Wait For Function
     Wait For Function    true    timeout=500ms
 
 Failed Wait For Function
-    Run Keyword and Expect Error
+    Run Keyword And Expect Error
     ...    STARTS: ${timeout_message}
     ...    Wait For Function    false    timeout=100ms
 
@@ -38,7 +38,7 @@ Failed Wait For Function Promise
     ${promise} =    Promise To    Wait For Function
     ...    (selector) => {console.log(selector); return document.activeElement === selector}
     ...    selector=\#username_field    timeout=100ms
-    Run Keyword and Expect Error
+    Run Keyword And Expect Error
     ...    STARTS: ${timeout_message}
     ...    Wait For    ${promise}
 

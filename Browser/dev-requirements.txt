@@ -19,7 +19,7 @@ pytest-mock==3.7.0
 beautifulsoup4 >= 4.9.3
 psutil >= 5.8.0
 coverage >= 6.1.2
-robotframework-tidy >= 2.0.0
+robotframework-tidy >= 2.1.0
 python-dateutil >= 2.8.2
 # Remove this when https://github.com/approvals/ApprovalTests.Python/issues/100 is fixed
 empty-files >= 0.0.3
