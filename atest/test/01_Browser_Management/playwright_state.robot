@@ -5,10 +5,10 @@ Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Open Firefox
-    Open Browser and assert Login Page    firefox
+    Open Browser And Assert Login Page    firefox
 
 Open Chrome
-    Open Browser and assert Login Page    chromium
+    Open Browser And Assert Login Page    chromium
 
 New Browser does not open a page
     New Browser
@@ -28,19 +28,19 @@ New Context does not open a page
 
 Open Browser opens everything
     [Tags]    slow
-    ${old_timeout} =    Set Browser timeout    30 seconds
+    ${old_timeout} =    Set Browser Timeout    30 seconds
     Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    Set Browser timeout    ${old_timeout}
+    Set Browser Timeout    ${old_timeout}
 
 Open Browser with invalid browser fails on RF side
-    Run Keyword and Expect Error
+    Run Keyword And Expect Error
     ...    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Open Browser
     ...    url=${FORM_URL}    browser=netscape
     [Teardown]    no operation
 
 New Browser with invalid browser fails on RF side
-    Run Keyword and Expect Error
+    Run Keyword And Expect Error
     ...    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    New Browser
     ...    netscape
     [Teardown]    no operation
@@ -108,7 +108,7 @@ New Page can New Context and browser
 
 Switch Page after popup
     [Tags]    slow
-    Open Browser and assert Login Page    chromium
+    Open Browser And Assert Login Page    chromium
     Click    button#pops_up
     ${previous} =    Switch Page    NEW
     Wait For Elements State    "Popped Up!"
@@ -169,9 +169,9 @@ Close Page gets errors and console log
     Click    "Crash click"
     ${response} =    Close Page
     Log    ${response}
-    Should be equal    ${response}[0][console][0][text]    Hello from warning
-    Should match    ${response}[0][errors][0]    *Error: a is not defined*
-    Should be equal    ${response}[0][id]    ${page}[page_id]
+    Should Be Equal    ${response}[0][console][0][text]    Hello from warning
+    Should Match    ${response}[0][errors][0]    *Error: a is not defined*
+    Should Be Equal    ${response}[0][id]    ${page}[page_id]
 
 Context indices are unique
     [Tags]    slow
@@ -276,7 +276,7 @@ When Page Without Context Is Created This Is Logged For User
     New Page
 
 *** Keywords ***
-Open Browser and assert Login Page
+Open Browser And Assert Login Page
     [Arguments]    ${local_browser}
     Open Browser To Login Page
     Get Text    h1    ==    Login Page

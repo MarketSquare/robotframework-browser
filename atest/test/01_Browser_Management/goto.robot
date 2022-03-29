@@ -5,7 +5,7 @@ Suite Setup     Close Page    ALL
 
 *** Test Cases ***
 No Open Browser Throws
-    Run KeyWord and Expect Error
+    Run KeyWord And Expect Error
     ...    Error: No page open.
     ...    GoTo    "about:blank"
 
@@ -28,7 +28,7 @@ Open GoTo GoBack GoForward
 Timeouting Go To
     New Page    ${LOGIN_URL}
     ${timeout} =    Set Browser Timeout    7ms
-    Run KeyWord and Expect Error
+    Run KeyWord And Expect Error
     ...    TimeoutError: page.goto: Timeout 7ms exceeded.*
     ...    Go To    ${WELCOME_URL}
     [Teardown]    Teardown For Timeouting Go To    ${timeout}
@@ -36,7 +36,7 @@ Timeouting Go To
 Timeouting Go To With Custom timeout
     [Tags]    slow
     New Page    ${LOGIN_URL}
-    Run KeyWord and Expect Error
+    Run KeyWord And Expect Error
     ...    TimeoutError: page.goto: Timeout 10ms exceeded.*
     ...    Go To    ${WELCOME_URL}    10 ms
     [Teardown]    Close Context

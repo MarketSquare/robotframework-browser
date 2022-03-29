@@ -56,7 +56,7 @@ If Element Not Found Screenshot Should Fail
 
 ElementHandle Screenshotting
     ${ref} =    Get Element    \#username_field
-    Take screenshot    ${TestScreenshot}    ${ref}
+    Take Screenshot    ${TestScreenshot}    ${ref}
     File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}.png
 
@@ -65,7 +65,7 @@ Take Take screenshot With Strict
     ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Take screenshot    selector=//input
     Set Strict Mode    False
-    ${path} =    Take screenshot    browser-strict    selector=//input
+    ${path} =    Take Screenshot    browser-strict    selector=//input
     Set Strict Mode    True
     [Teardown]    Remove File    ${path}
 
@@ -91,14 +91,14 @@ Screenshot Filename Incrementation
 Embed ScreenShot To log.html File
     [Documentation]
     ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
-    ${path} =    Take screenshot    EMBED
+    ${path} =    Take Screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
     Should Be Equal    ${path}    EMBED
 
 Embed Element Picture To log.html File
     [Documentation]
     ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
-    ${path} =    Take screenshot    EMbeD    selector=\#username_field
+    ${path} =    Take Screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
 

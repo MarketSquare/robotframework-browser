@@ -57,7 +57,7 @@ Get Property For Element Property Which Does Not Exist
 
 Get Property and Then .. (Closure)
     ${text} =    Get Property    h1    innerText    then    value.replace('g', 'k')
-    Should be equal    ${text}    Lokin Pake
+    Should Be Equal    ${text}    Lokin Pake
 
 Get Attribute
     ${type} =    Get Attribute    id=login_button    type
@@ -140,9 +140,9 @@ Get Element Count and Assert
     Get Element Count    label    validate    value == 2
     Get Element Count    label    >    1
     Get Element Count    not-existing    ==
-    ${promise} =    Promise to    Get Element Count    label
-    ${count} =    Wait for    ${promise}
-    should be equal    ${count}    ${2}
+    ${promise} =    Promise To    Get Element Count    label
+    ${count} =    Wait For    ${promise}
+    Should Be Equal    ${count}    ${2}
 
 Get Style and Assert
     Get Style    h1    ALL    *=    align-content

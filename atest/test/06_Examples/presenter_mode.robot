@@ -11,9 +11,9 @@ Force Tags          slow
 *** Test Cases ***
 Filling the text with True
     New Page    ${LOGIN_URL}
-    type text    input#username_field    user
+    Type Text    input#username_field    user
 
 Filling the text with settings
     Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
     New Page    ${LOGIN_URL}
-    type text    input#username_field    user
+    Type Text    input#username_field    user

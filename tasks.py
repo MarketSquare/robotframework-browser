@@ -587,6 +587,12 @@ def lint_robot(c):
         "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
         "--configure",
         "NormalizeAssignments:equal_sign_type_variables=space_and_equal_sign",
+        "--configure",
+        "NormalizeNewLines:section_lines=1",
+        "--transform",
+        "RenameKeywords",
+        "--transform",
+        "RenameTestCases"
     ]
     if in_ci:
         command.insert(1, "--check")

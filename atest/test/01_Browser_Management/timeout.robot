@@ -33,10 +33,10 @@ Test assertion timeouts
     New Context
     Set Browser Timeout    10 s
     New Page    ${LOGIN_URL}
-    ${old} =    Set retry assertions for    0s
+    ${old} =    Set Retry Assertions For    0s
     Run Keyword And Expect Error    *    Get title    ==    Wrong title
-    Get title    ==    Login Page
-    set retry assertions for    ${old}
+    Get Title    ==    Login Page
+    Set Retry Assertions For    ${old}
 
 Set Browser Timeout Should Return Old Value
     New Context

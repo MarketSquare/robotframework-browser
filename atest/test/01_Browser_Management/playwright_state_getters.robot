@@ -16,15 +16,15 @@ Get Multiple Browsers
     New Page    http://example.com
     ${browsers} =    Get Browser Catalog    then
     ...    [(b['type'], b['activeBrowser'], [[p['url'] for p in c['pages']] for c in b['contexts']]) for b in value]
-    ${expected} =    evaluate
+    ${expected} =    Evaluate
     ...    [('chromium', False, [['http://${SERVER}/prefilled_email_form.html'], ['${LOGIN_URL}']]), ('chromium', True, [['http://example.com/']])]
-    should be equal    ${browsers}    ${expected}
+    Should Be Equal    ${browsers}    ${expected}
 
 Get Closed Browsers
     New Browser
     Close Browser
     ${browsers} =    Get Browser Catalog
-    should be empty    ${browsers}
+    Should Be Empty    ${browsers}
 
 Get Browser Catalog Default Error
     [Tags]    slow
@@ -53,51 +53,51 @@ Get Viewport Size
 Multipage order
     [Tags]    slow
     New Page    ${FORM_URL}
-    Get title    ==    prefilled_email_form.html
-    Page encapsulating keyword
-    Get title    ==    prefilled_email_form.html
+    Get Title    ==    prefilled_email_form.html
+    Page Encapsulating Keyword
+    Get Title    ==    prefilled_email_form.html
     [Teardown]    Close Page
 
 Multicontext order
     New Context
     New Page    ${WELCOME_URL}
-    Get title    ==    Welcome Page
-    Context encapsulating keyword
-    Get title    ==    Welcome Page
+    Get Title    ==    Welcome Page
+    Context Encapsulating Keyword
+    Get Title    ==    Welcome Page
     [Teardown]    Close Context
 
 Multibrowser order
     [Tags]    slow
     New Browser    browser=chromium
     New Page    ${ERROR_URL}
-    Get title    ==    Error Page
-    Browser encapsulating keyword
-    Get title    ==    Error Page
+    Get Title    ==    Error Page
+    Browser Encapsulating Keyword
+    Get Title    ==    Error Page
     [Teardown]    Close Browser
 
 *** Keywords ***
-Page encapsulating keyword
+Page Encapsulating Keyword
     New Page    ${WELCOME_URL}
-    Get title    ==    Welcome Page
-    Page encapsulating keyword 2
-    Get title    ==    Welcome Page
+    Get Title    ==    Welcome Page
+    Page Encapsulating Keyword 2
+    Get Title    ==    Welcome Page
     [Teardown]    Close Page
 
-Page encapsulating keyword 2
+Page Encapsulating Keyword 2
     New Page    ${ERROR_URL}
-    Get title    ==    Error Page
+    Get Title    ==    Error Page
     [Teardown]    Close Page
 
-Context encapsulating keyword
+Context Encapsulating Keyword
     New Context
     New Page    ${ERROR_URL}
-    Get title    ==    Error Page
+    Get Title    ==    Error Page
     New Page    ${FORM_URL}
-    Get title    ==    prefilled_email_form.html
+    Get Title    ==    prefilled_email_form.html
     [Teardown]    Close Context
 
-Browser encapsulating keyword
+Browser Encapsulating Keyword
     New Browser    browser=${BROWSER}
     New Page    ${WELCOME_URL}
-    Get title    ==    Welcome Page
+    Get Title    ==    Welcome Page
     [Teardown]    Close Browser
