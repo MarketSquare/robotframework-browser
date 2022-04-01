@@ -312,7 +312,7 @@ service  Playwright {
   rpc GetCookies(Request.Empty) returns (Response.Json);
   rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
   /* Screen shot method */
-  rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
+  rpc TakeScreenshot(Request.ElementSelectorWithOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty);
   /* Navigate to the next page in history */

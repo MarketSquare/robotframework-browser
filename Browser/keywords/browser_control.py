@@ -82,10 +82,10 @@ class Control(LibraryComponent):
     def take_screenshot(
         self,
         filename: str = "robotframework-browser-screenshot-{index}",
-        selector: str = "",
+        selector: Optional[str] = None,
         fullPage: bool = False,
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
-        quality: str = "",
+        quality: Optional[int] = None,
         timeout: Optional[timedelta] = None,
     ) -> str:
         """Takes a screenshot of the current window or element and saves it to disk.
@@ -128,7 +128,13 @@ class Control(LibraryComponent):
         else:
             logger.debug(f"Using {filename} to take screenshot.")
         file_path = self._take_screenshot(
-            filename, selector, fullPage, fileType, quality, timeout, self.strict_mode
+            filename,
+            selector or "",
+            fullPage,
+            fileType,
+            quality,
+            timeout,
+            self.strict_mode,
         )
         if self._is_embed(filename):
             return self._embed_to_log(file_path)
@@ -167,7 +173,7 @@ class Control(LibraryComponent):
         selector: str = "",
         fullPage: bool = False,
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
-        quality: str = "",
+        quality: Optional[int] = None,
         timeout: Optional[timedelta] = None,
         strict: bool = True,
     ) -> str:
@@ -175,14 +181,19 @@ class Control(LibraryComponent):
             self._get_screenshot_path(filename, fileType.name)
         )
         with self.playwright.grpc_channel() as stub:
+            options = {
+                "path": f"{string_path_no_extension}.{fileType.name}",
+                "fileType": fileType.name,
+                "fullPage": fullPage,
+                "timeout": int(self.get_timeout(timeout)),
+            }
+            if quality is not None:
+                options["quality"] = max(min(100, quality), 0)
+
             response = stub.TakeScreenshot(
-                Request().ScreenshotOptions(
-                    path=string_path_no_extension,
+                Request().ElementSelectorWithOptions(
                     selector=selector,
-                    fullPage=fullPage,
-                    fileType=fileType.name,
-                    quality=quality,
-                    timeout=int(self.get_timeout(timeout)),
+                    options=json.dumps(options),
                     strict=strict,
                 )
             )

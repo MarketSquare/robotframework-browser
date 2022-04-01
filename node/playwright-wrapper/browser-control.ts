@@ -50,29 +50,21 @@ export async function goTo(request: Request.Url, page: Page): Promise<Response.E
 }
 
 export async function takeScreenshot(
-    request: Request.ScreenshotOptions,
+    request: Request.ElementSelectorWithOptions,
     state: PlaywrightState,
 ): Promise<Response.String> {
-    const fileType = request.getFiletype();
-    const path = request.getPath() + '.' + fileType;
-    const fullPage = request.getFullpage();
     const selector = request.getSelector();
-    const quality = request.getQuality();
-    const timeout = request.getTimeout();
-    const options: Record<string, any> = { path: path, type: fileType, timeout: timeout };
+    const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
-    if (quality) {
-        options.quality = parseInt(quality);
-    }
     if (selector) {
         const locator = await findLocator(state, selector, strictMode, undefined, true);
         await locator.screenshot(options);
     } else {
         const page = state.getActivePage();
         exists(page, 'Tried to take screenshot, but no page was open.');
-        options.fullPage = fullPage;
         await page.screenshot(options);
     }
+    const path = options['path'];
     const message = 'Screenshot successfully captured to: ' + path;
     return stringResponse(path, message);
 }
