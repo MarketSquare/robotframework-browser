@@ -16,14 +16,14 @@ import json
 import os
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union, List
 
 from robot.utils import get_link_path  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-from ..utils.data_types import Permission, ScreenshotFileTypes
+from ..utils.data_types import Permission, ScreenshotFileTypes, BoundingBox
 
 
 class Control(LibraryComponent):
@@ -87,6 +87,10 @@ class Control(LibraryComponent):
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
         quality: Optional[int] = None,
         timeout: Optional[timedelta] = None,
+        crop: Optional[BoundingBox] = None,
+        disable_animation: bool = False,
+        mask: Union[str, List[str]] = [],
+        omit_background: bool = False,
     ) -> str:
         """Takes a screenshot of the current window or element and saves it to disk.
 
@@ -127,18 +131,38 @@ class Control(LibraryComponent):
             logger.debug("Embedding image to log.html.")
         else:
             logger.debug(f"Using {filename} to take screenshot.")
-        file_path = self._take_screenshot(
-            filename,
-            selector or "",
-            fullPage,
-            fileType,
-            quality,
-            timeout,
-            self.strict_mode,
+        string_path_no_extension = str(
+            self._get_screenshot_path(filename, fileType.name)
         )
-        if self._is_embed(filename):
-            return self._embed_to_log(file_path)
-        return self._log_image_link(file_path)
+        with self.playwright.grpc_channel() as stub:
+            options = {
+                "path": f"{string_path_no_extension}.{fileType.name}",
+                "fileType": fileType.name,
+                "fullPage": fullPage,
+                "timeout": int(self.get_timeout(timeout)),
+                "mask": mask,
+                "omitBackground": omit_background,
+            }
+            if quality is not None:
+                options["quality"] = max(min(100, quality), 0)
+            if disable_animation:
+                options["animations"] = "disabled"
+            if crop:
+                options["clip"] = crop
+
+            response = stub.TakeScreenshot(
+                Request().ElementSelectorWithOptions(
+                    selector=selector or "",
+                    options=json.dumps(options),
+                    strict=self.strict_mode,
+                )
+            )
+            logger.debug(response.log)
+            file_path = response.body
+
+            if self._is_embed(filename):
+                return self._embed_to_log(file_path)
+            return self._log_image_link(file_path)
 
     def _log_image_link(self, file_path: str) -> str:
         relative_path = get_link_path(file_path, self.outputdir)
@@ -166,39 +190,6 @@ class Control(LibraryComponent):
         except Exception:
             logger.warn(f"Could not remove {png}")
         return "EMBED"
-
-    def _take_screenshot(
-        self,
-        filename: str,
-        selector: str = "",
-        fullPage: bool = False,
-        fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
-        quality: Optional[int] = None,
-        timeout: Optional[timedelta] = None,
-        strict: bool = True,
-    ) -> str:
-        string_path_no_extension = str(
-            self._get_screenshot_path(filename, fileType.name)
-        )
-        with self.playwright.grpc_channel() as stub:
-            options = {
-                "path": f"{string_path_no_extension}.{fileType.name}",
-                "fileType": fileType.name,
-                "fullPage": fullPage,
-                "timeout": int(self.get_timeout(timeout)),
-            }
-            if quality is not None:
-                options["quality"] = max(min(100, quality), 0)
-
-            response = stub.TakeScreenshot(
-                Request().ElementSelectorWithOptions(
-                    selector=selector,
-                    options=json.dumps(options),
-                    strict=strict,
-                )
-            )
-        logger.debug(response.log)
-        return response.body
 
     def _is_embed(self, filename: str) -> bool:
         return True if filename.upper() == "EMBED" else False
