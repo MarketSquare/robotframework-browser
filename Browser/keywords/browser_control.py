@@ -14,17 +14,17 @@
 import base64
 import json
 import os
+from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional, Union, List
-from collections.abc import Iterable
+from typing import List, Optional, Union
 
 from robot.utils import get_link_path  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-from ..utils.data_types import Permission, ScreenshotFileTypes, BoundingBox
+from ..utils.data_types import BoundingBox, Permission, ScreenshotFileTypes
 
 
 class Control(LibraryComponent):
@@ -90,7 +90,7 @@ class Control(LibraryComponent):
         timeout: Optional[timedelta] = None,
         crop: Optional[BoundingBox] = None,
         disable_animation: bool = False,
-        mask: Union[List[str], str] = [],
+        mask: Union[List[str], str] = "",
         omit_background: bool = False,
     ) -> str:
         """Takes a screenshot of the current window or element and saves it to disk.
@@ -149,7 +149,9 @@ class Control(LibraryComponent):
                 elif isinstance(mask, Iterable):
                     options["mask_selectors"] = [str(s) for s in mask]
                 else:
-                    raise ValueError(f"'mask' argument is neither string nor list of string. It is {type(mask)}")
+                    raise ValueError(
+                        f"'mask' argument is neither string nor list of string. It is {type(mask)}"
+                    )
 
             if quality is not None:
                 options["quality"] = max(min(100, quality), 0)
