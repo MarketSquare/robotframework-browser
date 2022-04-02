@@ -16,14 +16,16 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from os import PathLike
 from pathlib import Path
 from time import sleep
+from typing import Any, List
 
+from assertionengine import AssertionOperator
 from robot.api.deco import keyword  # type: ignore
-from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
 from robot.utils import DotDict  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadedFile, logger
+from ..utils.data_types import DialogAction, ElementState
 
 
 class Promises(LibraryComponent):
@@ -47,20 +49,50 @@ class Promises(LibraryComponent):
         | `Click`           \\#delayed_request
         | ${body}=        `Wait For`              ${promise}
         """
-        browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
-            self.library
-        )
-        handler = browser_lib.handlers[kw]
-        positional, named = handler.resolve_arguments(
-            args, EXECUTION_CONTEXTS.current.variables
-        )
-        named = dict(named)
+        promise: Future = Future()
+        keyword_name = kw.strip().lower().replace(" ", "_")
 
-        promise = self._executor.submit(handler.current_handler(), *positional, **named)
-        self.unresolved_promises.add(promise)
-        while not (promise.running() or promise.done()):
-            sleep(0.01)
+        if keyword_name in self.library.get_keyword_names():
+            positional, named = self.resolve_arguments(keyword_name, *args)
+            promise = self._executor.submit(
+                self.library.keywords[keyword_name], *positional, **(named or {})
+            )
+            self.unresolved_promises.add(promise)
+            while not (promise.running() or promise.done()):
+                sleep(0.01)
+
         return promise
+
+    def resolve_arguments(self, kw: str, *args):
+        positional: List[Any] = []
+        named = {}
+        logger.debug(f"*args {args}")
+
+        keyword_arguments = [
+            argument[0] if isinstance(argument, tuple) else argument
+            for argument in self.library.get_keyword_arguments(kw)
+        ]
+        for arg in args:
+            parts = arg.partition("=")
+            if parts[0].strip() in keyword_arguments:
+                if parts[2].strip() in DialogAction.__members__:
+                    named[parts[0].strip()] = DialogAction[parts[2].strip()]
+                else:
+                    named[parts[0].strip()] = parts[2].strip()
+            else:
+                if arg.strip() in AssertionOperator.__members__:
+                    positional.append(AssertionOperator[arg.strip()])
+                elif arg.strip() in ElementState.__members__:
+                    positional.append(ElementState.__members__[arg.strip()])
+                elif arg.strip() in DialogAction.__members__:
+                    positional.append(DialogAction[arg.strip()])
+                else:
+                    positional.append(arg)
+
+        logger.debug(
+            f"named arguments: {named}, positional arguments: {tuple(positional)}"
+        )
+        return tuple(positional), named
 
     @keyword(tags=("Wait", "BrowserControl"))
     def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
