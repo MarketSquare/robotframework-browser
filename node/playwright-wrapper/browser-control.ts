@@ -60,8 +60,6 @@ export async function takeScreenshot(
     const page = state.getActivePage();
     exists(page, 'Tried to take screenshot, but no page was open.');
     if (mask) {
-        //const maskLoc = await findLocator(state, options['mask'], strictMode, undefined, true);
-        //options['mask'] = [maskLoc];
         const mask_locators = [];
         for (const sel of mask) {
             mask_locators.push(await findLocator(state, sel, false, undefined, false));
