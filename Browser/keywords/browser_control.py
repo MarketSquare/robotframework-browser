@@ -17,6 +17,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional, Union, List
+from collections.abc import Iterable
 
 from robot.utils import get_link_path  # type: ignore
 
@@ -89,7 +90,7 @@ class Control(LibraryComponent):
         timeout: Optional[timedelta] = None,
         crop: Optional[BoundingBox] = None,
         disable_animation: bool = False,
-        mask: Union[str, List[str]] = [],
+        mask: Union[List[str], str] = [],
         omit_background: bool = False,
     ) -> str:
         """Takes a screenshot of the current window or element and saves it to disk.
@@ -140,16 +141,22 @@ class Control(LibraryComponent):
                 "fileType": fileType.name,
                 "fullPage": fullPage,
                 "timeout": int(self.get_timeout(timeout)),
-                "mask": mask,
                 "omitBackground": omit_background,
             }
+            if mask:
+                if isinstance(mask, str):
+                    options["mask_selectors"] = [mask]
+                elif isinstance(mask, Iterable):
+                    options["mask_selectors"] = [str(s) for s in mask]
+                else:
+                    raise ValueError(f"'mask' argument is neither string nor list of string. It is {type(mask)}")
+
             if quality is not None:
                 options["quality"] = max(min(100, quality), 0)
             if disable_animation:
                 options["animations"] = "disabled"
             if crop:
                 options["clip"] = crop
-
             response = stub.TakeScreenshot(
                 Request().ElementSelectorWithOptions(
                     selector=selector or "",

@@ -56,7 +56,17 @@ If Element Not Found Screenshot Should Fail
 
 ElementHandle Screenshotting
     ${ref} =    Get Element    \#username_field
-    Take Screenshot    ${TestScreenshot}    ${ref}
+    Type Text    ${ref}    Hello World
+    ${box} =    Get BoundingBox    ${ref}    ALL    then    {"x": value["x"] - 10, "y": value["y"] - 10, "width": value["width"] + 20, "height": value["height"] + 20}
+    Take Screenshot    EMBED    ${ref}    crop=${box}
+    Take Screenshot    EMBED    crop=${box}
+    Take Screenshot    EMBED    crop=${box}    mask=${ref}
+    Take Screenshot    ${TestScreenshot}    ${ref}    crop=${box}
+    ${ref} =    Get Element    input >> nth=1
+    Take Screenshot    EMBED    mask=${ref}
+    ${ref} =    Get Elements    input
+    Take Screenshot    EMBED    mask=${ref}[:2]
+    Take Screenshot    EMBED    mask=input
     File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}.png
 

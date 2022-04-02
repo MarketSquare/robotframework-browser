@@ -56,17 +56,25 @@ export async function takeScreenshot(
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
+    const page = state.getActivePage();
+    exists(page, 'Tried to take screenshot, but no page was open.');
+    if ('mask_selectors' in options) {
+        //const maskLoc = await findLocator(state, options['mask'], strictMode, undefined, true);
+        //options['mask'] = [maskLoc];
+        const mask = [];
+        for (const sel of options['mask_selectors']) {
+            mask.push(await findLocator(state, sel, false, undefined, false));
+        }
+        options.mask = mask;
+    }
     if (selector) {
         const locator = await findLocator(state, selector, strictMode, undefined, true);
         await locator.screenshot(options);
     } else {
-        const page = state.getActivePage();
-        exists(page, 'Tried to take screenshot, but no page was open.');
         await page.screenshot(options);
     }
-    const path = options['path'];
-    const message = 'Screenshot successfully captured to: ' + path;
-    return stringResponse(path, message);
+    const message = 'Screenshot successfully captured to: ' + options.path;
+    return stringResponse(options.path, message);
 }
 
 export async function setTimeout(request: Request.Timeout, context?: BrowserContext): Promise<Response.Empty> {
