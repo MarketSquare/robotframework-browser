@@ -121,6 +121,7 @@ message Request {
     string selector = 1;
     string text = 2;
     bool strict = 3;
+    bool force = 4;
   }
 
   message ClearText {
