@@ -140,10 +140,11 @@ export async function uncheckCheckbox(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
+    const force = request.getForce();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.waitFor({ state: 'attached' });
-    await locator.uncheck();
-    return emptyWithLog(`Unchecked checkbox: ${selector}`);
+    await locator.uncheck({force: force});
+    return emptyWithLog(`Unchecked checkbox: ${selector} with force: ${force}`);
 }
 
 export async function uploadFileBySelector(
