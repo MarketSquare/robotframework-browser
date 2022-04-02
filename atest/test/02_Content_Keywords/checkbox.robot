@@ -60,6 +60,12 @@ Uncheck Checkbox
     Uncheck Checkbox    [name=can_send_email]
     Get Checkbox State    [name=can_send_email]    ==    ${False}
 
+Uncheck Checkbox With Force
+    [Documentation]
+    ...    LOG 1:2    DEBUG    Unchecked checkbox: [name=can_send_email] with force: true
+    Uncheck Checkbox    [name=can_send_email]    True
+    Get Checkbox State    [name=can_send_email]    ==    ${False}
+
 Uncheck Checkbox With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation*//input*resolved to 12 elements*
