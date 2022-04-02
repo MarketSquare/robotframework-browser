@@ -560,11 +560,13 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def check_checkbox(self, selector: str):
+    def check_checkbox(self, selector: str, force: bool = False):
         """Checks the checkbox or selects radio button found by ``selector``.
 
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
+
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -572,7 +574,9 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+                Request().ElementSelector(
+                    selector=selector, strict=self.strict_mode, force=force
+                )
             )
         logger.debug(response.log)
 

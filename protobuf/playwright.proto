@@ -137,6 +137,7 @@ message Request {
   message ElementSelector {
     string selector = 1;
     bool strict = 2;
+    bool force = 3;
   }
 
   message Timeout {

@@ -592,7 +592,7 @@ def lint_robot(c):
         "--transform",
         "RenameKeywords",
         "--transform",
-        "RenameTestCases"
+        "RenameTestCases",
     ]
     if in_ci:
         command.insert(1, "--check")
