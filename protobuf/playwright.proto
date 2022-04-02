@@ -21,14 +21,12 @@ message Request {
     string label = 1;
   }
 
+
   message ScreenshotOptions {
-    string path = 1;
-    string selector = 2;
-    bool fullPage = 3;
-    string fileType = 4;
-    string quality = 5;
-    int32 timeout = 6;
-    bool strict = 7;
+    string selector = 1;
+    string mask = 2;
+    string options = 3;
+    bool strict = 4;
   }
 
   message KeywordCall {
@@ -312,7 +310,7 @@ service  Playwright {
   rpc GetCookies(Request.Empty) returns (Response.Json);
   rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
   /* Screen shot method */
-  rpc TakeScreenshot(Request.ElementSelectorWithOptions) returns (Response.String);
+  rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.Url) returns (Response.Empty);
   /* Navigate to the next page in history */

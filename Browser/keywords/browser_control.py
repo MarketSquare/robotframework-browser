@@ -145,13 +145,15 @@ class Control(LibraryComponent):
             }
             if mask:
                 if isinstance(mask, str):
-                    options["mask_selectors"] = [mask]
+                    mask_selectors = [mask]
                 elif isinstance(mask, Iterable):
-                    options["mask_selectors"] = [str(s) for s in mask]
+                    mask_selectors = [str(s) for s in mask]
                 else:
                     raise ValueError(
                         f"'mask' argument is neither string nor list of string. It is {type(mask)}"
                     )
+            else:
+                mask_selectors = None
 
             if quality is not None:
                 options["quality"] = max(min(100, quality), 0)
@@ -160,8 +162,9 @@ class Control(LibraryComponent):
             if crop:
                 options["clip"] = crop
             response = stub.TakeScreenshot(
-                Request().ElementSelectorWithOptions(
+                Request().ScreenshotOptions(
                     selector=selector or "",
+                    mask=json.dumps(mask_selectors),
                     options=json.dumps(options),
                     strict=self.strict_mode,
                 )

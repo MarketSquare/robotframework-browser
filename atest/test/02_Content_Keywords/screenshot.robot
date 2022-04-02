@@ -60,7 +60,7 @@ ElementHandle Screenshotting
     ${box} =    Get BoundingBox    ${ref}    ALL    then    {"x": value["x"] - 10, "y": value["y"] - 10, "width": value["width"] + 20, "height": value["height"] + 20}
     Take Screenshot    EMBED    ${ref}    crop=${box}
     Take Screenshot    EMBED    crop=${box}
-    Take Screenshot    EMBED    crop=${box}    mask=${ref}
+    Take Screenshot    EMBED    crop=${box}    mask=${ref}    omit_background=False    disable_animation=true
     Take Screenshot    ${TestScreenshot}    ${ref}    crop=${box}
     ${ref} =    Get Element    input >> nth=1
     Take Screenshot    EMBED    mask=${ref}

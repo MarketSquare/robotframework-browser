@@ -50,22 +50,23 @@ export async function goTo(request: Request.Url, page: Page): Promise<Response.E
 }
 
 export async function takeScreenshot(
-    request: Request.ElementSelectorWithOptions,
+    request: Request.ScreenshotOptions,
     state: PlaywrightState,
 ): Promise<Response.String> {
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
+    const mask = JSON.parse(request.getMask());
     const strictMode = request.getStrict();
     const page = state.getActivePage();
     exists(page, 'Tried to take screenshot, but no page was open.');
-    if ('mask_selectors' in options) {
+    if (mask) {
         //const maskLoc = await findLocator(state, options['mask'], strictMode, undefined, true);
         //options['mask'] = [maskLoc];
-        const mask = [];
-        for (const sel of options['mask_selectors']) {
-            mask.push(await findLocator(state, sel, false, undefined, false));
+        const mask_locators = [];
+        for (const sel of mask) {
+            mask_locators.push(await findLocator(state, sel, false, undefined, false));
         }
-        options.mask = mask;
+        options.mask = mask_locators;
     }
     if (selector) {
         const locator = await findLocator(state, selector, strictMode, undefined, true);
