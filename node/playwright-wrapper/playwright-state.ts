@@ -47,10 +47,11 @@ export interface LocatorCount {
 
 const extractArgumentsStringFromJavascript = (javascript: string): string => {
     const regex = /\((.*?)\)/;
-    const match = regex.exec(strip(javascript).replace('\n', ''));
+    const match = regex.exec(strip(javascript).replace(/\r?\n/g, ''));
     if (match) {
         return match[1];
     }
+    logger.error(`Could not extract arguments from javascript:\n${javascript}\ndefaulting to *args`);
     return '*args';
 };
 

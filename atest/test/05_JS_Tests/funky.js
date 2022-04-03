@@ -32,10 +32,29 @@ function crashKeyword() {
     throw Error("Crash");
 }
 
+async function moreDefaults(bTrue = true,
+                            bFalse = false,
+                            integer = 123,
+                            floater = 1.3,
+                            text = "hello",
+                            nothing = null,
+                            undefineder = undefined) {
+    return {
+        bTrue,
+        bFalse,
+        integer,
+        floater,
+        text,
+        nothing,
+        "undefineder": undefineder || null
+    };
+}
+
 exports.__esModule = true;
 exports.myFunkyKeyword = myFunkyKeyword;
 exports.createRemoteBrowser = createRemoteBrowser;
 exports.closeRemoteBrowser = closeRemoteBrowser;
 exports.crashKeyword = crashKeyword;
 exports.withDefaultValue = withDefaultValue;
+exports.moreDefaults = moreDefaults;
 exports.myNewStyleFunkyKeyword = myNewStyleFunkyKeyword;
