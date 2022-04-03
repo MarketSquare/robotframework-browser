@@ -136,7 +136,7 @@ Screenshot With Cropping jpg
 
 Screenshot With Cropping, Masking, Omitting Background(png)
     ${box} =    Get BoundingBox    input >> nth=1    ALL    then    {"x": value["x"] - 10, "y": value["y"] - 10, "width": value["width"] + 20, "height": value["height"] + 20}
-    ${path} =    Take Screenshot         crop=${box}    mask=input >> nth=1    omit_background=True
+    ${path} =    Take Screenshot         crop=${box}    mask=input >> nth=1    omitBackground=True
     File Should Exist    ${path}
     Should End With    ${path}    .png
     ${width}    ${height} =    Get Image Size    ${path}
@@ -148,7 +148,7 @@ Screenshot With Cropping, Masking, Omitting Background(png)
     Should Be Equal    ${color}    ${{(255,0,255,255)}}
     ${color}=    Get Pixel Color    ${path}    ${width//2}    2
     Should Be Equal    ${color}    ${{(255,255,255,255)}}
-    ${path} =    Take Screenshot    EMBED    fileType=png       crop=${box}    mask=input >> nth=1    omit_background=True
+    ${path} =    Take Screenshot    EMBED    fileType=png       crop=${box}    mask=input >> nth=1    omitBackground=True
     [Teardown]    Remove File     ${path}
 
 Screenshot With fixed Cropping
@@ -163,7 +163,7 @@ Screenshot With fixed Cropping
 
 
 Screenshot With Omit Background
-    ${path} =    Take Screenshot       crop={"x": 200, "y": 100, "height": 123, "width": 654}    omit_background=True
+    ${path} =    Take Screenshot       crop={"x": 200, "y": 100, "height": 123, "width": 654}    omitBackground=True
     File Should Exist    ${path}
     ${width}    ${height} =    Get Image Size    ${path}
     Should Be Equal As Integers    ${height}    123

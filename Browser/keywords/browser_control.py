@@ -89,9 +89,9 @@ class Control(LibraryComponent):
         quality: Optional[int] = None,
         timeout: Optional[timedelta] = None,
         crop: Optional[BoundingBox] = None,
-        disable_animation: bool = False,
+        disableAnimations: bool = False,
         mask: Union[List[str], str] = "",
-        omit_background: bool = False,
+        omitBackground: bool = False,
     ) -> str:
         """Takes a screenshot of the current window or element and saves it to disk.
 
@@ -119,6 +119,21 @@ class Control(LibraryComponent):
         Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout.
         The default value can be changed by using the `Set Browser Timeout` keyword.
 
+        ``crop`` Crops the taken screenshot to the given box. It takes same dictionary as returned from `Get BoundingBox`.
+        Cropping only works on page screenshot, so if no selector is given.
+
+        ``disableAnimations`` When set to ``True``, stops CSS animations, CSS transitions and Web Animations.
+        Animations get different treatment depending on their duration:
+         - finite animations are fast-forwarded to completion, so they'll fire transitionend event.
+         - infinite animations are canceled to initial state, and then played over after the screenshot.
+
+        ``mask`` Specify selectors that should be masked when the screenshot is taken.
+        Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box.
+        Arguemnt can take a single selector string or a list of selector strings if multiple different elements should be masked. 
+
+        ``omitBackground`` Hides default white background and allows capturing screenshots with transparency.
+        Not applicable to jpeg images.
+
         Keyword uses strict mode if selector is defined. See `Finding elements` for more details
         about strict mode.
 
@@ -141,7 +156,7 @@ class Control(LibraryComponent):
                 "fileType": fileType.name,
                 "fullPage": fullPage,
                 "timeout": int(self.get_timeout(timeout)),
-                "omitBackground": omit_background,
+                "omitBackground": omitBackground,
             }
             if mask:
                 if isinstance(mask, str):
@@ -157,7 +172,7 @@ class Control(LibraryComponent):
 
             if quality is not None:
                 options["quality"] = max(min(100, quality), 0)
-            if disable_animation:
+            if disableAnimations:
                 options["animations"] = "disabled"
             if crop:
                 options["clip"] = crop
