@@ -121,6 +121,7 @@ message Request {
     string selector = 1;
     string text = 2;
     bool strict = 3;
+    bool force = 4;
   }
 
   message ClearText {
@@ -137,6 +138,7 @@ message Request {
   message ElementSelector {
     string selector = 1;
     bool strict = 2;
+    bool force = 3;
   }
 
   message Timeout {

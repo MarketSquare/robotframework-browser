@@ -80,10 +80,16 @@ class Interaction(LibraryComponent):
         | `Type Text`    input#username_field    user    delay=10 ms    clear=No
         """
         logger.info(f"Types the text '{txt}' in the given field.")
-        self._type_text(selector, txt, delay, clear, strict=self.strict_mode)
+        self._type_text(
+            selector,
+            txt,
+            delay,
+            clear,
+            strict=self.strict_mode,
+        )
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_text(self, selector: str, txt: str):
+    def fill_text(self, selector: str, txt: str, force: bool = False):
         """Clears and fills the given ``txt`` into the text field found by ``selector``.
 
         This method waits for an element matching the ``selector`` to appear,
@@ -99,6 +105,8 @@ class Interaction(LibraryComponent):
 
         ``txt`` Text for the text field.
 
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
+
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Type Text` for emulating typing text character by character.
@@ -107,7 +115,7 @@ class Interaction(LibraryComponent):
         | `Fill Text`    css=input#username_field    username
         """
         logger.info(f"Fills the text '{txt}' in the given field.")
-        self._fill_text(selector, txt, strict=self.strict_mode)
+        self._fill_text(selector, txt, strict=self.strict_mode, force=force)
 
     @keyword(tags=("Setter", "PageContent"))
     def clear_text(self, selector: str):
@@ -201,7 +209,7 @@ class Interaction(LibraryComponent):
         return originals
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_secret(self, selector: str, secret: str):
+    def fill_secret(self, selector: str, secret: str, force: bool = False):
         """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
 
@@ -225,6 +233,8 @@ class Interaction(LibraryComponent):
         ``selector`` Selector of the text field.
         See the `Finding elements` section for details about the selectors.
 
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
+
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Fill Text` for other details.
@@ -239,7 +249,11 @@ class Interaction(LibraryComponent):
         )
         try:
             self._fill_text(
-                selector, secret, log_response=False, strict=self.strict_mode
+                selector,
+                secret,
+                log_response=False,
+                strict=self.strict_mode,
+                force=force,
             )
         except Exception as e:
             raise Exception(str(e).replace(secret, "***"))
@@ -560,11 +574,13 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def check_checkbox(self, selector: str):
+    def check_checkbox(self, selector: str, force: bool = False):
         """Checks the checkbox or selects radio button found by ``selector``.
 
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
+
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -572,16 +588,20 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+                Request().ElementSelector(
+                    selector=selector, strict=self.strict_mode, force=force
+                )
             )
         logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def uncheck_checkbox(self, selector: str):
+    def uncheck_checkbox(self, selector: str, force: bool = False):
         """Unchecks the checkbox found by ``selector``.
 
         ``selector`` Selector of the checkbox.
         See the `Finding elements` section for details about the selectors.
+
+        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -589,7 +609,9 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+                Request().ElementSelector(
+                    selector=selector, strict=self.strict_mode, force=force
+                )
             )
         logger.debug(response.log)
 
@@ -683,12 +705,19 @@ class Interaction(LibraryComponent):
         logger.debug(response.log)
 
     def _fill_text(
-        self, selector: str, txt: str, log_response: bool = True, strict: bool = True
+        self,
+        selector: str,
+        txt: str,
+        log_response: bool = True,
+        strict: bool = True,
+        force: bool = False,
     ):
         self.presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(
-                Request().FillText(selector=selector, text=txt, strict=strict)
+                Request().FillText(
+                    selector=selector, text=txt, strict=strict, force=force
+                )
             )
             if log_response:
                 logger.debug(response.log)

@@ -68,9 +68,10 @@ export async function fillText(request: Request.FillText, state: PlaywrightState
     const selector = request.getSelector();
     const text = request.getText();
     const strictMode = request.getStrict();
+    const force = request.getForce();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
-    await locator.fill(text);
-    return emptyWithLog(`Fill text ${text} on ${selector}`);
+    await locator.fill(text, {force: force});
+    return emptyWithLog(`Fill text ${text} on ${selector} with force: ${force}`);
 }
 
 export async function clearText(request: Request.ClearText, state: PlaywrightState): Promise<Response.Empty> {
@@ -127,10 +128,11 @@ export async function focus(request: Request.ElementSelector, state: PlaywrightS
 export async function checkCheckbox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
+    const force = request.getForce();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.waitFor({ state: 'attached' });
-    await locator.check();
-    return emptyWithLog(`Checked checkbox: ${selector}`);
+    await locator.check({ force: force });
+    return emptyWithLog(`Checked checkbox: ${selector} with force: ${force}`);
 }
 
 export async function uncheckCheckbox(
@@ -139,10 +141,11 @@ export async function uncheckCheckbox(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
+    const force = request.getForce();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.waitFor({ state: 'attached' });
-    await locator.uncheck();
-    return emptyWithLog(`Unchecked checkbox: ${selector}`);
+    await locator.uncheck({ force: force });
+    return emptyWithLog(`Unchecked checkbox: ${selector} with force: ${force}`);
 }
 
 export async function uploadFileBySelector(

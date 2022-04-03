@@ -46,6 +46,10 @@ Fill with css selector
     Fill Text    css=input#username_field    username
     Get Text    css=input#username_field    ==    username
 
+Fill Text With Force
+    Fill Text    css=input#username_field    username    force=True
+    Get Text    css=input#username_field    ==    username
+
 Fill Text With Nonmatching Selector
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
