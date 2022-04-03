@@ -129,7 +129,7 @@ class Control(LibraryComponent):
 
         ``mask`` Specify selectors that should be masked when the screenshot is taken.
         Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box.
-        Arguemnt can take a single selector string or a list of selector strings if multiple different elements should be masked. 
+        Arguemnt can take a single selector string or a list of selector strings if multiple different elements should be masked.
 
         ``omitBackground`` Hides default white background and allows capturing screenshots with transparency.
         Not applicable to jpeg images.
