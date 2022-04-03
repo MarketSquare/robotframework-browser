@@ -70,7 +70,7 @@ export async function fillText(request: Request.FillText, state: PlaywrightState
     const strictMode = request.getStrict();
     const force = request.getForce();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
-    await locator.fill(text, {force: force});
+    await locator.fill(text, { force: force });
     return emptyWithLog(`Fill text ${text} on ${selector} with force: ${force}`);
 }
 
