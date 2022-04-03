@@ -14,16 +14,17 @@
 import base64
 import json
 import os
+from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Union
 
 from robot.utils import get_link_path  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-from ..utils.data_types import Permission, ScreenshotFileTypes
+from ..utils.data_types import BoundingBox, Permission, ScreenshotFileTypes
 
 
 class Control(LibraryComponent):
@@ -82,11 +83,15 @@ class Control(LibraryComponent):
     def take_screenshot(
         self,
         filename: str = "robotframework-browser-screenshot-{index}",
-        selector: str = "",
+        selector: Optional[str] = None,
         fullPage: bool = False,
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
-        quality: str = "",
+        quality: Optional[int] = None,
         timeout: Optional[timedelta] = None,
+        crop: Optional[BoundingBox] = None,
+        disableAnimations: bool = False,
+        mask: Union[List[str], str] = "",
+        omitBackground: bool = False,
     ) -> str:
         """Takes a screenshot of the current window or element and saves it to disk.
 
@@ -114,6 +119,21 @@ class Control(LibraryComponent):
         Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout.
         The default value can be changed by using the `Set Browser Timeout` keyword.
 
+        ``crop`` Crops the taken screenshot to the given box. It takes same dictionary as returned from `Get BoundingBox`.
+        Cropping only works on page screenshot, so if no selector is given.
+
+        ``disableAnimations`` When set to ``True``, stops CSS animations, CSS transitions and Web Animations.
+        Animations get different treatment depending on their duration:
+         - finite animations are fast-forwarded to completion, so they'll fire transitionend event.
+         - infinite animations are canceled to initial state, and then played over after the screenshot.
+
+        ``mask`` Specify selectors that should be masked when the screenshot is taken.
+        Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box.
+        Arguemnt can take a single selector string or a list of selector strings if multiple different elements should be masked.
+
+        ``omitBackground`` Hides default white background and allows capturing screenshots with transparency.
+        Not applicable to jpeg images.
+
         Keyword uses strict mode if selector is defined. See `Finding elements` for more details
         about strict mode.
 
@@ -127,12 +147,49 @@ class Control(LibraryComponent):
             logger.debug("Embedding image to log.html.")
         else:
             logger.debug(f"Using {filename} to take screenshot.")
-        file_path = self._take_screenshot(
-            filename, selector, fullPage, fileType, quality, timeout, self.strict_mode
+        string_path_no_extension = str(
+            self._get_screenshot_path(filename, fileType.name)
         )
-        if self._is_embed(filename):
-            return self._embed_to_log(file_path)
-        return self._log_image_link(file_path)
+        with self.playwright.grpc_channel() as stub:
+            options = {
+                "path": f"{string_path_no_extension}.{fileType.name}",
+                "fileType": fileType.name,
+                "fullPage": fullPage,
+                "timeout": int(self.get_timeout(timeout)),
+                "omitBackground": omitBackground,
+            }
+            if mask:
+                if isinstance(mask, str):
+                    mask_selectors = [mask]
+                elif isinstance(mask, Iterable):
+                    mask_selectors = [str(s) for s in mask]
+                else:
+                    raise ValueError(
+                        f"'mask' argument is neither string nor list of string. It is {type(mask)}"
+                    )
+            else:
+                mask_selectors = None
+
+            if quality is not None:
+                options["quality"] = max(min(100, quality), 0)
+            if disableAnimations:
+                options["animations"] = "disabled"
+            if crop:
+                options["clip"] = crop
+            response = stub.TakeScreenshot(
+                Request().ScreenshotOptions(
+                    selector=selector or "",
+                    mask=json.dumps(mask_selectors),
+                    options=json.dumps(options),
+                    strict=self.strict_mode,
+                )
+            )
+            logger.debug(response.log)
+            file_path = response.body
+
+            if self._is_embed(filename):
+                return self._embed_to_log(file_path)
+            return self._log_image_link(file_path)
 
     def _log_image_link(self, file_path: str) -> str:
         relative_path = get_link_path(file_path, self.outputdir)
@@ -160,34 +217,6 @@ class Control(LibraryComponent):
         except Exception:
             logger.warn(f"Could not remove {png}")
         return "EMBED"
-
-    def _take_screenshot(
-        self,
-        filename: str,
-        selector: str = "",
-        fullPage: bool = False,
-        fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
-        quality: str = "",
-        timeout: Optional[timedelta] = None,
-        strict: bool = True,
-    ) -> str:
-        string_path_no_extension = str(
-            self._get_screenshot_path(filename, fileType.name)
-        )
-        with self.playwright.grpc_channel() as stub:
-            response = stub.TakeScreenshot(
-                Request().ScreenshotOptions(
-                    path=string_path_no_extension,
-                    selector=selector,
-                    fullPage=fullPage,
-                    fileType=fileType.name,
-                    quality=quality,
-                    timeout=int(self.get_timeout(timeout)),
-                    strict=strict,
-                )
-            )
-        logger.debug(response.log)
-        return response.body
 
     def _is_embed(self, filename: str) -> bool:
         return True if filename.upper() == "EMBED" else False
