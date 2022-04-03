@@ -51,6 +51,7 @@ const extractArgumentsStringFromJavascript = (javascript: string): string => {
     if (match) {
         return match[1];
     }
+    logger.error(`Could not extract arguments from javascript:\n${javascript}\ndefaulting to *args`);
     return '*args';
 };
 
