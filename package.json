@@ -25,7 +25,7 @@
     "grpc-tools": "^1.11.2",
     "husky": "^7.0.4",
     "lint-staged": "^12.3.7",
-    "prettier": "^2.6.1",
+    "prettier": "^2.6.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-draggable": "^4.4.4",
