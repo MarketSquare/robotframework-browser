@@ -38,7 +38,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.6.1",
     "@medv/finder": "^2.1.0",
-    "google-protobuf": "3.19.3",
+    "google-protobuf": "3.20.0",
     "pino": "^7.9.2",
     "playwright": "^1.20.2",
     "strip-comments": "^2.0.1",
