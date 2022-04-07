@@ -580,35 +580,44 @@ def lint_robot(c):
     in_ci = os.getenv("GITHUB_WORKFLOW")
     print(f"Lint Robot files {'in ci' if in_ci else ''}")
     atest_folder = "atest/test/"
-    command = [
+    base_commnd = [
         "robotidy",
         "--lineseparator",
         "unix",
+    ]
+    configure_command = [
         "--configure",
         "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
         "--configure",
         "NormalizeAssignments:equal_sign_type_variables=space_and_equal_sign",
         "--configure",
         "NormalizeNewLines:section_lines=1",
+    ]
+    configure_command = [*base_commnd, *configure_command]
+    transform_command = [
         "--transform",
         "RenameKeywords",
         "--transform",
         "RenameTestCases",
     ]
+    transform_command = [*base_commnd, *transform_command]
     if in_ci:
-        command.insert(1, "--check")
-        command.insert(1, "--diff")
+        base_commnd.insert(1, "--check")
+        base_commnd.insert(1, "--diff")
     for file in Path(atest_folder).glob("*"):
         if not file.name == "keywords.resource":
-            command.append(str(file))
-            c.run(" ".join(command))
-            command.pop()
+            configure_command.append(str(file))
+            c.run(" ".join(configure_command))
+            configure_command.pop()
+        transform_command.append(str(file))
+        c.run(" ".join(transform_command))
+        transform_command.pop()
     # keywords.resource needs resource to be imported before library, but generally
     # that should be avoided.
-    command.insert(1, "--configure")
-    command.insert(2, "OrderSettingsSection:imports_order=resource,library,variables")
-    command.append(f"{atest_folder}keywords.resource")
-    c.run(" ".join(command))
+    configure_command.insert(1, "--configure")
+    configure_command.insert(2, "OrderSettingsSection:imports_order=resource,library,variables")
+    configure_command.append(f"{atest_folder}keywords.resource")
+    c.run(" ".join(configure_command))
 
 
 @task(lint_python, lint_node, lint_robot)

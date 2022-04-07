@@ -48,17 +48,17 @@ Screenshotting With Jpeg Extension And Quality
 
 Screenshotting With Jpeg Extension And Quality Borders
     Take Screenshot    fullPage=True    fileType=jpeg    quality=0    timeout=10s
-    ${size_0}=    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.jpeg
+    ${size_0} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=-190    timeout=10s
-    ${size_1}=    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-2.jpeg
+    ${size_1} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-2.jpeg
     Should Be Equal    ${size_0}    ${size_1}
     Take Screenshot    fullPage=True    fileType=jpeg    quality=100    timeout=10s
-    ${size_100}=    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-3.jpeg
+    ${size_100} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-3.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=2023    timeout=10s
-    ${size_101}=    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-4.jpeg
+    ${size_101} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-4.jpeg
     Should Be Equal    ${size_100}    ${size_101}
     Take Screenshot    fullPage=True    fileType=jpeg    quality=50    timeout=10s
-    ${size_50}=    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-5.jpeg
+    ${size_50} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-5.jpeg
     Should Be True    ${size_0} < ${size_50} < ${size_100}
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.jpeg
 
@@ -125,49 +125,61 @@ Screenshot Without Active Page
     ...    Take Screenshot
 
 Screenshot With Cropping jpg
-    ${box} =    Get BoundingBox    input >> nth=1    ALL    then    {"x": value["x"] - 10, "y": value["y"] - 10, "width": value["width"] + 20, "height": value["height"] + 20}
+    ${box} =    Get BoundingBox
+    ...    input >> nth=1
+    ...    ALL
+    ...    then
+    ...    {"x": value["x"] - 10, "y": value["y"] - 10, "width": value["width"] + 20, "height": value["height"] + 20}
     ${path} =    Take Screenshot    fileType=jpeg    crop=${box}
     File Should Exist    ${path}
     Should End With    ${path}    .jpeg
     ${width}    ${height} =    Get Image Size    ${path}
     Should Be Equal As Integers    ${height}    ${box}[height]
     Should Be Equal As Integers    ${width}    ${box}[width]
-    [Teardown]    Remove File     ${path}
+    [Teardown]    Remove File    ${path}
 
 Screenshot With Cropping, Masking, Omitting Background(png)
-    ${box} =    Get BoundingBox    input >> nth=1    ALL    then    {"x": value["x"] - 10, "y": value["y"] - 10, "width": value["width"] + 20, "height": value["height"] + 20}
-    ${path} =    Take Screenshot         crop=${box}    mask=input >> nth=1    omitBackground=True
+    ${box} =    Get BoundingBox
+    ...    input >> nth=1
+    ...    ALL
+    ...    then
+    ...    {"x": value["x"] - 10, "y": value["y"] - 10, "width": value["width"] + 20, "height": value["height"] + 20}
+    ${path} =    Take Screenshot    crop=${box}    mask=input >> nth=1    omitBackground=True
     File Should Exist    ${path}
     Should End With    ${path}    .png
     ${width}    ${height} =    Get Image Size    ${path}
     Should Be Equal As Integers    ${height}    ${box}[height]
     Should Be Equal As Integers    ${width}    ${box}[width]
-    ${color}=    Get Pixel Color    ${path}    1    ${height//2}
+    ${color} =    Get Pixel Color    ${path}    1    ${height//2}
     Should Be Equal    ${color}    ${{(0,0,0,0)}}
-    ${color}=    Get Pixel Color    ${path}     ${width//2}   ${height//2}
+    ${color} =    Get Pixel Color    ${path}    ${width//2}    ${height//2}
     Should Be Equal    ${color}    ${{(255,0,255,255)}}
-    ${color}=    Get Pixel Color    ${path}    ${width//2}    2
+    ${color} =    Get Pixel Color    ${path}    ${width//2}    2
     Should Be Equal    ${color}    ${{(255,255,255,255)}}
-    ${path} =    Take Screenshot    EMBED    fileType=png       crop=${box}    mask=input >> nth=1    omitBackground=True
-    [Teardown]    Remove File     ${path}
+    ${path} =    Take Screenshot
+    ...    EMBED
+    ...    fileType=png
+    ...    crop=${box}
+    ...    mask=input >> nth=1
+    ...    omitBackground=True
+    [Teardown]    Remove File    ${path}
 
 Screenshot With fixed Cropping
-    ${path} =    Take Screenshot       crop={"x": 200, "y": 100, "height": 123, "width": 654}
+    ${path} =    Take Screenshot    crop={"x": 200, "y": 100, "height": 123, "width": 654}
     File Should Exist    ${path}
     ${width}    ${height} =    Get Image Size    ${path}
     Should Be Equal As Integers    ${height}    123
     Should Be Equal As Integers    ${width}    654
-    ${color}=    Get Pixel Color    ${path}     ${width//2}    ${height//2}
+    ${color} =    Get Pixel Color    ${path}    ${width//2}    ${height//2}
     Should Be Equal    ${color}    ${{(255,255,255,255)}}
-    [Teardown]    Remove File     ${path}
-
+    [Teardown]    Remove File    ${path}
 
 Screenshot With Omit Background
-    ${path} =    Take Screenshot       crop={"x": 200, "y": 100, "height": 123, "width": 654}    omitBackground=True
+    ${path} =    Take Screenshot    crop={"x": 200, "y": 100, "height": 123, "width": 654}    omitBackground=True
     File Should Exist    ${path}
     ${width}    ${height} =    Get Image Size    ${path}
     Should Be Equal As Integers    ${height}    123
     Should Be Equal As Integers    ${width}    654
-    ${color}=    Get Pixel Color    ${path}     ${width//2}    ${height//2}
+    ${color} =    Get Pixel Color    ${path}    ${width//2}    ${height//2}
     Should Be Equal    ${color}    ${{(0,0,0,0)}}
-    [Teardown]    Remove File     ${path}
+    [Teardown]    Remove File    ${path}
