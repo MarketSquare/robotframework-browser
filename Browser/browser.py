@@ -867,10 +867,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return Path(self.outputdir, "browser")
 
     def _start_suite(self, suite, result):
-        if not self._suite_cleanup_done and self.browser_output.is_dir():
+        if not self._suite_cleanup_done:
             self._suite_cleanup_done = True
-            logger.debug(f"Removing: {self.browser_output}")
-            shutil.rmtree(str(self.browser_output), ignore_errors=True)
+            if self.browser_output.is_dir():
+                logger.debug(f"Removing: {self.browser_output}")
+                shutil.rmtree(str(self.browser_output), ignore_errors=True)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
