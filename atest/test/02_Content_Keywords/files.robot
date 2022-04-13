@@ -16,8 +16,7 @@ Upload upload_test_file
 Upload 75MB file
     [Tags]    no-windows-support    no-mac-support
     [Timeout]    2 minute
-    Run Keyword And Expect Error    STARTS: Error: frame.setInputFiles: Target closed
-    ...    Upload Sized File    75
+    Upload Sized File    75
     # The browser actually gets a bit stuck so it needs to be cleaned up properly here.
     [Teardown]    Close Browser
 
