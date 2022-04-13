@@ -159,6 +159,7 @@ class Control(LibraryComponent):
                 "omitBackground": omitBackground,
             }
             if mask:
+                mask_selectors: Optional[List[str]]
                 if isinstance(mask, str):
                     mask_selectors = [mask]
                 elif isinstance(mask, Iterable):

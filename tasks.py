@@ -615,7 +615,9 @@ def lint_robot(c):
     # keywords.resource needs resource to be imported before library, but generally
     # that should be avoided.
     configure_command.insert(1, "--configure")
-    configure_command.insert(2, "OrderSettingsSection:imports_order=resource,library,variables")
+    configure_command.insert(
+        2, "OrderSettingsSection:imports_order=resource,library,variables"
+    )
     configure_command.append(f"{atest_folder}keywords.resource")
     c.run(" ".join(configure_command))
 
