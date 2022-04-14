@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>First Popup</title>
+</head>
+<body>
+    <div id="second_popup" onclick="popupFunction('second_popup.html')">Open Second Popup</div>
+
+    <div id="close_popup" onclick="closeThisPopup()">Close This popup</div>
+
+    <script type="text/javascript">
+        function popupFunction(url) {
+            window.open(url, 'Popup window 2', 'width=900, height=900')
+            closeThisPopup()
+        }
+
+        function closeThisPopup() {
+            window.close()
+        }
+    </script>
+</body>
+</html>
