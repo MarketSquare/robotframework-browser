@@ -180,8 +180,8 @@ async function _newBrowserContext(
         logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
         context.tracing.start({ screenshots: true, snapshots: true });
     }
-    c.c.on('page', (page) => {
-        c.pageStack.unshift(indexedPage(page));
+    c.c.on('page', async (page) => {
+        c.pageStack.unshift(await _newPage(c, page));
     });
     return c;
 }
@@ -205,8 +205,19 @@ function indexedPage(newPage: Page) {
     };
 }
 
-async function _newPage(context: BrowserContext): Promise<IndexedPage> {
-    return indexedPage(await context.newPage());
+async function _newPage(context: IndexedContext, page: Page | undefined = undefined): Promise<IndexedPage> {
+    const newPage = ((page === undefined) ? await context.c.newPage() : page);
+    const contextPage = indexedPage(newPage);
+    newPage.on('close', () => {
+        const oldPageStackLength = context.pageStack.length
+        const filteredPageStack = context.pageStack.filter((page: IndexedPage) => page.p != contextPage.p)
+
+        if(oldPageStackLength != filteredPageStack.length) {
+            context.pageStack = filteredPageStack
+            logger.info("Removed " + contextPage.id + " from " + context.id + " page stack")
+        }
+    });
+    return contextPage;
 }
 
 export class PlaywrightState {
@@ -264,7 +275,7 @@ export class PlaywrightState {
         const pageToContents = async (page: IndexedPage) => {
             let title = null;
             const titlePromise = page.p.title();
-            const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 150));
+            const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 350));
             try {
                 title = await Promise.race([titlePromise, titleTimeout]);
             } catch (e) {}
@@ -478,9 +489,9 @@ export async function closeContext(openBrowsers: PlaywrightState): Promise<Respo
 
 export async function closePage(openBrowsers: PlaywrightState): Promise<Response.PageReportResponse> {
     const activeBrowser = openBrowsers.getActiveBrowser();
-    await openBrowsers.getActivePage()?.close();
     const closedPage = activeBrowser.popPage();
     if (!closedPage) throw new Error('No open page');
+    await closedPage.p.close();
     return pageReportResponse('Successfully closed Page', closedPage);
 }
 
@@ -490,7 +501,7 @@ export async function newPage(request: Request.Url, openBrowsers: PlaywrightStat
     const newBrowser = browserState.newBrowser;
     const context = await browserState.browser.getOrCreateActiveContext(defaultTimeout);
 
-    const page = await _newPage(context.context.c);
+    const page = await _newPage(context.context);
     const videoPath = await page.p.video()?.path();
     logger.info('Video path: ' + videoPath);
     browserState.browser.pushPage(page);
