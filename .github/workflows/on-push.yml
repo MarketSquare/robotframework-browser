@@ -187,8 +187,7 @@ jobs:
     - name: Run pytests
       if: matrix.shard == 1
       run: |
-       coverage run -m invoke utest
-       coverage report
+       invoke utest
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
