@@ -75,6 +75,48 @@ Multibrowser order
     Get Title    ==    Error Page
     [Teardown]    Close Browser
 
+Get Browser Catalog After First Popup Close
+    New Browser
+    New Context
+    New Page    ${CREATE_POPUPS_URL}
+    Get Title    ==    Call Popups Page
+    ${pages}    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
+    ${pages amount}    Get Length    ${pages}
+    Should Be Equal As Integers    ${pages amount}    1
+    Click    id=first_popup
+    Sleep    800ms
+    ${pages}    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
+    ${pages amount}    Get Length    ${pages}
+    Should Be Equal As Integers    ${pages amount}    2
+    Switch Page    NEW
+    Click    id=close_popup
+    Sleep    800ms
+    ${pages}    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
+    ${pages amount}    Get Length    ${pages}
+    Should Be Equal As Integers    ${pages amount}    1
+    [Teardown]    Close Browser
+
+Get Browser Catalog After Second Popup Close
+    New Browser
+    New Context
+    New Page    ${CREATE_POPUPS_URL}
+    Get Title    ==    Call Popups Page
+    ${pages}    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
+    ${pages amount}    Get Length    ${pages}
+    Should Be Equal As Integers    ${pages amount}    1
+    Click    id=first_popup
+    Sleep    800ms
+    ${pages}    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
+    ${pages amount}    Get Length    ${pages}
+    Should Be Equal As Integers    ${pages amount}    2
+    Switch Page    NEW
+    Click    id=second_popup
+    Sleep    800ms
+    ${pages}    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
+    ${pages amount}    Get Length    ${pages}
+    Should Be Equal As Integers    ${pages amount}    2
+    [Teardown]    Close Browser
+
 *** Keywords ***
 Page Encapsulating Keyword
     New Page    ${WELCOME_URL}
