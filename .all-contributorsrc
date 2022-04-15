@@ -689,6 +689,15 @@
         "test",
         "bug"
       ]
+    },
+    {
+      "login": "jchenuw",
+      "name": "Jier Chen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29134340?v=4",
+      "profile": "https://github.com/jchenuw",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
