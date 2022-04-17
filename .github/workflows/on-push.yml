@@ -173,6 +173,10 @@ jobs:
       if: matrix.shard == 1
       run: |
         inv lint-robot
+    - name: Lint node
+      if: matrix.shard == 1
+      run: |
+        inv lint-node
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser
