@@ -206,15 +206,15 @@ function indexedPage(newPage: Page) {
 }
 
 async function _newPage(context: IndexedContext, page: Page | undefined = undefined): Promise<IndexedPage> {
-    const newPage = ((page === undefined) ? await context.c.newPage() : page);
+    const newPage = page === undefined ? await context.c.newPage() : page;
     const contextPage = indexedPage(newPage);
     newPage.on('close', () => {
-        const oldPageStackLength = context.pageStack.length
-        const filteredPageStack = context.pageStack.filter((page: IndexedPage) => page.p != contextPage.p)
+        const oldPageStackLength = context.pageStack.length;
+        const filteredPageStack = context.pageStack.filter((page: IndexedPage) => page.p != contextPage.p);
 
-        if(oldPageStackLength != filteredPageStack.length) {
-            context.pageStack = filteredPageStack
-            logger.info("Removed " + contextPage.id + " from " + context.id + " page stack")
+        if (oldPageStackLength != filteredPageStack.length) {
+            context.pageStack = filteredPageStack;
+            logger.info('Removed ' + contextPage.id + ' from ' + context.id + ' page stack');
         }
     });
     return contextPage;

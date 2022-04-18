@@ -1,6 +1,12 @@
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import React, { useState } from 'react';
 
+declare module 'react-draggable' {
+    export interface DraggableProps {
+        children: React.ReactNode;
+    }
+}
+
 export function DragGame() {
     const goal = {
         top: 500,
