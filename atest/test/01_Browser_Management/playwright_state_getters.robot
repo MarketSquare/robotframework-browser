@@ -1,5 +1,6 @@
 *** Settings ***
 Resource            imports.resource
+
 Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
@@ -78,8 +79,8 @@ Get Browser Catalog After First Popup Close
     New Browser
     New Page    ${CREATE_POPUPS_URL}
     Get Title    ==    Call Popups Page
-    ${pages}    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
-    ${pages amount}    Get Length    ${pages}
+    ${pages} =    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
+    ${pages amount} =    Get Length    ${pages}
     Should Be Equal As Integers    ${pages amount}    1
     Click    id=first_popup
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
