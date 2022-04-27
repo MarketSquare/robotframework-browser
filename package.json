@@ -28,7 +28,7 @@
     "prettier": "^2.6.2",
     "react": "^18.0.0",
     "react-dom": "^18.1.0",
-    "react-draggable": "^4.4.4",
+    "react-draggable": "^4.4.5",
     "react-router-dom": "^6.3.0",
     "ts-loader": "^9.2.8",
     "ts-node": "^10.7.0",
