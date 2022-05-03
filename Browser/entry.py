@@ -168,7 +168,7 @@ def rfbrowser_clean_node():
 
 def show_trace(file: str):
     print(f"Opening file: {file}")
-    playwright = NODE_MODULES / "playwright"
+    playwright = NODE_MODULES / "playwright-core"
     local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
     env["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
@@ -178,7 +178,7 @@ def show_trace(file: str):
         "show-trace",
         file,
     ]
-    subprocess.run(trace_arguments, env=env, shell=SHELL)
+    subprocess.run(trace_arguments, env=env, shell=SHELL, cwd=INSTALLATION_DIR)
 
 
 # Based on: https://stackoverflow.com/questions/3853722/how-to-insert-newlines-on-argparse-help-text

@@ -75,6 +75,32 @@ Multibrowser order
     Get Title    ==    Error Page
     [Teardown]    Close Browser
 
+Get Browser Catalog After First Popup Close
+    New Browser
+    New Page    ${CREATE_POPUPS_URL}
+    Get Title    ==    Call Popups Page
+    ${pages} =    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
+    ${pages amount} =    Get Length    ${pages}
+    Should Be Equal As Integers    ${pages amount}    1
+    Click    id=first_popup
+    Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
+    Switch Page    NEW
+    Click    id=close_popup
+    Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 1
+    [Teardown]    Close Browser
+
+Get Browser Catalog After Second Popup Close
+    New Browser
+    New Page    ${CREATE_POPUPS_URL}
+    Get Title    ==    Call Popups Page
+    Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 1
+    Click    id=first_popup
+    Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
+    Switch Page    NEW
+    Click    id=second_popup
+    Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
+    [Teardown]    Close Browser
+
 *** Keywords ***
 Page Encapsulating Keyword
     New Page    ${WELCOME_URL}

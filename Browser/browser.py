@@ -788,6 +788,17 @@ class Browser(DynamicCore):
                 self._jskeyword_call(component, name, args, doc)
         return component
 
+    def _js_value_to_python_value(self, value: str) -> str:
+        return {
+            "true": "True",
+            "false": "False",
+            "null": "None",
+            "undefined": "None",
+            "NaN": "float('nan')",
+            "Infinity": "float('inf')",
+            "-Infinity": "float('-inf')",
+        }.get(value, value)
+
     def _jskeyword_call(
         self,
         component: LibraryComponent,
@@ -812,7 +823,7 @@ class Browser(DynamicCore):
                     argument_names_and_default_values_texts.append("*args")
                 elif len(item) > 1:
                     argument_names_and_default_values_texts.append(
-                        f"{arg_name}={item[1]}"
+                        f"{arg_name}={self._js_value_to_python_value(item[1])}"
                     )
                 else:
                     argument_names_and_default_values_texts.append(f"{arg_name}")
@@ -856,10 +867,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return Path(self.outputdir, "browser")
 
     def _start_suite(self, suite, result):
-        if not self._suite_cleanup_done and self.browser_output.is_dir():
+        if not self._suite_cleanup_done:
             self._suite_cleanup_done = True
-            logger.debug(f"Removing: {self.browser_output}")
-            shutil.rmtree(str(self.browser_output), ignore_errors=True)
+            if self.browser_output.is_dir():
+                logger.debug(f"Removing: {self.browser_output}")
+                shutil.rmtree(str(self.browser_output), ignore_errors=True)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             try:
                 self._execution_stack.append(self.get_browser_catalog())

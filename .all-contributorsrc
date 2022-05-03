@@ -455,7 +455,8 @@
       "contributions": [
         "ideas",
         "bug",
-        "code"
+        "code",
+        "userTesting"
       ]
     },
     {
@@ -521,7 +522,8 @@
       "profile": "https://github.com/luchoagomezt",
       "contributions": [
         "bug",
-        "example"
+        "example",
+        "code"
       ]
     },
     {
@@ -665,6 +667,43 @@
       "name": "mgarcibu",
       "avatar_url": "https://avatars.githubusercontent.com/u/41591471?v=4",
       "profile": "https://github.com/mgarcibu",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "dgalezow",
+      "name": "DominikG",
+      "avatar_url": "https://avatars.githubusercontent.com/u/48494061?v=4",
+      "profile": "https://github.com/dgalezow",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "jokinr",
+      "name": "jokinr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46047015?v=4",
+      "profile": "https://github.com/jokinr",
+      "contributions": [
+        "test",
+        "bug"
+      ]
+    },
+    {
+      "login": "jchenuw",
+      "name": "Jier Chen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29134340?v=4",
+      "profile": "https://github.com/jchenuw",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "IDvoe",
+      "name": "IDvoe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/104168783?v=4",
+      "profile": "https://github.com/IDvoe",
       "contributions": [
         "bug"
       ]

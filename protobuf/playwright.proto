@@ -21,14 +21,12 @@ message Request {
     string label = 1;
   }
 
+
   message ScreenshotOptions {
-    string path = 1;
-    string selector = 2;
-    bool fullPage = 3;
-    string fileType = 4;
-    string quality = 5;
-    int32 timeout = 6;
-    bool strict = 7;
+    string selector = 1;
+    string mask = 2;
+    string options = 3;
+    bool strict = 4;
   }
 
   message KeywordCall {
@@ -121,6 +119,7 @@ message Request {
     string selector = 1;
     string text = 2;
     bool strict = 3;
+    bool force = 4;
   }
 
   message ClearText {
@@ -137,6 +136,7 @@ message Request {
   message ElementSelector {
     string selector = 1;
     bool strict = 2;
+    bool force = 3;
   }
 
   message Timeout {
