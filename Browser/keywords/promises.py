@@ -75,8 +75,8 @@ class Promises(LibraryComponent):
         for arg in args:
             parts = arg.partition("=")
             if parts[0].strip() in keyword_arguments:
-                if parts[2].strip() in DialogAction.__members__:
-                    named[parts[0].strip()] = DialogAction[parts[2].strip()]
+                if parts[2].strip().lower() in DialogAction.__members__:
+                    named[parts[0].strip()] = DialogAction[parts[2].strip().lower()]
                 else:
                     named[parts[0].strip()] = parts[2].strip()
             else:
