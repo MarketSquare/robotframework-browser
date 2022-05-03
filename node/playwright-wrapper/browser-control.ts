@@ -53,28 +53,27 @@ export async function takeScreenshot(
     request: Request.ScreenshotOptions,
     state: PlaywrightState,
 ): Promise<Response.String> {
-    const fileType = request.getFiletype();
-    const path = request.getPath() + '.' + fileType;
-    const fullPage = request.getFullpage();
     const selector = request.getSelector();
-    const quality = request.getQuality();
-    const timeout = request.getTimeout();
-    const options: Record<string, any> = { path: path, type: fileType, timeout: timeout };
+    const options = JSON.parse(request.getOptions());
+    const mask = JSON.parse(request.getMask());
     const strictMode = request.getStrict();
-    if (quality) {
-        options.quality = parseInt(quality);
+    const page = state.getActivePage();
+    exists(page, 'Tried to take screenshot, but no page was open.');
+    if (mask) {
+        const mask_locators = [];
+        for (const sel of mask) {
+            mask_locators.push(await findLocator(state, sel, false, undefined, false));
+        }
+        options.mask = mask_locators;
     }
     if (selector) {
         const locator = await findLocator(state, selector, strictMode, undefined, true);
         await locator.screenshot(options);
     } else {
-        const page = state.getActivePage();
-        exists(page, 'Tried to take screenshot, but no page was open.');
-        options.fullPage = fullPage;
         await page.screenshot(options);
     }
-    const message = 'Screenshot successfully captured to: ' + path;
-    return stringResponse(path, message);
+    const message = 'Screenshot successfully captured to: ' + options.path;
+    return stringResponse(options.path, message);
 }
 
 export async function setTimeout(request: Request.Timeout, context?: BrowserContext): Promise<Response.Empty> {

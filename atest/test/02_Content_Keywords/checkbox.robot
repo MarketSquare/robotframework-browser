@@ -33,11 +33,19 @@ Get Checkbox State Custom Error
     ...    Get Checkbox State    [name=can_send_email]    ==    unchecked    Kala {expected} {expected_type}
 
 Check Checkbox
+    [Documentation]
+    ...    LOG 3:2    DEBUG    Checked checkbox: [name=can_send_sms] with force: false
     ${state} =    Get Checkbox State    [name=can_send_sms]    ==    off
     Should Not Be True    ${state}
     Check Checkbox    [name=can_send_sms]
     ${state} =    Get Checkbox State    [name=can_send_sms]    ==    on
     Should Be True    ${state}
+
+Check Checkbox With Force
+    [Documentation]
+    ...    LOG 1:2    DEBUG    Checked checkbox: [name=can_send_sms] with force: true
+    Check Checkbox    [name=can_send_sms]    True
+    ${state} =    Get Checkbox State    [name=can_send_sms]    ==    on
 
 Check Checkbox With Strict
     # TODO: Change: "*2" to correct value after PW update
@@ -50,6 +58,12 @@ Check Checkbox With Strict
 Uncheck Checkbox
     Get Checkbox State    [name=can_send_email]    ==    ${True}
     Uncheck Checkbox    [name=can_send_email]
+    Get Checkbox State    [name=can_send_email]    ==    ${False}
+
+Uncheck Checkbox With Force
+    [Documentation]
+    ...    LOG 1:2    DEBUG    Unchecked checkbox: [name=can_send_email] with force: true
+    Uncheck Checkbox    [name=can_send_email]    True
     Get Checkbox State    [name=can_send_email]    ==    ${False}
 
 Uncheck Checkbox With Strict

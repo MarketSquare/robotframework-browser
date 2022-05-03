@@ -322,7 +322,7 @@ class PlaywrightState(LibraryComponent):
 
         ``browser`` Opens the specified browser. Defaults to chromium.
 
-        ``headless`` Set to False if you want a GUI. Defaults to False.
+        ``headless`` Set to False if you want a GUI. Defaults to True.
 
         ``executablePath`` Path to a browser executable to run instead of the bundled one.
         If executablePath is a relative path, then it is resolved relative to current working

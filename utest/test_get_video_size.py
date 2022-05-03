@@ -1,5 +1,5 @@
 import pytest
-from approvaltests import verify_all  # type: ignore
+from approvaltests.approvals import verify_all  # type: ignore
 
 from Browser.keywords import PlaywrightState
 
