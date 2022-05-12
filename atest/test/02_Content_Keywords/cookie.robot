@@ -37,7 +37,7 @@ Add Cookie With Url
 Add Cookie With Domain And Path
     [Tags]    no-windows-support
     ${url} =    Get Url
-    ${parsed_url} =    common.Parse Url    ${url}
+    ${parsed_url} =    Common.Parse Url    ${url}
     Add Cookie    Foo    Bar    domain=${parsed_url.netloc}    path=${parsed_url.path}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
@@ -45,7 +45,7 @@ Add Cookie With Domain And Path
 
 Add Cookie With URL And Domain Should Fail
     ${url} =    Get Url
-    ${parsed_url} =    common.Parse Url    ${url}
+    ${parsed_url} =    Common.Parse Url    ${url}
     Run Keyword And Expect Error
     ...    Error: browserContext.addCookies: Cookie should have either url or domain
     ...    Add Cookie

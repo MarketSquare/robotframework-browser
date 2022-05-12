@@ -675,9 +675,11 @@ class PlaywrightState(LibraryComponent):
         """Open a new Page.
 
         A Page is the Playwright equivalent to a tab. See `Browser, Context and Page`
-        for more information about Page concept. Returns `NewPageDetails` for created page.
-        NewPageDetails contains page_id and video_path. page_id is a stable identifier for
-        the created page. video_path is path to the created video or empty if video is not
+        for more information about Page concept.
+
+        Returns `NewPageDetails` as dictionary for created page.
+        `NewPageDetails` (dict) contains the keys ``page_id`` and ``video_path``. ``page_id`` is a stable identifier for
+        the created page. ``video_path`` is path to the created video or empty if video is not
         created.
 
         When a `New Page` is called without an open browser, `New Browser`
@@ -837,10 +839,10 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the previous context.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
-        ``id`` Id of the context to be changed to. Randomly generated UUID.
+        ``id`` of the context to be changed to. Randomly generated UUID.
 
-        ``browser`` < ``CURRENT`` | str> Switch context in specified browser. If value is not "CURRENT"
-        it should be an the id of the browser where to switch context.
+        ``browser`` < ``CURRENT`` | ``ALL`` | str> Switch context in specified browser.
+        If value is not "CURRENT" or "ALL" it shall be the id of the browser where to switch context.
 
         Example:
         | ${first_context} =     `New Context`
@@ -850,7 +852,11 @@ class PlaywrightState(LibraryComponent):
         | `Switch Context`       ${first_context}    # Switches back to first context and page.
         """
         with self.playwright.grpc_channel() as stub:
-            self._correct_browser(browser)
+            if browser.upper() == "ALL":
+                browser_id = self._get_context_parent_id(id)
+                self._correct_browser(browser_id)
+            else:
+                self._correct_browser(browser)
             response = stub.SwitchContext(Request().Index(index=id))
             logger.info(response.log)
             return response.body
@@ -884,22 +890,53 @@ class PlaywrightState(LibraryComponent):
         | `Click`           button#pops_up    # Open new page
         | ${previous} =    `Switch Page`      NEW
         """
-        if context.upper() == "ALL":
-            raise NotImplementedError
-        if browser.upper() == "ALL":
-            raise NotImplementedError
-        try:
-            id = id["page_id"]  # type: ignore[index]
-        except TypeError:
-            pass
+
+        def _all(text: str) -> bool:
+            return text.upper() == "ALL"
+
+        if isinstance(id, dict):
+            uid = id.get("page_id")
+        else:
+            uid = id
+        if not isinstance(uid, str) or not (
+            uid.lower().startswith("page=") or uid in ["NEW", "CURRENT"]
+        ):
+            raise ValueError(f"Malformed page `id`: {uid}")
+
+        if _all(browser) or _all(context):
+            browser_id, context_id = self._get_page_parent_ids(uid)
+            if _all(browser):
+                self._correct_browser(browser_id)
+            else:
+                self._correct_browser(browser)
+            if _all(context):
+                self._correct_context(context_id)
+            else:
+                self._correct_context(context)
+
         with self.playwright.grpc_channel() as stub:
-            self._correct_browser(browser)
-            self._correct_context(context)
             response = stub.SwitchPage(
-                Request().IdWithTimeout(id=str(id), timeout=self.timeout)
+                Request().IdWithTimeout(id=uid, timeout=self.timeout)
             )
             logger.info(response.log)
             return response.body
+
+    def _get_page_parent_ids(self, page_id: str) -> Tuple[str, str]:
+        browser_catalog = self.get_browser_catalog()
+        for browser in browser_catalog:
+            for context in browser["contexts"]:
+                for page in context["pages"]:
+                    if page["id"] == page_id:
+                        return browser["id"], context["id"]
+        raise ValueError(f"No page with requested id '{page_id}' found.")
+
+    def _get_context_parent_id(self, context_id: str) -> str:
+        browser_catalog = self.get_browser_catalog()
+        for browser in browser_catalog:
+            for context in browser["contexts"]:
+                if context["id"] == context_id:
+                    return browser["id"]
+        raise ValueError(f"No context with requested id '{context_id}' found.")
 
     @keyword(tags=("Getter", "BrowserControl"))
     def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> List:

@@ -275,6 +275,109 @@ When Page Without Context Is Created This Is Logged For User
     New Page
     New Page
 
+Switch Page with ALL Browsers
+    ${browser1} =    New Browser
+    ${context11} =    New Context
+    ${page111} =    New Page
+    ${page112} =    New Page
+    ${context12} =    New Context
+    ${page121} =    New Page
+    ${page122} =    New Page
+    ${browser2} =    New Browser
+    ${context21} =    New Context
+    ${page211} =    New Page
+    ${page212} =    New Page
+    ${context22} =    New Context
+    ${page221} =    New Page
+    ${page222} =    New Page
+
+    ${cat} =    Get Browser Catalog
+    Log    ${cat}
+    ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
+    Assert Equal    ${cur_page}[0]    ${page222}[page_id]
+
+    Switch Page    ${page111}    ALL    ALL
+    ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
+    Assert Equal    ${cur_page}[0]    ${page111}[page_id]
+
+    Switch Page    ${page212}[page_id]    ALL    ALL
+    ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
+    Assert Equal    ${cur_page}[0]    ${page212}[page_id]
+
+    Switch Page    ${page221}    ALL    CURRENT
+    ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
+    Assert Equal    ${cur_page}[0]    ${page221}[page_id]
+
+    Switch Page    ${page111}    CURRENT    ALL
+    ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
+    Assert Equal    ${cur_page}[0]    ${page111}[page_id]
+
+Switch Context with ALL Browsers
+    ${browser1} =    New Browser
+    ${context11} =    New Context
+    ${page111} =    New Page
+    ${page112} =    New Page
+    ${context12} =    New Context
+    ${page121} =    New Page
+    ${page122} =    New Page
+    ${browser2} =    New Browser
+    ${context21} =    New Context
+    ${page211} =    New Page
+    ${page212} =    New Page
+    ${context22} =    New Context
+    ${page221} =    New Page
+    ${page222} =    New Page
+
+    ${cat} =    Get Browser Catalog
+    Log    ${cat}
+    ${cur_context} =    Get Context Ids    ACTIVE    ACTIVE
+    Assert Equal    ${cur_context}[0]    ${context22}
+
+    Switch Context    ${context12}    ALL
+    ${cur_context} =    Get Context Ids    ACTIVE    ACTIVE
+    Assert Equal    ${cur_context}[0]    ${context12}
+
+    Switch Context    ${context11}    CURRENT
+    ${cur_context} =    Get Context Ids    ACTIVE    ACTIVE
+    Assert Equal    ${cur_context}[0]    ${context11}
+
+Switch Page with ALL Browsers Failing
+    ${browser1} =    New Browser
+    ${context11} =    New Context
+    ${page111} =    New Page
+    ${page112} =    New Page
+    ${context12} =    New Context
+    ${page121} =    New Page
+    ${page122} =    New Page
+    ${browser2} =    New Browser
+    ${context21} =    New Context
+    ${page211} =    New Page
+    ${page212} =    New Page
+    ${context22} =    New Context
+    ${page221} =    New Page
+    ${page222} =    New Page
+
+    ${cat} =    Get Browser Catalog
+    Log    ${cat}
+    ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
+    Assert Equal    ${cur_page}[0]    ${page222}[page_id]
+
+    Run Keyword And Expect Error    EQUALS:ValueError: No page with requested id 'page=123' found.
+    ...    Run Keyword And Continue On Failure
+    ...    Switch Page    page=123    ALL    ALL
+
+    Run Keyword And Expect Error
+    ...    EQUALS:Error: No page for id ${page211}[page_id]. Open pages: { id: ${page221}[page_id], url: about:blank },{ id: ${page222}[page_id], url: about:blank }
+    ...    Run Keyword And Continue On Failure
+    ...    Switch Page
+    ...    ${page211}
+    ...    CURRENT
+    ...    CURRENT
+
+    Run Keyword And Expect Error    EQUALS:ValueError: Malformed page `id`: 1
+    ...    Run Keyword And Continue On Failure
+    ...    Switch Page    1    ALL    ALL
+
 *** Keywords ***
 Open Browser And Assert Login Page
     [Arguments]    ${local_browser}
@@ -288,3 +391,7 @@ New Page Form
 New Page Login
     New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
+
+Assert Equal
+    [Arguments]    ${one}    ${two}
+    Run Keyword And Continue On Failure    Should Be Equal    ${one}    ${two}
