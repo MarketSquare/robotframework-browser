@@ -306,7 +306,18 @@ export async function getTableRowIndex(
             }
             element = parent;
         }
-        return Array.prototype.indexOf.call(element.querySelectorAll(':scope > * > tr'), table_row);
+        let rows = element.querySelectorAll(':scope > * > tr');
+        if (rows.length == 0) {
+            rows = element.querySelectorAll(':scope > tr');
+        }
+        if (rows.length == 0) {
+            throw Error(
+                `Table rows could not be found. ChildNodes are: ${Array.prototype.slice
+                    .call(element.childNodes)
+                    .map((e) => `${e.nodeName}.${e.className}`)}`,
+            );
+        }
+        return Array.prototype.indexOf.call(rows, table_row);
     });
     return intResponse(count, `Row index in table is ${count}.`);
 }

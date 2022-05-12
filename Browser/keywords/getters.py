@@ -785,7 +785,7 @@ class Getters(LibraryComponent):
             else self.get_table_row_index(f"{table} >> {row}")
         )
         return self.get_element(
-            f"{table} >> > * > tr >> nth={row_idx} >> > * >> nth={column_idx}"
+            f"{table} >> tr >> nth={row_idx} >> > * >> nth={column_idx}"
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
