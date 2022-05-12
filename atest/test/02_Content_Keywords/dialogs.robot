@@ -59,3 +59,14 @@ Verify Alert Text And Accept Dialogue
     Click    id=alerts
     ${text} =    Wait For    ${promise}
     Should Be Equal    ${text}    Am an alert
+
+Verify Upper Case Action Dialogue Accept
+    ${promise} =    Promise To    Wait For Alert    action=ACCEPT
+    Click    id=alerts
+    ${text} =    Wait For    ${promise}
+    Should Be Equal    ${text}    Am an alert
+
+Verify Upper Case Action Dialogue Dismiss
+    ${promise} =    Promise To    Wait For Alert    action=DISMISS    text=Am an alert
+    Click    id=alerts
+    Wait For    ${promise}
