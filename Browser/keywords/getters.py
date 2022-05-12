@@ -785,7 +785,7 @@ class Getters(LibraryComponent):
             else self.get_table_row_index(f"{table} >> {row}")
         )
         return self.get_element(
-            f"{table} >> > * > tr >> nth={row_idx} >> > * >> nth={column_idx}"
+            f"{table} >> tr >> nth={row_idx} >> > * >> nth={column_idx}"
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -1256,9 +1256,24 @@ class Getters(LibraryComponent):
         assertion_expected: Optional[str] = None,
         message: Optional[str] = None,
     ):
-        """*DEPRECATED!!* Use keyword `Get Element States` instead.
+        """*DEPRECATED!!* Use keyword `Get Element States` instead. This keyword will be removed end of 2022.
 
         Get the given state from the element found by ``selector``.
+
+        Refactoring example assertion:
+        | -    `Get Element State`    h1    readonly    ==    False
+        | +    `Get Element States`    h1    not contains    readonly
+
+         Refactoring example asserting multiple states:
+        | -    `Get Element State`    id=password    visible    ==    True
+        | -    `Get Element State`    id=password    readonly    ==    False
+        | -    `Get Element State`    id=password    disabled    ==    False
+        | +    `Get Element States`    h1    contains    visible    editable    enabled
+
+        Refactoring example for getting state:
+        | -    ${visibility}    `Get Element State`    h1    visible
+        | +    ${visibility}    `Get Element States`    h1    then    bool(value & visible)  # Returns ``${True}`` if element is visible.
+
 
         If the selector does satisfy the expected state it will return ``True`` otherwise ``False``.
 
@@ -1319,7 +1334,7 @@ class Getters(LibraryComponent):
         object instead of a list.
 
         Optionally asserts that the state matches the specified assertion. See
-        `Assertions` for further details for the assertion arguments. By default assertion
+        `Assertions` for further details for the assertion arguments. By default, assertion
         is not done.
 
         This keyword internally works with Python IntFlag.
@@ -1342,7 +1357,7 @@ class Getters(LibraryComponent):
 
         Elements do return the positive and negative values if applicable.
         As example, a checkbox does return either ``checked`` or ``unchecked`` while a text input
-        element has non of those two states.
+        element has none of those two states.
         Select elements have also either ``selected`` or ``unselected``.
 
         The state of ``animating`` will be set if an element is not considered ``stable``

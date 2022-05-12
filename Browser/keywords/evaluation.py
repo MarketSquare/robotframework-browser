@@ -26,7 +26,7 @@ from ..utils import DownloadedFile, keyword, logger
 class Evaluation(LibraryComponent):
     @keyword(name="Execute JavaScript", tags=("Setter", "Getter", "PageContent"))
     def execute_javascript(self, function: str, selector: str = "") -> Any:
-        """*DEPRECATED!!* Use keyword `Evaluate JavaScript` instead.
+        """*DEPRECATED!!* Use keyword `Evaluate JavaScript` instead. This keyword will be removed end of 2022.
 
         Executes given javascript on the page.
 

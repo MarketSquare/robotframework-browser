@@ -181,9 +181,7 @@ class Promises(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def promise_to_upload_file(self, path: PathLike):
-        """*!!DEPRECATED!!* Use keyword `Upload File By Selector` instead if possible. If your use case _needs_ promise to upload file please let the Browser team know by creating an issue.
-
-        Returns a promise that resolves when file from ``path`` has been uploaded.
+        """Returns a promise that resolves when file from ``path`` has been uploaded.
 
         Fails if the upload has not happened during timeout.
 
@@ -193,9 +191,11 @@ class Promises(LibraryComponent):
 
         Example use:
 
-        | ${promise}=    `Promise To Upload File`    ${CURDIR}/test_upload_file
-        | `Click`          \\#file_chooser
-        | ${upload_result}=  `Wait For`  ${promise}
+        | ${promise}=    `Promise To Upload File`    ${CURDIR}/test_upload_file.txt
+        | `Click`          id=open_file_chooser_button
+        | ${upload_result}=    `Wait For`    ${promise}
+
+        Alternatively, you can use `Upload File By Selector` keyword.
         """
         promise = self._executor.submit(self._upload_file, **{"path": path})
         self.unresolved_promises.add(promise)
