@@ -1111,12 +1111,12 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def upload_file_by_selector(self, selector: str, path: PathLike):
-        """Uploads file from `path` to file input matched by selector.
+        """Uploads file from `path` to file input element matched by selector.
 
         Fails if upload is not done before library timeout.
 
         Example:
-        | `Upload File By Selector`    \\#file_input_id    big_file.zip
+        | `Upload File By Selector`    //input[@type='file']    big_file.zip
         """
         with self.playwright.grpc_channel() as stub:
             if not Path(path).is_file():
