@@ -914,14 +914,13 @@ class Interaction(LibraryComponent):
         to_x: float,
         to_y: float,
         steps: int = 1,
-        drop: bool = True,
     ):
         """Executes a Drag&Drop operation from a coordinate to another coordinate.
 
         First it moves the mouse to the start-point,
         then presses the left mouse button,
         then moves to the end-point in specified number of steps,
-        then releases the mouse button depending on the drop argument.
+        then releases the mouse button.
 
         Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
         the top left corner of the pages viewport.
@@ -932,9 +931,6 @@ class Interaction(LibraryComponent):
 
         ``steps`` defines how many intermediate mouse move events are sent.
 
-        ``drop`` defines whether the operation ends with a dropped mouse.
-        Defaults to true.
-
         Example:
         | `Drag And Drop By Coordinates`
         | ...    from_x=30    from_y=30
@@ -942,8 +938,7 @@ class Interaction(LibraryComponent):
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
-        if drop:
-            self.mouse_button(MouseButtonAction.up)
+        self.mouse_button(MouseButtonAction.up)
 
     @keyword(tags=("Setter", "PageContent"))
     def drag_and_drop_relative_to(
