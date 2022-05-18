@@ -654,7 +654,8 @@ class Browser(DynamicCore):
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     ERROR_AUGMENTATION = {
         re.compile(r"Timeout .+ exceeded."): lambda msg: (
-            f'{msg}\nTip: Use "Set Browser Timeout" for setting a custom timeout.'
+            f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout or '
+            "double check your locator as the targeted element(s) couldn't be found."
         )
     }
 
@@ -950,6 +951,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     @classmethod
     def _alter_keyword_error(cls, args: tuple) -> tuple:
+        if not (args and isinstance(args, tuple)):
+            return args
+
         message = args[0]
         for regex, augment in cls.ERROR_AUGMENTATION.items():
             if regex.search(message):
