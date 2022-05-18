@@ -707,6 +707,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "cmin764",
+      "name": "Cosmin Poieana",
+      "avatar_url": "https://avatars.githubusercontent.com/u/709053?v=4",
+      "profile": "http://cosmins.life",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
