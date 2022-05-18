@@ -100,6 +100,7 @@ Ensure Open Page
     ELSE
         Switch To Page    ${IDs}[0]
         IF    $url    Go To    ${url}
+        END
     END
 
 Ensure Open Browser
@@ -115,6 +116,7 @@ Ensure Location
     Ensure Open Page
     ${loc} =    Get Url
     IF    "${url}" != "${loc}"    Go To    ${url}
+    END
 
 Switch To Page
     [Arguments]    ${page_id}
