@@ -73,7 +73,6 @@ Set Library Timeout
     END
     ${current_contexts} =    Get Context Ids    Active    Active
     IF    $current_contexts == []    New Context
-    END
     ${timeout} =    Set Browser Timeout    90 seconds
     Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
