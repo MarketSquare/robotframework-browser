@@ -47,7 +47,6 @@ Get Element And Get Elements
     Length Should Be    ${elements}    4
     FOR    ${element}    IN    @{elements}
         Should Start With    ${element}    element
-
     END
 
 Click With Element ID
