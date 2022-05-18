@@ -652,6 +652,12 @@ class Browser(DynamicCore):
     ROBOT_LISTENER_API_VERSION = 3
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
+    ERROR_AUGMENTATION = {
+        re.compile(r"Timeout .+ exceeded."): lambda msg: (
+            f'{msg}\nTip: Use "Set Browser Timeout" for setting a custom timeout.'
+        )
+    }
+
     _context_cache = ContextCache()
     _suite_cleanup_done = False
 
@@ -942,11 +948,20 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         for page_id, ctx_id in new_page_ids:
             self._playwright_state.close_page(page_id, ctx_id)
 
+    @classmethod
+    def _alter_keyword_error(cls, args: tuple) -> tuple:
+        message = args[0]
+        for regex, augment in cls.ERROR_AUGMENTATION.items():
+            if regex.search(message):
+                message = augment(message)
+        return (message,) + args[1:]
+
     def run_keyword(self, name, args, kwargs=None):
         try:
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except AssertionError as e:
             self.keyword_error()
+            e.args = self._alter_keyword_error(e.args)
             if self._pause_on_failure:
                 sys.__stdout__.write(f"\n[ FAIL ] {e}")
                 sys.__stdout__.write(
