@@ -366,20 +366,6 @@ export type IndexedPage = {
 
 type Uuid = string;
 
-export class PersistentContextBrowserState {
-    constructor(context) {
-        this.context = context;
-    }
-    private context;
-    browser: null;
-    name?: string;
-    id: Uuid;
-    headless: boolean;
-
-    public async close(): Promise<void> {
-        await this.context.close();
-    }
-}
 /*
  * contextStacks's last item should be the current active page and the first item should be the lastly added page.
  * User opened items should get pushed and page opened unshifted
