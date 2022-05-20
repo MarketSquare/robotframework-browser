@@ -346,6 +346,11 @@ class PlaywrightState(LibraryComponent):
 
         ``userDataDir`` Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead
 
+        If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
+
+        | ${launch_args}=  Set Variable  ["--disable-extensions-except=./ublock/uBlock0.chromium", "--load-extension=./ublock/uBlock0.chromium"]
+        | `New Persistent Context  browser=chromium  headless=False  args=${launch_args}
+
         Check `New Browser` or `New context` for the specific argument docs."""
 
         params = locals_to_params(locals())
