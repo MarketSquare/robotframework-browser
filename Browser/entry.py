@@ -38,7 +38,7 @@ def _write_marker(file, first=False):
 
 def rfbrowser_init(skip_browser_install: bool):
     current_folder = Path(__file__).resolve().parent
-    install_log = current_folder / "rfborwser.log"
+    install_log = current_folder / "rfbrowser.log"
     with open(install_log, "w") as install_file:
         _write_marker(install_file, True)
         try:
@@ -196,7 +196,7 @@ class SmartFormatter(argparse.HelpFormatter):
 def run():
     parser = argparse.ArgumentParser(
         description="Robot Framework Browser library command line tool. If there is error during command, debug "
-        "information is saved to <install dir>/Browser/rfborwser.log file.",
+        "information is saved to <install dir>/Browser/rfbrowser.log file.",
         formatter_class=SmartFormatter,
     )
     parser.add_argument(
