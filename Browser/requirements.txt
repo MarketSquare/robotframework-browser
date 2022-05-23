@@ -1,6 +1,6 @@
 backports.cached-property >= 1.0.1
-grpcio == 1.46.1
-grpcio-tools == 1.46.1
+grpcio == 1.46.3
+grpcio-tools == 1.46.3
 protobuf==3.20.1
 robotframework >=4.1.3
 robotframework-pythonlibcore >= 3.0.0
