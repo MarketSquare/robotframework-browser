@@ -294,6 +294,129 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
+    @keyword()
+    def new_persistent_context(
+        self,
+        userDataDir: str = "",  # TODO: change to PurePath
+        browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        headless: bool = True,
+        executablePath: Optional[str] = None,
+        args: Optional[List[str]] = None,
+        ignoreDefaultArgs: Optional[List[str]] = None,
+        proxy: Optional[Proxy] = None,
+        downloadsPath: Optional[str] = None,
+        handleSIGINT: bool = True,
+        handleSIGTERM: bool = True,
+        handleSIGHUP: bool = True,
+        timeout: timedelta = timedelta(seconds=30),
+        env: Optional[Dict] = None,
+        devtools: bool = False,
+        slowMo: timedelta = timedelta(seconds=0),
+        channel: Optional[str] = None,
+        acceptDownloads: bool = True,
+        ignoreHTTPSErrors: bool = False,
+        bypassCSP: bool = False,
+        viewport: Optional[ViewportDimensions] = None,
+        userAgent: Optional[str] = None,
+        deviceScaleFactor: float = 1.0,
+        isMobile: bool = False,
+        hasTouch: bool = False,
+        javaScriptEnabled: bool = True,
+        timezoneId: Optional[str] = None,
+        geolocation: Optional[GeoLocation] = None,
+        locale: Optional[str] = None,
+        permissions: Optional[List[Permission]] = None,
+        extraHTTPHeaders: Optional[Dict[str, str]] = None,
+        offline: bool = False,
+        httpCredentials: Optional[HttpCredentials] = None,
+        colorScheme: Optional[ColorScheme] = None,
+        videosPath: Optional[str] = None,
+        videoSize: Optional[ViewportDimensions] = None,
+        defaultBrowserType: Optional[SupportedBrowsers] = None,
+        hideRfBrowser: bool = False,
+        recordVideo: Optional[RecordVideo] = None,
+        recordHar: Optional[RecordHar] = None,
+        tracing: Optional[str] = None,
+        screen: Optional[Dict[str, int]] = None,
+        storageState: Optional[str] = None,
+        reducedMotion: ReduceMotion = ReduceMotion.no_preference,
+        forcedColors: ForcedColors = ForcedColors.none,
+    ):
+        """Open a new [persistent context | https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context].
+
+        ``userDataDir`` Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead
+
+        If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
+
+        | ${launch_args}=  Set Variable  ["--disable-extensions-except=./ublock/uBlock0.chromium", "--load-extension=./ublock/uBlock0.chromium"]
+        | `New Persistent Context  browser=chromium  headless=False  args=${launch_args}
+
+        Check `New Browser` or `New context` for the specific argument docs."""
+
+        params = locals_to_params(locals())
+        params = convert_typed_dict(self.new_context.__annotations__, params)
+        if timeout:
+            params["timeout"] = self.convert_timeout(timeout)
+        params["slowMo"] = self.convert_timeout(slowMo)
+
+        browser_path = self.library.external_browser_executable.get(browser)
+        if browser_path:
+            params["executablePath"] = browser_path
+        if channel and browser != SupportedBrowsers.chromium:
+            raise ValueError(
+                f"Must use {SupportedBrowsers.chromium.name} browser with channel definition"
+            )
+        trace_dir = self.traces_output / str(uuid4())
+        params["tracesDir"] = str(trace_dir)
+        options = json.dumps(params, default=str)
+        logger.info(options)
+
+        params = self._set_video_path(params)
+        params = self._set_video_size_to_int(params)
+        reduced_motion = str(params.get("reducedMotion"))
+        reduced_motion = reduced_motion.replace("_", "-")
+        params["reducedMotion"] = reduced_motion
+        if storageState and not Path(storageState).is_file():
+            raise ValueError(
+                f"storageState argument value '{storageState}' is not file, but it should be."
+            )
+        if "httpCredentials" in params and params["httpCredentials"] is not None:
+            secret = self.resolve_secret(
+                httpCredentials, params.get("httpCredentials"), "httpCredentials"
+            )
+            params["httpCredentials"] = secret
+        params = convert_typed_dict(self.new_context.__annotations__, params)
+        if not videosPath:
+            params.pop("videoSize", None)
+        trace_file = params.pop("tracing", None)
+        masked_params = self._mask_credentials(params.copy())
+        options = json.dumps(params, default=str)
+        logger.info(json.dumps(masked_params, default=str))
+        trace_file = Path(self.outputdir, trace_file) if tracing else ""
+        # response = self._new_context(options, hideRfBrowser, trace_file)
+        # context_options = self._mask_credentials(json.loads(response.contextOptions))
+        # logger.info(response.log)
+        # logger.info(context_options)
+
+        with self.playwright.grpc_channel() as stub:
+            response = stub.NewPersistentContext(
+                Request().PersistentContext(
+                    browser=browser.name,
+                    rawOptions=options,
+                    hideRfBrowser=hideRfBrowser,
+                    defaultTimeout=int(self.timeout),
+                    traceFile=str(trace_file),
+                )
+            )
+
+            context_options = self._mask_credentials(
+                json.loads(response.contextOptions)
+            )
+            logger.info(response.log)
+            logger.info(context_options)
+
+            return response.id
+
     @keyword(tags=("Setter", "BrowserControl"))
     def new_browser(
         self,

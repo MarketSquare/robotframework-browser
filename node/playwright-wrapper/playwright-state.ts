@@ -103,7 +103,7 @@ export async function extensionKeywordCall(
 }
 
 interface BrowserAndConfs {
-    browser: Browser;
+    browser: Browser | null;
     browserType: 'chromium' | 'firefox' | 'webkit';
     headless: boolean;
 }
@@ -379,7 +379,7 @@ export class BrowserState {
         this.id = `browser=${uuidv4()}`;
     }
     private _contextStack: IndexedContext[];
-    browser: Browser;
+    browser: Browser | null;
     name?: string;
     id: Uuid;
     headless: boolean;
@@ -393,12 +393,17 @@ export class BrowserState {
             await context.c.close();
         }
         this._contextStack = [];
+        if (this.browser === null) {
+            return;
+        }
         await this.browser.close();
     }
 
     public async getOrCreateActiveContext(defaultTimeout: number): Promise<IIndexedContext> {
         if (this.context) {
             return { context: this.context, newContext: false };
+        } else if (this.browser === null) {
+            throw new Error('Invalid persistent context browser without context');
         } else {
             const activeBrowser = this.browser;
             const context = await _newBrowserContext(activeBrowser, defaultTimeout, '');
@@ -532,6 +537,10 @@ export async function newContext(
     const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType, defaultTimeout);
     const traceFile = request.getTracefile();
     logger.info(`Trace file: ${traceFile}`);
+
+    if (browserState.browser.browser === null) {
+        throw new Error('Trying to create a new context when a persistentContext is active');
+    }
     const context = await _newBrowserContext(
         browserState.browser.browser,
         defaultTimeout,
@@ -539,6 +548,16 @@ export async function newContext(
         options,
         hideRfBrowser,
     );
+
+    return _finishContextResponse(context, browserState, traceFile, options);
+}
+
+function _finishContextResponse(
+    context: IndexedContext,
+    browserState: IBrowserState,
+    traceFile: string,
+    options: Record<string, unknown>,
+) {
     browserState.browser.pushContext(context);
     const response = new Response.NewContextResponse();
     response.setId(context.id);
@@ -564,6 +583,63 @@ export async function newBrowser(request: Request.Browser, openBrowsers: Playwri
     );
     const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
+}
+
+export async function newPersistentContext(
+    request: Request.PersistentContext,
+    openBrowsers: PlaywrightState,
+): Promise<Response.NewContextResponse> {
+    const traceFile = request.getTracefile();
+    const timeout = request.getDefaulttimeout();
+    const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
+
+    const userDataDir = options?.userDataDir as string;
+
+    let browser;
+    if (options.browser === 'chromium') {
+        browser = chromium;
+    } else if (options.browser === 'firefox') {
+        browser = firefox;
+    } else {
+        throw new Error('Invalid browserType for New Persistent Context');
+    }
+
+    const persistentContext = await browser.launchPersistentContext(userDataDir, options);
+
+    const browserAndConfs = {
+        browserType: options.browser,
+        browser: null,
+        headless: options?.headless || true,
+    } as BrowserAndConfs;
+    openBrowsers.addBrowser(browserAndConfs);
+
+    const browserState = await openBrowsers.getOrCreateActiveBrowser(null, timeout);
+    if (browserState.newBrowser === true) {
+        throw new Error('A new browser was created in error while trying to create a persistent context');
+    }
+
+    if (!options.hideRfBrowser) {
+        await persistentContext.addInitScript(function () {
+            window.__SET_RFBROWSER_STATE__ = function (state: any) {
+                window.__RFBROWSER__ = state;
+                return state;
+            };
+        });
+    }
+    persistentContext.setDefaultTimeout(timeout);
+    const indexedContext = {
+        id: `context=${uuidv4()}`,
+        c: persistentContext,
+        pageStack: [] as IndexedPage[],
+        options: options,
+        traceFile: traceFile,
+    };
+    if (traceFile) {
+        logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
+        persistentContext.tracing.start({ screenshots: true, snapshots: true });
+    }
+
+    return _finishContextResponse(indexedContext, browserState, traceFile, options);
 }
 
 export async function connectToBrowser(
