@@ -7,7 +7,7 @@ Test Setup          Go To    ${LOGIN_URL}
 
 *** Variables ***
 ${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot2} =     ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
+${FailureScreenshot2} =     ${OUTPUT_DIR}${/}Register_KW_On_Failure_With_Unicode____FAILURE_SCREENSHOT_1.png
 ${FailureScreenshot3} =     ${OUTPUT_DIR}${/}myfailure_screenshot.png
 
 *** Test Cases ***
