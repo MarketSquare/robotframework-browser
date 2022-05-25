@@ -716,6 +716,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "shenthils",
+      "name": "Shenthil",
+      "avatar_url": "https://avatars.githubusercontent.com/u/68647820?v=4",
+      "profile": "https://github.com/shenthils",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
