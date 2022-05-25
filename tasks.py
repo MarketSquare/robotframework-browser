@@ -49,6 +49,7 @@ python_lint_timestamp_file = PYTHON_SRC_DIR / ".linted"
 ATEST_TIMEOUT = 900
 cpu_count = os.cpu_count() or 1
 EXECUTOR_COUNT = str(cpu_count - 1 or 1)
+ROBOT_TIDY_TRANSFORMER = ROOT_DIR / "atest" / "robottidy_transformer"
 
 ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
@@ -600,6 +601,8 @@ def lint_robot(c):
         "RenameKeywords",
         "--transform",
         "RenameTestCases",
+        "--transform",
+        str(ROBOT_TIDY_TRANSFORMER.absolute() / "CamelCaseTestCaseTransformer.py")
     ]
     transform_command = [*base_commnd, *transform_command]
     if in_ci:
