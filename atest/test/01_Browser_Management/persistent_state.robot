@@ -2,7 +2,7 @@
 Resource    imports.resource
 
 *** Test Cases ***
-New Persistent Context creates a browser and a context
+New Persistent Context Creates A Browser And A Context
     New Persistent Context
 
     ${browser_id} =    Switch Browser    CURRENT
@@ -12,7 +12,7 @@ New Persistent Context creates a browser and a context
 
     Close Context
 
-Switching Between Two persistent contexts works
+Switching Between Two Persistent Contexts Works
     Get Browser Catalog
     ${context_1} =    New Persistent Context
     New Page    ${LOGIN_URL}
@@ -41,7 +41,7 @@ Switching Between Two persistent contexts works
 #    Close Page
 #    Get Title    matches    (?i)login
 
-New Context fails with persistent context
+New Context Fails With Persistent Context
     New Persistent Context
     Run Keyword And Expect Error
     ...    Error: Trying to create a new context when a persistentContext is active

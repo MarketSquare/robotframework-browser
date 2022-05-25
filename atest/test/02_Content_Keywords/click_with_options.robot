@@ -9,7 +9,7 @@ Click Count
     Click    \#clickWithOptions    clickCount=10
     Get Text    \#click_count    ==    10
 
-Click Count with Delay
+Click Count With Delay
     Click    \#clickWithOptions    delay=100ms    clickCount=2
     Get Text    \#click_count    ==    2
 
@@ -17,11 +17,11 @@ Delay Click
     Click    \#clickWithOptions    delay=200 ms
     Get Text    \#mouse_delay_time    validate    int(value) >= 200
 
-Second Delay click
+Second Delay Click
     Click    \#clickWithOptions    delay=0.2
     Get Text    \#mouse_delay_time    validate    int(value) >= 200
 
-Left Right and Middle Click
+Left Right And Middle Click
     Click    \#clickWithOptions    right
     Get Text    \#mouse_button    ==    right
     Click    \#clickWithOptions    middle
@@ -29,7 +29,7 @@ Left Right and Middle Click
     Click    \#clickWithOptions    left
     Get Text    \#mouse_button    ==    left
 
-Click with Coordinates
+Click With Coordinates
     ${xy} =    Get Boundingbox    \#clickWithOptions
     ${x} =    Evaluate    "${xy}[x]"
     ${y} =    Evaluate    "${xy}[y]"

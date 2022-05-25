@@ -24,7 +24,7 @@ Register Keyword To Run On Failure
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot}
 
-Register KåWä On Failure with unicode " 💩 "
+Register KåWä On Failure With Unicode " 💩 "
     Type Text    css=input#username_field    username
     ${prev} =    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
@@ -34,7 +34,7 @@ Register KåWä On Failure with unicode " 💩 "
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot2}
 
-Register kw with custom path
+Register Kw With Custom Path
     Type Text    css=input#username_field    username
     ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
     Run Keyword And Expect Error

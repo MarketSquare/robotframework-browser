@@ -63,7 +63,7 @@ Get Select Options With Not Matching Value
     ...    Not Here
     ...    Get Select Options    select[name=preferred_channel]    ==    Email    Not Here
 
-Get Selected Options with xpath
+Get Selected Options With Xpath
     ${selection} =    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==
     ...    Telephone
     Should Be Equal    ${selection}    Telephone
@@ -74,22 +74,22 @@ Get Selected Options With Nonmatching Selector
     ...    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Select Option By label
+Select Option By Label
     ${selection} =    Create List    Direct mail
     ${selected} =    Select Option And Verify Selection    label    select[name=preferred_channel]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
-Select Options By value
+Select Options By Value
     ${selection} =    Create List    males    females    others
     ${selected} =    Select Option And Verify Selection    value    select[name=interests]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
-Select Options By index
+Select Options By Index
     ${selection} =    Create List    ${0}    ${2}
     ${selected} =    Select Option And Verify Selection    index    select[name=possible_channels]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
-Select Options By text
+Select Options By Text
     ${selection} =    Create List    Males    Females
     ${selected} =    Select Option And Verify Selection    text    select[name=interests]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
@@ -117,7 +117,7 @@ Select Options By Value When Select Value And Text Are Different
     ${selection} =    Select Options By    id=ValueAndTextDifferent    value    2
     Should Be Equal    2    ${selection}[0]
 
-Select Options By Text When Select Value is Duplicated
+Select Options By Text When Select Value Is Duplicated
     ${selection} =    Select Options By    id=ValueDupl    text    2nd Option
     Should Be Equal    2nd Option    ${selection}[0]
     Get Selected Options    id=ValueDupl    text    ==    2nd Option

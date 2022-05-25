@@ -6,7 +6,7 @@ Suite Setup         New Browser
 Suite Teardown      Close Browser
 
 *** Test Cases ***
-New Page will not timeout
+New Page Will Not Timeout
     [Tags]    slow
     New Page    ${SLOW_PAGE}
     Get Title    ==    Slow page

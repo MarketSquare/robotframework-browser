@@ -4,7 +4,7 @@ Resource        imports.resource
 Suite Setup     New Browser
 
 *** Test Cases ***
-Save storage state
+Save Storage State
     New Context
     New Page    ${LOGIN_URL}
     Add Cookies For Storage

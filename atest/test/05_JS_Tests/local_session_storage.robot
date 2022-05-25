@@ -27,14 +27,14 @@ Sessionstorage Clear
     SessionStorage Get Item    mykey2    ==    ${None}
     SessionStorage Get Item    mykey3    ==    ${None}
 
-Localstorage clear
+Localstorage Clear
     LocalStorage Set Item    key1    value1
     LocalStorage Set Item    key2    value2
     LocalStorage Clear
     LocalStorage Get Item    key1    ==    ${None}
     LocalStorage Get Item    key2    ==    ${None}
 
-Sessionstorage clear
+Sessionstorage Clear
     SessionStorage Set Item    key1    value1
     SessionStorage Set Item    key2    value2
     ${val1} =    Execute Javascript    window.sessionStorage.getItem("key1")

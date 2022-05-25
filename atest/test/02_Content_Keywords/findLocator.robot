@@ -70,7 +70,7 @@ Frames With Element ID
     ...    Click    ${element} >>> "foo"
     [Teardown]    Set Browser Timeout    ${Timeout}
 
-Get Element Count In iFrame
+Get Element Count In IFrame
     [Setup]    Go To    ${FRAMES_URL}
     Get Element Count    iframe[name="left"] >>> //input    ==    2
 

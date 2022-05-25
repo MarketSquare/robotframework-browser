@@ -15,7 +15,7 @@ Test GoTo With Short Default Timeout
     Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 
-Test New Page with short Default Timeout
+Test New Page With Short Default Timeout
     New Context
     Set Browser Timeout    1ms
     Run Keyword And Expect Error    *${ErrorMessage}*    New Page    ${LOGIN_URL}

@@ -9,7 +9,7 @@ ${Dim_Func} =       {'width': value["width"], 'height': value["height"]}
 ${tol} =            1
 
 *** Test Cases ***
-Click With coordinates
+Click With Coordinates
     ${x} =    Get Boundingbox    \#login_button    x
     ${y} =    Get Boundingbox    \#login_button    y
     Mouse Button    click    ${x+5}    ${y+5}
@@ -34,7 +34,7 @@ Draggable Test
     Get Text    \#dragX    ==    400
     Get Text    \#dragY    ==    400
 
-Drag and Drop
+Drag And Drop
     Drag And Drop    id=draggable    id=clickWithOptions
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
     ${dest_center} =    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
@@ -53,7 +53,7 @@ Drag And Drop With Strict
     Drag And Drop    //input    id=clickWithOptions
     [Teardown]    Set Strict Mode    True
 
-Drag and Drop with coordinates
+Drag And Drop With Coordinates
     [Tags]    slow
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
     ${obj_dim} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Dim_Func}
@@ -86,7 +86,7 @@ Drag and Drop with coordinates
     ${steps} =    Set Variable    200
     ${time} =    Set Variable    1
 
-Hover and Drop to Hover
+Hover And Drop To Hover
     Hover    id=draggable    10    10
     Mouse Button    down
     Hover    id=draggable    30    40
@@ -103,13 +103,13 @@ Hover With Strict
     Hover    //input
     [Teardown]    Set Strict Mode    True
 
-Drag and Drop with Move Relative
+Drag And Drop With Move Relative
     Relative DnD    32    64    32    64
     Relative DnD    0    -64    32    0
     Relative DnD    -20    0    12    0
     Relative DnD    -22    -20    -10    -20
 
-Drag and Drop Relative To
+Drag And Drop Relative To
     DnD Relative To    32    64    32    64
     DnD Relative To    0    -64    32    0
     DnD Relative To    -20    0    12    0
@@ -121,13 +121,13 @@ Click Count
     Mouse Button    click    ${x}    ${y}    clickCount=10
     Get Text    \#click_count    ==    10
 
-Delay click
+Delay Click
     ${x} =    Get Boundingbox    \#clickWithOptions    x
     ${y} =    Get Boundingbox    \#clickWithOptions    y
     Mouse Button    click    ${x}    ${y}    delay=100
     Get Text    \#mouse_delay_time    validate    int(value) > 90
 
-Left Right and Middle Click
+Left Right And Middle Click
     ${x} =    Get Boundingbox    \#clickWithOptions    x
     ${y} =    Get Boundingbox    \#clickWithOptions    y
     Mouse Button    click    ${x}    ${y}    button=right

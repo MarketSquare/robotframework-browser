@@ -6,9 +6,9 @@ Resource        imports.resource
 Force Tags      slow
 
 *** Test Cases ***
-Failing with custom screenshot
+Failing With Custom Screenshot
     New Page    ${ERROR_URL}
     Run Keyword And Expect Error    STARTS: TimeoutError    Click    .nonexisting4
 
-Check screenshot
+Check Screenshot
     File Should Exist    ${OUTPUT DIR}/browser/screenshot/custom-fail.png

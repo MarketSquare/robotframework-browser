@@ -47,7 +47,7 @@ Greater Than
     Get Style    //*[@id="progress"]    width    >    100
     Get Style    //*[@id="progress"]    width    greater than    100
 
-Greater or Equal
+Greater Or Equal
     Get Style    //*[@id="progress"]    width    >=    400
 
 Less
