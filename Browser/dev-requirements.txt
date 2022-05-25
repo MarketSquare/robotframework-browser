@@ -19,7 +19,7 @@ Pillow==9.1.1
 beautifulsoup4 >= 4.9.3
 psutil >= 5.8.0
 coverage >= 6.1.2
-robotframework-tidy >= 2.2.0
+robotframework-tidy >= 2.3
 python-dateutil >= 2.8.2
 # Include normal dependencies from requirements.txt. Makes it possible to use
 # requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
