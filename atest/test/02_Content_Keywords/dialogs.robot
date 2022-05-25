@@ -20,12 +20,12 @@ Clicking Through Alert Fails
     ...    Click
     ...    \#alerts
 
-Promptinput works
+Promptinput Works
     Handle Future Dialogs    action=accept    prompt_input=Some Input String
     Click    \#prompts
     Get Text    \#prompt_result    ==    Some Input String
 
-Dismiss and Promptinput Fails
+Dismiss And Promptinput Fails
     Run Keyword And Expect Error    prompt_input is only valid if action is 'accept'    Handle Future Dialogs
     ...    action=dismiss    prompt_input=Some Prompt Input
 

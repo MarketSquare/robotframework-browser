@@ -50,7 +50,7 @@ Get Viewport Size
     Get Viewport Size    width    ==    800
     Get Viewport Size    height    ==    600
 
-Multipage order
+Multipage Order
     [Tags]    slow
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
@@ -58,7 +58,7 @@ Multipage order
     Get Title    ==    prefilled_email_form.html
     [Teardown]    Close Page
 
-Multicontext order
+Multicontext Order
     New Context
     New Page    ${WELCOME_URL}
     Get Title    ==    Welcome Page
@@ -66,7 +66,7 @@ Multicontext order
     Get Title    ==    Welcome Page
     [Teardown]    Close Context
 
-Multibrowser order
+Multibrowser Order
     [Tags]    slow
     New Browser    browser=chromium
     New Page    ${ERROR_URL}

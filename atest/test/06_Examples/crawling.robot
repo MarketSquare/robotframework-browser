@@ -12,7 +12,7 @@ Normal Crawling
     ${expected} =    Create List    Always    Link 1    Link 2    Link 3    Link 4
     Lists Should Be Equal    ${TITLES}    ${expected}
 
-Crawling only limited pages
+Crawling Only Limited Pages
     Set Test Variable    @{TITLES}    @{EMPTY}
     ${urls} =    Crawl Site    ${LINKER_URL}    My page keyword    max_number_of_page_to_crawl=4
     Log List    ${TITLES}
@@ -20,7 +20,7 @@ Crawling only limited pages
     ${expected} =    Create List    Always    Link 1    Link 2    Link 3
     Lists Should Be Equal    ${TITLES}    ${expected}
 
-Crawling only limited depth
+Crawling Only Limited Depth
     Set Test Variable    @{TITLES}    @{EMPTY}
     ${urls} =    Crawl Site    ${LINKER_URL}    My page keyword    max_depth_to_crawl=1
     Log List    ${TITLES}

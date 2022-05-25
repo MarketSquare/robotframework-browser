@@ -5,17 +5,17 @@ Resource        ../imports.resource
 Suite Setup     New Page    ${ERROR_URL}
 
 *** Test Cases ***
-Resource leaker
+Resource Leaker
     New Context
     New Page    ${WELCOME_URL}
 
-New context is not closed after test
+New Context Is Not Closed After Test
     Get Title    ==    Welcome Page
 
-Page leaker
+Page Leaker
     Go To    ${WELCOME_URL}
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
 
-New page is not closed after test
+New Page Is Not Closed After Test
     Get Title    ==    prefilled_email_form.html

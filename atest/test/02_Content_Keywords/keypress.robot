@@ -17,12 +17,12 @@ Press Keys With Strict
     Press Keys    //input    T    i    d    i    i
     [Teardown]    Set Strict Mode    True
 
-Press Key Combinations of Keystrokes in TextField
+Press Key Combinations Of Keystrokes In TextField
     Press Keys    input[name="email"]    Home    Shift+End    Delete
     Press Keys    input[name="email"]    Shift+KeyA    KeyA
     Get Text    input[name="email"]    ==    Aa
 
-Press Keys Combination of Keystrokes in Select List
+Press Keys Combination Of Keystrokes In Select List
     Click    select[name="possible_channels"] > option[value="email"]
     Browser.Press Keys    select[name="possible_channels"]    Shift+ArrowDown
     Browser.Press Keys    select[name="possible_channels"]    Shift+ArrowDown

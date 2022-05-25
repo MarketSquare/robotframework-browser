@@ -6,7 +6,7 @@ Suite Setup     New Page
 Test Setup      Go To    ${LOGIN_URL}
 
 *** Test Cases ***
-Type Text with Clearing
+Type Text With Clearing
     Type Text    input#username_field    Wrong Text
     Type Text    input#username_field    user
     Type Text    input#username_field    name    clear=No
@@ -42,7 +42,7 @@ Clear Text With Nonmatching Selector
     ...    Clear Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Fill with css selector
+Fill With Css Selector
     Fill Text    css=input#username_field    username
     Get Text    css=input#username_field    ==    username
 
@@ -90,7 +90,7 @@ Type Secret With Strict
     Type Secret    //input    $LOGIN_URL
     [Teardown]    Set Strict Mode    True
 
-Fill Secret placeholder-env-var
+Fill Secret Placeholder-env-var
     [Documentation]    ...
     ...    LOG 2:2    NONE
     ...    LOG 4:2    NONE
@@ -100,7 +100,7 @@ Fill Secret placeholder-env-var
     Fill Secret    css=input#password_field    %PH_ENV_VAR
     Get Text    css=input#password_field    ==    password11
 
-Fill Secret robot-env-var
+Fill Secret Robot-env-var
     [Documentation]    ...
     ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 5:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
@@ -111,7 +111,7 @@ Fill Secret robot-env-var
     Fill Secret    css=input#password_field    %{ENV_VAR}
     Get Text    css=input#password_field    ==    password12
 
-Fill Secret robot-env-var mixed
+Fill Secret Robot-env-var Mixed
     [Documentation]    ...
     ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
@@ -121,14 +121,14 @@ Fill Secret robot-env-var mixed
     Fill Secret    css=input#password_field    %{ENV_VAR}XXX
     Get Text    css=input#password_field    ==    password13XXX
 
-Fill Secret robot-env-var mixed2
+Fill Secret Robot-env-var Mixed2
     Set Environment Variable    ENV_VAR    password13
     Type Secret    css=input#username_field    XXX%{ENV_VAR}XXX
     Get Text    css=input#username_field    ==    XXXpassword13XXX
     Fill Secret    css=input#password_field    XXX%{ENV_VAR}XXX
     Get Text    css=input#password_field    ==    XXXpassword13XXX
 
-Fill Secret placeholder-robot-var
+Fill Secret Placeholder-robot-var
     [Documentation]
     ...    LOG 2:2    NONE
     ...    LOG 4:2    NONE
@@ -138,7 +138,7 @@ Fill Secret placeholder-robot-var
     Fill Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password123
 
-Fill Secret robot var
+Fill Secret Robot Var
     [Documentation]
     ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
@@ -148,7 +148,7 @@ Fill Secret robot var
     Fill Secret    css=input#password_field    ${var}
     Get Text    css=input#password_field    ==    password321
 
-Fill Secret robot var mixed
+Fill Secret Robot Var Mixed
     [Documentation]
     ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ${var} =    Set Variable    password321
@@ -157,14 +157,14 @@ Fill Secret robot var mixed
     Fill Secret    css=input#password_field    ${var}XXX
     Get Text    css=input#password_field    ==    password321XXX
 
-Fill Secret robot var mixed2
+Fill Secret Robot Var Mixed2
     ${var} =    Set Variable    password321
     Type Secret    css=input#username_field    xxx${var}XXX
     Get Text    css=input#username_field    ==    xxxpassword321XXX
     Fill Secret    css=input#password_field    xxx${var}XXX
     Get Text    css=input#password_field    ==    xxxpassword321XXX
 
-Fill Secret placeholder in robot var
+Fill Secret Placeholder In Robot Var
     Set Global Variable    ${global}    password666
     ${var} =    Set Variable    $global
     Type Secret    css=input#username_field    ${var}
@@ -172,7 +172,7 @@ Fill Secret placeholder in robot var
     Fill Secret    css=input#password_field    ${var}
     Get Text    css=input#password_field    ==    password666
 
-Fill Secret env placeholder in robot var
+Fill Secret Env Placeholder In Robot Var
     Set Environment Variable    pwd_TWO    ENV_password123
     ${var} =    Set Variable    %pwd_TWO
     Type Secret    css=input#username_field    ${var}
@@ -180,32 +180,32 @@ Fill Secret env placeholder in robot var
     Fill Secret    css=input#password_field    ${var}
     Get Text    css=input#password_field    ==    ENV_password123
 
-Fill Secret with direct $value not resolvable
+Fill Secret With Direct $value Not Resolvable
     Type Secret    css=input#username_field    $Direct Value
     Get Text    css=input#username_field    ==    $Direct Value
     Fill Secret    css=input#password_field    $Direct Value
     Get Text    css=input#password_field    ==    $Direct Value
 
-Fill Secret fails when variable is not set
+Fill Secret Fails When Variable Is Not Set
     Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret
     ...    css=input#username_field    ${NONE_EXISTING_ENV_VARIABLE}
     Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret
     ...    css=input#password_field    ${NONE_EXISTING_ENV_VARIABLE}
 
-Fill Secret fails when env variable is not set
+Fill Secret Fails When Env Variable Is Not Set
     Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret
     ...    css=input#username_field    %{NONE_EXISTING_ENV_VARIABLE}
     Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret
     ...    css=input#password_field    %{NONE_EXISTING_ENV_VARIABLE}
 
-Type Secret env
+Type Secret Env
     [Documentation]
     ...    LOG 2:2    NONE
     Set Environment Variable    TYPE_SECRET    password22
     Type Secret    css=input#password_field    %TYPE_SECRET
     Get Text    css=input#password_field    ==    password22
 
-Type Secret local
+Type Secret Local
     [Documentation]
     ...    LOG 2:2    NONE
     ${var} =    Set Variable    password321
@@ -219,7 +219,7 @@ Fill Secret With Nonmatching Selector
     ...    notamatch    %MY_RFBROWSER_SECRET
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Type Text with Delay
+Type Text With Delay
     Type Text    input#username_field    username    delay=10 ms
     Get Text    css=input#username_field    ==    username
 
@@ -231,14 +231,14 @@ Type Text With Strict
     Type Text    //input    username
     [Teardown]    Set Strict Mode    True
 
-Type and Fill Text with text selector
+Type And Fill Text With Text Selector
     Type Text    input#username_field    Text field
     Type Text    text=User Name:    txt=some text
     Get Text    input#username_field    ==    some text
     Fill Text    text=User Name:    txt=another text
     Get Text    input#username_field    ==    another text
 
-Type and Fill Secret with text selector
+Type And Fill Secret With Text Selector
     [Documentation]
     ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
@@ -255,7 +255,7 @@ Secret With Empty Value
     Type Secret    css=input#password_field    ${EMPTY}
     Fill Secret    css=input#password_field    ${EMPTY}
 
-Fill Text with Clearing
+Fill Text With Clearing
     Fill Text    input#username_field    Wrong Text
     Fill Text    input#username_field    username
     Get Text    css=input#username_field    ==    username
@@ -276,7 +276,7 @@ Get Text Custom Error
     ...    Get Text    css=input#username_field    ==    username    Tidii
     [Teardown]    Set Retry Assertions For    1s
 
-Text Area access
+Text Area Access
     Get Text    id=textarea51    ==    Some initial text
     Type Text    id=textarea51    Area 51
     Get Text    id=textarea51    ==    Area 51

@@ -4,52 +4,52 @@ Resource        imports.resource
 Test Setup      Ensure Location    ${LOGIN_URL}
 
 *** Test Cases ***
-Wait For Fails if no success
+Wait For Fails If No Success
     Run Keyword And Expect Error
     ...    GLOB:*Timeout 100ms exceeded while waiting for event "request"*
     ...    Wait For Request
     ...    /api/get/json
     ...    timeout=100ms
 
-Wait For Request synchronous
+Wait For Request Synchronous
     Click    \#delayed_request
     Wait For Request    timeout=1s
 
-Wait For Request async
+Wait For Request Async
     ${promise} =    Promise To    Wait For Request    matcher=    timeout=3s
     Click    \#delayed_request
     Wait For    ${promise}
 
-Wait For Request url
+Wait For Request Url
     Click    \#delayed_request
     Wait For Request    matcher=${ROOT_URL}/api/get/json    timeout=1s
 
-Wait For Request regex
+Wait For Request Regex
     Click    \#delayed_request
     Wait For Request    matcher=\\/\\/local\\w+\\:\\d+\\/api    timeout=1s
 
-Wait For Request predicate
+Wait For Request Predicate
     Click    \#delayed_request
     Wait For Request    matcher=request => request.url().endsWith('api/get/json') && request.method() === 'GET'
     ...    timeout=1s
 
-Wait For Response synchronous
+Wait For Response Synchronous
     Click    \#delayed_request
     Wait For Response    timeout=1s
 
-Wait For Response synchronous with default timeout
+Wait For Response Synchronous With Default Timeout
     Click    \#delayed_request
     Wait For Response
 
-Wait For Response synchronous with regex matcher
+Wait For Response Synchronous With Regex Matcher
     Click    \#delayed_request
     Wait For Response    matcher=\\/\\/local\\w+\\:\\d+\\/api
 
-Wait For Response synchronous with predicate
+Wait For Response Synchronous With Predicate
     Click    \#delayed_request
     Wait For Response    response => response.url().endsWith('json') && response.request().method() === 'GET'
 
-Wait For Response async
+Wait For Response Async
     ${promise} =    Promise To    Wait For Response    matcher=    timeout=3s
     Click    \#delayed_request
     ${body} =    Wait For    ${promise}
@@ -81,7 +81,7 @@ Wait For Navigation Fails With Wrong Regex
     Set Browser Timeout    ${timeout}
     Get Url    not contains    foobar
 
-Wait For Navigation Fails With Wrong wait_until
+Wait For Navigation Fails With Wrong Wait_until
     [Tags]    slow
     Go To    ${ROOT_URL}/redirector.html
     Run Keyword And Expect Error
@@ -90,7 +90,7 @@ Wait For Navigation Fails With Wrong wait_until
     ...    ${ROOT_URL}/posted.html
     ...    wait_until=foobar
 
-Wait For Navigation Works With wait_until
+Wait For Navigation Works With Wait_until
     [Tags]    slow
     ${old timeout} =    Set Browser Timeout    4s
     FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit

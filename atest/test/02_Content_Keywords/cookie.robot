@@ -21,7 +21,7 @@ Get Cookies With String Type
     ${cookies} =    Get Cookies    string
     Should Be Equal    Foo=Bar    ${cookies}
 
-Add Cookie Without Url, Path and Domain
+Add Cookie Without Url, Path And Domain
     Run Keyword And Expect Error
     ...    Error: browserContext.addCookies: Cookie should have a url or a domain/path pair
     ...    Add Cookie    Foo    Bar
@@ -75,7 +75,7 @@ Add Cookie With All Settings
     Should Be Equal    ${cookies}[0][httpOnly]    ${True}
     Should Be Equal    ${cookies}[0][secure]    ${False}
 
-Add Cookie With All Settings As string
+Add Cookie With All Settings As String
     ${url} =    Get Url
     ${date_string} =    Get Current Date    increment=1 day
     Add Cookie
@@ -217,7 +217,7 @@ Get Cookie Should Fail If Cookie Is Not Found
     ...    Get Cookie
     ...    FOO
 
-Get Cookie Should Fail With Invalid return_type
+Get Cookie Should Fail With Invalid Return_type
     Run Keyword And Expect Error
     ...    ValueError: Argument 'return_type' got value 'invalid_type' that cannot be converted to CookieType*
     ...    Get Cookie

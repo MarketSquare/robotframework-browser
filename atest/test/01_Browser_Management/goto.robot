@@ -33,7 +33,7 @@ Timeouting Go To
     ...    Go To    ${WELCOME_URL}
     [Teardown]    Teardown For Timeouting Go To    ${timeout}
 
-Timeouting Go To With Custom timeout
+Timeouting Go To With Custom Timeout
     [Tags]    slow
     New Page    ${LOGIN_URL}
     Run KeyWord And Expect Error

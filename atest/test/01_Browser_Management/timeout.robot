@@ -29,7 +29,7 @@ Test Overriding With Short
     Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 
-Test assertion timeouts
+Test Assertion Timeouts
     New Context
     Set Browser Timeout    10 s
     New Page    ${LOGIN_URL}

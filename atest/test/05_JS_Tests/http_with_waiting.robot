@@ -4,7 +4,7 @@ Resource        imports.resource
 Suite Setup     New Page    ${LOGIN_URL}
 
 *** Test Cases ***
-GET with waiting json response
+GET With Waiting Json Response
     ${promise} =    Promise To    Wait For Response    matcher=/api/get/json    timeout=3s
     &{response} =    HTTP    /api/get/json
     ${content} =    Wait For    ${promise}
@@ -13,7 +13,7 @@ GET with waiting json response
     Should Be Matching    ${content}    ${response}
     Should Be Equal    ${content}[request][method]    GET
 
-POST with waiting json response
+POST With Waiting Json Response
     ${promise} =    Promise To    Wait For Response    matcher=/api/post    timeout=3s
     &{response} =    HTTP    /api/post    POST    {"name": "George"}
     ${content} =    Wait For    ${promise}
@@ -23,7 +23,7 @@ POST with waiting json response
     Should Be Equal    ${content}[request][method]    POST
     Should Be Equal    ${content}[request][postData][name]    George
 
-GET with text response
+GET With Text Response
     ${promise} =    Promise To    Wait For Response    matcher=/api/get/text    timeout=3s
     &{response} =    HTTP    /api/get/text
     ${content} =    Wait For    ${promise}
@@ -32,7 +32,7 @@ GET with text response
     Should Be Matching    ${content}    ${response}
     Should Be Equal    ${content}[request][method]    GET
 
-GET with binary response
+GET With Binary Response
     ${promise} =    Promise To    Wait For Response    matcher=/api/get/bad_binary    timeout=3s
     &{response} =    HTTP    /api/get/bad_binary
     ${content} =    Wait For    ${promise}

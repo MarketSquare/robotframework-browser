@@ -9,11 +9,11 @@ Suite Teardown      Close Browser
 Force Tags          slow
 
 *** Test Cases ***
-Filling the text with True
+Filling The Text With True
     New Page    ${LOGIN_URL}
     Type Text    input#username_field    user
 
-Filling the text with settings
+Filling The Text With Settings
     Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
     New Page    ${LOGIN_URL}
     Type Text    input#username_field    user

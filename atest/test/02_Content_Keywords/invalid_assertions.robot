@@ -4,7 +4,7 @@ Resource        imports.resource
 Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
-Invalids will raise error directly from Robot Framework
+Invalids Will Raise Error Directly From Robot Framework
     Run Keyword And Expect Error
     ...    *'assertion_operator' got value 'invalidOperator' that cannot be converted to AssertionOperator*
     ...    Get Title    invalidOperator    value

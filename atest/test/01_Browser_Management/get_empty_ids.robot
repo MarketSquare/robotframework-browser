@@ -25,14 +25,14 @@ Get Empty Page IDs
     Check Return Value Is Empty List    Get Page Ids    All    All    Active
     Check Return Value Is Empty List    Get Page Ids    All    All    All
 
-Get Empty Context IDs from Browser
+Get Empty Context IDs From Browser
     New Browser
     Check Return Value Is Empty List    Get Context Ids    Active    Active
     Check Return Value Is Empty List    Get Context Ids    Active    All
     Check Return Value Is Empty List    Get Context Ids    All    Active
     Check Return Value Is Empty List    Get Context Ids    All    All
 
-Get Empty Context ID from Empty Browser
+Get Empty Context ID From Empty Browser
     [Tags]    slow
     ${browser} =    New Browser
     New Browser
@@ -41,7 +41,7 @@ Get Empty Context ID from Empty Browser
     Check Return Value Is Empty List    Get Context Ids    Active    Active
     Check Return Value Is Empty List    Get Context Ids    All    Active
 
-Get Empty Page ID from Empty Browser and Empty Context
+Get Empty Page ID From Empty Browser And Empty Context
     [Tags]    slow
     ${browser} =    New Browser
     Check Return Value Is Empty List    Get Page Ids    Active    Active    Active

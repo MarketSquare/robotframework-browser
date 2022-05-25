@@ -6,7 +6,7 @@ Suite Setup         New Browser    headless=False
 Suite Teardown      Close Browser
 
 *** Test Cases ***
-Finds a selector
+Finds A Selector
     [Tags]    no-mac-support    slow
     [Timeout]    2 minutes
     New Page    ${LOGIN_URL}

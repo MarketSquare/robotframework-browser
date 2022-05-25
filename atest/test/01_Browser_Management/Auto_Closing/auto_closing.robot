@@ -5,21 +5,21 @@ Resource        ../imports.resource
 Suite Setup     New Page    ${ERROR_URL}
 
 *** Test Cases ***
-Resource leaker
+Resource Leaker
     New Context
     New Page    ${WELCOME_URL}
 
-New context is closed after test
+New Context Is Closed After Test
     Get Title    ==    Error Page
 
-Page leaker
+Page Leaker
     Go To    ${WELCOME_URL}
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
 
-New page in same context is closed after test
+New Page In Same Context Is Closed After Test
     Get Title    ==    Welcome Page
 
-Unhandled alert does not block execution
+Unhandled Alert Does Not Block Execution
     New Page    ${ERROR_URL}
     Click    text="Do not click!"
