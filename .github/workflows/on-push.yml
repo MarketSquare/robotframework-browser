@@ -227,7 +227,7 @@ jobs:
     - name: Failures analysis
       if: ${{ failure() }}
       run: |
-        failures_analysis ./flip_rate/xunit/
+        failure_analysis ./flip_rate/xunit/
     - name: Package demoapp
       run: |
         inv demo-app
@@ -323,7 +323,7 @@ jobs:
       - name: Failures analysis
         if: ${{ failure() }}
         run: |
-          failures_analysis ./flip_rate/xunit/
+          failure_analysis ./flip_rate/xunit/
       - name: Uninstall on Linux or MacOS
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
