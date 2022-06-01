@@ -602,7 +602,7 @@ def lint_robot(c):
         "--transform",
         "RenameTestCases",
         "--transform",
-        str(ROBOT_TIDY_TRANSFORMER.absolute() / "CamelCaseTestCaseTransformer.py")
+        str(ROBOT_TIDY_TRANSFORMER.absolute() / "CamelCaseTestCaseTransformer.py"),
     ]
     transform_command = [*base_commnd, *transform_command]
     if in_ci:

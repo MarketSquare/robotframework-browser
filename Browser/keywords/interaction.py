@@ -17,7 +17,7 @@ from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -678,16 +678,7 @@ class Interaction(LibraryComponent):
                 )
             )
         logger.debug(response)
-        selected: Union[List[int], List[str]]
-        if attribute is SelectAttribute.value:
-            selected = [sel.value for sel in response.entry if sel.selected]
-        elif attribute is SelectAttribute.label:
-            selected = [sel.label for sel in response.entry if sel.selected]
-        else:
-            selected = [
-                index for index, sel in enumerate(response.entry) if sel.selected
-            ]
-        return selected
+        return [getattr(sel, attribute.name) for sel in response.entry if sel.selected]
 
     @keyword(tags=("Setter", "PageContent"))
     def deselect_options(self, selector: str):

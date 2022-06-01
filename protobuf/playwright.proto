@@ -244,7 +244,8 @@ message Types {
   message SelectEntry {
     string value = 2;
     string label = 3;
-    bool selected = 4;
+    int32 index = 4;
+    bool selected = 5;
   }
 }
 

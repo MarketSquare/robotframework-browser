@@ -42,21 +42,28 @@ export async function getElementCount(request: Request.ElementSelector, state: P
 }
 
 export async function getSelections(locator: Locator) {
-    const locatorOptions = locator.locator('option');
-    const locatorOptionsCount = await locatorOptions.count();
     const response = new Response.Select();
-
-    for (let i = 0; i < locatorOptionsCount; i++) {
-        const element = await locatorOptions.nth(i).elementHandle();
-        exists(element, `The ${i}. option element does not longer exist.`);
-        const label = await element.getProperty('label');
-        const value = await element.getProperty('value');
-        const selected = await element.getProperty('selected');
-        const entry = new Types.SelectEntry();
-        entry.setLabel(String(label));
-        entry.setValue(String(value));
-        entry.setSelected(JSON.parse(String(selected)));
-        response.addEntry(entry);
+    const selectElement = await locator.elementHandle();
+    const selectOptions = await selectElement?.evaluate((e) => {
+        return Array.from((e as HTMLSelectElement).options).map((option) => ({
+            label: option.label,
+            value: option.value,
+            index: option.index,
+            selected: option.selected,
+        }));
+    });
+    if (selectOptions) {
+        const entries = selectOptions.map((e) => {
+            const entry = new Types.SelectEntry();
+            entry.setLabel(e.label);
+            entry.setValue(e.value);
+            entry.setIndex(e.index);
+            entry.setSelected(e.selected);
+            return entry;
+        });
+        logger.info(`Option entries: ${entries.length}`);
+        logger.info(`Selected entries: ${entries.filter((e) => e.getSelected()).length}`);
+        entries.forEach((e) => response.addEntry(e));
     }
     return response;
 }
