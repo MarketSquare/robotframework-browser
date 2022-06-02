@@ -332,13 +332,21 @@ class Interaction(LibraryComponent):
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        ``*modifiers``
-        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
-        current modifiers back. If not specified, currently pressed modifiers are used.
-
         Example:
         | `Click`    id=button_location
         | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
+
+        ``*modifiers``
+        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
+        current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified
+        in any order, and multiple modifiers can be specified. Valid modifier keys are ``Control``, ``Alt``,
+        ``Shift`` and ``Meta``.
+        Due to the fact that the argument `*modifiers` is a positional only argument,
+        all preceding keyword arguments have to be specified as positional arguments before `*modifiers`.
+
+        Example:
+        | `Click`    id=clickWithModifiers    left    1    None    None    None    False    False    Alt    Meta    Shift
+        | `Click`    id=clickWithModifier    right    2    None    None    None    False    False    Shift
 
         """
         self.presenter_mode(selector, self.strict_mode)

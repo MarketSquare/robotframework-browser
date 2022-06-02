@@ -124,7 +124,7 @@ Select Options By Text When Select Value Is Duplicated
     Get Selected Options    id=ValueDupl    value    ==    object
     Get Selected Options    id=ValueDupl    index    ==    ${2}
 
-Select Option from ManyOptions
+Select Option From ManyOptions
     ${selection} =    Select Options By    id=ManyOptions    text    HARLEY-DAVIDSON(USA)
     Should Be Equal    HARLEY-DAVIDSON(USA)    ${selection}[0]
     Get Selected Options    id=ManyOptions    value    ==    156: 1008

@@ -166,7 +166,7 @@ Get Viewport Size Custom Error
 Get Element State With Strict On ElementSelectorWithOptions
     [Tags]    deprecated    expect_error
     Run Keyword And Expect Error
-    ...    *strict mode violation*//div*resolved to 18 elements*
+    ...    *strict mode violation*//div*resolved to 22 elements*
     ...    Get Element State    //div
     Set Strict Mode    False
     ${state} =    Get Element State    //div
@@ -176,7 +176,7 @@ Get Element State With Strict On ElementSelectorWithOptions
 Get Element State With Strict On WaitForFunctionOptions
     [Tags]    deprecated    expect_error
     Run Keyword And Expect Error
-    ...    *strict mode violation*//div*resolved to 18 elements*
+    ...    *strict mode violation*//div*resolved to 22 elements*
     ...    Get Element State    //div    state=disabled
     Set Strict Mode    False
     ${state} =    Get Element State    //div    state=disabled
