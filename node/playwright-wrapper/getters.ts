@@ -276,7 +276,7 @@ export async function getTableCellIndex(
 ): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
     const count = await element.evaluate((element) => {
@@ -298,7 +298,7 @@ export async function getTableRowIndex(
 ): Promise<Response.Int> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
     const count = await element.evaluate((element) => {

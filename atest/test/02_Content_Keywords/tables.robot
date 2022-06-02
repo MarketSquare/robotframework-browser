@@ -75,3 +75,15 @@ Select Wrong Table Element
     Run Keyword And Expect Error
     ...    REGEXP:ValueError: Selector element=.*? must select a <table> element but selects <td>\.
     ...    Get Table Cell Element    ${subtable_parent}    "two"    "1"
+
+Get Table Cell Element With Multiple Elements
+    Set Strict Mode    False
+    ${e} =    Get Table Cell Element    table    "Babyhawk"    "Weight"
+    Get Text    ${e}    ==    141g
+    Set Strict Mode    True
+    Run Keyword And Expect Error
+    ...    *strict mode violation*
+    ...    Get Table Cell Element
+    ...    table
+    ...    "Babyhawk"
+    ...    "Weight"

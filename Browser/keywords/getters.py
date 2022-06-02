@@ -818,7 +818,7 @@ class Getters(LibraryComponent):
         By default assertion is not done."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableCellIndex(
-                Request().ElementSelector(selector=selector, strict=False)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
             count = response.body
             if self.keyword_formatters.get(self.get_table_cell_index):
@@ -864,7 +864,7 @@ class Getters(LibraryComponent):
         By default assertion is not done."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableRowIndex(
-                Request().ElementSelector(selector=selector, strict=False)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
             count = response.body
             if self.keyword_formatters.get(self.get_table_row_index):
