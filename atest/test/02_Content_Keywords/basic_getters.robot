@@ -129,7 +129,7 @@ Get Element Count
     ${count} =    Get Element Count    h1
     Should Be Equal    ${count}    ${1}
     ${count} =    Get Element Count    label
-    Should Be Equal    ${count}    ${2}
+    Should Be Equal    ${count}    ${13}
     ${count} =    Get Element Count    not-existing
     Should Be Equal    ${count}    ${0}
 
@@ -137,12 +137,12 @@ Get Element Count And Assert
     [Setup]    Ensure Location    ${LOGIN_URL}
     Get Element Count    h1    ==    1
     Get Element Count    h1    ==    ${1}
-    Get Element Count    label    validate    value == 2
+    Get Element Count    label    validate    value == 13
     Get Element Count    label    >    1
     Get Element Count    not-existing    ==
     ${promise} =    Promise To    Get Element Count    label
     ${count} =    Wait For    ${promise}
-    Should Be Equal    ${count}    ${2}
+    Should Be Equal    ${count}    ${13}
 
 Get Style And Assert
     Get Style    h1    ALL    *=    align-content
@@ -153,17 +153,17 @@ Get Style With Element
     Get Style    ${elem}    align-content    ==    normal
 
 Get Element Size And Assert
-    ${expected} =    Evaluate    {'x': 0, 'y': 500, 'width': 40, 'height': 30}
+    ${expected} =    Evaluate    {'x': 0, 'y': 660, 'width': 40, 'height': 30}
     ${bounding_box} =    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}
     Should Be Equal    ${bounding_box}    ${expected}
-    Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 500, 'width': 40, 'height': 30}}}
+    Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 660, 'width': 40, 'height': 30}}}
 
 Get Element And Assert X
     ${x} =    Get BoundingBox    \#progress_bar    x    ==    0
     Should Be Equal    ${x}    ${0}
 
 Get Element And Assert Y
-    Get BoundingBox    \#progress_bar    y    validate    value - 500 == 0
+    Get BoundingBox    \#progress_bar    y    validate    value - 660 == 0
 
 Get Element Width And Height
     ${expected} =    Evaluate    {'w': 40, 'h': 30}

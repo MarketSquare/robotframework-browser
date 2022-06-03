@@ -1,5 +1,7 @@
 *** Settings ***
-Resource    imports.resource
+Resource            imports.resource
+
+Suite Teardown      Close Browser    ALL
 
 *** Test Cases ***
 New Persistent Context Creates A Browser And A Context
@@ -33,13 +35,6 @@ Switching Between Two Persistent Contexts Works
 
     Close Context
     Close Context
-
-# Close Page switches active page
-#    [Tags]    slow
-#    New Page Login
-#    New Page Form
-#    Close Page
-#    Get Title    matches    (?i)login
 
 New Context Fails With Persistent Context
     New Persistent Context
