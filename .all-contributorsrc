@@ -734,6 +734,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "amodzelewski",
+      "name": "amodzelewski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35276905?v=4",
+      "profile": "https://github.com/amodzelewski",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
