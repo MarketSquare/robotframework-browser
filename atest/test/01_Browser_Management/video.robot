@@ -29,7 +29,7 @@ Create Video With Relative Path
     Should Start With    ${details}[video_path]    ${OUTPUT_DIR}${/}browser${/}video${/}my_video
     Should End With    ${details}[video_path]    .webm
 
-Create Video With videoSize
+Create Video With VideoSize
     [Documentation]
     ...    LOG 4:3    INFO    GLOB:    *width="300" height="200"*.webm"*
     ${size} =    Create Dictionary    width    300    height    200
@@ -39,7 +39,7 @@ Create Video With videoSize
     Go To    ${FRAMES_URL}
     Verify Video Files    ${2}
 
-Create Video With viewport
+Create Video With Viewport
     [Documentation]
     ...    LOG 4:3    INFO    GLOB:    *width="400" height="250"*.webm"*
     ${size} =    Create Dictionary    width    400    height    250

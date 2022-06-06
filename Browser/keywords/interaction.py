@@ -17,7 +17,7 @@ from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -332,13 +332,21 @@ class Interaction(LibraryComponent):
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        ``*modifiers``
-        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
-        current modifiers back. If not specified, currently pressed modifiers are used.
-
         Example:
         | `Click`    id=button_location
         | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
+
+        ``*modifiers``
+        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
+        current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified
+        in any order, and multiple modifiers can be specified. Valid modifier keys are ``Control``, ``Alt``,
+        ``Shift`` and ``Meta``.
+        Due to the fact that the argument `*modifiers` is a positional only argument,
+        all preceding keyword arguments have to be specified as positional arguments before `*modifiers`.
+
+        Example:
+        | `Click`    id=clickWithModifiers    left    1    None    None    None    False    False    Alt    Meta    Shift
+        | `Click`    id=clickWithModifier    right    2    None    None    None    False    False    Shift
 
         """
         self.presenter_mode(selector, self.strict_mode)
@@ -678,16 +686,7 @@ class Interaction(LibraryComponent):
                 )
             )
         logger.debug(response)
-        selected: Union[List[int], List[str]]
-        if attribute is SelectAttribute.value:
-            selected = [sel.value for sel in response.entry if sel.selected]
-        elif attribute is SelectAttribute.label:
-            selected = [sel.label for sel in response.entry if sel.selected]
-        else:
-            selected = [
-                index for index, sel in enumerate(response.entry) if sel.selected
-            ]
-        return selected
+        return [getattr(sel, attribute.name) for sel in response.entry if sel.selected]
 
     @keyword(tags=("Setter", "PageContent"))
     def deselect_options(self, selector: str):
@@ -914,14 +913,13 @@ class Interaction(LibraryComponent):
         to_x: float,
         to_y: float,
         steps: int = 1,
-        drop: bool = True,
     ):
         """Executes a Drag&Drop operation from a coordinate to another coordinate.
 
         First it moves the mouse to the start-point,
         then presses the left mouse button,
         then moves to the end-point in specified number of steps,
-        then releases the mouse button depending on the drop argument.
+        then releases the mouse button.
 
         Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
         the top left corner of the pages viewport.
@@ -932,9 +930,6 @@ class Interaction(LibraryComponent):
 
         ``steps`` defines how many intermediate mouse move events are sent.
 
-        ``drop`` defines whether the operation ends with a dropped mouse.
-        Defaults to true.
-
         Example:
         | `Drag And Drop By Coordinates`
         | ...    from_x=30    from_y=30
@@ -942,8 +937,7 @@ class Interaction(LibraryComponent):
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
-        if drop:
-            self.mouse_button(MouseButtonAction.up)
+        self.mouse_button(MouseButtonAction.up)
 
     @keyword(tags=("Setter", "PageContent"))
     def drag_and_drop_relative_to(

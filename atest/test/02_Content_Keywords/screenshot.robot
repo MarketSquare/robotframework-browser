@@ -76,7 +76,7 @@ ElementHandle Screenshotting
     File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}.png
 
-Take Take screenshot With Strict
+Take Take Screenshot With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
     ...    Take screenshot    selector=//input
@@ -104,14 +104,14 @@ Screenshot Filename Incrementation
     File Should Exist    ${TestScreenshot}_2.png
     [Teardown]    Remove File    ${TestScreenshot}_*.png
 
-Embed ScreenShot To log.html File
+Embed ScreenShot To Log.html File
     [Documentation]
     ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
     ${path} =    Take Screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
     Should Be Equal    ${path}    EMBED
 
-Embed Element Picture To log.html File
+Embed Element Picture To Log.html File
     [Documentation]
     ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
     ${path} =    Take Screenshot    EMbeD    selector=\#username_field
@@ -124,7 +124,7 @@ Screenshot Without Active Page
     ...    Error: Tried to take screenshot, but no page was open.
     ...    Take Screenshot
 
-Screenshot With Cropping jpg
+Screenshot With Cropping Jpg
     ${box} =    Get BoundingBox
     ...    input >> nth=1
     ...    ALL
@@ -164,7 +164,7 @@ Screenshot With Cropping, Masking, Omitting Background(png)
     ...    omitBackground=True
     [Teardown]    Remove File    ${path}
 
-Screenshot With fixed Cropping
+Screenshot With Fixed Cropping
     ${path} =    Take Screenshot    crop={"x": 200, "y": 100, "height": 123, "width": 654}
     File Should Exist    ${path}
     ${width}    ${height} =    Get Image Size    ${path}

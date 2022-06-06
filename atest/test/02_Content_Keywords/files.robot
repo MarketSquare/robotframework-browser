@@ -10,29 +10,29 @@ Force Tags          slow
 ${CUSTOM_DL_PATH} =     ${CURDIR}/download_file
 
 *** Test Cases ***
-Upload upload_test_file
+Upload Upload_test_file
     Upload Named File    test_upload_file
 
-Upload 75MB file
+Upload 75MB File
     [Tags]    no-windows-support    no-mac-support
     [Timeout]    2 minute
     Upload Sized File    75
     # The browser actually gets a bit stuck so it needs to be cleaned up properly here.
     [Teardown]    Close Browser
 
-Upload 1MB file
+Upload 1MB File
     [Timeout]    30 seconds
     Upload Sized File    1
 
-Upload 74MB file
+Upload 74MB File
     [Timeout]    2 minute
     Upload Sized File    74
 
-Upload 5MB file
+Upload 5MB File
     [Timeout]    30 seconds
     Upload Sized File    5
 
-Upload File with different name
+Upload File With Different Name
     Upload Named File    invalid_test_upload_file
 
 Invalid Upload Path

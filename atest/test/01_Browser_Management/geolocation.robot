@@ -29,7 +29,7 @@ Clear Geolocation Permission
     Set Geolocation    72.56    145.89    0.23
     Run Keyword And Expect Error    *    Check Geolocation    72.56    145.89
 
-Enable Geolocation on wrong origin
+Enable Geolocation On Wrong Origin
     [Tags]    slow
     [Setup]    Start Context Without Geolocation
     Grant Permissions    geolocation    origin=http://www.example.com

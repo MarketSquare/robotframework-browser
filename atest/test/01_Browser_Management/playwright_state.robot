@@ -10,36 +10,36 @@ Open Firefox
 Open Chrome
     Open Browser And Assert Login Page    chromium
 
-New Browser does not open a page
+New Browser Does Not Open A Page
     New Browser
     Run Keyword And Expect Error
     ...    Error: No page open.    Go To    ${LOGIN_URL}
 
-New Browser does not create a context
+New Browser Does Not Create A Context
     New Browser
     # Use Switch context to test that no context exists here
     ${no_context_id} =    Switch Context    CURRENT
     Should Be Equal    ${no_context_id}    NO CONTEXT OPEN
 
-New Context does not open a page
+New Context Does Not Open A Page
     New Context
     ${no_page_id} =    Switch Page    CURRENT
     Should Be Equal    ${no_page_id}    NO PAGE OPEN
 
-Open Browser opens everything
+Open Browser Opens Everything
     [Tags]    slow
     ${old_timeout} =    Set Browser Timeout    30 seconds
     Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     Set Browser Timeout    ${old_timeout}
 
-Open Browser with invalid browser fails on RF side
+Open Browser With Invalid Browser Fails On RF Side
     Run Keyword And Expect Error
     ...    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Open Browser
     ...    url=${FORM_URL}    browser=netscape
     [Teardown]    no operation
 
-New Browser with invalid browser fails on RF side
+New Browser With Invalid Browser Fails On RF Side
     Run Keyword And Expect Error
     ...    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    New Browser
     ...    netscape
@@ -54,7 +54,7 @@ Create Chain Works
     Switch Page    ${first}
     Get Title    matches    (?i)login
 
-Close Browser switches active page
+Close Browser Switches Active Page
     [Tags]    slow
     New Browser
     New Page Login
@@ -63,7 +63,7 @@ Close Browser switches active page
     Close Browser
     Get Title    matches    (?i)login
 
-Close Context switches active page
+Close Context Switches Active Page
     [Tags]    slow
     New Context
     New Page Login
@@ -72,14 +72,14 @@ Close Context switches active page
     Close Context
     Get Title    matches    (?i)login
 
-Close Page switches active page
+Close Page Switches Active Page
     [Tags]    slow
     New Page Login
     New Page Form
     Close Page
     Get Title    matches    (?i)login
 
-Browser, Context and Page UUIDs
+Browser, Context And Page UUIDs
     [Tags]    slow
     ${browser} =    New Browser
     ${context} =    New Context
@@ -101,12 +101,12 @@ Switch Context
     Switch Context    ${first_context}
     Get Title    matches    (?i)login
 
-New Page can New Context and browser
+New Page Can New Context And Browser
     [Tags]    slow
     New Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
 
-Switch Page after popup
+Switch Page After Popup
     [Tags]    slow
     Open Browser And Assert Login Page    chromium
     Click    button#pops_up
@@ -115,7 +115,7 @@ Switch Page after popup
     Switch Page    ${previous}
     Wait For Elements State    button#pops_up
 
-Switch New Page fails when no new pages
+Switch New Page Fails When No New Pages
     [Tags]    slow
     New Page    ${LOGIN_URL}
     New Page    ${FORM_URL}
@@ -136,7 +136,7 @@ Set Viewport Size
     ${second_size} =    Get Viewport Size
     Should Be Equal    ${desired_second}    ${second_size}
 
-Page Index is stable when other pages closed
+Page Index Is Stable When Other Pages Closed
     [Tags]    slow
     ${first} =    New Page
     ${second} =    New Page
@@ -146,7 +146,7 @@ Page Index is stable when other pages closed
     ${last} =    Switch Page    ${first}
     Should Be Equal    ${first}[page_id]    ${last}
 
-Context Index is stable when other contexts closed
+Context Index Is Stable When Other Contexts Closed
     [Tags]    slow
     ${first} =    New Context
     ${second} =    New Context
@@ -156,14 +156,14 @@ Context Index is stable when other contexts closed
     ${last} =    Switch Context    ${first}
     Should Be Equal    ${first}    ${last}
 
-Page indices are unique
+Page Indices Are Unique
     [Tags]    slow
     ${first} =    New Page
     Close Page
     ${second} =    New Page
     Should Not Be Equal    ${first}    ${second}
 
-Close Page gets errors and console log
+Close Page Gets Errors And Console Log
     [Tags]    slow
     ${page} =    New Page    ${ERROR_URL}
     Click    "Crash click"
@@ -173,14 +173,14 @@ Close Page gets errors and console log
     Should Match    ${response}[0][errors][0]    *Error: a is not defined*
     Should Be Equal    ${response}[0][id]    ${page}[page_id]
 
-Context indices are unique
+Context Indices Are Unique
     [Tags]    slow
     ${first} =    New Context
     Close Context
     ${second} =    New Context
     Should Not Be Equal    ${first}    ${second}
 
-Browser indices are unique
+Browser Indices Are Unique
     [Tags]    slow
     ${first} =    New Browser
     Close Browser
@@ -227,7 +227,7 @@ Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
     Close Browser    ALL
     Close Browser    ALL
 
-New Context with defaultBrowserType ff
+New Context With DefaultBrowserType Ff
     [Tags]    slow
     [Timeout]    80s    # Because FF is just slow sometimes
     ${old_timeout} =    Set Browser Timeout    80s
@@ -235,7 +235,7 @@ New Context with defaultBrowserType ff
     Verify Browser Type    firefox
     Set Browser Timeout    ${old_timeout}
 
-New Context with defaultBrowserType chromium
+New Context With DefaultBrowserType Chromium
     [Tags]    slow
     New Context    defaultBrowserType=chromium
     Verify Browser Type    chromium
@@ -275,7 +275,7 @@ When Page Without Context Is Created This Is Logged For User
     New Page
     New Page
 
-Switch Page with ALL Browsers
+Switch Page With ALL Browsers
     ${browser1} =    New Browser
     ${context11} =    New Context
     ${page111} =    New Page
@@ -312,7 +312,7 @@ Switch Page with ALL Browsers
     ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
     Assert Equal    ${cur_page}[0]    ${page111}[page_id]
 
-Switch Context with ALL Browsers
+Switch Context With ALL Browsers
     ${browser1} =    New Browser
     ${context11} =    New Context
     ${page111} =    New Page
@@ -341,7 +341,7 @@ Switch Context with ALL Browsers
     ${cur_context} =    Get Context Ids    ACTIVE    ACTIVE
     Assert Equal    ${cur_context}[0]    ${context11}
 
-Switch Page with ALL Browsers Failing
+Switch Page With ALL Browsers Failing
     ${browser1} =    New Browser
     ${context11} =    New Context
     ${page111} =    New Page

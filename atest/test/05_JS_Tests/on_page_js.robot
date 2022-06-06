@@ -6,13 +6,13 @@ Suite Teardown      Close Browser
 Test Setup          New Page    ${LOGIN_URL}
 
 *** Test Cases ***
-JS execute without and with element
+JS Execute Without And With Element
     ${result} =    Evaluate JavaScript    ${None}    () => {return false;}
     Should Be Equal    ${result}    ${False}
     ${result} =    Evaluate JavaScript    body    () => {return false;}
     Should Be Equal    ${result}    ${False}
 
-Evaluate Multiline JavaScript with array
+Evaluate Multiline JavaScript With Array
     ${texts} =    Evaluate JavaScript    button
     ...    (elements, arg) => {
     ...    let text = []
@@ -28,7 +28,7 @@ Evaluate Multiline JavaScript with array
     Length Should Be    ${texts}    12
     Should Be Equal    ${texts}[-1]    ${{[1,2,3]}}
 
-Evaluate Multiline JavaScript with singel element
+Evaluate Multiline JavaScript With Singel Element
     ${texts} =    Evaluate JavaScript    button >> nth=0
     ...    (e, arg) => {
     ...    let text = []
@@ -54,7 +54,7 @@ Evaluate Multiline JavaScript Strict Mode Error
     ...    }
     ...    arg=Hello World
 
-Evaluate Multiline JavaScript on Page
+Evaluate Multiline JavaScript On Page
     ${arg} =    Create Dictionary    selector=input#login_button    text=-APPENDIX
     ${texts} =    Evaluate JavaScript    ${NONE}
     ...    (arg) => {
@@ -81,7 +81,7 @@ JS Execute With Element On Strict Mode
     Should Be Equal    ${result}    ${False}
     [Teardown]    Set Strict Mode    True
 
-Results from page
+Results From Page
     ${result} =    Evaluate JavaScript    ${None}    "hello from page "+location.href
     Should Be Equal    ${result}    hello from page ${LOGIN_URL}
     ${result2} =    Evaluate JavaScript    ${None}    1+2+3
@@ -100,7 +100,7 @@ Mutate Element On Page With ElementHandle
     Evaluate JavaScript    ${ref}    (elem) => elem.innerText = "abc"
     Get Property    ${ref}    innerText    ==    abc
 
-Highlight Element on page
+Highlight Element On Page
     [Tags]    slow
     Highlight Elements    css=input#login_button    duration=200ms
     Get Element Count    .robotframework-browser-highlight    ==    1
@@ -118,7 +118,7 @@ Highlight Element With Strict
     Highlight Elements    //input    duration=200ms
     [Teardown]    Set Strict Mode    True
 
-Highlight Element with style
+Highlight Element With Style
     [Tags]    slow
     Highlight Elements    input#login_button    duration=500ms
     Get Style    .robotframework-browser-highlight    border-bottom-width    ==    2px
@@ -132,13 +132,13 @@ Highlight Element with style
     Should Be True    "${style}[border-bottom-color]" == "rgb(255, 0, 255)"
     Sleep    600ms
 
-Highlight Element with element selector
+Highlight Element With Element Selector
     New Page    ${LOGIN_URL}
     ${elem} =    Get Element    input#login_button
     Highlight Elements    ${elem}
     Get Element Count    .robotframework-browser-highlight    ==    1
 
-Page state
+Page State
     [Tags]    not-implemented
     Log    Is that art???
     #Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123

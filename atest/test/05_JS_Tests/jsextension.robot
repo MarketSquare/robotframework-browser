@@ -3,19 +3,19 @@ Library     Browser    jsextension=${CURDIR}/funky.js
 Resource    imports.resource
 
 *** Test Cases ***
-Calling custom js keyword
+Calling Custom Js Keyword
     New Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
     MyFunkyKeyword    h1
     Get Text    h1    ==    Funk yeah!
 
-Calling new style custom js keyword
+Calling New Style Custom Js Keyword
     New Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
     MyNewStyleFunkyKeyword    h1
     Get Text    h1    ==    Funk yeah again!
 
-Calling custom js keyword with default value
+Calling Custom Js Keyword With Default Value
     New Page    ${LOGIN_URL}
     ${val} =    WithDefaultValue
     Should Be Equal    ${val}    DEFAULT
@@ -24,7 +24,7 @@ Calling custom js keyword with default value
     ${val3} =    WithDefaultValue    a=even
     Should Be Equal    ${val3}    EVEN
 
-Connecting and creating a remote browser
+Connecting And Creating A Remote Browser
     [Tags]    slow
     ${wsEndpoint} =    Create Remote Browser
     ${browser} =    Connect To Browser    ${wsEndpoint}
@@ -33,7 +33,7 @@ Connecting and creating a remote browser
     Get Text    h1    ==    Login Page
     [Teardown]    Close Remote Clean
 
-Defaults in the keyword from Python to JS and back
+Defaults In The Keyword From Python To JS And Back
     ${result} =    MoreDefaults
     Should Be Equal    ${result}[bTrue]    ${TRUE}
     Should Be Equal    ${result}[bFalse]    ${FALSE}
@@ -57,10 +57,10 @@ Defaults in the keyword from Python to JS and back
     ${result8} =    MoreDefaults    undefineder=${NONE}
     Should Be Equal    ${result8}[undefineder]    ${NONE}
 
-Crashing keyword
+Crashing Keyword
     Run Keyword And Expect Error    Error: Crash    crashKeyword
 
-Failing import
+Failing Import
     Run Keyword And Expect Error    Initializing library 'Browser' with arguments*    Import Library    Browser
     ...    jsextension=${CURDIR}/wrong.js
 

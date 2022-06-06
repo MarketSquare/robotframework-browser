@@ -8,14 +8,14 @@ Test Setup      New Page    ${LOGIN_URL}
 ${timeout_message} =    TimeoutError: page.waitForFunction: Timeout 100ms exceeded.
 
 *** Test Cases ***
-Wait For Function No Element and fail on timeout
+Wait For Function No Element And Fail On Timeout
     ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
     ...    TimeoutError*
     ...    Wait For Function    () => {return false;}
     Set Browser Timeout    ${timeout}
 
-Wait For Function Element and fail on timeout
+Wait For Function Element And Fail On Timeout
     ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
     ...    TimeoutError*
@@ -30,7 +30,7 @@ Failed Wait For Function
     ...    STARTS: ${timeout_message}
     ...    Wait For Function    false    timeout=100ms
 
-Failed complicated Wait For Function
+Failed Complicated Wait For Function
     Run Keyword And Expect Error    STARTS: ${timeout_message}    Wait For Function
     ...    (selector) => document.activeElement === selector    selector=\#username_field    timeout=100ms
 

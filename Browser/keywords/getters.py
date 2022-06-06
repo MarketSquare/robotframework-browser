@@ -492,12 +492,12 @@ class Getters(LibraryComponent):
         logger.info(response)
         result = [
             {
-                "index": index,
+                "index": sel.index,
                 "value": sel.value,
                 "label": sel.label,
-                "selected": bool(sel.selected),
+                "selected": sel.selected,
             }
-            for index, sel in enumerate(response.entry)
+            for sel in response.entry
         ]
         formatter = self.keyword_formatters.get(self.get_select_options)
         return verify_assertion(
@@ -558,15 +558,14 @@ class Getters(LibraryComponent):
         logger.info(response)
         expected = list(assertion_expected)
         selected: Union[List[int], List[str]]
-        if option_attribute is SelectAttribute.value:
-            selected = [sel.value for sel in response.entry if sel.selected]
-        elif option_attribute is SelectAttribute.label:
-            selected = [sel.label for sel in response.entry if sel.selected]
-        elif option_attribute is SelectAttribute.index:
-            selected = [
-                index for index, sel in enumerate(response.entry) if sel.selected
-            ]
+
+        if option_attribute is SelectAttribute.index:
             expected = [int(exp) for exp in expected]
+        selected = [
+            getattr(sel, option_attribute.name)
+            for sel in response.entry
+            if sel.selected
+        ]
         if self.keyword_formatters.get(self.get_selected_options):
             logger.warn("Formatter is not supported by Get Selected Options keyword.")
         return list_verify_assertion(
@@ -819,7 +818,7 @@ class Getters(LibraryComponent):
         By default assertion is not done."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableCellIndex(
-                Request().ElementSelector(selector=selector, strict=False)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
             count = response.body
             if self.keyword_formatters.get(self.get_table_cell_index):
@@ -865,7 +864,7 @@ class Getters(LibraryComponent):
         By default assertion is not done."""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableRowIndex(
-                Request().ElementSelector(selector=selector, strict=False)
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
             count = response.body
             if self.keyword_formatters.get(self.get_table_row_index):

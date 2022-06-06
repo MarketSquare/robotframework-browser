@@ -22,7 +22,7 @@ Get Select Options
 Get Select Options Strict
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 6 elements*
+    ...    *strict mode violation*//select*resolved to 7 elements*
     ...    Get Select Options    //select
     Set Strict Mode    False
     ${options} =    Get Select Options    //select
@@ -63,7 +63,7 @@ Get Select Options With Not Matching Value
     ...    Not Here
     ...    Get Select Options    select[name=preferred_channel]    ==    Email    Not Here
 
-Get Selected Options with xpath
+Get Selected Options With Xpath
     ${selection} =    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==
     ...    Telephone
     Should Be Equal    ${selection}    Telephone
@@ -74,22 +74,22 @@ Get Selected Options With Nonmatching Selector
     ...    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Select Option By label
+Select Option By Label
     ${selection} =    Create List    Direct mail
     ${selected} =    Select Option And Verify Selection    label    select[name=preferred_channel]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
-Select Options By value
+Select Options By Value
     ${selection} =    Create List    males    females    others
     ${selected} =    Select Option And Verify Selection    value    select[name=interests]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
-Select Options By index
+Select Options By Index
     ${selection} =    Create List    ${0}    ${2}
     ${selected} =    Select Option And Verify Selection    index    select[name=possible_channels]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
-Select Options By text
+Select Options By Text
     ${selection} =    Create List    Males    Females
     ${selected} =    Select Option And Verify Selection    text    select[name=interests]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
@@ -117,12 +117,26 @@ Select Options By Value When Select Value And Text Are Different
     ${selection} =    Select Options By    id=ValueAndTextDifferent    value    2
     Should Be Equal    2    ${selection}[0]
 
-Select Options By Text When Select Value is Duplicated
+Select Options By Text When Select Value Is Duplicated
     ${selection} =    Select Options By    id=ValueDupl    text    2nd Option
     Should Be Equal    2nd Option    ${selection}[0]
     Get Selected Options    id=ValueDupl    text    ==    2nd Option
     Get Selected Options    id=ValueDupl    value    ==    object
     Get Selected Options    id=ValueDupl    index    ==    ${2}
+
+Select Option From ManyOptions
+    ${selection} =    Select Options By    id=ManyOptions    text    HARLEY-DAVIDSON(USA)
+    Should Be Equal    HARLEY-DAVIDSON(USA)    ${selection}[0]
+    Get Selected Options    id=ManyOptions    value    ==    156: 1008
+    ${selection} =    Select Options By    id=ManyOptions    value    25: 0590
+    Should Be Equal    25: 0590    ${selection}[0]
+    Get Selected Options    id=ManyOptions    text    ==    AUTO UNION
+    Get Selected Options    id=ManyOptions    index    ==    ${25}
+    ${selection} =    Select Options By    id=ManyOptions    text    DUCATI (I)
+    Should Be Equal    DUCATI (I)    ${selection}[0]
+    Get Selected Options    id=ManyOptions    text    ==    DUCATI (I)
+    Get Selected Options    id=ManyOptions    value    ==    98: 4042
+    Get Selected Options    id=ManyOptions    index    ==    ${98}
 
 Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
@@ -133,7 +147,7 @@ Deselect Options Explicitly
 
 Deselect Options With Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 6 elements*
+    ...    *strict mode violation*//select*resolved to 7 elements*
     ...    Deselect Options    //select
     Set Strict Mode    False
     Deselect Options    //select

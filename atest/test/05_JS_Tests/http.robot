@@ -9,19 +9,19 @@ Suite Setup     New Page    ${LOGIN_URL}
 &{expected put json body} =     name=Jane    id=${3}
 
 *** Test Cases ***
-GET with text response
+GET With Text Response
     &{response} =    HTTP    /api/get/text
     Should Be Equal    ${response.body}    HELLO
     Should Be Equal    ${response.status}    ${200}
     Should Be Equal    ${response.headers['content-type']}    text/html; charset=utf-8
 
-GET with json response
+GET With Json Response
     &{response} =    HTTP    /api/get/json
     Should Be Equal    ${response.body}    ${expected get json body}
     Should Be Equal    ${response.status}    ${200}
     Should Be Equal    ${response.headers['content-type']}    application/json; charset=utf-8
 
-GET with error
+GET With Error
     &{response} =    HTTP    /api/get/doesntexist
     Should Be Equal    ${response.status}    ${404}
 

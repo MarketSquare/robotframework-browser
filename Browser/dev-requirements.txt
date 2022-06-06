@@ -12,14 +12,14 @@ robotframework-pabot >= 2.5.0
 twine >= 3.4.1
 robotstatuschecker >= 2.1.0
 rellu >= 0.7
-approvaltests == 5.0.2
+approvaltests == 5.2.0
 pytest-mock==3.7.0
 Pillow==9.1.1
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.9.3
 psutil >= 5.8.0
 coverage >= 6.1.2
-robotframework-tidy >= 2.2.0
+robotframework-tidy >= 2.3
 python-dateutil >= 2.8.2
 # Include normal dependencies from requirements.txt. Makes it possible to use
 # requirements-dev.txt as a single requirement file in PyCharm and other IDEs.

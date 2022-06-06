@@ -25,7 +25,7 @@ When Strict Is False Should Not Fail
     Set Strict Mode    False
     Get Text    //input
 
-Strict Mode In invokePlaywrightMethodStrict With Frames
+Strict Mode In InvokePlaywrightMethodStrict With Frames
     [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
@@ -36,7 +36,7 @@ Strict Mode In invokePlaywrightMethodStrict With Frames
     ${width} =    Get Style    //iframe >>> //p    width
     Should End With    ${width}    px
 
-Strict Mode In invokePlaywrightMethodStrict With Frame Element
+Strict Mode In InvokePlaywrightMethodStrict With Frame Element
     [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
@@ -47,7 +47,7 @@ Strict Mode In invokePlaywrightMethodStrict With Frame Element
     ${width} =    Get Style    id=left >>> //input    width
     Should End With    ${width}    px
 
-Stirct Mode In invokePlaywrightMethodStrict Without Frame
+Stirct Mode In InvokePlaywrightMethodStrict Without Frame
     [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
@@ -58,7 +58,7 @@ Stirct Mode In invokePlaywrightMethodStrict Without Frame
     ${width} =    Get Style    //iframe    width
     Should End With    ${width}    px
 
-Stirct Mode In invokePlaywrightMethodStrict Without Frame And
+Stirct Mode In InvokePlaywrightMethodStrict Without Frame And
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error

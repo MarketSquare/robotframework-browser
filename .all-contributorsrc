@@ -716,6 +716,24 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "shenthils",
+      "name": "Shenthil",
+      "avatar_url": "https://avatars.githubusercontent.com/u/68647820?v=4",
+      "profile": "https://github.com/shenthils",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "mardukbp",
+      "name": "Marduk Bolaños",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1140106?v=4",
+      "profile": "https://github.com/mardukbp",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,

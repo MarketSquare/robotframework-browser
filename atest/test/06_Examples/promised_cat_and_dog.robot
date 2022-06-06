@@ -3,7 +3,7 @@ Library     Browser    timeout=5s    retry_assertions_for=3s
 Resource    imports.resource
 
 *** Test Cases ***
-Shows a cat and a dog
+Shows A Cat And A Dog
     [Tags]    no-mac-support    slow
     New Page    ${DOG_AND_CAT_URL}
     Get Text    id=texts    ==    Beginning

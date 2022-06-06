@@ -23,7 +23,7 @@ Get Element With Strict
     Should Start With    ${element}    element=
     [Teardown]    Set Strict Mode    True
 
-Get Element With Nonmatching child selector
+Get Element With Nonmatching Child Selector
     ${ref} =    Get Element    select[name="preferred_channel"]
     ${timeout} =    Set Browser Timeout    100ms
     Run Keyword And Expect Error
@@ -44,13 +44,13 @@ Get Element From Frame
     ${ref} =    Get Element    body >> [src="left.html"] >>> body
     Get Property    ${ref} >> //input[@name="searchbutton"]    value    ==    Search
 
-Using Element Handle directly as selector
+Using Element Handle Directly As Selector
     New Page    ${LOGIN_URL}
     ${login_btn} =    Get Element    input#login_button
     Click    ${login_btn}
     Get Text    text=Login failed. Invalid user name and/or password.
 
-Get Elements when only 1 match
+Get Elements When Only 1 Match
     ${refs} =    Get Elements    select[name="preferred_channel"]
     ${elem} =    Get From List    ${refs}    0
     Set Strict Mode    False
@@ -73,7 +73,7 @@ Get Elements Should Fail With Invalid Selector
     ...    * Unknown engine "invalid" *
     ...    Get Elements    invalid=//foobar
 
-Get Element and Click
+Get Element And Click
     New Page    ${LOGIN_URL}
     ${refs} =    Get Elements    .pure-button
     Should Be Equal As Numbers    ${{ len(${refs}) }}    5

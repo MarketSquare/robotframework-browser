@@ -75,6 +75,14 @@ message Request {
     string traceFile = 4;
   }
 
+  message PersistentContext {
+    string browser = 1;
+    string rawOptions = 2;
+    bool hideRfBrowser = 3;
+    int32 defaultTimeout = 4;
+    string traceFile = 5;
+  }
+
   message Permissions {
     repeated string permissions = 1;
     string origin = 2;
@@ -236,7 +244,8 @@ message Types {
   message SelectEntry {
     string value = 2;
     string label = 3;
-    bool selected = 4;
+    int32 index = 4;
+    bool selected = 5;
   }
 }
 
@@ -429,6 +438,7 @@ service  Playwright {
   rpc NewPage(Request.Url) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
+  rpc NewPersistentContext(Request.PersistentContext) returns (Response.NewContextResponse);
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);

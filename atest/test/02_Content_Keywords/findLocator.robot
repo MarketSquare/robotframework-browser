@@ -50,14 +50,14 @@ Get Element And Get Elements
     END
 
 Click With Element ID
-    ${element} =    Get Element    //tbody/tr[2]
+    ${element} =    Get Element    //tbody/tr[2] >> nth=0
     ${Timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
     ...    TimeoutError: locator.click: Timeout 200ms exceeded.*
     ...    Click    ${element} >> css=input#login_button
     Set Browser Timeout    ${Timeout}
     Get Text    text=Login Page
-    ${element} =    Get Element    //tbody/tr[3]
+    ${element} =    Get Element    //tbody/tr[3] >> nth=0
     Click    ${element} >> css=input#login_button
     Get Text    text=Login failed. Invalid user name and/or password.
 
@@ -70,7 +70,7 @@ Frames With Element ID
     ...    Click    ${element} >>> "foo"
     [Teardown]    Set Browser Timeout    ${Timeout}
 
-Get Element Count In iFrame
+Get Element Count In IFrame
     [Setup]    Go To    ${FRAMES_URL}
     Get Element Count    iframe[name="left"] >>> //input    ==    2
 

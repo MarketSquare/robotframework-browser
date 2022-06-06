@@ -14,10 +14,10 @@ Get Text
     ${h1} =    Get Text    h1
     Should Be Equal    ${h1}    Login Page
 
-Get Text and Assert ==
+Get Text And Assert ==
     Get Text    ${UserNameLabel}    ==    User Name:
 
-Get Text and Assert !=
+Get Text And Assert !=
     Get Text    ${UserNameLabel}    !=
 
 Get Text Assert Validate
@@ -28,7 +28,7 @@ Get Text With Nonmatching Selector
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Get Property and Assert
+Get Property And Assert
     Get Property    h1    innerText    ==    Login Page
     Get Property    h1    innerText    !=    ${None}
 
@@ -42,11 +42,11 @@ Get Property With Strict Mode
     Should Not Be Empty    ${property}
     [Teardown]    Set Strict Mode    True
 
-Get Property innerText
+Get Property InnerText
     ${inner_text} =    Get Property    ${UserNameLabel}    innerText
     Should Be Equal    ${inner_text}    User Name:
 
-Get Property size
+Get Property Size
     Get Property    ${InputUsername}    type    ==    text
 
 Get Property For Element Property Which Does Not Exist
@@ -55,7 +55,7 @@ Get Property For Element Property Which Does Not Exist
     ...    Get Property    ${UserNameLabel}    not_here
     ${attribute} =    Get Property    ${UserNameLabel}    not_here    ==    ${None}
 
-Get Property and Then .. (Closure)
+Get Property And Then .. (Closure)
     ${text} =    Get Property    h1    innerText    then    value.replace('g', 'k')
     Should Be Equal    ${text}    Lokin Pake
 
@@ -68,10 +68,10 @@ Get Attribute Default Error
     ...    *Attribute 'disabled' not found!
     ...    Get Attribute    id=login_button    disabled
 
-Get Attribute and Verify absense
+Get Attribute And Verify Absense
     Get Attribute    id=login_button    disabled    ==    ${None}
 
-Get Attribute and return presents state
+Get Attribute And Return Presents State
     ${present} =    Get Attribute    id=login_button    value    evaluate    value is not None
     Should Be True    ${present}
     ${present} =    Get Attribute    id=login_button    disabled    evaluate    value is None
@@ -96,7 +96,7 @@ Get Attribute Names With Strict
     Should Not Be Empty    ${attrs}
     [Teardown]    Set Strict Mode    True
 
-Get Attribute Names and Assert single and multiple
+Get Attribute Names And Assert Single And Multiple
     [Setup]    Ensure Location    ${ELEMENT_STATE_URL}
     Get Attribute Names    [name="readonly_input"]    ==    type    name    value    readonly
     Get Attribute Names    [name="disabled_input"]    contains    disabled
@@ -118,7 +118,7 @@ Get Classes With Strict
     Should Be Equal    ${classes}    ${None}
     [Teardown]    Set Strict Mode    True
 
-Get Classes and Assert
+Get Classes And Assert
     [Setup]    Ensure Location    ${LOGIN_URL}
     Get Classes    id=draggable    contains    react-draggable
     Get Classes    id=draggable    ==    react-draggable    box
@@ -129,43 +129,43 @@ Get Element Count
     ${count} =    Get Element Count    h1
     Should Be Equal    ${count}    ${1}
     ${count} =    Get Element Count    label
-    Should Be Equal    ${count}    ${2}
+    Should Be Equal    ${count}    ${13}
     ${count} =    Get Element Count    not-existing
     Should Be Equal    ${count}    ${0}
 
-Get Element Count and Assert
+Get Element Count And Assert
     [Setup]    Ensure Location    ${LOGIN_URL}
     Get Element Count    h1    ==    1
     Get Element Count    h1    ==    ${1}
-    Get Element Count    label    validate    value == 2
+    Get Element Count    label    validate    value == 13
     Get Element Count    label    >    1
     Get Element Count    not-existing    ==
     ${promise} =    Promise To    Get Element Count    label
     ${count} =    Wait For    ${promise}
-    Should Be Equal    ${count}    ${2}
+    Should Be Equal    ${count}    ${13}
 
-Get Style and Assert
+Get Style And Assert
     Get Style    h1    ALL    *=    align-content
     Get Style    h1    align-content    ==    normal
 
-Get Style with element
+Get Style With Element
     ${elem} =    Get Element    h1
     Get Style    ${elem}    align-content    ==    normal
 
-Get Element Size and Assert
-    ${expected} =    Evaluate    {'x': 0, 'y': 500, 'width': 40, 'height': 30}
+Get Element Size And Assert
+    ${expected} =    Evaluate    {'x': 0, 'y': 660, 'width': 40, 'height': 30}
     ${bounding_box} =    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}
     Should Be Equal    ${bounding_box}    ${expected}
-    Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 500, 'width': 40, 'height': 30}}}
+    Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 660, 'width': 40, 'height': 30}}}
 
-Get Element and Assert x
+Get Element And Assert X
     ${x} =    Get BoundingBox    \#progress_bar    x    ==    0
     Should Be Equal    ${x}    ${0}
 
-Get Element and Assert y
-    Get BoundingBox    \#progress_bar    y    validate    value - 500 == 0
+Get Element And Assert Y
+    Get BoundingBox    \#progress_bar    y    validate    value - 660 == 0
 
-Get Element width and height
+Get Element Width And Height
     ${expected} =    Evaluate    {'w': 40, 'h': 30}
     ${wh} =    Get BoundingBox    \#progress_bar    ALL    validate    value['width'] == 40
     ${wh} =    Get BoundingBox    \#progress_bar    ALL    evaluate    {'w': value['width'], 'h': value['height']}
@@ -233,14 +233,14 @@ Get Element States
         Should Be Equal    ${state}    ${exp}
     END
 
-Get Element States Check hidden and retry
+Get Element States Check Hidden And Retry
     [Tags]    slow
     ${org} =    Set Retry Assertions For    2 sec
     Click    id=goes_hidden
     Get Element States    id=goes_hidden    *=    hidden
     [Teardown]    Set Retry Assertions For    ${org}
 
-Get Element States Checkboxes and RadioButton checked
+Get Element States Checkboxes And RadioButton Checked
     [Setup]    Ensure Location    ${FORM_URL}
     Wait For Elements State    [name='can_send_sms']
     Get Element States    [name='can_send_sms']    *=    unchecked
@@ -264,7 +264,7 @@ Get Element States Focused
     Get Element States    [name='can_send_sms']    contains    focused
     Get Element States    [name='can_send_sms']    not contains    defocused
 
-Get Element States readonly disabled
+Get Element States Readonly Disabled
     [Setup]    Ensure Location    ${ELEMENT_STATE_URL}
     Wait For Elements State    [name="enabled_input"]
     Get Element States    [name="enabled_input"]
@@ -291,7 +291,7 @@ Get Element States Validate Flag Operations
     Wait For Elements State    [name="enabled_input"]
     Get Element States    [name="enabled_input"]    validate    value | (visible | attached)
 
-Get Element States Return single element
+Get Element States Return Single Element
     [Setup]    Ensure Location    ${ELEMENT_STATE_URL}
     Wait For Elements State    [name="enabled_input"]
     ${visibility} =    Get Element States    [name="enabled_input"]    then    value & visible

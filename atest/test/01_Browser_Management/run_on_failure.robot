@@ -7,7 +7,7 @@ Test Setup          Go To    ${LOGIN_URL}
 
 *** Variables ***
 ${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot2} =     ${OUTPUT_DIR}${/}Register_KW_On_Failure_with_unicode____FAILURE_SCREENSHOT_1.png
+${FailureScreenshot2} =     ${OUTPUT_DIR}${/}Register_KW_On_Failure_With_Unicode____FAILURE_SCREENSHOT_1.png
 ${FailureScreenshot3} =     ${OUTPUT_DIR}${/}myfailure_screenshot.png
 
 *** Test Cases ***
@@ -24,7 +24,7 @@ Register Keyword To Run On Failure
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot}
 
-Register KåWä On Failure with unicode " 💩 "
+Register KåWä On Failure With Unicode " 💩 "
     Type Text    css=input#username_field    username
     ${prev} =    Register Keyword To Run On Failure    Take Screenshot
     Run Keyword And Expect Error
@@ -34,7 +34,7 @@ Register KåWä On Failure with unicode " 💩 "
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot2}
 
-Register kw with custom path
+Register Kw With Custom Path
     Type Text    css=input#username_field    username
     ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
     Run Keyword And Expect Error

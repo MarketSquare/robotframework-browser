@@ -49,6 +49,7 @@ python_lint_timestamp_file = PYTHON_SRC_DIR / ".linted"
 ATEST_TIMEOUT = 900
 cpu_count = os.cpu_count() or 1
 EXECUTOR_COUNT = str(cpu_count - 1 or 1)
+ROBOT_TIDY_TRANSFORMER = ROOT_DIR / "atest" / "robottidy_transformer"
 
 ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
@@ -61,19 +62,20 @@ the Playwright_ tool internally. Browser library {version} is a new release with
 **UPDATE** enhancements and bug fixes.
 All issues targeted for Browser library {version.milestone} can be found
 from the `issue tracker`_.
-If you have pip_ installed, just run
+For first time installation with pip_, just run
 ::
    pip install --upgrade robotframework-browser
    rfbrowser init
-to install the latest available release or use
+to install the latest available release. If you upgrading
+from previous release with pip_, run
 ::
-   pip install robotframework-browser=={version}
+   pip install robotframework-browser
+   rfbrowser clean-node
    rfbrowser init
-to install exactly this version. Alternatively you can download the source
-distribution from PyPI_ and install it manually.
-Browser library {version} was released on {date}. Browser supports
-Python 3.7+, Node 12/14/16 LTS and Robot Framework 4.0+. Library was
-tested with Playwright REPLACE_PW_VERSION
+Alternatively you can download the source distribution from PyPI_ and 
+install it manually. Browser library {version} was released on {date}. 
+Browser supports Python 3.7+, Node 12/14/16 LTS and Robot Framework 4.0+. 
+Library was tested with Playwright REPLACE_PW_VERSION
 
 .. _Robot Framework: http://robotframework.org
 .. _Browser: https://github.com/MarketSquare/robotframework-browser
@@ -599,6 +601,8 @@ def lint_robot(c):
         "RenameKeywords",
         "--transform",
         "RenameTestCases",
+        "--transform",
+        str(ROBOT_TIDY_TRANSFORMER.absolute() / "CamelCaseTestCaseTransformer.py"),
     ]
     transform_command = [*base_commnd, *transform_command]
     if in_ci:
