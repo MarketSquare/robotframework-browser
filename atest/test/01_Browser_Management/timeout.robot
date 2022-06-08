@@ -5,14 +5,22 @@ Resource            imports.resource
 Suite Setup         New Browser
 Suite Teardown      Close Browser
 
+Force Tags      timeout
+
+
 *** Variables ***
-${ErrorMessage} =       page.goto: Timeout 1ms exceeded.
+${err_goto} =       page.goto: Timeout 1ms exceeded.
+${err_click} =  SEPARATOR=
+...    locator.click: Timeout 100ms exceeded.
+...    *Use "Set Browser Timeout" for increasing the timeout or double check${SPACE}
+...    your locator as the targeted element(s) couldn't be found.
+
 
 *** Test Cases ***
 Test GoTo With Short Default Timeout
     New Page
     Set Browser Timeout    1ms
-    Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
+    Run Keyword And Expect Error    *${err_goto}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 
 Test Overriding With Long
@@ -26,7 +34,7 @@ Test Overriding With Short
     Set Browser Timeout    10 s
     New Page    ${FORM_URL}
     Set Browser Timeout    1 ms
-    Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
+    Run Keyword And Expect Error    *${err_goto}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 
 Test Assertion Timeouts
@@ -61,3 +69,8 @@ Calling Set Browser Timeout Without Open Contex Should Not Fail
     Set Browser Timeout    1s
     Close Browser    ALL
     Set Browser Timeout    1s
+
+Check Timeout Tips
+    New Page    ${LOGIN_URL}
+    Set Browser Timeout    0.1s
+    Run Keyword And Expect Error    *${err_click}*    Click    nothing
