@@ -734,6 +734,33 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "amodzelewski",
+      "name": "amodzelewski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35276905?v=4",
+      "profile": "https://github.com/amodzelewski",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "TimDicos",
+      "name": "TimDicos",
+      "avatar_url": "https://avatars.githubusercontent.com/u/106802639?v=4",
+      "profile": "https://github.com/TimDicos",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "vinismarques",
+      "name": "vinismarques",
+      "avatar_url": "https://avatars.githubusercontent.com/u/33668018?v=4",
+      "profile": "https://github.com/vinismarques",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
