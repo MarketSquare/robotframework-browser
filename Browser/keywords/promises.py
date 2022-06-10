@@ -16,7 +16,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, List
+from typing import Any, Dict, List
 
 from assertionengine import AssertionOperator
 from robot.api.deco import keyword  # type: ignore
@@ -25,7 +25,7 @@ from robot.utils import DotDict  # type: ignore
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadedFile, logger
-from ..utils.data_types import DialogAction, ElementState
+from ..utils.data_types import DialogAction, ElementState, PageLoadStates
 
 
 class Promises(LibraryComponent):
@@ -65,7 +65,7 @@ class Promises(LibraryComponent):
 
     def resolve_arguments(self, kw: str, *args):
         positional: List[Any] = []
-        named = {}
+        named: Dict[str, Any] = {}
         logger.debug(f"*args {args}")
 
         keyword_arguments = [
@@ -77,6 +77,8 @@ class Promises(LibraryComponent):
             if parts[0].strip() in keyword_arguments:
                 if parts[2].strip().lower() in DialogAction.__members__:
                     named[parts[0].strip()] = DialogAction[parts[2].strip().lower()]
+                elif parts[2].strip().lower() in PageLoadStates.__members__:
+                    named[parts[0].strip()] = PageLoadStates[parts[2].strip().lower()]
                 else:
                     named[parts[0].strip()] = parts[2].strip()
             else:
@@ -86,6 +88,8 @@ class Promises(LibraryComponent):
                     positional.append(ElementState.__members__[arg.strip()])
                 elif arg.strip() in DialogAction.__members__:
                     positional.append(DialogAction[arg.strip()])
+                elif arg.strip() in PageLoadStates.__members__:
+                    positional.append(PageLoadStates.__members__[arg.strip()])
                 else:
                     positional.append(arg)
 
