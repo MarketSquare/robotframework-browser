@@ -761,6 +761,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "nizwiz",
+      "name": "nizwiz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19755352?v=4",
+      "profile": "https://github.com/nizwiz",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
