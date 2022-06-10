@@ -99,3 +99,10 @@ Wait For Navigation Works With Wait_until
         Get Url    contains    posted
     END
     [Teardown]    Set Browser Timeout    ${old timeout}
+
+Promise To Wait For Navigation With wait_until
+    ${old timeout} =    Set Browser Timeout    4s
+    Go To    ${ROOT_URL}/redirector.html
+    ${page_navigation} =    Promise To    Wait For Navigation    url=${ROOT_URL}/posted.html    wait_until=networkidle
+    Wait For    ${page_navigation}
+    [Teardown]    Set Browser Timeout    ${old timeout}
