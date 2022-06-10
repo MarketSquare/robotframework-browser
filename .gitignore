@@ -3,6 +3,7 @@ Browser/wrapper
 Browser/generated
 Browser/__init__.pyi
 Browser/**/*.pyc
+Browser/rfbrowser.log
 node/playwright-wrapper/generated
 
 docs/Browser.html
