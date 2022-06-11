@@ -492,8 +492,7 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         params = convert_typed_dict(self.new_context.__annotations__, params)
-        if timeout:
-            params["timeout"] = self.convert_timeout(timeout)
+        params["timeout"] = self.convert_timeout(timeout)
         params["slowMo"] = self.convert_timeout(slowMo)
 
         browser_path = self.library.external_browser_executable.get(browser)

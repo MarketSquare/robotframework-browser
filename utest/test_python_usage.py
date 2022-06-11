@@ -5,6 +5,8 @@ from unittest.mock import Mock
 import pytest
 from assertionengine import AssertionOperator
 
+from Browser import SupportedBrowsers
+
 
 @pytest.fixture()
 def application_server():
@@ -47,6 +49,16 @@ def test_readme_example(browser):
 def test_new_browser_and_close(browser):
     browser.new_browser()
     browser.close_browser()
+
+
+def test_new_browser_with_timeout_of_zero_seconds(browser):
+    browser.new_browser(browser=SupportedBrowsers.chromium, headless=True, timeout="0")
+    browser.close_browser("ALL")
+
+
+def test_new_browser_with_default_timeout(browser):
+    browser.new_browser(browser=SupportedBrowsers.chromium, headless=True)
+    browser.close_browser("ALL")
 
 
 def test_playwright_exit_handler(atexit_register):
