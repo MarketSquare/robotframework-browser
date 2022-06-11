@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-84-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-85-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -270,6 +270,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     <td align="center"><a href="https://github.com/vinismarques"><img src="https://avatars.githubusercontent.com/u/33668018?v=4?s=100" width="100px;" alt=""/><br /><sub><b>vinismarques</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Avinismarques" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/nizwiz"><img src="https://avatars.githubusercontent.com/u/19755352?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nizwiz</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Anizwiz" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/Reddriver"><img src="https://avatars.githubusercontent.com/u/7867213?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Reddriver</b></sub></a><br /><a href="#ideas-Reddriver" title="Ideas, Planning, & Feedback">🤔</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/SeppoTuura"><img src="https://avatars.githubusercontent.com/u/105704978?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Seppo</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ASeppoTuura" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 
