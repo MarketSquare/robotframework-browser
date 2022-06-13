@@ -1374,7 +1374,6 @@ class Getters(LibraryComponent):
             return f.name if isinstance(f, ElementState) else f
 
         assertion_expected_str = [convert_str(flag) for flag in assertion_expected]
-        self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementStates(
                 Request.ElementSelector(selector=selector, strict=self.strict_mode)
