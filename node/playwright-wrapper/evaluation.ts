@@ -110,7 +110,7 @@ export async function evaluateJavascript(
 
     async function getJSResult() {
         if (selector !== '') {
-            const locator = await findLocator(state, selector, strictMode, undefined, true);
+            const locator = await findLocator(state, selector, strictMode, undefined, !allElements);
             if (allElements) {
                 return await locator.evaluateAll(script, arg);
             }
