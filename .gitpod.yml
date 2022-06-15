@@ -6,10 +6,16 @@ tasks:
   - init: python bootstrap.py
     command: |
       source .venv/bin/activate
-      npx playwright install-deps
+      npx playwright install-deps -yes
       inv deps
       inv build
 image: gitpod/workspace-full-vnc
 ports:
   - port: 6080
     onOpen: open-preview
+vscode:
+  extensions:
+    - ms-python.python
+    - d-biehl.robotcode
+    - eamodio.gitlens
+    - dbaeumer.vscode-eslint
