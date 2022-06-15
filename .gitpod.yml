@@ -4,7 +4,11 @@
 
 tasks:
   - init: python bootstrap.py
-    command: source .venv/bin/activate
+    command: |
+      source .venv/bin/activate
+      npx playwright install-deps
+      inv deps
+      inv build
 image: gitpod/workspace-full-vnc
 ports:
   - port: 6080
