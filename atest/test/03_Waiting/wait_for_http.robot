@@ -100,7 +100,7 @@ Wait For Navigation Works With Wait_until
     END
     [Teardown]    Set Browser Timeout    ${old timeout}
 
-Promise To Wait For Navigation With wait_until
+Promise To Wait For Navigation With Wait_until
     ${old timeout} =    Set Browser Timeout    4s
     Go To    ${ROOT_URL}/redirector.html
     ${page_navigation} =    Promise To    Wait For Navigation    url=${ROOT_URL}/posted.html    wait_until=networkidle
