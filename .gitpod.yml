@@ -5,3 +5,7 @@
 tasks:
   - init: python bootstrap.py
     command: source .venv/bin/activate
+image: gitpod/workspace-full-vnc
+ports:
+  - port: 6080
+    onOpen: open-preview
