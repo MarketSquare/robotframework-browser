@@ -341,6 +341,7 @@ class PlaywrightState(LibraryComponent):
         storageState: Optional[str] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
         forcedColors: ForcedColors = ForcedColors.none,
+        url: Optional[str] = None,
     ):
         """Open a new [persistent context | https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context].
 
@@ -414,6 +415,9 @@ class PlaywrightState(LibraryComponent):
             )
             logger.info(response.log)
             logger.info(context_options)
+
+            if url:
+                stub.GoTo(Request().Url(url=url))
 
             return response.id
 

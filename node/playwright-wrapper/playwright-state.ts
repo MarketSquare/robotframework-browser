@@ -639,6 +639,9 @@ export async function newPersistentContext(
         persistentContext.tracing.start({ screenshots: true, snapshots: true });
     }
 
+    const page = indexedContext.c.pages()[0];
+    indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
+
     return _finishContextResponse(indexedContext, browserState, traceFile, options);
 }
 
