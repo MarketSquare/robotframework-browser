@@ -5,16 +5,14 @@ Resource            imports.resource
 Suite Setup         New Browser
 Suite Teardown      Close Browser
 
-Force Tags      timeout
-
+Force Tags          timeout
 
 *** Variables ***
 ${err_goto} =       page.goto: Timeout 1ms exceeded.
-${err_click} =  SEPARATOR=
-...    locator.click: Timeout 100ms exceeded.
-...    *Use "Set Browser Timeout" for increasing the timeout or double check${SPACE}
-...    your locator as the targeted element(s) couldn't be found.
-
+${err_click} =      SEPARATOR=
+...                 locator.click: Timeout 100ms exceeded.
+...                 *Use "Set Browser Timeout" for increasing the timeout or double check${SPACE}
+...                 your locator as the targeted element(s) couldn't be found.
 
 *** Test Cases ***
 Test GoTo With Short Default Timeout

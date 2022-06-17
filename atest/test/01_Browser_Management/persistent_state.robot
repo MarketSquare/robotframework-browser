@@ -42,14 +42,14 @@ New Context Fails With Persistent Context
     ...    Error: Trying to create a new context when a persistentContext is active
     ...    New Context
 
-New Persistent Context Can Use an URL
-    Close Browser  ALL
-    New Persistent Context  url=${WELCOME_URL}
+New Persistent Context Can Use An URL
+    Close Browser    ALL
+    New Persistent Context    url=${WELCOME_URL}
     Get Url    ==    ${WELCOME_URL}
 
 New Persistent Context Creates An Empty Page
-    Close Browser  ALL
+    Close Browser    ALL
     New Persistent Context
-    ${catalog}    Get Browser Catalog
-    Get Title  ==  ${EMPTY}
+    ${catalog} =    Get Browser Catalog
+    Get Title    ==    ${EMPTY}
     Get Url    ==    about:blank
