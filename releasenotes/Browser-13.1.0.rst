@@ -13,12 +13,12 @@ All issues targeted for Browser library v13.1.0 can be found
 from the `issue tracker`_.
 For first time installation with pip_, just run
 ::
-   pip install --upgrade robotframework-browser
+   pip install robotframework-browser
    rfbrowser init
 to install the latest available release. If you upgrading
 from previous release with pip_, run
 ::
-   pip install robotframework-browser
+   pip install --upgrade robotframework-browser
    rfbrowser clean-node
    rfbrowser init
 Alternatively you can download the source distribution from PyPI_ and 
