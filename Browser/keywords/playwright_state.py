@@ -217,9 +217,9 @@ class PlaywrightState(LibraryComponent):
         Returns a list of dictionaries containing id, errors and console messages from the page.
 
         Example
-        | `Close Page`                                       # Closes current page, context and browser
-        | `Close Page`    CURRENT     CURRENT     CURRENT    # Closes current page, context and browser
-        | `Close Page`    ALL         ALL         ALL        # Closes all pages, context and browsers
+        | `Close Page`                                       # Closes current page, within the current context and browser
+        | `Close Page`    CURRENT     CURRENT     CURRENT    # Closes current page, within the current context and browser
+        | `Close Page`    ALL         ALL         ALL        # Closes all pages, within all contexts and browsers
         """
         result = []
         with self.playwright.grpc_channel() as stub:
