@@ -102,7 +102,7 @@ def deps(c):
 
     if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
         arch = " --target_arch=x64" if platform.processor() == "arm" else ""
-        c.run(f"npm install{arch}", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
+        c.run(f"npm install{arch} --parseable true --progress false", env={"PLAYWRIGHT_BROWSERS_PATH": "0"})
         npm_deps_timestamp_file.touch()
     else:
         print("no changes in package-lock.json, skipping npm install")

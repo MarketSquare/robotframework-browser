@@ -14,14 +14,30 @@ def browser():
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Cleanup does not work in Windows")
 def test_cleanup_browser_folder_no_folder(browser):
+    browser._suite_cleanup_done = False
     with tempfile.TemporaryDirectory() as tmp_dir:
         browser_folder = Path(tmp_dir) / "browser"
         assert not browser_folder.is_dir()
         browser_folder.mkdir()
+        screenshot = browser_folder / "screenshot"
+        screenshot.mkdir()
+        video = browser_folder / "video"
+        video.mkdir()
+        traces = browser_folder / "traces"
+        traces.mkdir()
+        state = browser_folder / "state"
+        state.mkdir()
+        foobar = browser_folder / "foobar"
+        foobar.mkdir()
         with patch("Browser.Browser.outputdir", new_callable=PropertyMock) as mock_property:
             mock_property.return_value = tmp_dir
             browser._start_suite(None, None)
-            assert not browser_folder.is_dir()
+            assert browser_folder.is_dir()
+            assert not screenshot.is_dir()
+            assert not video.is_dir()
+            assert not traces.is_dir()
+            assert not state.is_dir()
+            assert foobar.is_dir()
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Cleanup does not work in Windows")

@@ -5,6 +5,8 @@ Resource        imports.resource
 
 Force Tags      slow
 
+Suite Setup    Check Screenshots Before
+
 *** Test Cases ***
 Failing With Screenshot 1
     New Page    ${ERROR_URL}
@@ -23,3 +25,10 @@ Check Screenshots
     File Should Exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-2.png
     File Should Exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-3.png
     File Should Not Exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-4.png
+
+*** Keywords ***
+Check Screenshots Before
+    Remove File    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-1.png
+    Remove File    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-2.png
+    Remove File    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-3.png
+    Remove File    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-4.png
