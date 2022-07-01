@@ -3,9 +3,9 @@ Library         Browser    timeout=3s
 Library         OperatingSystem
 Resource        imports.resource
 
-Force Tags      slow
+Suite Setup     Check Screenshots Before
 
-Suite Setup    Check Screenshots Before
+Force Tags      slow
 
 *** Test Cases ***
 Failing With Screenshot 1
