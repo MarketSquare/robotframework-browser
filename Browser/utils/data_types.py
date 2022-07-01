@@ -465,9 +465,9 @@ class AutoClosingLevel(Enum):
     closed when the suite teardown ends.
 
     If automatic closing level is `SUITE`, all contexts and pages that are created during the test suite
-     are closed when the suite teardown ends.
+    are closed when the suite teardown ends.
 
-    If automatic closing level is `MANUAL`, nothing is closed automatically during the test execution
+    If automatic closing level is `MANUAL`, nothing is closed automatically while the test execution
     is ongoing.
 
     All browsers are automatically closed, always and regardless of the automatic closing level at
