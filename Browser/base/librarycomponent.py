@@ -79,19 +79,19 @@ class LibraryComponent:
 
     @property
     def screenshots_output(self):
-        return self.browser_output / "screenshot"
+        return self.library.screenshots_output
 
     @property
     def video_output(self):
-        return self.browser_output / "video"
+        return self.library.video_output
 
     @property
     def traces_output(self):
-        return self.browser_output / "traces"
+        return self.library.traces_output
 
     @property
     def state_file(self):
-        return self.browser_output / "state"
+        return self.library.state_file
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)

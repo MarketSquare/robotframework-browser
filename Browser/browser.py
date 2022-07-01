@@ -874,12 +874,37 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def browser_output(self) -> Path:
         return Path(self.outputdir, "browser")
 
+    @property
+    def screenshots_output(self):
+        return self.browser_output / "screenshot"
+
+    @property
+    def video_output(self):
+        return self.browser_output / "video"
+
+    @property
+    def traces_output(self):
+        return self.browser_output / "traces"
+
+    @property
+    def state_file(self):
+        return self.browser_output / "state"
+
     def _start_suite(self, suite, result):
         if not self._suite_cleanup_done:
             self._suite_cleanup_done = True
-            if self.browser_output.is_dir():
-                logger.debug(f"Removing: {self.browser_output}")
-                shutil.rmtree(str(self.browser_output), ignore_errors=True)
+            if self.screenshots_output.is_dir():
+                logger.debug(f"Removing: {self.screenshots_output}")
+                shutil.rmtree(str(self.screenshots_output), ignore_errors=True)
+            if self.video_output.is_dir():
+                logger.debug(f"Removing: {self.video_output}")
+                shutil.rmtree(str(self.video_output), ignore_errors=True)
+            if self.traces_output.is_dir():
+                logger.debug(f"Removing: {self.traces_output}")
+                shutil.rmtree(str(self.traces_output), ignore_errors=True)
+            if self.state_file.is_dir():
+                logger.debug(f"Removing: {self.state_file}")
+                shutil.rmtree(str(self.state_file), ignore_errors=True)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
