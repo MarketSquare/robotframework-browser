@@ -112,7 +112,7 @@ class Browser(DynamicCore):
 
     == Contexts ==
 
-    A *context* corresponds to set of independent incognito pages in a browser
+    A *context* corresponds to a set of independent incognito pages in a browser
     that share cookies, sessions or profile settings. Pages in two separate
     contexts do not share cookies, sessions or profile settings.
     Compared to Selenium, these do *not* require their own browser process.
@@ -124,7 +124,7 @@ class Browser(DynamicCore):
     To make pages in the same suite share state, use the same context by opening the
     context with `New Context` on suite setup.
 
-    The context layer is useful e.g. for testing different users sessions on the
+    The context layer is useful e.g. for testing different user sessions on the
     same webpage without opening a whole new browser context.
     Contexts can also have detailed configurations, such as geo-location, language settings,
     the viewport size or color scheme.
@@ -154,7 +154,7 @@ class Browser(DynamicCore):
     and `New Context` are executed with default values first.
 
     Each Browser, Context and Page has a unique ID with which they can be addressed.
-    A full catalog of what is open can be received by `Get Browser Catalog` as dictionary.
+    A full catalog of what is open can be received by `Get Browser Catalog` as a dictionary.
 
     = Automatic page and context closing =
 
@@ -170,7 +170,7 @@ class Browser(DynamicCore):
     strict mode. If strict mode is false, keyword does not fail if selector points
     many elements. Strict mode is enabled by default, but can be changed in library
     `importing` or `Set Strict Mode` keyword. Keyword documentation states if keyword
-    uses strict mode. If keyword does not state that is used strict mode, then strict
+    uses strict mode. If keyword does not state that strict mode is used, then strict
     mode is not applied for the keyword. For more details, see Playwright
     [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
 
@@ -296,7 +296,7 @@ class Browser(DynamicCore):
     Playwright node module: xpath, css, id and text. The strategy can either
     be explicitly specified with a prefix or the strategy can be implicit.
 
-    A major advantage of Browser is, that multiple selector engines can be used
+    A major advantage of Browser is that multiple selector engines can be used
     within one selector. It is possible to mix XPath, CSS and Text selectors while
     selecting a single element.
 
@@ -314,12 +314,12 @@ class Browser(DynamicCore):
     a custom one). Selector ``body`` follows the format of the particular engine,
     e.g. for css engine it should be a [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector].
     Body format is assumed to ignore leading and trailing white spaces,
-    so that extra whitespace can be added for readability. If selector
+    so that extra whitespace can be added for readability. If the selector
     engine needs to include ``>>`` in the body, it should be escaped
     inside a string to not be confused with clause separator,
     e.g. ``text="some >> text"``.
 
-    Selector engine name can be prefixed with ``*`` to capture element that
+    Selector engine name can be prefixed with ``*`` to capture an element that
     matches the particular clause instead of the last one. For example,
     ``css=article >> text=Hello`` captures the element with the text ``Hello``,
     and ``*css=article >> text=Hello`` (note the *) captures the article element
@@ -360,7 +360,7 @@ class Browser(DynamicCore):
     == Frames ==
 
     By default, selector chains do not cross frame boundaries. It means that a
-    simple CSS selector is not able to select and element located inside an iframe
+    simple CSS selector is not able to select an element located inside an iframe
     or a frameset. For this use case, there is a special selector ``>>>`` which can
     be used to combine a selector for the frame and a selector for an element
     inside a frame.
@@ -383,8 +383,8 @@ class Browser(DynamicCore):
 
     The selectors on the left and right side of ``>>>`` can be any valid selectors.
     The selector clause directly before the frame opener ``>>>`` must select the frame element.
-    Frame selection is the only place where Library modifies the selector, as explained in above.
-    In all cases, library does not alter selector in any way, instead it is passed as is to
+    Frame selection is the only place where Browser Library modifies the selector, as explained in above.
+    In all cases, the library does not alter the selector in any way, instead it is passed as is to the
     Playwright side.
 
     == WebComponents and Shadow DOM ==
@@ -394,10 +394,10 @@ class Browser(DynamicCore):
 
     Also other technologies claim that they can handle
     [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|Shadow DOM and Web Components].
-    However, non of them do pierce shadow roots automatically,
+    However, none of them do pierce shadow roots automatically,
     which may be inconvenient when working with Shadow DOM and Web Components.
 
-    For that reason, css engine pierces shadow roots. More specifically, every
+    For that reason, the css engine pierces shadow roots. More specifically, every
     [https://developer.mozilla.org/en-US/docs/Web/CSS/Descendant_combinator|Descendant combinator]
     pierces an arbitrary number of open shadow roots, including the implicit descendant combinator
     at the start of the selector.
@@ -463,7 +463,7 @@ class Browser(DynamicCore):
     It is possible to get a reference to a Locator by using `Get Element` and `Get Elements` keywords.
     Keywords do not save reference to an element in the HTML document, instead it saves reference to a Playwright
     [https://playwright.dev/docs/api/class-locator|Locator]. In nutshell Locator captures the logic of how to
-    retrieve that element from the page. Each time action is performed, locator re-searches the elements
+    retrieve that element from the page. Each time an action is performed, the locator re-searches the elements
     in the page. This reference can be used as a *first* part of a selector by using a special selector
     syntax `element=`. like this:
 
@@ -487,12 +487,12 @@ class Browser(DynamicCore):
     %ASSERTION_TABLE%
 
     By default, keywords will provide an error message if an assertion fails.
-    Default error message can be overwritten with a ``message`` argument.
+    Default error messages can be overwritten with a ``message`` argument.
     The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
     `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
     options.
-    The `{value}` is value returned by the keyword and the `{expected}`
-    is expected value defined by the user, usually value in the
+    The `{value}` is the value returned by the keyword and the `{expected}`
+    is the expected value defined by the user, usually the value in the
     ``assertion_expected`` argument. The `{value_type}` and
     `{expected_type}` are the type definitions from `{value}` and `{expected}`
     arguments. In similar fashion as Python
@@ -501,15 +501,15 @@ class Browser(DynamicCore):
 
     The assertion ``assertion_expected`` value is not converted by the library and
     is used as is. Therefore when assertion is made, the ``assertion_expected``
-    argument value and value returned the keyword must have same type. If types
-    are not same, assertion will fail. Example `Get Text` always returns a string
+    argument value and value returned the keyword must have the same type. If types
+    are not the same, assertion will fail. Example `Get Text` always returns a string
     and has to be compared with a string, even the returned value might look like
     a number.
 
     Other Keywords have other specific types they return.
     `Get Element Count` always returns an integer.
     `Get Bounding Box` and `Get Viewport Size` can be filtered.
-    They return a dictionary without filter and a number when filtered.
+    They return a dictionary without a filter and a number when filtered.
     These Keywords do automatic conversion for the expected value if a number is returned.
 
     * < less or greater > With Strings*
@@ -570,17 +570,18 @@ class Browser(DynamicCore):
 
     = Experimental: Re-using same node process =
 
-    Browser library integrated nodejs and python. NodeJS side can be also executed as a standalone process.
+    Browser library integrated nodejs and python. The NodeJS side can be also executed as a standalone process.
     Browser libraries running on the same machine can talk to that instead of starting new node processes.
     This can speed execution when running tests parallel.
-    To start node side run on the directory when Browser package is
+    To start node side run on the directory when the Browser package is
     ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js PORT``.
-    ``PORT`` is port you want to use for the node process.
+
+    ``PORT`` is the port you want to use for the node process.
     To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
 
     = Extending Browser library with a JavaScript module =
 
-    Browser library can be extended with JavaScript. Module must be in CommonJS format that Node.js uses.
+    Browser library can be extended with JavaScript. The module must be in CommonJS format that Node.js uses.
     You can translate your ES6 module to Node.js CommonJS style with Babel. Many other languages
     can be also translated to modules that can be used from Node.js. For example TypeScript, PureScript and
     ClojureScript just to mention few.
@@ -696,7 +697,7 @@ class Browser(DynamicCore):
           Currently only configuring of `chromium` to a separate executable (chrome,
           chromium and Edge executables all work with recent versions) works.
         - ``jsextension`` <str>
-          Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
+          Path to Javascript module exposed as extra keywords. The module must be in CommonJS.
         - ``enable_presenter_mode`` <bool | dict>
           Automatic highlights to interacted components, slowMo and a small pause at the end. Can be enabled
           by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px",
