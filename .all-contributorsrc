@@ -286,7 +286,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/66635066?v=4",
       "profile": "https://github.com/leeuwe",
       "contributions": [
-        "doc"
+        "doc",
+        "ideas"
       ]
     },
     {
@@ -731,6 +732,60 @@
       "name": "Marduk Bolaños",
       "avatar_url": "https://avatars.githubusercontent.com/u/1140106?v=4",
       "profile": "https://github.com/mardukbp",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "amodzelewski",
+      "name": "amodzelewski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35276905?v=4",
+      "profile": "https://github.com/amodzelewski",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "TimDicos",
+      "name": "TimDicos",
+      "avatar_url": "https://avatars.githubusercontent.com/u/106802639?v=4",
+      "profile": "https://github.com/TimDicos",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "vinismarques",
+      "name": "vinismarques",
+      "avatar_url": "https://avatars.githubusercontent.com/u/33668018?v=4",
+      "profile": "https://github.com/vinismarques",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "nizwiz",
+      "name": "nizwiz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19755352?v=4",
+      "profile": "https://github.com/nizwiz",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "Reddriver",
+      "name": "Reddriver",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7867213?v=4",
+      "profile": "https://github.com/Reddriver",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "SeppoTuura",
+      "name": "Seppo",
+      "avatar_url": "https://avatars.githubusercontent.com/u/105704978?v=4",
+      "profile": "https://github.com/SeppoTuura",
       "contributions": [
         "bug"
       ]

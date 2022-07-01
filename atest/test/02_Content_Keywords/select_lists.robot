@@ -22,7 +22,7 @@ Get Select Options
 Get Select Options Strict
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 6 elements*
+    ...    *strict mode violation*//select*resolved to 7 elements*
     ...    Get Select Options    //select
     Set Strict Mode    False
     ${options} =    Get Select Options    //select
@@ -124,6 +124,20 @@ Select Options By Text When Select Value Is Duplicated
     Get Selected Options    id=ValueDupl    value    ==    object
     Get Selected Options    id=ValueDupl    index    ==    ${2}
 
+Select Option From ManyOptions
+    ${selection} =    Select Options By    id=ManyOptions    text    HARLEY-DAVIDSON(USA)
+    Should Be Equal    HARLEY-DAVIDSON(USA)    ${selection}[0]
+    Get Selected Options    id=ManyOptions    value    ==    156: 1008
+    ${selection} =    Select Options By    id=ManyOptions    value    25: 0590
+    Should Be Equal    25: 0590    ${selection}[0]
+    Get Selected Options    id=ManyOptions    text    ==    AUTO UNION
+    Get Selected Options    id=ManyOptions    index    ==    ${25}
+    ${selection} =    Select Options By    id=ManyOptions    text    DUCATI (I)
+    Should Be Equal    DUCATI (I)    ${selection}[0]
+    Get Selected Options    id=ManyOptions    text    ==    DUCATI (I)
+    Get Selected Options    id=ManyOptions    value    ==    98: 4042
+    Get Selected Options    id=ManyOptions    index    ==    ${98}
+
 Deselect Options Implicitly
     Select Option And Verify Selection    text    select[name=possible_channels]
 
@@ -133,7 +147,7 @@ Deselect Options Explicitly
 
 Deselect Options With Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//select*resolved to 6 elements*
+    ...    *strict mode violation*//select*resolved to 7 elements*
     ...    Deselect Options    //select
     Set Strict Mode    False
     Deselect Options    //select

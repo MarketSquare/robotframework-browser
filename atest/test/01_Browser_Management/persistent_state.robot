@@ -1,5 +1,7 @@
 *** Settings ***
-Resource    imports.resource
+Resource            imports.resource
+
+Suite Teardown      Close Browser    ALL
 
 *** Test Cases ***
 New Persistent Context Creates A Browser And A Context
@@ -34,15 +36,20 @@ Switching Between Two Persistent Contexts Works
     Close Context
     Close Context
 
-# Close Page switches active page
-#    [Tags]    slow
-#    New Page Login
-#    New Page Form
-#    Close Page
-#    Get Title    matches    (?i)login
-
 New Context Fails With Persistent Context
     New Persistent Context
     Run Keyword And Expect Error
     ...    Error: Trying to create a new context when a persistentContext is active
     ...    New Context
+
+New Persistent Context Can Use An URL
+    Close Browser    ALL
+    New Persistent Context    url=${WELCOME_URL}
+    Get Url    ==    ${WELCOME_URL}
+
+New Persistent Context Creates An Empty Page
+    Close Browser    ALL
+    New Persistent Context
+    ${catalog} =    Get Browser Catalog
+    Get Title    ==    ${EMPTY}
+    Get Url    ==    about:blank

@@ -278,6 +278,7 @@ def atest(
     debug=False,
     include_mac=None,
     smoke=False,
+    processes=None,
 ):
     """Runs Robot Framework acceptance tests with pabot.
 
@@ -290,10 +291,9 @@ def atest(
         smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
     """
-    args = [
-        "--pythonpath",
-        ".",
-    ]
+    args = [] if processes is None else ["--processes", processes]
+
+    args.extend(["--pythonpath",".",])
     if suite:
         args.extend(["--suite", suite])
     if include:
@@ -602,7 +602,7 @@ def lint_robot(c):
         "--transform",
         "RenameTestCases",
         "--transform",
-        str(ROBOT_TIDY_TRANSFORMER.absolute() / "CamelCaseTestCaseTransformer.py")
+        str(ROBOT_TIDY_TRANSFORMER.absolute() / "CamelCaseTestCaseTransformer.py"),
     ]
     transform_command = [*base_commnd, *transform_command]
     if in_ci:

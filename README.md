@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-79-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-85-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -202,7 +202,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
   <tr>
     <td align="center"><a href="https://github.com/emakaay"><img src="https://avatars.githubusercontent.com/u/72747481?v=4?s=100" width="100px;" alt=""/><br /><sub><b>emakaay</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aemakaay" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://virvatuli.itch.io/"><img src="https://avatars.githubusercontent.com/u/29060467?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Nea Ohvo</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AVirvatuli" title="Bug reports">🐛</a></td>
-    <td align="center"><a href="https://github.com/leeuwe"><img src="https://avatars.githubusercontent.com/u/66635066?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Elout van Leeuwen</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=leeuwe" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/leeuwe"><img src="https://avatars.githubusercontent.com/u/66635066?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Elout van Leeuwen</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=leeuwe" title="Documentation">📖</a> <a href="#ideas-leeuwe" title="Ideas, Planning, & Feedback">🤔</a></td>
     <td align="center"><a href="https://github.com/LDerikx"><img src="https://avatars.githubusercontent.com/u/26576024?v=4?s=100" width="100px;" alt=""/><br /><sub><b>LDerikx</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=LDerikx" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/olga-"><img src="https://avatars.githubusercontent.com/u/9334057?v=4?s=100" width="100px;" alt=""/><br /><sub><b>olga-</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=olga-" title="Documentation">📖</a> <a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aolga-" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/bollwyvl"><img src="https://avatars.githubusercontent.com/u/45380?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Nicholas Bollweg</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=bollwyvl" title="Documentation">📖</a></td>
@@ -265,6 +265,14 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
   <tr>
     <td align="center"><a href="https://github.com/shenthils"><img src="https://avatars.githubusercontent.com/u/68647820?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Shenthil</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ashenthils" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/mardukbp"><img src="https://avatars.githubusercontent.com/u/1140106?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Marduk Bolaños</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amardukbp" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/amodzelewski"><img src="https://avatars.githubusercontent.com/u/35276905?v=4?s=100" width="100px;" alt=""/><br /><sub><b>amodzelewski</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aamodzelewski" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/TimDicos"><img src="https://avatars.githubusercontent.com/u/106802639?v=4?s=100" width="100px;" alt=""/><br /><sub><b>TimDicos</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ATimDicos" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/vinismarques"><img src="https://avatars.githubusercontent.com/u/33668018?v=4?s=100" width="100px;" alt=""/><br /><sub><b>vinismarques</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Avinismarques" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/nizwiz"><img src="https://avatars.githubusercontent.com/u/19755352?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nizwiz</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Anizwiz" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/Reddriver"><img src="https://avatars.githubusercontent.com/u/7867213?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Reddriver</b></sub></a><br /><a href="#ideas-Reddriver" title="Ideas, Planning, & Feedback">🤔</a></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/SeppoTuura"><img src="https://avatars.githubusercontent.com/u/105704978?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Seppo</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ASeppoTuura" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 

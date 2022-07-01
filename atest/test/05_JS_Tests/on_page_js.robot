@@ -41,6 +41,35 @@ Evaluate Multiline JavaScript With Singel Element
     Length Should Be    ${texts}    2
     Should Be Equal    ${texts}[-1]    Hello World
 
+Evaluate Multiline JavaScript With Strict Mode Disabled And All Elements
+    ${org} =    Set Strict Mode    False
+    ${length} =    Evaluate JavaScript    button
+    ...    (elements) => {
+    ...    return elements.length
+    ...    }
+    ...    all_elements=True
+    Should Be Equal    ${length}    ${11}
+    [Teardown]    Set Strict Mode    ${org}
+
+Evaluate Multiline JavaScript With Strict Mode Enabled And All Elements
+    ${org} =    Set Strict Mode    True
+    ${length} =    Evaluate JavaScript    button
+    ...    (elements) => {
+    ...    return elements.length
+    ...    }
+    ...    all_elements=True
+    Should Be Equal    ${length}    ${11}
+    [Teardown]    Set Strict Mode    ${org}
+
+Evaluate Multiline JavaScript With Strict Mode Disabled And Single Element
+    ${org} =    Set Strict Mode    False
+    ${text} =    Evaluate JavaScript    button
+    ...    (e) => {
+    ...    return e.innerText
+    ...    }
+    Should Be Equal    ${text}    Visible
+    [Teardown]    Set Strict Mode    ${org}
+
 Evaluate Multiline JavaScript Strict Mode Error
     Run Keyword And Expect Error
     ...    *strict mode violation*input*resolved to 4 elements*
@@ -110,7 +139,7 @@ Highlight Element On Page
     Highlight Elements    .pure-button    duration=1000ms
     Set Strict Mode    True
     Get Element Count    .robotframework-browser-highlight    ==    5
-    Sleep    9000ms
+    Sleep    1500ms
     Get Element Count    .robotframework-browser-highlight    ==    0
 
 Highlight Element With Strict

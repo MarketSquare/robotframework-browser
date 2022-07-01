@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import argparse
+import logging
 import os
 import platform
 import shutil
@@ -20,74 +21,77 @@ import sys
 import traceback
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
-from typing import TextIO
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"
 # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
 # But shell=True breaks our linux CI
 SHELL = True if platform.platform().startswith("Windows") else False
+CURRENT_FOLDER = Path(__file__).resolve().parent
+INSTALL_LOG = CURRENT_FOLDER / "rfbrowser.log"
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)-8s] %(message)s",
+    handlers=[
+        logging.FileHandler(INSTALL_LOG, mode="w"),
+        logging.StreamHandler(sys.stdout),
+    ],
+)
 
 
-def _write_marker(file, first=False):
-    if not first:
-        file.write("\n")
-    file.write("=" * 110)
-    file.write("\n")
+def _write_marker():
+    logging.info("=" * 110)
 
 
 def rfbrowser_init(skip_browser_install: bool):
-    current_folder = Path(__file__).resolve().parent
-    install_log = current_folder / "rfbrowser.log"
-    with open(install_log, "w") as install_file:
-        _write_marker(install_file, True)
-        try:
-            _rfbrowser_init(skip_browser_install, install_file)
-            _write_marker(install_file)
-        except Exception as error:
-            _write_marker(install_file)
-            install_file.write(traceback.format_exc())
-            _python_info(install_file)
-            _node_info(install_file)
-            _log_install_dir(install_file)
-            raise error
+    _write_marker()
+    try:
+        _rfbrowser_init(skip_browser_install)
+        _write_marker()
+    except Exception as error:
+        _write_marker()
+        logging.info(traceback.format_exc())
+        _python_info()
+        _node_info()
+        _log_install_dir()
+        raise error
 
 
-def _log_install_dir(install_file):
-    install_file.write(
+def _log_install_dir():
+    logging.info(
         f"Installation directory `{INSTALLATION_DIR}` does not contain the required files"
         "\nPrinting contents:\n"
     )
     for line in _walk_install_dir():
-        install_file.write(line)
-    _write_marker(install_file)
+        logging.info(line)
+    _write_marker()
 
 
-def _node_info(install_file):
+def _node_info():
     process = subprocess.run(
         ["npm", "-v"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=SHELL
     )
-    install_file.write("npm version is:\n")
-    install_file.write(process.stdout.decode("UTF-8"))
-    _write_marker(install_file)
+    logging.info("npm version is:n")
+    logging.info(process.stdout.decode("UTF-8"))
+    _write_marker()
 
 
-def _python_info(install_file):
-    _write_marker(install_file)
+def _python_info():
+    _write_marker()
     python_version = (
         f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     )
-    install_file.write(f"Used Python is: {sys.executable}\nVersion: {python_version}")
-    _write_marker(install_file)
-    install_file.write("pip freeze output:\n\n")
+    logging.info(f"Used Python is: {sys.executable}\nVersion: {python_version}")
+    _write_marker()
+    logging.info("pip freeze output:\n\n")
     process = subprocess.run(
         [sys.executable, "-m", "pip", "freeze"],
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
         timeout=60,
     )
-    install_file.write(process.stdout.decode("UTF-8"))
-    _write_marker(install_file)
+    logging.info(process.stdout.decode("UTF-8"))
+    _write_marker()
 
 
 def _walk_install_dir():
@@ -102,15 +106,15 @@ def _walk_install_dir():
     return lines
 
 
-def _rfbrowser_init(skip_browser_install: bool, log_file: TextIO):
-    print("Installing node dependencies...")
+def _rfbrowser_init(skip_browser_install: bool):
+    logging.info("Installing node dependencies...")
     if not (INSTALLATION_DIR / "package.json").is_file():
-        print(
-            f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json "
-            + "\nPrinting contents:\n"
+        logging.info(
+            f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json ",
+            "\nPrinting contents:\n",
         )
         for line in _walk_install_dir():
-            print(line)
+            logging.info(line)
         raise RuntimeError("Could not find robotframework-browser's package.json")
     if not os.access(INSTALLATION_DIR, os.W_OK):
         sys.tracebacklimit = 0
@@ -118,12 +122,12 @@ def _rfbrowser_init(skip_browser_install: bool, log_file: TextIO):
             f"`rfbrowser init` needs write permissions to {INSTALLATION_DIR}"
         )
 
-    print(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
+    logging.info(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
 
     try:
         subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=SHELL)
     except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
-        print(
+        logging.info(
             "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
             "See https://nodejs.org/ for documentation"
         )
@@ -146,8 +150,7 @@ def _rfbrowser_init(skip_browser_install: bool, log_file: TextIO):
     while process.poll() is None:
         if process.stdout:
             output = process.stdout.readline().decode("UTF-8")
-            log_file.write(output)
-            print(output)
+            logging.info(output)
 
     if process.returncode != 0:
         raise RuntimeError(
@@ -155,19 +158,19 @@ def _rfbrowser_init(skip_browser_install: bool, log_file: TextIO):
             + f"Node process returned with exit status {process.returncode}"
         )
 
-    print("rfbrowser init completed")
+    logging.info("rfbrowser init completed")
 
 
 def rfbrowser_clean_node():
     if not NODE_MODULES.is_dir():
-        print(f"Could not find {NODE_MODULES}, nothing to delete.")
+        logging.info(f"Could not find {NODE_MODULES}, nothing to delete.")
         return
-    print("Delete library node dependencies...")
+    logging.info("Delete library node dependencies...")
     shutil.rmtree(NODE_MODULES)
 
 
 def show_trace(file: str):
-    print(f"Opening file: {file}")
+    logging.info(f"Opening file: {file}")
     playwright = NODE_MODULES / "playwright-core"
     local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
@@ -193,7 +196,22 @@ class SmartFormatter(argparse.HelpFormatter):
         return argparse.HelpFormatter._split_lines(self, text, width)
 
 
-def run():
+def runner(command, skip_browsers, trace_file):
+    if command == "init":
+        rfbrowser_init(skip_browsers)
+    elif command == "clean-node":
+        rfbrowser_clean_node()
+    elif command == "show-trace":
+        if not trace_file:
+            raise Exception("show-trace needs also --file argument")
+        show_trace(trace_file)
+    else:
+        raise Exception(
+            f"Command should be init, clean-node or show-trace, but it was {command}"
+        )
+
+
+def main():
     parser = argparse.ArgumentParser(
         description="Robot Framework Browser library command line tool. If there is error during command, debug "
         "information is saved to <install dir>/Browser/rfbrowser.log file.",
@@ -233,19 +251,10 @@ def run():
     )
     args = parser.parse_args()
     command = args.command.lower()
-    if command == "init":
-        rfbrowser_init(args.skip_browsers)
-    elif command == "clean-node":
-        rfbrowser_clean_node()
-    elif command == "show-trace":
-        if not args.file:
-            raise Exception("show-trace needs also --file argument")
-        show_trace(args.file)
-    else:
-        raise Exception(
-            f"Command should be init, clean-node or show-trace, but it was {command}"
-        )
+    skip_browsers = args.skip_browsers
+    trace_file = args.file
+    runner(command, skip_browsers, trace_file)
 
 
 if __name__ == "__main__":
-    run()
+    main()

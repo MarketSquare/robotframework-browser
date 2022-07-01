@@ -217,9 +217,9 @@ class PlaywrightState(LibraryComponent):
         Returns a list of dictionaries containing id, errors and console messages from the page.
 
         Example
-        | `Close Page`                                       # Closes current page, context and browser
-        | `Close Page`    CURRENT     CURRENT     CURRENT    # Closes current page, context and browser
-        | `Close Page`    ALL         ALL         ALL        # Closes all pages, context and browsers
+        | `Close Page`                                       # Closes current page, within the current context and browser
+        | `Close Page`    CURRENT     CURRENT     CURRENT    # Closes current page, within the current context and browser
+        | `Close Page`    ALL         ALL         ALL        # Closes all pages, within all contexts and browsers
         """
         result = []
         with self.playwright.grpc_channel() as stub:
@@ -341,6 +341,7 @@ class PlaywrightState(LibraryComponent):
         storageState: Optional[str] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
         forcedColors: ForcedColors = ForcedColors.none,
+        url: Optional[str] = None,
     ):
         """Open a new [persistent context | https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context].
 
@@ -414,6 +415,9 @@ class PlaywrightState(LibraryComponent):
             )
             logger.info(response.log)
             logger.info(context_options)
+
+            if url:
+                stub.GoTo(Request().Url(url=url))
 
             return response.id
 
@@ -492,8 +496,7 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         params = convert_typed_dict(self.new_context.__annotations__, params)
-        if timeout:
-            params["timeout"] = self.convert_timeout(timeout)
+        params["timeout"] = self.convert_timeout(timeout)
         params["slowMo"] = self.convert_timeout(slowMo)
 
         browser_path = self.library.external_browser_executable.get(browser)

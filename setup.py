@@ -24,7 +24,7 @@ install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
 
 setup_kwargs = {
     "name": "robotframework-browser",
-    "version": "13.0.0",
+    "version": "13.2.0",
     "description": "Robot Framework Browser library powered by Playwright. Aiming for speed, reliability and visibility.",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
@@ -36,7 +36,7 @@ setup_kwargs = {
     "packages": packages,
     "package_data": package_data,
     "install_requires": install_requires,
-    "entry_points": {"console_scripts": ["rfbrowser=Browser.entry:run"]},
+    "entry_points": {"console_scripts": ["rfbrowser=Browser.entry:main"]},
     "python_requires": ">=3.7,<4.0",
     "classifiers": [
         "Development Status :: 5 - Production/Stable",
