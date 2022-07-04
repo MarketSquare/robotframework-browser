@@ -167,12 +167,16 @@ class LibraryComponent:
     def presenter_mode(self, selector, strict):
         if self.library.presenter_mode:
             mode = self.get_presenter_mode
-            self.library.hover(selector, strict)
-            self.library.highlight_elements(
-                selector,
-                duration=mode["duration"],
-                width=mode["width"],
-                style=mode["style"],
-                color=mode["color"],
-            )
-            sleep(mode["duration"].seconds)
+            try:
+                self.library.hover(selector, strict)
+                self.library.highlight_elements(
+                    selector,
+                    duration=mode["duration"],
+                    width=mode["width"],
+                    style=mode["style"],
+                    color=mode["color"],
+                )
+            except Exception as error:
+                logger.debug(f"On presenter more supress {error}")
+            else:
+                sleep(mode["duration"].seconds)
