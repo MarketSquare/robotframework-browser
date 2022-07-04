@@ -893,18 +893,15 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _start_suite(self, suite, result):
         if not self._suite_cleanup_done:
             self._suite_cleanup_done = True
-            if self.screenshots_output.is_dir():
-                logger.debug(f"Removing: {self.screenshots_output}")
-                shutil.rmtree(str(self.screenshots_output), ignore_errors=True)
-            if self.video_output.is_dir():
-                logger.debug(f"Removing: {self.video_output}")
-                shutil.rmtree(str(self.video_output), ignore_errors=True)
-            if self.traces_output.is_dir():
-                logger.debug(f"Removing: {self.traces_output}")
-                shutil.rmtree(str(self.traces_output), ignore_errors=True)
-            if self.state_file.is_dir():
-                logger.debug(f"Removing: {self.state_file}")
-                shutil.rmtree(str(self.state_file), ignore_errors=True)
+            for path in [
+                self.screenshots_output,
+                self.video_output,
+                self.traces_output,
+                self.state_file,
+            ]:
+                if path.is_dir():
+                    logger.debug(f"Removing: {path}")
+                    shutil.rmtree(str(path), ignore_errors=True)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
