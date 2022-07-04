@@ -1,5 +1,6 @@
 *** Settings ***
 Resource            imports.resource
+Library             ../../library/presenter_mode.py
 
 Suite Setup         Setup
 Suite Teardown      Set Retry Assertions For    ${assert_timeout}
@@ -13,6 +14,12 @@ ${InputUsername} =      id=username_field
 Get Text
     ${h1} =    Get Text    h1
     Should Be Equal    ${h1}    Login Page
+
+Get Text Disabled
+    [Setup]    Go To    ${ELEMENT_STATE_URL}
+    Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
+    ${text} =    Get Text    //input[@name="readonly_with_equals_only"]
+    [Teardown]    Set Presenter Mode    False
 
 Get Text And Assert ==
     Get Text    ${UserNameLabel}    ==    User Name:
