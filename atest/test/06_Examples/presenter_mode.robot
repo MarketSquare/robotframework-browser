@@ -17,3 +17,4 @@ Filling The Text With Settings
     Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
     New Page    ${LOGIN_URL}
     Type Text    input#username_field    user
+    [Teardown]    Set Presenter Mode    False
