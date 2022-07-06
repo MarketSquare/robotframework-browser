@@ -789,6 +789,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "rousku",
+      "name": "rousku",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2264792?v=4",
+      "profile": "https://github.com/rousku",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
