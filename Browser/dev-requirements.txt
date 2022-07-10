@@ -1,25 +1,25 @@
-invoke >= 1.6.0
-pytest >= 6.2.5
+invoke >= 1.7.1
+pytest >= 7.1.2
 pytest-watch >= 4.2.0
-black >= 21.9b0
-mypy >= 0.910
-mypy-protobuf >= 2.10
-flake8 >= 3.9.2
-flake8-bugbear >= 21.9.2
-isort >= 5.9.3
-wheel>=0.35.1
-robotframework-pabot >= 2.5.0
-twine >= 3.4.1
-robotstatuschecker >= 2.1.0
+black >= 22.6.0
+mypy >= 0.961
+mypy-protobuf >= 3.2.0
+flake8 >= 4.0.1
+flake8-bugbear >= 22.7.1
+isort >= 5.10.1
+wheel>=0.37.1
+robotframework-pabot >= 2.5.3
+twine >= 4.0.1
+robotstatuschecker >= 2.2.0
 rellu >= 0.7
 approvaltests == 5.3.0
 pytest-mock==3.8.2
 Pillow==9.2.0
 # Required for injecting google analytics tags on release
-beautifulsoup4 >= 4.9.3
-psutil >= 5.8.0
-coverage >= 6.1.2
-robotframework-tidy >= 2.3
+beautifulsoup4 >= 4.11.1
+psutil >= 5.9.1
+coverage >= 6.4.1
+robotframework-tidy >= 2.6.0
 python-dateutil >= 2.8.2
 # Include normal dependencies from requirements.txt. Makes it possible to use
 # requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
