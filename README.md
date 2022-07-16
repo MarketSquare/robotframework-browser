@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-87-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-88-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -275,6 +275,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     <td align="center"><a href="https://github.com/SeppoTuura"><img src="https://avatars.githubusercontent.com/u/105704978?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Seppo</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ASeppoTuura" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/rousku"><img src="https://avatars.githubusercontent.com/u/2264792?v=4?s=100" width="100px;" alt=""/><br /><sub><b>rousku</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Arousku" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/tomaspekarovic"><img src="https://avatars.githubusercontent.com/u/68331267?v=4?s=100" width="100px;" alt=""/><br /><sub><b>tomaspekarovic</b></sub></a><br /><a href="#ideas-tomaspekarovic" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/robinmackaij-kadaster"><img src="https://avatars.githubusercontent.com/u/97301504?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Robin Mackaij</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Arobinmackaij-kadaster" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 
