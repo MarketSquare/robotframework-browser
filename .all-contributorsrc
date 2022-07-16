@@ -807,6 +807,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "robinmackaij-kadaster",
+      "name": "Robin Mackaij",
+      "avatar_url": "https://avatars.githubusercontent.com/u/97301504?v=4",
+      "profile": "https://github.com/robinmackaij-kadaster",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
