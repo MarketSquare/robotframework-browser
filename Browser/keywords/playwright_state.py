@@ -343,7 +343,8 @@ class PlaywrightState(LibraryComponent):
         forcedColors: ForcedColors = ForcedColors.none,
         url: Optional[str] = None,
     ):
-        """Open a new [persistent context | https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context].
+        """Open a new
+        [https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context | persistent context].
 
         ``userDataDir`` Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead
 
