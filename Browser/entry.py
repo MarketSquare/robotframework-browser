@@ -173,7 +173,8 @@ def rfbrowser_clean_node():
 
 
 def show_trace(file: str):
-    logging.info(f"Opening file: {file}")
+    absolute_file = Path(file).resolve(strict=True)
+    logging.info(f"Opening file: {absolute_file}")
     playwright = NODE_MODULES / "playwright-core"
     local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
@@ -182,7 +183,7 @@ def show_trace(file: str):
         "npx",
         "playwright",
         "show-trace",
-        file,
+        str(absolute_file),
     ]
     subprocess.run(trace_arguments, env=env, shell=SHELL, cwd=INSTALLATION_DIR)
 
