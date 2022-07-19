@@ -59,6 +59,7 @@ class RunOnFailureKeywords(LibraryComponent):
         | `Register Keyword To Run On Failure`    Take Screenshot    fullPage=True
         | `Register Keyword To Run On Failure`    Take Screenshot    failure-{index}    fullPage=True
 
+        [https://forum.robotframework.org/t//4316|Comment >>]
         """
         old_keyword = self.library.run_on_failure_keyword
         new_keyword = self.parse_run_on_failure_keyword(

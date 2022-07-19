@@ -150,6 +150,8 @@ class Control(LibraryComponent):
         | `Take Screenshot`   selector=id=username_field    # Captures element in image
         | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
         | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
+
+        [https://forum.robotframework.org/t//4337|Comment >>]
         """
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
@@ -243,6 +245,8 @@ class Control(LibraryComponent):
         | ${old_timeout} =    `Set Browser Timeout`    1m 30 seconds
         | Click     //button
         | `Set Browser Timeout`    ${old_timeout}
+
+        [https://forum.robotframework.org/t//4328|Comment >>]
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
         self.timeout = self.convert_timeout(timeout)
@@ -277,6 +281,8 @@ class Control(LibraryComponent):
 
         Example waits 10 seconds on Playwright to get the page title and library
         will retry 30 seconds to make sure that title is correct.
+
+        [https://forum.robotframework.org/t//4331|Comment >>]
         """
         old_retry_assertions_for = self.millisecs_to_timestr(self.retry_assertions_for)
         self.retry_assertions_for = self.convert_timeout(timeout)
@@ -299,6 +305,8 @@ class Control(LibraryComponent):
         ``width`` Sets the width size.
 
         ``height`` Sets the height size.
+
+        [https://forum.robotframework.org/t//4333|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetViewportSize(
@@ -312,6 +320,8 @@ class Control(LibraryComponent):
 
         ``offline`` Toggles the offline mode. Set to False to switch back
         to online mode. Defaults to True.
+
+        [https://forum.robotframework.org/t//4330|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetOffline(Request().Bool(value=offline))
@@ -331,6 +341,8 @@ class Control(LibraryComponent):
         | ${permissions} =    Create List    geolocation
         | `New Context`    permissions=${permissions}
         | `Set Geolocation`    60.173708, 24.982263    3    # Points to Korkeasaari in Helsinki.
+
+        [https://forum.robotframework.org/t//4329|Comment >>]
         """
         geolocation_dict = {"latitude": latitude, "longitude": longitude}
         if accuracy:
@@ -343,7 +355,10 @@ class Control(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def reload(self):
-        """Reloads current active page."""
+        """Reloads current active page.
+
+        [https://forum.robotframework.org/t//4317|Comment >>]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.Reload(Request().Empty())
             logger.info(response.log)

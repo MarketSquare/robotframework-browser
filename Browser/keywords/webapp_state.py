@@ -42,6 +42,8 @@ class WebAppState(LibraryComponent):
         Example:
         | `Local Storage Get Item`    Key    ==    Value    My error
         | ${value} =    `Local Storage Get Item`    Key
+
+        [https://forum.robotframework.org/t//4300|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -68,6 +70,8 @@ class WebAppState(LibraryComponent):
 
         Example:
         | `Local Storage Set Item`    Key    Value
+
+        [https://forum.robotframework.org/t//4302|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -88,6 +92,8 @@ class WebAppState(LibraryComponent):
         | `LocalStorage Remove Item`    Foo
         | ${item} =    `Local Storage Get Item`    Foo
         | Should Be Equal    ${item}    ${None}
+
+        [https://forum.robotframework.org/t//4301|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -106,6 +112,8 @@ class WebAppState(LibraryComponent):
         | `LocalStorage Clear`
         | ${item} =    `Local Storage Get Item`    Foo
         | Should Be Equal    ${item}    ${None}
+
+        [https://forum.robotframework.org/t//4299|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -133,6 +141,8 @@ class WebAppState(LibraryComponent):
         | `SessionStorage Set Item`    key2    value2
         | ${item} =    `SessionStorage Get Item`    key1
         | Should Be Equal    ${item}    value2
+
+        [https://forum.robotframework.org/t//4324|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -160,6 +170,8 @@ class WebAppState(LibraryComponent):
 
         Example:
         | `SessionStorage Set Item`    key2    value2
+
+        [https://forum.robotframework.org/t//4326|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -180,6 +192,8 @@ class WebAppState(LibraryComponent):
         | `SessionStorage Set Item`       mykey2    myvalue2
         | `SessionStorage Remove Item`    mykey2
         | `SessionStorage Get Item`       mykey2    ==    ${None}
+
+        [https://forum.robotframework.org/t//4325|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -197,6 +211,8 @@ class WebAppState(LibraryComponent):
         | `SessionStorage Set Item`    mykey3    myvalue3
         |  `SessionStorage Clear`
         | `SessionStorage Get Item`    mykey3    ==    ${None}
+
+        [https://forum.robotframework.org/t//4323|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(

@@ -363,7 +363,10 @@ class PlaywrightState(LibraryComponent):
         | ${launch_args}=  Set Variable  ["--disable-extensions-except=./ublock/uBlock0.chromium", "--load-extension=./ublock/uBlock0.chromium"]
         | `New Persistent Context  browser=chromium  headless=False  args=${launch_args}
 
-        Check `New Browser` or `New context` for the specific argument docs."""
+        Check `New Browser` or `New context` for the specific argument docs.
+
+        [https://forum.robotframework.org/t//4309|Comment >>]
+        """
 
         params = locals_to_params(locals())
         params = convert_typed_dict(self.new_context.__annotations__, params)
@@ -827,6 +830,8 @@ class PlaywrightState(LibraryComponent):
         and `New Context` are executed with default values first.
 
         ``url`` If specified it will open the new page to the specified URL.
+
+        [https://forum.robotframework.org/t//4308|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.NewPage(
@@ -969,6 +974,8 @@ class PlaywrightState(LibraryComponent):
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
         ``id`` Id of the browser to be changed to. Starting at 0.
+
+        [https://forum.robotframework.org/t//4334|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=id))
@@ -993,6 +1000,8 @@ class PlaywrightState(LibraryComponent):
         | ${second_context} =    `New Context`
         | `New Page`             ${URL2}
         | `Switch Context`       ${first_context}    # Switches back to first context and page.
+
+        [https://forum.robotframework.org/t//4335|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             if browser.upper() == "ALL":
@@ -1032,6 +1041,8 @@ class PlaywrightState(LibraryComponent):
         Example:
         | `Click`           button#pops_up    # Open new page
         | ${previous} =    `Switch Page`      NEW
+
+        [https://forum.robotframework.org/t//4336|Comment >>]
         """
 
         def _all(text: str) -> bool:
@@ -1276,6 +1287,8 @@ class PlaywrightState(LibraryComponent):
         |     `New Page`    https://login.page.html
         |     #  Login is not needed because authentication is read from state file
         |     `Get Text`    id=header    ==    Something
+
+        [https://forum.robotframework.org/t//4318|Comment >>]
         """
         file = str(self.state_file / f"{str(uuid4())}.json")
         self.state_file.mkdir(parents=True, exist_ok=True)

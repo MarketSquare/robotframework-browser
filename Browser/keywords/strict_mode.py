@@ -29,6 +29,8 @@ class StrictMode(LibraryComponent):
         | ${old_mode} =      Set Strict Mode    False
         | Get Text           //input            # Does not fail if selector points to one or more elements
         | Set Strict Mode    ${old_mode}
+
+        [https://forum.robotframework.org/t//4332|Comment >>]
         """
         old_mode = self.strict_mode
         self.strict_mode = mode

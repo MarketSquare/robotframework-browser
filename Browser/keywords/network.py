@@ -89,6 +89,7 @@ class Network(LibraryComponent):
         | Should Be Equal     ${res.status}              200
         | Should Be Equal     ${res.body.some_field}     some value
 
+        [https://forum.robotframework.org/t//4296|Comment >>]
         """
         if headers is None:
             headers = {}
@@ -145,6 +146,8 @@ class Network(LibraryComponent):
         JavaScript Function Example:
         | `Click`               \\#delayed_request    # Creates response which should be waited before pressing save.
         | `Wait For Request`    [https://playwright.dev/docs/api/class-request|request] => request.url().endsWith('api/get/json') && request.method() === 'GET'
+
+        [https://forum.robotframework.org/t//4348|Comment >>]
         """
         return self._wait_for_http("Request", matcher, timeout)
 
@@ -184,6 +187,8 @@ class Network(LibraryComponent):
         JavaScript Function Example:
         | `Click`               \\#delayed_request    # Creates response which should be waited before pressing save.
         | `Wait For Response`   [https://playwright.dev/docs/api/class-response/|response] => response.url().endsWith('json') && response.request().method() === 'GET'
+
+        [https://forum.robotframework.org/t//4349|Comment >>]
         """
         return self._wait_for_http("Response", matcher, timeout)
 
@@ -198,6 +203,8 @@ class Network(LibraryComponent):
         Example:
         | `Go To`                         ${URL}
         | `Wait Until Network Is Idle`    timeout=3s
+
+        [https://forum.robotframework.org/t//4350|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitUntilNetworkIsIdle(
@@ -234,6 +241,8 @@ class Network(LibraryComponent):
         Example:
         | `Go To`                  ${ROOT_URL}/redirector.html
         | `Wait for navigation`    ${ROOT_URL}/posted.html    wait_until=${wait_until}
+
+        [https://forum.robotframework.org/t//4347|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitForNavigation(
