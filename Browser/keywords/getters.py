@@ -896,6 +896,8 @@ class Getters(LibraryComponent):
         | ${element} =    `Get Element`    \\#username_field
         | ${option_value} =    `Get Property`    ${element} >> optionOne    value    # Locator is resolved from the page.
         | ${option_value} =    `Get Property`    ${element} >> optionTwo    value    # Locator is resolved again from the page.
+
+        [https://forum.robotframework.org/t/comments-for-get-element/4269|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(
