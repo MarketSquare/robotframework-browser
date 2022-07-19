@@ -706,6 +706,8 @@ class PlaywrightState(LibraryComponent):
         for a list of supported options.
 
         If there's no open Browser this keyword will open one. Does not create pages.
+
+        [https://forum.robotframework.org/t/comments-for-new-context/4307|Comment >>]
         """
         params = locals_to_params(locals())
         params = self._set_video_path(params)
