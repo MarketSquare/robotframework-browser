@@ -113,6 +113,8 @@ class Interaction(LibraryComponent):
 
         Example:
         | `Fill Text`    css=input#username_field    username
+
+        [https://forum.robotframework.org/t//4254|Comment >>]
         """
         logger.info(f"Fills the text '{txt}' in the given field.")
         self._fill_text(selector, txt, strict=self.strict_mode, force=force)
@@ -128,6 +130,8 @@ class Interaction(LibraryComponent):
 
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
+
+        [https://forum.robotframework.org/t//4237|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(
@@ -242,6 +246,8 @@ class Interaction(LibraryComponent):
         Example:
         | `Fill Secret`    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
         | `Fill Secret`    input#username_field    %username    # Keyword resolves variable value from environment variables
+
+        [https://forum.robotframework.org/t//4253|Comment >>]
         """
         originals = self._get_original_values(locals())
         secret = self.resolve_secret(
@@ -465,6 +471,8 @@ class Interaction(LibraryComponent):
 
         If there's no element matching selector, the method waits until a
         matching element appears in the DOM. Timeouts after 10 seconds.
+
+        [https://forum.robotframework.org/t//4255|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(
@@ -594,6 +602,8 @@ class Interaction(LibraryComponent):
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Does nothing if the element is already checked/selected.
+
+        [https://forum.robotframework.org/t//4235|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(
@@ -697,6 +707,8 @@ class Interaction(LibraryComponent):
         See the `Finding elements` section for details about the selectors.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        [https://forum.robotframework.org/t//4245|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(
@@ -897,6 +909,8 @@ class Interaction(LibraryComponent):
 
         Example
         | `Drag And Drop`    "Circle"    "Goal"
+
+        [https://forum.robotframework.org/t//4247|Comment >>]
         """
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
@@ -935,6 +949,8 @@ class Interaction(LibraryComponent):
         | `Drag And Drop By Coordinates`
         | ...    from_x=30    from_y=30
         | ...    to_x=10    to_y=10    steps=200
+
+        [https://forum.robotframework.org/t//4248|Comment >>]
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
@@ -970,6 +986,8 @@ class Interaction(LibraryComponent):
 
         Example
         | `Drag And Drop Relative to`    "Circle"    -20    0     # Slides the element 20 pixel to the left
+
+        [https://forum.robotframework.org/t//4249|Comment >>]
         """
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)

@@ -362,7 +362,10 @@ class Control(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def clear_permissions(self):
-        """Clears all permissions from the current context."""
+        """Clears all permissions from the current context.
+
+        [https://forum.robotframework.org/t//4236|Comment >>]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearPermissions(Request().Empty())
             logger.info(response.log)
