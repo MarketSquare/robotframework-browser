@@ -155,6 +155,8 @@ class Evaluation(LibraryComponent):
         Example:
         | `Highlight Elements`    input#login_button    duration=200ms
         | `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF
+
+        [https://forum.robotframework.org/t//4294|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.HighlightElements(

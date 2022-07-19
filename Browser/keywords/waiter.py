@@ -167,6 +167,8 @@ class Waiter(LibraryComponent):
         | ${promise}      `Promise To`      `Wait For Function`    element => element.style.width=="100%"    selector=\\#progress_bar    timeout=4s
         | `Click`         \\#progress_bar
         | `Wait For`      ${promise}
+
+        [https://forum.robotframework.org/t//4346|Comment >>]
         """
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         end = float(

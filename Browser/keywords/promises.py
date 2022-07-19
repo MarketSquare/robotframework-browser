@@ -48,6 +48,8 @@ class Promises(LibraryComponent):
         | ${promise}=     `Promise To`            Wait For Response     matcher=     timeout=3
         | `Click`           \\#delayed_request
         | ${body}=        `Wait For`              ${promise}
+
+        [https://forum.robotframework.org/t//4312|Comment >>]
         """
         promise: Future = Future()
         keyword_name = kw.strip().lower().replace(" ", "_")
@@ -127,6 +129,8 @@ class Promises(LibraryComponent):
         | ${file_obj}=           `Wait For`  ${dl_promise}
         | File Should Exist    ${file_obj}[saveAs]
         | Should Be True       ${file_obj.suggestedFilename}
+
+        [https://forum.robotframework.org/t//4314|Comment >>]
         """
         promise = self._executor.submit(self._wait_for_download, **{"saveAs": saveAs})
         self.unresolved_promises.add(promise)
@@ -164,6 +168,8 @@ class Promises(LibraryComponent):
         | ${promise}=    `Promise To`            `Wait For Response`     matcher=     timeout=3
         | `Click`         \\#delayed_request
         | ${body}=       `Wait For`              ${promise}
+
+        [https://forum.robotframework.org/t//4342|Comment >>]
         """
         self.unresolved_promises -= {*promises}
         if len(promises) == 1:
@@ -180,6 +186,8 @@ class Promises(LibraryComponent):
         | `Promise To`               Wait For Response     matcher=     timeout=3
         | `Click`                    \\#delayed_request
         | `Wait For All Promises`
+
+        [https://forum.robotframework.org/t//4344|Comment >>]
         """
         self.wait_for(*self.unresolved_promises)
 
@@ -200,6 +208,8 @@ class Promises(LibraryComponent):
         | ${upload_result}=    `Wait For`    ${promise}
 
         Alternatively, you can use `Upload File By Selector` keyword.
+
+        [https://forum.robotframework.org/t//4313|Comment >>]
         """
         promise = self._executor.submit(self._upload_file, **{"path": path})
         self.unresolved_promises.add(promise)

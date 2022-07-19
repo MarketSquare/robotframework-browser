@@ -28,6 +28,8 @@ class Devices(LibraryComponent):
         See Playwright's
         [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json]
         for a formatted list.
+
+        [https://forum.robotframework.org/t//4268|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevices(Request().Empty())
@@ -53,6 +55,8 @@ class Devices(LibraryComponent):
         | `New Context`         &{device}
         | `New Page`
         | `Get Viewport Size`   # returns { "width": 375, "height": 812 }
+
+        [https://forum.robotframework.org/t//4267|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDevice(Request().Device(name=name))

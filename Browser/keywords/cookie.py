@@ -39,6 +39,8 @@ class Cookie(LibraryComponent):
         If ``return_type`` is ``string`` or ``str``, then keyword returns the cookie as a string in format:
         ``name1=value1; name2=value2; name3=value3``. The return value contains only ``name`` and ``value`` keys of the
         cookie.
+
+        [https://forum.robotframework.org/t//4266|Comment >>]
         """
         response, cookies = self._get_cookies()
         if not response.log:
@@ -214,6 +216,8 @@ class Cookie(LibraryComponent):
         | ${cookie}=        `Get Cookie`              Foobar
         | Should Be Equal   ${cookie.value}           Tidii
         | Should Be Equal   ${cookie.expiry.year}     ${2020}
+
+        [https://forum.robotframework.org/t//4265|Comment >>]
         """
         _, cookies = self._get_cookies()
         for cookie_dict in cookies:
