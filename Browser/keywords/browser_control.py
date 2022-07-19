@@ -32,14 +32,20 @@ class Control(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def go_forward(self):
-        """Navigates to the next page in history."""
+        """Navigates to the next page in history.
+
+        [https://forum.robotframework.org/t//4290|Comment >>]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GoForward(Request.Empty())
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
     def go_back(self):
-        """Navigates to the previous page in history."""
+        """Navigates to the previous page in history.
+
+        [https://forum.robotframework.org/t//4289|Comment >>]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GoBack(Request.Empty())
             logger.info(response.log)
@@ -52,6 +58,8 @@ class Control(LibraryComponent):
 
         ``timeout`` <str> time to wait page to load. If not defined
         will use the library default timeout.
+
+        [https://forum.robotframework.org/t//4291|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(
@@ -351,6 +359,8 @@ class Control(LibraryComponent):
         Example:
         | `New Context`
         | `Grant Permissions`    geolocation
+
+        [https://forum.robotframework.org/t//4292|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GrantPermissions(

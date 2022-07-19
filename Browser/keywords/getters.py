@@ -63,6 +63,8 @@ class Getters(LibraryComponent):
         for the assertion arguments. By default assertion is not done.
 
         ``message`` overrides the default error message.
+
+        [https://forum.robotframework.org/t//4287|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetUrl(Request().Empty())
@@ -130,6 +132,8 @@ class Getters(LibraryComponent):
 
         Optionally does a string assertion. See `Assertions` for further details for
         the assertion arguments. By default assertion is not done.
+
+        [https://forum.robotframework.org/t//4275|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetPageSource(Request().Empty())
@@ -165,6 +169,8 @@ class Getters(LibraryComponent):
         for further details for the assertion arguments. By default assertion is not done.
 
         ``message`` overrides the default error message.
+
+        [https://forum.robotframework.org/t//4286|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTitle(Request().Empty())
@@ -266,6 +272,8 @@ class Getters(LibraryComponent):
         Example:
         | `Get Property`    h1    innerText    ==    Login Page
         | ${property} =    `Get Property`    h1    innerText
+
+        [https://forum.robotframework.org/t//4276|Comment >>]
         """
         self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
@@ -333,6 +341,8 @@ class Getters(LibraryComponent):
         | `Get Attribute`   id=enabled_button    disabled     ==    ${None}     # PASS => returns: None
         | `Get Attribute`   id=enabled_button    something    evaluate    value is not None    # PASS =>  returns: True
         | `Get Attribute`   id=enabled_button    disabled     evaluate    value is None        # PASS =>  returns: True
+
+        [https://forum.robotframework.org/t//4256|Comment >>]
         """
         self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
@@ -393,6 +403,8 @@ class Getters(LibraryComponent):
         Example:
         | `Get Attribute Names`    [name="readonly_input"]    ==    type    name    value    readonly    # Has exactly these attribute names.
         | `Get Attribute Names`    [name="readonly_input"]    contains    disabled    # Contains at least this attribute name.
+
+        [https://forum.robotframework.org/t//4257|Comment >>]
         """
         attribute_names = self.library.execute_javascript(
             "(element) => element.getAttributeNames()", selector
@@ -439,6 +451,8 @@ class Getters(LibraryComponent):
         Example:
         | `Get Classes`    id=draggable    ==    react-draggable    box    # Element contains exactly this class name.
         | `Get Classes`    id=draggable    validate    "react-draggable-dragged" not in value    # Element does not contain react-draggable-dragged class.
+
+        [https://forum.robotframework.org/t//4262|Comment >>]
         """
         class_dict = self.get_property(selector, "classList")
         expected = list(assertion_expected)
@@ -485,6 +499,8 @@ class Getters(LibraryComponent):
 
         | `Get Select Options`     //select[2]    validate  [v["label"] for v in value] == ["Email", "Mobile"]
         | `Get Select Options`   select#names     validate  any(v["label"] == "Mikko" for v in value)
+
+        [https://forum.robotframework.org/t//4279|Comment >>]
         """
         self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
@@ -552,6 +568,8 @@ class Getters(LibraryComponent):
         | `Get Selected Options`   select#names             index          `==`       2                  4      #assertion index
         | `Get Selected Options`   select#names             label          *=         Mikko                     #assertion contain
         | `Get Selected Options`   select#names             label          validate   len(value) == 3           #assertion length
+
+        [https://forum.robotframework.org/t//4280|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
@@ -617,6 +635,8 @@ class Getters(LibraryComponent):
 
         Example:
         | `Get Checkbox State`    [name=can_send_email]    ==    checked
+
+        [https://forum.robotframework.org/t//4261|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
@@ -663,6 +683,8 @@ class Getters(LibraryComponent):
 
         Example:
         | `Get Element Count`    label    >    1
+
+        [https://forum.robotframework.org/t//4270|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
@@ -710,6 +732,7 @@ class Getters(LibraryComponent):
         | `Get Viewport Size`    ALL    ==    {'width':1280, 'height':720}
         | `Get Viewport Size`    width    >=    1200
 
+        [https://forum.robotframework.org/t//4288|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
@@ -769,6 +792,8 @@ class Getters(LibraryComponent):
         | Get Text    ${e}    ==    @mkorpela
         | ${e}=    `Get Table Cell Element`    ${table}    2    -1   # Index is also directly possible
         | Get Text    ${e}    ==    René Rohner
+
+        [https://forum.robotframework.org/t//4282|Comment >>]
         """
         node_name = str(self.library.execute_javascript("e => e.nodeName", table))
         if node_name != "TABLE":
@@ -817,7 +842,10 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the index matches the specified assertion. See
         `Assertions` for further details for the assertion arguments.
-        By default assertion is not done."""
+        By default assertion is not done.
+
+        [https://forum.robotframework.org/t//4283|Comment >>]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableCellIndex(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -863,7 +891,10 @@ class Getters(LibraryComponent):
 
         Optionally asserts that the index matches the specified assertion. See
         `Assertions` for further details for the assertion arguments.
-        By default assertion is not done."""
+        By default assertion is not done.
+
+        [https://forum.robotframework.org/t//4284|Comment >>]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableRowIndex(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -918,6 +949,8 @@ class Getters(LibraryComponent):
         | ${elements} =    `Get Elements`
         | ${elem} =    Get From List    ${elements}    0
         | ${option_value} =    `Get Property`    ${elem} >> option    value
+
+        [https://forum.robotframework.org/t//4273|Comment >>]
         """
         try:
             with self.playwright.grpc_channel(original_error=True) as stub:
@@ -966,6 +999,8 @@ class Getters(LibraryComponent):
         Optionally asserts that the style matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
+
+        [https://forum.robotframework.org/t//4281|Comment >>]
         """
         self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
@@ -1040,6 +1075,8 @@ class Getters(LibraryComponent):
         | # Assertions:
         | `Get BoundingBox`     id=element         width         >    180
         | `Get BoundingBox`     id=element         ALL           validate    value['x'] > value['y']*2
+
+        [https://forum.robotframework.org/t//4258|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(
@@ -1102,6 +1139,8 @@ class Getters(LibraryComponent):
         | Log                Width: ${height}                                   # Height: 58425
         | ${scroll_size}=    `Get Scroll Size`    id=keyword-shortcuts-container  # unfiltered element
         | Log                ${scroll_size}                                     # {'width': 253, 'height': 3036}
+
+        [https://forum.robotframework.org/t//4278|Comment >>]
         """
         scroll_size = DotDict()
         scroll_size["width"] = exec_scroll_function(self, "scrollWidth", selector)
@@ -1165,6 +1204,8 @@ class Getters(LibraryComponent):
         is not done.
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
+
+        [https://forum.robotframework.org/t//4277|Comment >>]
         """
         scroll_position = DotDict()
         scroll_position["top"] = exec_scroll_function(self, "scrollTop", selector)
@@ -1225,6 +1266,8 @@ class Getters(LibraryComponent):
         is not done.
 
         See `Get BoundingBox` or `Get Scroll Size` for examples.
+
+        [https://forum.robotframework.org/t//4263|Comment >>]
         """
         client_size = DotDict()
         client_size["width"] = exec_scroll_function(self, "clientWidth", selector)
@@ -1305,6 +1348,8 @@ class Getters(LibraryComponent):
 
         Example:
         | `Get Element State`    h1    readonly    ==    False
+
+        [https://forum.robotframework.org/t//4271|Comment >>]
         """
         result = self.get_element_states(
             selector, AssertionOperator["evaluate"], f"bool(value & {state.name})"

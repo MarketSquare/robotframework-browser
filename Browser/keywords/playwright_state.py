@@ -944,6 +944,8 @@ class PlaywrightState(LibraryComponent):
         |     "activeBrowser": true
         |   }
         | ]
+
+        [https://forum.robotframework.org/t//4259|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBrowserCatalog(Request().Empty())
@@ -1090,6 +1092,8 @@ class PlaywrightState(LibraryComponent):
         - ``ACTIVE`` / ``CURRENT`` Returns the id of the currently active browser as list.
 
         The ACTIVE browser is a synonym for the CURRENT Browser.
+
+        [https://forum.robotframework.org/t//4260|Comment >>]
         """
         if browser == SelectionType.ACTIVE:
             browser_item = self._get_active_browser_item(self.get_browser_catalog())
@@ -1120,6 +1124,8 @@ class PlaywrightState(LibraryComponent):
         - ``ACTIVE`` only context ids from the active browser shall be fetched.
 
         The ACTIVE context of the ACTIVE Browser is the ``Current`` Context.
+
+        [https://forum.robotframework.org/t//4264|Comment >>]
         """
         if browser == SelectionType.ACTIVE:
             browser_item = self._get_active_browser_item(self.get_browser_catalog())
@@ -1179,6 +1185,8 @@ class PlaywrightState(LibraryComponent):
         |     Log Many           These are all Page IDs    @{all_pages}
 
         The ACTIVE page of the ACTIVE context of the ACTIVE Browser is the ``Current`` Page.
+
+        [https://forum.robotframework.org/t//4274|Comment >>]
         """
         if browser == SelectionType.ACTIVE:
             browser_item = self._get_active_browser_item(self.get_browser_catalog())
