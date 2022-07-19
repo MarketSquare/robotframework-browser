@@ -77,7 +77,7 @@ Wait For Navigation Fails With Wrong Regex
     [Tags]    slow
     Go To    ${ROOT_URL}/redirector.html
     ${timeout} =    Set Browser Timeout    200ms
-    Run Keyword And Expect Error    *TimeoutError*    Wait for navigation    foobar
+    Run Keyword And Expect Error    *TimeoutError*    Wait For Navigation    foobar
     Set Browser Timeout    ${timeout}
     Get Url    not contains    foobar
 
@@ -86,7 +86,7 @@ Wait For Navigation Fails With Wrong Wait_until
     Go To    ${ROOT_URL}/redirector.html
     Run Keyword And Expect Error
     ...    *PageLoadStates does not have member 'foobar'. Available: 'commit', 'domcontentloaded', 'load' and 'networkidle'*
-    ...    Wait for navigation
+    ...    Wait For Navigation
     ...    ${ROOT_URL}/posted.html
     ...    wait_until=foobar
 

@@ -37,13 +37,13 @@ Open Browser With Invalid Browser Fails On RF Side
     Run Keyword And Expect Error
     ...    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    Open Browser
     ...    url=${FORM_URL}    browser=netscape
-    [Teardown]    no operation
+    [Teardown]    No Operation
 
 New Browser With Invalid Browser Fails On RF Side
     Run Keyword And Expect Error
     ...    *Argument 'browser' got value 'netscape' that cannot be converted to SupportedBrowsers*    New Browser
     ...    netscape
-    [Teardown]    no operation
+    [Teardown]    No Operation
 
 Create Chain Works
     [Tags]    slow

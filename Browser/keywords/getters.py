@@ -210,6 +210,8 @@ class Getters(LibraryComponent):
         | ${text} =    `Get Text`    id=important                            # Returns element text without assertion.
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         | ${text} =    `Get Text`    //input         ==    root              # Returns input element text with assertion.
+
+        [https://forum.robotframework.org/t/comments-for-get-text/4285|Comment >>]
         """
         self.presenter_mode(selector, self.strict_mode)
         response = self._get_text(selector)
@@ -894,6 +896,8 @@ class Getters(LibraryComponent):
         | ${element} =    `Get Element`    \\#username_field
         | ${option_value} =    `Get Property`    ${element} >> optionOne    value    # Locator is resolved from the page.
         | ${option_value} =    `Get Property`    ${element} >> optionTwo    value    # Locator is resolved again from the page.
+
+        [https://forum.robotframework.org/t/comments-for-get-element/4269|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(
@@ -1368,6 +1372,8 @@ class Getters(LibraryComponent):
         ``stable`` state is not returned, because it would cause too high delay in that keyword.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        [https://forum.robotframework.org/t/comments-for-get-element-states/4272|Comment >>]
         """
 
         def convert_str(f):

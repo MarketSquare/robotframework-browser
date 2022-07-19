@@ -40,7 +40,7 @@ Test Assertion Timeouts
     Set Browser Timeout    10 s
     New Page    ${LOGIN_URL}
     ${old} =    Set Retry Assertions For    0s
-    Run Keyword And Expect Error    *    Get title    ==    Wrong title
+    Run Keyword And Expect Error    *    Get Title    ==    Wrong title
     Get Title    ==    Login Page
     Set Retry Assertions For    ${old}
 

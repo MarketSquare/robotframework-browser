@@ -95,6 +95,8 @@ class PlaywrightState(LibraryComponent):
         ``pause_on_failure`` Stop execution when failure detected and leave browser open. Defaults to True.
 
         ``bypassCSP`` Defaults to bypassing CSP and enabling custom script attach to the page.
+
+        [https://forum.robotframework.org/t/comments-for-open-browser/4310|Comment >>]
         """
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
@@ -494,6 +496,8 @@ class PlaywrightState(LibraryComponent):
         ``channel`` Allows to operate against the stock Google Chrome and Microsoft Edge browsers.
         For more details see:
         [https://playwright.dev/docs/browsers/#google-chrome--microsoft-edge|Playwright documentation].
+
+        [https://forum.robotframework.org/t/comments-for-new-browser/4306|Comment >>]
         """
         params = locals_to_params(locals())
         params = convert_typed_dict(self.new_context.__annotations__, params)
@@ -706,6 +710,8 @@ class PlaywrightState(LibraryComponent):
         for a list of supported options.
 
         If there's no open Browser this keyword will open one. Does not create pages.
+
+        [https://forum.robotframework.org/t/comments-for-new-context/4307|Comment >>]
         """
         params = locals_to_params(locals())
         params = self._set_video_path(params)

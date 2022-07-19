@@ -58,7 +58,7 @@ Defaults In The Keyword From Python To JS And Back
     Should Be Equal    ${result8}[undefineder]    ${NONE}
 
 Crashing Keyword
-    Run Keyword And Expect Error    Error: Crash    crashKeyword
+    Run Keyword And Expect Error    Error: Crash    CrashKeyword
 
 Failing Import
     Run Keyword And Expect Error    Initializing library 'Browser' with arguments*    Import Library    Browser
