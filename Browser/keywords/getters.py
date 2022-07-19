@@ -210,6 +210,8 @@ class Getters(LibraryComponent):
         | ${text} =    `Get Text`    id=important                            # Returns element text without assertion.
         | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
         | ${text} =    `Get Text`    //input         ==    root              # Returns input element text with assertion.
+
+        [https://forum.robotframework.org/t/comments-for-get-text/4285|Comment >>]
         """
         self.presenter_mode(selector, self.strict_mode)
         response = self._get_text(selector)
