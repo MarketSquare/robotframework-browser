@@ -167,7 +167,7 @@ Wait For Elements State To Hide Fails With Promise
     ${promise} =    Promise To    Wait For Elements State    \#victim    hidden    200ms
     Run Keyword And Expect Error
     ...    *TimeoutError: locator.waitFor: Timeout 200ms exceeded.*
-    ...    Wait for    ${promise}
+    ...    Wait For    ${promise}
 
 Wait For Elements State To Hide With Promise And Wait For All Promises
     [Tags]    no-windows-support
