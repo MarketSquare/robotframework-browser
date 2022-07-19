@@ -127,6 +127,8 @@ class Cookie(LibraryComponent):
         | `Add Cookie`   foo   bar   domain=example.com                path=/foo/bar                     # Using domain and url arguments.
         | `Add Cookie`   foo   bar   http://address.com/path/to/site   expiry=2027-09-28 16:21:35        # Expiry as timestamp.
         | `Add Cookie`   foo   bar   http://address.com/path/to/site   expiry=1822137695                 # Expiry as epoch seconds.
+
+        [https://forum.robotframework.org/t//4233|Comment >>]
         """
         params = locals_to_params(locals())
         if expires:
@@ -149,14 +151,20 @@ class Cookie(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def delete_all_cookies(self):
-        """Deletes all cookies from the currently active browser context."""
+        """Deletes all cookies from the currently active browser context.
+
+        [https://forum.robotframework.org/t//4244|Comment >>]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.DeleteAllCookies(Request.Empty())
         logger.info(response.log)
 
     @keyword
     def eat_all_cookies(self):
-        """Eat all cookies for all easter."""
+        """Eat all cookies for all easter.
+
+        [https://forum.robotframework.org/t//4250|Comment >>]
+        """
         self.delete_all_cookies()
         logger.info(
             """

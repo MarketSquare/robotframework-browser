@@ -34,6 +34,8 @@ class Crawling(LibraryComponent):
 
         ``max_depth_to_crawl`` is the upper limit of consecutive links followed from the start page.
         Crawling will stop if there are no more links under this depth.
+
+        [https://forum.robotframework.org/t//4243|Comment >>]
         """
         if url:
             self.library.new_page(url)

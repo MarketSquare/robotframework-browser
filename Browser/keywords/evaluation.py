@@ -50,6 +50,8 @@ class Evaluation(LibraryComponent):
         about strict mode.
 
         [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
+
+        [https://forum.robotframework.org/t//4252|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
@@ -106,6 +108,8 @@ class Evaluation(LibraryComponent):
         about strict mode.
 
         [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
+
+        [https://forum.robotframework.org/t//4251|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.EvaluateJavascript(
@@ -173,6 +177,8 @@ class Evaluation(LibraryComponent):
 
         Example:
         | `Add Style Tag`    \\#username_field:focus {background-color: aqua;}
+
+        [https://forum.robotframework.org/t//4234|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))
@@ -206,6 +212,8 @@ class Evaluation(LibraryComponent):
         | ${href}=          Get Property  ${elem}  href
         | ${file_object}=   Download  ${href}
         | ${file_path}=     Set Variable  ${file_object.saveAs}
+
+        [https://forum.robotframework.org/t//4246|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.Download(Request().Url(url=url))

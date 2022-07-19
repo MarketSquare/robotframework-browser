@@ -124,6 +124,8 @@ class PlaywrightState(LibraryComponent):
         | `Close Browser`    CURRENT    # Close current browser
         | `Close Browser`               # Close current browser
         | `Close Browser`    ${id}      # Close browser matching id
+
+        [https://forum.robotframework.org/t//4239|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             if browser == "ALL":
@@ -157,6 +159,8 @@ class PlaywrightState(LibraryComponent):
         | `Close Context`    CURRENT    CURRENT    #  Closes current context and current browser
         | `Close Context`    ALL        CURRENT    #  Closes all context from current browser and current browser
         | `Close Context`    ALL        ALL        #  Closes all context from current browser and all browser
+
+        [https://forum.robotframework.org/t//4240|Comment >>]
         """
         for browser_instance in self._get_browser_instances(browser):
             if browser_instance["id"] == "NO BROWSER OPEN":
@@ -222,6 +226,8 @@ class PlaywrightState(LibraryComponent):
         | `Close Page`                                       # Closes current page, within the current context and browser
         | `Close Page`    CURRENT     CURRENT     CURRENT    # Closes current page, within the current context and browser
         | `Close Page`    ALL         ALL         ALL        # Closes all pages, within all contexts and browsers
+
+        [https://forum.robotframework.org/t//4241|Comment >>]
         """
         result = []
         with self.playwright.grpc_channel() as stub:
@@ -288,6 +294,8 @@ class PlaywrightState(LibraryComponent):
         ``wsEndpoint`` Address to connect to.
 
         ``browser`` Opens the specified browser. Defaults to chromium.
+
+        [https://forum.robotframework.org/t//4242|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ConnectToBrowser(
