@@ -95,6 +95,8 @@ class PlaywrightState(LibraryComponent):
         ``pause_on_failure`` Stop execution when failure detected and leave browser open. Defaults to True.
 
         ``bypassCSP`` Defaults to bypassing CSP and enabling custom script attach to the page.
+
+        [https://forum.robotframework.org/t/comments-for-open-browser/4310|Comment >>]
         """
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
