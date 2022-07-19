@@ -1370,6 +1370,8 @@ class Getters(LibraryComponent):
         ``stable`` state is not returned, because it would cause too high delay in that keyword.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        [https://forum.robotframework.org/t/comments-for-get-element-states/4272|Comment >>]
         """
 
         def convert_str(f):
