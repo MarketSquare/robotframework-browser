@@ -38,8 +38,12 @@ Upload File With Different Name
 Invalid Upload Path
     New Page    ${LOGIN_URL}
     Run Keyword And Expect Error
-    ...    Nonexistent input file path
+    ...    ValueError: Nonexistent input file path*
     ...    Upload File By Selector    \#file_chooser    NonExistentFile
+
+Relative Upload Path
+    New Page    ${LOGIN_URL}
+    Upload File By Selector    \#file_chooser    atest${/}test${/}02_Content_Keywords${/}test_upload_file
 
 Wait For Download
     New Context    acceptDownloads=True

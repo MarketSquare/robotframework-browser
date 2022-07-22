@@ -1168,12 +1168,15 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4341|Comment >>]
         """
+        p = Path(path)
+        if not p.is_file():
+            raise ValueError(f"Nonexistent input file path '{p.resolve()}'")
         with self.playwright.grpc_channel() as stub:
-            if not Path(path).is_file():
-                raise ValueError("Nonexistent input file path")
             response = stub.UploadFileBySelector(
                 Request().FileBySelector(
-                    path=str(path), selector=selector, strict=self.library.strict_mode
+                    path=str(p.resolve()),
+                    selector=selector,
+                    strict=self.library.strict_mode,
                 )
             )
             logger.debug(response.log)
