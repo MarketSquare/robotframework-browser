@@ -38,8 +38,26 @@ Upload File With Different Name
 Invalid Upload Path
     New Page    ${LOGIN_URL}
     Run Keyword And Expect Error
-    ...    Nonexistent input file path
+    ...    ValueError: Nonexistent input file path*
     ...    Upload File By Selector    \#file_chooser    NonExistentFile
+
+Relative Upload Path
+    New Page    ${LOGIN_URL}
+    File Should Exist    atest${/}test${/}02_Content_Keywords${/}test_upload_file
+    Upload File By Selector    \#file_chooser    atest${/}test${/}02_Content_Keywords${/}test_upload_file
+
+Relative Upload Path With Promise
+    File Should Exist    atest${/}test${/}..${/}test${/}02_Content_Keywords${/}test_upload_file
+    Upload With Promise    atest${/}test${/}..${/}test${/}02_Content_Keywords${/}test_upload_file
+
+Upload Path With Promise
+    File Should Exist    ${CURDIR}${/}test_upload_file
+    Upload With Promise    ${CURDIR}${/}test_upload_file
+
+Invalid Upload Path With Promise
+    Run Keyword And Expect Error
+    ...    ValueError: Nonexistent input file path*
+    ...    Upload With Promise    NonExistentFile
 
 Wait For Download
     New Context    acceptDownloads=True
@@ -106,3 +124,10 @@ Upload Named File
     Upload File By Selector    \#file_chooser    ${CURDIR}/${file_name}
     ${result_name} =    Get Text    \#upload_result
     Get Text    \#upload_result    ==    ${file_name}
+
+Upload With Promise
+    [Arguments]    ${file_name}
+    New Page    ${LOGIN_URL}
+    ${promise} =    Promise To Upload File    ${file_name}
+    Click    \#file_chooser
+    Wait For    ${promise}

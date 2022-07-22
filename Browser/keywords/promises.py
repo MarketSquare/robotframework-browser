@@ -211,13 +211,14 @@ class Promises(LibraryComponent):
 
         [https://forum.robotframework.org/t//4313|Comment >>]
         """
-        promise = self._executor.submit(self._upload_file, **{"path": path})
+        p = Path(path)
+        if not p.is_file():
+            raise ValueError(f"Nonexistent input file path '{p.resolve()}'")
+        promise = self._executor.submit(self._upload_file, **{"path": str(p.resolve())})
         self.unresolved_promises.add(promise)
         return promise
 
-    def _upload_file(self, path: PathLike):
-        p = Path(path)
-        p.resolve(strict=True)
+    def _upload_file(self, path: str):
         with self.playwright.grpc_channel() as stub:
-            response = stub.UploadFile(Request().FilePath(path=str(p)))
+            response = stub.UploadFile(Request().FilePath(path=path))
             logger.debug(response.log)
