@@ -43,12 +43,15 @@ Invalid Upload Path
 
 Relative Upload Path
     New Page    ${LOGIN_URL}
+    File Should Exist    atest${/}test${/}02_Content_Keywords${/}test_upload_file
     Upload File By Selector    \#file_chooser    atest${/}test${/}02_Content_Keywords${/}test_upload_file
 
 Relative Upload Path With Promise
+    File Should Exist    atest${/}test${/}..${/}test${/}02_Content_Keywords${/}test_upload_file
     Upload With Promise    atest${/}test${/}..${/}test${/}02_Content_Keywords${/}test_upload_file
 
 Upload Path With Promise
+    File Should Exist    ${CURDIR}${/}test_upload_file
     Upload With Promise    ${CURDIR}${/}test_upload_file
 
 Invalid Upload Path With Promise
