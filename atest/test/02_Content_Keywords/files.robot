@@ -45,6 +45,17 @@ Relative Upload Path
     New Page    ${LOGIN_URL}
     Upload File By Selector    \#file_chooser    atest${/}test${/}02_Content_Keywords${/}test_upload_file
 
+Relative Upload Path With Promise
+    Upload With Promise    atest${/}test${/}..${/}test${/}02_Content_Keywords${/}test_upload_file
+
+Upload Path With Promise
+    Upload With Promise    ${CURDIR}${/}test_upload_file
+
+Invalid Upload Path With Promise
+    Run Keyword And Expect Error
+    ...    ValueError: Nonexistent input file path*
+    ...    Upload With Promise    NonExistentFile
+
 Wait For Download
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
@@ -110,3 +121,10 @@ Upload Named File
     Upload File By Selector    \#file_chooser    ${CURDIR}/${file_name}
     ${result_name} =    Get Text    \#upload_result
     Get Text    \#upload_result    ==    ${file_name}
+
+Upload With Promise
+    [Arguments]    ${file_name}
+    New Page    ${LOGIN_URL}
+    ${promise} =    Promise To Upload File    ${file_name}
+    Click    \#file_chooser
+    Wait For    ${promise}
