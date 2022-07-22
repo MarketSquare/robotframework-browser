@@ -25,6 +25,8 @@ class StrictMode(LibraryComponent):
         Keyword changes library strict mode value and keyword also return the previous
         strict mode value.
 
+        This setting is global and will impact every test/task and suite after.
+
         Example:
         | ${old_mode} =      Set Strict Mode    False
         | Get Text           //input            # Does not fail if selector points to one or more elements
