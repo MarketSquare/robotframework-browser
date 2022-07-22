@@ -285,7 +285,7 @@ class Interaction(LibraryComponent):
 
         See playwright's documentation for a more comprehensive list of
         supported input keys.
-        [https://playwright.dev/docs/api/class-page#pagepressselector-key-options | Playwright docs for press.]
+        [https://playwright.dev/docs/api/class-page#page-press | Playwright docs for press.]
 
         Example:
         | # Keyword         Selector                    *Keys
