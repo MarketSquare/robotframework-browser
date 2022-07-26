@@ -725,6 +725,7 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t/comments-for-new-context/4307|Comment >>]
         """
         params = locals_to_params(locals())
+        params = convert_typed_dict(self.new_context.__annotations__, params)
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
         reduced_motion = str(params.get("reducedMotion"))
@@ -739,7 +740,6 @@ class PlaywrightState(LibraryComponent):
                 httpCredentials, params.get("httpCredentials"), "httpCredentials"
             )
             params["httpCredentials"] = secret
-        params = convert_typed_dict(self.new_context.__annotations__, params)
         if not videosPath:
             params.pop("videoSize", None)
         trace_file = params.pop("tracing", None)
