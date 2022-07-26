@@ -14,6 +14,7 @@ Create Video With Full Path
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Verify Video Files    1
+    Should Be Equal    ${record_video.dir}    ${OUTPUT_DIR}/video
 
 Create Video With Relative Path
     [Documentation]
@@ -28,6 +29,7 @@ Create Video With Relative Path
     Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    ${1}
     Should Start With    ${details}[video_path]    ${OUTPUT_DIR}${/}browser${/}video${/}my_video
     Should End With    ${details}[video_path]    .webm
+    Should Be Equal    ${record_video.dir}    my_video
 
 Create Video With VideoSize
     [Documentation]
@@ -38,6 +40,7 @@ Create Video With VideoSize
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Verify Video Files    ${2}
+    Should Be Equal    ${record_video.dir}    ${OUTPUT_DIR}/video
 
 Create Video With Viewport
     [Documentation]
@@ -48,6 +51,7 @@ Create Video With Viewport
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
     Verify Video Files    ${3}
+    Should Be Equal    ${record_video.dir}    ${OUTPUT_DIR}/video
 
 No Video
     [Documentation]
@@ -75,6 +79,7 @@ Video Must Be Created When Close Browser Is Called
     Go To    ${FRAMES_URL}
     Close Browser    ALL
     Wait File Count In Directory    ${OUTPUT_DIR}/video    ${1}
+    Should Be Equal    ${record_video.dir}    ${OUTPUT_DIR}/video
 
 *** Keywords ***
 Video Setup
