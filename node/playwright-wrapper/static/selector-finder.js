@@ -193,7 +193,8 @@ const BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID = "browser-library-cancel-selector
 const BROWSER_LIBRARY_DESCRIPTION = "browser-library-selector-recorder-description-text";
 const BROWSER_LIBRARY_SELECTION = "browser-library-selection-id";
 const BROWSER_LIBRARY_SELECTION_OK_BUTTON = "browser-library-selection-ok-button";
-const BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON = "browser-library-selection-cancel-button"
+const BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON = "browser-library-selection-cancel-button";
+const BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON = "browser-library-selection-highlight-button";
 
 function htmlToElement(html) {
     var template = document.createElement('template');
@@ -442,7 +443,8 @@ top: ${rect.height}px;
 <select id="${BROWSER_LIBRARY_SELECTION}">
 ${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
 </select>
-<button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">OK</button>
+<button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">Select</button>
+<button id="${BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON}">Highlight</button>
 <button id="${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON}">Cancel</button>
 </div>`);
             oldelement.style.visibility = 'hidden';
@@ -460,6 +462,9 @@ ${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
                 div.remove();
                 findingElement = true;
             };
+            document.getElementById(BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON).onclick = () => {
+                window.highlightPWSelector(selection.value);
+            }
         }
 
         async function mouseMoveListener(e) {
