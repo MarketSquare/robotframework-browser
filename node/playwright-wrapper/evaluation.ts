@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { Frame, Page } from 'playwright';
+import { Frame, Page, selectors } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -21,6 +21,8 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 import { findLocator } from './playwright-invoke';
 
+import { click, internalClick } from './interaction';
+import { getText } from './getters';
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
@@ -191,6 +193,9 @@ export async function recordSelector(
     page.exposeFunction('getRecordedSelectors', () => {
         return myselectors;
     });
+    page.exposeFunction('highlightPWSelector', (selector: string) => {
+        highlightAll(selector, 1000, '3px', 'dotted', 'silver', false, state);
+    });
     const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
     return jsResponse(result, 'Selector recorded.');
 }
@@ -278,6 +283,19 @@ export async function highlightElements(
     const style = request.getStyle();
     const color = request.getColor();
     const strictMode = request.getStrict();
+    const count = await highlightAll(selector, duration, width, style, color, strictMode, state);
+    return emptyWithLog(`Highlighted ${count} elements for ${duration}.`);
+}
+
+async function highlightAll(
+    selector: string,
+    duration: number,
+    width: string,
+    style: string,
+    color: string,
+    strictMode: boolean,
+    state: PlaywrightState,
+): Promise<number> {
     const locator = await findLocator(state, selector, strictMode, undefined, false);
     const count = locator.count();
     await locator.evaluateAll(
@@ -302,7 +320,7 @@ export async function highlightElements(
         },
         { dur: duration, wdt: width, stl: style, clr: color },
     );
-    return emptyWithLog(`Highlighted ${count} elements for ${duration}.`);
+    return count;
 }
 
 export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.Json> {

@@ -192,8 +192,10 @@ const BROWSER_LIBRARY_SELECT_BUTTON_ID = "browser-library-select-selector";
 const BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID = "browser-library-cancel-selector";
 const BROWSER_LIBRARY_DESCRIPTION = "browser-library-selector-recorder-description-text";
 const BROWSER_LIBRARY_SELECTION = "browser-library-selection-id";
+const BROWSER_LIBRARY_SELECTIONS = "browser-library-selections-id";
 const BROWSER_LIBRARY_SELECTION_OK_BUTTON = "browser-library-selection-ok-button";
-const BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON = "browser-library-selection-cancel-button"
+const BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON = "browser-library-selection-cancel-button";
+const BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON = "browser-library-selection-highlight-button";
 
 function htmlToElement(html) {
     var template = document.createElement('template');
@@ -439,10 +441,15 @@ top: ${rect.height}px;
     background: white;
     padding: 8px;">
 <span>Select selector pattern to use:</span>
-<select id="${BROWSER_LIBRARY_SELECTION}">
-${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
-</select>
-<button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">OK</button>
+<input id="${BROWSER_LIBRARY_SELECTION}"
+       value="${options[0]}"
+       name="${BROWSER_LIBRARY_SELECTION}"
+       list="${BROWSER_LIBRARY_SELECTIONS}">
+<datalist id="${BROWSER_LIBRARY_SELECTIONS}">
+${options.map(o => `<option value="${o}"/>`).join("\n")}
+</datalist>
+<button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">Select</button>
+<button id="${BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON}">Highlight</button>
 <button id="${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON}">Cancel</button>
 </div>`);
             oldelement.style.visibility = 'hidden';
@@ -460,6 +467,9 @@ ${options.map(o => `<option value="${o}">${o}</option>`).join("\n")}
                 div.remove();
                 findingElement = true;
             };
+            document.getElementById(BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON).onclick = () => {
+                window.highlightPWSelector(selection.value);
+            }
         }
 
         async function mouseMoveListener(e) {
