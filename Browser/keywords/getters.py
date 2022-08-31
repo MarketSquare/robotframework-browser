@@ -219,7 +219,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-get-text/4285|Comment >>]
         """
-        self.presenter_mode(selector, self.strict_mode)
+        selector = self.presenter_mode(selector, self.strict_mode)
         response = self._get_text(selector)
         logger.debug(response.log)
         formatter = self.keyword_formatters.get(self.get_text)
@@ -275,7 +275,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4276|Comment >>]
         """
-        self.presenter_mode(selector, self.strict_mode)
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetDomProperty(
                 Request().ElementProperty(
@@ -344,7 +344,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4256|Comment >>]
         """
-        self.presenter_mode(selector, self.strict_mode)
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementAttribute(
                 Request().ElementProperty(
@@ -502,7 +502,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4279|Comment >>]
         """
-        self.presenter_mode(selector, self.strict_mode)
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -1002,7 +1002,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4281|Comment >>]
         """
-        self.presenter_mode(selector, self.strict_mode)
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
