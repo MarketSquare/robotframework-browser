@@ -12,7 +12,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.1",
     "@types/uuid": "^8.3.4",
-    "@typescript-eslint/eslint-plugin": "^5.35.1",
+    "@typescript-eslint/eslint-plugin": "^5.36.1",
     "@typescript-eslint/parser": "^5.36.1",
     "esbuild": "^0.14.54",
     "esbuild-node-externals": "^1.5.0",
