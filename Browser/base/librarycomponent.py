@@ -177,6 +177,8 @@ class LibraryComponent:
                     color=mode["color"],
                 )
             except Exception as error:
+                selector = self.library.record_selector(f'"{selector}" failure')
                 logger.debug(f"On presenter more supress {error}")
             else:
                 sleep(mode["duration"].seconds)
+        return selector
