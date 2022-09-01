@@ -215,6 +215,7 @@ function addElement (label) {
     top: 16px;
     left: 16px;
     background: white;
+    color: black;
     padding: 8px;" id="${BROWSER_LIBRARY_ID}">
         <h5 id="${BROWSER_LIBRARY_HEADER_ID}" style="cursor: move; background: rgb(178,227,227)">
         ${"Selector recorder" + (label && label.length ? " for " + label : "")}
@@ -359,6 +360,8 @@ z-index: 2147483646;
 <style>
 #${BROWSER_LIBRARY_SELECT_BUTTON_ID} {
     background: white;
+    color: black;
+    font-family: system-ui, -apple-system, sans-serif;
     border: 3px solid green;
     border-radius: 6px;
     cursor: pointer;
@@ -440,6 +443,25 @@ top: ${rect.height}px;
     left: ${oldelement.style.left};
     background: white;
     padding: 8px;">
+<style>
+#${BROWSER_LIBRARY_SELECTION} {
+    background: #d5d5d5;
+    color: blue;
+    padding: 4px;
+}
+#${BROWSER_LIBRARY_SELECTION_OK_BUTTON} {
+    color: black;
+    background: white;
+}
+#${BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON} {
+    color: black;
+    background: white;
+}
+#${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON} {
+    color: black;
+    background: white;
+}
+</style>
 <span>Select selector pattern to use:</span>
 <input id="${BROWSER_LIBRARY_SELECTION}"
        value="${options[0]}"
