@@ -66,7 +66,7 @@ Ensure generated code and types are up to date with `inv build`
 Set `VERSION=<version>`. Version number should match to the milestone to the 
 [issue tracker](https://github.com/MarketSquare/robotframework-browser/milestones)
 
-Checkout preciously released tag, generate the keyword documentation from the
+Checkout previously released tag, generate the keyword documentation from the
 previous release and add the keyword documentation to the repository main branch.
 
 ```

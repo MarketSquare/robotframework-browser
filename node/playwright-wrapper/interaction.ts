@@ -100,9 +100,13 @@ export async function click(
     const selector = request.getSelector();
     const options = request.getOptions();
     const strictMode = request.getStrict();
+    await internalClick(selector, strictMode, options, state);
+    return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
+}
+
+export async function internalClick(selector: string, strictMode: boolean, options: string, state: PlaywrightState) {
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.click(JSON.parse(options));
-    return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
 }
 
 export async function hover(

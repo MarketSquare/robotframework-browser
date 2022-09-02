@@ -362,7 +362,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-click/4238|Comment >>]
         """
-        self.presenter_mode(selector, self.strict_mode)
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             options = {
                 "button": button.name,
@@ -745,7 +745,7 @@ class Interaction(LibraryComponent):
         strict: bool = True,
         force: bool = False,
     ):
-        self.presenter_mode(selector, strict)
+        selector = self.presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(
                 Request().FillText(
@@ -764,7 +764,7 @@ class Interaction(LibraryComponent):
         log_response: bool = True,
         strict: bool = True,
     ):
-        self.presenter_mode(selector, strict)
+        selector = self.presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
             response = stub.TypeText(

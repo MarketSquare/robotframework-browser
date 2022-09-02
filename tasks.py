@@ -797,7 +797,7 @@ def _get_pw_version() -> str:
 
 @task(package)
 def release(c):
-    c.run("python -m twine upload --repository pypi dist/*")
+    c.run("python -m twine upload --repository robotframework-browser dist/*")
 
 
 @task()
