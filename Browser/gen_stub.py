@@ -110,6 +110,8 @@ function_list = get_function_list_from_keywords(br.get_keyword_names())
 pyi_boilerplate = """\
 import datetime
 import typing
+import os
+
 from concurrent.futures import Future
 from datetime import timedelta
 from typing import (
