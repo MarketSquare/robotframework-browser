@@ -168,7 +168,7 @@ class LibraryComponent:
         if self.library.presenter_mode:
             mode = self.get_presenter_mode
             try:
-                self.library.hover(selector, strict)
+                self.library.scroll_to_element(selector)
                 self.library.highlight_elements(
                     selector,
                     duration=mode["duration"],
