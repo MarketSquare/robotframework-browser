@@ -28,9 +28,7 @@ from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
 from robot.errors import DataError  # type: ignore
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
-from robot.result.model import TestCase as TestCaseResult  # type: ignore
 from robot.running.arguments import PythonArgumentParser  # type: ignore
-from robot.running.model import TestCase as TestCaseRunning  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore  # type: ignore
 
@@ -58,6 +56,36 @@ from .utils import AutoClosingLevel, get_normalized_keyword, is_falsy, keyword, 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import DelayedKeyword, HighLightElement, SupportedBrowsers
 from .version import __version__ as VERSION
+
+KW_CALL_CONTENT_TEMPLATE = """body::before {{
+    content: '{keyword_call}';
+    position: fixed;
+    z-index: 9999;
+    border: 1px solid lightblue;
+    border-radius: 1rem;
+    background: #00008b90;
+    color: white;
+    padding: 2px 10px;
+    pointer-events: none;
+    font-family: monospace;
+    font-size: medium;
+    font-weight: normal;
+    white-space: pre;
+    bottom: 5px;
+    left: 5px;
+}}"""
+
+KW_CALL_BANNER_FUNCTION = """(content) => {
+    const kwCallBanner = document.getElementById('kwCallBanner');
+    if (kwCallBanner) {
+        kwCallBanner.textContent = content;
+    } else {
+        const kwCallBanner = document.createElement("style");
+        kwCallBanner.setAttribute("id", 'kwCallBanner');
+        kwCallBanner.textContent = content;
+        document.head.appendChild(kwCallBanner);
+    }
+}"""
 
 
 class Browser(DynamicCore):
@@ -650,7 +678,7 @@ class Browser(DynamicCore):
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
-    ROBOT_LISTENER_API_VERSION = 3
+    ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     ERROR_AUGMENTATION = {
@@ -675,6 +703,7 @@ class Browser(DynamicCore):
         enable_presenter_mode: Union[HighLightElement, bool] = False,
         playwright_process_port: Optional[int] = None,
         strict: bool = True,
+        show_keyword_call_banner: Optional[bool] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -753,7 +782,9 @@ class Browser(DynamicCore):
             libraries.append(self._initialize_jsextension(jsextension))
         self.presenter_mode = enable_presenter_mode
         self.strict_mode = strict
+        self.show_keyword_call_banner = show_keyword_call_banner
         self._keyword_formatters: dict = {}
+        self._current_loglevel: Optional[str] = None
         DynamicCore.__init__(self, libraries)
         # Parsing needs keywords to be discovered.
         self.run_on_failure_keyword = self._parse_run_on_failure_keyword(run_on_failure)
@@ -890,7 +921,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def state_file(self):
         return self.browser_output / "state"
 
-    def _start_suite(self, suite, result):
+    def _start_suite(self, name, attrs):
         if not self._suite_cleanup_done:
             self._suite_cleanup_done = True
             for path in [
@@ -908,16 +939,16 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, test, result):
+    def _start_test(self, name, attr):
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
-    def _end_test(self, test: TestCaseRunning, result: TestCaseResult):
+    def _end_test(self, name, attrs):
         if len(self._unresolved_promises) > 0:
-            logger.warn(f"Waiting unresolved promises at the end of test '{test.name}'")
+            logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
             if self.presenter_mode:
@@ -930,11 +961,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 catalog_before_test = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_test)
             except AssertionError as e:
-                logger.debug(f"Test Case: {test.name}, End Test: {e}")
+                logger.debug(f"Test Case: {name}, End Test: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
-    def _end_suite(self, suite, result):
+    def _end_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")
@@ -943,7 +974,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 catalog_before_suite = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_suite)
             except AssertionError as e:
-                logger.debug(f"Test Suite: {suite.name}, End Suite: {e}")
+                logger.debug(f"Test Suite: {name}, End Suite: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
@@ -998,7 +1029,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 input()
             raise e
 
-    def start_keyword(self, name, attrs):
+    def _start_keyword(self, name, attrs):
         """Take screenshot of tests that have failed due to timeout.
 
         This method is part of the Listener API implemented by the library.
@@ -1013,7 +1044,18 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         been closed already. This implementation will take the screenshot
         before the teardown begins to execute.
         """
+        if (
+            self.show_keyword_call_banner is False
+            or (self.show_keyword_call_banner is None and not self.presenter_mode)
+            or attrs["libname"] != "Browser"
+            or attrs["status"] == "NOT RUN"
+        ):
+            return
+        self._show_keyword_call(attrs)
         self.current_arguments = tuple(attrs["args"])
+        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+            self._set_logging(False)
+
         if attrs["type"] == "Teardown":
             timeout_pattern = "Test timeout .* exceeded."
             test = EXECUTION_CONTEXTS.current.test
@@ -1023,6 +1065,52 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 and re.match(timeout_pattern, test.message)
             ):
                 self.screenshot_on_failure(test.name)
+
+    def _end_keyword(self, name, attrs):
+        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+            self._set_logging(True)
+
+    def _set_logging(self, status: bool):
+        try:
+            context = BuiltIn()._context.output
+        except DataError:
+            context = BuiltIn()
+        if status:
+            if self._current_loglevel:
+                context.set_log_level(self._current_loglevel)
+                self._current_loglevel = None
+        else:
+            self._current_loglevel = context.set_log_level("NONE")
+
+    def _show_keyword_call(self, attrs):
+        try:
+            if attrs["kwname"] in ["Take Screenshot", "Get Page Source"]:
+                self.set_keyword_call_banner()
+            else:
+                args = "    ".join(attrs["args"])
+                args = BuiltIn().replace_variables(args)
+                content = f"{attrs['kwname']}{'    ' * bool(attrs['args'])}{args}"
+                self.set_keyword_call_banner(content)
+        except Exception:
+            pass
+
+    def set_keyword_call_banner(self, keyword_call=None):
+        if keyword_call:
+            keyword_call = keyword_call.replace("'", "\\'")
+            content = KW_CALL_CONTENT_TEMPLATE.format(keyword_call=keyword_call)
+        else:
+            content = "body::before{}"
+
+        with self.playwright.grpc_channel() as stub:
+            stub.EvaluateJavascript(
+                Request().EvaluateAll(
+                    selector="",
+                    script=KW_CALL_BANNER_FUNCTION,
+                    arg=json.dumps(content),
+                    allElements=False,
+                    strict=False,
+                )
+            )
 
     def keyword_error(self):
         """Runs keyword on failure."""
