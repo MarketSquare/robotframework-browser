@@ -297,7 +297,14 @@ async function highlightAll(
     state: PlaywrightState,
 ): Promise<number> {
     const locator = await findLocator(state, selector, strictMode, undefined, false);
-    const count = locator.count();
+    let count: number;
+    try {
+        count = await locator.count();
+    } catch (e) {
+        logger.info(e);
+        return 0;
+    }
+    logger.info(`Locator count is ${count}`);
     await locator.evaluateAll(
         (elements: Array<Element>, options: any) => {
             elements.forEach((e: Element) => {
