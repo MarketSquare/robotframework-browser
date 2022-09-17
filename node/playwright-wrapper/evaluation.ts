@@ -194,7 +194,7 @@ export async function recordSelector(
         return myselectors;
     });
     page.exposeFunction('highlightPWSelector', (selector: string) => {
-        highlightAll(selector, 1000, '3px', 'dotted', 'silver', false, state);
+        highlightAll(selector, 1000, '3px', 'dotted', 'blue', false, state);
     });
     const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
     return jsResponse(result, 'Selector recorded.');

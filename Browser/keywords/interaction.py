@@ -484,6 +484,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4255|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -622,6 +623,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4235|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(
                 Request().ElementSelector(
@@ -645,6 +647,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4340|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(
                 Request().ElementSelector(
@@ -695,6 +698,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4322|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
             self.deselect_options(selector)
@@ -731,6 +735,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4245|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -939,6 +944,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4247|Comment >>]
         """
+        selector_from = self.presenter_mode(selector_from, self.strict_mode)
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
         to_bbox = self.library.get_boundingbox(selector_to)
@@ -1016,6 +1022,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4249|Comment >>]
         """
+        selector_from = self.presenter_mode(selector_from, self.strict_mode)
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
         to_x = from_xy["x"] + x

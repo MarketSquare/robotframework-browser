@@ -17,7 +17,7 @@ import os
 from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from robot.utils import get_link_path  # type: ignore
 
@@ -287,6 +287,37 @@ class Control(LibraryComponent):
         old_retry_assertions_for = self.millisecs_to_timestr(self.retry_assertions_for)
         self.retry_assertions_for = self.convert_timeout(timeout)
         return old_retry_assertions_for
+
+    @keyword(tags=("Setter", "Config"))
+    def show_keyword_banner(
+        self, show: bool = True, style: str = ""
+    ) -> Dict[str, Union[None, bool, str]]:
+        """Controls if the keyword banner is shown on page or not.
+
+        Keyword call banner is a css overlay that shows the currently executed keyword directly on page.
+        This is useful for debugging and for showing the test execution on video recordings.
+        By default, the banner is not shown on page except when running in presenter mode.
+
+        The banner can be controlled by an import setting of Browser library. (see `Importing` section)
+
+        ``show`` If `True` banner is shown on page. If `False` banner is not shown on page. If `None` banner is shown on page only when running in presenter mode.
+
+        ``style`` Additional css styles to be applied to the banner. These styles are css settings and may override the existing ones for the banner.
+
+
+        Example:
+        | Show Keyword Banner     True    top: 5px; bottom: auto; left: 5px; background-color: #00909077; font-size: 9px; color: black;   # Show banner on top left corner with custom styles
+        | Show Keyword Banner     False   # Hide banner
+
+        [https://forum.robotframework.org/t//4716|Comment >>]
+        """
+        original_state = self.library.show_keyword_call_banner
+        original_style = self.library.keyword_call_banner_add_style
+        self.library.show_keyword_call_banner = show
+        self.library.keyword_call_banner_add_style = style
+        if not show:
+            self.library.set_keyword_call_banner()
+        return {"show": original_state, "style": original_style}
 
     @keyword(tags=("Setter", "BrowserControl"))
     def set_viewport_size(self, width: int, height: int):

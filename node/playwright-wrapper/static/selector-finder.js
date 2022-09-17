@@ -183,8 +183,11 @@ function cssesc(a, b = {}) {
         return b && b.length % 2 ? a : (b || "") + c
     }), !e && c.wrap ? d + g + d : g
 }
-/* Cool work ends and Browser library work begins */
 
+/* Cool work ends and Browser library work begins */
+const BROWSER_LIBRARY_SELECTOR_CLASS = "browser-library-selector-class";
+const BROWSER_LIBRARY_MONOSPACED_CLASS = "browser-library-monospaced-class";
+const BROWSER_LIBRARY_SYSFONT_CLASS = "browser-library-sysfont-class";
 const BROWSER_LIBRARY_ID = "browser-library-selector-recorder";
 const BROWSER_LIBRARY_HEADER_ID = "browser-library-selector-recorder-header";
 const BROWSER_LIBRARY_TEXT_ID = "browser-library-selector-recorder-target-text";
@@ -193,9 +196,12 @@ const BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID = "browser-library-cancel-selector
 const BROWSER_LIBRARY_DESCRIPTION = "browser-library-selector-recorder-description-text";
 const BROWSER_LIBRARY_SELECTION = "browser-library-selection-id";
 const BROWSER_LIBRARY_SELECTIONS = "browser-library-selections-id";
+const BROWSER_LIBRARY_SELECTION_FRAME = "browser-library-selection-frame";
+const BROWSER_LIBRARY_SELECTION_PANEL = "browser-library-selection-panel";
 const BROWSER_LIBRARY_SELECTION_OK_BUTTON = "browser-library-selection-ok-button";
 const BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON = "browser-library-selection-cancel-button";
 const BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON = "browser-library-selection-highlight-button";
+const BROWSER_LIBRARY_SELECTION_BUTTON_CLASS = "browser-library-selection-button-class";
 
 function htmlToElement(html) {
     var template = document.createElement('template');
@@ -204,65 +210,55 @@ function htmlToElement(html) {
     return template.content.firstChild;
 }
 
-function addElement (label) {
+function addElement(label) {
     const newDiv = htmlToElement(`
-    <div style="display: flex;
-    flex-direction: column;
-    border: 2px solid blue;
-    border-radius: 5px;
-    z-index: 2147483647;
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    background: white;
-    color: black;
-    padding: 8px;" id="${BROWSER_LIBRARY_ID}">
-        <h5 id="${BROWSER_LIBRARY_HEADER_ID}" style="cursor: move; background: rgb(178,227,227)">
-        ${"Selector recorder" + (label && label.length ? " for " + label : "")}
+    <div id="${BROWSER_LIBRARY_ID}" class="${BROWSER_LIBRARY_SELECTOR_CLASS}">
+        <h5 id="${BROWSER_LIBRARY_HEADER_ID}" class="${BROWSER_LIBRARY_SYSFONT_CLASS}">
+        ${"Selector Recorder" + (label && label.length ? " For '" + label + "'" : "")}
         </h5>
-        <span id="${BROWSER_LIBRARY_TEXT_ID}">NOTSET</span>
-        <span id="${BROWSER_LIBRARY_DESCRIPTION}"></span>
-        <span style="max-width: 300px">Move mouse and Hover over an element to record a selector.</span>
+        <span id="${BROWSER_LIBRARY_TEXT_ID}" class="${BROWSER_LIBRARY_MONOSPACED_CLASS}">NOTSET</span>
+        <span id="${BROWSER_LIBRARY_DESCRIPTION}" class="${BROWSER_LIBRARY_MONOSPACED_CLASS}"></span>
+        <span style="max-width: 300px" class="${BROWSER_LIBRARY_SYSFONT_CLASS}">Move mouse and Hover over an element to record a selector.</span>
     </div>
     `)
-  const elem = document.body.appendChild(newDiv);
-  dragElement(elem, document.getElementById(BROWSER_LIBRARY_HEADER_ID));
-  setTimeout(() => elem.focus(), 300);
+    const elem = document.body.appendChild(newDiv);
+    dragElement(elem, document.getElementById(BROWSER_LIBRARY_HEADER_ID));
+    setTimeout(() => elem.focus(), 300);
 }
 
 function dragElement(elmnt, header) {
-  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  header.onmousedown = dragMouseDown;
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    header.onmousedown = dragMouseDown;
 
-  function dragMouseDown(e) {
-    e = e || window.event;
-    e.preventDefault();
-    // get the mouse cursor position at startup:
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    // call a function whenever the cursor moves:
-    document.onmousemove = elementDrag;
-  }
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // get the mouse cursor position at startup:
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        // call a function whenever the cursor moves:
+        document.onmousemove = elementDrag;
+    }
 
-  function elementDrag(e) {
-    e = e || window.event;
-    e.preventDefault();
-    // calculate the new cursor position:
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    // set the element's new position:
-    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-  }
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // calculate the new cursor position:
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        // set the element's new position:
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
 
-  function closeDragElement() {
-    // stop moving when mouse button is released:
-    document.onmouseup = null;
-    document.onmousemove = null;
-  }
+    function closeDragElement() {
+        // stop moving when mouse button is released:
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
 }
 
 function elementSelectorFromPointInFrame(x, y) {
@@ -272,37 +268,45 @@ function elementSelectorFromPointInFrame(x, y) {
             return '???';
         }
         if (element.shadowRoot) {
-            const parentSelector = finder(element, {root:parentElement})
+            const parentSelector = finder(element, {root: parentElement})
             const [childSelector, rect] = subelementFromPoint(element.shadowRoot);
             return [childSelector.map(s => parentSelector + " >> " + s), rect];
         }
         const rect = element.getBoundingClientRect();
         const left = parseFloat(window.getComputedStyle(element, null).getPropertyValue('padding-left')) || 0;
-        const top =  parseFloat(window.getComputedStyle(element, null).getPropertyValue('padding-top')) || 0;
+        const top = parseFloat(window.getComputedStyle(element, null).getPropertyValue('padding-top')) || 0;
         const selectors = [];
-        const selector1 = finder(element, {root:parentElement})
+        const selector1 = finder(element, {root: parentElement})
         selectors.push(selector1);
-        const selector2 = finder(element, {root:parentElement,
-            className: (c) => !selector1.includes("."+c),
+        const selector2 = finder(element, {
+            root: parentElement,
+            className: (c) => !selector1.includes("." + c),
         });
         if (!selectors.includes(selector2)) selectors.push(selector2);
         const selector3 = finder(element, {
             root: parentElement,
-            idName: (id) => !selector1.includes('#'+id)
+            idName: (id) => !selector1.includes('#' + id)
         });
         if (!selectors.includes(selector3)) selectors.push(selector3);
         const selector4 = finder(element, {
             root: parentElement,
-            className: (c) => !selector1.includes("."+c),
-            idName: (id) => !selector1.includes('#'+id),
+            className: (c) => !selector1.includes("." + c),
+            idName: (id) => !selector1.includes('#' + id),
         });
         if (!selectors.includes(selector4)) selectors.push(selector4);
-        return [selectors, {top: rect.top, left: rect.left, height: rect.height, width: rect.width, paddingLeft: left, paddingTop: top}];
+        return [selectors, {
+            top: rect.top,
+            left: rect.left,
+            height: rect.height,
+            width: rect.width,
+            paddingLeft: left,
+            paddingTop: top
+        }];
     }
     return subelementFromPoint(document);
 }
 
-window.subframeSelectorRecorderFindSelector = function(myid) {
+window.subframeSelectorRecorderFindSelector = function (myid) {
 
     let currentCssSelector = "NOTSET";
 
@@ -317,7 +321,7 @@ window.subframeSelectorRecorderFindSelector = function(myid) {
     document.addEventListener('mousemove', mouseMoveListener);
 }
 
-window.selectorRecorderFindSelector = function(label) {
+window.selectorRecorderFindSelector = function (label) {
     return new Promise((resolve) => {
         let currentCssSelector = "NOTSET";
         let lastTotalRecord = [];
@@ -342,60 +346,36 @@ window.selectorRecorderFindSelector = function(label) {
                     findingElement = false;
                     const rect = selectors.map(i => i[1]).reduce((acc, cur) => {
                         return {
-                            top: acc.top+cur.top+acc.paddingTop, left: acc.left+cur.left+acc.paddingLeft, width: cur.width, height: cur.height,
-                            paddingLeft: cur.paddingLeft, paddingTop: cur.paddingTop
+                            top: acc.top + cur.top + acc.paddingTop,
+                            left: acc.left + cur.left + acc.paddingLeft,
+                            width: cur.width,
+                            height: cur.height,
+                            paddingLeft: cur.paddingLeft,
+                            paddingTop: cur.paddingTop
                         }
                     }, {
                         top: 0, left: 0, width: 0, height: 0, paddingTop: 0, paddingLeft: 0
                     });
-                    const div = htmlToElement(`<div style="
-position: absolute;
-top: ${rect.top-window.scrollY}px;
-left: ${rect.left-window.scrollX}px;
-width: ${rect.width}px;
-height: ${rect.height}px;
-border: 3px solid green;
-z-index: 2147483646;
-">
-<style>
-#${BROWSER_LIBRARY_SELECT_BUTTON_ID} {
-    background: white;
-    color: black;
-    font-family: system-ui, -apple-system, sans-serif;
-    border: 3px solid green;
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 0.5rem;
-    box-shadow: 2px 2px 5px darkolivegreen;
-}
-#${BROWSER_LIBRARY_SELECT_BUTTON_ID}:hover {
-    background: silver;
-    border-color: greenyellow;
-}
-#${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID} {
-    background: white;
-    border: 3px solid green;
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 0.5rem;
-    box-shadow: 2px 2px 5px darkolivegreen;
-}
-#${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID}:hover {
-    background: silver;
-    border-color: greenyellow;
-}
-</style>
+                    const div = htmlToElement(`<div id="${BROWSER_LIBRARY_SELECTION_FRAME}" style="
+top: ${rect.top - window.scrollY - 2}px;
+left: ${rect.left - window.scrollX - 2}px;
+width: ${rect.width + 4}px;
+height: ${rect.height+ 4}px;
+
+"><div class="found-element animate-flicker" style="
+width: 100%;
+height: 100%;
+
+"></div>
 <div
 style="
 position: relative;
 display: flex;
-flex-wrap: wrap;
-top: ${rect.height}px;
-"
+flex-wrap: wrap;"
 >
-<button id="${BROWSER_LIBRARY_SELECT_BUTTON_ID}"
+<button id="${BROWSER_LIBRARY_SELECT_BUTTON_ID}" class="${BROWSER_LIBRARY_SELECTOR_CLASS}"
 >Select</button>
-<button id="${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID}"
+<button id="${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID}" class="${BROWSER_LIBRARY_SELECTOR_CLASS}"
 >Cancel</button>
 </div>
 </div>`);
@@ -431,36 +411,16 @@ top: ${rect.height}px;
                 const item = lastTotalRecord.map(j => j[i]).join(" >>> ");
                 options.push(item);
             }
-            const oldelement = document.getElementById(BROWSER_LIBRARY_ID);
-            const div = htmlToElement(`<div style="
+            const oldElement = document.getElementById(BROWSER_LIBRARY_ID);
+            const oldPosition = oldElement.getBoundingClientRect();
+            const div = htmlToElement(`<div id="${BROWSER_LIBRARY_SELECTION_PANEL}" class="${BROWSER_LIBRARY_SELECTOR_CLASS}" style="
     display: flex;
     flex-direction: column;
-    border: 2px solid blue;
-    border-radius: 5px;
     z-index: 2147483647;
     position: fixed;
-    top: ${oldelement.style.top};
-    left: ${oldelement.style.left};
-    background: white;
-    padding: 8px;">
+    top: ${oldPosition.top}px;
+    left: ${oldPosition.left}px;">
 <style>
-#${BROWSER_LIBRARY_SELECTION} {
-    background: #d5d5d5;
-    color: blue;
-    padding: 4px;
-}
-#${BROWSER_LIBRARY_SELECTION_OK_BUTTON} {
-    color: black;
-    background: white;
-}
-#${BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON} {
-    color: black;
-    background: white;
-}
-#${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON} {
-    color: black;
-    background: white;
-}
 </style>
 <span>Select selector pattern to use:</span>
 <input id="${BROWSER_LIBRARY_SELECTION}"
@@ -470,11 +430,11 @@ top: ${rect.height}px;
 <datalist id="${BROWSER_LIBRARY_SELECTIONS}">
 ${options.map(o => `<option value="${o}"/>`).join("\n")}
 </datalist>
-<button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}">Select</button>
-<button id="${BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON}">Highlight</button>
-<button id="${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON}">Cancel</button>
+<button id="${BROWSER_LIBRARY_SELECTION_OK_BUTTON}" class="${BROWSER_LIBRARY_SELECTION_BUTTON_CLASS} ${BROWSER_LIBRARY_SELECTOR_CLASS}">Take It</button>
+<button id="${BROWSER_LIBRARY_SELECTION_HIGHLIGHT_BUTTON}" class="${BROWSER_LIBRARY_SELECTION_BUTTON_CLASS} ${BROWSER_LIBRARY_SELECTOR_CLASS}">Highlight</button>
+<button id="${BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON}" class="${BROWSER_LIBRARY_SELECTION_BUTTON_CLASS} ${BROWSER_LIBRARY_SELECTOR_CLASS}">Reselect</button>
 </div>`);
-            oldelement.style.visibility = 'hidden';
+            oldElement.style.visibility = 'hidden';
             document.body.appendChild(div);
             const selection = document.getElementById(BROWSER_LIBRARY_SELECTION)
             document.getElementById(BROWSER_LIBRARY_SELECTION_OK_BUTTON).onclick = () => {
@@ -484,7 +444,7 @@ ${options.map(o => `<option value="${o}"/>`).join("\n")}
                 resolve(selection.value);
             };
             document.getElementById(BROWSER_LIBRARY_SELECTION_CANCEL_BUTTON).onclick = () => {
-                oldelement.style.visibility = 'visible';
+                oldElement.style.visibility = 'visible';
                 focusDiv.remove();
                 div.remove();
                 findingElement = true;
@@ -520,6 +480,163 @@ ${options.map(o => `<option value="${o}"/>`).join("\n")}
         }
 
         document.addEventListener('mousemove', mouseMoveListener);
+        const style = htmlToElement(`<style>
+#${BROWSER_LIBRARY_SELECTION_FRAME}{
+    position: absolute;
+    z-index: 2147483646;
+}
+@keyframes flickerAnimation {
+  0%   { opacity:1; }
+  50%  { opacity:0; }
+  100% { opacity:1; }
+}
+@-o-keyframes flickerAnimation{
+  0%   { opacity:1; }
+  50%  { opacity:0; }
+  100% { opacity:1; }
+}
+@-moz-keyframes flickerAnimation{
+  0%   { opacity:1; }
+  50%  { opacity:0; }
+  100% { opacity:1; }
+}
+@-webkit-keyframes flickerAnimation{
+  0%   { opacity:1; }
+  50%  { opacity:0; }
+  100% { opacity:1; }
+}
+.animate-flicker {
+   -webkit-animation: flickerAnimation 1s infinite;
+   -moz-animation: flickerAnimation 1s infinite;
+   -o-animation: flickerAnimation 1s infinite;
+    animation: flickerAnimation 1s infinite;
+}
+.found-element{
+    border: 2px dashed green;
+    box-shadow:0 0 20px green;
+}
+
+#${BROWSER_LIBRARY_ID} {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid lightblue;
+    border-radius: 15px;
+    z-index: 2147483647;
+    position: fixed;
+    top: 56px;
+    left: 99px;
+    background: rgba(0, 0, 139, 0.5);
+    padding: 12px;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+
+#${BROWSER_LIBRARY_HEADER_ID} {
+    cursor: move;
+    background: lightgray;
+    color: darkblue;
+    border-radius: 3px;
+    padding: 0px 5px;
+    margin: 0px;
+    margin-bottom: 10px;
+}
+
+
+.${BROWSER_LIBRARY_SELECTOR_CLASS},
+.${BROWSER_LIBRARY_MONOSPACED_CLASS} {
+    font-family: monospace;
+    font-size: medium;
+    font-weight: normal;
+}
+
+.${BROWSER_LIBRARY_SYSFONT_CLASS},
+button.${BROWSER_LIBRARY_SELECTOR_CLASS} {
+    font-family: system-ui, -apple-system, sans-serif !important;
+}
+
+.${BROWSER_LIBRARY_SELECTOR_CLASS} {
+    color: white;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    box-shadow: 2px 2px 5px darkblue;
+}
+
+#${BROWSER_LIBRARY_SELECT_BUTTON_ID} {
+    background: #00008b70;
+    padding: 0px 5px;
+    border: 1px solid lightblue;
+    border-radius: 1rem;
+    cursor: pointer;
+    margin: 0.5rem;
+}
+
+#${BROWSER_LIBRARY_SELECT_BUTTON_ID}:hover {
+    color: black;
+    background: lightblue;
+    border-color: white;
+}
+#${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID} {
+    background: #09090970;
+    padding: 0px 5px;
+    border: 1px solid lightgray;
+    border-radius: 1rem;
+    cursor: pointer;
+    margin: 0.5rem;
+    box-shadow: 2px 2px 5px black;
+}
+#${BROWSER_LIBRARY_SELECT_CANCEL_BUTTON_ID}:hover {
+    background: lightgray;
+    border-color: black;
+    color: black;
+}
+
+#${BROWSER_LIBRARY_SELECTION_PANEL} {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid lightblue;
+    border-radius: 15px;
+    z-index: 2147483647;
+    position: fixed;
+    background: rgba(0, 0, 139, 0.5);
+    padding: 12px;
+    color: white;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+
+#${BROWSER_LIBRARY_SELECTION}:hover {
+    background: white;
+}
+
+#${BROWSER_LIBRARY_SELECTION} {
+    background: #d5d5d5;
+    color: black;
+    padding: 4px;
+    margin: 4px;
+    border: 1px solid darkblue;
+    font-family: monospace;
+    font-size: medium;
+    font-weight: normal;
+}
+.${BROWSER_LIBRARY_SELECTION_BUTTON_CLASS} {
+    color: white;
+    background: #00008b70;
+    border: 1px solid lightblue;
+    text-align: center;
+    vertical-align: middle;
+    margin: 4px 0px;
+    box-shadow: 2px 2px 5px black;
+    border-radius: 1rem;
+    padding: 4px;
+}
+.${BROWSER_LIBRARY_SELECTION_BUTTON_CLASS}:hover {
+    color: black;
+    background: lightblue;
+    border-color: white;
+}
+
+</style>`)
+        document.head.appendChild(style);
         addElement(label);
         window.requestAnimationFrame(updateTexts);
     });
