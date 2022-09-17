@@ -142,6 +142,11 @@ Highlight Element On Page
     Sleep    1500ms
     Get Element Count    .robotframework-browser-highlight    ==    0
 
+Highlight Element With Invalid Selector
+    Highlight Elements    %inva$id[Unparse//elem    duration=200ms
+    Sleep    100ms
+    Get Element Count    .robotframework-browser-highlight    ==    0
+
 Highlight Element With Strict
     Set Strict Mode    True
     Highlight Elements    //input    duration=200ms
