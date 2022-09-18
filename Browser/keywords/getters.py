@@ -687,7 +687,10 @@ class Getters(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetViewportSize(Request().Empty())
             logger.info(response.log)
-            parsed = DotDict(json.loads(response.json))
+            response_json = json.loads(response.json)
+            if response_json is None:
+                return
+            parsed = DotDict(response_json)
             logger.debug(parsed)
             if self.keyword_formatters.get(self.get_viewport_size):
                 logger.warn("Formatter is not supported by Get Viewport Size keyword.")
