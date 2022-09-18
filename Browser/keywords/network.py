@@ -66,13 +66,11 @@ class Network(LibraryComponent):
     ) -> Any:
         """Performs an HTTP request in the current browser context
 
-        Accepts the following arguments:
-          - ``url`` The request url, e.g. ``/api/foo``.
-          - ``method`` The HTTP method for the request. Defaults to GET.
-          - ``body`` The request body. GET requests cannot have a body. If the body can be parsed as JSON,
-          the ``Content-Type`` header for the request will be automatically set to ``application/json``.
-          Defaults to None.
-          - ``headers`` A dictionary of additional request headers. Defaults to None.
+        | =Arguments= | =Description= |
+        | ``url`` | The request url, e.g. ``/api/foo``. |
+        | ``method`` | The HTTP method for the request. Defaults to GET. |
+        | ``body`` | The request body. GET requests cannot have a body. If the body can be parsed as JSON, the ``Content-Type`` header for the request will be automatically set to ``application/json``. Defaults to None. |
+        | ``headers`` | A dictionary of additional request headers. Defaults to None. |
 
         The response is a Python dictionary with following attributes:
           - ``status`` <int> The status code of the response.
@@ -129,10 +127,11 @@ class Network(LibraryComponent):
     ) -> Any:
         """Waits for request matching matcher to be made.
 
-        ``matcher`` Request URL string, JavaScript regex or JavaScript function to match request by.
-        By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page/#page-wait-for-request|waitForRequest documentation].
 
-        ``timeout`` Timeout supports Robot Framework time format. Uses default timeout if not set.
+        | =Arguments= | =Description= |
+        | ``matcher`` | Request URL string, JavaScript regex or JavaScript function to match request by. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page/#page-wait-for-request|waitForRequest documentation]. |
+        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
+
 
         Example:
         | `Click`               \\#delayed_request
@@ -157,10 +156,10 @@ class Network(LibraryComponent):
     ) -> Any:
         """Waits for response matching matcher and returns python dict with contents.
 
-        ``matcher`` Request URL string, JavaScript regex or JavaScript function to match request by.
-        By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page/#page-wait-for-response|waitForResponse documentation].
 
-        ``timeout`` Timeout in seconds. Uses default timeout if not set.
+        | =Arguments= | =Description= |
+        | ``matcher`` | Request URL string, JavaScript regex or JavaScript function to match request by. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page/#page-wait-for-response|waitForResponse documentation]. |
+        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
 
         The response is a Python dictionary with following attributes:
           - ``status`` <int> The status code of the response.
@@ -198,7 +197,8 @@ class Network(LibraryComponent):
 
         Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
 
-        ``timeout`` Timeout supports Robot Framework time format. Uses default timeout of 10 seconds if not set.
+        | =Arguments= | =Description= |
+        | ``timeout`` | Timeout supports Robot Framework time format. Uses browser timeout if not set. |
 
         Example:
         | `Go To`                         ${URL}
@@ -221,17 +221,12 @@ class Network(LibraryComponent):
     ):
         """Waits until page has navigated to given ``url``.
 
-        ``url``  expected navigation target address either the exact match or a JavaScript-like regex wrapped
-         in ``/`` symbols.
 
-        ``timeout`` Timeout in milliseconds. Uses default timeout of 10 seconds if not set.
+        | =Arguments= | =Description= |
+        | ``url`` | Expected navigation target address either the exact match or a JavaScript-like regex wrapped in ``/`` symbols. |
+        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
+        | ``wait_until`` | When to consider operation succeeded, defaults to load. Events can be either: ``domcontentloaded`` - consider operation to be finished when the DOMContentLoaded event is fired. ``load`` - consider operation to be finished when the load event is fired. ``networkidle`` - consider operation to be finished when there are no network connections for at least 500 ms. ``commit`` - consider operation to be finished when network response is received and the document started loading. |
 
-        ``wait_until`` <"load"|"domcontentloaded"|"networkidle|"commit""> When to consider operation succeeded,
-        defaults to load. Events can be either:
-        'domcontentloaded' - consider operation to be finished when the DOMContentLoaded event is fired.
-        'load' - consider operation to be finished when the load event is fired.
-        'networkidle' - consider operation to be finished when there are no network connections for at least 500 ms.
-        `commit` - consider operation to be finished when network response is received and the document started loading.
 
         Keyword works only when page is loaded and does not work if URL fragment changes. Example if
         https://marketsquare.github.io/robotframework-browser/Browser.html changes to

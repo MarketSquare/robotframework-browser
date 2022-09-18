@@ -20,10 +20,8 @@ class StrictMode(LibraryComponent):
     def set_strict_mode(self, mode: bool):
         """Controls library strict mode.
 
-        When set to ``True``, keywords that are searching elements will use Playwright
-        [https://playwright.dev/docs/api/class-page#page-query-selector|strict mode].
-        Keyword changes library strict mode value and keyword also return the previous
-        strict mode value.
+        | =Arguments= | =Description= |
+        | ``mode`` | When set to ``True``, keywords that are searching elements will use Playwright [https://playwright.dev/docs/api/class-page#page-query-selector|strict mode]. Keyword changes library strict mode value and keyword also return the previous strict mode value. |
 
         This setting is global and will impact every test/task and suite after.
 

@@ -207,7 +207,7 @@ class DownloadedFile(TypedDict):
 
 
 class NewPageDetails(TypedDict):
-    """Return value of New Page keyword.
+    """Return value of `New Page` keyword.
 
     ``page_id`` is the UUID of the opened page.
     ``video_path`` path to the video or empty string if video is not created.
@@ -244,10 +244,24 @@ class SelectionType(Enum):
 
     ``ALL`` / ``ANY`` defines to return ids of all instances."""
 
-    ACTIVE = auto()
-    CURRENT = ACTIVE
-    ALL = auto()
+    CURRENT = "CURRENT"
+    ACTIVE = CURRENT
+    ALL = "ALL"
     ANY = ALL
+
+    @classmethod
+    def create(cls, value: Union[str, "SelectionType"]):
+        """Returns the enum value from the given string or not."""
+        if isinstance(value, cls):
+            return value
+        if isinstance(value, str):
+            try:
+                return cls[value.upper()]
+            except KeyError:
+                return value
+
+    def __str__(self):
+        return self.value
 
 
 class DialogAction(Enum):

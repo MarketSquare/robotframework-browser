@@ -40,9 +40,8 @@ class Devices(LibraryComponent):
     def get_device(self, name: str) -> Dict:
         """Get a single device descriptor with name exactly matching name.
 
-        ``name`` Given name of the requested device. See Playwright's
-        [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json]
-        for a formatted list.
+        | =Arguments= | =Description= |
+        | ``name`` | Given name of the requested device. See Playwright's [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json] for a formatted list. |
 
         Allows a concise syntax to set website testing values to exact matches of specific
         mobile devices.

@@ -33,10 +33,9 @@ class RunOnFailureKeywords(LibraryComponent):
     ) -> DelayedKeyword:
         """Sets the keyword to execute, when a Browser keyword fails.
 
-        ``keyword`` is the name of a keyword that will be executed if a
-        Browser keyword fails. It is possible to use any available
-        keyword, including user keywords or keywords from other libraries.
-        ``args`` are the arguments to the keyword if any.
+        | =Arguments= | =Description= |
+        | ``keyword`` | The name of a keyword that will be executed if a Browser keyword fails. It is possible to use any available keyword, including user keywords or keywords from other libraries. |
+        | ``*args`` | The arguments to the keyword if any. |
 
         The initial keyword to use is set when `importing` the library, and
         the keyword that is used by default is `Take Screenshot`.
