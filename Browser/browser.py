@@ -725,7 +725,7 @@ class Browser(DynamicCore):
         self.ROBOT_LIBRARY_LISTENER = self
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
-        self.pause_on_failure: Set["Browser"] = set()
+        self.pause_on_failure: Set[str] = set()
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             external_browser_executable or {}
         )
