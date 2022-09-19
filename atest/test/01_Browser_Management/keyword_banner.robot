@@ -8,25 +8,24 @@ Suite Setup         Ensure Open Page
 Test Setup          Go To    ${FORM_URL}
 Test Teardown       Show Keyword Banner    None
 
-
 *** Test Cases ***
 Show Keyword Banner
     [Documentation]    This test case should show the keyword banner
-    ${original_settings}=    Show Keyword Banner    True
+    ${original_settings} =    Show Keyword Banner    True
     Should Be True    $original_settings["show"] == None and $original_settings["style"] == ''
     Get Selected Options    [name="possible_channels"]    text    validate    value == ["Email", "Telephone"]
-    ${style}=    keyword_banner.Get Computed Banner Style
+    ${style} =    keyword_banner.Get Computed Banner Style
     Should Be Equal
     ...    ${style}[content]
     ...    "Get Selected Options \ \ \ [name=\\"possible_channels\\"] \ \ \ text \ \ \ validate \ \ \ value == [\\"Email\\", \\"Telephone\\"]"
     Show Keyword Banner    &{original_settings}
     Get Title
-    ${style}=    keyword_banner.Get Computed Banner Style
+    ${style} =    keyword_banner.Get Computed Banner Style
     Should Be Equal    ${style}[content]    none
 
 Keyword Call Banner Content
     [Documentation]    This test case should show the keyword banner
-    ${original_settings}=    Show Keyword Banner    True
+    ${original_settings} =    Show Keyword Banner    True
     Should Be True    $original_settings["show"] == None and $original_settings["style"] == ''
     Set Viewport Size    width=1200    height=800
     keyword_banner.Get Banner Content    ==    Set Viewport Size \ \ \ width=1200 \ \ \ height=800
@@ -46,7 +45,7 @@ Keyword Call Banner Content
     ...    Get Attribute \ \ \ xpath=//input[@name="submit"] \ \ \ attribute=name \ \ \ assertion_operator=should be \ \ \ assertion_expected=submit
 
 Get Page Source And Take Screenshot Muting
-    ${original_settings}=    Show Keyword Banner    True
+    ${original_settings} =    Show Keyword Banner    True
     Get Title
     keyword_banner.Get Banner Content    ==    Get Title
     Take Screenshot    ${OUTPUTDIR}/screenshot.png
@@ -61,16 +60,16 @@ Get Page Source And Take Screenshot Muting
 
 Change Banner CSS
     Set Viewport Size    width=1200    height=800
-    ${original_settings}=    Show Keyword Banner    True
+    ${original_settings} =    Show Keyword Banner    True
     Get Title
-    ${style}=    keyword_banner.Get Computed Banner Style
+    ${style} =    keyword_banner.Get Computed Banner Style
     Should Be Equal    ${style}[left]    5px
     Should Be Equal    ${style}[bottom]    5px
     Show Keyword Banner
     ...    show=True
     ...    style=top: 5px; bottom: auto; background-color: red; color: white; font-size: 20px; font-family: monospace; padding: 10px; border: 1px solid black; border-radius: 5px;
     Get Title
-    ${style}=    keyword_banner.Get Computed Banner Style
+    ${style} =    keyword_banner.Get Computed Banner Style
     Should Be Equal    ${style}[top]    5px
     Should Be Equal    ${style}[left]    5px
     Should Be Equal    ${style}[backgroundColor]    rgb(255, 0, 0)
@@ -82,4 +81,3 @@ Change Banner CSS
     Should Be Equal    ${style}[paddingTop]    10px
     Should Be Equal    ${style}[paddingBottom]    10px
     Should Be Equal    ${style}[borderRadius]    5px
-
