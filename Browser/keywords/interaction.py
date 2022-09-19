@@ -827,7 +827,7 @@ class Interaction(LibraryComponent):
         y: Optional[float] = None,
         button: MouseButton = MouseButton.left,
         clickCount: int = 1,
-        delay: int = 0,
+        delay: timedelta = timedelta(seconds=0),
     ):
         """Clicks, presses or releases a mouse button.
 
@@ -836,7 +836,7 @@ class Interaction(LibraryComponent):
         | ``x``, ``y`` | Coordinates to move before action is executed. |
         | ``button`` | One of ``left``, ``middle`` or ``up``. Defaults to ``left``. |
         | ``clickCount`` | Determine how often the button shall be clicked if action is equal to ``click``. Defaults to 1. |
-        | ``delay`` | Delay in ms between the mousedown and mouseup event. Can only be set if the action is ``click``. |
+        | ``delay`` | Delay in Robot Framework time format between the mousedown and mouseup event. Can only be set if the action is ``click``. |
 
         Moving the mouse between holding down and releasing it, is possible with `Mouse Move`.
 
@@ -858,7 +858,7 @@ class Interaction(LibraryComponent):
             if action == MouseButtonAction.click:
                 for _ in range(clickCount):
                     self.mouse_button(MouseButtonAction.down, button=button)
-                    sleep(delay / 1000)
+                    sleep(delay.total_seconds())
                     self.mouse_button(MouseButtonAction.up, button=button)
                 return
             else:

@@ -124,7 +124,7 @@ Click Count
 Delay Click
     ${x} =    Get Boundingbox    \#clickWithOptions    x
     ${y} =    Get Boundingbox    \#clickWithOptions    y
-    Mouse Button    click    ${x}    ${y}    delay=100
+    Mouse Button    click    ${x}    ${y}    delay=100ms
     Get Text    \#mouse_delay_time    validate    int(value) > 90
 
 Left Right And Middle Click
