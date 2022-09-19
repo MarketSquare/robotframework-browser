@@ -378,6 +378,7 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-new-browser/4306|Comment >>]
         """
+        params = locals_to_params(locals())
         old_args_list = list(self.old_new_browser_args.items())
         pos_params = {}
         for index, pos_arg in enumerate(deprecated_pos_args):
@@ -391,7 +392,6 @@ class PlaywrightState(LibraryComponent):
             logger.warn(
                 "Deprecated positional arguments are used in 'New Browser'. Please use named arguments instead."
             )
-        params = locals_to_params(locals())
         params = {**pos_params, **params}
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
         options = json.dumps(params, default=str)
@@ -528,6 +528,8 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-new-context/4307|Comment >>]
         """
+        params = locals_to_params(locals())
+        params["viewport"] = copy(viewport)
         old_args_list = list(self.old_new_context_args.items())
         pos_params = {}
         for index, pos_arg in enumerate(deprecated_pos_args):
@@ -541,8 +543,6 @@ class PlaywrightState(LibraryComponent):
             logger.warn(
                 "Deprecated positional arguments are used in 'New Context'. Please use named arguments instead."
             )
-        params = locals_to_params(locals())
-        params["viewport"] = copy(viewport)
         params = {**pos_params, **params}
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(
@@ -679,6 +679,8 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
+        params = locals_to_params(locals())
+        params["viewport"] = copy(viewport)
         old_args_list = list(self.old_new_perse_context_args.items())
         pos_params = {}
         for index, pos_arg in enumerate(deprecated_pos_args):
@@ -692,8 +694,6 @@ class PlaywrightState(LibraryComponent):
             logger.warn(
                 "Deprecated positional arguments are used in 'New Persistent Context'. Please use named arguments instead."
             )
-        params = locals_to_params(locals())
-        params["viewport"] = copy(viewport)
         params = {**pos_params, **params}
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
@@ -743,7 +743,7 @@ class PlaywrightState(LibraryComponent):
         if not videosPath:
             params.pop("videoSize", None)
         masked_params = self._mask_credentials(params.copy())
-        logger.debug(masked_params)
+        logger.info(json.dumps(masked_params, default=str, indent=2))
         return params
 
     def _set_browser_options(self, params, browser, channel, slowMo, timeout):
