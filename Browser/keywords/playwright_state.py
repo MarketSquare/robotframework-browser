@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
+from robot.running.arguments.typeconverters import TypeConverter  # type: ignore
 from robot.utils import get_link_path  # type: ignore
 
 from ..assertion_engine import with_assertion_polling
@@ -313,24 +314,41 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
+    old_new_browser_args = {
+        "executablePath": Optional[str],
+        "args": Optional[List[str]],
+        "ignoreDefaultArgs": Optional[List[str]],
+        "proxy": Optional[Proxy],
+        "downloadsPath": Optional[str],
+        "handleSIGINT": bool,
+        "handleSIGTERM": bool,
+        "handleSIGHUP": bool,
+        "timeout": timedelta,
+        "env": Optional[Dict],
+        "devtools": bool,
+        "slowMo": timedelta,
+        "channel": Optional[str],
+    }
+
     @keyword(tags=("Setter", "BrowserControl"))
     def new_browser(
         self,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
-        executablePath: Optional[str] = None,
+        *deprecated_pos_args,
         args: Optional[List[str]] = None,
-        ignoreDefaultArgs: Optional[List[str]] = None,
-        proxy: Optional[Proxy] = None,
+        channel: Optional[str] = None,
+        devtools: bool = False,
         downloadsPath: Optional[str] = None,
+        env: Optional[Dict] = None,
+        executablePath: Optional[str] = None,
+        handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        handleSIGHUP: bool = True,
-        timeout: timedelta = timedelta(seconds=30),
-        env: Optional[Dict] = None,
-        devtools: bool = False,
+        ignoreDefaultArgs: Optional[List[str]] = None,
+        proxy: Optional[Proxy] = None,
         slowMo: timedelta = timedelta(seconds=0),
-        channel: Optional[str] = None,
+        timeout: timedelta = timedelta(seconds=30),
     ) -> str:
 
         """Create a new playwright Browser with specified options.
@@ -342,6 +360,7 @@ class PlaywrightState(LibraryComponent):
         | =Arguments= | =Description= |
         | ``browser`` | Opens the specified [#type-SupportedBrowsers|browser]. Defaults to chromium. |
         | ``headless`` | Set to False if you want a GUI. Defaults to True. |
+        | ``*deprecated_pos_args`` | Other positional arguments are deprecated for `New Browser`. Please use named arguments in the future. We will remove positional arguments after RoboCon 2023 Online in March. Old order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``. |
         | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
         | ``args`` | Additional arguments to pass to the browser instance. The list of Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/|here]. Defaults to None. |
         | ``ignoreDefaultArgs`` | If an array is given, then filters out the given default arguments. Defaults to None. |
@@ -359,7 +378,21 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-new-browser/4306|Comment >>]
         """
+        old_args_list = list(self.old_new_browser_args.items())
+        pos_params = {}
+        for index, pos_arg in enumerate(deprecated_pos_args):
+            argument_name = old_args_list[index][0]
+            argument_type = old_args_list[index][1]
+            converted_pos = TypeConverter.converter_for(argument_type).convert(
+                argument_name, pos_arg
+            )
+            pos_params[argument_name] = converted_pos
+        if pos_params:
+            logger.warn(
+                "Deprecated positional arguments are used in 'New Browser'. Please use named arguments instead."
+            )
         params = locals_to_params(locals())
+        params = {**pos_params, **params}
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
         options = json.dumps(params, default=str)
         logger.info(options)
@@ -371,42 +404,74 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
+    old_new_context_args = {
+        "acceptDownloads": bool,
+        "ignoreHTTPSErrors": bool,
+        "bypassCSP": bool,
+        "viewport": Optional[ViewportDimensions],
+        "userAgent": Optional[str],
+        "deviceScaleFactor": Optional[float],
+        "isMobile": Optional[bool],
+        "hasTouch": Optional[bool],
+        "javaScriptEnabled": bool,
+        "timezoneId": Optional[str],
+        "geolocation": Optional[GeoLocation],
+        "locale": Optional[str],
+        "permissions": Optional[List[Permission]],
+        "extraHTTPHeaders": Optional[Dict[str, str]],
+        "offline": bool,
+        "httpCredentials": Optional[HttpCredentials],
+        "colorScheme": Optional[ColorScheme],
+        "videosPath": Optional[str],
+        "videoSize": Optional[ViewportDimensions],
+        "defaultBrowserType": Optional[SupportedBrowsers],
+        "hideRfBrowser": bool,
+        "recordVideo": Optional[RecordVideo],
+        "recordHar": Optional[RecordHar],
+        "tracing": Optional[str],
+        "screen": Optional[Dict[str, int]],
+        "storageState": Optional[str],
+        "reducedMotion": ReduceMotion,
+        "forcedColors": ForcedColors,
+    }
+
     @keyword(tags=("Setter", "BrowserControl"))
     @attribute_warning(
         old_args=("videosPath", "videoSize"), new_args=("recordVideo", "recordVideo")
     )
     def new_context(
         self,
+        *deprecated_pos_args,
         acceptDownloads: bool = True,
-        ignoreHTTPSErrors: bool = False,
         bypassCSP: bool = False,
+        colorScheme: Optional[ColorScheme] = None,
+        defaultBrowserType: Optional[SupportedBrowsers] = None,
+        deviceScaleFactor: Optional[float] = None,
+        extraHTTPHeaders: Optional[Dict[str, str]] = None,
+        forcedColors: ForcedColors = ForcedColors.none,
+        geolocation: Optional[GeoLocation] = None,
+        hasTouch: Optional[bool] = None,
+        hideRfBrowser: bool = False,
+        httpCredentials: Optional[HttpCredentials] = None,
+        ignoreHTTPSErrors: bool = False,
+        isMobile: Optional[bool] = None,
+        javaScriptEnabled: bool = True,
+        locale: Optional[str] = None,
+        offline: bool = False,
+        permissions: Optional[List[Permission]] = None,
+        recordHar: Optional[RecordHar] = None,
+        recordVideo: Optional[RecordVideo] = None,
+        reducedMotion: ReduceMotion = ReduceMotion.no_preference,
+        screen: Optional[Dict[str, int]] = None,
+        storageState: Optional[str] = None,
+        timezoneId: Optional[str] = None,
+        tracing: Optional[str] = None,
+        userAgent: Optional[str] = None,
+        videoSize: Optional[ViewportDimensions] = None,
+        videosPath: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
         ),
-        userAgent: Optional[str] = None,
-        deviceScaleFactor: Optional[float] = None,
-        isMobile: Optional[bool] = None,
-        hasTouch: Optional[bool] = None,
-        javaScriptEnabled: bool = True,
-        timezoneId: Optional[str] = None,
-        geolocation: Optional[GeoLocation] = None,
-        locale: Optional[str] = None,
-        permissions: Optional[List[Permission]] = None,
-        extraHTTPHeaders: Optional[Dict[str, str]] = None,
-        offline: bool = False,
-        httpCredentials: Optional[HttpCredentials] = None,
-        colorScheme: Optional[ColorScheme] = None,
-        videosPath: Optional[str] = None,
-        videoSize: Optional[ViewportDimensions] = None,
-        defaultBrowserType: Optional[SupportedBrowsers] = None,
-        hideRfBrowser: bool = False,
-        recordVideo: Optional[RecordVideo] = None,
-        recordHar: Optional[RecordHar] = None,
-        tracing: Optional[str] = None,
-        screen: Optional[Dict[str, int]] = None,
-        storageState: Optional[str] = None,
-        reducedMotion: ReduceMotion = ReduceMotion.no_preference,
-        forcedColors: ForcedColors = ForcedColors.none,
     ) -> str:
         """Create a new BrowserContext with specified options.
 
@@ -416,35 +481,36 @@ class PlaywrightState(LibraryComponent):
         that can be used in `Switch Context`.
 
 
-        | =Arguments= | =Description= |
-        | ``acceptDownloads``    | Whether to automatically download all the attachments. Defaults to True where all the downloads are accepted. |
-        | ``ignoreHTTPSErrors``  | Whether to ignore HTTPS errors during navigation. Defaults to False. |
-        | ``bypassCSP``          | Toggles bypassing page's Content-Security-Policy. Defaults to False. |
-        | ``viewport``           | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
-        | ``userAgent``          | Specific user agent to use in this context. |
-        | ``deviceScaleFactor``  | Specify device scale factor (can be thought of as dpr). Defaults to ``1``. |
-        | ``isMobile``           | Whether the meta viewport tag is taken into account and touch events are enabled. Defaults to False. |
-        | ``hasTouch``           | Specifies if viewport supports touch events. Defaults to False. |
-        | ``javaScriptEnabled``  | Whether or not to enable JavaScript in the context. Defaults to True. |
-        | ``timezoneId``         | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU’s metaZones.txt] for a list of supported timezone IDs. |
-        | ``geolocation``        | A dictionary containing ``latitude`` and ``longitude`` or ``accuracy`` to emulate. If ``latitude`` or ``longitude`` is not specified, the device geolocation won't be overriden. |
-        | ``locale``             | Specify user locale, for example ``en-GB``, ``de-DE``, etc. |
-        | ``permissions``        | A dictionary containing permissions to grant to all pages in this context. All permissions that are not listed here will be automatically denied. |
-        | ``extraHTTPHeaders``   | A dictionary containing additional HTTP headers to be sent with every request. All header values must be strings. |
-        | ``offline``            | Toggles browser's offline mode. Defaults to False. |
-        | ``httpCredentials``    | Credentials for [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication]. |
-        | ``colorScheme``        | Emulates `'prefers-colors-scheme'` media feature, supported values are `'light'`, `'dark'`, `'no-preference'`. |
-        | ``videosPath``         | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
-        | ``videoSize``          | Specifies dimensions of the automatically recorded video. Can only be used if videosPath is set. If not specified the size will be equal to viewport. If viewport is not configured explicitly the video size defaults to 1280x720. Actual picture of the page will be scaled down if necessary to fit specified size. |
-        | ``defaultBrowserType`` | If no browser is open and `New Context` opens a new browser with defaults, it now uses this setting. Very useful together with `Get Device` keyword. |
-        | ``hideRFBrowser``      | If set to True, the browser window will be hidden. |
-        | ``recordVideo``        | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
-        | ``recordHar``          | Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file. If not specified, the HAR is not recorded. Make sure to await context to close for the to be saved. |
-        | ``tracing``            | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace -F /path/to/trace.zip``. |
-        | ``screen``             | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
-        | ``storageState``       | Restores the storage stated created by the `Save Storage State` keyword. Must mbe full path to the file. |
-        | ``reduceMotion``       | Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`. |
-        | ``forcedColors``       | Emulates `forced-colors` media feature, supported values are `active` and `none`. |
+        | =Arguments=              | =Description= |
+        | ``*deprecated_pos_args`` | Positional arguments are deprecated for New Context. Please use named arguments in the future. We will remove positional arguments after RoboCon 2023 Online in March. Old positional order was ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``, ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``, ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``, ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``, ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``. |
+        | ``acceptDownloads``      | Whether to automatically download all the attachments. Defaults to True where all the downloads are accepted. |
+        | ``bypassCSP``            | Toggles bypassing page's Content-Security-Policy. Defaults to False. |
+        | ``colorScheme``          | Emulates `'prefers-colors-scheme'` media feature, supported values are `'light'`, `'dark'`, `'no-preference'`. |
+        | ``defaultBrowserType``   | If no browser is open and `New Context` opens a new browser with defaults, it now uses this setting. Very useful together with `Get Device` keyword. |
+        | ``deviceScaleFactor``    | Specify device scale factor (can be thought of as dpr). Defaults to ``1``. |
+        | ``extraHTTPHeaders``     | A dictionary containing additional HTTP headers to be sent with every request. All header values must be strings. |
+        | ``forcedColors``         | Emulates `forced-colors` media feature, supported values are `active` and `none`. |
+        | ``geolocation``          | A dictionary containing ``latitude`` and ``longitude`` or ``accuracy`` to emulate. If ``latitude`` or ``longitude`` is not specified, the device geolocation won't be overriden. |
+        | ``hasTouch``             | Specifies if viewport supports touch events. Defaults to False. |
+        | ``hideRFBrowser``        | If set to True, the browser window will be hidden. |
+        | ``httpCredentials``      | Credentials for [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication]. |
+        | ``ignoreHTTPSErrors``    | Whether to ignore HTTPS errors during navigation. Defaults to False. |
+        | ``isMobile``             | Whether the meta viewport tag is taken into account and touch events are enabled. Defaults to False. |
+        | ``javaScriptEnabled``    | Whether or not to enable JavaScript in the context. Defaults to True. |
+        | ``locale``               | Specify user locale, for example ``en-GB``, ``de-DE``, etc. |
+        | ``offline``              | Toggles browser's offline mode. Defaults to False. |
+        | ``permissions``          | A dictionary containing permissions to grant to all pages in this context. All permissions that are not listed here will be automatically denied. |
+        | ``recordHar``            | Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file. If not specified, the HAR is not recorded. Make sure to await context to close for the to be saved. |
+        | ``recordVideo``          | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
+        | ``reduceMotion``         | Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`. |
+        | ``screen``               | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
+        | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must mbe full path to the file. |
+        | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU’s metaZones.txt] for a list of supported timezone IDs. |
+        | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace -F /path/to/trace.zip``. |
+        | ``userAgent``            | Specific user agent to use in this context. |
+        | ``videoSize``            | Specifies dimensions of the automatically recorded video. Can only be used if videosPath is set. If not specified the size will be equal to viewport. If viewport is not configured explicitly the video size defaults to 1280x720. Actual picture of the page will be scaled down if necessary to fit specified size. |
+        | ``videosPath``           | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
+        | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
 
 
         Example:
@@ -462,9 +528,23 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-new-context/4307|Comment >>]
         """
-
+        old_args_list = list(self.old_new_context_args.items())
+        pos_params = {}
+        for index, pos_arg in enumerate(deprecated_pos_args):
+            argument_name = old_args_list[index][0]
+            argument_type = old_args_list[index][1]
+            converted_pos = TypeConverter.converter_for(argument_type).convert(
+                argument_name, pos_arg
+            )
+            pos_params[argument_name] = converted_pos
+        if pos_params:
+            logger.warn(
+                "Deprecated positional arguments are used in 'New Context'. Please use named arguments instead."
+            )
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
+        params = {**pos_params, **params}
+        logger.debug(f"params: {params}")
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(
             params, httpCredentials, storageState, videosPath
@@ -482,65 +562,114 @@ class PlaywrightState(LibraryComponent):
         self.context_cache.add(response.id, self._get_video_size(params))
         return response.id
 
+    old_new_perse_context_args = {
+        "executablePath": Optional[str],
+        "args": Optional[List[str]],
+        "ignoreDefaultArgs": Optional[List[str]],
+        "proxy": Optional[Proxy],
+        "downloadsPath": Optional[str],
+        "handleSIGINT": bool,
+        "handleSIGTERM": bool,
+        "handleSIGHUP": bool,
+        "timeout": timedelta,
+        "env": Optional[Dict],
+        "devtools": bool,
+        "slowMo": timedelta,
+        "channel": Optional[str],
+        "acceptDownloads": bool,
+        "ignoreHTTPSErrors": bool,
+        "bypassCSP": bool,
+        "viewport": Optional[ViewportDimensions],
+        "userAgent": Optional[str],
+        "deviceScaleFactor": Optional[float],
+        "isMobile": Optional[bool],
+        "hasTouch": Optional[bool],
+        "javaScriptEnabled": bool,
+        "timezoneId": Optional[str],
+        "geolocation": Optional[GeoLocation],
+        "locale": Optional[str],
+        "permissions": Optional[List[Permission]],
+        "extraHTTPHeaders": Optional[Dict[str, str]],
+        "offline": bool,
+        "httpCredentials": Optional[HttpCredentials],
+        "colorScheme": Optional[ColorScheme],
+        "videosPath": Optional[str],
+        "videoSize": Optional[ViewportDimensions],
+        "defaultBrowserType": Optional[SupportedBrowsers],
+        "hideRfBrowser": bool,
+        "recordVideo": Optional[RecordVideo],
+        "recordHar": Optional[RecordHar],
+        "tracing": Optional[str],
+        "screen": Optional[Dict[str, int]],
+        "storageState": Optional[str],
+        "reducedMotion": ReduceMotion,
+        "forcedColors": ForcedColors,
+        "url": Optional[str],
+    }
+
     @keyword()
     def new_persistent_context(
         self,
         userDataDir: str = "",  # TODO: change to PurePath
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
-        executablePath: Optional[str] = None,
+        *deprecated_pos_args,
+        acceptDownloads: bool = True,
         args: Optional[List[str]] = None,
-        ignoreDefaultArgs: Optional[List[str]] = None,
-        proxy: Optional[Proxy] = None,
+        bypassCSP: bool = False,
+        channel: Optional[str] = None,
+        colorScheme: Optional[ColorScheme] = None,
+        defaultBrowserType: Optional[SupportedBrowsers] = None,
+        deviceScaleFactor: Optional[float] = None,
+        devtools: bool = False,
         downloadsPath: Optional[str] = None,
+        env: Optional[Dict] = None,
+        executablePath: Optional[str] = None,
+        extraHTTPHeaders: Optional[Dict[str, str]] = None,
+        forcedColors: ForcedColors = ForcedColors.none,
+        geolocation: Optional[GeoLocation] = None,
+        handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        handleSIGHUP: bool = True,
-        timeout: timedelta = timedelta(seconds=30),
-        env: Optional[Dict] = None,
-        devtools: bool = False,
-        slowMo: timedelta = timedelta(seconds=0),
-        channel: Optional[str] = None,
-        acceptDownloads: bool = True,
+        hasTouch: Optional[bool] = None,
+        hideRfBrowser: bool = False,
+        httpCredentials: Optional[HttpCredentials] = None,
+        ignoreDefaultArgs: Optional[List[str]] = None,
         ignoreHTTPSErrors: bool = False,
-        bypassCSP: bool = False,
+        isMobile: Optional[bool] = None,
+        javaScriptEnabled: bool = True,
+        locale: Optional[str] = None,
+        offline: bool = False,
+        permissions: Optional[List[Permission]] = None,
+        proxy: Optional[Proxy] = None,
+        recordHar: Optional[RecordHar] = None,
+        recordVideo: Optional[RecordVideo] = None,
+        reducedMotion: ReduceMotion = ReduceMotion.no_preference,
+        screen: Optional[Dict[str, int]] = None,
+        slowMo: timedelta = timedelta(seconds=0),
+        storageState: Optional[str] = None,
+        timeout: timedelta = timedelta(seconds=30),
+        timezoneId: Optional[str] = None,
+        tracing: Optional[str] = None,
+        url: Optional[str] = None,
+        userAgent: Optional[str] = None,
+        videoSize: Optional[ViewportDimensions] = None,
+        videosPath: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
         ),
-        userAgent: Optional[str] = None,
-        deviceScaleFactor: Optional[float] = None,
-        isMobile: Optional[bool] = None,
-        hasTouch: Optional[bool] = None,
-        javaScriptEnabled: bool = True,
-        timezoneId: Optional[str] = None,
-        geolocation: Optional[GeoLocation] = None,
-        locale: Optional[str] = None,
-        permissions: Optional[List[Permission]] = None,
-        extraHTTPHeaders: Optional[Dict[str, str]] = None,
-        offline: bool = False,
-        httpCredentials: Optional[HttpCredentials] = None,
-        colorScheme: Optional[ColorScheme] = None,
-        videosPath: Optional[str] = None,
-        videoSize: Optional[ViewportDimensions] = None,
-        defaultBrowserType: Optional[SupportedBrowsers] = None,
-        hideRfBrowser: bool = False,
-        recordVideo: Optional[RecordVideo] = None,
-        recordHar: Optional[RecordHar] = None,
-        tracing: Optional[str] = None,
-        screen: Optional[Dict[str, int]] = None,
-        storageState: Optional[str] = None,
-        reducedMotion: ReduceMotion = ReduceMotion.no_preference,
-        forcedColors: ForcedColors = ForcedColors.none,
-        url: Optional[str] = None,
     ):
         """Open a new
         [https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context | persistent context].
 
         `New Persistent Context` does basically executes `New Browser`, `New Context` and `New Page` in one step with setting a profile at the same time.
 
-        | =Argument=           | =Description= |
-        | ``userDataDir``      | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead |
-        | other arguments      | Please see `New Browser`, `New Context` and `New Page` for more information about the other arguments. |
+        | =Argument=               | =Description= |
+        | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. Old positional order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``, ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``, ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``, ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``, ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``, ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``, ``url``. |
+        | ``browser``              | Browser type to use. Default is Chromium. |
+        | ``headless``             | Whether to run browser in headless mode. Defaults to ``True``. |
+        | ``*deprecated_pos_args`` | Other positional arguments are deprecated for `New Persistent Context`. Please use named arguments in the future. We will remove positional arguments after RoboCon 2023 Online in March. |
+        | other arguments          | Please see `New Browser`, `New Context` and `New Page` for more information about the other arguments. |
 
         If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
 
@@ -551,9 +680,22 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
-
+        old_args_list = list(self.old_new_perse_context_args.items())
+        pos_params = {}
+        for index, pos_arg in enumerate(deprecated_pos_args):
+            argument_name = old_args_list[index][0]
+            argument_type = old_args_list[index][1]
+            converted_pos = TypeConverter.converter_for(argument_type).convert(
+                argument_name, pos_arg
+            )
+            pos_params[argument_name] = converted_pos
+        if pos_params:
+            logger.warn(
+                "Deprecated positional arguments are used in 'New Persistent Context'. Please use named arguments instead."
+            )
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
+        params = {**pos_params, **params}
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
         params = self._set_context_options(

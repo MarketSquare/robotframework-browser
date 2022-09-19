@@ -46,7 +46,7 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
             for req_key in arg_type.__required_keys__:  # type: ignore
                 if req_key.lower() not in lower_case_dict:
                     raise RuntimeError(
-                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__}."
+                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__} for argument '{arg_name}'."
                         f"\nThe required key '{req_key}' in not set in given value."
                         f"\nExpected types: {arg_type.__annotations__}"
                     )
