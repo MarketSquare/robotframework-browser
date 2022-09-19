@@ -544,7 +544,6 @@ class PlaywrightState(LibraryComponent):
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
         params = {**pos_params, **params}
-        logger.debug(f"params: {params}")
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(
             params, httpCredentials, storageState, videosPath

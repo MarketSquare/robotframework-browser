@@ -27,9 +27,9 @@ Open GoTo GoBack GoForward
 
 Timeouting Go To
     New Page    ${LOGIN_URL}
-    ${timeout} =    Set Browser Timeout    7ms
+    ${timeout} =    Set Browser Timeout    2ms
     Run KeyWord And Expect Error
-    ...    TimeoutError: page.goto: Timeout 7ms exceeded.*
+    ...    TimeoutError: page.goto: Timeout 2ms exceeded.*
     ...    Go To    ${WELCOME_URL}
     [Teardown]    Teardown For Timeouting Go To    ${timeout}
 
@@ -37,8 +37,8 @@ Timeouting Go To With Custom Timeout
     [Tags]    slow
     New Page    ${LOGIN_URL}
     Run KeyWord And Expect Error
-    ...    TimeoutError: page.goto: Timeout 10ms exceeded.*
-    ...    Go To    ${WELCOME_URL}    10 ms
+    ...    TimeoutError: page.goto: Timeout 3ms exceeded.*
+    ...    Go To    ${WELCOME_URL}    3 ms
     [Teardown]    Close Context
 
 *** Keywords ***
