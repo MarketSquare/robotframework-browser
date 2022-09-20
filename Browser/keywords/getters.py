@@ -509,6 +509,7 @@ class Getters(LibraryComponent):
         option_attribute: SelectAttribute = SelectAttribute.label,
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the specified attribute of selected options of the ``select`` element.
 
@@ -517,6 +518,7 @@ class Getters(LibraryComponent):
         | ``option_attribute`` | Which attribute shall be returned/verified. Defaults to label. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``*assertion_expected`` | Expected value for the state |
+        | ``message`` | overrides the default error message for assertion. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -563,6 +565,7 @@ class Getters(LibraryComponent):
             assertion_operator,
             expected,
             "Selected Options:",
+            message
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))

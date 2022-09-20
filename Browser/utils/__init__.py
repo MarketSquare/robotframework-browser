@@ -17,6 +17,7 @@
 from .data_types import (
     AutoClosingLevel,
     ColorScheme,
+    ConditionInputs,
     CookieSameSite,
     CookieType,
     DownloadedFile,
