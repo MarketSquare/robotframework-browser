@@ -17,7 +17,7 @@ from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -827,7 +827,8 @@ class Interaction(LibraryComponent):
         y: Optional[float] = None,
         button: MouseButton = MouseButton.left,
         clickCount: int = 1,
-        delay: timedelta = timedelta(seconds=0),
+        delay: Union[int, timedelta] = timedelta(seconds=0),
+        # TODO: remove int special handling. Was only here since 09.2022 for removing delay ms to timedelta
     ):
         """Clicks, presses or releases a mouse button.
 
@@ -837,6 +838,14 @@ class Interaction(LibraryComponent):
         | ``button`` | One of ``left``, ``middle`` or ``up``. Defaults to ``left``. |
         | ``clickCount`` | Determine how often the button shall be clicked if action is equal to ``click``. Defaults to 1. |
         | ``delay`` | Delay in Robot Framework time format between the mousedown and mouseup event. Can only be set if the action is ``click``. |
+
+        *Attention:*
+        Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead.
+        For refactoring just add 'ms' after the delay number.
+
+        Delay Example:
+        | `Mouse Button`    click    100 ms
+        | `Mouse Button`    click    ${dyn_delay} ms
 
         Moving the mouse between holding down and releasing it, is possible with `Mouse Move`.
 
@@ -848,6 +857,14 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4303|Comment >>]
         """
+        if isinstance(delay, int):
+            logger.warn(
+                "Keyword 'Mouse Button' does no longer support int for 'delay'."
+            )
+            delay = timedelta(milliseconds=delay)
+            raise ValueError(
+                "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
+            )
         with self.playwright.grpc_channel() as stub:
             if x and y:
                 self.mouse_move(x, y)
@@ -1086,7 +1103,8 @@ class Interaction(LibraryComponent):
         self,
         action: KeyboardInputAction,
         input: str,
-        delay: timedelta = timedelta(milliseconds=0),
+        delay: Union[int, timedelta] = timedelta(milliseconds=0),
+        # TODO: remove int special handling. Was only here since 09.2022 for removing delay ms to timedelta
     ):
         """Input text into page with virtual keyboard.
 
@@ -1094,6 +1112,10 @@ class Interaction(LibraryComponent):
         | ``action`` | ``insertText``: Dispatches only input event, does not emit the keydown, keyup or keypress events. ``type``: Sends a keydown, keypress/input, and keyup event for each character in the text. |
         | ``input`` | The inputstring to be typed. _No special keys possible._ |
         | ``delay`` | Time to wait between key presses in Robot Framework's time format. Defaults to 0. |
+
+        *Attention:*
+        Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead.
+
 
         Note: To press a special key, like Control or ArrowDown, use keyboard.press.
         Modifier keys DO NOT effect these methods. For testing modifier effects use single key
@@ -1104,6 +1126,13 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4297|Comment >>]
         """
+        if isinstance(delay, int):
+            logger.warn(
+                "Keyword 'Keyboard Input' does no longer support int for 'delay'."
+            )
+            raise ValueError(
+                "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
+            )
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardInput(
                 Request().KeyboardInputOptions(
