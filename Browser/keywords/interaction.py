@@ -859,12 +859,14 @@ class Interaction(LibraryComponent):
         """
         if isinstance(delay, int):
             logger.warn(
-                "Keyword 'Mouse Button' does no longer support int for 'delay'."
+                "Keyword 'Mouse Button' will not support int in ms for 'delay' in the future. "
+                "Use timedelta with units ('ms' or 's') instead."
             )
             delay = timedelta(milliseconds=delay)
-            raise ValueError(
-                "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
-            )
+            # ToDo: add in 15.0.0
+            # raise ValueError(
+            #     "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
+            # )
         with self.playwright.grpc_channel() as stub:
             if x and y:
                 self.mouse_move(x, y)
@@ -1114,7 +1116,7 @@ class Interaction(LibraryComponent):
         | ``delay`` | Time to wait between key presses in Robot Framework's time format. Defaults to 0. |
 
         *Attention:*
-        Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead.
+        Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format with units instead.
 
 
         Note: To press a special key, like Control or ArrowDown, use keyboard.press.
@@ -1128,11 +1130,14 @@ class Interaction(LibraryComponent):
         """
         if isinstance(delay, int):
             logger.warn(
-                "Keyword 'Keyboard Input' does no longer support int for 'delay'."
+                "Keyword 'Keyboard Input' will not support int in ms for 'delay' in the future. "
+                "Use timedelta with units ('ms' or 's') instead."
             )
-            raise ValueError(
-                "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
-            )
+            delay = timedelta(milliseconds=delay)
+            # TODO: add in 15.0.0
+            # raise ValueError(
+            #     "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
+            # )
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardInput(
                 Request().KeyboardInputOptions(
