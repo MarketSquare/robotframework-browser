@@ -42,20 +42,11 @@ class Waiter(LibraryComponent):
 
         If the selector doesn't satisfy the condition within the timeout the keyword will FAIL.
 
-        ``selector`` Selector of the corresponding object.
-        See the `Finding elements` section for details about the selectors.
-
-        ``state`` See `ElementState` for explanation.
-
-        Note that element without any content or with display:none has an empty bounding box
-        and is not considered visible.
-
-        ``timeout`` uses default timeout from library if not set.
-
-        ``message`` overrides the default error message. The ``message``
-        argument accepts `{selector}`, `{function}`, and `{timeout}`
-        [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
-        The `{function}` formatter is same ``state`` argument value.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the corresponding object. See the `Finding elements` section for details about the selectors. |
+        | ``state`` | See `ElementState` for explanation. |
+        | ``timeout`` | uses default timeout from library if not set. |
+        | ``message`` | overrides the default error message. The ``message`` argument accepts `{selector}`, `{function}`, and `{timeout}` [https://docs.python.org/3/library/stdtypes.html#str.format|format] options. The `{function}` formatter is same ``state`` argument value. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -144,22 +135,12 @@ class Waiter(LibraryComponent):
     ):
         """Polls JavaScript expression or function in browser until it returns a (JavaScript) truthy value.
 
-        ``function`` A valid javascript function or a javascript function body. For example
-        ``() => true`` and ``true`` will behave similarly.
-
-        ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
-        argument the function receives. If given a selector a function is necessary, with an argument
-        to capture the elementhandle. For example ``(element) => document.activeElement === element``
-        See the `Finding elements` section for details about the selectors.
-
-        ``polling`` Default polling value of "raf" polls in a callback for ``requestAnimationFrame``.
-        Any other value for polling will be parsed as a robot framework time for interval between polls.
-
-        ``timeout`` Uses default timeout of 10 seconds if not set.
-
-        ``message`` overrides the default error message. The ``message``
-        argument accepts `{selector}`, `{function}`, and `{timeout}`
-        [https://docs.python.org/3/library/stdtypes.html#str.format|format] options.
+        | =Arguments= | =Description= |
+        | ``function`` | A valid javascript function or a javascript function body. For example ``() => true`` and ``true`` will behave similarly. |
+        | ``selector`` | Selector to resolve and pass to the JavaScript function. This will be the first argument the function receives. If given a selector a function is necessary, with an argument to capture the elementhandle. For example ``(element) => document.activeElement === element`` See the `Finding elements` section for details about the selectors. |
+        | ``polling`` | Default polling value of "raf" polls in a callback for ``requestAnimationFrame``. Any other value for polling will be parsed as a robot framework time for interval between polls. |
+        | ``timeout`` | Uses default timeout of the library if not set. |
+        | ``message`` | overrides the default error message. The ``message`` argument accepts `{selector}`, `{function}`, and `{timeout}` [https://docs.python.org/3/library/stdtypes.html#str.format|format] options. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 

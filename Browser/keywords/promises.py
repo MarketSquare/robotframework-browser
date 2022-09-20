@@ -44,6 +44,10 @@ class Promises(LibraryComponent):
 
         ``kw`` Keyword that will work async on background.
 
+        | =Arguments= | =Description= |
+        | ``kw`` | Keyword that will work async on background. |
+        | ``*args`` | Keyword arguments as normally used. |
+
         Example:
         | ${promise}=     `Promise To`            Wait For Response     matcher=     timeout=3
         | `Click`           \\#delayed_request
@@ -112,8 +116,8 @@ class Promises(LibraryComponent):
 
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 
-        ``saveAs`` defines path where the file is saved. File will also temporarily be saved in playwright context's
-        default download location.
+        | =Arguments= | =Description= |
+        | ``saveAs`` | Defines path where the file is saved. File will also temporarily be saved in playwright context's default download location. |
 
         Waited promise returns a dictionary which contains saveAs and suggestedFilename as keys. The saveAs contains
         where the file is downloaded and suggestedFilename contains the name suggested name for the download.
@@ -162,7 +166,8 @@ class Promises(LibraryComponent):
 
         For general waiting of elements please see `Implicit waiting`.
 
-        ``promises`` *Work in progress*
+        | =Arguments= | =Description= |
+        | ``promises`` | Promises to wait for. |
 
         Example:
         | ${promise}=    `Promise To`            `Wait For Response`     matcher=     timeout=3
@@ -199,7 +204,8 @@ class Promises(LibraryComponent):
 
         Upload file from ``path`` into next file chooser dialog on page.
 
-        ``path`` Path to file to be uploaded.
+        | =Arguments= | =Description= |
+        | ``path`` | Path to file to be uploaded. |
 
         Example use:
 

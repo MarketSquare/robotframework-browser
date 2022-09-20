@@ -54,10 +54,9 @@ class Control(LibraryComponent):
     def go_to(self, url: str, timeout: Optional[timedelta] = None):
         """Navigates to the given ``url``.
 
-        ``url`` <str> URL to be navigated to.
-
-        ``timeout`` <str> time to wait page to load. If not defined
-        will use the library default timeout.
+        | =Arguments= | =Description= |
+        | ``url`` | <str> URL to be navigated to. |
+        | ``timeout`` | <str> time to wait page to load. If not defined will use the library default timeout. |
 
         [https://forum.robotframework.org/t//4291|Comment >>]
         """
@@ -103,44 +102,17 @@ class Control(LibraryComponent):
     ) -> str:
         """Takes a screenshot of the current window or element and saves it to disk.
 
-        ``filename`` Filename into which to save. The file will be saved into the robot framework
-         ${OUTPUTDIR}/browser/screenshot directory by default, but it can overwritten by providing
-         custom path or filename. String ``{index}`` in filename will be replaced with a rolling
-         number. Use this to not override filenames. If filename equals to EMBED (case insensitive),
-         then screenshot is embedded as Base64 image to the log.html. The image is saved temporally
-         to the disk and warning is displayed if removing the temporary file fails.
-
-         The ${OUTPUTDIR}/browser/ is removed at the first suite startup.
-
-        ``selector`` Take a screenshot of the element matched by selector.
-        See the `Finding elements` section for details about the selectors.
-        If not provided take a screenshot of current viewport.
-
-        ``fullPage`` When True, takes a screenshot of the full scrollable page,
-        instead of the currently visible viewport. Defaults to False.
-
-        ``fileType`` <"png"|"jpeg"> Specify screenshot type, defaults to png.
-
-        ``quality`` The quality of the image, between 0-100. Not applicable to png images.
-
-        ``timeout`` Maximum time how long taking screenshot can last, defaults to library timeout.
-        Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout.
-        The default value can be changed by using the `Set Browser Timeout` keyword.
-
-        ``crop`` Crops the taken screenshot to the given box. It takes same dictionary as returned from `Get BoundingBox`.
-        Cropping only works on page screenshot, so if no selector is given.
-
-        ``disableAnimations`` When set to ``True``, stops CSS animations, CSS transitions and Web Animations.
-        Animations get different treatment depending on their duration:
-         - finite animations are fast-forwarded to completion, so they'll fire transitionend event.
-         - infinite animations are canceled to initial state, and then played over after the screenshot.
-
-        ``mask`` Specify selectors that should be masked when the screenshot is taken.
-        Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box.
-        Arguemnt can take a single selector string or a list of selector strings if multiple different elements should be masked.
-
-        ``omitBackground`` Hides default white background and allows capturing screenshots with transparency.
-        Not applicable to jpeg images.
+        | =Arguments= | =Description= |
+        | ``filename`` | Filename into which to save. The file will be saved into the robot framework  ${OUTPUTDIR}/browser/screenshot directory by default, but it can overwritten by providing  custom path or filename. String ``{index}`` in filename will be replaced with a rolling  number. Use this to not override filenames. If filename equals to EMBED (case insensitive),  then screenshot is embedded as Base64 image to the log.html. The image is saved temporally  to the disk and warning is displayed if removing the temporary file fails. The ${OUTPUTDIR}/browser/ is removed at the first suite startup. |
+        | ``selector`` | Take a screenshot of the element matched by selector. See the `Finding elements` section for details about the selectors. If not provided take a screenshot of current viewport. |
+        | ``fullPage`` | When True, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to False. |
+        | ``fileType`` | <"png"|"jpeg"> Specify screenshot type, defaults to png. |
+        | ``quality`` | The quality of the image, between 0-100. Not applicable to png images. |
+        | ``timeout`` | Maximum time how long taking screenshot can last, defaults to library timeout. Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout. The default value can be changed by using the `Set Browser Timeout` keyword. |
+        | ``crop`` | Crops the taken screenshot to the given box. It takes same dictionary as returned from `Get BoundingBox`. Cropping only works on page screenshot, so if no selector is given. |
+        | ``disableAnimations`` | When set to ``True``, stops CSS animations, CSS transitions and Web Animations. Animations get different treatment depending on their duration:  - finite animations are fast-forwarded to completion, so they'll fire transitionend event.  - infinite animations are canceled to initial state, and then played over after the screenshot. |
+        | ``mask`` | Specify selectors that should be masked when the screenshot is taken. Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box. Argument can take a single selector string or a list of selector strings if multiple different elements should be masked. |
+        | ``omitBackground`` | Hides default white background and allows capturing screenshots with transparency. Not applicable to jpeg images. |
 
         Keyword uses strict mode if selector is defined. See `Finding elements` for more details
         about strict mode.
@@ -236,10 +208,8 @@ class Control(LibraryComponent):
     def set_browser_timeout(self, timeout: timedelta) -> str:
         """Sets the timeout used by most input and getter keywords.
 
-        ``timeout`` Timeout of it is for current playwright context
-        and for new contexts. Supports Robot Framework
-        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format|time format]
-        . Returns the previous value of the timeout.
+        | =Arguments= | =Description= |
+        | ``timeout`` | Timeout of it is for current playwright context and for new contexts. Supports Robot Framework [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format|time format] . Returns the previous value of the timeout. |
 
         Example:
         | ${old_timeout} =    `Set Browser Timeout`    1m 30 seconds
@@ -265,13 +235,13 @@ class Control(LibraryComponent):
     def set_retry_assertions_for(self, timeout: timedelta) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
-        `Set Browser timeout` controls how long Playwright will perform
-        waiting in the node side, assertion retry will determine how long
-        Browser library will retry the playwright operation. Generally
-        assertion timeout should be longer than the timeout set by
-        `Set Browser timeout`.
+        Assertion retry timeout will determine how long Browser library will retry an assertion to be true.
 
-        Returns the previous value of the assertion retry.
+        The other keyword `Set Browser timeout` controls how long Playwright
+        will perform waiting in the node side for Elements to fulfill the
+        requirements of the specific keyword.
+
+        Returns the previous value of the assertion retry timeout.
 
         Example:
         | `Set Browser Timeout`    10 seconds
@@ -300,9 +270,9 @@ class Control(LibraryComponent):
 
         The banner can be controlled by an import setting of Browser library. (see `Importing` section)
 
-        ``show`` If `True` banner is shown on page. If `False` banner is not shown on page. If `None` banner is shown on page only when running in presenter mode.
-
-        ``style`` Additional css styles to be applied to the banner. These styles are css settings and may override the existing ones for the banner.
+        | =Arguments= | =Description= |
+        | ``show`` | If `True` banner is shown on page. If `False` banner is not shown on page. If `None` banner is shown on page only when running in presenter mode. |
+        | ``style`` | Additional css styles to be applied to the banner. These styles are css settings and may override the existing ones for the banner. |
 
 
         Example:
@@ -333,9 +303,9 @@ class Control(LibraryComponent):
         so you should set the viewport size before navigating to
         the page with `New Context` before opening the page itself.
 
-        ``width`` Sets the width size.
-
-        ``height`` Sets the height size.
+        | =Arguments= | =Description= |
+        | ``width`` | Sets the width size. |
+        | ``height`` | Sets the height size. |
 
         [https://forum.robotframework.org/t//4333|Comment >>]
         """
@@ -349,8 +319,8 @@ class Control(LibraryComponent):
     def set_offline(self, offline: bool = True):
         """Toggles current Context's offline emulation.
 
-        ``offline`` Toggles the offline mode. Set to False to switch back
-        to online mode. Defaults to True.
+        | =Arguments= | =Description= |
+        | ``offline`` | Toggles the offline mode. Set to False to switch back to online mode. Defaults to True. |
 
         [https://forum.robotframework.org/t//4330|Comment >>]
         """
@@ -367,6 +337,11 @@ class Control(LibraryComponent):
         Latitude can be between -90 and 90 and longitude can be between -180 and 180.
         Accuracy of the location must be positive number and defaults to 0. When
         creating context, grant ``geolocation`` permission for pages to read its geolocation.
+
+        | =Arguments= | =Description= |
+        | ``latitude`` | Latitude between -90 and 90. |
+        | ``longitude`` | Longitude between -180 and 180. |
+        | ``accuracy`` | Non-negative accuracy value. Defaults to 0. |
 
         Example:
         | ${permissions} =    Create List    geolocation
@@ -398,9 +373,9 @@ class Control(LibraryComponent):
     def grant_permissions(self, *permissions: Permission, origin: Optional[str] = None):
         """Grants permissions to the current context.
 
-        ```permissions``` is a list of permissions to grant.
-        Permissions can be one of the following:
-        geolocation, notifications, camera, microphone,
+        | =Arguments= | =Description= |
+        | ``permissions`` | is a list of permissions to grant. Permissions can be one of the following: geolocation, notifications, camera, microphone, |
+        | ``origin`` | The origin to grant permissions to, e.g. "https://example.com". |
 
         Example:
         | `New Context`

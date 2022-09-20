@@ -35,7 +35,11 @@ class WebAppState(LibraryComponent):
     ) -> Any:
         """Get saved data from the local storage.
 
-        ``key`` Named key of the item in the storage.
+        | =Arguments= | =Description= |
+        | ``key`` | Named key of the item in the storage. |
+        | ``assertion_operator`` | Assertion operator to use. See `Assertions` for more information. |
+        | ``assertion_expected`` | Expected value to compare with. |
+        | ``message`` | Custom error message to use. |
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
@@ -64,9 +68,9 @@ class WebAppState(LibraryComponent):
     def local_storage_set_item(self, key: str, value: str):
         """Save data to the local storage.
 
-        ``key`` The name of the key under which it should be saved.
-
-        ``value`` The value which shall be saved as a string.
+        | =Arguments= | =Description= |
+        | ``key`` | The name of the key under which it should be saved. |
+        | ``value`` | The value which shall be saved as a string. |
 
         Example:
         | `Local Storage Set Item`    Key    Value
@@ -85,7 +89,8 @@ class WebAppState(LibraryComponent):
     def local_storage_remove_item(self, key: str):
         """Remove saved data with key from the local storage.
 
-        ``key`` Name of the item which shall be deleted.
+        | =Arguments= | =Description= |
+        | ``key`` | The name of the item which shall be deleted. |
 
         Example:
         | `Local Storage Set Item`      Foo    bar
@@ -133,9 +138,10 @@ class WebAppState(LibraryComponent):
     ) -> Any:
         """Get saved data from from session storage.
 
-        ``key`` Named key of the item in the storage.
-
-        See `Assertions` for further details for the assertion arguments. Defaults to None.
+        | =Arguments= | =Description= |
+        | ``key`` | Named key of the item in the storage. |
+        | ``assertion_operator`` | Assertion operator to use. See `Assertions` for more information. |
+        | ``assertion_expected`` | Expected value to compare with. |
 
         Example:
         | `SessionStorage Set Item`    key2    value2
@@ -164,9 +170,9 @@ class WebAppState(LibraryComponent):
     def session_storage_set_item(self, key: str, value: str):
         """Save data to session storage.
 
-        ``key`` The name of the key under which it should be saved.
-
-        ``value`` The value which shall be saved as a string.
+        | =Arguments= | =Description= |
+        | ``key`` | The name of the key under which it should be saved. |
+        | ``value`` | The value which shall be saved as a string. |
 
         Example:
         | `SessionStorage Set Item`    key2    value2
@@ -186,7 +192,8 @@ class WebAppState(LibraryComponent):
         """
         Remove saved data with key from the session storage.
 
-        ``key`` Name of the item which shall be deleted.
+        | =Arguments= | =Description= |
+        | ``key`` | The name of the item which shall be deleted. |
 
         Example:
         | `SessionStorage Set Item`       mykey2    myvalue2

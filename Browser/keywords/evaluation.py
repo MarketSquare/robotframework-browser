@@ -30,13 +30,9 @@ class Evaluation(LibraryComponent):
 
         Executes given javascript on the page.
 
-        ``function`` A valid javascript function or a javascript function body. For example
-        ``() => true`` and ``true`` will behave similarly.
-
-        ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
-        argument the function receives. If given a selector a function is necessary, with an argument
-        to capture the elementhandle. For example ``(element) => document.activeElement === element``
-        See the `Finding elements` section for details about the selectors.
+        | =Arguments= | =Description= |
+        | ``function`` | A valid javascript function or a javascript function body. For example ``() => true`` and ``true`` will behave similarly. |
+        | ``selector`` | Selector to resolve and pass to the JavaScript function. This will be the first argument the function receives. If given a selector a function is necessary, with an argument to capture the elementhandle. For example ``(element) => document.activeElement === element`` See the `Finding elements` section for details about the selectors. |
 
         Same functionality can be replaced with newer ``Evaluate JavaScript`` Keyword:
         | -    Execute JavaScript    (elem) => elem.innerText = "abc"    h1
@@ -75,20 +71,11 @@ class Evaluation(LibraryComponent):
     ) -> Any:
         """Executes given javascript on the selected element(s) or on page.
 
-        ``selector`` Selector to resolve and pass to the JavaScript function. This will be the first
-        argument the function receives if not ``${None}``. ``selector`` is optional and can be omitted.
-        If given a selector, a function is necessary, with an argument
-        to capture the elementHandle. For example ``(element) => document.activeElement === element``
-        See the `Finding elements` section for details about the selectors.
-
-        ``*function`` A valid javascript function or a javascript function body.
-        These arguments can be used to write readable multiline JavaScript.
-
-        ``arg`` an additional argument that can be handed over to the JavaScript function.
-        This argument must be JSON serializable. ElementHandles are not supported.
-
-        ``all_elements`` defines if only the single elementHandle found by ``selector`` is handed
-        over to the function or if set to ``True`` all found elements are handed over as array.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector to resolve and pass to the JavaScript function. This will be the first argument the function receives if not ``${None}``. ``selector`` is optional and can be omitted. If given a selector, a function is necessary, with an argument to capture the elementHandle. For example ``(element) => document.activeElement === element`` See the `Finding elements` section for details about the selectors. |
+        | ``*function`` | A valid javascript function or a javascript function body. These arguments can be used to write readable multiline JavaScript. |
+        | ``arg`` | an additional argument that can be handed over to the JavaScript function. This argument must be JSON serializable. ElementHandles are not supported. |
+        | ``all_elements`` | defines if only the single elementHandle found by ``selector`` is handed over to the function or if set to ``True`` all found elements are handed over as array. |
 
         Example with ``all_elements=True``:
         |  ${texts}=    Evaluate JavaScript    button
@@ -138,17 +125,12 @@ class Evaluation(LibraryComponent):
     ):
         """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment.
 
-        ``selector`` Selectors which shall be highlighted.
-        See the `Finding elements` section for details about the selectors.
-
-        ``duration`` Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
-
-        ``width`` Sets the width of the higlight border. Defaults to 2px.
-
-        ``style`` Sets the style of the border. Defaults to dotted.
-
-        ``color`` Sets the color of the border. Valid colors i.e. are:
-        ``red``, ``blue``, ``yellow``, ``pink``, ``black``
+        | =Arguments= | =Description= |
+        | ``selector`` | Selectors which shall be highlighted. See the `Finding elements` section for details about the selectors. |
+        | ``duration`` | Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds. |
+        | ``width`` | Sets the width of the higlight border. Defaults to 2px. |
+        | ``style`` | Sets the style of the border. Defaults to dotted. |
+        | ``color`` | Sets the color of the border. Valid colors i.e. are: ``red``, ``blue``, ``yellow``, ``pink``, ``black`` |
 
         Keyword does not fail if selector resolves to multiple elements.
 
@@ -175,7 +157,8 @@ class Evaluation(LibraryComponent):
     def add_style_tag(self, content: str):
         """Adds a <style type="text/css"> tag with the content.
 
-        ``content`` Raw CSS content to be injected into frame.
+        | =Arguments= | =Description= |
+        | ``content`` | Raw CSS content to be injected into frame. |
 
         Example:
         | `Add Style Tag`    \\#username_field:focus {background-color: aqua;}
@@ -212,7 +195,7 @@ class Evaluation(LibraryComponent):
         Example 2:
         | ${elem}=          Get Element   text="Download File"
         | ${href}=          Get Property  ${elem}  href
-        | ${file_object}=   Download  ${href}
+        | ${file_object}=   Download  ${href}
         | ${file_path}=     Set Variable  ${file_object.saveAs}
 
         [https://forum.robotframework.org/t//4246|Comment >>]

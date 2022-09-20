@@ -103,26 +103,17 @@ class Cookie(LibraryComponent):
     ):
         """Adds a cookie to currently active browser context.
 
-        ``name`` Name of the cookie.
 
-        ``value`` Given value for the cookie.
-
-        ``url`` Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
-
-        ``domain`` Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
-
-        ``path`` Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
-
-        ``expires`` Given expiry for the cookie. Can be of date format or unix time. Supports
-        the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
-        library or an epoch timestamp.
-        - example: 2027-09-28 16:21:35
-
-        ``httpOnly`` Sets the httpOnly token.
-
-        ``secure`` Sets the secure token.
-
-        ``samesite`` Sets the samesite mode.
+        | =Arguments= | =Description= |
+        | ``name`` | Name of the cookie. |
+        | ``value`` | Given value for the cookie. |
+        | ``url`` | Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
+        | ``domain`` | Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
+        | ``path`` | Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
+        | ``expires`` | Given expiry for the cookie. Can be of date format or unix time. Supports the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime] library or an epoch timestamp. - example: 2027-09-28 16:21:35 |
+        | ``httpOnly`` | Sets the httpOnly token. |
+        | ``secure`` | Sets the secure token. |
+        | ``samesite`` | Sets the samesite mode. |
 
         Example:
         | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
@@ -186,7 +177,9 @@ class Cookie(LibraryComponent):
     ) -> Union[DotDict, str]:
         """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
 
-        ``cookie`` Name of the cookie to be retrieved.
+        | =Arguments= | =Description= |
+        | ``cookie`` | Name of the cookie to be retrieved. |
+        | ``return_type`` | Type of the return value. Can be either ``dictionary`` or ``string``. Defaults to ``dictionary``. |
 
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns a of Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary]
