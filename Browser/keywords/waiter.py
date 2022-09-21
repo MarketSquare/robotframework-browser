@@ -241,10 +241,10 @@ class Waiter(LibraryComponent):
 
         [https://forum.robotframework.org/t//4346|Comment >>]
         """
-        original_assert_retry = self.library.set_retry_assertions_for(
+        original_assert_retry = self.retry_assertions_for_stack.set(
             timeout or self.timeout
         )
         try:
             return BuiltIn().run_keyword(condition.value, *args)
         finally:
-            self.library.set_retry_assertions_for(original_assert_retry)
+            self.retry_assertions_for_stack.set(original_assert_retry)

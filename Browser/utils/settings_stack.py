@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .data_types import Scope
 
@@ -31,7 +31,7 @@ class SettingsStack:
     def end(self, id):
         self._stack.pop(id, None)
 
-    def set(self, setting: Any, scope: Scope = Scope.Global):
+    def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):
         if scope == Scope.Global:
             self._stack = {"g": ScopedSetting(Scope.Global, setting)}
         elif scope == Scope.Suite:
@@ -42,6 +42,8 @@ class SettingsStack:
             if self._last_setting.typ != Scope.Test:
                 raise ValueError("Setting for test/task can not be set on suite level}")
             self._stack[self._last_id] = ScopedSetting(Scope.Test, setting)
+        else:
+            self._stack[self._last_id] = ScopedSetting(self._last_setting.typ, setting)
 
     def get(self):
         return self._last_setting.setting

@@ -50,16 +50,20 @@ class LibraryComponent:
         return self.library.timeout_stack
 
     @timeout_stack.setter
-    def timeout_stack(self, value: SettingsStack):
-        self.library.timeout_stack = value
+    def timeout_stack(self, stack: SettingsStack):
+        self.library.timeout_stack = stack
 
     @property
     def retry_assertions_for(self) -> float:
-        return self.library.retry_assertions_for
+        return self.library.retry_assertions_for_stack.get()
 
-    @retry_assertions_for.setter
-    def retry_assertions_for(self, value: float):
-        self.library.retry_assertions_for = value
+    @property
+    def retry_assertions_for_stack(self) -> SettingsStack:
+        return self.library.retry_assertions_for_stack
+
+    @retry_assertions_for_stack.setter
+    def retry_assertions_for_stack(self, stack: SettingsStack):
+        self.library.retry_assertions_for_stack = stack
 
     @property
     def unresolved_promises(self):
@@ -142,11 +146,15 @@ class LibraryComponent:
 
     @property
     def strict_mode(self) -> bool:
-        return self.library.strict_mode
+        return self.library.strict_mode_stack.get()
 
-    @strict_mode.setter
-    def strict_mode(self, mode: bool):
-        self.library.strict_mode = mode
+    @property
+    def strict_mode_stack(self) -> SettingsStack:
+        return self.library.strict_mode_stack
+
+    @strict_mode_stack.setter
+    def strict_mode_stack(self, stack: SettingsStack):
+        self.library.strict_mode_stack = stack
 
     def parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]

@@ -617,6 +617,22 @@ class Browser(DynamicCore):
     ``PORT`` is the port you want to use for the node process.
     To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
 
+    = Scope Setting =
+
+    Some keywords which manipulates library settings have a scope argument.
+    With that scope argument one can set the "live time" of that setting.
+    Available Scopes are: `Global`, `Suite` and `Test`/`Task`
+    See `Scope`.
+    Is a scope finished, this scoped setting, like timeout, will no longer be used.
+
+    Live Times:
+    - A `Global` scope will live forever until it is overwritten by another `Global` scope. Or locally temporarily overridden by a more narrow scope.
+    - A `Suite` scope will locally override the `Global` scope and live until the end of the Suite within it is set, or if it is overwritten by a later setting with `Global` or same scope. Children suite does inherit the setting from the parent suite but also may have its own local `Suite` setting that then will be inherited to its children suites.
+    - A `Test` or `Task` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
+
+    A new set higher order scope will always remove the lower order scope which may be in charge.
+    So the setting of a `Suite` scope from a test, will set that scope to the robot file suite where that test is and removes the `Test` scope that may have been in place.
+
     = Extending Browser library with a JavaScript module =
 
     Browser library can be extended with JavaScript. The module must be in CommonJS format that Node.js uses.
@@ -787,7 +803,9 @@ class Browser(DynamicCore):
             self, params["enable_playwright_debug"], playwright_process_port
         )
         self._auto_closing_level: AutoClosingLevel = params["auto_closing_level"]
-        self.retry_assertions_for = self.convert_timeout(params["retry_assertions_for"])
+        self.retry_assertions_for_stack = SettingsStack(
+            self.convert_timeout(params["retry_assertions_for"])
+        )
         # Parsing needs keywords to be discovered.
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             params["external_browser_executable"] or {}
@@ -797,7 +815,7 @@ class Browser(DynamicCore):
         self.presenter_mode: Union[HighLightElement, bool] = params[
             "enable_presenter_mode"
         ]
-        self.strict_mode = params["strict"]
+        self.strict_mode_stack = SettingsStack(params["strict"])
         self.show_keyword_call_banner = params["show_keyword_call_banner"]
 
         self._execution_stack: List[dict] = []
