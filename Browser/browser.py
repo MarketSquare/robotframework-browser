@@ -1185,7 +1185,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         if timeout is None:
-            return self.timeout
+            return self.timeout_stack.get()
         return self.convert_timeout(timeout)
 
     def convert_timeout(
