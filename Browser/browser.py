@@ -832,6 +832,10 @@ class Browser(DynamicCore):
             params["run_on_failure"]
         )
 
+    @property
+    def timeout(self):
+        return self.timeout_stack.get()
+
     def _parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]
     ) -> DelayedKeyword:
