@@ -5,7 +5,7 @@ Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Get Multiple Browsers
-    [Tags]    slow    no-mac-support
+    [Tags]    slow
     New Browser
     New Page    ${FORM_URL}
     New Context
