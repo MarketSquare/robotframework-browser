@@ -23,7 +23,7 @@ from robot.utils import get_link_path  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import keyword, logger
+from ..utils import Scope, keyword, logger
 from ..utils.data_types import BoundingBox, Permission, ScreenshotFileTypes
 
 
@@ -205,7 +205,9 @@ class Control(LibraryComponent):
         return True if filename.upper() == "EMBED" else False
 
     @keyword(tags=("Setter", "Config"))
-    def set_browser_timeout(self, timeout: timedelta) -> str:
+    def set_browser_timeout(
+        self, timeout: timedelta, scope: Scope = Scope.Suite
+    ) -> str:
         """Sets the timeout used by most input and getter keywords.
 
         | =Arguments= | =Description= |
@@ -219,7 +221,7 @@ class Control(LibraryComponent):
         [https://forum.robotframework.org/t//4328|Comment >>]
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
-        self.timeout = self.convert_timeout(timeout)
+        self.timeout_stack.set(self.convert_timeout(timeout), scope)
         try:
             with self.playwright.grpc_channel() as stub:
                 response = stub.SetTimeout(Request().Timeout(timeout=self.timeout))

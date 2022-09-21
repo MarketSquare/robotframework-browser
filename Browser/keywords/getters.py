@@ -561,11 +561,7 @@ class Getters(LibraryComponent):
         if self.keyword_formatters.get(self.get_selected_options):
             logger.warn("Formatter is not supported by Get Selected Options keyword.")
         return list_verify_assertion(
-            selected,
-            assertion_operator,
-            expected,
-            "Selected Options:",
-            message
+            selected, assertion_operator, expected, "Selected Options:", message
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))

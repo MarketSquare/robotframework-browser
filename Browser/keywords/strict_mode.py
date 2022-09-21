@@ -36,3 +36,7 @@ class StrictMode(LibraryComponent):
         self.strict_mode = mode
         logger.debug(f"Old mode was {old_mode}")
         return old_mode
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def set_selector_prefix(self, prefix: str, scope: str = "global"):
+        self.library.selector_prefix = prefix

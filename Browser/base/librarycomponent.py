@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, Set, Union
 
 from robot.utils import timestr_to_secs  # type: ignore
 
-from ..utils import get_variable_value, logger
+from ..utils import SettingsStack, get_variable_value, logger
 from ..utils.data_types import DelayedKeyword, HighLightElement
 
 if TYPE_CHECKING:
@@ -43,11 +43,15 @@ class LibraryComponent:
 
     @property
     def timeout(self) -> float:
-        return self.library.timeout
+        return self.library.timeout_stack.get()
 
-    @timeout.setter
-    def timeout(self, value: float):
-        self.library.timeout = value
+    @property
+    def timeout_stack(self) -> SettingsStack:
+        return self.library.timeout_stack
+
+    @timeout_stack.setter
+    def timeout_stack(self, value: SettingsStack):
+        self.library.timeout_stack = value
 
     @property
     def retry_assertions_for(self) -> float:

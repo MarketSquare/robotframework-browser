@@ -599,6 +599,7 @@ class ConditionInputs(Enum):
     | ``Url`` | `Get Url` |
     | ``Viewport Size`` | `Get Viewport Size` |
     """
+
     attribute = "get_attribute"
     attribute_names = "get_attribute_names"
     bounding_box = "get_bounding_box"
@@ -622,3 +623,10 @@ class ConditionInputs(Enum):
     title = "get_title"
     url = "get_url"
     viewport_size = "get_viewport_size"
+
+
+class Scope(Enum):
+    Global = auto()
+    Suite = auto()
+    Test = auto()
+    Task = Test

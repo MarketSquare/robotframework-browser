@@ -33,6 +33,7 @@ from .data_types import (
     RecordVideo,
     ReduceMotion,
     RequestMethod,
+    Scope,
     SelectAttribute,
     SelectionType,
     SupportedBrowsers,
@@ -55,3 +56,4 @@ from .misc import (
     spawn_node_process,
 )
 from .robot_booleans import is_falsy, is_truthy
+from .settings_stack import ScopedSetting, SettingsStack

@@ -15,8 +15,9 @@
 import json
 import time
 from datetime import timedelta
-from typing import Dict, Optional, Union, Any
-from robot.libraries.BuiltIn import BuiltIn
+from typing import Any, Dict, Optional, Union
+
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -24,7 +25,6 @@ from ..utils import ConditionInputs, ElementState, keyword, logger
 
 
 class Waiter(LibraryComponent):
-
     @keyword(tags=("Wait", "PageContent"))
     def wait_for_elements_state(
         self,
@@ -241,7 +241,9 @@ class Waiter(LibraryComponent):
 
         [https://forum.robotframework.org/t//4346|Comment >>]
         """
-        original_assert_retry = self.library.set_retry_assertions_for(timeout or self.timeout)
+        original_assert_retry = self.library.set_retry_assertions_for(
+            timeout or self.timeout
+        )
         try:
             return BuiltIn().run_keyword(condition.value, *args)
         finally:

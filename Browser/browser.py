@@ -52,7 +52,15 @@ from .keywords import (
 )
 from .keywords.crawling import Crawling
 from .playwright import Playwright
-from .utils import AutoClosingLevel, get_normalized_keyword, is_falsy, keyword, logger
+from .utils import (
+    AutoClosingLevel,
+    Scope,
+    SettingsStack,
+    get_normalized_keyword,
+    is_falsy,
+    keyword,
+    logger,
+)
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import DelayedKeyword, HighLightElement, SupportedBrowsers
@@ -774,8 +782,7 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-
-        self.timeout = self.convert_timeout(params["timeout"])
+        self.timeout_stack = SettingsStack(self.convert_timeout(params["timeout"]))
         self.playwright = Playwright(
             self, params["enable_playwright_debug"], playwright_process_port
         )
@@ -940,6 +947,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return self.browser_output / "state"
 
     def _start_suite(self, name, attrs):
+        self.timeout_stack.start(attrs["id"], Scope.Suite)
         if not self._suite_cleanup_done:
             self._suite_cleanup_done = True
             for path in [
@@ -957,14 +965,58 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, name, attr):
+    def _start_test(self, name, attrs):
+        self.timeout_stack.start(attrs["id"], Scope.Test)
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
+    def _start_keyword(self, name, attrs):
+        if (
+            self.show_keyword_call_banner is False
+            or (self.show_keyword_call_banner is None and not self.presenter_mode)
+            or attrs["libname"] != "Browser"
+            or attrs["status"] == "NOT RUN"
+        ):
+            return
+        self._show_keyword_call(attrs)
+        self.current_arguments = tuple(attrs["args"])
+        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+            self._set_logging(False)
+
+        if attrs["type"] == "Teardown":
+            timeout_pattern = "Test timeout .* exceeded."
+            test = EXECUTION_CONTEXTS.current.test
+            if (
+                test is not None
+                and test.status == "FAIL"
+                and re.match(timeout_pattern, test.message)
+            ):
+                self.screenshot_on_failure(test.name)
+
+    def run_keyword(self, name, args, kwargs=None):
+        try:
+            return DynamicCore.run_keyword(self, name, args, kwargs)
+        except AssertionError as e:
+            self.keyword_error()
+            e.args = self._alter_keyword_error(e.args)
+            if self.pause_on_failure:
+                sys.__stdout__.write(f"\n[ FAIL ] {e}")
+                sys.__stdout__.write(
+                    "\n[Paused on failure] Press Enter to continue..\n"
+                )
+                sys.__stdout__.flush()
+                input()
+            raise e
+
+    def _end_keyword(self, name, attrs):
+        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+            self._set_logging(True)
+
     def _end_test(self, name, attrs):
+        self.timeout_stack.end(attrs["id"])
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
@@ -984,6 +1036,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
     def _end_suite(self, name, attrs):
+        self.timeout_stack.end(attrs["id"])
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")
@@ -1031,48 +1084,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             if regex.search(message):
                 message = augment(message)
         return (message,) + args[1:]
-
-    def run_keyword(self, name, args, kwargs=None):
-        try:
-            return DynamicCore.run_keyword(self, name, args, kwargs)
-        except AssertionError as e:
-            self.keyword_error()
-            e.args = self._alter_keyword_error(e.args)
-            if self.pause_on_failure:
-                sys.__stdout__.write(f"\n[ FAIL ] {e}")
-                sys.__stdout__.write(
-                    "\n[Paused on failure] Press Enter to continue..\n"
-                )
-                sys.__stdout__.flush()
-                input()
-            raise e
-
-    def _start_keyword(self, name, attrs):
-        if (
-            self.show_keyword_call_banner is False
-            or (self.show_keyword_call_banner is None and not self.presenter_mode)
-            or attrs["libname"] != "Browser"
-            or attrs["status"] == "NOT RUN"
-        ):
-            return
-        self._show_keyword_call(attrs)
-        self.current_arguments = tuple(attrs["args"])
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
-            self._set_logging(False)
-
-        if attrs["type"] == "Teardown":
-            timeout_pattern = "Test timeout .* exceeded."
-            test = EXECUTION_CONTEXTS.current.test
-            if (
-                test is not None
-                and test.status == "FAIL"
-                and re.match(timeout_pattern, test.message)
-            ):
-                self.screenshot_on_failure(test.name)
-
-    def _end_keyword(self, name, attrs):
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
-            self._set_logging(True)
 
     def _set_logging(self, status: bool):
         try:

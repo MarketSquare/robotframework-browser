@@ -6,6 +6,7 @@ Suite Teardown      Close Page
 
 *** Test Cases ***
 Example
+    [Tags]    no-mac-support
     ${old_timeout} =    Set Browser Timeout    60 seconds
     New Page    https://playwright.dev
     Get Text    h1    contains    Playwright
