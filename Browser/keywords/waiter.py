@@ -241,6 +241,8 @@ class Waiter(LibraryComponent):
 
         [https://forum.robotframework.org/t//4346|Comment >>]
         """
+        if timeout is not None:
+            timeout = self.library.convert_timeout(timeout) 
         original_assert_retry = self.retry_assertions_for_stack.set(
             timeout or self.timeout
         )

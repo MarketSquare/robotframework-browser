@@ -3,6 +3,14 @@
         
         <script>
             var victimaction;
+            var delay;
+            delay = 700;
+
+            function setDelay() {
+                delay = document.getElementById("delay-setting").value;
+                document.getElementById("delay-display").value = delay;
+            }
+
             function sleep(ms) {
                 return new Promise(resolve => setTimeout(resolve, ms));
             }
@@ -68,7 +76,7 @@
             }
 
             async function submit(event) {
-                await sleep(700);
+                await sleep(Number(delay));
                 switch(victimaction) {
                     case "attached":
                         document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
@@ -128,9 +136,10 @@
                 }
             }
         </script>
+        <div>
             <label for="dropdown">Choose a Wait for element state:</label>
             <select name="dd" id="dropdown" onchange="waiter.call(this, event)">
-                <option value="--">--</option>
+              <option value="--">--</option>
               <option value="attached">attached</option>
               <option value="attached-checked">attached-checked</option>
               <option value="attached-unchecked">attached-unchecked</option>
@@ -151,7 +160,16 @@
             </select>
             <br><br>
             <button id="submit" type="submit" value="Submit" onclick="submit.call(this, event)">Go</button>
-        <div>Timeout is 700 ms</div>
+        </div>
         <div id="place"></div>
+        <div>
+            <label for="delay-display">Delay is:</label>
+            <input type="text" readonly disabled id="delay-display" value="700">
+        </div> 
+        <div>
+            <label for="delay-setting">Delay:</label>
+            <input type="text" id="delay-setting" />
+            <button id="setdelay" onclick="setDelay.call(this, event)">Set Delay</button>
+        </div>
     </body>
 </html>

@@ -583,7 +583,6 @@ class ConditionInputs(Enum):
     | ``Classes`` | `Get Classes` |
     | ``Client Size`` | `Get Client Size` |
     | ``Element Count`` | `Get Element Count` |
-    | ``Element State`` | `Get Element State` |
     | ``Element States`` | `Get Element States` |
     | ``Page Source`` | `Get Page Source` |
     | ``Property`` | `Get Property` |
@@ -608,7 +607,6 @@ class ConditionInputs(Enum):
     classes = "get_classes"
     client_size = "get_client_size"
     element_count = "get_element_count"
-    element_state = "get_element_state"
     element_states = "get_element_states"
     page_source = "get_page_source"
     property = "get_property"
