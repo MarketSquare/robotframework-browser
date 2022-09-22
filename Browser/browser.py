@@ -22,7 +22,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union, Any
+from typing import Any, Dict, List, Optional, Set, Union
 
 from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
