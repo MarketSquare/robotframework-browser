@@ -241,11 +241,11 @@ class Waiter(LibraryComponent):
 
         [https://forum.robotframework.org/t//4346|Comment >>]
         """
-        if timeout is not None:
-            timeout = self.library.convert_timeout(timeout) 
-        original_assert_retry = self.retry_assertions_for_stack.set(
-            timeout or self.timeout
-        )
+        if isinstance(timeout, timedelta):
+            assertion_timeout = self.library.convert_timeout(timeout)
+        else:
+            assertion_timeout = self.timeout
+        original_assert_retry = self.retry_assertions_for_stack.set(assertion_timeout)
         try:
             return BuiltIn().run_keyword(condition.value, *args)
         finally:

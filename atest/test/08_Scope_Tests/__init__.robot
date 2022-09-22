@@ -4,12 +4,10 @@ Resource            ../keywords.resource
 Suite Setup         Set New Global Settings
 Suite Teardown      Reset Global Settings
 
-
 *** Variables ***
-${org_timeout}      ${None}
-${org_retry}        ${None}
-${org_strict}       ${None}
-
+${org_timeout} =    ${None}
+${org_retry} =      ${None}
+${org_strict} =     ${None}
 
 *** Keywords ***
 Set New Global Settings

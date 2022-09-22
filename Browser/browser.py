@@ -798,7 +798,9 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self.timeout_stack = SettingsStack(self.convert_timeout(params["timeout"]), self)
+        self.timeout_stack = SettingsStack(
+            self.convert_timeout(params["timeout"]), self
+        )
         self.playwright = Playwright(
             self, params["enable_playwright_debug"], playwright_process_port
         )
