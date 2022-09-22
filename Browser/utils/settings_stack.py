@@ -35,7 +35,7 @@ class SettingsStack:
     def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):
         original = self.get()
         if scope == Scope.Global:
-            for key, value in self._stack.items():
+            for value in self._stack.values():
                 value.setting = setting
         elif scope == Scope.Suite:
             if self._last_setting.typ == Scope.Test:
