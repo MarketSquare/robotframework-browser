@@ -23,7 +23,7 @@ from robot.utils import get_link_path  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import keyword, logger
+from ..utils import Scope, keyword, logger
 from ..utils.data_types import BoundingBox, Permission, ScreenshotFileTypes
 
 
@@ -205,11 +205,14 @@ class Control(LibraryComponent):
         return True if filename.upper() == "EMBED" else False
 
     @keyword(tags=("Setter", "Config"))
-    def set_browser_timeout(self, timeout: timedelta) -> str:
+    def set_browser_timeout(
+        self, timeout: timedelta, scope: Scope = Scope.Suite
+    ) -> str:
         """Sets the timeout used by most input and getter keywords.
 
         | =Arguments= | =Description= |
         | ``timeout`` | Timeout of it is for current playwright context and for new contexts. Supports Robot Framework [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format|time format] . Returns the previous value of the timeout. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope Settings` for more details. |
 
         Example:
         | ${old_timeout} =    `Set Browser Timeout`    1m 30 seconds
@@ -219,7 +222,7 @@ class Control(LibraryComponent):
         [https://forum.robotframework.org/t//4328|Comment >>]
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
-        self.timeout = self.convert_timeout(timeout)
+        self.timeout_stack.set(self.convert_timeout(timeout), scope)
         try:
             with self.playwright.grpc_channel() as stub:
                 response = stub.SetTimeout(Request().Timeout(timeout=self.timeout))
@@ -232,10 +235,14 @@ class Control(LibraryComponent):
         return old_timeout
 
     @keyword(tags=("Setter", "Config"))
-    def set_retry_assertions_for(self, timeout: timedelta) -> str:
+    def set_retry_assertions_for(
+        self, timeout: timedelta, scope: Scope = Scope.Suite
+    ) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
-        Assertion retry timeout will determine how long Browser library will retry an assertion to be true.
+        | =Arguments= | =Description= |
+        | ``timeout`` | Assertion retry timeout will determine how long Browser library will retry an assertion to be true. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope` for more details. |
 
         The other keyword `Set Browser timeout` controls how long Playwright
         will perform waiting in the node side for Elements to fulfill the
@@ -255,7 +262,7 @@ class Control(LibraryComponent):
         [https://forum.robotframework.org/t//4331|Comment >>]
         """
         old_retry_assertions_for = self.millisecs_to_timestr(self.retry_assertions_for)
-        self.retry_assertions_for = self.convert_timeout(timeout)
+        self.retry_assertions_for_stack.set(self.convert_timeout(timeout), scope)
         return old_retry_assertions_for
 
     @keyword(tags=("Setter", "Config"))

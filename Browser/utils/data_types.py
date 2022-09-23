@@ -569,3 +569,62 @@ class ForcedColors(Enum):
 
     active = auto()
     none = auto()
+
+
+class ConditionInputs(Enum):
+    """
+    Following values are allowed and represent the assertion keywords to use:
+    | =Value= | =Keyword= |
+    | ``Attribute`` | `Get Attribute` |
+    | ``Attribute Names`` | `Get Attribute Names` |
+    | ``BoundingBox`` | `Get BoundingBox` |
+    | ``Browser Catalog`` | `Get Browser Catalog` |
+    | ``Checkbox State`` | `Get Checkbox State` |
+    | ``Classes`` | `Get Classes` |
+    | ``Client Size`` | `Get Client Size` |
+    | ``Element Count`` | `Get Element Count` |
+    | ``Element States`` | `Get Element States` |
+    | ``Page Source`` | `Get Page Source` |
+    | ``Property`` | `Get Property` |
+    | ``Scroll Position`` | `Get Scroll Position` |
+    | ``Scroll Size`` | `Get Scroll Size` |
+    | ``Select Options`` | `Get Select Options` |
+    | ``Selected Options`` | `Get Selected Options` |
+    | ``Style`` | `Get Style` |
+    | ``Table Cell Index`` | `Get Table Cell Index` |
+    | ``Table Row Index`` | `Get Table Row Index` |
+    | ``Text`` | `Get Text` |
+    | ``Title`` | `Get Title` |
+    | ``Url`` | `Get Url` |
+    | ``Viewport Size`` | `Get Viewport Size` |
+    """
+
+    attribute = "get_attribute"
+    attribute_names = "get_attribute_names"
+    bounding_box = "get_bounding_box"
+    browser_catalog = "get_browser_catalog"
+    checkbox_state = "get_checkbox_state"
+    classes = "get_classes"
+    client_size = "get_client_size"
+    element_count = "get_element_count"
+    element_states = "get_element_states"
+    page_source = "get_page_source"
+    property = "get_property"
+    scroll_position = "get_scroll_position"
+    scroll_size = "get_scroll_size"
+    select_options = "get_select_options"
+    selected_options = "get_selected_options"
+    style = "get_style"
+    table_cell_index = "get_table_cell_index"
+    table_row_index = "get_table_row_index"
+    text = "get_text"
+    title = "get_title"
+    url = "get_url"
+    viewport_size = "get_viewport_size"
+
+
+class Scope(Enum):
+    Global = auto()
+    Suite = auto()
+    Test = auto()
+    Task = Test

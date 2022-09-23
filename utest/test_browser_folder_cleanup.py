@@ -31,7 +31,7 @@ def test_cleanup_browser_folder_no_folder(browser):
         foobar.mkdir()
         with patch("Browser.Browser.outputdir", new_callable=PropertyMock) as mock_property:
             mock_property.return_value = tmp_dir
-            browser._start_suite(None, None)
+            browser._start_suite(None, {"id": "s1"})
             assert browser_folder.is_dir()
             assert not screenshot.is_dir()
             assert not video.is_dir()
@@ -47,8 +47,8 @@ def test_cleanup_browser_folder_folder(browser):
         assert not browser_folder.is_dir()
         with patch("Browser.Browser.outputdir", new_callable=PropertyMock) as mock_property:
             mock_property.return_value = tmp_dir
-            browser._start_suite(None, None)
+            browser._start_suite(None, {"id": "s1"})
             assert not browser_folder.is_dir()
             browser_folder.mkdir()
-            browser._start_suite(None, None)
+            browser._start_suite(None, {"id": "s1"})
             assert browser_folder.is_dir()

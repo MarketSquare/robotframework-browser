@@ -1172,7 +1172,7 @@ class Interaction(LibraryComponent):
                 Request().FileBySelector(
                     path=str(p.resolve()),
                     selector=selector,
-                    strict=self.library.strict_mode,
+                    strict=self.strict_mode,
                 )
             )
             logger.debug(response.log)

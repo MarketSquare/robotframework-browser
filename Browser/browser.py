@@ -22,7 +22,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
@@ -52,7 +52,15 @@ from .keywords import (
 )
 from .keywords.crawling import Crawling
 from .playwright import Playwright
-from .utils import AutoClosingLevel, get_normalized_keyword, is_falsy, keyword, logger
+from .utils import (
+    AutoClosingLevel,
+    Scope,
+    SettingsStack,
+    get_normalized_keyword,
+    is_falsy,
+    keyword,
+    logger,
+)
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import DelayedKeyword, HighLightElement, SupportedBrowsers
@@ -609,6 +617,22 @@ class Browser(DynamicCore):
     ``PORT`` is the port you want to use for the node process.
     To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
 
+    = Scope Setting =
+
+    Some keywords which manipulates library settings have a scope argument.
+    With that scope argument one can set the "live time" of that setting.
+    Available Scopes are: `Global`, `Suite` and `Test`/`Task`
+    See `Scope`.
+    Is a scope finished, this scoped setting, like timeout, will no longer be used.
+
+    Live Times:
+    - A `Global` scope will live forever until it is overwritten by another `Global` scope. Or locally temporarily overridden by a more narrow scope.
+    - A `Suite` scope will locally override the `Global` scope and live until the end of the Suite within it is set, or if it is overwritten by a later setting with `Global` or same scope. Children suite does inherit the setting from the parent suite but also may have its own local `Suite` setting that then will be inherited to its children suites.
+    - A `Test` or `Task` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
+
+    A new set higher order scope will always remove the lower order scope which may be in charge.
+    So the setting of a `Suite` scope from a test, will set that scope to the robot file suite where that test is and removes the `Test` scope that may have been in place.
+
     = Extending Browser library with a JavaScript module =
 
     Browser library can be extended with JavaScript. The module must be in CommonJS format that Node.js uses.
@@ -774,13 +798,17 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-
-        self.timeout = self.convert_timeout(params["timeout"])
+        self.timeout_stack = SettingsStack(
+            self.convert_timeout(params["timeout"]), self
+        )
         self.playwright = Playwright(
             self, params["enable_playwright_debug"], playwright_process_port
         )
         self._auto_closing_level: AutoClosingLevel = params["auto_closing_level"]
-        self.retry_assertions_for = self.convert_timeout(params["retry_assertions_for"])
+        self.retry_assertions_for_stack = SettingsStack(
+            self.convert_timeout(params["retry_assertions_for"]),
+            self,
+        )
         # Parsing needs keywords to be discovered.
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             params["external_browser_executable"] or {}
@@ -790,7 +818,7 @@ class Browser(DynamicCore):
         self.presenter_mode: Union[HighLightElement, bool] = params[
             "enable_presenter_mode"
         ]
-        self.strict_mode = params["strict"]
+        self.strict_mode_stack = SettingsStack(params["strict"], self)
         self.show_keyword_call_banner = params["show_keyword_call_banner"]
 
         self._execution_stack: List[dict] = []
@@ -801,11 +829,16 @@ class Browser(DynamicCore):
         self.keyword_call_banner_add_style: str = ""
         self._keyword_formatters: dict = {}
         self._current_loglevel: Optional[str] = None
+        self.is_test_case_running = False
 
         DynamicCore.__init__(self, libraries)
         self.run_on_failure_keyword = self._parse_run_on_failure_keyword(
             params["run_on_failure"]
         )
+
+    @property
+    def timeout(self):
+        return self.timeout_stack.get()
 
     def _parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]
@@ -940,6 +973,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return self.browser_output / "state"
 
     def _start_suite(self, name, attrs):
+        self._start_stack(attrs, Scope.Suite)
         if not self._suite_cleanup_done:
             self._suite_cleanup_done = True
             for path in [
@@ -957,14 +991,60 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, name, attr):
+    def _start_test(self, name, attrs):
+        self._start_stack(attrs, Scope.Test)
+        self.is_test_case_running = True
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
+    def _start_keyword(self, name, attrs):
+        if (
+            self.show_keyword_call_banner is False
+            or (self.show_keyword_call_banner is None and not self.presenter_mode)
+            or attrs["libname"] != "Browser"
+            or attrs["status"] == "NOT RUN"
+        ):
+            return
+        self._show_keyword_call(attrs)
+        self.current_arguments = tuple(attrs["args"])
+        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+            self._set_logging(False)
+
+        if attrs["type"] == "Teardown":
+            timeout_pattern = "Test timeout .* exceeded."
+            test = EXECUTION_CONTEXTS.current.test
+            if (
+                test is not None
+                and test.status == "FAIL"
+                and re.match(timeout_pattern, test.message)
+            ):
+                self.screenshot_on_failure(test.name)
+
+    def run_keyword(self, name, args, kwargs=None):
+        try:
+            return DynamicCore.run_keyword(self, name, args, kwargs)
+        except AssertionError as e:
+            self.keyword_error()
+            e.args = self._alter_keyword_error(e.args)
+            if self.pause_on_failure:
+                sys.__stdout__.write(f"\n[ FAIL ] {e}")
+                sys.__stdout__.write(
+                    "\n[Paused on failure] Press Enter to continue..\n"
+                )
+                sys.__stdout__.flush()
+                input()
+            raise e
+
+    def _end_keyword(self, name, attrs):
+        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+            self._set_logging(True)
+
     def _end_test(self, name, attrs):
+        self._end_scope(attrs)
+        self.is_test_case_running = False
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
@@ -984,6 +1064,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
     def _end_suite(self, name, attrs):
+        self._end_scope(attrs)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")
@@ -995,6 +1076,16 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Test Suite: {name}, End Suite: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
+
+    def _start_stack(self, attrs: Dict[str, Any], scope: Scope):
+        self.timeout_stack.start(attrs["id"], scope)
+        self.strict_mode_stack.start(attrs["id"], scope)
+        self.retry_assertions_for_stack.start(attrs["id"], scope)
+
+    def _end_scope(self, attrs: Dict[str, Any]):
+        self.timeout_stack.end(attrs["id"])
+        self.strict_mode_stack.end(attrs["id"])
+        self.retry_assertions_for_stack.end(attrs["id"])
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
         catalog_after = self.get_browser_catalog()
@@ -1031,48 +1122,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             if regex.search(message):
                 message = augment(message)
         return (message,) + args[1:]
-
-    def run_keyword(self, name, args, kwargs=None):
-        try:
-            return DynamicCore.run_keyword(self, name, args, kwargs)
-        except AssertionError as e:
-            self.keyword_error()
-            e.args = self._alter_keyword_error(e.args)
-            if self.pause_on_failure:
-                sys.__stdout__.write(f"\n[ FAIL ] {e}")
-                sys.__stdout__.write(
-                    "\n[Paused on failure] Press Enter to continue..\n"
-                )
-                sys.__stdout__.flush()
-                input()
-            raise e
-
-    def _start_keyword(self, name, attrs):
-        if (
-            self.show_keyword_call_banner is False
-            or (self.show_keyword_call_banner is None and not self.presenter_mode)
-            or attrs["libname"] != "Browser"
-            or attrs["status"] == "NOT RUN"
-        ):
-            return
-        self._show_keyword_call(attrs)
-        self.current_arguments = tuple(attrs["args"])
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
-            self._set_logging(False)
-
-        if attrs["type"] == "Teardown":
-            timeout_pattern = "Test timeout .* exceeded."
-            test = EXECUTION_CONTEXTS.current.test
-            if (
-                test is not None
-                and test.status == "FAIL"
-                and re.match(timeout_pattern, test.message)
-            ):
-                self.screenshot_on_failure(test.name)
-
-    def _end_keyword(self, name, attrs):
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
-            self._set_logging(True)
 
     def _set_logging(self, status: bool):
         try:
@@ -1156,7 +1205,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         if timeout is None:
-            return self.timeout
+            return self.timeout_stack.get()
         return self.convert_timeout(timeout)
 
     def convert_timeout(

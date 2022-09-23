@@ -15,11 +15,13 @@
 import json
 import time
 from datetime import timedelta
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
+
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import ElementState, keyword, logger
+from ..utils import ConditionInputs, ElementState, keyword, logger
 
 
 class Waiter(LibraryComponent):
@@ -197,3 +199,54 @@ class Waiter(LibraryComponent):
             )
             logger.debug(response.json)
             logger.info(response.log)
+
+    @keyword(tags=("Wait", "PageContent"))
+    def wait_for_condition(
+        self,
+        condition: ConditionInputs,
+        *args: Any,
+        timeout: Optional[timedelta] = None,
+    ) -> Any:
+        """Waits for a condition, defined with Browser getter keywords to become True.
+
+        This Keyword is basically just a wrapper around our assertion keywords, but with a timeout.
+        It can be used to wait for anything that also can be asserted with our keywords.
+
+        In comparison to Robot Frameworks `Wait Until Keywords Succeeds` this keyword is more
+        readable and easier to use but is limited to Browser libraries assertion keywords.
+
+        | =Arguments= | =Description= |
+        | ``condition`` | A condition, defined with Browser getter keywords, without the word ``Get``. |
+        | ``*args`` | Arguments to pass to the condition keyword. |
+        | ``timeout`` | Timout to wait for the condition to become True. Uses default timeout of the library if not set. |
+
+
+
+        The easiest way to use this keyword is first starting with an assertion keyword with assertion like: `Get Text`
+
+        Start:
+        | `Get Text`    id=status_bar   contains    Done
+
+        Then you replace the word `Get` with `Wait For Condition    ` and if necessary add the timeout argument.
+
+        End:
+        | `Wait For Condition`    Text    id=status_bar   contains    Done
+
+
+        Example usage:
+        | `Wait For Condition`    Element States    id=cdk-overlay-0    ==    detached
+        | `Wait For Condition`    Element States     //h1    contains    visible    editable    enabled    timeout=2 s
+        | `Wait For Condition`    Title    should start with    Robot
+        | `Wait For Condition`    Url    should end with    robotframework.org
+
+        [https://forum.robotframework.org/t//4346|Comment >>]
+        """
+        if isinstance(timeout, timedelta):
+            assertion_timeout = self.library.convert_timeout(timeout)
+        else:
+            assertion_timeout = self.timeout
+        original_assert_retry = self.retry_assertions_for_stack.set(assertion_timeout)
+        try:
+            return BuiltIn().run_keyword(condition.value, *args)
+        finally:
+            self.retry_assertions_for_stack.set(original_assert_retry)

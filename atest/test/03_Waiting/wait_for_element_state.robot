@@ -19,7 +19,7 @@ Wait For Elements State Stable
 
 Wait For Elements State Attached With Strict On WaitForElementsState
     Run Keyword And Expect Error
-    ...    *strict mode violation*//div*resolved to 2 elements*
+    ...    *strict mode violation*//div*resolved to 4 elements*
     ...    Wait For Elements State    //div    attached    1.5 sec
     Set Strict Mode    False
     Wait For Elements State    //div    attached    1.5 sec
@@ -29,7 +29,7 @@ Wait For Elements State Enabled With Strict On Wait_for_function
     Select Options By    \#dropdown    value    True    enabled
     Click    \#submit    noWaitAfter=True
     Run Keyword And Expect Error
-    ...    *strict mode violation*//div*resolved to 2 elements*
+    ...    *strict mode violation*//div*resolved to 4 elements*
     ...    Wait For Elements State    //div    enabled    1.5 sec
     Set Strict Mode    False
     Wait For Elements State    //div    enabled    1.5 sec
