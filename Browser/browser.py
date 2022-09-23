@@ -761,6 +761,12 @@ class Browser(DynamicCore):
         | ``show_keyword_call_banner``      | If set to ``True``, will show a banner with the keyword name and arguments before the keyword is executed at the bottom of the page. If set to ``False``, will not show the banner. If set to None, which is the default, will show the banner only if the presenter mode is enabled. `Get Page Source` and `Take Screenshot` will not show the banner, because that could negatively affect your test cases/tasks. This feature may be super helpful when you are debugging your tests and using tracing from `New Context` or `Video recording` features. |
         | ``strict``                        | If keyword selector points multiple elements and keywords should interact with one element, keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords or by ```et Strict Mode`` keyword. |
         | ``timeout``                       | Timeout for keywords that operate on elements. The keywords will wait for this time for the element to appear into the page. Defaults to "10s" => 10 seconds. |
+
+        Old deprecated argument order:
+        ``timeout``, ``enable_playwright_debug``, ``auto_closing_level``, ``retry_assertions_for``, ``run_on_failure``,
+        ``external_browser_executable``, ``jsextension``, ``enable_presenter_mode``, ``playwright_process_port``,
+        ``strict``, ``show_keyword_call_banner``
+
         """
         self.ROBOT_LIBRARY_LISTENER = self
 

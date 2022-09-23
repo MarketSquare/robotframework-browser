@@ -376,6 +376,11 @@ class PlaywrightState(LibraryComponent):
         | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers/#google-chrome--microsoft-edge|Playwright documentation]. |
 
 
+        Old deprecated argument order:
+        ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``,
+        ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``
+
+
         [https://forum.robotframework.org/t/comments-for-new-browser/4306|Comment >>]
         """
         params = locals_to_params(locals())
@@ -512,6 +517,13 @@ class PlaywrightState(LibraryComponent):
         | ``videosPath``           | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
 
+
+        Old deprecated argument order:
+        ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``,
+        ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``,
+        ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``,
+        ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``,
+        ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``
 
         Example:
         | Test an iPhone
@@ -676,6 +688,15 @@ class PlaywrightState(LibraryComponent):
         | `New Persistent Context  browser=chromium  headless=False  args=${launch_args}
 
         Check `New Browser` or `New context` for the specific argument docs.
+
+        Old deprecated argument order:
+        ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``,
+        ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``,
+        ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``,
+        ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``,
+        ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``,
+        ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``,
+        ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``, ``url``
 
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
