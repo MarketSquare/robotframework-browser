@@ -14,7 +14,7 @@ Upload Upload_test_file
     Upload Named File    test_upload_file
 
 Upload 75MB File
-    [Tags]    no-windows-support    no-mach-support
+    [Tags]    no-windows-support    no-mac-support
     [Timeout]    2 minute
     Upload Sized File    75
     # The browser actually gets a bit stuck so it needs to be cleaned up properly here.

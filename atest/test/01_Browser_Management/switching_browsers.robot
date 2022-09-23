@@ -5,7 +5,7 @@ Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Switch Browser
-    [Tags]    no-mach-support    slow
+    [Tags]    no-mac-support    slow
     [Timeout]    2 minutes
     ${first_browser} =    New Browser    chromium
     New Page    ${LOGIN_URL}
