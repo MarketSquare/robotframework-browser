@@ -10,6 +10,10 @@ ${org_retry} =      ${None}
 ${org_strict} =     ${None}
 
 *** Keywords ***
+Close All And Open New Browser
+    Close Browser    ALL
+    Set New Global Settings
+
 Set New Global Settings
     ${org_timeout} =    Set Browser Timeout    1001 ms    scope=global
     Set Global Variable    $org_timeout

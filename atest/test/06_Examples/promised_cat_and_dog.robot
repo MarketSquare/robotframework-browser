@@ -4,7 +4,7 @@ Resource    imports.resource
 
 *** Test Cases ***
 Shows A Cat And A Dog
-    [Tags]    no-mac-support    slow
+    [Tags]    no-mach-support    slow
     New Page    ${DOG_AND_CAT_URL}
     Get Text    id=texts    ==    Beginning
     ${cat_promise} =    Promise To    Get Text    id=texts    ==    Cat

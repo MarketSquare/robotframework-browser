@@ -963,7 +963,7 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBrowserCatalog(Request().Empty())
             parsed = json.loads(response.json)
-            logger.info(json.dumps(parsed))
+            logger.info(json.dumps(parsed, indent=2))
             formatter = self.keyword_formatters.get(self.get_browser_catalog)
             return verify_assertion(
                 parsed,
@@ -986,6 +986,7 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4334|Comment >>]
         """
+        logger.info(f"Switching browser to {id}")
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=id))
             logger.info(response.log)
@@ -1013,14 +1014,20 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4335|Comment >>]
         """
+        logger.info(f"Switching context to {id} in {browser}")
         browser = SelectionType.create(browser)
-        with self.playwright.grpc_channel() as stub:
+        id = SelectionType.create(id)
+
+        if isinstance(id, str):
+            parent_browser_id = self._get_context_parent_id(id)
             if browser == SelectionType.ALL:
-                browser_id = self._get_context_parent_id(id)
-                self._correct_browser(browser_id)
+                self._correct_browser(parent_browser_id)
             else:
+                if isinstance(browser, str) and browser != parent_browser_id:
+                    raise ValueError(f"Context {id} is not in browser {browser}")
                 self._correct_browser(browser)
-            response = stub.SwitchContext(Request().Index(index=id))
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SwitchContext(Request().Index(index=str(id)))
             logger.info(response.log)
             return response.body
 
@@ -1049,8 +1056,11 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4336|Comment >>]
         """
+        logger.info(f"Switching to page {id},context {context}, browser {browser}")
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
+        correct_context_selected = True
+        correct_browser_selected = True
 
         def _all(value: Union[SelectionType, str]) -> bool:
             return value == SelectionType.ALL
@@ -1068,16 +1078,35 @@ class PlaywrightState(LibraryComponent):
         ):
             raise ValueError(f"Malformed page `id`: {uid}")
 
-        if _all(browser) or _all(context):
-            browser_id, context_id = self._get_page_parent_ids(str(uid))
-            if _all(browser):
-                self._correct_browser(browser_id)
-            else:
-                self._correct_browser(browser)
-            if _all(context):
-                self._correct_context(context_id)
-            else:
-                self._correct_context(context)
+        if (
+            not (isinstance(uid, str) and uid.upper() == "NEW")
+            and uid != SelectionType.CURRENT
+        ):
+            parent_browser_id, parent_context_id = self._get_page_parent_ids(str(uid))
+            if isinstance(browser, str) and browser != parent_browser_id:
+                logger.error(
+                    f"Page {uid} is not in browser {browser}. Switching to browser {parent_browser_id}"
+                )
+                correct_browser_selected = False
+            if isinstance(context, str) and context != parent_context_id:
+                logger.error(
+                    f"Page {uid} is not in context {context}. Switching to context {parent_context_id}"
+                )
+                correct_context_selected = False
+            if not correct_context_selected or not correct_browser_selected:
+                raise ValueError(f"Page Switch to {uid} failed")
+
+            if context == SelectionType.ALL:
+                self.switch_context(parent_context_id, browser)
+            elif context == SelectionType.CURRENT and browser == SelectionType.ALL:
+                self.switch_browser(parent_browser_id)
+            elif context == SelectionType.ALL and browser == SelectionType.ALL:
+                self.switch_context(parent_context_id, parent_browser_id)
+            elif isinstance(context, str):
+                self.switch_context(context, browser)
+            elif context == SelectionType.CURRENT and isinstance(browser, str):
+                self.switch_browser(browser)
+
         logger.debug(uid)
         logger.debug(context)
         logger.debug(browser)
