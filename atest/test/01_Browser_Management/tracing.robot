@@ -24,10 +24,10 @@ When Not Enabled No Trace File
 Enable Tracing To File With Two Browsers
     [Tags]    slow
     [Timeout]    90s
-    ${browser1} =    New Browser
+    ${browser1} =    New Browser    headless=${HEADLESS}
     New Context    tracing=trace_1.zip
     New Page    ${LOGIN_URL}
-    ${browser2} =    New Browser
+    ${browser2} =    New Browser    headless=${HEADLESS}
     New Context    tracing=trace_2.zip
     New Page    ${FORM_URL}
     Click    //input[@name="submit"]
@@ -57,7 +57,7 @@ Check Show-Trace Command
 Tracing And Closing All Browsers
     [Tags]    slow
     [Timeout]    90s
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Context    tracing=trace_10.zip
     New Page    ${LOGIN_URL}
     Click    id=login_button
@@ -69,7 +69,7 @@ Tracing And Closing All Browsers
 Tracing And Closing Current Browsers
     [Tags]    slow
     [Timeout]    90s
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Context    tracing=trace_20.zip
     New Context    tracing=trace_21.zip
     New Page    ${LOGIN_URL}

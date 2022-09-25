@@ -1,8 +1,9 @@
 *** Settings ***
-Library             Browser
 Resource            imports.resource
 
 Suite Teardown      Close Page
+
+Force Tags          no-iframe
 
 *** Test Cases ***
 Example

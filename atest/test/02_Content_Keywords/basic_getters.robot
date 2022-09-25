@@ -31,6 +31,7 @@ Get Text Assert Validate
     Get Text    h1    validate    value.startswith('Login')
 
 Get Text With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}

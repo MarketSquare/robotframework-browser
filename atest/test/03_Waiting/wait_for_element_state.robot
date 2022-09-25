@@ -97,11 +97,13 @@ Wait For Elements State Deselected
     Wait For Elements State    \#person >> option[value=victim]    deselected    1.5 sec
 
 Wait For Elements State Focused
+    [Tags]    no-iframe
     Select Options By    \#dropdown    value    True    focused
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    focused    1.5 sec
 
 Wait For Elements State Defocused
+    [Tags]    no-iframe
     Select Options By    \#dropdown    value    True    defocused
     Click    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    defocused    1.5 sec
@@ -125,7 +127,7 @@ Wait For Elements State Fails On Too Short Timeout
 
 Wait For Elements State Fails On Too Short Global Timeout
     ${timeout} =    Set Browser Timeout    0.3 s
-    Run Keyword And Expect Error    Custom Error #submit, hidden and 300 milliseconds
+    Run Keyword And Expect Error    Custom Error ${SELECTOR_PREFIX_SPACED}#submit, hidden and 300 milliseconds
     ...    Wait For Elements State    \#submit    hidden    ${None}
     ...    Custom Error {selector}, {function} and {timeout}
     [Teardown]    Set Browser Timeout    ${timeout}
@@ -133,7 +135,7 @@ Wait For Elements State Fails On Too Short Global Timeout
 Wait For Elements State Fails On Too Short Timeout Custom Error With Formatting
     Select Options By    \#dropdown    value    True    unchecked
     Click    \#submit    noWaitAfter=True
-    Run Keyword And Expect Error    Custom Error #victim, e => !e.checked and 300 milliseconds
+    Run Keyword And Expect Error    Custom Error ${SELECTOR_PREFIX_SPACED}#victim, e => !e.checked and 300 milliseconds
     ...    Wait For Elements State    \#victim    unchecked    300ms
     ...    Custom Error {selector}, {function} and {timeout}
 
@@ -148,7 +150,7 @@ Wait For Elements State Fails On Too Short Timeout Custom Error And Hidden
     Select Options By    \#dropdown    value    True    unchecked
     Click    \#submit    noWaitAfter=True
     Run Keyword And Expect Error
-    ...    Custom Error #victim, hidden and 300 milliseconds
+    ...    Custom Error ${SELECTOR_PREFIX_SPACED}#victim, hidden and 300 milliseconds
     ...    Wait For Elements State    \#victim    hidden    300ms    Custom Error {selector}, {function} and {timeout}
 
 Wait For Elements State To Hide With Promise

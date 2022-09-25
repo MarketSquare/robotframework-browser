@@ -54,6 +54,7 @@ Open Html In Another Tab
     Get Title    ==    Welcome Page
 
 Download Works Also Headless
+    [Tags]    no-iframe
     New Context    acceptDownloads=${TRUE}
     New Page    ${WELCOME_URL}
     ${path} =    Download    ${WELCOME_URL}

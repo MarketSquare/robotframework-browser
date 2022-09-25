@@ -5,12 +5,12 @@ Test Teardown       Close Browser    ALL
 
 *** Test Cases ***
 Get Multiple Browsers
-    [Tags]    slow
-    New Browser
+    [Tags]    slow    no-iframe
+    New Browser    headless=${HEADLESS}
     New Page    ${FORM_URL}
     New Context
     New Page    ${LOGIN_URL}
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Context
     ${oldtimeout} =    Set Browser Timeout    15s
     New Page    http://example.com
@@ -21,21 +21,21 @@ Get Multiple Browsers
     Should Be Equal    ${browsers}    ${expected}
 
 Get Closed Browsers
-    New Browser
+    New Browser    headless=${HEADLESS}
     Close Browser
     ${browsers} =    Get Browser Catalog
     Should Be Empty    ${browsers}
 
 Get Browser Catalog Default Error
     [Tags]    slow
-    New Browser
+    New Browser    headless=${HEADLESS}
     ${expected} =    Create List    1    2
     Run Keyword And Expect Error
     ...    Browser Catalog '*' (list) should be '[[]'1', '2'[]]' (list)
     ...    Get Browser Catalog    ==    ${expected}
 
 Get Browser Catalog Custom Error
-    New Browser
+    New Browser    headless=${HEADLESS}
     ${expected} =    Create List    1    2
     Run Keyword And Expect Error
     ...    Tidii
@@ -76,7 +76,8 @@ Multibrowser Order
     [Teardown]    Close Browser
 
 Get Browser Catalog After First Popup Close
-    New Browser
+    [Tags]    no-iframe
+    New Browser    headless=${HEADLESS}
     New Page    ${CREATE_POPUPS_URL}
     Get Title    ==    Call Popups Page
     ${pages} =    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
@@ -90,7 +91,8 @@ Get Browser Catalog After First Popup Close
     [Teardown]    Close Browser
 
 Get Browser Catalog After Second Popup Close
-    New Browser
+    [Tags]    no-iframe
+    New Browser    headless=${HEADLESS}
     New Page    ${CREATE_POPUPS_URL}
     Get Title    ==    Call Popups Page
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 1

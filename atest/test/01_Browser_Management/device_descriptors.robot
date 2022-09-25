@@ -1,5 +1,4 @@
 *** Settings ***
-Library     Browser
 Resource    imports.resource
 
 *** Test Cases ***
@@ -19,7 +18,7 @@ Get Device
 
 Get Device With Screen
     ${device} =    Get Device    iPhone 11
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Context    &{device}    acceptDownloads=True
 
 Get Invalid Device Errors

@@ -84,6 +84,7 @@ Evaluate Multiline JavaScript Strict Mode Error
     ...    arg=Hello World
 
 Evaluate Multiline JavaScript On Page
+    [Tags]    no-iframe
     ${arg} =    Create Dictionary    selector=input#login_button    text=-APPENDIX
     ${texts} =    Evaluate JavaScript    ${NONE}
     ...    (arg) => {

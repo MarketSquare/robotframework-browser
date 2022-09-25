@@ -44,7 +44,7 @@ Scroll To Elements
 
 Scroll To/By All
     [Setup]    New Page    ${TABLES_URL}
-    Scroll To Scroll By
+    Scroll To Scroll By    body
     Click    id=divscroll
     Scroll To Scroll By    id=scrollable
 

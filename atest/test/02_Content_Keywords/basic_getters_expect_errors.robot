@@ -186,7 +186,7 @@ Get Element State With Strict On WaitForFunctionOptions
 Get Element State Default Error
     [Tags]    deprecated    expect_error
     Run Keyword And Expect Error
-    ...    State 'readonly' of 'h1' is 'False' (bool) should be 'True' (bool)
+    ...    State 'readonly' of '${SELECTOR_PREFIX_SPACED}h1' is 'False' (bool) should be 'True' (bool)
     ...    Get Element State    h1    readonly    ==    True
 
 Get Element State Custom Error
@@ -218,6 +218,7 @@ Get Property Custom Error
     ...    Get Property    h1    innerText    !=    Login Page    Tidii
 
 Get Property With Nonmatching Selector
+    [Tags]    no-iframe
     [Setup]    Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Property
     ...    notamatch    attributeName
@@ -225,7 +226,7 @@ Get Property With Nonmatching Selector
 
 Get Attribute With Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*"//input*resolved to 4 elements*
+    ...    *strict mode violation*"*//input*resolved to 4 elements*
     ...    Get Attribute    //input    id
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 4 elements*
@@ -259,8 +260,11 @@ Get Attribute Names Custom Error
 
 Get Classes Default Error
     Run Keyword And Expect Error
-    ...    Classes of id=draggable '[[]'box', 'react-draggable'[]]' (list) should contain 'not-here' (str)
-    ...    Get Classes    id=draggable    contains    not-here
+    ...    Classes of ${SELECTOR_PREFIX_SPACED}id=draggable '[[]'box', 'react-draggable'[]]' (list) should contain 'not-here' (str)
+    ...    Get Classes
+    ...    id=draggable
+    ...    contains
+    ...    not-here
 
 Get Classes Custom Error
     Run Keyword And Expect Error
@@ -269,7 +273,7 @@ Get Classes Custom Error
 
 Get Element Count Default Error
     Run Keyword And Expect Error
-    ...    Element count for selector `h1` is '1' (int) should be less than '1.0' (float)
+    ...    Element count for selector `${SELECTOR_PREFIX_SPACED}h1` is '1' (int) should be less than '1.0' (float)
     ...    Get Element Count    h1    <    1
 
 Get Element Count Custom Error

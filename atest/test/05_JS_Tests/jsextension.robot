@@ -1,6 +1,8 @@
 *** Settings ***
-Library     Browser    jsextension=${CURDIR}/funky.js
-Resource    imports.resource
+Library         Browser    jsextension=${CURDIR}/funky.js
+Resource        imports.resource
+
+Force Tags      no-iframe
 
 *** Test Cases ***
 Calling Custom Js Keyword

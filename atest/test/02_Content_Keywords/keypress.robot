@@ -29,6 +29,7 @@ Press Keys Combination Of Keystrokes In Select List
     Get Selected Options    select[name="possible_channels"]    value    ==    email    phone    directmail
 
 Press Keys With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "css=notamatch"*    Press Keys
     ...    css=notamatch    F

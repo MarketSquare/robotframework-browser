@@ -3,6 +3,8 @@ Resource        imports.resource
 
 Suite Setup     Close Browser    ALL
 
+Force Tags      no-iframe
+
 *** Test Cases ***
 Set Geolocation On Browser Startup
     Start Context With Geolocation

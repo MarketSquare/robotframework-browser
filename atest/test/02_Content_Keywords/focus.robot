@@ -5,6 +5,7 @@ Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Add Style
+    [Tags]    no-iframe
     Add Style Tag    \#username_field:focus {background-color: aqua;}
     Focus    \#username_field
     Get Style    \#username_field    background-color    ==    rgb(0, 255, 255)

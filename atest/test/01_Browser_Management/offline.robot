@@ -1,5 +1,4 @@
 *** Settings ***
-Library     Browser
 Resource    imports.resource
 
 *** Test Cases ***

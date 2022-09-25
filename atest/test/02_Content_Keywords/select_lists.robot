@@ -69,6 +69,7 @@ Get Selected Options With Xpath
     Should Be Equal    ${selection}    Telephone
 
 Get Selected Options With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Selected Options
     ...    notamatch
@@ -95,6 +96,7 @@ Select Options By Text
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
     ...    Select Options By
@@ -154,6 +156,7 @@ Deselect Options With Strict
     [Teardown]    Set Strict Mode    True
 
 Deselect Options With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Deselect Options
     ...    notamatch

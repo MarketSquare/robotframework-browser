@@ -22,7 +22,6 @@ from typing import Any, Dict, List, Optional, Union
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
-    exec_scroll_function,
     get_abs_scroll_coordinates,
     get_rel_scroll_coordinates,
     keyword,
@@ -127,6 +126,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4237|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(
                 Request().ClearText(selector=selector, strict=self.strict_mode)
@@ -274,14 +274,15 @@ class Interaction(LibraryComponent):
 
         See playwright's documentation for a more comprehensive list of
         supported input keys.
-        [https://playwright.dev/docs/api/class-page#page-press | Playwright docs for press.]
+        [https://playwright.dev/docs/api/class-page#page-press | Playwright docs for press.]
 
         Example:
         | # Keyword         Selector                    *Keys
         | `Press Keys`      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
 
         [https://forum.robotframework.org/t//4311|Comment >>]
-        """  # noqa
+        """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(
                 Request().PressKeys(
@@ -432,6 +433,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4295|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, Any] = {"force": force}
             if position_x and position_y:
@@ -501,8 +503,7 @@ class Interaction(LibraryComponent):
         horizontal_px = get_abs_scroll_coordinates(
             horizontal, scroll_width - client_width, "left", "right"
         )
-        exec_scroll_function(
-            self,
+        self.exec_scroll_function(
             f'scrollTo({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
             selector,
         )
@@ -539,8 +540,7 @@ class Interaction(LibraryComponent):
         horizontal_px = get_rel_scroll_coordinates(
             horizontal, scroll_width - client_width, client_width, "width"
         )
-        exec_scroll_function(
-            self,
+        self.exec_scroll_function(
             f'scrollBy({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
             selector,
         )
@@ -559,6 +559,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4321|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.ScrollToElement(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -920,7 +921,6 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4247|Comment >>]
         """
-        selector_from = self.presenter_mode(selector_from, self.strict_mode)
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
         to_bbox = self.library.get_boundingbox(selector_to)
@@ -995,7 +995,6 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4249|Comment >>]
         """
-        selector_from = self.presenter_mode(selector_from, self.strict_mode)
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
         to_x = from_xy["x"] + x
@@ -1164,6 +1163,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4341|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         p = Path(path)
         if not p.is_file():
             raise ValueError(f"Nonexistent input file path '{p.resolve()}'")

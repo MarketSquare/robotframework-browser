@@ -1,7 +1,7 @@
 *** Settings ***
 Resource            imports.resource
 
-Suite Setup         New Browser
+Suite Setup         New Browser    headless=${HEADLESS}
 Suite Teardown      Close Browser
 Test Setup          New Page    ${LOGIN_URL}
 

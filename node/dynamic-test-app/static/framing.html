@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<title>xxx iframes xxx</title>
+    </head>
+    <body>
+        <script>
+            function onLoadIframe(iframe) {
+                var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                var iframeTitle = iframeDoc.title;
+                document.title = iframeTitle;
+            }
+        </script>
+        <iframe 
+            style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;"            name="myIframeName" 
+            id="iframe_id"
+            src=""
+            onload="onLoadIframe(this)"></iframe>
+        <script>
+            // gets parameter 'url' from the URL and sets it as the iframe's src
+            var url = new URL(window.location.href);
+            var iframe_url = url.searchParams.get("url");
+            if (iframe_url) {
+                document.getElementById("iframe_id").src = iframe_url;
+            }
+	    </script>
+    </body>
+</html>

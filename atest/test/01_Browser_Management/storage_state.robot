@@ -1,7 +1,7 @@
 *** Settings ***
 Resource        imports.resource
 
-Suite Setup     New Browser
+Suite Setup     New Browser    headless=${HEADLESS}
 
 *** Test Cases ***
 Save Storage State

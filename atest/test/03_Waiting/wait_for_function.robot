@@ -31,10 +31,12 @@ Failed Wait For Function
     ...    Wait For Function    false    timeout=100ms
 
 Failed Complicated Wait For Function
+    [Tags]    no-iframe
     Run Keyword And Expect Error    STARTS: ${timeout_message}    Wait For Function
     ...    (selector) => document.activeElement === selector    selector=\#username_field    timeout=100ms
 
 Failed Wait For Function Promise
+    [Tags]    no-iframe
     ${promise} =    Promise To    Wait For Function
     ...    (selector) => {console.log(selector); return document.activeElement === selector}
     ...    selector=\#username_field    timeout=100ms
@@ -43,6 +45,7 @@ Failed Wait For Function Promise
     ...    Wait For    ${promise}
 
 Succesful Wait For Function Promise
+    [Tags]    no-iframe
     ${promise} =    Promise To    Wait For Function    (selector) => document.activeElement === selector
     ...    selector=\#username_field    timeout=750ms
     Click    \#username_field

@@ -13,6 +13,7 @@ Type Text With Clearing
     Get Text    css=input#username_field    ==    username
 
 Type Text With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
     ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
@@ -36,6 +37,7 @@ Clear Text With Strict
     [Teardown]    Set Strict Mode    True
 
 Clear Text With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
     ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
@@ -51,6 +53,7 @@ Fill Text With Force
     Get Text    css=input#username_field    ==    username
 
 Fill Text With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
     ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
@@ -94,6 +97,7 @@ Fill Secret Placeholder-env-var
     [Documentation]    ...
     ...    LOG 2:2    NONE
     ...    LOG 4:2    NONE
+    [Tags]    no-iframe
     Set Environment Variable    PH_ENV_VAR    password11
     Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.02}    ${TRUE}
     Get Text    css=input#username_field    ==    password11
@@ -132,6 +136,7 @@ Fill Secret Placeholder-robot-var
     [Documentation]
     ...    LOG 2:2    NONE
     ...    LOG 4:2    NONE
+    [Tags]    no-iframe
     ${var} =    Set Variable    password123
     Type Secret    css=input#username_field    $var
     Get Text    css=input#username_field    ==    password123
@@ -199,8 +204,7 @@ Fill Secret Fails When Env Variable Is Not Set
     ...    css=input#password_field    %{NONE_EXISTING_ENV_VARIABLE}
 
 Type Secret Env
-    [Documentation]
-    ...    LOG 2:2    NONE
+    [Tags]    no-iframe    log 2:2    none
     Set Environment Variable    TYPE_SECRET    password22
     Type Secret    css=input#password_field    %TYPE_SECRET
     Get Text    css=input#password_field    ==    password22
@@ -208,11 +212,13 @@ Type Secret Env
 Type Secret Local
     [Documentation]
     ...    LOG 2:2    NONE
+    [Tags]    no-iframe
     ${var} =    Set Variable    password321
     Type Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password321
 
 Fill Secret With Nonmatching Selector
+    [Tags]    no-iframe
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Secret

@@ -282,6 +282,7 @@ def atest(
     include_mac=None,
     smoke=False,
     processes=None,
+    framed=False,
 ):
     """Runs Robot Framework acceptance tests with pabot.
 
@@ -312,6 +313,10 @@ def atest(
         args.extend(["--listener", "Debugger"])
     if smoke:
         args.extend(["--exclude", "slow"])
+    if framed:
+        args.extend(["--variable", "SUFFIX:framing.html?url="])
+        args.extend(["--variable", "SELECTOR_PREFIX:id=iframe_id >>>"])
+        args.extend(["--exclude", "no-iframe"])
     os.mkdir(ATEST_OUTPUT)
 
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
