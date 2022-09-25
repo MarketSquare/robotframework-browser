@@ -24,7 +24,7 @@ Set New Global Settings
     Set Global Variable    $org_strict
     ${org_prefix} =    Set Selector Prefix    ${EMPTY}
     Set Global Variable    $org_prefix
-    
+
     Log All Scopes    1000    1000    False    ${EMPTY}
 
 Reset Global Settings

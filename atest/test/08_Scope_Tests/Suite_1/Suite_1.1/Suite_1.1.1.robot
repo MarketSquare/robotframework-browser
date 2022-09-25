@@ -15,7 +15,7 @@ Test Global Scope And Set Test Scope
 
     Go To    ${WAIT_URL_DIRECT}
     Strict Mode Should Be    False
-    ${global_strict}    Set Strict Mode    ${True}    scope=Test
+    ${global_strict} =    Set Strict Mode    ${True}    scope=Test
     Should Be Equal    ${global_strict}    ${False}
     Strict Mode Should Be    True
 

@@ -266,7 +266,9 @@ class Control(LibraryComponent):
         return old_retry_assertions_for
 
     @keyword(tags=("Setter", "Config"))
-    def set_selector_prefix(self, prefix: Optional[str], scope: Scope = Scope.Suite) -> str:
+    def set_selector_prefix(
+        self, prefix: Optional[str], scope: Scope = Scope.Suite
+    ) -> str:
         """Sets the prefix for all selectors in the given scope.
 
         | =Arguments= | =Description= |
