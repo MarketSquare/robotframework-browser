@@ -143,9 +143,9 @@ class Control(LibraryComponent):
             if mask:
                 mask_selectors: Optional[List[str]]
                 if isinstance(mask, str):
-                    mask_selectors = [mask]
+                    mask_selectors = [self.resolve_selector(mask)]
                 elif isinstance(mask, Iterable):
-                    mask_selectors = [str(s) for s in mask]
+                    mask_selectors = [self.resolve_selector(str(s)) for s in mask]
                 else:
                     raise ValueError(
                         f"'mask' argument is neither string nor list of string. It is {type(mask)}"
@@ -161,7 +161,7 @@ class Control(LibraryComponent):
                 options["clip"] = crop
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
-                    selector=selector or "",
+                    selector=self.resolve_selector(selector) or "",
                     mask=json.dumps(mask_selectors),
                     options=json.dumps(options),
                     strict=self.strict_mode,
@@ -264,6 +264,30 @@ class Control(LibraryComponent):
         old_retry_assertions_for = self.millisecs_to_timestr(self.retry_assertions_for)
         self.retry_assertions_for_stack.set(self.convert_timeout(timeout), scope)
         return old_retry_assertions_for
+
+    @keyword(tags=("Setter", "Config"))
+    def set_selector_prefix(self, prefix: Optional[str], scope: Scope = Scope.Suite) -> str:
+        """Sets the prefix for all selectors in the given scope.
+
+        | =Arguments= | =Description= |
+        | ``prefix``   | Prefix for all selectors. Prefix and selector will be separated by a single space. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope` for more details. |
+
+        Returns the previous value of the prefix.
+
+        Example:
+        | ${old} =    `Set Selector Prefix`    iframe#embedded_page >>>
+        | `Click`    button#login_btn       # Clicks on button inside iframe with the selector ``iframe#embedded_page >>> button#login_btn``
+        | `Set Selector Prefix`    ${old}
+
+        Example will click on button with id ``login_btn`` inside iframe with id ``embedded_page``.
+        The resulting selector will be ``iframe#embedded_page >>> button#login_btn``.
+
+        [https://forum.robotframework.org/t//4330|Comment >>]
+        """
+        old_prefix = self.selector_prefix
+        self.selector_prefix_stack.set(prefix or "", scope)
+        return old_prefix
 
     @keyword(tags=("Setter", "Config"))
     def show_keyword_banner(

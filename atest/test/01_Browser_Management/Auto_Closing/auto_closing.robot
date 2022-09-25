@@ -1,8 +1,7 @@
 *** Settings ***
-Library         Browser    timeout=3s
 Resource        ../imports.resource
 
-Suite Setup     New Page    ${ERROR_URL}
+Suite Setup     Setup Suite
 
 *** Test Cases ***
 Resource Leaker
@@ -21,5 +20,12 @@ New Page In Same Context Is Closed After Test
     Get Title    ==    Welcome Page
 
 Unhandled Alert Does Not Block Execution
+    [Tags]    debug
+    [Timeout]    1000s
     New Page    ${ERROR_URL}
     Click    text="Do not click!"
+
+*** Keywords ***
+Setup Suite
+    New Page    ${ERROR_URL}
+    Set Browser Timeout    3s    Suite

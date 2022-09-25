@@ -1,5 +1,4 @@
 *** Settings ***
-Library             Browser    run_on_failure=None
 Resource            imports.resource
 
 Suite Teardown      Close Browser
@@ -19,3 +18,12 @@ Test New Page With Short Default Timeout
     New Context
     Set Browser Timeout    1ms
     Run Keyword And Expect Error    *${ErrorMessage}*    New Page    ${LOGIN_URL}
+
+*** Keywords ***
+Setup
+    ${original} =    Register Keyword To Run On Failure    ${None}
+    Set Suite Variable    $original
+
+Teardown
+    Register Keyword To Run On Failure    ${original}
+    Close Browser

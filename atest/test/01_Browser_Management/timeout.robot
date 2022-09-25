@@ -2,10 +2,10 @@
 Library             Browser    run_on_failure=None    enable_playwright_debug=${True}
 Resource            imports.resource
 
-Suite Setup         New Browser
+Suite Setup         New Browser    headless=${HEADLESS}
 Suite Teardown      Close Browser
 
-Force Tags          timeout
+Force Tags          timeout    no-iframe
 
 *** Variables ***
 ${err_goto} =       page.goto: Timeout 1ms exceeded.

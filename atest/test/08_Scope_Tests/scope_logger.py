@@ -1,0 +1,29 @@
+from robot.libraries.BuiltIn import BuiltIn
+from robot.api import logger
+from Browser import Browser
+from typing import Optional
+
+
+def log_all_scopes(exp_timeout: float, exp_retry_assertions_for: float, exp_strict_mode: bool, exp_selector_prefix: Optional[str] = None):
+    b: Browser = BuiltIn().get_library_instance("Browser")
+    timeout = b.timeout_stack.get()
+    retry_assertions_for = b.retry_assertions_for_stack.get()
+    strict_mode = b.strict_mode_stack.get()
+    selector_prefix = b.selector_prefix_stack.get()
+
+    assert timeout == exp_timeout, f"timeout: {timeout} ({type(timeout)}) != {exp_timeout} ({type(exp_timeout)})"
+    assert retry_assertions_for == exp_retry_assertions_for, f"retry_assertions_for: {retry_assertions_for} ({type(retry_assertions_for)}) != {exp_retry_assertions_for} ({type(exp_retry_assertions_for)})"
+    assert strict_mode == exp_strict_mode, f"strict_mode: {strict_mode} ({type(strict_mode)}) != {exp_strict_mode} ({type(exp_strict_mode)})"
+    assert selector_prefix == exp_selector_prefix, f"selector_prefix: {selector_prefix} ({type(selector_prefix)}) != {exp_selector_prefix} ({type(exp_selector_prefix)})"
+
+    logger.info(f"timeout: {timeout}")
+    logger.info(f"retry_assertions_for: {retry_assertions_for}")
+    logger.info(f"strict_mode: {strict_mode}")
+    logger.info(f"selector_prefix: {selector_prefix}")
+
+    return {
+        "timeout": timeout,
+        "retry_assertions_for": retry_assertions_for,
+        "strict_mode": strict_mode,
+        "selector_prefix": selector_prefix,
+    }

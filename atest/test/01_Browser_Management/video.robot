@@ -83,7 +83,7 @@ Video Must Be Created When Close Browser Is Called
 
 *** Keywords ***
 Video Setup
-    New Browser
+    New Browser    headless=${HEADLESS}
     OperatingSystem.Remove Directory    ${OUTPUT_DIR}/video    recursive=True
 
 Verify Video Files

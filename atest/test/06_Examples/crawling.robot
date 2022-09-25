@@ -1,7 +1,8 @@
 *** Settings ***
-Library     Collections
-Library     Browser
-Resource    imports.resource
+Library         Collections
+Resource        imports.resource
+
+Force Tags      no-iframe
 
 *** Test Cases ***
 Normal Crawling

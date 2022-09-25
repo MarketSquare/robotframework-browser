@@ -3,6 +3,8 @@ Resource        imports.resource
 
 Test Setup      New Page    ${DRAGGAME_URL}
 
+Force Tags      no-iframe
+
 *** Test Cases ***
 Move Obstacle To Goal And Make A Goal
     Get Text    h2    ==    Put the circle in the goal

@@ -49,6 +49,7 @@ class Evaluation(LibraryComponent):
 
         [https://forum.robotframework.org/t//4252|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.ExecuteJavascript(
                 Request().JavascriptCode(
@@ -98,6 +99,7 @@ class Evaluation(LibraryComponent):
 
         [https://forum.robotframework.org/t//4251|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.EvaluateJavascript(
                 Request().EvaluateAll(
@@ -143,7 +145,7 @@ class Evaluation(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.HighlightElements(
                 Request().ElementSelectorWithDuration(
-                    selector=selector,
+                    selector=self.resolve_selector(selector),
                     duration=int(self.convert_timeout(duration)),
                     width=width,
                     style=style,

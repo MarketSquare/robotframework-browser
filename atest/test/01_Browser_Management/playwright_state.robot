@@ -11,12 +11,12 @@ Open Chrome
     Open Browser And Assert Login Page    chromium
 
 New Browser Does Not Open A Page
-    New Browser
+    New Browser    headless=${HEADLESS}
     Run Keyword And Expect Error
     ...    Error: No page open.    Go To    ${LOGIN_URL}
 
 New Browser Does Not Create A Context
-    New Browser
+    New Browser    headless=${HEADLESS}
     # Use Switch context to test that no context exists here
     ${no_context_id} =    Switch Context    CURRENT
     Should Be Equal    ${no_context_id}    NO CONTEXT OPEN
@@ -47,7 +47,7 @@ New Browser With Invalid Browser Fails On RF Side
 
 Create Chain Works
     [Tags]    slow
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Context
     ${first} =    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
@@ -56,9 +56,9 @@ Create Chain Works
 
 Close Browser Switches Active Page
     [Tags]    slow
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Page Login
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Page Form
     Close Browser
     Get Title    matches    (?i)login
@@ -81,7 +81,7 @@ Close Page Switches Active Page
 
 Browser, Context And Page UUIDs
     [Tags]    slow
-    ${browser} =    New Browser
+    ${browser} =    New Browser    headless=${HEADLESS}
     ${context} =    New Context
     ${page} =    New Page
     Should Start With    ${browser}    browser=
@@ -107,7 +107,7 @@ New Page Can New Context And Browser
     Get Text    h1    ==    Login Page
 
 Switch Page After Popup
-    [Tags]    slow
+    [Tags]    slow    no-iframe
     Open Browser And Assert Login Page    chromium
     Click    button#pops_up
     ${previous} =    Switch Page    NEW
@@ -182,9 +182,9 @@ Context Indices Are Unique
 
 Browser Indices Are Unique
     [Tags]    slow
-    ${first} =    New Browser
+    ${first} =    New Browser    headless=${HEADLESS}
     Close Browser
-    ${second} =    New Browser
+    ${second} =    New Browser    headless=${HEADLESS}
     Should Not Be Equal    ${first}    ${second}
 
 Close All Contexts
@@ -271,19 +271,19 @@ When Page Without Context Is Created This Is Logged For User
     ...    LOG    3:4    NONE
     [Tags]    slow
     [Setup]    Close Browser    ALL
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Page
     New Page
 
 Switch Page With ALL Browsers
-    ${browser1} =    New Browser
+    ${browser1} =    New Browser    headless=${HEADLESS}
     ${context11} =    New Context
     ${page111} =    New Page
     ${page112} =    New Page
     ${context12} =    New Context
     ${page121} =    New Page
     ${page122} =    New Page
-    ${browser2} =    New Browser
+    ${browser2} =    New Browser    headless=${HEADLESS}
     ${context21} =    New Context
     ${page211} =    New Page
     ${page212} =    New Page
@@ -313,14 +313,14 @@ Switch Page With ALL Browsers
     Assert Equal    ${cur_page}[0]    ${page111}[page_id]
 
 Switch Context With ALL Browsers
-    ${browser1} =    New Browser
+    ${browser1} =    New Browser    headless=${HEADLESS}
     ${context11} =    New Context
     ${page111} =    New Page
     ${page112} =    New Page
     ${context12} =    New Context
     ${page121} =    New Page
     ${page122} =    New Page
-    ${browser2} =    New Browser
+    ${browser2} =    New Browser    headless=${HEADLESS}
     ${context21} =    New Context
     ${page211} =    New Page
     ${page212} =    New Page
@@ -342,14 +342,14 @@ Switch Context With ALL Browsers
     Assert Equal    ${cur_context}[0]    ${context11}
 
 Switch Page With ALL Browsers Failing
-    ${browser1} =    New Browser
+    ${browser1} =    New Browser    headless=${HEADLESS}
     ${context11} =    New Context
     ${page111} =    New Page
     ${page112} =    New Page
     ${context12} =    New Context
     ${page121} =    New Page
     ${page122} =    New Page
-    ${browser2} =    New Browser
+    ${browser2} =    New Browser    headless=${HEADLESS}
     ${context21} =    New Context
     ${page211} =    New Page
     ${page212} =    New Page

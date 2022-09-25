@@ -6,7 +6,7 @@ Library             ../../library/presenter_mode.py
 Suite Setup         New Browser    headless=False
 Suite Teardown      Close Browser
 
-Force Tags          slow
+Force Tags          slow    no-iframe
 
 *** Test Cases ***
 Filling The Text With True

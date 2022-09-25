@@ -742,6 +742,7 @@ class Browser(DynamicCore):
         playwright_process_port: Optional[int] = None,
         retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot  fail-screenshot-{index}",
+        selector_prefix: Optional[str] = None,
         show_keyword_call_banner: Optional[bool] = None,
         strict: bool = True,
         timeout: timedelta = timedelta(seconds=10),
@@ -826,7 +827,7 @@ class Browser(DynamicCore):
         ]
         self.strict_mode_stack = SettingsStack(params["strict"], self)
         self.show_keyword_call_banner = params["show_keyword_call_banner"]
-
+        self.selector_prefix_stack = SettingsStack(selector_prefix, self)
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self.pause_on_failure: Set[str] = set()
@@ -979,7 +980,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return self.browser_output / "state"
 
     def _start_suite(self, name, attrs):
-        self._start_stack(attrs, Scope.Suite)
+        self._add_to_scope_stack(attrs, Scope.Suite)
         if not self._suite_cleanup_done:
             self._suite_cleanup_done = True
             for path in [
@@ -998,7 +999,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
     def _start_test(self, name, attrs):
-        self._start_stack(attrs, Scope.Test)
+        self._add_to_scope_stack(attrs, Scope.Test)
         self.is_test_case_running = True
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
@@ -1049,7 +1050,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._set_logging(True)
 
     def _end_test(self, name, attrs):
-        self._end_scope(attrs)
+        self._remove_from_scope_stack(attrs)
         self.is_test_case_running = False
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
@@ -1070,7 +1071,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
     def _end_suite(self, name, attrs):
-        self._end_scope(attrs)
+        self._remove_from_scope_stack(attrs)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")
@@ -1083,15 +1084,17 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
-    def _start_stack(self, attrs: Dict[str, Any], scope: Scope):
+    def _add_to_scope_stack(self, attrs: Dict[str, Any], scope: Scope):
         self.timeout_stack.start(attrs["id"], scope)
         self.strict_mode_stack.start(attrs["id"], scope)
         self.retry_assertions_for_stack.start(attrs["id"], scope)
+        self.selector_prefix_stack.start(attrs["id"], scope)
 
-    def _end_scope(self, attrs: Dict[str, Any]):
+    def _remove_from_scope_stack(self, attrs: Dict[str, Any]):
         self.timeout_stack.end(attrs["id"])
         self.strict_mode_stack.end(attrs["id"])
         self.retry_assertions_for_stack.end(attrs["id"])
+        self.selector_prefix_stack.end(attrs["id"])
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
         catalog_after = self.get_browser_catalog()

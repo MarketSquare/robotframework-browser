@@ -65,8 +65,9 @@ Screenshotting With Jpeg Extension And Quality Borders
 If Element Not Found Screenshot Should Fail
     ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
-    ...    TimeoutError: locator.screenshot: Timeout 200ms exceeded.*waiting for selector "#not_there"*
-    ...    Take Screenshot    selector=\#not_there
+    ...    TimeoutError: locator.screenshot: Timeout 200ms exceeded.*waiting for selector "${SELECTOR_PREFIX_WAITING}#not_there"*
+    ...    Take Screenshot
+    ...    selector=\#not_there
     Set Browser Timeout    ${timeout}
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
@@ -113,7 +114,7 @@ Embed ScreenShot To Log.html File
 
 Embed Element Picture To Log.html File
     [Documentation]
-    ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 1:*    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
     ${path} =    Take Screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED

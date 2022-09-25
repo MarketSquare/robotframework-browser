@@ -32,7 +32,7 @@ from robot.utils import DotDict  # type: ignore
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import exec_scroll_function, keyword, logger
+from ..utils import keyword, logger
 from ..utils.data_types import (
     AreaFields,
     BoundingBoxFields,
@@ -438,7 +438,7 @@ class Getters(LibraryComponent):
             list(class_dict.values()),
             assertion_operator,
             expected,
-            f"Classes of {selector}",
+            f"Classes of {self.resolve_selector(selector)}",
             message,
         )
 
@@ -543,6 +543,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4280|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetSelectContent(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -596,6 +597,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4261|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoolProperty(
                 Request().ElementProperty(
@@ -641,6 +643,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4270|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElementCount(
                 Request().ElementSelector(selector=selector, strict=False)
@@ -748,7 +751,8 @@ class Getters(LibraryComponent):
         node_name = str(self.library.execute_javascript("e => e.nodeName", table))
         if node_name != "TABLE":
             raise ValueError(
-                f"Selector {table} must select a <table> element but selects <{node_name.lower()}>."
+                f"Selector {self.resolve_selector(table)} must select a "
+                f"<table> element but selects <{node_name.lower()}>."
             )
         column_idx = (
             column
@@ -793,6 +797,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4283|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableCellIndex(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -840,6 +845,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4284|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetTableRowIndex(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -876,6 +882,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-get-element/4269|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetElement(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -899,6 +906,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4273|Comment >>]
         """
+        selector = self.resolve_selector(selector)
         try:
             with self.playwright.grpc_channel(original_error=True) as stub:
                 response = stub.GetElements(
@@ -1015,6 +1023,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4258|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(
                 Request.ElementSelector(selector=selector, strict=self.strict_mode)
@@ -1074,8 +1083,8 @@ class Getters(LibraryComponent):
         [https://forum.robotframework.org/t//4278|Comment >>]
         """
         scroll_size = DotDict()
-        scroll_size["width"] = exec_scroll_function(self, "scrollWidth", selector)
-        scroll_size["height"] = exec_scroll_function(self, "scrollHeight", selector)
+        scroll_size["width"] = self.exec_scroll_function("scrollWidth", selector)
+        scroll_size["height"] = self.exec_scroll_function("scrollHeight", selector)
         if self.keyword_formatters.get(self.get_scroll_size):
             logger.warn("Formatter is not supported by Get Scroll Size keyword.")
         if key == SizeFields.ALL:
@@ -1130,8 +1139,8 @@ class Getters(LibraryComponent):
         [https://forum.robotframework.org/t//4277|Comment >>]
         """
         scroll_position = DotDict()
-        scroll_position["top"] = exec_scroll_function(self, "scrollTop", selector)
-        scroll_position["left"] = exec_scroll_function(self, "scrollLeft", selector)
+        scroll_position["top"] = self.exec_scroll_function("scrollTop", selector)
+        scroll_position["left"] = self.exec_scroll_function("scrollLeft", selector)
         client_size = self.get_client_size(selector)
         scroll_position["bottom"] = scroll_position["top"] + client_size["height"]
         scroll_position["right"] = scroll_position["left"] + client_size["width"]
@@ -1186,8 +1195,8 @@ class Getters(LibraryComponent):
         [https://forum.robotframework.org/t//4263|Comment >>]
         """
         client_size = DotDict()
-        client_size["width"] = exec_scroll_function(self, "clientWidth", selector)
-        client_size["height"] = exec_scroll_function(self, "clientHeight", selector)
+        client_size["width"] = self.exec_scroll_function("clientWidth", selector)
+        client_size["height"] = self.exec_scroll_function("clientHeight", selector)
         if self.keyword_formatters.get(self.get_client_size):
             logger.warn("Formatter is not supported by Get Clinet Size keyword.")
         if key == SizeFields.ALL:
@@ -1272,6 +1281,7 @@ class Getters(LibraryComponent):
 
         if self.keyword_formatters.get(self.get_element_state):
             logger.warn("Formatter is not supported by Get Element State keyword.")
+        selector = self.resolve_selector(selector)
         return bool_verify_assertion(
             result,
             assertion_operator,
@@ -1341,6 +1351,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-get-element-states/4272|Comment >>]
         """
+        selector = self.resolve_selector(selector)
 
         def convert_str(f):
             return f.name if isinstance(f, ElementState) else f

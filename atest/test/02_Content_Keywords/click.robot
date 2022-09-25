@@ -10,6 +10,7 @@ Click Button
     Get Text    text=Login failed. Invalid user name and/or password.
 
 Click Nonmatching Selector
+    [Tags]    no-iframe
     ${originaltimeout} =    Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "css=notamatch"*    Click
     ...    css=notamatch

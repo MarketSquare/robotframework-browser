@@ -3,6 +3,8 @@ Resource        imports.resource
 
 Test Setup      Ensure Location    ${LOGIN_URL}
 
+Force Tags      no-iframe
+
 *** Test Cases ***
 Wait For Fails If No Success
     Run Keyword And Expect Error
@@ -22,7 +24,7 @@ Wait For Request Async
 
 Wait For Request Url
     Click    \#delayed_request
-    Wait For Request    matcher=${ROOT_URL}/api/get/json    timeout=1s
+    Wait For Request    matcher=${ROOT_URL}api/get/json    timeout=1s
 
 Wait For Request Regex
     Click    \#delayed_request
@@ -56,26 +58,26 @@ Wait For Response Async
 
 Wait Until Network Is Idle Works
     [Tags]    slow
-    Go To    ${ROOT_URL}/delayed-load.html
+    Go To    ${ROOT_URL}delayed-load.html
     Get Text    \#server_delayed_response    ==    Server response after 400ms
     Wait Until Network Is Idle    timeout=3s
     Get Text    \#server_delayed_response    ==    after some time I respond
 
 Wait For Navigation Works
     [Tags]    slow
-    Go To    ${ROOT_URL}/redirector.html
-    Wait For Navigation    ${ROOT_URL}/posted.html
-    Get Url    ==    ${ROOT_URL}/posted.html
+    Go To    ${ROOT_URL}redirector.html
+    Wait For Navigation    ${ROOT_URL}posted.html
+    Get Url    ==    ${ROOT_URL}posted.html
 
 Wait For Navigation Works With Regex
     [Tags]    slow
-    Go To    ${ROOT_URL}/redirector.html
+    Go To    ${ROOT_URL}redirector.html
     Wait For Navigation    /p[\\w]{4}d/i
     Get Url    contains    posted
 
 Wait For Navigation Fails With Wrong Regex
     [Tags]    slow
-    Go To    ${ROOT_URL}/redirector.html
+    Go To    ${ROOT_URL}redirector.html
     ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error    *TimeoutError*    Wait For Navigation    foobar
     Set Browser Timeout    ${timeout}
@@ -83,26 +85,26 @@ Wait For Navigation Fails With Wrong Regex
 
 Wait For Navigation Fails With Wrong Wait_until
     [Tags]    slow
-    Go To    ${ROOT_URL}/redirector.html
+    Go To    ${ROOT_URL}redirector.html
     Run Keyword And Expect Error
     ...    *PageLoadStates does not have member 'foobar'. Available: 'commit', 'domcontentloaded', 'load' and 'networkidle'*
     ...    Wait For Navigation
-    ...    ${ROOT_URL}/posted.html
+    ...    ${ROOT_URL}posted.html
     ...    wait_until=foobar
 
 Wait For Navigation Works With Wait_until
     [Tags]    slow
     ${old timeout} =    Set Browser Timeout    4s
     FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit
-        Go To    ${ROOT_URL}/redirector.html
-        Wait For Navigation    ${ROOT_URL}/posted.html    wait_until=${wait_until}
+        Go To    ${ROOT_URL}redirector.html
+        Wait For Navigation    ${ROOT_URL}posted.html    wait_until=${wait_until}
         Get Url    contains    posted
     END
     [Teardown]    Set Browser Timeout    ${old timeout}
 
 Promise To Wait For Navigation With Wait_until
     ${old timeout} =    Set Browser Timeout    4s
-    Go To    ${ROOT_URL}/redirector.html
-    ${page_navigation} =    Promise To    Wait For Navigation    url=${ROOT_URL}/posted.html    wait_until=networkidle
+    Go To    ${ROOT_URL}redirector.html
+    ${page_navigation} =    Promise To    Wait For Navigation    url=${ROOT_URL}posted.html    wait_until=networkidle
     Wait For    ${page_navigation}
     [Teardown]    Set Browser Timeout    ${old timeout}

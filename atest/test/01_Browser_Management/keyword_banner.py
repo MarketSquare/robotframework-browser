@@ -5,7 +5,7 @@ from typing import Optional
 
 def get_computed_banner_style():
     b: Browser = BuiltIn().get_library_instance("Browser")
-    return b.evaluate_javascript('body', "element => window.getComputedStyle(element,':before')")
+    return b.evaluate_javascript('!prefix body', "element => window.getComputedStyle(element,':before')")
 
 def get_real_page_source(operator: AssertionOperator = None, expected: Optional[str] = None):
     b: Browser = BuiltIn().get_library_instance("Browser")

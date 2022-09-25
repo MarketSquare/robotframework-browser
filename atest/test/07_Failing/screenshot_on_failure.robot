@@ -1,5 +1,4 @@
 *** Settings ***
-Library         Browser    timeout=3s
 Library         OperatingSystem
 Resource        imports.resource
 
@@ -28,6 +27,7 @@ Check Screenshots
 
 *** Keywords ***
 Check Screenshots Before
+    Set Browser Timeout    3s    scope=Suite
     Remove File    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-1.png
     Remove File    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-2.png
     Remove File    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-3.png

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import re
 import time
 from datetime import timedelta
 from typing import Any, Dict, Optional, Union
@@ -21,7 +22,7 @@ from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import ConditionInputs, ElementState, keyword, logger
+from ..utils import ConditionInputs, ElementState, Scope, keyword, logger
 
 
 class Waiter(LibraryComponent):
@@ -58,6 +59,20 @@ class Waiter(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-wait-for-elements-state/4345|Comment >>]
         """
+        # self.wait_for_condition(ConditionInputs.element_states, selector, AssertionOperator.contains, state, timeout=timeout, message=message)  #For Future Use...
+
+        if state in [ElementState.focused, ElementState.defocused] and (
+            (self.selector_prefix and ">>>" in self.selector_prefix)
+            or ">>>" in selector
+        ):
+            escaped_selector = re.sub(r"^#", "\\#", selector)
+            raise ValueError(
+                f"State '{state.name}' is not supported with iframe selectors.\n"
+                f"Use "
+                f"'Wait For Condition    Element States    {escaped_selector}   contains    {state.name}'"
+                f" instead."
+            )
+
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
             ElementState.readonly: "e => e.readOnly",
@@ -92,6 +107,7 @@ class Waiter(LibraryComponent):
                         logger.debug(f"Suppress error: {error}")
                     else:
                         if message:
+                            selector = self.resolve_selector(selector)
                             message = message.format(
                                 selector=selector,
                                 function=state.name,
@@ -114,6 +130,7 @@ class Waiter(LibraryComponent):
         timeout: Optional[timedelta] = None,
         strict: bool = True,
     ):
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, object] = {"state": state.name}
             if timeout:
@@ -168,6 +185,7 @@ class Waiter(LibraryComponent):
                     logger.debug(f"Suppress {error}")
                 else:
                     if message:
+                        selector = self.resolve_selector(selector)
                         message = message.format(
                             selector=selector, function=function, timeout=timeout_as_str
                         )
@@ -182,6 +200,7 @@ class Waiter(LibraryComponent):
         timeout: Optional[timedelta] = None,
         strict: bool = True,
     ):
+        selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, int] = {}
             if polling != "raf":
@@ -206,6 +225,7 @@ class Waiter(LibraryComponent):
         condition: ConditionInputs,
         *args: Any,
         timeout: Optional[timedelta] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Waits for a condition, defined with Browser getter keywords to become True.
 
@@ -219,7 +239,7 @@ class Waiter(LibraryComponent):
         | ``condition`` | A condition, defined with Browser getter keywords, without the word ``Get``. |
         | ``*args`` | Arguments to pass to the condition keyword. |
         | ``timeout`` | Timout to wait for the condition to become True. Uses default timeout of the library if not set. |
-
+        | ``message`` | Overrides the default error message. |
 
 
         The easiest way to use this keyword is first starting with an assertion keyword with assertion like: `Get Text`
@@ -243,10 +263,17 @@ class Waiter(LibraryComponent):
         """
         if isinstance(timeout, timedelta):
             assertion_timeout = self.library.convert_timeout(timeout)
-        else:
+        elif timeout is None:
             assertion_timeout = self.timeout
-        original_assert_retry = self.retry_assertions_for_stack.set(assertion_timeout)
+        else:
+            raise TypeError(f"Invalid timeout type: {type(timeout)}")
+        scope = Scope.Test if self.library.is_test_case_running else Scope.Suite
+        if message is not None:
+            args = args + (f"message={message}",)
+        original_assert_retry = self.retry_assertions_for_stack.set(
+            assertion_timeout, scope=scope
+        )
         try:
             return BuiltIn().run_keyword(condition.value, *args)
         finally:
-            self.retry_assertions_for_stack.set(original_assert_retry)
+            self.retry_assertions_for_stack.set(original_assert_retry, scope=scope)

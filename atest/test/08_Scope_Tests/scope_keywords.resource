@@ -1,5 +1,15 @@
 *** Settings ***
 Resource    ../keywords.resource
+Library     scope_logger.py
+
+
+*** Variables ***
+${SERVER_URL}           http://${SERVER}/
+${FRAME_URL} =          framing.html?url=
+${IFRAME_PREFIX} =    id=iframe_id >>>
+${WAIT_URL_FRAMED} =    ${SERVER_URL}${FRAME_URL}waitfor.html
+${WAIT_URL_DIRECT} =    ${SERVER_URL}waitfor.html
+
 
 *** Keywords ***
 Timeout Should Be Between
@@ -33,7 +43,7 @@ Assertion Retry Should Be Between
 Strict Mode Should Be
     [Arguments]    ${status}
     IF    ${status}
-        Run Keyword And Expect Error    *    Get Text    input
+        Run Keyword And Expect Error    *strict mode violation*    Get Text    input
     ELSE
         Get Text    input
     END
@@ -43,3 +53,4 @@ Waiter Page Set Delay
     Fill Text    id=delay-setting    ${delay}
     Click    id=setdelay
     Take Screenshot    EMBED
+

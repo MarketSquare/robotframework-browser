@@ -32,15 +32,15 @@ Switch Context
     ${pg2} =    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
     ${ctx3} =    New Context
-    ${pg3} =    New Page    ${ROOT_URL}
-    Get Title    ==    React App
+    ${pg3} =    New Page    ${ERROR_URL}
+    Get Title    ==    Error Page
 
     Switch Context    ${ctx}    ${br}
     Get Title    ==    prefilled_email_form.html
     Switch Context    ${ctx2}    ALL
     Get Title    matches    (?i)login
     Switch Context    ${ctx3}    ${br2}
-    Get Title    ==    React App
+    Get Title    ==    Error Page
     Switch Context    ${ctx2}    CURRENT
     Get Title    matches    (?i)login
     Run Keyword And Expect Error    *    Switch Context    ${ctx}    CURRENT
@@ -59,8 +59,8 @@ Switch Page
     ${ctx2} =    New Context
     ${pg2} =    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    ${pg3} =    New Page    ${ROOT_URL}
-    Get Title    ==    React App
+    ${pg3} =    New Page    ${ERROR_URL}
+    Get Title    ==    Error Page
 
     Switch Page    ${pg}    ${ctx}    ${br}
     Get Title    ==    prefilled_email_form.html
@@ -69,7 +69,7 @@ Switch Page
     Switch Page    ${pg}    ALL    ALL
     Get Title    ==    prefilled_email_form.html
     Switch Page    ${pg3}    CURRENT    ${br2}
-    Get Title    ==    React App
+    Get Title    ==    Error Page
     Switch Page    ${pg2}    CURRENT    CURRENT
     Get Title    matches    (?i)login
     Switch Page    ${pg}    CURRENT    ALL

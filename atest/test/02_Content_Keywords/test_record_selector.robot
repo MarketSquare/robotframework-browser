@@ -1,5 +1,4 @@
 *** Settings ***
-Library             Browser
 Resource            imports.resource
 
 Suite Setup         New Browser    headless=False

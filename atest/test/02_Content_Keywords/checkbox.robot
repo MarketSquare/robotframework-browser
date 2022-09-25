@@ -23,7 +23,7 @@ Get Checkbox State With Strict
 Get Checkbox State Default Error
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    Checkbox ?name=can_send_email? is 'True' (bool) should be 'False' (bool)
+    ...    Checkbox ${SELECTOR_PREFIX_SPACED}?name=can_send_email? is 'True' (bool) should be 'False' (bool)
     ...    Get Checkbox State    [name=can_send_email]    ==    unchecked
 
 Get Checkbox State Custom Error
@@ -34,7 +34,7 @@ Get Checkbox State Custom Error
 
 Check Checkbox
     [Documentation]
-    ...    LOG 3:2    DEBUG    Checked checkbox: [name=can_send_sms] with force: false
+    ...    LOG 3:*    DEBUG    REGEXP: Checked checkbox: .*?\\[name=can_send_sms\\] with force: false
     ${state} =    Get Checkbox State    [name=can_send_sms]    ==    off
     Should Not Be True    ${state}
     Check Checkbox    [name=can_send_sms]
@@ -43,7 +43,7 @@ Check Checkbox
 
 Check Checkbox With Force
     [Documentation]
-    ...    LOG 1:2    DEBUG    Checked checkbox: [name=can_send_sms] with force: true
+    ...    LOG 1:*    DEBUG    REGEXP: Checked checkbox: .*?\\[name=can_send_sms\\] with force: true
     Check Checkbox    [name=can_send_sms]    True
     ${state} =    Get Checkbox State    [name=can_send_sms]    ==    on
 
@@ -62,7 +62,7 @@ Uncheck Checkbox
 
 Uncheck Checkbox With Force
     [Documentation]
-    ...    LOG 1:2    DEBUG    Unchecked checkbox: [name=can_send_email] with force: true
+    ...    LOG 1:*    DEBUG    REGEXP: Unchecked checkbox: .*?\\[name=can_send_email\\] with force: true
     Uncheck Checkbox    [name=can_send_email]    True
     Get Checkbox State    [name=can_send_email]    ==    ${False}
 
@@ -77,6 +77,7 @@ Uncheck Checkbox With Strict
     [Teardown]    Set Strict Mode    True
 
 Get Checkbox State With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "xpath=//notamatch"*
     ...    Get Checkbox State    xpath=//notamatch
