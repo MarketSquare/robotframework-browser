@@ -285,7 +285,7 @@ class Control(LibraryComponent):
         Example will click on button with id ``login_btn`` inside iframe with id ``embedded_page``.
         The resulting selector will be ``iframe#embedded_page >>> button#login_btn``.
 
-        [https://forum.robotframework.org/t//4330|Comment >>]
+        [https://forum.robotframework.org/t//4741|Comment >>]
         """
         old_prefix = self.selector_prefix
         self.selector_prefix_stack.set(prefix or "", scope)
