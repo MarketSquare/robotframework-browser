@@ -1322,8 +1322,8 @@ class Getters(LibraryComponent):
         contain the states as `ElementState`.
 
         Example:
-        | `Get Element States`    h1    validate    value | visible
-        | `Get Element States`    h1    then    value & (visible | hidden)  # returns either ``['visible']`` or ``['hidden']``
+        | `Get Element States`    h1    validate    value & visible   # Fails in case of an invisible element
+        | `Get Element States`    h1    then    value & (visible | hidden)  # Returns either ``['visible']`` or ``['hidden']``
         | `Get Element States`    h1    then    bool(value & visible)  # Returns ``${True}`` if element is visible
 
         The most typical use case would be to verify if an element contains a specific state or multiple states.
