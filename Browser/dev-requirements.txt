@@ -13,7 +13,7 @@ twine >= 4.0.1
 robotstatuschecker >= 2.2.0
 rellu >= 0.7
 approvaltests == 7.0.1
-pytest-mock==3.9.0
+pytest-mock==3.10.0
 Pillow==9.2.0
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.11.1
