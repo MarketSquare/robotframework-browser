@@ -825,6 +825,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "kariharju",
+      "name": "Kari Harju",
+      "avatar_url": "https://avatars.githubusercontent.com/u/56814402?v=4",
+      "profile": "https://github.com/kariharju",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
