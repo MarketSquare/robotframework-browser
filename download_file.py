@@ -37,9 +37,9 @@ class Artifact:
     created_date: datetime
 
 
-def get_artifacts(url: str) -> dict:
+def get_artifacts(url: str, headers: dict) -> dict:
     params = {"per_page": 90}
-    response = requests.get(f"{url}/actions/artifacts", params=params)
+    response = requests.get(f"{url}/actions/artifacts", params=params, headers=headers)
     response.raise_for_status()
     data = response.json()
     artifacts = data["artifacts"]
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     DOWNLOAD_FOLDER.mkdir(exist_ok=True, parents=True)
     XUNIT_FOLDER.mkdir(exist_ok=True, parents=True)
     artifact_files = []
-    for artifact in get_artifacts(url):
+    for artifact in get_artifacts(url, headers):
         artifact_files.append(
             get_artifact(artifact, SAVED_ARTIFACTS, DOWNLOAD_FOLDER, headers)
         )
