@@ -250,7 +250,15 @@ def utest(c, reporter=None, suite=None):
 
     To create coverage use: coverage run -m invoke utest
     """
-    args = ["--showlocals", "--junitxml=utest/output/pytest_xunit.xml", "--tb=long", "-o", "log_cli=True", "-o","log_cli_level=INFO"]
+    args = [
+        "--showlocals",
+        "--junitxml=utest/output/pytest_xunit.xml",
+        "--tb=long",
+        "-o",
+        "log_cli=True",
+        "-o",
+        "log_cli_level=INFO",
+    ]
     if reporter:
         args.append(f"--approvaltests-add-reporter={reporter}")
     if suite:
