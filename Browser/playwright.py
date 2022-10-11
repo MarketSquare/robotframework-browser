@@ -111,7 +111,7 @@ class Playwright(LibraryComponent):
 
     def wait_until_server_up(self):
         for _ in range(50):
-            with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            with grpc.insecure_channel(f"127.0.0.1:{self.port}") as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
                     response = stub.Health(Request().Empty())
@@ -128,7 +128,7 @@ class Playwright(LibraryComponent):
 
     @cached_property
     def _channel(self):
-        return grpc.insecure_channel(f"localhost:{self.port}")
+        return grpc.insecure_channel(f"127.0.0.1:{self.port}")
 
     @contextlib.contextmanager
     def grpc_channel(self, original_error=False):
