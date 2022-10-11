@@ -250,7 +250,7 @@ def utest(c, reporter=None, suite=None):
 
     To create coverage use: coverage run -m invoke utest
     """
-        args = [
+    args = [
         "--showlocals",
         "--junitxml=utest/output/pytest_xunit.xml",
         "--tb=long",
