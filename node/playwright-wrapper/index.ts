@@ -28,7 +28,7 @@ server.addService(
     PlaywrightService as unknown as ServiceDefinition<UntypedServiceImplementation>,
     new PlaywrightServer() as unknown as UntypedServiceImplementation,
 );
-server.bindAsync(`localhost:${port}`, ServerCredentials.createInsecure(), () => {
+server.bindAsync(`127.0.0.1:${port}`, ServerCredentials.createInsecure(), () => {
     logger.info(`Listening on ${port}`);
     server.start();
 });
