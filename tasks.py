@@ -74,7 +74,7 @@ from previous release with pip_, run
    rfbrowser init
 Alternatively you can download the source distribution from PyPI_ and 
 install it manually. Browser library {version} was released on {date}. 
-Browser supports Python 3.7+, Node 12/14/16 LTS and Robot Framework 4.0+. 
+Browser supports Python 3.7+, Node 14/16 LTS and Robot Framework 4.0+. 
 Library was tested with Playwright REPLACE_PW_VERSION
 
 .. _Robot Framework: http://robotframework.org
