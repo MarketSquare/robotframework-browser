@@ -80,7 +80,6 @@ class Control(LibraryComponent):
         while True:
             index += 1
             indexed = Path(filename.replace("{index}", str(index)))
-            logger.trace(indexed)
             path = directory / indexed
             # Unique path was found
             if not path.with_suffix(f".{fileType}").is_file():

@@ -303,7 +303,9 @@ def atest(
         smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
     """
-    if "gitpod.io" in os.environ.get("GITPOD_HOST", "") and (not processes or int(processes) > 6):
+    if "gitpod.io" in os.environ.get("GITPOD_HOST", "") and (
+        not processes or int(processes) > 6
+    ):
         processes = "6"
 
     args = [] if processes is None else ["--processes", processes]

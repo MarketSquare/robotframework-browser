@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import re
+import traceback
 from concurrent.futures._base import Future
 from copy import copy, deepcopy
 from datetime import timedelta
@@ -36,6 +38,7 @@ class LibraryComponent:
         :param library: The library itself as a context object.
         """
         self.library = library
+        self._crypto = None
 
     @property
     def playwright(self):
@@ -143,11 +146,35 @@ class LibraryComponent:
         self, secret_variable: Any, original_secret: Any, arg_name: str
     ) -> str:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
+        secret = self.decrypt_with_crypto_library(secret)
         if secret == original_secret:
             logger.warn(
                 f"Direct assignment of values as '{arg_name}' is deprecated. Use special "
                 "variable syntax to resolve variable. Example $var instead of ${var}."
             )
+        return secret
+
+    def decrypt_with_crypto_library(self, secret):
+        if self._crypto is None:
+            try:
+                from CryptoLibrary.utils import CryptoUtility  # type: ignore
+
+                self._crypto = CryptoUtility()
+            except ImportError:
+                self._crypto = False
+                return secret
+        if (
+            self._crypto
+            and isinstance(secret, str)
+            and re.fullmatch(self._crypto.CIPHER_PATTERN, secret)
+        ):
+            try:
+                plain_text = self._crypto.decrypt_text(secret)
+                logger.trace("Successfully decrypted secret with CryptoLibrary.")
+                return plain_text
+            except Exception as excep:
+                logger.warn(excep)
+                logger.trace(traceback.format_exc())
         return secret
 
     def _replace_placeholder_variables(self, placeholder):
