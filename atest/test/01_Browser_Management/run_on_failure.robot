@@ -78,7 +78,7 @@ Register User Keyword
 
 Register Get Page Source
     [Documentation]
-    ...    LOG 3.1:4    DEBUG    Page source obtained successfully.
+    ...    LOG 3.1:3    DEBUG    Page source obtained successfully.
     [Tags]    no-iframe
     ${prev} =    Register Keyword To Run On Failure    Get Page Source
     Type Text    css=input#username_field    username
