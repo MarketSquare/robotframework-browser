@@ -844,7 +844,15 @@
       "profile": "https://github.com/kariharju",
       "contributions": [
         "bug"
-
+      ]
+    },
+    {
+      "login": "you",
+      "name": "you",
+      "avatar_url": "https://avatars.githubusercontent.com/u/57100752?v=4",
+      "profile": "https://github.com/you",
+      "contributions": [
+        "bug"
       ]
     }
   ],
@@ -853,5 +861,6 @@
   "projectOwner": "MarketSquare",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "skipCi": true
+  "skipCi": true,
+  "commitConvention": "angular"
 }
