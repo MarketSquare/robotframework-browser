@@ -224,7 +224,9 @@ class LibraryComponent:
         mode: dict = {}
         if isinstance(self.library.presenter_mode, dict):
             mode = copy(self.library.presenter_mode)  # type: ignore
-        duration = timedelta(seconds=timestr_to_secs(mode.get("duration", "2 seconds")))
+        duration = mode.get("duration", "2 seconds")
+        if not isinstance(duration, timedelta):
+            duration = timedelta(seconds=timestr_to_secs(duration))
         width = mode.get("width", "2px")
         style = mode.get("style", "dotted")
         color = mode.get("color", "blue")
