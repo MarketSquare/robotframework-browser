@@ -20,6 +20,8 @@ from typing import Any, Dict, Optional, Union
 
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 
+import Browser.browser as browser_file
+
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import ConditionInputs, ElementState, Scope, keyword, logger
@@ -273,7 +275,14 @@ class Waiter(LibraryComponent):
         original_assert_retry = self.retry_assertions_for_stack.set(
             assertion_timeout, scope=scope
         )
+        for lib, instance in BuiltIn().get_library_instance(all=True).items():
+            logger.info(lib)
+            if isinstance(instance, browser_file.Browser):
+                rf_keyword = f"{lib}.{condition.value}"
+                break
+        else:
+            rf_keyword = condition.value
         try:
-            return BuiltIn().run_keyword(condition.value, *args)
+            return BuiltIn().run_keyword(rf_keyword, *args)
         finally:
             self.retry_assertions_for_stack.set(original_assert_retry, scope=scope)
