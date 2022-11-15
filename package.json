@@ -13,7 +13,7 @@
     "@types/strip-comments": "^2.0.1",
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
-    "@typescript-eslint/parser": "^5.42.1",
+    "@typescript-eslint/parser": "^5.43.0",
     "esbuild": "^0.15.13",
     "esbuild-node-externals": "^1.5.0",
     "eslint": "^8.27.0",
