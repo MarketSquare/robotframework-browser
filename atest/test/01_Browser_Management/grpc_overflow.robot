@@ -15,5 +15,5 @@ GRPC Message Overflow Should Not Happen Event The Message Exceeds Default Size
     ...    Get Attribute    //${aabbcc * 1500}    foo    equal    tidii
     Should Contain    ${msg}    TimeoutError: locator.elementHandle: Timeout 2000ms exceeded.
     Should Contain    ${msg}    =========================== logs ===========================
-    Should Contain    ${msg}    waiting for selector "${SELECTOR_PREFIX_WAITING}//${aabbcc * 80}
+    Should Contain    ${msg}    waiting for locator('xpath=//${aabbcc * 80}
     [Teardown]    Set Browser Timeout    ${timeout}
