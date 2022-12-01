@@ -220,8 +220,9 @@ Get Property Custom Error
 Get Property With Nonmatching Selector
     [Tags]    no-iframe
     [Setup]    Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Property
-    ...    notamatch    attributeName
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Get Property    notamatch    attributeName
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute With Strict

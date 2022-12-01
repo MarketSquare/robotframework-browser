@@ -16,7 +16,7 @@ Type Text With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
-    ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
+    ...    *    TimeoutError: locator.fill: Timeout 50ms exceeded.*waiting For Locator('notamatch')*
     ...    Type Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
@@ -40,7 +40,7 @@ Clear Text With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
-    ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
+    ...    *TimeoutError: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Clear Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
@@ -56,7 +56,7 @@ Fill Text With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
-    ...    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
+    ...    *TimeoutError: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Fill Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
@@ -221,8 +221,9 @@ Fill Secret With Nonmatching Selector
     [Tags]    no-iframe
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Secret
-    ...    notamatch    %MY_RFBROWSER_SECRET
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Fill Secret    notamatch    %MY_RFBROWSER_SECRET
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Type Text With Delay
