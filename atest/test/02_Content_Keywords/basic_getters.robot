@@ -33,7 +33,9 @@ Get Text Assert Validate
 Get Text With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Text    notamatch
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Get Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Property And Assert

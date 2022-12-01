@@ -31,6 +31,7 @@ Press Keys Combination Of Keystrokes In Select List
 Press Keys With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "css=notamatch"*    Press Keys
-    ...    css=notamatch    F
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.press: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Press Keys    css=notamatch    F
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}

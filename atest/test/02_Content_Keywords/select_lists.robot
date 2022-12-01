@@ -71,8 +71,9 @@ Get Selected Options With Xpath
 Get Selected Options With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Get Selected Options
-    ...    notamatch
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Get Selected Options    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Option By Label
@@ -98,7 +99,8 @@ Select Options By Text
 Select Options By With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.selectOption: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Select Options By
     ...    notamatch    label    False    Label
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
@@ -158,8 +160,9 @@ Deselect Options With Strict
 Deselect Options With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Deselect Options
-    ...    notamatch
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.selectOption: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Deselect Options    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 *** Keywords ***
