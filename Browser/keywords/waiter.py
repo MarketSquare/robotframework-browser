@@ -276,7 +276,6 @@ class Waiter(LibraryComponent):
             assertion_timeout, scope=scope
         )
         for lib, instance in BuiltIn().get_library_instance(all=True).items():
-            logger.info(lib)
             if isinstance(instance, browser_file.Browser):
                 rf_keyword = f"{lib}.{condition.value}"
                 break
