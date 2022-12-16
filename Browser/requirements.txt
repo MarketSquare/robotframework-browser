@@ -7,4 +7,4 @@ robotframework-pythonlibcore >= 4.0.0
 robotframework-assertion-engine >= 0.6.1
 typing-extensions >= 4.4.0
 wrapt >= 1.14.1
-overrides >= 6.3.0
+overrides >= 7.3.1
