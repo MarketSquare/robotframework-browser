@@ -1,5 +1,6 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
+
 Suite Setup         Ensure Open Browser
 Test Setup          New Page    ${FORM_URL}
 Test Teardown       Close Context    ALL

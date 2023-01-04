@@ -752,7 +752,7 @@ class Browser(DynamicCore):
         show_keyword_call_banner: Optional[bool] = None,
         strict: bool = True,
         timeout: timedelta = timedelta(seconds=10),
-        plugins: Optional[str] = None
+        plugins: Optional[str] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 
