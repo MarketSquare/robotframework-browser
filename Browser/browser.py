@@ -31,7 +31,7 @@ from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
 from robot.running.arguments import PythonArgumentParser  # type: ignore
 from robot.running.arguments.typeconverters import TypeConverter  # type: ignore
 from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
-from robotlibcore import DynamicCore  # type: ignore
+from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
 from .base import ContextCache, LibraryComponent
 from .generated.playwright_pb2 import Request
@@ -701,6 +701,12 @@ class Browser(DynamicCore):
     | }
     | exports.__esModule = true;
     | exports.registerMySelector = registerMySelector;
+
+    = Plugins =
+
+    Browser library offers plugins as a way to modify and add library keywords and modify some of the internal
+    functionality without creating a new library or hacking the source code. See plugin API documentation for
+    further details.
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
@@ -746,6 +752,7 @@ class Browser(DynamicCore):
         show_keyword_call_banner: Optional[bool] = None,
         strict: bool = True,
         timeout: timedelta = timedelta(seconds=10),
+        plugins: Optional[str] = None
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -759,10 +766,11 @@ class Browser(DynamicCore):
         | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
         | ``retry_assertions_for``          | Timeout for retrying assertions on keywords before failing the keywords. This timeout starts counting from the first failure. Global ``timeout`` will still be in effect. This allows stopping execution faster to assertion failure when element is found fast. |
         | ``run_on_failure``                | Sets the keyword to execute in case of a failing Browser keyword. It can be the name of any keyword. If the keyword has arguments those must be separated with two spaces for example ``My keyword \\ arg1 \\ arg2``. If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value. Run on failure is not applied when library methods are executed directly from Python. |
-        | ``selector_prefix``                | Prefix for all selectors. This is useful when you need to use add an iframe selector before each selector. |
+        | ``selector_prefix``               | Prefix for all selectors. This is useful when you need to use add an iframe selector before each selector. |
         | ``show_keyword_call_banner``      | If set to ``True``, will show a banner with the keyword name and arguments before the keyword is executed at the bottom of the page. If set to ``False``, will not show the banner. If set to None, which is the default, will show the banner only if the presenter mode is enabled. `Get Page Source` and `Take Screenshot` will not show the banner, because that could negatively affect your test cases/tasks. This feature may be super helpful when you are debugging your tests and using tracing from `New Context` or `Video recording` features. |
         | ``strict``                        | If keyword selector points multiple elements and keywords should interact with one element, keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords or by ```et Strict Mode`` keyword. |
         | ``timeout``                       | Timeout for keywords that operate on elements. The keywords will wait for this time for the element to appear into the page. Defaults to "10s" => 10 seconds. |
+        | ``plugins``                       | Allows extending the Browser library with external Python classes. |
 
         Old deprecated argument order:
         ``timeout``, ``enable_playwright_debug``, ``auto_closing_level``, ``retry_assertions_for``, ``run_on_failure``,
@@ -823,6 +831,9 @@ class Browser(DynamicCore):
         )
         if params["jsextension"] is not None:
             libraries.append(self._initialize_jsextension(params["jsextension"]))
+        if params["plugins"] is not None:
+            parser = PluginParser(LibraryComponent, [self])
+            libraries.extend(parser.parse_plugins(params["plugins"]))
         self.presenter_mode: Union[HighLightElement, bool] = params[
             "enable_presenter_mode"
         ]
