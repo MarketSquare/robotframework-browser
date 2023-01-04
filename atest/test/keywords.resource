@@ -3,7 +3,12 @@ Resource    variables.resource
 Library     Collections
 Library     DateTime
 Library     OperatingSystem
-Library     Browser    timeout=${PLAYWRIGHT_TIMEOUT}    enable_playwright_debug=${True}    enable_presenter_mode=False    selector_prefix=${SELECTOR_PREFIX}
+Library     Browser
+...    timeout=${PLAYWRIGHT_TIMEOUT}
+...    enable_playwright_debug=${True}
+...    enable_presenter_mode=False
+...    selector_prefix=${SELECTOR_PREFIX}
+...    plugins=${CURDIR}/09_Plugins/ExamplePlugin.py
 Library     ../library/common.py
 Library     ../library/os_wrapper.py
 Library     ../library/show_trace_tool.py
