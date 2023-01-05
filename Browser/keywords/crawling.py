@@ -82,8 +82,8 @@ class Crawling(LibraryComponent):
         links: Set[str] = set()
         depth = parent_depth + 1
         for link_element in link_elements:
-            href, normal_link = self.library.execute_javascript(
-                "(e) => [e.href, !e.download]", link_element
+            href, normal_link = self.library.evaluate_javascript(
+                link_element, "(e) => [e.href, !e.download]"
             )
             if normal_link:
                 links.add(href)

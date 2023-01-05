@@ -163,38 +163,6 @@ Get Viewport Size Custom Error
     ...    My error dotdict
     ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}
 
-Get Element State With Strict On ElementSelectorWithOptions
-    [Tags]    deprecated    expect_error
-    Run Keyword And Expect Error
-    ...    *strict mode violation*//div*resolved to 22 elements*
-    ...    Get Element State    //div
-    Set Strict Mode    False
-    ${state} =    Get Element State    //div
-    Should Be True    ${state}
-    [Teardown]    Set Strict Mode    True
-
-Get Element State With Strict On WaitForFunctionOptions
-    [Tags]    deprecated    expect_error
-    Run Keyword And Expect Error
-    ...    *strict mode violation*//div*resolved to 22 elements*
-    ...    Get Element State    //div    state=disabled
-    Set Strict Mode    False
-    ${state} =    Get Element State    //div    state=disabled
-    Should Not Be True    ${state}
-    [Teardown]    Set Strict Mode    True
-
-Get Element State Default Error
-    [Tags]    deprecated    expect_error
-    Run Keyword And Expect Error
-    ...    State 'readonly' of '${SELECTOR_PREFIX_SPACED}h1' is 'False' (bool) should be 'True' (bool)
-    ...    Get Element State    h1    readonly    ==    True
-
-Get Element State Custom Error
-    [Tags]    deprecated    expect_error
-    Run Keyword And Expect Error
-    ...    Tidii
-    ...    Get Element State    h1    readonly    ==    True    Tidii
-
 Get Url Default Error
     [Tags]    expect_error
     Run Keyword And Expect Error

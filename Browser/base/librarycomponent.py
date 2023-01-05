@@ -257,6 +257,6 @@ class LibraryComponent:
             element_selector = "(element) => element"
         else:
             element_selector = "document.scrollingElement"
-        return self.library.execute_javascript(
-            f"{element_selector}.{function}", selector
+        return self.library.evaluate_javascript(
+            selector, f"{element_selector}.{function}"
         )
