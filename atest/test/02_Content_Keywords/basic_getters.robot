@@ -125,7 +125,7 @@ Get Classes With Strict
     ...    Get Classes    //button
     Set Strict Mode    False
     ${classes} =    Get Classes    //button
-    Should Be Equal    ${classes}    ${None}
+    Should Be Equal    ${classes}    ${{[]}}
     [Teardown]    Set Strict Mode    True
 
 Get Classes And Assert

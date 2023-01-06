@@ -215,21 +215,21 @@ Get Attribute Names Default Error
     ${expected} =    Create List    1    3
     Run Keyword And Expect Error
     ...    Attribute names '*' (list) should be '?'1', '3'?' (list)
-    ...    Get Attribute Names    [name="readonly_input"]    ==    ${expected}
+    ...    Get Attribute Names    [name="readonly_input"]    ==    @{expected}
     [Teardown]    Close Page
 
 Get Attribute Names Custom Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
     ${expected} =    Create List    1    3
     Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
-    ...    ==    ${expected}    message=Custom error {expected} {expected_type}
+    ...    ==    @{expected}    message=Custom error {expected} {expected_type}
     Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
     ...    ==    1    3    message=Custom error {expected} {expected_type}
     [Teardown]    Close Page
 
 Get Classes Default Error
     Run Keyword And Expect Error
-    ...    Classes of ${SELECTOR_PREFIX_SPACED}id=draggable '[[]'box', 'react-draggable'[]]' (list) should contain 'not-here' (str)
+    ...    EQUALS: Classes of ${SELECTOR_PREFIX_SPACED}id=draggable '['box', 'react-draggable']' (list) should contain '['not-here']' (list)
     ...    Get Classes
     ...    id=draggable
     ...    contains
