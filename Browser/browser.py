@@ -705,7 +705,8 @@ class Browser(DynamicCore):
     = Plugins =
 
     Browser library offers plugins as a way to modify and add library keywords and modify some of the internal
-    functionality without creating a new library or hacking the source code. See plugin API documentation for
+    functionality without creating a new library or hacking the source code. See plugin API
+    [https://github.com/MarketSquare/robotframework-browser/blob/main/docs/plugins/README.md | documentation] for
     further details.
     """
 
