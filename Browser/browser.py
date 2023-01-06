@@ -998,8 +998,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def _start_suite(self, name, attrs):
         self._add_to_scope_stack(attrs, Scope.Suite)
-        if not self._suite_cleanup_done:
-            self._suite_cleanup_done = True
+        if not Browser._suite_cleanup_done:
+            Browser._suite_cleanup_done = True
             for path in [
                 self.screenshots_output,
                 self.video_output,
