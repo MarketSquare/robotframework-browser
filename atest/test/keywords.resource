@@ -53,7 +53,7 @@ Input Username
 
 Input Pwd
     [Arguments]    ${password}
-    Fill Secret    input#password_field    ${password}
+    Fill Secret    input#password_field    $password
 
 Submit Credentials
     Click    css=input#login_button

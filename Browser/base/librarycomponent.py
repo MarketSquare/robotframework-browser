@@ -148,9 +148,10 @@ class LibraryComponent:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         secret = self.decrypt_with_crypto_library(secret)
         if secret == original_secret:
-            logger.warn(
-                f"Direct assignment of values as '{arg_name}' is deprecated. Use special "
-                "variable syntax to resolve variable. Example $var instead of ${var}."
+            raise ValueError(
+                f"Direct assignment of values or variables as '{arg_name}' is not allowed. "
+                "Use special variable syntax ($var instead of ${var}) "
+                "to prevent variable values from being spoiled."
             )
         return secret
 
