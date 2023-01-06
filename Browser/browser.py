@@ -834,7 +834,11 @@ class Browser(DynamicCore):
             libraries.append(self._initialize_jsextension(params["jsextension"]))
         if params["plugins"] is not None:
             parser = PluginParser(LibraryComponent, [self])
-            libraries.extend(parser.parse_plugins(params["plugins"]))
+            parsed_plugins = parser.parse_plugins(params["plugins"])
+            libraries.extend(parsed_plugins)
+            self._plugin_keywords = parser.get_plugin_keywords(parsed_plugins)
+        else:
+            self._plugin_keywords = []
         self.presenter_mode: Union[HighLightElement, bool] = params[
             "enable_presenter_mode"
         ]
@@ -1057,6 +1061,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 sys.__stdout__.flush()
                 input()
             raise e
+
+    def get_keyword_tags(self, name: str) -> list:
+        tags = list(DynamicCore.get_keyword_tags(self, name))
+        if name in self._plugin_keywords:
+            tags.append("plugin")
+        return tags
 
     def _end_keyword(self, name, attrs):
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":

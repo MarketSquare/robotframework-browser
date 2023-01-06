@@ -20,6 +20,7 @@ class ExamplePlugin(LibraryComponent):  # Inherit LibraryComponent
                     "name": cookie["name"],
                     "value": cookie["value"]
                 }
+        return {}
 
     def now_keyword(self):  # This is not keyword
         print(1)
