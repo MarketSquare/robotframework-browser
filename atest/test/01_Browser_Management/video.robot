@@ -34,6 +34,29 @@ Create Video With Relative Path
     New Page    file://${details}[video_path]
     Get BoundingBox    video    ALL    validate    value['width'] == 1280 and value['height'] == 720
 
+Create Video With Relative Path And Persistent Context
+    ${record_video} =    Create Dictionary    dir    my_persistent_video
+    ${browserID}    ${contextID}    ${details1} =    New Persistent Context
+    ...    ${OUTPUT_DIR}/browser/profile
+    ...    recordVideo=${record_video}
+    ...    url=${LOGIN_URL}
+    Highlight Elements    input
+    ${details2} =    New Page    ${LOGIN_URL}
+    Highlight Elements    input
+    Go To    ${Form_URL}
+    Highlight Elements    input
+    Close Context
+    Wait Until File Exists    ${details2}[video_path]
+    Close Browser    ALL
+    File Should Exist    ${details2}[video_path]
+    New Context    viewport={'width': 2048, 'height': 1200}
+    New Page
+    Go To    file://${details1}[video_path]
+    Get BoundingBox    video    ALL    validate    value['width'] == 1280 and value['height'] == 720
+    Go To    file://${details2}[video_path]
+    Get BoundingBox    video    ALL    validate    value['width'] == 1280 and value['height'] == 720
+    [Teardown]    Clean Up Persistent Test
+
 Create Video With VideoSize
     [Documentation]
     ...    LOG 4:3    INFO    GLOB:    *width="300" height="200"*.webm"*
@@ -88,3 +111,7 @@ Verify Video Files
     [Arguments]    ${count}
     Close Page
     Wait File Count In Directory    ${OUTPUT_DIR}/video    ${count}
+
+Clean Up Persistent Test
+    Remove Directory    ${OUTPUT_DIR}/browser/profile    recursive=True
+    Remove Directory    ${OUTPUT_DIR}/browser/video/my_persistent_video    recursive=True

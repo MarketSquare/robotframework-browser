@@ -664,6 +664,8 @@ class PlaywrightState(LibraryComponent):
 
         `New Persistent Context` does basically executes `New Browser`, `New Context` and `New Page` in one step with setting a profile at the same time.
 
+        This keyword returns a tuple of browser id, context id and page details. (New in Browser 15.0.0)
+
         | =Argument=               | =Description= |
         | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. Old positional order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``, ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``, ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``, ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``, ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``, ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``, ``url``. |
         | ``browser``              | Browser type to use. Default is Chromium. |
@@ -674,9 +676,9 @@ class PlaywrightState(LibraryComponent):
         If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
 
         | ${launch_args}=  Set Variable  ["--disable-extensions-except=./ublock/uBlock0.chromium", "--load-extension=./ublock/uBlock0.chromium"]
-        | `New Persistent Context  browser=chromium  headless=False  args=${launch_args}
+        | ${browserId}  ${contextId}  ${pageDetails}=  `New Persistent Context`  browser=chromium  headless=False  url=https://robocon,io  args=${launch_args}
 
-        Check `New Browser` or `New context` for the specific argument docs.
+        Check `New Browser`, `New Context` and `New Page` for the specific argument docs.
 
         Old deprecated argument order:
         ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``,
@@ -729,8 +731,13 @@ class PlaywrightState(LibraryComponent):
 
             if url:
                 stub.GoTo(Request().Url(url=url))
-
-            return response.id
+            self.context_cache.add(response.id, self._get_video_size(params))
+            video_path = self._embed_video(json.loads(response.video))
+            return (
+                response.browserId,
+                response.id,
+                NewPageDetails(page_id=response.pageId, video_path=video_path),
+            )
 
     def _set_context_options(self, params, httpCredentials, storageState):
         params = convert_typed_dict(self.new_context.__annotations__, params)
