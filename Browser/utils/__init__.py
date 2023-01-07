@@ -40,7 +40,6 @@ from .data_types import (
     ViewportDimensions,
     convert_typed_dict,
 )
-from .deprecated import attribute_warning
 from .js_utilities import get_abs_scroll_coordinates, get_rel_scroll_coordinates
 from .meta_python import find_by_id, locals_to_params
 from .misc import (

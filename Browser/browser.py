@@ -941,6 +941,7 @@ class Browser(DynamicCore):
                     )
                 else:
                     argument_names_and_default_values_texts.append(f"{arg_name}")
+        logger.console(f'[{", ".join(arg_set_texts)}]')
         text = f"""
 @keyword
 def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
