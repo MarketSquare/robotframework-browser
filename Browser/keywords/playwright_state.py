@@ -40,7 +40,6 @@ from ..utils import (
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
-    attribute_warning,
     convert_typed_dict,
     find_by_id,
     keyword,
@@ -441,9 +440,6 @@ class PlaywrightState(LibraryComponent):
     }
 
     @keyword(tags=("Setter", "BrowserControl"))
-    @attribute_warning(
-        old_args=("videosPath", "videoSize"), new_args=("recordVideo", "recordVideo")
-    )
     def new_context(
         self,
         *deprecated_pos_args,
@@ -472,8 +468,6 @@ class PlaywrightState(LibraryComponent):
         timezoneId: Optional[str] = None,
         tracing: Optional[str] = None,
         userAgent: Optional[str] = None,
-        videoSize: Optional[ViewportDimensions] = None,
-        videosPath: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
         ),
@@ -513,8 +507,6 @@ class PlaywrightState(LibraryComponent):
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU’s metaZones.txt] for a list of supported timezone IDs. |
         | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace -F /path/to/trace.zip``. |
         | ``userAgent``            | Specific user agent to use in this context. |
-        | ``videoSize``            | Specifies dimensions of the automatically recorded video. Can only be used if videosPath is set. If not specified the size will be equal to viewport. If viewport is not configured explicitly the video size defaults to 1280x720. Actual picture of the page will be scaled down if necessary to fit specified size. |
-        | ``videosPath``           | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
 
 
@@ -553,13 +545,12 @@ class PlaywrightState(LibraryComponent):
             pos_params[argument_name] = converted_pos
         if pos_params:
             logger.warn(
-                "Deprecated positional arguments are used in 'New Context'. Please use named arguments instead."
+                "Deprecated positional arguments are used in 'New Context'. "
+                "Please use named arguments instead. Will be removed after March 2023."
             )
         params = {**pos_params, **params}
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
-        params = self._set_context_options(
-            params, httpCredentials, storageState, videosPath
-        )
+        params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
         response = self._new_context(options, hideRfBrowser, trace_file)
         context_options = self._mask_credentials(json.loads(response.contextOptions))
@@ -664,8 +655,6 @@ class PlaywrightState(LibraryComponent):
         tracing: Optional[str] = None,
         url: Optional[str] = None,
         userAgent: Optional[str] = None,
-        videoSize: Optional[ViewportDimensions] = None,
-        videosPath: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
         ),
@@ -718,9 +707,7 @@ class PlaywrightState(LibraryComponent):
         params = {**pos_params, **params}
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
-        params = self._set_context_options(
-            params, httpCredentials, storageState, videosPath
-        )
+        params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
 
         with self.playwright.grpc_channel() as stub:
@@ -745,7 +732,7 @@ class PlaywrightState(LibraryComponent):
 
             return response.id
 
-    def _set_context_options(self, params, httpCredentials, storageState, videosPath):
+    def _set_context_options(self, params, httpCredentials, storageState):
         params = convert_typed_dict(self.new_context.__annotations__, params)
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
@@ -761,8 +748,6 @@ class PlaywrightState(LibraryComponent):
                 httpCredentials, params.get("httpCredentials"), "httpCredentials"
             )
             params["httpCredentials"] = secret
-        if not videosPath:
-            params.pop("videoSize", None)
         masked_params = self._mask_credentials(params.copy())
         logger.info(json.dumps(masked_params, default=str, indent=2))
         return params
@@ -803,18 +788,16 @@ class PlaywrightState(LibraryComponent):
         return data
 
     def _set_video_path(self, params: dict) -> dict:
-        video_path = params.get("videosPath")
         record_video = params.get("recordVideo", {})
-        if not video_path:
-            video_path = record_video.get("dir")
-        if not video_path:
+        video_path = record_video.get("dir")
+        if not record_video:
             return params
-        if Path(video_path).is_dir():
+        if video_path is None:
+            params["recordVideo"]["dir"] = self.video_output
             return params
-        if record_video:
-            params["recordVideo"]["dir"] = self.video_output / video_path
-        else:
-            params["videosPath"] = self.video_output / video_path
+        if Path(video_path).is_absolute():
+            return params
+        params["recordVideo"]["dir"] = self.video_output / video_path
         return params
 
     def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
@@ -823,18 +806,15 @@ class PlaywrightState(LibraryComponent):
         return int(width) if width else None, int(height) if height else None
 
     def _set_video_size_to_int(self, params: dict) -> dict:
-        width, height = self._get_record_video_size(params)
-        if width and height:
-            params["recordVideo"]["size"]["width"] = width
-            params["recordVideo"]["size"]["height"] = height
+        if "recordVideo" not in params:
+            return params
+        params["recordVideo"]["size"] = self._get_video_size(params)
         return params
 
     def _get_video_size(self, params: dict) -> dict:
         width, height = self._get_record_video_size(params)
         if width and height:
             return {"width": width, "height": height}
-        if "videoSize" in params:
-            return params["videoSize"]
         if "viewport" in params:
             return params["viewport"]
         return {"width": 1280, "height": 720}

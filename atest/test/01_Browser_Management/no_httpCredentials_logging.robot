@@ -19,7 +19,7 @@ New Context Mask For HttpCredentials When Defined
     TRY
         New Context    httpCredentials={'username': 'name', 'password': 'pwd'}
     EXCEPT    ValueError: Direct assignment of values or variables as 'httpCredentials' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
-        Log     Correct Error Message
+        Log    Correct Error Message
     END
 
 New Context HttpCredentials Resolved

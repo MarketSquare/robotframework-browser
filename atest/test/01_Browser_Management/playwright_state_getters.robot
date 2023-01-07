@@ -1,7 +1,7 @@
 *** Settings ***
 Resource            imports.resource
 
-Suite Setup        Close Browser    ALL
+Suite Setup         Close Browser    ALL
 Test Teardown       Close Browser    ALL
 
 *** Test Cases ***

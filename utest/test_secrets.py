@@ -28,6 +28,7 @@ def test_fill_secret_in_plain_text(caplog):
     except ValueError as e:
         assert str(e) == ERROR_MESSAGE
 
+
 def test_type_secret_in_plain_text(caplog):
     ctx = MagicMock()
     ctx.presenter_mode = False

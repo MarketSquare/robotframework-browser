@@ -34,7 +34,7 @@ Localstorage Clear
     LocalStorage Get Item    key1    ==    ${None}
     LocalStorage Get Item    key2    ==    ${None}
 
-Sessionstorage Clear
+Sessionstorage Clear 2
     SessionStorage Set Item    key1    value1
     SessionStorage Set Item    key2    value2
     ${val1} =    Evaluate JavaScript    ${None}    window.sessionStorage.getItem("key1")
