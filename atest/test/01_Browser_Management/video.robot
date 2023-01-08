@@ -13,18 +13,20 @@ Create Video With Full Path
     New Context    acceptDownloads=${True}    recordVideo=${record_video}
     New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
+    Get Browser Catalog
     Verify Video Files    1
     Should Be Equal    ${record_video.dir}    ${OUTPUT_DIR}/video
 
 Create Video With Relative Path
     [Documentation]
     ...    LOG 5:3    INFO    GLOB:    *video width="1280" height="720" controls*src="browser/video/my_video*.webm"*
-    ${files} =    Glob Files Count    ${OUTPUT_DIR}/browser/video/my_video
+    ${files} =    Glob Files Count    ${{pathlib.Path("${OUTPUT_DIR}/browser/video/my_video")}}
     Should Be Equal    ${0}    ${files}
     ${record_video} =    Create Dictionary    dir    my_video
     New Context    recordVideo=${record_video}
     ${details} =    New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
+    Get Browser Catalog
     Close Context
     Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    ${1}
     Should Start With    ${details}[video_path]    ${OUTPUT_DIR}${/}browser${/}video${/}my_video
@@ -45,6 +47,7 @@ Create Video With Relative Path And Persistent Context
     Highlight Elements    input
     Go To    ${Form_URL}
     Highlight Elements    input
+    Get Browser Catalog
     Close Context
     Wait Until File Exists    ${details2}[video_path]
     Close Browser    ALL
@@ -65,6 +68,7 @@ Create Video With VideoSize
     New Context    recordVideo=${record_video}
     ${details} =    New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
+    Get Browser Catalog
     Close Context    CURRENT
     Wait Until File Exists    ${details}[video_path]
     New Context    viewport={'width': 2048, 'height': 1200}
@@ -79,6 +83,7 @@ Create Video With Viewport
     New Context    recordVideo=${record_video}    viewport=${size}
     ${details} =    New Page    ${LOGIN_URL}
     Go To    ${FRAMES_URL}
+    Get Browser Catalog
     Verify Video Files    ${2}
     New Context    viewport={'width': 2048, 'height': 1200}
     New Page    file://${details}[video_path]
@@ -89,6 +94,7 @@ No Video
     ...    LOG 2:3    DEBUG    Video is not enabled.
     New Context
     New Page    ${LOGIN_URL}
+    Get Browser Catalog
     Verify Video Files    ${2}
 
 Video Must Be Created When Close Browser Is Called

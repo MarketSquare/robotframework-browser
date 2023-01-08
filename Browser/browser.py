@@ -932,9 +932,6 @@ class Browser(DynamicCore):
         argument_names_and_default_values: str,
         doc: str,
     ):
-        logger.console(
-            f"argument_names_and_default_values: {argument_names_and_default_values}"
-        )
         argument_names_and_vals = [
             [a.strip() for a in arg.split("=")]
             for arg in (argument_names_and_default_values or "").split(",")
@@ -956,7 +953,6 @@ class Browser(DynamicCore):
                     )
                 else:
                     argument_names_and_default_values_texts.append(f"{arg_name}")
-        logger.console(f'[{", ".join(arg_set_texts)}]')
         text = f"""
 @keyword
 def {name}(self, {", ".join(argument_names_and_default_values_texts)}):

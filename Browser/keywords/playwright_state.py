@@ -800,11 +800,12 @@ class PlaywrightState(LibraryComponent):
         if not record_video:
             return params
         if video_path is None:
-            params["recordVideo"]["dir"] = self.video_output
-            return params
-        if Path(video_path).is_absolute():
-            return params
-        params["recordVideo"]["dir"] = self.video_output / video_path
+            vid_path = self.video_output
+        elif Path(video_path).is_absolute():
+            vid_path = params["recordVideo"]["dir"]
+        else:
+            vid_path = self.video_output / video_path
+        params["recordVideo"]["dir"] = Path(vid_path).resolve().absolute()
         return params
 
     def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
