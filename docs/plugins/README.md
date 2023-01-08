@@ -31,9 +31,13 @@ It is possible to have space before and after the comma. Plugins are imported in
 plugins argument. If two or more plugins declare the same keyword or modify the same method/attribute in the library,
 the last plugin to perform the changes will overwrite the changes made by other plugins. Example of plugin imports:
 
+```robotframework
+Library     Browser     plugins=${CURDIR}/MyPlugin.py                       # Imports plugin with physical path
 ```
-| Library | Browser | plugins=${CURDIR}/MyPlugin.py                   | # Imports plugin with physical path |
-| Library | Browser | plugins=plugins.MyPlugin, plugins.MyOtherPlugin | # Imports two plugins with name     |
+
+
+```robotframework
+Library     Browser     plugins=plugins.MyPlugin, plugins.MyOtherPlugin     # Imports two plugins with name
 ```
 
 ## Plugin arguments
@@ -46,25 +50,28 @@ It is also possible to provide optional arguments to the plugins. Arguments must
 the plugin. Browser library will not convert arguments to any specific type and everything is by default unicode.
 Plugin is responsible for converting the argument to proper types. Example of importing plugin with arguments:
 
-```
-| Library | Browser | plugins=plugins.Plugin;ArgOne;ArgTwo | # Import two plugins with two arguments: ArgOne and ArgTwo |
+```robotframework
+Library     Browser     plugins=plugins.Plugin;ArgOne;ArgTwo     # Import two plugins with two arguments: ArgOne and ArgTwo
 ```
 
 It is also possible to provide variable number of arguments and keywords arguments. Named arguments must be defined
 first, variable number of arguments as second and keywords arguments as last. All arguments must be separated with
 semicolon. Example if plugin `__init__` is defined like this:
 
-```
+```python
+from Browser.base.librarycomponent import LibraryComponent
+
+
 class Plugin(LibraryComponent):
 
-    def __init__(self, ctx, arg, *varargs, **kwargs):
+    def __init__(self, library, arg, *varargs, **kwargs):
         # Code to implement the plugin.
 ```
 
 Then, for example, it is possible to plugin with these arguments:
 
-```
-| Library | Browser | plugins=plugins.Plugin;argument1;varg1;varg2;kw1=kwarg1;kw2=kwarg2 |
+```robotframework
+Library     Browser     plugins=plugins.Plugin;argument1;varg1;varg2;kw1=kwarg1;kw2=kwarg2
 ```
 
 Then the argument1 is given the arg in the `__init__`. The `varg1` and `varg2` variable number arguments are given to
@@ -81,8 +88,8 @@ the
 and uses `@keyword` decorator to mark which methods are exposed as keywords.
 
 Plugins must be implemented as Python classes and plugins must inherit the Browser library LibraryComponent class.
-Plugin `__init__` must support at least one argument: `library`. Also optional arguments are supported,
-see Plugin arguments for more details how to provide optional arguments to plugins.
+Plugin `__init__` must support at least one positional argument `library` which will grant access to the Browser object.
+Also optional arguments are supported, see Plugin arguments for more details how to provide optional arguments to plugins.
 
 Browser library uses Robot Framework
 [dynamic library API](https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#dynamic-library-api),
@@ -92,15 +99,77 @@ library API. Browser library is handling the dynamic library API requirements to
 this means that methods that implements keywords, must be decorated with `@keyword` decorator. The `@keyword`
 decorator can be imported from Robot Framework and used in the following way:
 
-```
+```python
 from robot.api.deco import keyword
+from Browser.base.librarycomponent import LibraryComponent
 
 class Plugin(LibraryComponent):
 
     @keyword
     def plugin_keyword(self):
-        with self.playwright.grpc_channel() as stub:  
-            # More code here to implement the keyword
+        # More code here to implement the keyword
+```
+
+
+### Implementing keywords
+
+In the next example you see a more complex example.
+It implements the init function to initialize a custom javascript module "*jsplugin.js*"
+that contains a function `mouseWheel`.
+This javascript module has the same requirements as the js keyword extensions of Browser library.
+These keywords are however not exposed to Robot Framework but can be called from a python function
+using `self.call_js_keyword` function.
+See Python keyword `mouse_wheel`.
+
+The second Python keyword `get_location_object` uses the Browser keyword `Evaluate Javascript`
+to get the location object from the browser. As long as no access to Playwright is needed,
+`Evaluate Javascript` may be sufficient.
+To call a Browser library keyword from a plugin, use `self.library.<keyword name to call>` syntax.
+You can call any Browser keyword that way.
+
+
+Python plugin example:
+```python
+import json
+from pathlib import Path
+from robot.api import logger
+from robot.api.deco import keyword
+from robot.utils import DotDict
+from Browser import Browser
+from Browser.base.librarycomponent import LibraryComponent
+
+
+class ExamplePlugin(LibraryComponent):
+    def __init__(self, library: Browser):
+        super().__init__(library)
+        self.initialize_js_extension(Path(__file__).parent / "jsplugin.js")
+
+    @keyword
+    def mouse_wheel(self, x: int, y: int):
+        """This keyword calls a custom javascript keyword from the file jsplugin.js."""
+        return self.call_js_keyword("mouseWheel", x=x, y=y, logger=None, page=None)
+
+    @keyword
+    def get_location_object(self) -> dict:
+        """This keyword calls the python keyword `Evaluate Javascript` to get the location object."""
+        location_dict = json.loads(
+                self.library.evaluate_javascript(None, f"JSON.stringify(window.location)")
+            )
+        logger.info(f"Location object:\n {json.dumps(location_dict, indent=2)}")
+        return DotDict(location_dict)
+```
+
+Javascript plugin example "*jsplugin.js*":
+```javascript
+async function mouseWheel(x, y, logger, page) {
+    logger(`Mouse wheel at ${x}, ${y}`);
+    await page.mouse.wheel(x, y);
+    logger("Returning a funny string");
+    return await page.evaluate("document.scrollingElement.scrollTop");
+}
+
+exports.__esModule = true;
+exports.mouseWheel = mouseWheel;
 ```
 
 # Handling plugins failures
@@ -120,4 +189,4 @@ added or modified from plugins. When Browser library keyword documentation, with
 it is easy to separate keywords which are added or modified by plugins. Keyword documentation can be example generated
 by following command:
 
-`python -m robot.libdoc Browser::plugins=/path/to/Plugin.py ./Browser.html`
+`libdoc Browser::plugins=/path/to/Plugin.py Browser.html`

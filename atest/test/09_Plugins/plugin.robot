@@ -42,3 +42,12 @@ Test Js Plugin Called From Python Plugin
     Mouse Wheel    -20    -150
     Get Scroll Position    ${None}    top    ==    50
     Get Scroll Position    ${None}    left    ==    30
+
+Pluging Keyword Example Location
+    [Setup]    New Page    ${FORM_URL}
+    ${location} =   Get Location Object
+    ${url} =    Get Url
+    Should Be Equal    ${location.hostname}    localhost
+    Should Be Equal    ${location.pathname}    /prefilled_email_form.html
+    Should Be Equal    ${location.protocol}    http:
+    Should Be Equal    ${location.href}        ${FORM_URL}

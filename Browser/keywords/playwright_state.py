@@ -372,7 +372,7 @@ class PlaywrightState(LibraryComponent):
         | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
         | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
         | ``slowMo`` | Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay. |
-        | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers/#google-chrome--microsoft-edge|Playwright documentation]. |
+        | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
 
 
         Old deprecated argument order:

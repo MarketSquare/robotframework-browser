@@ -129,7 +129,7 @@ class Network(LibraryComponent):
 
 
         | =Arguments= | =Description= |
-        | ``matcher`` | Request URL string, JavaScript regex or JavaScript function to match request by. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page/#page-wait-for-request|waitForRequest documentation]. |
+        | ``matcher`` | Request URL string, JavaScript regex or JavaScript function to match request by. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-request|waitForRequest documentation]. |
         | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
 
 
@@ -158,7 +158,7 @@ class Network(LibraryComponent):
 
 
         | =Arguments= | =Description= |
-        | ``matcher`` | Request URL string, JavaScript regex or JavaScript function to match request by. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page/#page-wait-for-response|waitForResponse documentation]. |
+        | ``matcher`` | Request URL string, JavaScript regex or JavaScript function to match request by. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-response|waitForResponse documentation]. |
         | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
 
         The response is a Python dictionary with following attributes:
