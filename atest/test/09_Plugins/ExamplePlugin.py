@@ -11,7 +11,6 @@ from Browser.generated.playwright_pb2 import Request
 
 class ExamplePlugin(LibraryComponent):
     def __init__(self, ctx: Browser):
-        logger.console(type(ctx))
         super().__init__(ctx)
         self.initialize_js_extension(Path(__file__).parent.resolve() / "jsplugin.js")
 
