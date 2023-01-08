@@ -1,6 +1,7 @@
 *** Settings ***
 Resource            imports.resource
 
+Suite Setup         New Browser
 Test Teardown       Close Context
 
 *** Test Cases ***
@@ -14,14 +15,12 @@ New Context No Mask For HttpCredentials When Not Defined
     New Context
 
 New Context Mask For HttpCredentials When Defined
-    [Documentation]    ...
-    ...    LOG 1:2    WARN    REGEXP:    Direct assignment of values as 'httpCredentials' is deprecated.*
-    ...    LOG 1:3    INFO    REGEXP:    .*"httpCredentials": "XXX".*
-    ...    LOG 1:3    INFO    REGEXP:    .*ignoreHTTPSErrors.*
-    ...    LOG 1:5    INFO    REGEXP:    .*httpCredentials(\"|'):\\s(\"|')XXX(\"|').*
-    ...    LOG 1:5    INFO    REGEXP:    .*ignoreHTTPSErrors.*
     [Tags]    no-mac-support
-    New Context    httpCredentials={'username': 'name', 'password': 'pwd'}
+    TRY
+        New Context    httpCredentials={'username': 'name', 'password': 'pwd'}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'httpCredentials' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    Correct Error Message
+    END
 
 New Context HttpCredentials Resolved
     [Documentation]    ...

@@ -18,7 +18,7 @@ Third Level
     Get Text    id=b >>> id=c >>> id=cc    ==    This is c
 
 Third Level Executing JS
-    Execute Javascript    (element) => element.textContent = "foo"    id=b >>> id=c >>> id=cc
+    Evaluate JavaScript    id=b >>> id=c >>> id=cc    (element) => element.textContent = "foo"
     Get Text    id=b >>> id=c >>> id=cc    ==    foo
 
 Third Level From Second

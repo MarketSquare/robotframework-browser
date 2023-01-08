@@ -24,44 +24,6 @@ from ..utils import DownloadedFile, keyword, logger
 
 
 class Evaluation(LibraryComponent):
-    @keyword(name="Execute JavaScript", tags=("Setter", "Getter", "PageContent"))
-    def execute_javascript(self, function: str, selector: str = "") -> Any:
-        """*DEPRECATED!!* Use keyword `Evaluate JavaScript` instead. This keyword will be removed end of 2022.
-
-        Executes given javascript on the page.
-
-        | =Arguments= | =Description= |
-        | ``function`` | A valid javascript function or a javascript function body. For example ``() => true`` and ``true`` will behave similarly. |
-        | ``selector`` | Selector to resolve and pass to the JavaScript function. This will be the first argument the function receives. If given a selector a function is necessary, with an argument to capture the elementhandle. For example ``(element) => document.activeElement === element`` See the `Finding elements` section for details about the selectors. |
-
-        Same functionality can be replaced with newer ``Evaluate JavaScript`` Keyword:
-        | -    Execute JavaScript    (elem) => elem.innerText = "abc"    h1
-        | +    Evaluate JavaScript    h1    (elem) => elem.innerText = "abc"
-
-        Example for replacement without Selector:
-        | -    Execute JavaScript    () => document.location.hostname
-        | +    Evaluate JavaScript    ${None}    () => document.location.hostname
-
-        Keyword uses strict mode if selector is defined. See `Finding elements` for more details
-        about strict mode.
-
-        [https://github.com/MarketSquare/robotframework-browser/tree/main/atest/test/06_Examples/js_evaluation.robot | Usage examples. ]
-
-        [https://forum.robotframework.org/t//4252|Comment >>]
-        """
-        selector = self.resolve_selector(selector)
-        with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(
-                    script=function, selector=selector, strict=self.strict_mode
-                )
-            )
-        if response.log:
-            logger.info(response.log)
-        if response.result:
-            return json.loads(response.result)
-        return response.result
-
     @keyword(name="Evaluate JavaScript", tags=("Setter", "Getter", "PageContent"))
     def evaluate_javascript(
         self,

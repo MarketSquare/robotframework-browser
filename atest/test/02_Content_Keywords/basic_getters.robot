@@ -125,7 +125,7 @@ Get Classes With Strict
     ...    Get Classes    //button
     Set Strict Mode    False
     ${classes} =    Get Classes    //button
-    Should Be Equal    ${classes}    ${None}
+    Should Be Equal    ${classes}    ${{[]}}
     [Teardown]    Set Strict Mode    True
 
 Get Classes And Assert
@@ -222,17 +222,6 @@ Get Viewport Size
     Should Be True    ${size}[width] >= 0
     Should Be True    ${size}[height] >= 0
     Length Should Be    ${size}    2
-
-Get Element State
-    [Tags]    deprecated
-    ${state} =    Get Element State    h1    assertion_operator=equal    assertion_expected=True
-    Should Be True    ${state}
-    ${state} =    Get Element State    h1
-    Should Be True    ${state}
-
-Get Element State With Assertion
-    [Tags]    deprecated
-    Get Element State    h1    readonly    ==    False
 
 Get Element States
     Wait For Elements State    h1

@@ -47,3 +47,4 @@ tmp
 # coverage
 .coverage
 htmlcov
+results

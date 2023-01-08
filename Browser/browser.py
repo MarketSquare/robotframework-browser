@@ -34,7 +34,7 @@ from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
 from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
 from .base import ContextCache, LibraryComponent
-from .generated.playwright_pb2 import Request
+from .generated.playwright_pb2 import Request, Response
 from .keywords import (
     Control,
     Cookie,
@@ -831,7 +831,9 @@ class Browser(DynamicCore):
             params["external_browser_executable"] or {}
         )
         if params["jsextension"] is not None:
-            libraries.append(self._initialize_jsextension(params["jsextension"]))
+            libraries.append(
+                self._create_lib_component_from_jsextension(params["jsextension"])
+            )
         if params["plugins"] is not None:
             parser = PluginParser(LibraryComponent, [self])
             parsed_plugins = parser.parse_plugins(params["plugins"])
@@ -888,19 +890,29 @@ class Browser(DynamicCore):
             normalized_keyword_name, keyword_name, tuple(varargs), kwargs
         )
 
-    def _initialize_jsextension(self, jsextension: str) -> LibraryComponent:
+    def _create_lib_component_from_jsextension(
+        self, jsextension: str
+    ) -> LibraryComponent:
         component = LibraryComponent(self)
+        response = self.init_js_extension(Path(jsextension))
+        for name, args, doc in zip(
+            response.keywords,
+            response.keywordArguments,
+            response.keywordDocumentations,
+        ):
+            self._jskeyword_call(component, name, args, doc)
+        return component
+
+    def init_js_extension(
+        self, js_extension_path: Union[Path, str]
+    ) -> Response.Keywords:
         with self.playwright.grpc_channel() as stub:
             response = stub.InitializeExtension(
-                Request().FilePath(path=os.path.abspath(jsextension))
+                Request().FilePath(
+                    path=str(Path(js_extension_path).resolve().absolute())
+                )
             )
-            for name, args, doc in zip(
-                response.keywords,
-                response.keywordArguments,
-                response.keywordDocumentations,
-            ):
-                self._jskeyword_call(component, name, args, doc)
-        return component
+            return response
 
     def _js_value_to_python_value(self, value: str) -> str:
         return {
@@ -933,7 +945,7 @@ class Browser(DynamicCore):
                 arg_set_texts.append(f'("{arg_name}", "RESERVED")')
             else:
                 arg_set_texts.append(f'("{arg_name}", {arg_name})')
-                if item[0] == "args":
+                if arg_name == "args":
                     argument_names_and_default_values_texts.append("*args")
                 elif len(item) > 1:
                     argument_names_and_default_values_texts.append(
@@ -969,6 +981,30 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         except SyntaxError as e:
             raise DataError(f"{e.msg} in {name}")
 
+    def call_js_keyword(self, keyword_name: str, **args) -> Any:
+        reserved = {
+            "logger": "RESERVED",
+            "playwright": "RESERVED",
+            "page": "RESERVED",
+        }
+        _args_browser_internal = {
+            "arguments": [
+                (arg_name, reserved.get(arg_name, value))
+                for arg_name, value in args.items()
+            ]
+        }
+        with self.playwright.grpc_channel() as stub:
+            responses = stub.CallExtensionKeyword(
+                Request().KeywordCall(
+                    name=keyword_name, arguments=json.dumps(_args_browser_internal)
+                )
+            )
+            for response in responses:
+                logger.info(response.log)
+            if response.json == "":
+                return
+            return json.loads(response.json)
+
     @property
     def outputdir(self) -> str:
         if EXECUTION_CONTEXTS.current:
@@ -998,8 +1034,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def _start_suite(self, name, attrs):
         self._add_to_scope_stack(attrs, Scope.Suite)
-        if not self._suite_cleanup_done:
-            self._suite_cleanup_done = True
+        if not Browser._suite_cleanup_done:
+            Browser._suite_cleanup_done = True
             for path in [
                 self.screenshots_output,
                 self.video_output,

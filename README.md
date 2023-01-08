@@ -96,7 +96,7 @@ Ready made extensions and a place to share your own at [robotframework-browser-e
 ### Ergonomic selector syntax, supports chaining of `text`, `css`  and `xpath` selectors
 
 ```RobotFramework
-# Select element containing text "Login" with text selector strategy 
+# Select element containing text "Login" with text selector strategy
 # and select it's parent `input` element with xpath
 Click    "Login" >> xpath=../input
 # Select element with CSS strategy and select button in it with text strategy
@@ -107,7 +107,7 @@ Click    div.dialog >> "Ok"
 New Page   ${LOGIN_URL}
 ${ref}=    Get Element    h1
 Get Property    ${ref}    innerText    ==    Login Page
-Execute JavaScript    (elem) => elem.innerText = "abc"    ${ref}
+Evaluate JavaScript    ${ref}    (elem) => elem.innerText = "abc"
 Get Property    ${ref}    innerText    ==    abc
 ```
 ### Asynchronously waiting for HTTP requests and responses

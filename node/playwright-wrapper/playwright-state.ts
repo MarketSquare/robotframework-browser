@@ -549,10 +549,10 @@ export async function newContext(
         hideRfBrowser,
     );
 
-    return _finishContextResponse(context, browserState, traceFile, options);
+    return await _finishContextResponse(context, browserState, traceFile, options);
 }
 
-function _finishContextResponse(
+async function _finishContextResponse(
     context: IndexedContext,
     browserState: IBrowserState,
     traceFile: string,
@@ -642,7 +642,25 @@ export async function newPersistentContext(
     const page = indexedContext.c.pages()[0];
     indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
 
-    return _finishContextResponse(indexedContext, browserState, traceFile, options);
+    browserState.browser.pushContext(indexedContext);
+    const response = new Response.NewPersistentContextResponse();
+    response.setId(indexedContext.id);
+    if (traceFile) {
+        response.setLog(`Successfully created context and trace file will be saved to: ${traceFile}`);
+        options.trace = { screenshots: true, snapshots: true };
+    } else {
+        response.setLog('Successfully created context. ');
+    }
+    response.setContextoptions(JSON.stringify(options));
+    response.setNewbrowser(browserState.newBrowser);
+    const currentBrowser = openBrowsers.activeBrowser;
+    const currentPage = indexedContext.pageStack[0];
+    const videoPath = await currentPage.p.video()?.path();
+    const video = { video_path: videoPath || null, contextUuid: indexedContext.id };
+    response.setVideo(JSON.stringify(video));
+    response.setPageid(currentPage.id);
+    response.setBrowserid(currentBrowser?.id || '');
+    return response;
 }
 
 export async function connectToBrowser(

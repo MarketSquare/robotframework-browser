@@ -9,7 +9,7 @@ Test Setup          New Page    ${LOGIN_URL}
 Localstorage
     LocalStorage Set Item    mykey    myvalue
     LocalStorage Get Item    mykey    ==    myvalue
-    ${val} =    Execute Javascript    window.localStorage.getItem("mykey")
+    ${val} =    Evaluate Javascript    ${None}    window.localStorage.getItem("mykey")
     Should Be Equal    ${val}    myvalue
     LocalStorage Remove Item    mykey
     LocalStorage Get Item    mykey    ==    ${None}
@@ -34,10 +34,10 @@ Localstorage Clear
     LocalStorage Get Item    key1    ==    ${None}
     LocalStorage Get Item    key2    ==    ${None}
 
-Sessionstorage Clear
+Sessionstorage Clear 2
     SessionStorage Set Item    key1    value1
     SessionStorage Set Item    key2    value2
-    ${val1} =    Execute Javascript    window.sessionStorage.getItem("key1")
+    ${val1} =    Evaluate JavaScript    ${None}    window.sessionStorage.getItem("key1")
     Should Be Equal    ${val1}    value1
     SessionStorage Clear
     SessionStorage Get Item    key1    ==    ${None}

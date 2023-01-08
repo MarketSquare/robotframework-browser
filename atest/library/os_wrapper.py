@@ -22,6 +22,15 @@ def wait_file_count_in_directory(path: str, count: int, pattern: Optional[str] =
     raise AssertionError(f"File count was {file_count}, but should have been {count} within {timeout} seconds")
 
 
+def wait_until_file_exists(path: Path, timeout: timedelta = timedelta(seconds=3)):
+    wait_time = time.monotonic() + timestr_to_secs(timeout.total_seconds())
+    while wait_time > time.monotonic():
+        if Path(path).exists():
+            return
+        time.sleep(0.42)
+    raise AssertionError(f"File {path} not found within {timeout} seconds")
+
+
 def glob_files(path: str) -> list:
     """Returns files path.glob(**/*). """
     files = Path(path).glob("**/*")
