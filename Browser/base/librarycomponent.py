@@ -17,11 +17,13 @@ import traceback
 from concurrent.futures._base import Future
 from copy import copy, deepcopy
 from datetime import timedelta
+from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Optional, Set, Union
 
 from robot.utils import timestr_to_secs  # type: ignore
 
+from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger
 from ..utils.data_types import DelayedKeyword, HighLightElement
 
@@ -130,6 +132,14 @@ class LibraryComponent:
     @property
     def state_file(self):
         return self.library.state_file
+
+    def initialize_js_extension(
+        self, js_extension_path: Union[Path, str]
+    ) -> Response.Keywords:
+        return self.library.init_js_extension(js_extension_path=js_extension_path)
+
+    def call_js_keyword(self, keyword_name: str, **args) -> Any:
+        return self.library.call_js_keyword(keyword_name, **args)
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
