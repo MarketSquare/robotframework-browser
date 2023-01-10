@@ -59,9 +59,11 @@ export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
+    logger.info(`Initializing extension: ${request.getPath()}`);
     const extension: Record<string, (...args: unknown[]) => unknown> = eval('require')(request.getPath());
-    state.extension = extension;
+    state.extensions.push(extension);
     const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
+    logger.info(`Adding ${kws.length} keywords from JS Extension`);
     return keywordsResponse(
         kws,
         kws.map((v) => {
@@ -82,7 +84,9 @@ export async function extensionKeywordCall(
 ): Promise<Response.Json> {
     const methodName = request.getName();
     const args = JSON.parse(request.getArguments()) as { arguments: [string, unknown][] };
-    const func = (state.extension as Record<string, (...args: unknown[]) => unknown>)[methodName];
+    const extension = state.extensions.find(extension => Object.keys(extension).includes(methodName));
+    if (!extension) throw Error(`Could not find keyword ${methodName}`);
+    const func = extension[methodName];
     const result = await func(
         ...args['arguments'].map((v) => {
             if (v[0] === 'page') {
@@ -224,8 +228,9 @@ export class PlaywrightState {
     constructor() {
         this.browserStack = [];
         this.locatorHandles = new Map();
+        this.extensions = [];
     }
-    extension: unknown;
+    extensions: Record<string, (...args: unknown[]) => unknown>[];
     private browserStack: BrowserState[];
     get activeBrowser() {
         return lastItem(this.browserStack);
