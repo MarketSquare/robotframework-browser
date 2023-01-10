@@ -21,6 +21,7 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Optional, Set, Union
 
+from robot.libraries.BuiltIn import BuiltIn
 from robot.utils import timestr_to_secs  # type: ignore
 
 from ..generated.playwright_pb2 import Response
@@ -166,19 +167,11 @@ class LibraryComponent:
         return secret
 
     def decrypt_with_crypto_library(self, secret):
-        if self._crypto is None:
-            try:
-                from CryptoLibrary.utils import CryptoUtility  # type: ignore
-
-                self._crypto = CryptoUtility()
-            except ImportError:
-                self._crypto = False
-                return secret
-        if (
-            self._crypto
-            and isinstance(secret, str)
-            and re.fullmatch(self._crypto.CIPHER_PATTERN, secret)
-        ):
+        if not isinstance(secret, str) or not re.match(r'^crypt:(.*)', secret):
+            return secret
+        logger.trace("CryptoLibrary string pattern found.")
+        self._import_crypto_library()
+        if self._crypto:
             try:
                 plain_text = self._crypto.decrypt_text(secret)
                 logger.trace("Successfully decrypted secret with CryptoLibrary.")
@@ -187,6 +180,24 @@ class LibraryComponent:
                 logger.warn(excep)
                 logger.trace(traceback.format_exc())
         return secret
+
+    def _import_crypto_library(self):
+        if self._crypto is None:
+            try:
+                try:
+                    logger.trace('Trying to import CryptoLibrary instance from Robot Framework.')
+                    crypto_library = BuiltIn().get_library_instance("CryptoLibrary")
+                    self._crypto = crypto_library.crypto
+                except RuntimeError:
+                    logger.trace('Getting CryptoLibrary failed, trying to import directly.')
+                    from CryptoLibrary.utils import CryptoUtility  # type: ignore
+                    self._crypto = CryptoUtility()
+            except ImportError:
+                logger.trace(traceback.format_exc())
+                logger.trace('CryptoLibrary import failed, using plain string.')
+                self._crypto = False
+                return
+            logger.trace('CryptoLibrary import succeeded.')
 
     def _replace_placeholder_variables(self, placeholder):
         if isinstance(placeholder, dict):
