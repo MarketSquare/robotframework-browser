@@ -98,7 +98,7 @@ Secret handling and direct value assignment
 They deprecated the assignment of variables or values a while ago.
 Now the direct assignment is removed. (`#2523`_)
 
-They only accept variables in the form of $variable instead of ${variable} now!
+They only accept variables in the form of `$variable` instead of `${variable}` now!
 
 Also the `password` attribute of `httpCredentials` needs to be in this special
 variable syntax now.
