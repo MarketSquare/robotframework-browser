@@ -45,9 +45,9 @@ Test Js Plugin Called From Python Plugin
 
 Pluging Keyword Example Location
     [Setup]    New Page    ${FORM_URL}
-    ${location} =   Get Location Object
+    ${location} =    Get Location Object
     ${url} =    Get Url
     Should Be Equal    ${location.hostname}    localhost
     Should Be Equal    ${location.pathname}    /prefilled_email_form.html
     Should Be Equal    ${location.protocol}    http:
-    Should Be Equal    ${location.href}        ${FORM_URL}
+    Should Be Equal    ${location.href}    ${FORM_URL}

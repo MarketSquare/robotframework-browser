@@ -338,10 +338,15 @@ Text Area Access
     Type Text    id=textarea51    Ufo detected
     Get Text    id=textarea51    ==    Ufo detected
 
-Type Secret with CryptoLibrary
-    Type Secret    input#username_field    crypt:/kfGGEGSwlcPsxBzVjMsnBWsYPXfFDF8BPj3APzN6AKS2W0mjOuh4coJljnb+MqZOmB5BG1oGpON7QC7nQ==    delay=10 ms
+Type Secret With CryptoLibrary
+    Type Secret
+    ...    input#username_field
+    ...    crypt:/kfGGEGSwlcPsxBzVjMsnBWsYPXfFDF8BPj3APzN6AKS2W0mjOuh4coJljnb+MqZOmB5BG1oGpON7QC7nQ==
+    ...    delay=10 ms
     Get Text    css=input#username_field    ==    FunkyPassword
 
-Fill Secret with CryptoLibrary
-    Fill Secret    input#username_field    crypt:1hYdLAcm9cANzOCussOyLS2wX4Nem6DAEGDacu8p9DCHHwZ0i+9MUkkeBHnf6UrrQLMcTQMbHoYoTH8f0do9fyk5itHBBjr91n4=
+Fill Secret With CryptoLibrary
+    Fill Secret
+    ...    input#username_field
+    ...    crypt:1hYdLAcm9cANzOCussOyLS2wX4Nem6DAEGDacu8p9DCHHwZ0i+9MUkkeBHnf6UrrQLMcTQMbHoYoTH8f0do9fyk5itHBBjr91n4=
     Get Text    css=input#username_field    ==    AnotherFunkySecretPassword

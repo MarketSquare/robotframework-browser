@@ -84,7 +84,7 @@ export async function extensionKeywordCall(
 ): Promise<Response.Json> {
     const methodName = request.getName();
     const args = JSON.parse(request.getArguments()) as { arguments: [string, unknown][] };
-    const extension = state.extensions.find(extension => Object.keys(extension).includes(methodName));
+    const extension = state.extensions.find((extension) => Object.keys(extension).includes(methodName));
     if (!extension) throw Error(`Could not find keyword ${methodName}`);
     const func = extension[methodName];
     const result = await func(
