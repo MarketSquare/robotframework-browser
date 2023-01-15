@@ -235,11 +235,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download package for install testing
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: rfbrowser-wheel
       - name: Download package for install testing
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: demoapp
           path: zip_results/demoapp
