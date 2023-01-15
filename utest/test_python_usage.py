@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 from assertionengine import AssertionOperator
+import logging
 
 from Browser import SupportedBrowsers
 
@@ -92,27 +93,39 @@ def test_promise_handling(browser, application_server):
 
 def test_promise_to_wait_for_response_with_name_arguments(browser):
     browser.new_page()
-    promise = browser.promise_to('Wait For Response', "matcher=", "timeout=1s")
-    browser.go_to(url='https://www.google.com')
+    logger = logging.getLogger()
+    old_level = logger.getEffectiveLevel()
+    logger.setLevel(logging.WARNING)
+    promise = browser.promise_to("Wait For Response", "matcher=", "timeout=1s")
+    # pdb.set_trace()
+    browser.go_to(url="https://www.google.com")
+    logger.setLevel(old_level)
+
     assert promise.result() is not None
 
 
 def test_promise_to_wait_for_alert_with_name_arguments(browser):
     browser.new_page()
-    promise = browser.promise_to('Wait For Alert', 'action=ignore', 'prompt_input=Kala', 'text=Wrong Text')
-    browser.go_to(url='https://www.google.com')
+    promise = browser.promise_to(
+        "Wait For Alert", "action=ignore", "prompt_input=Kala", "text=Wrong Text"
+    )
+    browser.go_to(url="https://www.google.com")
     assert (promise.running() or promise.done()) is True
 
 
 def test_promise_to_wait_for_elements_state(browser):
     browser.new_page()
-    promise = browser.promise_to('Wait For Elements State', '#victim', 'hidden', '200ms')
-    browser.go_to(url='https://www.google.com')
+    promise = browser.promise_to(
+        "Wait For Elements State", "#victim", "hidden", "200ms"
+    )
+    browser.go_to(url="https://www.google.com")
     assert (promise.running() or promise.done()) is True
 
 
 def test_promise_to_wait_for_elements_state_with_name_arguments(browser):
     browser.new_page()
-    promise = browser.promise_to('Wait For Elements State', 'selector="#victim"', 'state=hidden', 'timeout=200ms')
-    browser.go_to(url='https://www.google.com')
+    promise = browser.promise_to(
+        "Wait For Elements State", 'selector="#victim"', "state=hidden", "timeout=200ms"
+    )
+    browser.go_to(url="https://www.google.com")
     assert (promise.running() or promise.done()) is True
