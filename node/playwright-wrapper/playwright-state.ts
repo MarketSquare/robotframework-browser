@@ -82,28 +82,24 @@ export async function extensionKeywordCall(
     call: ServerWritableStream<Request.KeywordCall, Response.Json>,
     state: PlaywrightState,
 ): Promise<Response.Json> {
-    const methodName = request.getName();
+    const keywordName = request.getName();
     const args = JSON.parse(request.getArguments()) as { arguments: [string, unknown][] };
-    const extension = state.extensions.find((extension) => Object.keys(extension).includes(methodName));
-    if (!extension) throw Error(`Could not find keyword ${methodName}`);
-    const func = extension[methodName];
-    const result = await func(
-        ...args['arguments'].map((v) => {
-            if (v[0] === 'page') {
-                return state.getActivePage();
-            }
-            if (v[0] === 'logger') {
-                return (msg: string) => {
-                    call.write(jsonResponse(JSON.stringify(''), msg));
-                };
-            }
-            if (v[0] === 'playwright') {
-                return playwright;
-            }
-            return v[1];
-        }),
+    const extension = state.extensions.find((extension) => Object.keys(extension).includes(keywordName));
+    if (!extension) throw Error(`Could not find keyword ${keywordName}`);
+    const keyword = extension[keywordName];
+    const expectedArgumentNames = extractArgumentsStringFromJavascript(keyword.toString())
+        .split(',')
+        .map((s) => s.trim().match(/^\w*/)?.[0] || s.trim());
+    const namedArguments = Object.fromEntries(args['arguments']);
+    const apiArguments = new Map();
+    apiArguments.set('page', state.getActivePage());
+    apiArguments.set('logger', (msg: string) => call.write(jsonResponse(JSON.stringify(''), msg)));
+    apiArguments.set('playwright', playwright);
+    const functionArguments = expectedArgumentNames.map(
+        (argName) => apiArguments.get(argName) || namedArguments[argName],
     );
-    return jsonResponse(JSON.stringify(result), 'ok');
+    const result = await keyword(...functionArguments);
+    return jsonResponse(JSON.stringify(result), JSON.stringify([expectedArgumentNames, namedArguments]));
 }
 
 interface BrowserAndConfs {
