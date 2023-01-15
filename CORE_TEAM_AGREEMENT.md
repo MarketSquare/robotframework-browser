@@ -30,7 +30,7 @@ A new member to the team requires that all current team members support this.
 
 ## Removing a team member
 
-Anyone can leave the team by his own will.
+Anyone can leave the team by their own will.
 If all others from the core team agree that a team member should be removed from the team
 then that team member will no longer be part of the core team.
 
