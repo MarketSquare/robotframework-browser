@@ -18,7 +18,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest", "windows-latest" ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
@@ -120,7 +120,7 @@ jobs:
             node-version: 16.x
             shard: 3
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
@@ -233,7 +233,7 @@ jobs:
           - os: windows-latest
             node-version: 14.x
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download package for install testing
         uses: actions/download-artifact@v3
         with:
