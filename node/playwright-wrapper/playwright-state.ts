@@ -77,6 +77,11 @@ export async function initializeExtension(
     );
 }
 
+const getArgumentNamesFromJavascriptKeyword = (keyword: CallableFunction) =>
+    extractArgumentsStringFromJavascript(keyword.toString())
+        .split(',')
+        .map((s) => s.trim().match(/^\w*/)?.[0] || s.trim());
+
 export async function extensionKeywordCall(
     request: Request.KeywordCall,
     call: ServerWritableStream<Request.KeywordCall, Response.Json>,
@@ -87,19 +92,16 @@ export async function extensionKeywordCall(
     const extension = state.extensions.find((extension) => Object.keys(extension).includes(keywordName));
     if (!extension) throw Error(`Could not find keyword ${keywordName}`);
     const keyword = extension[keywordName];
-    const expectedArgumentNames = extractArgumentsStringFromJavascript(keyword.toString())
-        .split(',')
-        .map((s) => s.trim().match(/^\w*/)?.[0] || s.trim());
     const namedArguments = Object.fromEntries(args['arguments']);
     const apiArguments = new Map();
     apiArguments.set('page', state.getActivePage());
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse(JSON.stringify(''), msg)));
     apiArguments.set('playwright', playwright);
-    const functionArguments = expectedArgumentNames.map(
+    const functionArguments = getArgumentNamesFromJavascriptKeyword(keyword).map(
         (argName) => apiArguments.get(argName) || namedArguments[argName],
     );
     const result = await keyword(...functionArguments);
-    return jsonResponse(JSON.stringify(result), JSON.stringify([expectedArgumentNames, namedArguments]));
+    return jsonResponse(JSON.stringify(result), 'ok');
 }
 
 interface BrowserAndConfs {
