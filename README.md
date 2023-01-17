@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-98-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-99-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -289,6 +289,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Remppa"><img src="https://avatars.githubusercontent.com/u/17778362?v=4?s=100" width="100px;" alt="Remppa"/><br /><sub><b>Remppa</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ARemppa" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/tomekPawlak"><img src="https://avatars.githubusercontent.com/u/39945193?v=4?s=100" width="100px;" alt="Tomasz Pawlak"/><br /><sub><b>Tomasz Pawlak</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AtomekPawlak" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/stude1"><img src="https://avatars.githubusercontent.com/u/5876939?v=4?s=100" width="100px;" alt="Timo Stordell"/><br /><sub><b>Timo Stordell</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Astude1" title="Bug reports">🐛</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarcinGmurczyk"><img src="https://avatars.githubusercontent.com/u/11760932?v=4?s=100" width="100px;" alt="Marcin Gmurczyk"/><br /><sub><b>Marcin Gmurczyk</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=MarcinGmurczyk" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
