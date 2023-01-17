@@ -7,9 +7,10 @@ import pytest
 import Browser.keywords as interaction
 from Browser.keywords import PlaywrightState
 
-WARN_MESSAGE = (
-    "WARNING  RobotFramework:logger.py:95 Direct assignment of values as 'secret' is deprecated. "
-    "Use special variable syntax to resolve variable. Example $var instead of ${var}.\n"
+ERROR_MESSAGE = (
+    "Direct assignment of values or variables as 'secret' is not allowed. "
+    "Use special variable syntax ($var instead of ${var}) "
+    "to prevent variable values from being spoiled."
 )
 
 
@@ -22,8 +23,10 @@ def test_fill_secret_in_plain_text(caplog):
     ctx.presenter_mode = False
     secrets = interaction.Interaction(ctx)
     secrets._fill_text = MagicMock(return_value=Response())
-    secrets.fill_secret("selector", "password")
-    assert caplog.text == WARN_MESSAGE
+    try:
+        secrets.fill_secret("selector", "password")
+    except ValueError as e:
+        assert str(e) == ERROR_MESSAGE
 
 
 def test_type_secret_in_plain_text(caplog):
@@ -31,8 +34,10 @@ def test_type_secret_in_plain_text(caplog):
     ctx.presenter_mode = False
     secrets = interaction.Interaction(ctx)
     secrets._type_text = MagicMock(return_value=Response())
-    secrets.type_secret("selector", "password")
-    assert caplog.text == WARN_MESSAGE
+    try:
+        secrets.type_secret("selector", "password")
+    except ValueError as e:
+        assert str(e) == ERROR_MESSAGE
 
 
 def test_type_secret_with_prefix(caplog):

@@ -297,6 +297,16 @@ message Response {
     bool newBrowser = 4;
   }
 
+  message NewPersistentContextResponse {
+    string id = 1;
+    string log = 2;
+    string contextOptions = 3;
+    bool newBrowser = 4;
+    string video = 5;
+    string pageId = 6;
+    string browserId = 7;
+  }
+
   message NewPageResponse {
     string log = 1;
     string body = 2;
@@ -438,7 +448,7 @@ service  Playwright {
   rpc NewPage(Request.Url) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
-  rpc NewPersistentContext(Request.PersistentContext) returns (Response.NewContextResponse);
+  rpc NewPersistentContext(Request.PersistentContext) returns (Response.NewPersistentContextResponse);
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);

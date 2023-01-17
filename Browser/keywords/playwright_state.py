@@ -40,7 +40,6 @@ from ..utils import (
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
-    attribute_warning,
     convert_typed_dict,
     find_by_id,
     keyword,
@@ -373,7 +372,7 @@ class PlaywrightState(LibraryComponent):
         | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
         | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
         | ``slowMo`` | Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay. |
-        | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers/#google-chrome--microsoft-edge|Playwright documentation]. |
+        | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
 
 
         Old deprecated argument order:
@@ -441,9 +440,6 @@ class PlaywrightState(LibraryComponent):
     }
 
     @keyword(tags=("Setter", "BrowserControl"))
-    @attribute_warning(
-        old_args=("videosPath", "videoSize"), new_args=("recordVideo", "recordVideo")
-    )
     def new_context(
         self,
         *deprecated_pos_args,
@@ -472,8 +468,6 @@ class PlaywrightState(LibraryComponent):
         timezoneId: Optional[str] = None,
         tracing: Optional[str] = None,
         userAgent: Optional[str] = None,
-        videoSize: Optional[ViewportDimensions] = None,
-        videosPath: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
         ),
@@ -513,8 +507,6 @@ class PlaywrightState(LibraryComponent):
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU’s metaZones.txt] for a list of supported timezone IDs. |
         | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace -F /path/to/trace.zip``. |
         | ``userAgent``            | Specific user agent to use in this context. |
-        | ``videoSize``            | Specifies dimensions of the automatically recorded video. Can only be used if videosPath is set. If not specified the size will be equal to viewport. If viewport is not configured explicitly the video size defaults to 1280x720. Actual picture of the page will be scaled down if necessary to fit specified size. |
-        | ``videosPath``           | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
 
 
@@ -553,13 +545,12 @@ class PlaywrightState(LibraryComponent):
             pos_params[argument_name] = converted_pos
         if pos_params:
             logger.warn(
-                "Deprecated positional arguments are used in 'New Context'. Please use named arguments instead."
+                "Deprecated positional arguments are used in 'New Context'. "
+                "Please use named arguments instead. Will be removed after March 2023."
             )
         params = {**pos_params, **params}
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
-        params = self._set_context_options(
-            params, httpCredentials, storageState, videosPath
-        )
+        params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
         response = self._new_context(options, hideRfBrowser, trace_file)
         context_options = self._mask_credentials(json.loads(response.contextOptions))
@@ -664,8 +655,6 @@ class PlaywrightState(LibraryComponent):
         tracing: Optional[str] = None,
         url: Optional[str] = None,
         userAgent: Optional[str] = None,
-        videoSize: Optional[ViewportDimensions] = None,
-        videosPath: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
         ),
@@ -674,6 +663,8 @@ class PlaywrightState(LibraryComponent):
         [https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context | persistent context].
 
         `New Persistent Context` does basically executes `New Browser`, `New Context` and `New Page` in one step with setting a profile at the same time.
+
+        This keyword returns a tuple of browser id, context id and page details. (New in Browser 15.0.0)
 
         | =Argument=               | =Description= |
         | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. Old positional order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``, ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``, ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``, ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``, ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``, ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``, ``url``. |
@@ -685,9 +676,9 @@ class PlaywrightState(LibraryComponent):
         If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
 
         | ${launch_args}=  Set Variable  ["--disable-extensions-except=./ublock/uBlock0.chromium", "--load-extension=./ublock/uBlock0.chromium"]
-        | `New Persistent Context  browser=chromium  headless=False  args=${launch_args}
+        | ${browserId}  ${contextId}  ${pageDetails}=  `New Persistent Context`  browser=chromium  headless=False  url=https://robocon,io  args=${launch_args}
 
-        Check `New Browser` or `New context` for the specific argument docs.
+        Check `New Browser`, `New Context` and `New Page` for the specific argument docs.
 
         Old deprecated argument order:
         ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``,
@@ -718,9 +709,7 @@ class PlaywrightState(LibraryComponent):
         params = {**pos_params, **params}
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
-        params = self._set_context_options(
-            params, httpCredentials, storageState, videosPath
-        )
+        params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
 
         with self.playwright.grpc_channel() as stub:
@@ -742,10 +731,15 @@ class PlaywrightState(LibraryComponent):
 
             if url:
                 stub.GoTo(Request().Url(url=url))
+            self.context_cache.add(response.id, self._get_video_size(params))
+            video_path = self._embed_video(json.loads(response.video))
+            return (
+                response.browserId,
+                response.id,
+                NewPageDetails(page_id=response.pageId, video_path=video_path),
+            )
 
-            return response.id
-
-    def _set_context_options(self, params, httpCredentials, storageState, videosPath):
+    def _set_context_options(self, params, httpCredentials, storageState):
         params = convert_typed_dict(self.new_context.__annotations__, params)
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
@@ -761,8 +755,6 @@ class PlaywrightState(LibraryComponent):
                 httpCredentials, params.get("httpCredentials"), "httpCredentials"
             )
             params["httpCredentials"] = secret
-        if not videosPath:
-            params.pop("videoSize", None)
         masked_params = self._mask_credentials(params.copy())
         logger.info(json.dumps(masked_params, default=str, indent=2))
         return params
@@ -803,18 +795,17 @@ class PlaywrightState(LibraryComponent):
         return data
 
     def _set_video_path(self, params: dict) -> dict:
-        video_path = params.get("videosPath")
         record_video = params.get("recordVideo", {})
-        if not video_path:
-            video_path = record_video.get("dir")
-        if not video_path:
+        video_path = record_video.get("dir")
+        if not record_video:
             return params
-        if Path(video_path).is_dir():
-            return params
-        if record_video:
-            params["recordVideo"]["dir"] = self.video_output / video_path
+        if video_path is None:
+            vid_path = self.video_output
+        elif Path(video_path).is_absolute():
+            vid_path = params["recordVideo"]["dir"]
         else:
-            params["videosPath"] = self.video_output / video_path
+            vid_path = self.video_output / video_path
+        params["recordVideo"]["dir"] = Path(vid_path).resolve().absolute()
         return params
 
     def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
@@ -823,18 +814,15 @@ class PlaywrightState(LibraryComponent):
         return int(width) if width else None, int(height) if height else None
 
     def _set_video_size_to_int(self, params: dict) -> dict:
-        width, height = self._get_record_video_size(params)
-        if width and height:
-            params["recordVideo"]["size"]["width"] = width
-            params["recordVideo"]["size"]["height"] = height
+        if "recordVideo" not in params:
+            return params
+        params["recordVideo"]["size"] = self._get_video_size(params)
         return params
 
     def _get_video_size(self, params: dict) -> dict:
         width, height = self._get_record_video_size(params)
         if width and height:
             return {"width": width, "height": height}
-        if "videoSize" in params:
-            return params["videoSize"]
         if "viewport" in params:
             return params["viewport"]
         return {"width": 1280, "height": 720}

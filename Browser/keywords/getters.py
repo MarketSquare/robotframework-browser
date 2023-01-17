@@ -384,8 +384,8 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4257|Comment >>]
         """
-        attribute_names = self.library.execute_javascript(
-            "(element) => element.getAttributeNames()", selector
+        attribute_names = self.library.evaluate_javascript(
+            selector, "(element) => element.getAttributeNames()"
         )
         expected = list(assertion_expected)
         if self.keyword_formatters.get(self.get_attribute_names):
@@ -748,7 +748,7 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4282|Comment >>]
         """
-        node_name = str(self.library.execute_javascript("e => e.nodeName", table))
+        node_name = str(self.library.evaluate_javascript(table, "e => e.nodeName"))
         if node_name != "TABLE":
             raise ValueError(
                 f"Selector {self.resolve_selector(table)} must select a "
@@ -1216,79 +1216,6 @@ class Getters(LibraryComponent):
                 f"Client {key.name} is",
                 message,
             )
-
-    @keyword(tags=("Getter", "Assertion", "PageContent"))
-    @with_assertion_polling
-    def get_element_state(
-        self,
-        selector: str,
-        state: ElementState = ElementState.visible,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[str] = None,
-        message: Optional[str] = None,
-    ):
-        """*DEPRECATED!!* Use keyword `Get Element States` instead. This keyword will be removed end of 2022.
-
-        Get the given state from the element found by ``selector``.
-
-        Refactoring example assertion:
-        | -    `Get Element State`    h1    readonly    ==    False
-        | +    `Get Element States`    h1    not contains    readonly
-
-         Refactoring example asserting multiple states:
-        | -    `Get Element State`    id=password    visible    ==    True
-        | -    `Get Element State`    id=password    readonly    ==    False
-        | -    `Get Element State`    id=password    disabled    ==    False
-        | +    `Get Element States`    h1    contains    visible    editable    enabled
-
-        Refactoring example for getting state:
-        | -    ${visibility}    `Get Element State`    h1    visible
-        | +    ${visibility}    `Get Element States`    h1    then    bool(value & visible)  # Returns ``${True}`` if element is visible.
-
-
-        If the selector does satisfy the expected state it will return ``True`` otherwise ``False``.
-
-        ``selector`` Selector of the corresponding object. See the `Finding elements` section for details about the selectors.
-
-        ``state`` Defaults to visible. Possible states are
-
-        ``assertion_operator`` See `Assertions` for further details. Defaults to None.
-
-        ``assertion_expected`` Expected value for the counting
-
-        ``message`` overrides the default error message for assertion.
-
-        Note that element must be attached to DOM to be able to fetch the state of ``readonly`` , ``selected`` and ``checked``.
-        The other states are false if the requested element is not attached.
-
-        Note that element without any content or with display:none has an empty bounding box
-        and is not considered visible.
-
-        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
-
-        Optionally asserts that the state matches the specified assertion. See
-        `Assertions` for further details for the assertion arguments. By default assertion
-        is not done.
-
-        Example:
-        | `Get Element State`    h1    readonly    ==    False
-
-        [https://forum.robotframework.org/t//4271|Comment >>]
-        """
-        result = self.get_element_states(
-            selector, AssertionOperator["evaluate"], f"bool(value & {state.name})"
-        )
-
-        if self.keyword_formatters.get(self.get_element_state):
-            logger.warn("Formatter is not supported by Get Element State keyword.")
-        selector = self.resolve_selector(selector)
-        return bool_verify_assertion(
-            result,
-            assertion_operator,
-            assertion_expected,
-            f"State '{state.name}' of '{selector}' is",
-            message,
-        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling

@@ -37,7 +37,7 @@ Get Selected Options
     ...    Verifying list 'possible_channels' fails if assert all options selected.
     [Tags]    slow
     ${selection} =    Get Selected Options    select[name=preferred_channel]    label    ==    Telephone
-    Should Be Equal    ${selection}    Telephone
+    Should Be Equal    ${selection}    ${{["Telephone"]}}
     Get Selected Options    select[name=preferred_channel]    value    ==    phone
     Get Selected Options    select[name=possible_channels]    text    ==    Email    Telephone
     Get Selected Options    select[name=possible_channels]    text    validate    len(value) == 2
@@ -47,14 +47,14 @@ Get Selected Options
     Should Be Equal    ${selection}[1]    phone
     Get Selected Options    select[name=interests]    label    ==
     ${selection} =    Get Selected Options    select[name=interests]    label    ==
-    Should Be Equal    ${selection}    ${None}
+    Should Be Equal    ${selection}    ${{[]}}
     Run Keyword And Expect Error    *    Get Selected Options    select[name=possible_channels]    label    ==
     ...    Email    Telephone    Direct mail
 
 Get Selected Options With Not Matching Attribute Value
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    Selected Options: 'phone' (str) should be 'kala' (str)
+    ...    EQUALS: Selected Options: '['phone']' (list) should be '['kala']' (list)
     ...    Get Selected Options    select[name=preferred_channel]    value    ==    kala
 
 Get Select Options With Not Matching Value
@@ -66,7 +66,7 @@ Get Select Options With Not Matching Value
 Get Selected Options With Xpath
     ${selection} =    Get Selected Options    //html/body/form/table/tbody/tr[8]/td[2]/select    label    ==
     ...    Telephone
-    Should Be Equal    ${selection}    Telephone
+    Should Be Equal    ${selection}    ${{["Telephone"]}}
 
 Get Selected Options With Nonmatching Selector
     [Tags]    no-iframe

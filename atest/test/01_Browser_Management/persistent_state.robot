@@ -16,20 +16,25 @@ New Persistent Context Creates A Browser And A Context
 
 Switching Between Two Persistent Contexts Works
     Get Browser Catalog
-    ${context_1} =    New Persistent Context
-    New Page    ${LOGIN_URL}
-    Click    id=login_button
+    ${browser_1}    ${context_1}    ${page_1} =    New Persistent Context    url=${LOGIN_URL}
+    Get Browser Catalog
+    ${url_1} =    Get Url
+    ${title_1} =    Get Title
 
-    ${browser_1} =    Switch Browser    CURRENT
+    ${browser_2}    ${context_2}    ${page_2} =    New Persistent Context    url=${FORM_URL}
     Get Browser Catalog
-    ${context_2} =    New Persistent Context
-    ${browser_2} =    Switch Browser    CURRENT
-    Get Browser Catalog
+    ${url_2} =    Get Url
+    ${title_2} =    Get Title
 
     Switch Browser    ${browser_1}
+    Get URL    ==    ${url_1}
+    Get Title    ==    ${title_1}
     ${switch_id} =    Switch Context    CURRENT
     Should Be Equal    ${context_1}    ${switch_id}
+
     Switch Browser    ${browser_2}
+    Get URL    ==    ${url_2}
+    Get Title    ==    ${title_2}
     ${switch_id} =    Switch Context    CURRENT
     Should Be Equal    ${context_2}    ${switch_id}
 

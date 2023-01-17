@@ -1,5 +1,6 @@
 *** Settings ***
 Library         OperatingSystem
+Library         CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR}/keys/
 Resource        imports.resource
 
 Suite Setup     New Page
@@ -69,13 +70,18 @@ Fill Text With Strict
     [Teardown]    Set Strict Mode    True
 
 Fill Secret Direct Value
-    [Documentation]    ...
-    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    Type Secret    css=input#username_field    Direct Value 1    10 ms    True
-    Get Text    css=input#username_field    ==    Direct Value 1
-    Fill Secret    css=input#password_field    Direct Value 2
-    Get Text    css=input#password_field    ==    Direct Value 2
+    TRY
+        Type Secret    css=input#username_field    Direct Value 1    10 ms    True
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#username_field    ==    ${EMPTY}
+    TRY
+        Fill Secret    css=input#password_field    Direct Value 2
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#password_field    ==    ${EMPTY}
 
 Fill Secret With Strict
     Run Keyword And Expect Error
@@ -105,32 +111,50 @@ Fill Secret Placeholder-env-var
     Get Text    css=input#password_field    ==    password11
 
 Fill Secret Robot-env-var
-    [Documentation]    ...
-    ...    LOG 3:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    ...    LOG 5:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Set Environment Variable    WAITTIMER    10 ms
     Set Environment Variable    ENV_VAR    password12
-    Type Secret    css=input#username_field    %{ENV_VAR}    %{WAITTIMER}    clear=True
+    TRY
+        Type Secret    css=input#username_field    %{ENV_VAR}    %{WAITTIMER}    clear=True
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Type Secret    css=input#username_field    %ENV_VAR    %{WAITTIMER}    clear=True
     Get Text    css=input#username_field    ==    password12
-    Fill Secret    css=input#password_field    %{ENV_VAR}
+    TRY
+        Fill Secret    css=input#password_field    %{ENV_VAR}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Fill Secret    css=input#password_field    %ENV_VAR
     Get Text    css=input#password_field    ==    password12
 
 Fill Secret Robot-env-var Mixed
-    [Documentation]    ...
-    ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     Set Environment Variable    ENV_VAR    password13
-    Type Secret    css=input#username_field    %{ENV_VAR}XXX
-    Get Text    css=input#username_field    ==    password13XXX
-    Fill Secret    css=input#password_field    %{ENV_VAR}XXX
-    Get Text    css=input#password_field    ==    password13XXX
+    TRY
+        Type Secret    css=input#username_field    %{ENV_VAR}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    %{ENV_VAR}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
 Fill Secret Robot-env-var Mixed2
     Set Environment Variable    ENV_VAR    password13
-    Type Secret    css=input#username_field    XXX%{ENV_VAR}XXX
-    Get Text    css=input#username_field    ==    XXXpassword13XXX
-    Fill Secret    css=input#password_field    XXX%{ENV_VAR}XXX
-    Get Text    css=input#password_field    ==    XXXpassword13XXX
+    TRY
+        Type Secret    css=input#username_field    XXX%{ENV_VAR}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#username_field    ==    ${EMPTY}
+    TRY
+        Fill Secret    css=input#password_field    XXX%{ENV_VAR}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#password_field    ==    ${EMPTY}
 
 Fill Secret Placeholder-robot-var
     [Documentation]
@@ -144,38 +168,57 @@ Fill Secret Placeholder-robot-var
     Get Text    css=input#password_field    ==    password123
 
 Fill Secret Robot Var
-    [Documentation]
-    ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ${var} =    Set Variable    password321
-    Type Secret    css=input#username_field    ${var}
-    Get Text    css=input#username_field    ==    password321
-    Fill Secret    css=input#password_field    ${var}
-    Get Text    css=input#password_field    ==    password321
+    TRY
+        Type Secret    css=input#username_field    ${var}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    ${var}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
 Fill Secret Robot Var Mixed
-    [Documentation]
-    ...    LOG 2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
     ${var} =    Set Variable    password321
-    Type Secret    css=input#username_field    ${var}XXX
-    Get Text    css=input#username_field    ==    password321XXX
-    Fill Secret    css=input#password_field    ${var}XXX
-    Get Text    css=input#password_field    ==    password321XXX
+    TRY
+        Type Secret    css=input#username_field    ${var}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    ${var}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
 Fill Secret Robot Var Mixed2
     ${var} =    Set Variable    password321
-    Type Secret    css=input#username_field    xxx${var}XXX
-    Get Text    css=input#username_field    ==    xxxpassword321XXX
-    Fill Secret    css=input#password_field    xxx${var}XXX
-    Get Text    css=input#password_field    ==    xxxpassword321XXX
+    TRY
+        Type Secret    css=input#username_field    xxx${var}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    xxx${var}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
 Fill Secret Placeholder In Robot Var
     Set Global Variable    ${global}    password666
     ${var} =    Set Variable    $global
-    Type Secret    css=input#username_field    ${var}
-    Get Text    css=input#username_field    ==    password666
-    Fill Secret    css=input#password_field    ${var}
-    Get Text    css=input#password_field    ==    password666
+    TRY
+        Type Secret    css=input#username_field    ${var}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    ${var}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
 Fill Secret Env Placeholder In Robot Var
     Set Environment Variable    pwd_TWO    ENV_password123
@@ -186,10 +229,18 @@ Fill Secret Env Placeholder In Robot Var
     Get Text    css=input#password_field    ==    ENV_password123
 
 Fill Secret With Direct $value Not Resolvable
-    Type Secret    css=input#username_field    $Direct Value
-    Get Text    css=input#username_field    ==    $Direct Value
-    Fill Secret    css=input#password_field    $Direct Value
-    Get Text    css=input#password_field    ==    $Direct Value
+    TRY
+        Type Secret    css=input#username_field    $Direct Value
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#username_field    ==    ${EMPTY}
+    TRY
+        Fill Secret    css=input#password_field    $Direct Value
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#password_field    ==    ${EMPTY}
 
 Fill Secret Fails When Variable Is Not Set
     Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret
@@ -246,21 +297,18 @@ Type And Fill Text With Text Selector
     Get Text    input#username_field    ==    another text
 
 Type And Fill Secret With Text Selector
-    [Documentation]
-    ...    LOG 1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    ...    LOG 4:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    Type Secret    input#password_field    pwfield
-    Type Secret    text=Password:    some text
+    ${var} =    Set Variable    pwfield
+    Type Secret    input#password_field    $var
+    ${var} =    Set Variable    some text
+    Type Secret    text=Password:    $var
     Get Text    input#password_field    ==    some text
-    Fill Secret    text=Password:    another text
+    ${var} =    Set Variable    another text
+    Fill Secret    text=Password:    $var
     Get Text    input#password_field    ==    another text
 
 Secret With Empty Value
-    [Documentation]
-    ...    LOG    1:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    ...    LOG    2:2    WARN    Direct assignment of values as 'secret' is deprecated. Use special variable syntax to resolve variable. Example $var instead of ${var}.
-    Type Secret    css=input#password_field    ${EMPTY}
-    Fill Secret    css=input#password_field    ${EMPTY}
+    Type Secret    css=input#password_field    $EMPTY
+    Fill Secret    css=input#password_field    $EMPTY
 
 Fill Text With Clearing
     Fill Text    input#username_field    Wrong Text
@@ -289,3 +337,16 @@ Text Area Access
     Get Text    id=textarea51    ==    Area 51
     Type Text    id=textarea51    Ufo detected
     Get Text    id=textarea51    ==    Ufo detected
+
+Type Secret With CryptoLibrary
+    Type Secret
+    ...    input#username_field
+    ...    crypt:/kfGGEGSwlcPsxBzVjMsnBWsYPXfFDF8BPj3APzN6AKS2W0mjOuh4coJljnb+MqZOmB5BG1oGpON7QC7nQ==
+    ...    delay=10 ms
+    Get Text    css=input#username_field    ==    FunkyPassword
+
+Fill Secret With CryptoLibrary
+    Fill Secret
+    ...    input#username_field
+    ...    crypt:1hYdLAcm9cANzOCussOyLS2wX4Nem6DAEGDacu8p9DCHHwZ0i+9MUkkeBHnf6UrrQLMcTQMbHoYoTH8f0do9fyk5itHBBjr91n4=
+    Get Text    css=input#username_field    ==    AnotherFunkySecretPassword

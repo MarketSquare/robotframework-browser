@@ -17,11 +17,14 @@ import traceback
 from concurrent.futures._base import Future
 from copy import copy, deepcopy
 from datetime import timedelta
+from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Optional, Set, Union
 
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robot.utils import timestr_to_secs  # type: ignore
 
+from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger
 from ..utils.data_types import DelayedKeyword, HighLightElement
 
@@ -131,6 +134,14 @@ class LibraryComponent:
     def state_file(self):
         return self.library.state_file
 
+    def initialize_js_extension(
+        self, js_extension_path: Union[Path, str]
+    ) -> Response.Keywords:
+        return self.library.init_js_extension(js_extension_path=js_extension_path)
+
+    def call_js_keyword(self, keyword_name: str, **args) -> Any:
+        return self.library.call_js_keyword(keyword_name, **args)
+
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
 
@@ -148,26 +159,19 @@ class LibraryComponent:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         secret = self.decrypt_with_crypto_library(secret)
         if secret == original_secret:
-            logger.warn(
-                f"Direct assignment of values as '{arg_name}' is deprecated. Use special "
-                "variable syntax to resolve variable. Example $var instead of ${var}."
+            raise ValueError(
+                f"Direct assignment of values or variables as '{arg_name}' is not allowed. "
+                "Use special variable syntax ($var instead of ${var}) "
+                "to prevent variable values from being spoiled."
             )
         return secret
 
     def decrypt_with_crypto_library(self, secret):
-        if self._crypto is None:
-            try:
-                from CryptoLibrary.utils import CryptoUtility  # type: ignore
-
-                self._crypto = CryptoUtility()
-            except ImportError:
-                self._crypto = False
-                return secret
-        if (
-            self._crypto
-            and isinstance(secret, str)
-            and re.fullmatch(self._crypto.CIPHER_PATTERN, secret)
-        ):
+        if not isinstance(secret, str) or not re.match(r"^crypt:(.*)", secret):
+            return secret
+        logger.trace("CryptoLibrary string pattern found.")
+        self._import_crypto_library()
+        if self._crypto:
             try:
                 plain_text = self._crypto.decrypt_text(secret)
                 logger.trace("Successfully decrypted secret with CryptoLibrary.")
@@ -176,6 +180,29 @@ class LibraryComponent:
                 logger.warn(excep)
                 logger.trace(traceback.format_exc())
         return secret
+
+    def _import_crypto_library(self):
+        if self._crypto is None:
+            try:
+                try:
+                    logger.trace(
+                        "Trying to import CryptoLibrary instance from Robot Framework."
+                    )
+                    crypto_library = BuiltIn().get_library_instance("CryptoLibrary")
+                    self._crypto = crypto_library.crypto
+                except RuntimeError:
+                    logger.trace(
+                        "Getting CryptoLibrary failed, trying to import directly."
+                    )
+                    from CryptoLibrary.utils import CryptoUtility  # type: ignore
+
+                    self._crypto = CryptoUtility()
+            except ImportError:
+                logger.trace(traceback.format_exc())
+                logger.trace("CryptoLibrary import failed, using plain string.")
+                self._crypto = False
+                return
+            logger.trace("CryptoLibrary import succeeded.")
 
     def _replace_placeholder_variables(self, placeholder):
         if isinstance(placeholder, dict):
@@ -257,6 +284,6 @@ class LibraryComponent:
             element_selector = "(element) => element"
         else:
             element_selector = "document.scrollingElement"
-        return self.library.execute_javascript(
-            f"{element_selector}.{function}", selector
+        return self.library.evaluate_javascript(
+            selector, f"{element_selector}.{function}"
         )

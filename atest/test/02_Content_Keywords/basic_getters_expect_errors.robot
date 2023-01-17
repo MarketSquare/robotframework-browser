@@ -163,38 +163,6 @@ Get Viewport Size Custom Error
     ...    My error dotdict
     ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}
 
-Get Element State With Strict On ElementSelectorWithOptions
-    [Tags]    deprecated    expect_error
-    Run Keyword And Expect Error
-    ...    *strict mode violation*//div*resolved to 22 elements*
-    ...    Get Element State    //div
-    Set Strict Mode    False
-    ${state} =    Get Element State    //div
-    Should Be True    ${state}
-    [Teardown]    Set Strict Mode    True
-
-Get Element State With Strict On WaitForFunctionOptions
-    [Tags]    deprecated    expect_error
-    Run Keyword And Expect Error
-    ...    *strict mode violation*//div*resolved to 22 elements*
-    ...    Get Element State    //div    state=disabled
-    Set Strict Mode    False
-    ${state} =    Get Element State    //div    state=disabled
-    Should Not Be True    ${state}
-    [Teardown]    Set Strict Mode    True
-
-Get Element State Default Error
-    [Tags]    deprecated    expect_error
-    Run Keyword And Expect Error
-    ...    State 'readonly' of '${SELECTOR_PREFIX_SPACED}h1' is 'False' (bool) should be 'True' (bool)
-    ...    Get Element State    h1    readonly    ==    True
-
-Get Element State Custom Error
-    [Tags]    deprecated    expect_error
-    Run Keyword And Expect Error
-    ...    Tidii
-    ...    Get Element State    h1    readonly    ==    True    Tidii
-
 Get Url Default Error
     [Tags]    expect_error
     Run Keyword And Expect Error
@@ -247,21 +215,21 @@ Get Attribute Names Default Error
     ${expected} =    Create List    1    3
     Run Keyword And Expect Error
     ...    Attribute names '*' (list) should be '?'1', '3'?' (list)
-    ...    Get Attribute Names    [name="readonly_input"]    ==    ${expected}
+    ...    Get Attribute Names    [name="readonly_input"]    ==    @{expected}
     [Teardown]    Close Page
 
 Get Attribute Names Custom Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
     ${expected} =    Create List    1    3
     Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
-    ...    ==    ${expected}    message=Custom error {expected} {expected_type}
+    ...    ==    @{expected}    message=Custom error {expected} {expected_type}
     Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
     ...    ==    1    3    message=Custom error {expected} {expected_type}
     [Teardown]    Close Page
 
 Get Classes Default Error
     Run Keyword And Expect Error
-    ...    Classes of ${SELECTOR_PREFIX_SPACED}id=draggable '[[]'box', 'react-draggable'[]]' (list) should contain 'not-here' (str)
+    ...    EQUALS: Classes of ${SELECTOR_PREFIX_SPACED}id=draggable '['box', 'react-draggable']' (list) should contain '['not-here']' (list)
     ...    Get Classes
     ...    id=draggable
     ...    contains

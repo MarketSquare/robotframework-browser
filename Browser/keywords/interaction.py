@@ -155,6 +155,25 @@ class Interaction(LibraryComponent):
         | ``delay`` | Delay between the single key strokes. It may be either a number or a Robot Framework time string. Time strings are fully explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``. Example: ``50 ms`` |
         | ``clear`` | Set to false, if the field shall not be cleared before typing. Defaults to true. |
 
+        This keyword does not log secret in Robot Framework logs, when
+        keyword resolves the ``secret`` variable internally.
+        When ``secret`` variable is prefixed with `$`, without the curly braces,
+        library will resolve the corresponding Robot Framework variable.
+
+        If ``secret`` variable is prefixed with `%`, library will resolve
+        corresponding environment variable. Example `$Password`` will
+        resolve to ``${Password}`` Robot Framework variable.
+        Also ``%ENV_PWD`` will resolve to ``%{ENV_PWD}`` environment variable.
+
+        *Using normal Robot Framework variables like ``${password}`` will not work!*
+
+        *Normal plain text will not work.*
+        If you want to use plain text, use `Type Text` keyword instead.
+
+        This keyword will also work with a give cryptographic cipher text, that has been
+        encrypted by Crypto library.
+        See [https://github.com/Snooz82/robotframework-crypto | Crypto Library] for more details.
+
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Type Text` for details.
@@ -221,11 +240,14 @@ class Interaction(LibraryComponent):
         resolve to ``${Password}`` Robot Framework variable.
         Also ``%ENV_PWD`` will resolve to ``%{ENV_PWD}`` environment variable.
 
-        Using normal Robot Framework variables will also work,
+        *Using normal Robot Framework variables like ``${password}`` will not work!*
 
-        *Normal plain text will not work. For now, it will just create warnings.*
-        *In the future this keyword will fail with plain text.*
+        *Normal plain text will not work.*
         If you want to use plain text, use `Fill Text` keyword instead.
+
+        This keyword will also work with a give cryptographic cipher text, that has been
+        encrypted by Crypto library.
+        See [https://github.com/Snooz82/robotframework-crypto | Crypto Library] for more details.
 
         If ``enable_playwright_debug`` is enabled in the library import,
         secret will be always visible as plain text in the playwright debug

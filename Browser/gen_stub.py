@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import re
 import sys
 from datetime import timedelta
 from typing import Any
@@ -19,6 +18,7 @@ from typing import Any
 from robotlibcore import KeywordBuilder  # type: ignore
 
 import Browser
+from Browser.utils.data_types import SelectionType
 
 PY310 = sys.version_info.major == 3 and sys.version_info.minor >= 10
 
@@ -40,16 +40,8 @@ def get_method_name_for_keyword(keyword_name: str) -> str:
 
 
 def get_type_string_from_type(argument_type: type) -> str:
-    if PY310:
-        if str(argument_type).count("[") == 1 and str(argument_type).count("]") == 1:
-            return str(argument_type).lstrip("typing.")
-        match = re.search(r"(\[)(\S+)(\])", str(argument_type))
-        if match:
-            return match.group(2)
-        match = re.search(r"(\[)(\S+ \S+)(\])", str(argument_type))
-        if match:
-            text = match.group(2)
-            return text.lstrip("typing.")
+    if PY310 and str(argument_type).startswith("typing."):
+        return str(argument_type)
     if hasattr(argument_type, "__name__"):
         return argument_type.__name__
     else:
@@ -88,8 +80,10 @@ def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
                 arg_str = f"{arg_str}: {arg_type_str}"
             if isinstance(default_value, str):
                 default_value = f"'{default_value}'"
-            if isinstance(default_value, timedelta):
+            elif isinstance(default_value, timedelta):
                 default_value = f"timedelta(seconds={default_value.total_seconds()})"
+            elif isinstance(default_value, SelectionType):
+                default_value = f"SelectionType.{default_value}"
             arg_str = f"{arg_str} = {default_value}"
         else:
             arg_str = argument
@@ -111,12 +105,8 @@ pyi_boilerplate = """\
 import datetime
 import typing
 from concurrent.futures import Future
-from datetime import timedelta
-from typing import (
-    Any,
-    Optional,
-)
 from os import PathLike
+from typing import Any
 
 import assertionengine
 

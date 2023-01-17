@@ -35,4 +35,4 @@ Add Cookies For Storage
     ${url} =    Get Url
     Add Cookie    Foo    Bar    url=${url}
     Add Cookie    Key    Value    url=${url}
-    Execute JavaScript    localStorage.setItem('bgcolor', 'red');
+    Evaluate JavaScript    ${None}    localStorage.setItem('bgcolor', 'red');

@@ -5,16 +5,17 @@ from unittest.mock import patch, PropertyMock
 
 import pytest
 
+import Browser
+
 
 @pytest.fixture()
 def browser():
-    import Browser
     return Browser.Browser()
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Cleanup does not work in Windows")
 def test_cleanup_browser_folder_no_folder(browser):
-    browser._suite_cleanup_done = False
+    Browser._suite_cleanup_done = False
     with tempfile.TemporaryDirectory() as tmp_dir:
         browser_folder = Path(tmp_dir) / "browser"
         assert not browser_folder.is_dir()

@@ -59,9 +59,11 @@ export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
+    logger.info(`Initializing extension: ${request.getPath()}`);
     const extension: Record<string, (...args: unknown[]) => unknown> = eval('require')(request.getPath());
-    state.extension = extension;
+    state.extensions.push(extension);
     const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
+    logger.info(`Adding ${kws.length} keywords from JS Extension`);
     return keywordsResponse(
         kws,
         kws.map((v) => {
@@ -75,30 +77,30 @@ export async function initializeExtension(
     );
 }
 
+const getArgumentNamesFromJavascriptKeyword = (keyword: CallableFunction) =>
+    extractArgumentsStringFromJavascript(keyword.toString())
+        .split(',')
+        .map((s) => s.trim().match(/^\w*/)?.[0] || s.trim());
+
 export async function extensionKeywordCall(
     request: Request.KeywordCall,
     call: ServerWritableStream<Request.KeywordCall, Response.Json>,
     state: PlaywrightState,
 ): Promise<Response.Json> {
-    const methodName = request.getName();
+    const keywordName = request.getName();
     const args = JSON.parse(request.getArguments()) as { arguments: [string, unknown][] };
-    const func = (state.extension as Record<string, (...args: unknown[]) => unknown>)[methodName];
-    const result = await func(
-        ...args['arguments'].map((v) => {
-            if (v[0] === 'page') {
-                return state.getActivePage();
-            }
-            if (v[0] === 'logger') {
-                return (msg: string) => {
-                    call.write(jsonResponse(JSON.stringify(''), msg));
-                };
-            }
-            if (v[0] === 'playwright') {
-                return playwright;
-            }
-            return v[1];
-        }),
+    const extension = state.extensions.find((extension) => Object.keys(extension).includes(keywordName));
+    if (!extension) throw Error(`Could not find keyword ${keywordName}`);
+    const keyword = extension[keywordName];
+    const namedArguments = Object.fromEntries(args['arguments']);
+    const apiArguments = new Map();
+    apiArguments.set('page', state.getActivePage());
+    apiArguments.set('logger', (msg: string) => call.write(jsonResponse(JSON.stringify(''), msg)));
+    apiArguments.set('playwright', playwright);
+    const functionArguments = getArgumentNamesFromJavascriptKeyword(keyword).map(
+        (argName) => apiArguments.get(argName) || namedArguments[argName],
     );
+    const result = await keyword(...functionArguments);
     return jsonResponse(JSON.stringify(result), 'ok');
 }
 
@@ -224,8 +226,9 @@ export class PlaywrightState {
     constructor() {
         this.browserStack = [];
         this.locatorHandles = new Map();
+        this.extensions = [];
     }
-    extension: unknown;
+    extensions: Record<string, (...args: unknown[]) => unknown>[];
     private browserStack: BrowserState[];
     get activeBrowser() {
         return lastItem(this.browserStack);
@@ -549,10 +552,10 @@ export async function newContext(
         hideRfBrowser,
     );
 
-    return _finishContextResponse(context, browserState, traceFile, options);
+    return await _finishContextResponse(context, browserState, traceFile, options);
 }
 
-function _finishContextResponse(
+async function _finishContextResponse(
     context: IndexedContext,
     browserState: IBrowserState,
     traceFile: string,
@@ -642,7 +645,25 @@ export async function newPersistentContext(
     const page = indexedContext.c.pages()[0];
     indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
 
-    return _finishContextResponse(indexedContext, browserState, traceFile, options);
+    browserState.browser.pushContext(indexedContext);
+    const response = new Response.NewPersistentContextResponse();
+    response.setId(indexedContext.id);
+    if (traceFile) {
+        response.setLog(`Successfully created context and trace file will be saved to: ${traceFile}`);
+        options.trace = { screenshots: true, snapshots: true };
+    } else {
+        response.setLog('Successfully created context. ');
+    }
+    response.setContextoptions(JSON.stringify(options));
+    response.setNewbrowser(browserState.newBrowser);
+    const currentBrowser = openBrowsers.activeBrowser;
+    const currentPage = indexedContext.pageStack[0];
+    const videoPath = await currentPage.p.video()?.path();
+    const video = { video_path: videoPath || null, contextUuid: indexedContext.id };
+    response.setVideo(JSON.stringify(video));
+    response.setPageid(currentPage.id);
+    response.setBrowserid(currentBrowser?.id || '');
+    return response;
 }
 
 export async function connectToBrowser(

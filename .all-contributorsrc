@@ -241,7 +241,8 @@
       "contributions": [
         "userTesting",
         "bug",
-        "test"
+        "test",
+        "ideas"
       ]
     },
     {
@@ -398,7 +399,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/39527407?v=4",
       "profile": "https://github.com/ssallmen",
       "contributions": [
-        "bug"
+        "bug",
+        "test"
       ]
     },
     {
@@ -887,6 +889,24 @@
       "name": "Remppa",
       "avatar_url": "https://avatars.githubusercontent.com/u/17778362?v=4",
       "profile": "https://github.com/Remppa",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "tomekPawlak",
+      "name": "Tomasz Pawlak",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39945193?v=4",
+      "profile": "https://github.com/tomekPawlak",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "stude1",
+      "name": "Timo Stordell",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5876939?v=4",
+      "profile": "https://github.com/stude1",
       "contributions": [
         "bug"
       ]
