@@ -292,7 +292,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarcinGmurczyk"><img src="https://avatars.githubusercontent.com/u/11760932?v=4?s=100" width="100px;" alt="Marcin Gmurczyk"/><br /><sub><b>Marcin Gmurczyk</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=MarcinGmurczyk" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.imbus.de"><img src="https://avatars.githubusercontent.com/u/7069968?v=4?s=100" width="100px;" alt="Daniel Biehl"/><br /><sub><b>Daniel Biehl</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ad-biehl" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.imbus.de"><img src="https://avatars.githubusercontent.com/u/7069968?v=4?s=100" width="100px;" alt="Daniel Biehl"/><br /><sub><b>Daniel Biehl</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ad-biehl" title="Bug reports">🐛</a> <a href="#ideas-d-biehl" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/rarajabs"><img src="https://avatars.githubusercontent.com/u/1460421?v=4?s=100" width="100px;" alt="rarajabs"/><br /><sub><b>rarajabs</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ararajabs" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
