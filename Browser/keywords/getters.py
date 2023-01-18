@@ -27,7 +27,7 @@ from assertionengine import (
     list_verify_assertion,
     verify_assertion,
 )
-from robot.utils import DotDict  # type: ignore
+from robot.utils import DotDict
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent

@@ -16,7 +16,7 @@ import json
 from datetime import timedelta
 from typing import Any, Optional
 
-from robot.utils import DotDict  # type: ignore
+from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request

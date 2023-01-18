@@ -19,8 +19,8 @@ from time import sleep
 from typing import Any, Dict, List
 
 from assertionengine import AssertionOperator
-from robot.api.deco import keyword  # type: ignore
-from robot.utils import DotDict  # type: ignore
+from robot.api.deco import keyword
+from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request

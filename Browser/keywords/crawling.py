@@ -1,8 +1,8 @@
 import urllib.parse
 from typing import List, Optional, Set, Tuple
 
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
-from robotlibcore import keyword  # type: ignore
+from robot.api.deco import keyword
+from robot.libraries.BuiltIn import BuiltIn
 
 from Browser.base import LibraryComponent
 

@@ -19,7 +19,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from robot.utils import get_link_path  # type: ignore
+from robot.utils import get_link_path
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request

@@ -16,8 +16,8 @@ import json
 from datetime import datetime
 from typing import List, Optional, Union
 
-from robot.libraries.DateTime import convert_date  # type: ignore
-from robot.utils import DotDict  # type: ignore
+from robot.libraries.DateTime import convert_date
+from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
