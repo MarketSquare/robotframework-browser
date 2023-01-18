@@ -72,5 +72,5 @@ Get Empty Page ID From Empty Browser And Empty Context
 *** Keywords ***
 Check Return Value Is Empty List
     [Arguments]    ${keyword}    @{args}
-    ${should_be_empty} =    Run Keyword And Continue On Failure     ${keyword}    @{args}
+    ${should_be_empty} =    Run Keyword And Continue On Failure    ${keyword}    @{args}
     Run Keyword And Continue On Failure    Should Be True    $should_be_empty == []
