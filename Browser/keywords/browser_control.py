@@ -121,6 +121,7 @@ class Control(LibraryComponent):
         | `Take Screenshot`   selector=id=username_field    # Captures element in image
         | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
         | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
+        | `Take Screenshot`   EMBED                         # Screenshot is embedded as Base64 image to the log.html.
 
         [https://forum.robotframework.org/t//4337|Comment >>]
         """
