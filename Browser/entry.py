@@ -263,7 +263,8 @@ def main():
             "Python side. Example:\n1) pip install -U robotframework-browser\n2) rfbrowser clean-node\n3)rfbrowser "
             "init.\nRun rfbrowser clean-node command also before uninstalling the library with pip. This makes sure "
             "that playwright browser binaries are not left in the disk after the pip uninstall command."
-            "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nSee the each command argument "
+            "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nversion command displays the "
+            "installed Browser library, Robot Framework and Playwright versions.\n\nSee the each command argument "
             "group for more details what (optional) arguments that command supports."
         ),
         type=str,
