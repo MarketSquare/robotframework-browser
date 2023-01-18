@@ -965,6 +965,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "johanvaniperen",
+      "name": "Johan van Iperen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36015334?v=4",
+      "profile": "https://github.com/johanvaniperen",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
