@@ -207,7 +207,7 @@ def show_versions():
     version_text = version_file.read_text()
     match = re.search(r"\"\d+\.\d+.\d+\"", version_text)
     browser_lib_version = match.group(0)
-    package_json = CURRENT_FOLDER / ".." / "package.json"
+    package_json = INSTALLATION_DIR / "package.json"
     package_json_data = json.loads(package_json.read_text())
     match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
     pw_version = match.group(0)
