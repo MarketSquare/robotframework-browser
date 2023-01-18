@@ -1100,6 +1100,8 @@ class Interaction(LibraryComponent):
         | ``deltaX`` & ``deltaY`` | Pixels that are scrolled horizontally & vertically. |
 
         Example:
+        | # Before doing a mouse wheel interaction. A mouse needs to be posisioned on the browser window.
+        | `Hover`    body
         | `Mouse Wheel`    0    250
 
         [https://forum.robotframework.org/t//5186|Comment >>]
