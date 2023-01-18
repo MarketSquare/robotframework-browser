@@ -156,6 +156,18 @@ Mouse Move Relative To With Strict
     Mouse Move Relative To    //input    4    2
     [Teardown]    Set Strict Mode    True
 
+Scroll by Mouse Wheel
+    [Setup]    New Page    ${TABLES_URL}
+    Get Scroll Position    body     left    ==    0
+    Get Scroll Position    body     top    ==    0
+    Hover    id=table1
+    Mouse Wheel    30    400
+    Get Scroll Position    body     left    ==    30
+    Get Scroll Position    body     top    ==    400
+    Mouse Wheel    -40    100
+    Get Scroll Position    body     left    ==    0
+    Get Scroll Position    body     top    ==    500
+
 *** Keywords ***
 Relative DnD
     [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}

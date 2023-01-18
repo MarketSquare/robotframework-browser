@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { Dialog, Page } from 'playwright';
+import { exists } from './playwright-invoke';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
@@ -211,6 +212,15 @@ export async function mouseMove(request: Request.Json, page?: Page): Promise<Res
     await invokeOnMouse(page, 'move', params);
     return emptyWithLog(`Successfully moved mouse to ${params.x}, ${params.y}`);
 }
+
+export async function mouseWheel(request: Request.MouseWheel, page?: Page): Promise<Response.Empty> {
+    const deltaX = request.getDeltax();
+    const deltaY = request.getDeltay();
+    exists(page, `but no open page`);
+    await page?.mouse.wheel(deltaX, deltaY);
+    return emptyWithLog(`Successfully scrolled mouse wheel with ${deltaX}, ${deltaY}`);
+}
+
 export async function keyboardKey(request: Request.KeyboardKeypress, page: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'down' | 'up' | 'press';
     const key = request.getKey();
