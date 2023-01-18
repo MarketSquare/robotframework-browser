@@ -1095,7 +1095,7 @@ class Interaction(LibraryComponent):
     @keyword(tags=("Setter", "PageContent"))
     def mouse_wheel(self, deltaX: int, deltaY: int):
         """Simulates the user rotation of a mouse wheel.
-        
+
         | =Arguments= | =Description= |
         | ``deltaX`` & ``deltaY`` | Pixels that are scrolled horizontally & vertically. |
 
