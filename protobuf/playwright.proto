@@ -52,6 +52,11 @@ message Request {
     string json = 2;
   }
 
+  message MouseWheel {
+    int32 deltaX = 1;
+    int32 deltaY = 2;
+  }
+
   message KeyboardKeypress {
     string action = 1;
     string key = 2;
@@ -427,6 +432,7 @@ service  Playwright {
 
   rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);
   rpc MouseMove(Request.Json) returns (Response.Empty);
+  rpc MouseWheel(Request.MouseWheel) returns (Response.Empty);
 
   rpc KeyboardKey(Request.KeyboardKeypress) returns (Response.Empty);
   rpc KeyboardInput(Request.KeyboardInputOptions) returns (Response.Empty);
