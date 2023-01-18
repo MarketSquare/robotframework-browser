@@ -14,7 +14,7 @@
 import threading
 from typing import Any, Callable, Dict, List
 
-from robot.api import logger  # type: ignore
+from robot.api import logger
 
 _THREAD_STASHES: Dict[int, List[List[Callable]]] = {}
 
