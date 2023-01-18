@@ -18,7 +18,7 @@ import time
 from datetime import timedelta
 from typing import Any, Dict, Optional, Union
 
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn
 
 import Browser.browser as browser_file
 

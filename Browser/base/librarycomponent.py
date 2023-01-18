@@ -21,8 +21,8 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Optional, Set, Union
 
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
-from robot.utils import timestr_to_secs  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn
+from robot.utils import timestr_to_secs
 
 from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger

@@ -20,8 +20,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
-from robot.running.arguments.typeconverters import TypeConverter  # type: ignore
-from robot.utils import get_link_path  # type: ignore
+from robot.running.arguments.typeconverters import TypeConverter
+from robot.utils import get_link_path
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
