@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import traceback
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
 
@@ -28,12 +29,20 @@ NODE_MODULES = INSTALLATION_DIR / "node_modules"
 # But shell=True breaks our linux CI
 SHELL = True if platform.platform().startswith("Windows") else False
 CURRENT_FOLDER = Path(__file__).resolve().parent
-INSTALL_LOG = CURRENT_FOLDER / "rfbrowser.log"
+log_file = "rfbrowser.log"
+INSTALL_LOG = CURRENT_FOLDER / log_file
+try:
+    INSTALL_LOG.touch(exist_ok=True)
+except Exception as error:
+    print(f"Cound not wwrite to {INSTALL_LOG}, got error: {error}")
+    INSTALL_LOG = Path(os.getcwd()) / log_file
+    print(f"Writing install log to: {INSTALL_LOG}")
+
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)-8s] %(message)s",
     handlers=[
-        logging.FileHandler(INSTALL_LOG, mode="w"),
+        RotatingFileHandler(INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a"),
         logging.StreamHandler(sys.stdout),
     ],
 )
