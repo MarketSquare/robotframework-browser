@@ -947,6 +947,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "falk7",
+      "name": "falk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61115124?v=4",
+      "profile": "https://github.com/falk7",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
