@@ -8,7 +8,7 @@
 
 ----
 
-[Robot Framework](https://robotframework.org) Browser library powered by [Playwright](https://playwright.dev/). Moving browser automation to year 2021!
+[Robot Framework](https://robotframework.org) Browser library powered by [Playwright](https://playwright.dev/). Moving browser automation to year 2023!
 
 Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visibility.
 
