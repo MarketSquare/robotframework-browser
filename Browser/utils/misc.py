@@ -20,7 +20,7 @@ import subprocess
 from os import PathLike
 from typing import Any, Tuple
 
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn
 
 get_variable_value = BuiltIn().get_variable_value
 
