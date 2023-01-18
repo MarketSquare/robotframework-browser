@@ -956,6 +956,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "ciadoh",
+      "name": "ciadoh",
+      "avatar_url": "https://avatars.githubusercontent.com/u/68943309?v=4",
+      "profile": "https://github.com/ciadoh",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
