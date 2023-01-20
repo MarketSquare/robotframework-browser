@@ -231,24 +231,30 @@ export async function getElementStates(
     return jsonResponse(JSON.stringify(states), 'Returned state.');
 }
 
-export async function getStyle(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
+export async function getStyle(request: Request.ElementStyle, state: PlaywrightState): Promise<Response.Json> {
     const selector = request.getSelector();
+    const option = {
+        styleKey: request.getStylekey() || null,
+        pseudoElement: request.getPseudo() || null,
+    };
     const strictMode = request.getStrict();
 
     logger.info('Getting css of element on page');
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.elementHandle();
-    const result = await locator.evaluate(function (element: Element) {
-        const rawStyle = window.getComputedStyle(element);
-        const mapped: Record<string, string> = {};
-        // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
-        for (let i = 0; i < rawStyle.length; i++) {
-            const name = rawStyle[i];
-            mapped[name] = rawStyle.getPropertyValue(name);
+    const result = await locator.evaluate((element: Element, option) => {
+        const pseudoElement = option.pseudoElement;
+        const styleKey = option.styleKey;
+        const cssStyleDeclaration = window.getComputedStyle(element, pseudoElement);
+        if (styleKey) {
+            return cssStyleDeclaration.getPropertyValue(styleKey);
+        } else {
+            return Object.fromEntries(
+                Array.from(cssStyleDeclaration).map((key) => [key, cssStyleDeclaration.getPropertyValue(key)]),
+            );
         }
-        return JSON.stringify(mapped);
-    });
-    return jsonResponse(result, 'Style get successfully.');
+    }, option);
+    return jsonResponse(JSON.stringify(result), 'Style get successfully.');
 }
 
 export async function getViewportSize(page: Page): Promise<Response.Json> {

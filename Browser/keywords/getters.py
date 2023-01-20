@@ -933,6 +933,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
         message: Optional[str] = None,
+        pseudo_element: Optional[str] = None,
     ) -> Any:
         """Gets the computed style properties of the element selected by ``selector``.
 
@@ -955,10 +956,23 @@ class Getters(LibraryComponent):
         [https://forum.robotframework.org/t//4281|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetStyle(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
-            )
+        # with self.playwright.grpc_channel() as stub:
+        #     response = stub.GetStyle(
+        #         Request().ElementSelector(selector=selector, strict=self.strict_mode)
+        #     )
+        self.library.evaluate_javascript("""
+        (element: Element, option) => {
+            const pseudoElement = option.pseudoElement;
+            const styleKey = option.styleKey;
+            const cssStyleDeclaration = window.getComputedStyle(element, pseudoElement);
+            if (styleKey) {
+                return cssStyleDeclaration.getPropertyValue(styleKey);
+            } else {
+                return Object.fromEntries(
+                    Array.from(cssStyleDeclaration).map((key) => [key, cssStyleDeclaration.getPropertyValue(key)]),
+                );
+            }
+        }""", option)
         parsed = DotDict(json.loads(response.json))
         formatter = self.keyword_formatters.get(self.get_style)
         if key == "ALL":
