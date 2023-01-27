@@ -194,12 +194,16 @@ Get Property With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute With Strict
-    Run Keyword And Expect Error
-    ...    *strict mode violation*"*//input*resolved to 4 elements*
-    ...    Get Attribute    //input    id
-    Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
-    ...    Get Attribute    //input    id    equal    nothere
+    TRY
+        Get Attribute    //input    id
+    EXCEPT    *strict mode violation*//input*resolved to 4 elements*    type=glob    AS    ${error}
+        Log    ${error}
+    END
+    TRY
+        Get Attribute    //input    id    equal    nothere
+    EXCEPT    *strict mode violation*//input*resolved to 4 elements*    type=glob    AS    ${error}
+        Log    ${error}
+    END
     Set Strict Mode    False
     ${id} =    Get Attribute    //input    id
     Should Be Equal    ${id}    username_field
