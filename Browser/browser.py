@@ -1162,18 +1162,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _add_to_scope_stack(self, attrs: Dict[str, Any], scope: Scope):
         for stack in self.scope_stack.values():
             stack.start(attrs["id"], scope)
-        # self.timeout_stack.start(attrs["id"], scope)
-        # self.strict_mode_stack.start(attrs["id"], scope)
-        # self.retry_assertions_for_stack.start(attrs["id"], scope)
-        # self.selector_prefix_stack.start(attrs["id"], scope)
 
     def _remove_from_scope_stack(self, attrs: Dict[str, Any]):
         for stack in self.scope_stack.values():
             stack.end(attrs["id"])
-        # self.timeout_stack.end(attrs["id"])
-        # self.strict_mode_stack.end(attrs["id"])
-        # self.retry_assertions_for_stack.end(attrs["id"])
-        # self.selector_prefix_stack.end(attrs["id"])
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
         catalog_after = self.get_browser_catalog()
