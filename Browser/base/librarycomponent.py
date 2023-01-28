@@ -48,6 +48,18 @@ class LibraryComponent:
         return self.library.playwright
 
     @property
+    def run_on_failure_keyword(self) -> DelayedKeyword:
+        return self.library.scope_stack["run_on_failure"].get()
+
+    @property
+    def run_on_failure_keyword_stack(self) -> SettingsStack:
+        return self.library.scope_stack["run_on_failure"]
+
+    @run_on_failure_keyword_stack.setter
+    def run_on_failure_keyword_stack(self, stack: SettingsStack):
+        self.library.scope_stack["run_on_failure"] = stack
+
+    @property
     def timeout(self) -> float:
         return self.library.scope_stack["timeout"].get()
 

@@ -788,7 +788,7 @@ class Browser(DynamicCore):
 
         """
         self.ROBOT_LIBRARY_LISTENER = self
-
+        self.scope_stack = {}
         old_args_list = list(self.old_init_args.items())
         pos_params = {}
         for index, pos_arg in enumerate(deprecated_pos_args):
@@ -848,18 +848,6 @@ class Browser(DynamicCore):
         ]
 
         self.show_keyword_call_banner = params["show_keyword_call_banner"]
-        self.scope_stack = {
-            "timeout": SettingsStack(
-                self.convert_timeout(params["timeout"]),
-                self,
-                self._browser_control._set_playwright_timeout,
-            ),
-            "retry_assertions_for": SettingsStack(
-                self.convert_timeout(params["retry_assertions_for"]), self
-            ),
-            "strict_mode": SettingsStack(params["strict"], self),
-            "selector_prefix": SettingsStack(selector_prefix, self),
-        }
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self.pause_on_failure: Set[str] = set()
@@ -871,13 +859,27 @@ class Browser(DynamicCore):
         self.is_test_case_running = False
 
         DynamicCore.__init__(self, libraries)
-        self.run_on_failure_keyword = self._parse_run_on_failure_keyword(
-            params["run_on_failure"]
+
+        self.scope_stack["timeout"] = SettingsStack(
+            self.convert_timeout(params["timeout"]),
+            self,
+            self._browser_control._set_playwright_timeout,
+        )
+        self.scope_stack["retry_assertions_for"] = SettingsStack(
+            self.convert_timeout(params["retry_assertions_for"]), self
+        )
+        self.scope_stack["strict_mode"] = SettingsStack(params["strict"], self)
+        self.scope_stack["selector_prefix"] = SettingsStack(selector_prefix, self)
+        self.scope_stack["run_on_failure"] = SettingsStack(
+            self._parse_run_on_failure_keyword(params["run_on_failure"]), self
         )
 
     @property
+    def run_on_failure_keyword(self) -> DelayedKeyword:
+        return self.scope_stack["run_on_failure"].get()
+
+    @property
     def timeout(self):
-        # return self.timeout_stack.get()
         return self.scope_stack["timeout"].get()
 
     def _parse_run_on_failure_keyword(
