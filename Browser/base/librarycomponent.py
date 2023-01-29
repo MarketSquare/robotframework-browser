@@ -48,6 +48,30 @@ class LibraryComponent:
         return self.library.playwright
 
     @property
+    def keyword_call_banner_add_style(self) -> str:
+        return self.library.scope_stack["keyword_call_banner_add_style"].get()
+
+    @property
+    def keyword_call_banner_add_style_stack(self) -> SettingsStack:
+        return self.library.scope_stack["keyword_call_banner_add_style"]
+
+    @keyword_call_banner_add_style_stack.setter
+    def keyword_call_banner_add_style_stack(self, stack: SettingsStack):
+        self.library.scope_stack["keyword_call_banner_add_style"] = stack
+
+    @property
+    def show_keyword_call_banner(self) -> bool:
+        return self.library.scope_stack["show_keyword_call_banner"].get()
+
+    @property
+    def show_keyword_call_banner_stack(self) -> SettingsStack:
+        return self.library.scope_stack["show_keyword_call_banner"]
+
+    @show_keyword_call_banner_stack.setter
+    def show_keyword_call_banner_stack(self, stack: SettingsStack):
+        self.library.scope_stack["show_keyword_call_banner"] = stack
+
+    @property
     def run_on_failure_keyword(self) -> DelayedKeyword:
         return self.library.scope_stack["run_on_failure"].get()
 

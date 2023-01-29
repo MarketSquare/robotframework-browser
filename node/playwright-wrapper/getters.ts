@@ -241,7 +241,6 @@ export async function getStyle(request: Request.ElementStyle, state: PlaywrightS
 
     logger.info('Getting css of element on page');
     const locator = await findLocator(state, selector, strictMode, undefined, true);
-    await locator.elementHandle();
     const result = await locator.evaluate((element: Element, option) => {
         const pseudoElement = option.pseudoElement;
         const styleKey = option.styleKey;

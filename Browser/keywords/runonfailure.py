@@ -36,7 +36,7 @@ class RunOnFailureKeywords(LibraryComponent):
         | =Arguments= | =Description= |
         | ``keyword`` | The name of a keyword that will be executed if a Browser keyword fails. It is possible to use any available keyword, including user keywords or keywords from other libraries. |
         | ``*args`` | The arguments to the keyword if any. |
-        | ``scope`` | Scope defines the live time of this setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope Settings` for more details. |
+        | ``scope`` | Scope defines the live time of this setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Settings` for more details. |
 
         The initial keyword to use is set when `importing` the library, and
         the keyword that is used by default is `Take Screenshot`.

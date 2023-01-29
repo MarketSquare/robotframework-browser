@@ -212,7 +212,7 @@ class Control(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``timeout`` | Timeout of it is for current playwright context and for new contexts. Supports Robot Framework [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format|time format] . Returns the previous value of the timeout. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope Settings` for more details. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Settings` for more details. |
 
         Example:
         | ${old_timeout} =    `Set Browser Timeout`    1m 30 seconds
@@ -244,7 +244,7 @@ class Control(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``timeout`` | Assertion retry timeout will determine how long Browser library will retry an assertion to be true. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope` for more details. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
         The other keyword `Set Browser timeout` controls how long Playwright
         will perform waiting in the node side for Elements to fulfill the
@@ -275,7 +275,7 @@ class Control(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``prefix``   | Prefix for all selectors. Prefix and selector will be separated by a single space. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope` for more details. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
         Returns the previous value of the prefix.
 
@@ -295,7 +295,7 @@ class Control(LibraryComponent):
 
     @keyword(tags=("Setter", "Config"))
     def show_keyword_banner(
-        self, show: bool = True, style: str = ""
+        self, show: bool = True, style: str = "", scope: Scope = Scope.Suite
     ) -> Dict[str, Union[None, bool, str]]:
         """Controls if the keyword banner is shown on page or not.
 
@@ -308,7 +308,7 @@ class Control(LibraryComponent):
         | =Arguments= | =Description= |
         | ``show`` | If `True` banner is shown on page. If `False` banner is not shown on page. If `None` banner is shown on page only when running in presenter mode. |
         | ``style`` | Additional css styles to be applied to the banner. These styles are css settings and may override the existing ones for the banner. |
-
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
         Example:
         | Show Keyword Banner     True    top: 5px; bottom: auto; left: 5px; background-color: #00909077; font-size: 9px; color: black;   # Show banner on top left corner with custom styles
@@ -316,10 +316,10 @@ class Control(LibraryComponent):
 
         [https://forum.robotframework.org/t//4716|Comment >>]
         """
-        original_state = self.library.show_keyword_call_banner
-        original_style = self.library.keyword_call_banner_add_style
-        self.library.show_keyword_call_banner = show
-        self.library.keyword_call_banner_add_style = style
+        original_state = self.show_keyword_call_banner
+        original_style = self.keyword_call_banner_add_style
+        self.show_keyword_call_banner_stack.set(show, scope)
+        self.keyword_call_banner_add_style_stack.set(style, scope)
         if not show:
             self.library.set_keyword_call_banner()
         return {"show": original_state, "style": original_style}

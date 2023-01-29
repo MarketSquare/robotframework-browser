@@ -846,14 +846,11 @@ class Browser(DynamicCore):
         self.presenter_mode: Union[HighLightElement, bool] = params[
             "enable_presenter_mode"
         ]
-
-        self.show_keyword_call_banner = params["show_keyword_call_banner"]
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self.pause_on_failure: Set[str] = set()
         self._unresolved_promises: Set[Future] = set()
         self.current_arguments = ()
-        self.keyword_call_banner_add_style: str = ""
         self._keyword_formatters: dict = {}
         self._current_loglevel: Optional[str] = None
         self.is_test_case_running = False
@@ -873,6 +870,16 @@ class Browser(DynamicCore):
         self.scope_stack["run_on_failure"] = SettingsStack(
             self._parse_run_on_failure_keyword(params["run_on_failure"]), self
         )
+        self.scope_stack["show_keyword_call_banner"] = SettingsStack(params["show_keyword_call_banner"], self)
+        self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
+
+    @property
+    def keyword_call_banner_add_style(self):
+        return self.scope_stack["keyword_call_banner_add_style"].get()
+
+    @property
+    def show_keyword_call_banner(self):
+        return self.scope_stack["show_keyword_call_banner"].get()
 
     @property
     def run_on_failure_keyword(self) -> DelayedKeyword:
@@ -1077,14 +1084,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
     def _start_keyword(self, name, attrs):
-        if (
+        if not (
             self.show_keyword_call_banner is False
             or (self.show_keyword_call_banner is None and not self.presenter_mode)
             or attrs["libname"] != "Browser"
             or attrs["status"] == "NOT RUN"
         ):
-            return
-        self._show_keyword_call(attrs)
+            self._show_keyword_call(attrs)
         self.current_arguments = tuple(attrs["args"])
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
             self._set_logging(False)

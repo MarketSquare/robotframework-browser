@@ -891,7 +891,7 @@ class PlaywrightState(LibraryComponent):
     def get_browser_catalog(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Dict:
         """Returns all browsers, open contexts in them and open pages in these contexts.

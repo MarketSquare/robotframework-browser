@@ -48,7 +48,7 @@ class Getters(LibraryComponent):
     def get_url(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the current URL.
@@ -78,7 +78,7 @@ class Getters(LibraryComponent):
     def get_page_state(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns page model state object as a dictionary.
@@ -115,7 +115,7 @@ class Getters(LibraryComponent):
     def get_page_source(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets pages HTML source as a string.
@@ -149,7 +149,7 @@ class Getters(LibraryComponent):
     def get_title(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the title of the current page.
@@ -184,7 +184,7 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
@@ -235,7 +235,7 @@ class Getters(LibraryComponent):
         selector: str,
         property: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
@@ -292,7 +292,7 @@ class Getters(LibraryComponent):
         selector: str,
         attribute: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
@@ -448,7 +448,7 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
@@ -665,7 +665,7 @@ class Getters(LibraryComponent):
         self,
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the current viewport dimensions.
@@ -929,9 +929,9 @@ class Getters(LibraryComponent):
     def get_style(
         self,
         selector: str,
-        key: str = "ALL",
+        key: Optional[str] = "ALL",
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
         pseudo_element: Optional[str] = None,
     ) -> Any:
@@ -942,10 +942,13 @@ class Getters(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector from which the style shall be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``key`` | Key of the requested CSS property. Retrieves "ALL" styles by default. |
+        | ``key`` | Key of the requested CSS property. Retrieves "ALL" styles as dictionary by default. All css settings can be used as keys even if they are not all returned in the dictionary. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``assertion_expected`` | Expected value for the counting |
         | ``message`` | overrides the default error message for assertion. |
+        | ``pseudo_element`` | Pseudo element to match. Defaults to None. Pseudo elements are special css |
+
+        [ https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements | Pseudo element ] is a css fuctionality to add styles. Example `::before` or `::after`.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -956,43 +959,31 @@ class Getters(LibraryComponent):
         [https://forum.robotframework.org/t//4281|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
-        # with self.playwright.grpc_channel() as stub:
-        #     response = stub.GetStyle(
-        #         Request().ElementSelector(selector=selector, strict=self.strict_mode)
-        #     )
-        self.library.evaluate_javascript("""
-        (element: Element, option) => {
-            const pseudoElement = option.pseudoElement;
-            const styleKey = option.styleKey;
-            const cssStyleDeclaration = window.getComputedStyle(element, pseudoElement);
-            if (styleKey) {
-                return cssStyleDeclaration.getPropertyValue(styleKey);
-            } else {
-                return Object.fromEntries(
-                    Array.from(cssStyleDeclaration).map((key) => [key, cssStyleDeclaration.getPropertyValue(key)]),
-                );
-            }
-        }""", option)
-        parsed = DotDict(json.loads(response.json))
-        formatter = self.keyword_formatters.get(self.get_style)
         if key == "ALL":
+            key = None
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetStyle(
+                Request().ElementStyle(selector=selector, styleKey=key, pseudo=pseudo_element, strict=self.strict_mode)
+            )
+        parsed_response = json.loads(response.json)
+        formatter = self.keyword_formatters.get(self.get_style)
+        if key is None and isinstance(parsed_response, dict):
             if formatter:
                 logger.warn(
                     "Formatter is not supported by Get Style keyword with key 'ALL'."
                 )
             return dict_verify_assertion(
-                parsed,
+                parsed_response,
                 assertion_operator,
                 assertion_expected,
                 "Computed style is",
                 message,
             )
         else:
-            item = parsed.get(key, "NOT_FOUND")
             logger.info(f"Value of key: {key}")
-            logger.info(f"Value of selected property: {item}")
+            logger.info(f"Value of selected property: {parsed_response}")
             return verify_assertion(
-                item,
+                parsed_response,
                 assertion_operator,
                 assertion_expected,
                 f"Style value for {key} is",
@@ -1007,7 +998,7 @@ class Getters(LibraryComponent):
         selector: str,
         key: BoundingBoxFields = BoundingBoxFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
@@ -1067,7 +1058,7 @@ class Getters(LibraryComponent):
         selector: Optional[str] = None,
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
@@ -1126,7 +1117,7 @@ class Getters(LibraryComponent):
         selector: Optional[str] = None,
         key: AreaFields = AreaFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
@@ -1185,7 +1176,7 @@ class Getters(LibraryComponent):
         selector: Optional[str] = None,
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
