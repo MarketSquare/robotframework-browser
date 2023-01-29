@@ -357,8 +357,9 @@ window.selectorRecorderFindSelector = function (label) {
                         top: 0, left: 0, width: 0, height: 0, paddingTop: 0, paddingLeft: 0
                     });
                     const div = htmlToElement(`<div id="${BROWSER_LIBRARY_SELECTION_FRAME}" style="
-top: ${rect.top - window.scrollY - 2}px;
-left: ${rect.left - window.scrollX - 2}px;
+position: fixed;
+top: ${rect.top - 2}px;
+left: ${rect.left - 2}px;
 width: ${rect.width + 4}px;
 height: ${rect.height+ 4}px;
 
