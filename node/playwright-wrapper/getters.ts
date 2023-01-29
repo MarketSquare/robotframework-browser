@@ -242,11 +242,9 @@ export async function getStyle(request: Request.ElementStyle, state: PlaywrightS
     logger.info('Getting css of element on page');
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     const result = await locator.evaluate((element: Element, option) => {
-        const pseudoElement = option.pseudoElement;
-        const styleKey = option.styleKey;
-        const cssStyleDeclaration = window.getComputedStyle(element, pseudoElement);
-        if (styleKey) {
-            return cssStyleDeclaration.getPropertyValue(styleKey);
+        const cssStyleDeclaration = window.getComputedStyle(element, option.pseudoElement);
+        if (option.styleKey) {
+            return cssStyleDeclaration.getPropertyValue(option.styleKey);
         } else {
             return Object.fromEntries(
                 Array.from(cssStyleDeclaration).map((key) => [key, cssStyleDeclaration.getPropertyValue(key)]),
