@@ -48,40 +48,52 @@ class LibraryComponent:
         return self.library.playwright
 
     @property
+    def run_on_failure_keyword(self) -> DelayedKeyword:
+        return self.library.scope_stack["run_on_failure"].get()
+
+    @property
+    def run_on_failure_keyword_stack(self) -> SettingsStack:
+        return self.library.scope_stack["run_on_failure"]
+
+    @run_on_failure_keyword_stack.setter
+    def run_on_failure_keyword_stack(self, stack: SettingsStack):
+        self.library.scope_stack["run_on_failure"] = stack
+
+    @property
     def timeout(self) -> float:
-        return self.library.timeout_stack.get()
+        return self.library.scope_stack["timeout"].get()
 
     @property
     def timeout_stack(self) -> SettingsStack:
-        return self.library.timeout_stack
+        return self.library.scope_stack["timeout"]
 
     @timeout_stack.setter
     def timeout_stack(self, stack: SettingsStack):
-        self.library.timeout_stack = stack
+        self.library.scope_stack["timeout"] = stack
 
     @property
     def retry_assertions_for(self) -> float:
-        return self.library.retry_assertions_for_stack.get()
+        return self.library.scope_stack["retry_assertions_for"].get()
 
     @property
     def retry_assertions_for_stack(self) -> SettingsStack:
-        return self.library.retry_assertions_for_stack
+        return self.library.scope_stack["retry_assertions_for"]
 
     @retry_assertions_for_stack.setter
     def retry_assertions_for_stack(self, stack: SettingsStack):
-        self.library.retry_assertions_for_stack = stack
+        self.library.scope_stack["retry_assertions_for"] = stack
 
     @property
     def selector_prefix(self) -> str:
-        return self.library.selector_prefix_stack.get()
+        return self.library.scope_stack["selector_prefix"].get()
 
     @property
     def selector_prefix_stack(self) -> SettingsStack:
-        return self.library.selector_prefix_stack
+        return self.library.scope_stack["selector_prefix"]
 
     @selector_prefix_stack.setter
     def selector_prefix_stack(self, stack: SettingsStack):
-        self.library.selector_prefix_stack = stack
+        self.library.scope_stack["selector_prefix"] = stack
 
     def resolve_selector(self, selector: Optional[str]) -> str:
         if not selector:
@@ -227,15 +239,15 @@ class LibraryComponent:
 
     @property
     def strict_mode(self) -> bool:
-        return self.library.strict_mode_stack.get()
+        return self.library.scope_stack["strict_mode"].get()
 
     @property
     def strict_mode_stack(self) -> SettingsStack:
-        return self.library.strict_mode_stack
+        return self.library.scope_stack["strict_mode"]
 
     @strict_mode_stack.setter
     def strict_mode_stack(self, stack: SettingsStack):
-        self.library.strict_mode_stack = stack
+        self.library.scope_stack["strict_mode"] = stack
 
     def parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]

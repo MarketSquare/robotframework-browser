@@ -788,7 +788,7 @@ class Browser(DynamicCore):
 
         """
         self.ROBOT_LIBRARY_LISTENER = self
-
+        self.scope_stack = {}
         old_args_list = list(self.old_init_args.items())
         pos_params = {}
         for index, pos_arg in enumerate(deprecated_pos_args):
@@ -806,9 +806,10 @@ class Browser(DynamicCore):
         params = {**pos_params, **params}
 
         self._playwright_state = PlaywrightState(self)
+        self._browser_control = Control(self)
         libraries = [
             self._playwright_state,
-            Control(self),
+            self._browser_control,
             Cookie(self),
             Crawling(self),
             Devices(self),
@@ -823,17 +824,10 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self.timeout_stack = SettingsStack(
-            self.convert_timeout(params["timeout"]), self
-        )
         self.playwright = Playwright(
             self, params["enable_playwright_debug"], playwright_process_port
         )
         self._auto_closing_level: AutoClosingLevel = params["auto_closing_level"]
-        self.retry_assertions_for_stack = SettingsStack(
-            self.convert_timeout(params["retry_assertions_for"]),
-            self,
-        )
         # Parsing needs keywords to be discovered.
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             params["external_browser_executable"] or {}
@@ -852,9 +846,8 @@ class Browser(DynamicCore):
         self.presenter_mode: Union[HighLightElement, bool] = params[
             "enable_presenter_mode"
         ]
-        self.strict_mode_stack = SettingsStack(params["strict"], self)
+
         self.show_keyword_call_banner = params["show_keyword_call_banner"]
-        self.selector_prefix_stack = SettingsStack(selector_prefix, self)
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self.pause_on_failure: Set[str] = set()
@@ -866,13 +859,28 @@ class Browser(DynamicCore):
         self.is_test_case_running = False
 
         DynamicCore.__init__(self, libraries)
-        self.run_on_failure_keyword = self._parse_run_on_failure_keyword(
-            params["run_on_failure"]
+
+        self.scope_stack["timeout"] = SettingsStack(
+            self.convert_timeout(params["timeout"]),
+            self,
+            self._browser_control._set_playwright_timeout,
+        )
+        self.scope_stack["retry_assertions_for"] = SettingsStack(
+            self.convert_timeout(params["retry_assertions_for"]), self
+        )
+        self.scope_stack["strict_mode"] = SettingsStack(params["strict"], self)
+        self.scope_stack["selector_prefix"] = SettingsStack(selector_prefix, self)
+        self.scope_stack["run_on_failure"] = SettingsStack(
+            self._parse_run_on_failure_keyword(params["run_on_failure"]), self
         )
 
     @property
+    def run_on_failure_keyword(self) -> DelayedKeyword:
+        return self.scope_stack["run_on_failure"].get()
+
+    @property
     def timeout(self):
-        return self.timeout_stack.get()
+        return self.scope_stack["timeout"].get()
 
     def _parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]
@@ -1152,16 +1160,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
     def _add_to_scope_stack(self, attrs: Dict[str, Any], scope: Scope):
-        self.timeout_stack.start(attrs["id"], scope)
-        self.strict_mode_stack.start(attrs["id"], scope)
-        self.retry_assertions_for_stack.start(attrs["id"], scope)
-        self.selector_prefix_stack.start(attrs["id"], scope)
+        for stack in self.scope_stack.values():
+            stack.start(attrs["id"], scope)
 
     def _remove_from_scope_stack(self, attrs: Dict[str, Any]):
-        self.timeout_stack.end(attrs["id"])
-        self.strict_mode_stack.end(attrs["id"])
-        self.retry_assertions_for_stack.end(attrs["id"])
-        self.selector_prefix_stack.end(attrs["id"])
+        for stack in self.scope_stack.values():
+            stack.end(attrs["id"])
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
         catalog_after = self.get_browser_catalog()
@@ -1281,7 +1285,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         if timeout is None:
-            return self.timeout_stack.get()
+            return self.scope_stack["timeout"].get()
         return self.convert_timeout(timeout)
 
     def convert_timeout(

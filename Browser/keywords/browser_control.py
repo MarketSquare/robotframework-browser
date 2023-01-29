@@ -223,16 +223,18 @@ class Control(LibraryComponent):
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
         self.timeout_stack.set(self.convert_timeout(timeout), scope)
+        return old_timeout
+
+    def _set_playwright_timeout(self, timeout):
         try:
             with self.playwright.grpc_channel() as stub:
-                response = stub.SetTimeout(Request().Timeout(timeout=self.timeout))
+                response = stub.SetTimeout(Request().Timeout(timeout=timeout))
                 logger.info(response.log)
         except Exception as error:  # Suppress  all errors
             if "Browser has been closed" in str(error):
                 logger.debug(f"Suppress error {error} when setting timeout.")
             else:
                 raise
-        return old_timeout
 
     @keyword(tags=("Setter", "Config"))
     def set_retry_assertions_for(
