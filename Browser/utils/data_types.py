@@ -635,15 +635,16 @@ class Scope(Enum):
       Or locally temporarily overridden by a more narrow scope.
     - A ``Suite`` scope will locally override the Global scope and
       live until the end of the Suite within it is set, or if it is overwritten
-      by a later setting with Global or same scope. 
+      by a later setting with Global or same scope.
       Children suite does inherit the setting from the parent suite but also may have
       its own local Suite setting that then will be inherited to its children suites.
     - A ``Test`` or ``Task`` scope will be inherited from its parent suite but when set,
       lives until the end of that particular test or task.
-    
+
     A new set higher order scope will always remove the lower order scope which may be in charge.
     So the setting of a Suite scope from a test, will set that scope to the robot file suite where
     that test is and removes the Test scope that may have been in place."""
+
     Global = auto()
     Suite = auto()
     Test = auto()

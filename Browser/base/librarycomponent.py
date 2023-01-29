@@ -189,12 +189,10 @@ class LibraryComponent:
     def millisecs_to_timestr(self, timeout: float) -> str:
         return self.library.millisecs_to_timestr(timeout)
 
-    def resolve_secret(
-        self, secret_variable: Any, original_secret: Any, arg_name: str
-    ) -> str:
+    def resolve_secret(self, secret_variable: Any, arg_name: str) -> str:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         secret = self.decrypt_with_crypto_library(secret)
-        if secret == original_secret:
+        if secret == secret_variable:
             raise ValueError(
                 f"Direct assignment of values or variables as '{arg_name}' is not allowed. "
                 "Use special variable syntax ($var instead of ${var}) "

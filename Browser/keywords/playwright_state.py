@@ -751,9 +751,7 @@ class PlaywrightState(LibraryComponent):
                 f"storageState argument value '{storageState}' is not file, but it should be."
             )
         if "httpCredentials" in params and params["httpCredentials"] is not None:
-            secret = self.resolve_secret(
-                httpCredentials, params.get("httpCredentials"), "httpCredentials"
-            )
+            secret = self.resolve_secret(httpCredentials, "httpCredentials")
             params["httpCredentials"] = secret
         masked_params = self._mask_credentials(params.copy())
         logger.info(json.dumps(masked_params, default=str, indent=2))

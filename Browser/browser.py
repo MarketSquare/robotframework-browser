@@ -850,7 +850,6 @@ class Browser(DynamicCore):
         self._running_on_failure_keyword = False
         self.pause_on_failure: Set[str] = set()
         self._unresolved_promises: Set[Future] = set()
-        self.current_arguments = ()
         self._keyword_formatters: dict = {}
         self._current_loglevel: Optional[str] = None
         self.is_test_case_running = False
@@ -870,7 +869,9 @@ class Browser(DynamicCore):
         self.scope_stack["run_on_failure"] = SettingsStack(
             self._parse_run_on_failure_keyword(params["run_on_failure"]), self
         )
-        self.scope_stack["show_keyword_call_banner"] = SettingsStack(params["show_keyword_call_banner"], self)
+        self.scope_stack["show_keyword_call_banner"] = SettingsStack(
+            params["show_keyword_call_banner"], self
+        )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
 
     @property
@@ -1091,7 +1092,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             or attrs["status"] == "NOT RUN"
         ):
             self._show_keyword_call(attrs)
-        self.current_arguments = tuple(attrs["args"])
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
             self._set_logging(False)
 

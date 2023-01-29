@@ -959,21 +959,27 @@ class Getters(LibraryComponent):
         [https://forum.robotframework.org/t//4281|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
-        if key == "ALL":
-            key = None
+        if key == "ALL" or key is None:
+            key = ""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(
-                Request().ElementStyle(selector=selector, styleKey=key, pseudo=pseudo_element, strict=self.strict_mode)
+                Request().ElementStyle(
+                    selector=selector,
+                    styleKey=key,
+                    pseudo=pseudo_element or "",
+                    strict=self.strict_mode,
+                )
             )
         parsed_response = json.loads(response.json)
         formatter = self.keyword_formatters.get(self.get_style)
-        if key is None and isinstance(parsed_response, dict):
+        logger.console(type(parsed_response))
+        if key == "" or isinstance(parsed_response, dict):
             if formatter:
                 logger.warn(
                     "Formatter is not supported by Get Style keyword with key 'ALL'."
                 )
             return dict_verify_assertion(
-                parsed_response,
+                DotDict(parsed_response),
                 assertion_operator,
                 assertion_expected,
                 "Computed style is",

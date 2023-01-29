@@ -25,7 +25,6 @@ from ..utils import (
     get_abs_scroll_coordinates,
     get_rel_scroll_coordinates,
     keyword,
-    locals_to_params,
     logger,
 )
 from ..utils.data_types import (
@@ -185,10 +184,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4338|Comment >>]
         """
-        originals = self._get_original_values(locals())
-        secret = self.resolve_secret(
-            secret, originals.get("secret") or secret, "secret"
-        )
+        secret = self.resolve_secret(secret, "secret")
         try:
             self._type_text(
                 selector,
@@ -200,23 +196,6 @@ class Interaction(LibraryComponent):
             )
         except Exception as e:
             raise Exception(str(e).replace(secret, "***"))
-
-    def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
-        originals = locals_to_params(local_args)
-        if not self.library.current_arguments:
-            return originals
-        named_args = False
-        for idx, val in enumerate(self.library.current_arguments):
-            if idx > len(originals):
-                break
-            if "=" in val and not named_args:
-                named_args = val.split("=", 1)[0] in originals
-            if named_args:
-                arg_name, arg_value = val.split("=", 1)
-                originals[arg_name] = arg_value
-            else:
-                originals[list(originals.keys())[idx]] = val
-        return originals
 
     @keyword(tags=("Setter", "PageContent"))
     def fill_secret(self, selector: str, secret: str, force: bool = False):
@@ -263,10 +242,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4253|Comment >>]
         """
-        originals = self._get_original_values(locals())
-        secret = self.resolve_secret(
-            secret, originals.get("secret") or secret, "secret"
-        )
+        secret = self.resolve_secret(secret, "secret")
         try:
             self._fill_text(
                 selector,

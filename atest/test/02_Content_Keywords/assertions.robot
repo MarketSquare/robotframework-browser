@@ -69,6 +69,8 @@ Pseudo Elements and Keyword Banner Styled Scope Test
     Get Style    body    background-color    ==    rgba(0, 144, 144, 0.467)    pseudo_element=::before
     Get Style    body    font-size    ==    9px    pseudo_element=::before
     Get Style    body    color    ==    rgb(0, 0, 0)    pseudo_element=::before
+    Get Style    body    ALL    pseudo_element=::before
+    Get Style    body    ${None}    pseudo_element=::before
 
 Pseudo Elements and Keyword Banner Off Scope Test
     Show Keyword Banner    show=False    scope=Test
