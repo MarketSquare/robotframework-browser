@@ -174,6 +174,8 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
     return emptyWithLog('added Style: ' + content);
 }
 
+const selectorsForPage: { [key: string]: unknown[] } = {};
+
 export async function recordSelector(
     request: Request.Label,
     state: PlaywrightState,
@@ -181,22 +183,39 @@ export async function recordSelector(
     if (state.getActiveBrowser().headless) {
         throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
     }
-    const page = state.getActivePage() as Page;
+    const activeBrowser = state.activeBrowser;
+    if (!activeBrowser) {
+        throw Error('No active browser.');
+    }
+    const indexedPage = activeBrowser.page;
+    if (!indexedPage) {
+        throw Error('No active page.');
+    }
+    const page = indexedPage.p;
     await page.bringToFront();
-    const myselectors: unknown[] = [];
-    page.exposeFunction('setRecordedSelector', (index: number, item: unknown) => {
-        while (myselectors.length > index) {
-            myselectors.pop();
-        }
-        myselectors.push(item);
-    });
-    page.exposeFunction('getRecordedSelectors', () => {
-        return myselectors;
-    });
-    page.exposeFunction('highlightPWSelector', (selector: string) => {
-        highlightAll(selector, 1000, '3px', 'dotted', 'blue', false, state);
-    });
+    // If the page already has recorder then skipping creation
+    if (!(indexedPage.id in selectorsForPage)) {
+        const myselectors: unknown[] = [];
+        selectorsForPage[indexedPage.id] = myselectors;
+        await page.exposeFunction('setRecordedSelector', (index: number, item: unknown) => {
+            while (myselectors.length > index) {
+                myselectors.pop();
+            }
+            myselectors.push(item);
+        });
+        await page.exposeFunction('getRecordedSelectors', () => {
+            return myselectors;
+        });
+        await page.exposeFunction('highlightPWSelector', (selector: string) => {
+            highlightAll(selector, 1000, '3px', 'dotted', 'blue', false, state);
+        });
+    }
+
     const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
+    // clean old recording array for the next run on the page
+    while (selectorsForPage[indexedPage.id].length) {
+        selectorsForPage[indexedPage.id].pop();
+    }
     return jsResponse(result, 'Selector recorded.');
 }
 
