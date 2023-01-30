@@ -316,29 +316,95 @@ class Interaction(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
         | ``button`` | Defaults to ``left`` if invalid. |
-        | ``clickCount`` | Defaults to 1. |
-        | ``delay`` | Time to wait between mouse-down and mouse-up. Defaults to 0. |
-        | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
-        | ``force`` | Set to True to skip Playwright's Actionability checks (https://playwright.dev/docs/actionability). |
-        | ``noWaitAfter`` | Actions that initiate navigation, are waiting for these navigation to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
+
+        All other arguments are **DEPRECATED** and will be removed in the future. Use `Click With Options` instead.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
         | `Click`    id=button_location
-        | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
+        | `Click`    id=button_location    left
+        | `Click`    id=button_location    right
 
-        ``*modifiers``
-        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
-        current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified
-        in any order, and multiple modifiers can be specified.
-        Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``.
-        Due to the fact that the argument `*modifiers` is a positional only argument,
-        all preceding keyword arguments have to be specified as positional arguments before `*modifiers`.
+        [https://forum.robotframework.org/t/comments-for-click/4238|Comment >>]
+        """
+        deprecated = {
+            "clickCount": 1,
+            "delay": None,
+            "position_x": None,
+            "position_y": None,
+            "force": False,
+            "noWaitAfter": False,
+            "modifiers": (),
+        }
+        deprecated_locals = []
+        for arg, value in deprecated.items():
+            if locals().get(arg) != value:
+                deprecated_locals.append(arg)
+        if deprecated_locals:
+            logger.warn(
+                "The arguments of `Click` keyword are deprecated. "
+                "Use `Click With Options` instead. "
+                f"[ {', '.join(deprecated_locals)} ]"
+            )
+        self.click_with_options(
+            selector,
+            button,
+            *modifiers,
+            clickCount=clickCount,
+            delay=delay,
+            position_x=position_x,
+            position_y=position_y,
+            force=force,
+            noWaitAfter=noWaitAfter,
+        )
+
+    @keyword(tags=("Setter", "PageContent"))
+    def click_with_options(
+        self,
+        selector: str,
+        button: MouseButton = MouseButton.left,
+        *modifiers: KeyboardModifier,
+        clickCount: int = 1,
+        delay: Optional[timedelta] = None,
+        force: bool = False,
+        noWaitAfter: bool = False,
+        position_x: Optional[float] = None,
+        position_y: Optional[float] = None,
+        trial: bool = False,
+    ):
+        """Simulates mouse click on the element found by ``selector``.
+
+        This keyword clicks an element matching ``selector`` by performing the following steps:
+        - Find an element matches selector. If there is none, wait until a matching element is attached to the DOM.
+        - Wait for actionability checks on the matched element, unless ``force`` option is set.
+          If the element is detached during the checks, the whole action is retried.
+        - Scroll the element into view if needed.
+        - Use `Mouse Button` to click in the center of the element, or the specified position.
+        - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
+
+
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
+        | ``button`` | Defaults to ``left`` if invalid. |
+        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified in any order, and multiple modifiers can be specified. Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``. Due to the fact that the argument `*modifiers` is a positional only argument, all preceding keyword arguments have to be specified as positional arguments before `*modifiers`. |
+        | ``clickCount`` | Defaults to 1. |
+        | ``delay`` | Time to wait between mouse-down and mouse-up. Defaults to 0. |
+        | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
+        | ``force`` | Set to True to skip Playwright's Actionability checks (https://playwright.dev/docs/actionability). |
+        | ``noWaitAfter`` | Actions that initiate navigation, are waiting for these navigation to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
+        | ``trial`` | When set, this method only performs the actionability checks and skips the action. Defaults to false. Useful to wait until the element is ready for the action without performing it. |
+
+        Arguments ``clickCount``, ``delay``, ``position_x``, ``position_y``, ``force``, ``noWaitAfter`` and ``trial`` are named-only arguments and must be specified using their names..
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
-        | `Click`    id=clickWithModifiers    left    1    None    None    None    False    False    Alt    Meta    Shift
-        | `Click`    id=clickWithModifier    right    2    None    None    None    False    False    Shift
+        | `Click`    id=button_location
+        | `Click`    id=button_location    trial=True
+        | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
+        | `Click`    id=clickWithModifiers    left     Alt    Meta    Shift    clickCount=1    force=True
+        | `Click`    id=clickWithOptions    right    clickCount=2    force=True    noWaitAfter=True
 
         [https://forum.robotframework.org/t//4238|Comment >>]
         """
@@ -349,6 +415,7 @@ class Interaction(LibraryComponent):
                 "clickCount": clickCount,
                 "force": force,
                 "noWaitAfter": noWaitAfter,
+                "trial": trial,
             }
             if delay:
                 options["delay"] = self.get_timeout(delay)
