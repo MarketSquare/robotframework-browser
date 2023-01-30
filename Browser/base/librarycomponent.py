@@ -48,6 +48,30 @@ class LibraryComponent:
         return self.library.playwright
 
     @property
+    def keyword_call_banner_add_style(self) -> str:
+        return self.library.scope_stack["keyword_call_banner_add_style"].get()
+
+    @property
+    def keyword_call_banner_add_style_stack(self) -> SettingsStack:
+        return self.library.scope_stack["keyword_call_banner_add_style"]
+
+    @keyword_call_banner_add_style_stack.setter
+    def keyword_call_banner_add_style_stack(self, stack: SettingsStack):
+        self.library.scope_stack["keyword_call_banner_add_style"] = stack
+
+    @property
+    def show_keyword_call_banner(self) -> bool:
+        return self.library.scope_stack["show_keyword_call_banner"].get()
+
+    @property
+    def show_keyword_call_banner_stack(self) -> SettingsStack:
+        return self.library.scope_stack["show_keyword_call_banner"]
+
+    @show_keyword_call_banner_stack.setter
+    def show_keyword_call_banner_stack(self, stack: SettingsStack):
+        self.library.scope_stack["show_keyword_call_banner"] = stack
+
+    @property
     def run_on_failure_keyword(self) -> DelayedKeyword:
         return self.library.scope_stack["run_on_failure"].get()
 
@@ -165,12 +189,10 @@ class LibraryComponent:
     def millisecs_to_timestr(self, timeout: float) -> str:
         return self.library.millisecs_to_timestr(timeout)
 
-    def resolve_secret(
-        self, secret_variable: Any, original_secret: Any, arg_name: str
-    ) -> str:
+    def resolve_secret(self, secret_variable: Any, arg_name: str) -> str:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         secret = self.decrypt_with_crypto_library(secret)
-        if secret == original_secret:
+        if secret == secret_variable:
             raise ValueError(
                 f"Direct assignment of values or variables as '{arg_name}' is not allowed. "
                 "Use special variable syntax ($var instead of ${var}) "

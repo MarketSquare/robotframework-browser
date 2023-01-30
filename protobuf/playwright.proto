@@ -243,6 +243,13 @@ message Request {
     bool allElements = 4;
     bool strict = 5;
   }
+
+  message ElementStyle {
+    string selector = 1;
+    string pseudo = 2;
+    string styleKey = 3;
+    bool strict = 4;
+  }
 }
 
 message Types {
@@ -411,7 +418,7 @@ service  Playwright {
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
-  rpc GetStyle(Request.ElementSelector) returns (Response.Json);
+  rpc GetStyle(Request.ElementStyle) returns (Response.Json);
   /* Gets elements x, y coordinates and width, height as json object */ 
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the browser */

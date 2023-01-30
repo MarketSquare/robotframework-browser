@@ -751,9 +751,7 @@ class PlaywrightState(LibraryComponent):
                 f"storageState argument value '{storageState}' is not file, but it should be."
             )
         if "httpCredentials" in params and params["httpCredentials"] is not None:
-            secret = self.resolve_secret(
-                httpCredentials, params.get("httpCredentials"), "httpCredentials"
-            )
+            secret = self.resolve_secret(httpCredentials, "httpCredentials")
             params["httpCredentials"] = secret
         masked_params = self._mask_credentials(params.copy())
         logger.info(json.dumps(masked_params, default=str, indent=2))
@@ -891,7 +889,7 @@ class PlaywrightState(LibraryComponent):
     def get_browser_catalog(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Dict:
         """Returns all browsers, open contexts in them and open pages in these contexts.
