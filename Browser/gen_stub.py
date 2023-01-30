@@ -13,12 +13,12 @@
 # limitations under the License.
 import sys
 from datetime import timedelta
+from enum import Enum
 from typing import Any
 
 from robotlibcore import KeywordBuilder  # type: ignore
 
 import Browser
-from Browser.utils.data_types import SelectionType
 
 PY310 = sys.version_info.major == 3 and sys.version_info.minor >= 10
 
@@ -82,8 +82,8 @@ def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
                 default_value = f"'{default_value}'"
             elif isinstance(default_value, timedelta):
                 default_value = f"timedelta(seconds={default_value.total_seconds()})"
-            elif isinstance(default_value, SelectionType):
-                default_value = f"SelectionType.{default_value}"
+            elif isinstance(default_value, Enum):
+                default_value = f"{type(default_value).__name__}.{default_value.name}"
             arg_str = f"{arg_str} = {str(default_value)}"
         else:
             arg_str = argument
