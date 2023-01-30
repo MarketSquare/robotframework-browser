@@ -206,11 +206,11 @@ def show_versions():
     version_file = CURRENT_FOLDER / "version.py"
     version_text = version_file.read_text()
     match = re.search(r"\"\d+\.\d+.\d+\"", version_text)
-    browser_lib_version = match.group(0)
+    browser_lib_version = match.group(0) if match else "unknown"
     package_json = INSTALLATION_DIR / "package.json"
     package_json_data = json.loads(package_json.read_text())
     match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
-    pw_version = match.group(0)
+    pw_version = match.group(0) if match else "unknown"
     logging.info(
         f'Installed Browser library version is: {browser_lib_version} with RF "{rf_version.VERSION}"'
     )

@@ -19,7 +19,7 @@ class ExamplePlugin(LibraryComponent):
         self.initialize_js_extension(Path(__file__).parent.resolve() / "jsplugin.js")
         library.scope_stack["last_log_message"] = SettingsStack("", library)
 
-    def end_keyword(self, kw, args):
+    def end_keyword(self, _kw, _args):
         msg = self.library.scope_stack["last_log_message"].get()
         if msg:
             logger.info(msg)

@@ -84,7 +84,7 @@ def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
                 default_value = f"timedelta(seconds={default_value.total_seconds()})"
             elif isinstance(default_value, SelectionType):
                 default_value = f"SelectionType.{default_value}"
-            arg_str = f"{arg_str} = {default_value}"
+            arg_str = f"{arg_str} = {str(default_value)}"
         else:
             arg_str = argument
             arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
@@ -110,11 +110,20 @@ from typing import Any
 
 import assertionengine
 
+from robotlibcore import DynamicCore  # type: ignore
+
 from .utils.data_types import *
+from .base import LibraryComponent
 
 
-class Browser:
+class Browser(DynamicCore):
     timeout: Any = ...
+    scope_stack: typing.Dict = ...
+    _old_init_args: typing.Dict = ...
+    _playwright_state: Any = ...
+    _browser_control: Any = ...
+
+
 """
 
 pyi_non_kw_methods = """\
@@ -123,11 +132,12 @@ pyi_non_kw_methods = """\
     def millisecs_to_timestr(self, timeout: float)  -> str: ...
     def get_strict_mode(self, strict: Union[bool, None]) -> bool: ...
     def _parse_run_on_failure_keyword(self, keyword_name: Union[str, None]) -> DelayedKeyword: ...
+    def _create_lib_component_from_jsextension(self, jsextension: str) -> LibraryComponent: ...
 
 """
 
 init_method = KeywordBuilder.build(br.__init__)
-with open("Browser/__init__.pyi", "w") as stub_file:
+with open("Browser/browser.pyi", "w") as stub_file:
     stub_file.write(pyi_boilerplate)
     init_string = keyword_line(
         init_method.argument_specification, init_method.argument_types, "__init__"

@@ -225,7 +225,7 @@ class Control(LibraryComponent):
         self.timeout_stack.set(self.convert_timeout(timeout), scope)
         return old_timeout
 
-    def _set_playwright_timeout(self, timeout):
+    def set_playwright_timeout(self, timeout):
         try:
             with self.playwright.grpc_channel() as stub:
                 response = stub.SetTimeout(Request().Timeout(timeout=timeout))

@@ -138,7 +138,6 @@ Get Classes And Assert
     Get Classes    id=draggable    ==    react-draggable    box    react-draggable-dragged
     Get Classes    id=draggable    validate    "react-draggable-dragged" in value
 
-
 Get Element Count
     [Setup]    Ensure Location    ${LOGIN_URL}
     ${count} =    Get Element Count    h1
