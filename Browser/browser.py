@@ -1267,7 +1267,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     self.run_on_failure_keyword.name == "take_screenshot"
                     and not varargs
                 ):
-                    varargs = [self._failure_screenshot_path()]
+                    varargs = (self._failure_screenshot_path(),)
                 self.keywords[self.run_on_failure_keyword.name](*varargs, **kwargs)
             else:
                 BuiltIn().run_keyword(

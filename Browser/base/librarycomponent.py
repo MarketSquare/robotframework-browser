@@ -19,7 +19,7 @@ from copy import copy, deepcopy
 from datetime import timedelta
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Union
 
 from robot.libraries.BuiltIn import BuiltIn
 from robot.utils import timestr_to_secs
@@ -282,7 +282,7 @@ class LibraryComponent:
 
     @property
     def get_presenter_mode(self) -> HighLightElement:
-        mode: dict = {}
+        mode: Union[HighLightElement, Dict] = {}
         if isinstance(self.library.presenter_mode, dict):
             mode = copy(self.library.presenter_mode)
         duration = mode.get("duration", "2 seconds")
@@ -291,7 +291,9 @@ class LibraryComponent:
         width = mode.get("width", "2px")
         style = mode.get("style", "dotted")
         color = mode.get("color", "blue")
-        return {"duration": duration, "width": width, "style": style, "color": color}
+        return HighLightElement(
+            duration=duration, width=width, style=style, color=color
+        )
 
     def presenter_mode(self, selector, strict):
         selector = self.resolve_selector(selector)
