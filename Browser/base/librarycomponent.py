@@ -41,7 +41,7 @@ class LibraryComponent:
         :param library: The library itself as a context object.
         """
         self.library = library
-        self._crypto = None
+        self._crypto: Optional[Any] = None
 
     @property
     def playwright(self):
@@ -284,7 +284,7 @@ class LibraryComponent:
     def get_presenter_mode(self) -> HighLightElement:
         mode: dict = {}
         if isinstance(self.library.presenter_mode, dict):
-            mode = copy(self.library.presenter_mode)  # type: ignore
+            mode = copy(self.library.presenter_mode)
         duration = mode.get("duration", "2 seconds")
         if not isinstance(duration, timedelta):
             duration = timedelta(seconds=timestr_to_secs(duration))

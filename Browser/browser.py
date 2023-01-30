@@ -732,7 +732,7 @@ class Browser(DynamicCore):
     _context_cache = ContextCache()
     _suite_cleanup_done = False
 
-    old_init_args = {
+    _old_init_args = {
         "timeout": timedelta,
         "enable_playwright_debug": bool,
         "auto_closing_level": AutoClosingLevel,
@@ -788,8 +788,8 @@ class Browser(DynamicCore):
 
         """
         self.ROBOT_LIBRARY_LISTENER = self
-        self.scope_stack = {}
-        old_args_list = list(self.old_init_args.items())
+        self.scope_stack: Dict = {}
+        old_args_list = list(self._old_init_args.items())
         pos_params = {}
         for index, pos_arg in enumerate(deprecated_pos_args):
             argument_name = old_args_list[index][0]
@@ -859,7 +859,7 @@ class Browser(DynamicCore):
         self.scope_stack["timeout"] = SettingsStack(
             self.convert_timeout(params["timeout"]),
             self,
-            self._browser_control._set_playwright_timeout,
+            self._browser_control.set_playwright_timeout,
         )
         self.scope_stack["retry_assertions_for"] = SettingsStack(
             self.convert_timeout(params["retry_assertions_for"]), self
@@ -1056,7 +1056,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def state_file(self):
         return self.browser_output / "state"
 
-    def _start_suite(self, name, attrs):
+    def _start_suite(self, _name, attrs):
         self._add_to_scope_stack(attrs, Scope.Suite)
         if not Browser._suite_cleanup_done:
             Browser._suite_cleanup_done = True
@@ -1075,7 +1075,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, name, attrs):
+    def _start_test(self, _name, attrs):
         self._add_to_scope_stack(attrs, Scope.Test)
         self.is_test_case_running = True
         if self._auto_closing_level == AutoClosingLevel.TEST:
@@ -1084,7 +1084,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
-    def _start_keyword(self, name, attrs):
+    def _start_keyword(self, _name, attrs):
         if not (
             self.show_keyword_call_banner is False
             or (self.show_keyword_call_banner is None and not self.presenter_mode)
@@ -1126,7 +1126,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             tags.append("plugin")
         return tags
 
-    def _end_keyword(self, name, attrs):
+    def _end_keyword(self, _name, attrs):
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
             self._set_logging(True)
 

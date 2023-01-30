@@ -55,7 +55,7 @@ Pluging Keyword Example Location
     Should Be Equal    ${location.protocol}    http:
     Should Be Equal    ${location.href}    ${FORM_URL}
 
-# TODO  ADD THESE TESTS WHEN NEW PLC IS RELEASED
+# TODO    ADD THESE TESTS WHEN NEW PLC IS RELEASED
 #Check Plugin Suite Scope Setting 1
 #    [Documentation]
 #    ...    LOG 1:3    INFO    Suite Level Message
