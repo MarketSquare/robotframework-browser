@@ -133,6 +133,11 @@ Get Classes And Assert
     Get Classes    id=draggable    contains    react-draggable
     Get Classes    id=draggable    ==    react-draggable    box
     Get Classes    id=draggable    validate    "react-draggable-dragged" not in value
+    Drag And Drop Relative To    id=draggable    10    10    steps=2
+    Get Classes    id=draggable    *=    react-draggable    box
+    Get Classes    id=draggable    ==    react-draggable    box    react-draggable-dragged
+    Get Classes    id=draggable    validate    "react-draggable-dragged" in value
+
 
 Get Element Count
     [Setup]    Ensure Location    ${LOGIN_URL}

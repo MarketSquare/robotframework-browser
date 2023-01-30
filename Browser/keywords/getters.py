@@ -373,8 +373,8 @@ class Getters(LibraryComponent):
         is not done.
 
         Available assertions:
-        - ``==`` and ``!=`` can work with multiple values
-        - ``contains`` / ``*=`` only accepts one single expected value
+        - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
+        - ``validate`` and ``evaluate`` only accepts one single expected value
 
         Other operators are not allowed.
 
@@ -419,8 +419,8 @@ class Getters(LibraryComponent):
         is not done.
 
         Available assertions:
-        - ``==`` and ``!=`` can work with multiple values
-        - ``contains`` / ``*=`` only accepts one single expected value
+        - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
+        - ``validate`` and ``evaluate`` only accepts one single expected value
 
         Other operators are not allowed.
 
@@ -526,8 +526,8 @@ class Getters(LibraryComponent):
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
-        - ``==`` and ``!=`` can work with multiple values
-        - ``contains`` / ``*=`` only accepts one single expected value
+        - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
+        - ``validate`` and ``evaluate`` only accepts one single expected value
 
         Other operators are not allowed.
 
