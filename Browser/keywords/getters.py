@@ -972,7 +972,6 @@ class Getters(LibraryComponent):
             )
         parsed_response = json.loads(response.json)
         formatter = self.keyword_formatters.get(self.get_style)
-        logger.console(type(parsed_response))
         if key == "" or isinstance(parsed_response, dict):
             if formatter:
                 logger.warn(
