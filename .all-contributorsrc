@@ -993,6 +993,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "wvanasten",
+      "name": "Wilfried van Asten",
+      "avatar_url": "https://avatars.githubusercontent.com/u/93996238?v=4",
+      "profile": "https://github.com/wvanasten",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
