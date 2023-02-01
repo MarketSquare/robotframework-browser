@@ -168,6 +168,7 @@ class Getters(LibraryComponent):
             response = stub.GetTitle(Request().Empty())
             logger.debug(response.log)
             value = response.body
+            logger.info(f"Title: {value!r}")
             formatter = self.keyword_formatters.get(self.get_title)
             return verify_assertion(
                 value,
@@ -212,6 +213,7 @@ class Getters(LibraryComponent):
         selector = self.presenter_mode(selector, self.strict_mode)
         response = self._get_text(selector)
         logger.debug(response.log)
+        logger.info(f"Text: {response.body!r}")
         formatter = self.keyword_formatters.get(self.get_text)
         return verify_assertion(
             response.body,
@@ -271,6 +273,7 @@ class Getters(LibraryComponent):
         logger.debug(response.log)
         if response.body:
             value = json.loads(response.body)
+            logger.info(f"Property: {value!r}")
         elif assertion_operator is not None:
             value = None
         else:
@@ -337,7 +340,7 @@ class Getters(LibraryComponent):
         value = json.loads(response.body)
         if assertion_operator is None and value is None:
             raise AttributeError(f"Attribute '{attribute}' not found!")
-        logger.debug(f"Attribute is: {value}")
+        logger.info(f"Attribute is: {value!r}")
         formatter = self.keyword_formatters.get(self.get_attribute)
         return verify_assertion(
             value,

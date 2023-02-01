@@ -56,26 +56,26 @@ Pluging Keyword Example Location
     Should Be Equal    ${location.href}    ${FORM_URL}
 
 Check Plugin Suite Scope Setting 1
-   [Documentation]
-   ...    LOG 1:3    INFO    Suite Level Message
-   ...    LOG 2:3    INFO    Suite Level Message
-   Log    Test
-   Log    Hello
+    [Documentation]
+    ...    LOG 1:3    INFO    Suite Level Message
+    ...    LOG 2:3    INFO    Suite Level Message
+    Log    Test
+    Log    Hello
 
 Set And Check Plugin Scope Setting
-   [Documentation]
-   ...    LOG 1:2    INFO    Hello World
-   ...    LOG 2:2    INFO    Test
-   ...    LOG 2:3    INFO    Hello World
-   ...    LOG 3:2    INFO    Hello
-   ...    LOG 3:3    INFO    Hello World
-   Set Last Log Message    Hello World    scope=Test
-   Log    Test
-   Log    Hello
+    [Documentation]
+    ...    LOG 1:2    INFO    Hello World
+    ...    LOG 2:2    INFO    Test
+    ...    LOG 2:3    INFO    Hello World
+    ...    LOG 3:2    INFO    Hello
+    ...    LOG 3:3    INFO    Hello World
+    Set Last Log Message    Hello World    scope=Test
+    Log    Test
+    Log    Hello
 
 Check Plugin Suite Scope Setting 2
-   [Documentation]
-   ...    LOG 1:3    INFO    Suite Level Message
-   ...    LOG 2:3    INFO    Suite Level Message
-   Log    Test
-   Log    Hello
+    [Documentation]
+    ...    LOG 1:3    INFO    Suite Level Message
+    ...    LOG 2:3    INFO    Suite Level Message
+    Log    Test
+    Log    Hello
