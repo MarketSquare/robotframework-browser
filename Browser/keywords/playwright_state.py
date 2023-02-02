@@ -171,7 +171,7 @@ class PlaywrightState(LibraryComponent):
         """
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
-        for browser_instance in self._get_browser_instances(browser):
+        for browser_instance in self._get_browser_ids(browser):
             if browser_instance["id"] == "NO BROWSER OPEN":
                 logger.info("No browsers open. can not closing context.")
                 return
@@ -199,15 +199,30 @@ class PlaywrightState(LibraryComponent):
                 return []
         return [find_by_id(context, contexts)]
 
-    def _get_browser_instances(self, browser):
+    def _get_browser_ids(self, browser) -> List:
         catalog = self.get_browser_catalog()
         if browser == SelectionType.ALL:
             browser_ids = [browser_instance["id"] for browser_instance in catalog]
         elif browser == SelectionType.CURRENT:
-            browser_ids = [self.switch_browser("CURRENT")]
+            current_browser = self.switch_browser("CURRENT")
+            browser_ids = [current_browser]
+            if current_browser == "NO BROWSER OPEN":
+                browser_ids = []
         else:
             browser_ids = [browser]
         return [find_by_id(browser_id, catalog) for browser_id in browser_ids]
+
+    def _get_context_id(
+        self, context_selection: Union[str, SelectionType], contexts: List
+    ) -> List:
+        if context_selection == SelectionType.CURRENT:
+            current_ctx = self.switch_context("CURRENT")
+            if current_ctx == "NO CONTEXT OPEN":
+                return []
+            contexts = [find_by_id(current_ctx, contexts)]
+        elif context_selection != SelectionType.ALL:
+            contexts = [find_by_id(str(context_selection), contexts)]
+        return contexts
 
     @keyword(tags=("Setter", "BrowserControl"))
     def close_page(
@@ -240,44 +255,24 @@ class PlaywrightState(LibraryComponent):
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
         result = []
+        browser_ids = self._get_browser_ids(browser)
         with self.playwright.grpc_channel() as stub:
-            catalog = self.library.get_browser_catalog()
-
-            if browser == SelectionType.ALL:
-                browser_ids = [b["id"] for b in catalog]
-            elif browser == SelectionType.CURRENT:
-                current_browser = self.switch_browser("CURRENT")
-                browser_ids = [current_browser]
-                if current_browser == "NO BROWSER OPEN":
-                    return
-            else:
-                browser_ids = [browser]
-
-            browsers = [find_by_id(b_id, catalog) for b_id in browser_ids]
-
-            for b in browsers:
-                self.switch_browser(b["id"])
-                contexts = b["contexts"]
-                if context == SelectionType.CURRENT:
-                    current_ctx = self.switch_context("CURRENT")
-                    if current_ctx == "NO CONTEXT OPEN":
-                        return
-                    contexts = [find_by_id(current_ctx, contexts)]
-                elif context != SelectionType.ALL:
-                    contexts = [find_by_id(str(context), contexts)]
-                for c in contexts:
-
-                    self.switch_context(c["id"])
+            for browser_id in browser_ids:
+                self.switch_browser(browser_id["id"])
+                contexts_ids = browser_id["contexts"]
+                contexts_ids = self._get_context_id(context, contexts_ids)
+                for context_id in contexts_ids:
+                    self.switch_context(context_id["id"])
                     if page == SelectionType.ALL:
-                        page_ids = [p["id"] for p in c["pages"]]
+                        pages_ids = [p["id"] for p in context_id["pages"]]
                     else:
-                        page_ids = [page]
+                        pages_ids = [page]
 
-                    for p in page_ids:
-                        if p == "NO PAGE OPEN":
+                    for page_id in pages_ids:
+                        if page_id == "NO PAGE OPEN":
                             return
                         if page != SelectionType.CURRENT:
-                            self.switch_page(p)
+                            self.switch_page(page_id)
                         response = stub.ClosePage(Request().Empty())
                         if response.log:
                             logger.info(response.log)
@@ -891,7 +886,7 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Dict:
+    ) -> List:
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
         See `Browser, Context and Page` for more information about these concepts.
