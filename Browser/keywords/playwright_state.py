@@ -1033,6 +1033,21 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
+    def _get_page_uid(self, id) -> str:
+        if isinstance(id, dict):
+            uid = id.get("page_id")
+            if not uid:
+                raise ValueError(
+                    f"Invalid page id format: {id} . Expected format: {NewPageDetails.__annotations__}"
+                )
+        else:
+            uid = SelectionType.create(id)
+        if isinstance(uid, str) and not (
+            uid.lower().startswith("page=") or uid.upper() == "NEW"
+        ):
+            raise ValueError(f"Malformed page `id`: {uid}")
+        return uid
+
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_page(
         self,
@@ -1063,22 +1078,7 @@ class PlaywrightState(LibraryComponent):
         browser = SelectionType.create(browser)
         correct_context_selected = True
         correct_browser_selected = True
-
-        def _all(value: Union[SelectionType, str]) -> bool:
-            return value == SelectionType.ALL
-
-        if isinstance(id, dict):
-            uid = id.get("page_id")
-            if not uid:
-                raise ValueError(
-                    f"Invalid page id format: {id} . Expected format: {NewPageDetails.__annotations__}"
-                )
-        else:
-            uid = SelectionType.create(id)
-        if isinstance(uid, str) and not (
-            uid.lower().startswith("page=") or uid.upper() == "NEW"
-        ):
-            raise ValueError(f"Malformed page `id`: {uid}")
+        uid = self._get_page_uid(id)
 
         if (
             not (isinstance(uid, str) and uid.upper() == "NEW")
