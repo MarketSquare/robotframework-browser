@@ -4,3 +4,4 @@ exclude =
    generated,
 	 wrapper
 ignore = E501, W503, B008, B028
+max-complexity = 10
