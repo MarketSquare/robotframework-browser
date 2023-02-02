@@ -119,8 +119,18 @@ def _walk_install_dir():
     return lines
 
 
-def _rfbrowser_init(skip_browser_install: bool):
-    logging.info("Installing node dependencies...")
+def _check_npm():
+    try:
+        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=SHELL)
+    except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
+        logging.info(
+            "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
+            "See https://nodejs.org/ for documentation"
+        )
+        raise exception
+
+
+def _check_files_and_access():
     if not (INSTALLATION_DIR / "package.json").is_file():
         logging.info(
             f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json ",
@@ -135,17 +145,12 @@ def _rfbrowser_init(skip_browser_install: bool):
             f"`rfbrowser init` needs write permissions to {INSTALLATION_DIR}"
         )
 
+
+def _rfbrowser_init(skip_browser_install: bool):
+    logging.info("Installing node dependencies...")
+    _check_files_and_access()
+    _check_npm()
     logging.info(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
-
-    try:
-        subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=SHELL)
-    except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
-        logging.info(
-            "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
-            "See https://nodejs.org/ for documentation"
-        )
-        raise exception
-
     if skip_browser_install:
         os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
     else:
