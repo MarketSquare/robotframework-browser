@@ -374,7 +374,7 @@ class PlaywrightState(LibraryComponent):
         | ``handleSIGTERM`` | Close the browser process on SIGTERM. Defaults to True. |
         | ``ignoreDefaultArgs`` | If an array is given, then filters out the given default arguments. Defaults to None. |
         | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}`` |
-        | ``reuse_existing`` | If set to True, then the existing browser instance will be reused. Defaults to True. |
+        | ``reuse_existing`` | If set to True, an existing browser instance, that matches the same arguments, will be reused. If no same configured Browser exist, a new one is started. Defaults to True. |
         | ``slowMo`` | Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay. |
         | ``timeout`` | Maximum time in Robot Framework time format to wait for the browser instance to start. Defaults to 30 seconds. Pass 0 to disable timeout. |
 
