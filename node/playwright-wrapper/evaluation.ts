@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { Frame, Page } from 'playwright';
+import { Frame, Page, selectors } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
@@ -21,8 +21,10 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
 import { findLocator } from './playwright-invoke';
 
-import * as pino from 'pino';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import { click, internalClick } from './interaction';
+import { getText } from './getters';
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 declare global {
     interface Window {
@@ -72,6 +74,14 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     return jsonResponse(JSON.stringify(response), `Found ${count} Locators successfully.`);
 }
 
+const tryToTransformStringToFunction = (str: string): string | (() => unknown) => {
+    try {
+        return new Function('return ' + str)();
+    } catch (ignored) {
+        return str;
+    }
+};
+
 export async function executeJavascript(
     request: Request.JavascriptCode,
     state: PlaywrightState,
@@ -79,19 +89,39 @@ export async function executeJavascript(
 ): Promise<Response.JavascriptExecutionResult> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    let script = request.getScript();
+    const script = tryToTransformStringToFunction(request.getScript());
     let elem;
-    try {
-        script = eval(script);
-    } catch (error) {
-        logger.info(`On executeJavascript, supress ${error} for eval.`);
-    }
     if (selector) {
         const locator = await findLocator(state, selector, strictMode, undefined, true);
         elem = await locator.elementHandle();
     }
     const result = await page.evaluate(script, elem);
     return jsResponse(result as string, 'JavaScript executed successfully.');
+}
+
+export async function evaluateJavascript(
+    request: Request.EvaluateAll,
+    state: PlaywrightState,
+    page: Page,
+): Promise<Response.JavascriptExecutionResult> {
+    const selector = request.getSelector();
+    const script = tryToTransformStringToFunction(request.getScript());
+    const strictMode = request.getStrict();
+    const arg = JSON.parse(request.getArg());
+    const allElements = request.getAllelements();
+
+    async function getJSResult() {
+        if (selector !== '') {
+            const locator = await findLocator(state, selector, strictMode, undefined, !allElements);
+            if (allElements) {
+                return await locator.evaluateAll(script, arg);
+            }
+            return await locator.evaluate(script, arg);
+        }
+        return await page.evaluate(script, arg);
+    }
+
+    return jsResponse((await getJSResult()) as string, 'JavaScript executed successfully.');
 }
 
 export async function getPageState(page: Page): Promise<Response.JavascriptExecutionResult> {
@@ -121,27 +151,21 @@ export async function waitForFunction(
     state: PlaywrightState,
     page: Page,
 ): Promise<Response.Json> {
-    let script = request.getScript();
+    const script = tryToTransformStringToFunction(request.getScript());
     const selector = request.getSelector();
     const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
-    logger.info(`unparsed args: ${script}, ${request.getSelector()}, ${request.getOptions()}`);
+    logger.info(`unparsed args: ${request.getScript()}, ${request.getSelector()}, ${request.getOptions()}`);
 
     let elem;
-    try {
-        script = eval(script);
-    } catch (error) {
-        logger.info(`On waitForFunction, supress ${error} for eval.`);
-    }
     if (selector) {
         const locator = await findLocator(state, selector, strictMode, undefined, true);
         elem = await locator.elementHandle();
-        script = eval(script);
     }
 
     // TODO: This might behave weirdly if element selector points to a different page
     const result = await page.waitForFunction(script, elem, options);
-    return jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Function completed succesfully.');
+    return jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Function completed successfully.');
 }
 
 export async function addStyleTag(request: Request.StyleTag, page: Page): Promise<Response.Empty> {
@@ -150,6 +174,8 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
     return emptyWithLog('added Style: ' + content);
 }
 
+const selectorsForPage: { [key: string]: unknown[] } = {};
+
 export async function recordSelector(
     request: Request.Label,
     state: PlaywrightState,
@@ -157,19 +183,39 @@ export async function recordSelector(
     if (state.getActiveBrowser().headless) {
         throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
     }
-    const page = state.getActivePage() as Page;
+    const activeBrowser = state.activeBrowser;
+    if (!activeBrowser) {
+        throw Error('No active browser.');
+    }
+    const indexedPage = activeBrowser.page;
+    if (!indexedPage) {
+        throw Error('No active page.');
+    }
+    const page = indexedPage.p;
     await page.bringToFront();
-    const myselectors: unknown[] = [];
-    page.exposeFunction('setRecordedSelector', (index: number, item: unknown) => {
-        while (myselectors.length > index) {
-            myselectors.pop();
-        }
-        myselectors.push(item);
-    });
-    page.exposeFunction('getRecordedSelectors', () => {
-        return myselectors;
-    });
+    // If the page already has recorder then skipping creation
+    if (!(indexedPage.id in selectorsForPage)) {
+        const myselectors: unknown[] = [];
+        selectorsForPage[indexedPage.id] = myselectors;
+        await page.exposeFunction('setRecordedSelector', (index: number, item: unknown) => {
+            while (myselectors.length > index) {
+                myselectors.pop();
+            }
+            myselectors.push(item);
+        });
+        await page.exposeFunction('getRecordedSelectors', () => {
+            return myselectors;
+        });
+        await page.exposeFunction('highlightPWSelector', (selector: string) => {
+            highlightAll(selector, 1000, '3px', 'dotted', 'blue', false, state);
+        });
+    }
+
     const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
+    // clean old recording array for the next run on the page
+    while (selectorsForPage[indexedPage.id].length) {
+        selectorsForPage[indexedPage.id].pop();
+    }
     return jsResponse(result, 'Selector recorded.');
 }
 
@@ -256,8 +302,28 @@ export async function highlightElements(
     const style = request.getStyle();
     const color = request.getColor();
     const strictMode = request.getStrict();
+    const count = await highlightAll(selector, duration, width, style, color, strictMode, state);
+    return emptyWithLog(`Highlighted ${count} elements for ${duration}.`);
+}
+
+async function highlightAll(
+    selector: string,
+    duration: number,
+    width: string,
+    style: string,
+    color: string,
+    strictMode: boolean,
+    state: PlaywrightState,
+): Promise<number> {
     const locator = await findLocator(state, selector, strictMode, undefined, false);
-    const count = locator.count();
+    let count: number;
+    try {
+        count = await locator.count();
+    } catch (e) {
+        logger.info(e);
+        return 0;
+    }
+    logger.info(`Locator count is ${count}`);
     await locator.evaluateAll(
         (elements: Array<Element>, options: any) => {
             elements.forEach((e: Element) => {
@@ -280,7 +346,7 @@ export async function highlightElements(
         },
         { dur: duration, wdt: width, stl: style, clr: color },
     );
-    return emptyWithLog(`Highlighted ${count} elements for ${duration}.`);
+    return count;
 }
 
 export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.Json> {
@@ -300,6 +366,10 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
         throw new Error('Download requires an active page');
     }
     const urlString = request.getUrl();
+    const fromUrl = page.url();
+    if (fromUrl === 'about:blank') {
+        throw new Error('Download requires that the page has been navigated to an url');
+    }
     const script = (urlString: string): Promise<string | void> => {
         return fetch(urlString)
             .then((resp) => {

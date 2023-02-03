@@ -1,5 +1,4 @@
 *** Settings ***
-Library     Browser
 Resource    imports.resource
 
 *** Test Cases ***
@@ -17,9 +16,9 @@ Get Device
     Should Be True    ${device}[isMobile]
     Should Be True    ${device}[hasTouch]
 
-Get Device with Screen
+Get Device With Screen
     ${device} =    Get Device    iPhone 11
-    New Browser
+    New Browser    headless=${HEADLESS}
     New Context    &{device}    acceptDownloads=True
 
 Get Invalid Device Errors
@@ -27,7 +26,7 @@ Get Invalid Device Errors
     ...    Error: No device named NonExistentDeviceName
     ...    Get Device    NonExistentDeviceName
 
-Descriptor Properly sets context settings
+Descriptor Properly Sets Context Settings
     ${device} =    Get Device    Galaxy S5
     New Context    &{device}
     New Page

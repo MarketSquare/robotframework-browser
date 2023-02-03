@@ -13,11 +13,33 @@
 # limitations under the License.
 
 import time
-from typing import Optional
+from typing import Optional, Union
 
 import wrapt  # type: ignore
+from assertionengine import AssertionOperator
+from typing_extensions import get_args, get_origin
 
 from .utils import logger
+
+
+def assertion_operator_is_set(wrapped, args, kwargs):
+    assertion_operator = None
+    assertion_op_name = None
+    assertion_op_index = None
+    for index, (_arg, typ) in enumerate(wrapped.__annotations__.items()):
+        if get_origin(typ) is Union:
+            if AssertionOperator in get_args(typ):
+                assertion_op_index = index
+                break
+        if typ is AssertionOperator:
+            assertion_op_index = index
+            break
+    if assertion_op_index is not None:
+        if len(args) > assertion_op_index:
+            assertion_operator = args[assertion_op_index]
+        elif assertion_op_name in kwargs:
+            assertion_operator = kwargs[assertion_op_name]
+    return assertion_operator
 
 
 @wrapt.decorator
@@ -45,10 +67,11 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
                 logger.clear_thread_stash()
     finally:
         logger.flush_and_delete_thread_stash()
-        now = time.time()
-        logger.debug(
-            f"""Assertion polling statistics:
-First element asserted in: {(retries_start or now) - start} seconds
-Total tries: {tries}
-Elapsed time in retries {now - (retries_start or now)} seconds"""
-        )
+        if retry_assertions_until and assertion_operator_is_set(wrapped, args, kwargs):
+            now = time.time()
+            logger.debug(
+                f"Assertion polling statistics:\n"
+                f"First element asserted in: {(retries_start or now) - start} seconds\n"
+                f"Total tries: {tries}\n"
+                f"Elapsed time in retries {now - (retries_start or now)} seconds"
+            )

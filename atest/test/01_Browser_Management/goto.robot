@@ -1,13 +1,16 @@
 *** Settings ***
-Resource    imports.resource
+Resource        imports.resource
+
+Suite Setup     Close Page    ALL
 
 *** Test Cases ***
 No Open Browser Throws
-    Run KeyWord and Expect Error
+    Run KeyWord And Expect Error
     ...    Error: No page open.
     ...    GoTo    "about:blank"
 
 Open GoTo GoBack GoForward
+    [Tags]    slow
     [Setup]    New Page    ${LOGIN_URL}
     Go To    ${WELCOME_URL}
     Get Url    ==    ${WELCOME_URL}
@@ -20,20 +23,26 @@ Open GoTo GoBack GoForward
     Get Url    ==    ${WELCOME_URL}
     Go Forward
     Get Url    ==    ${ERROR_URL}
-    [Teardown]    Close Browser
+    [Teardown]    Close Context
 
 Timeouting Go To
     New Page    ${LOGIN_URL}
-    ${timeout} =    Set Browser Timeout    10ms
-    Run KeyWord and Expect Error
-    ...    TimeoutError: page.goto: Timeout 10ms exceeded.*
+    ${timeout} =    Set Browser Timeout    2ms
+    Run KeyWord And Expect Error
+    ...    TimeoutError: page.goto: Timeout 2ms exceeded.*
     ...    Go To    ${WELCOME_URL}
-    Set Browser Timeout    ${timeout}
-    [Teardown]    Close Browser
+    [Teardown]    Teardown For Timeouting Go To    ${timeout}
 
-Timeouting Go To With Custom timeout
+Timeouting Go To With Custom Timeout
+    [Tags]    slow
     New Page    ${LOGIN_URL}
-    Run KeyWord and Expect Error
-    ...    TimeoutError: page.goto: Timeout 10ms exceeded.*
-    ...    Go To    ${WELCOME_URL}    10 ms
-    [Teardown]    Close Browser
+    Run KeyWord And Expect Error
+    ...    TimeoutError: page.goto: Timeout 3ms exceeded.*
+    ...    Go To    ${WELCOME_URL}    3 ms
+    [Teardown]    Close Context
+
+*** Keywords ***
+Teardown For Timeouting Go To
+    [Arguments]    ${timeout}
+    Set Browser Timeout    ${timeout}
+    Close Browser

@@ -12,13 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import re
+import traceback
 from concurrent.futures._base import Future
-from copy import deepcopy
+from copy import copy, deepcopy
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Set, Union
+from pathlib import Path
+from time import sleep
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Union
 
-from ..utils import get_variable_value, logger
-from ..utils.data_types import DelayedKeyword
+from robot.libraries.BuiltIn import BuiltIn
+from robot.utils import timestr_to_secs
+
+from ..generated.playwright_pb2 import Response
+from ..utils import SettingsStack, get_variable_value, logger
+from ..utils.data_types import DelayedKeyword, HighLightElement
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -33,26 +41,98 @@ class LibraryComponent:
         :param library: The library itself as a context object.
         """
         self.library = library
+        self._crypto: Optional[Any] = None
 
     @property
     def playwright(self):
         return self.library.playwright
 
     @property
-    def timeout(self) -> float:
-        return self.library.timeout
+    def keyword_call_banner_add_style(self) -> str:
+        return self.library.scope_stack["keyword_call_banner_add_style"].get()
 
-    @timeout.setter
-    def timeout(self, value: float):
-        self.library.timeout = value
+    @property
+    def keyword_call_banner_add_style_stack(self) -> SettingsStack:
+        return self.library.scope_stack["keyword_call_banner_add_style"]
+
+    @keyword_call_banner_add_style_stack.setter
+    def keyword_call_banner_add_style_stack(self, stack: SettingsStack):
+        self.library.scope_stack["keyword_call_banner_add_style"] = stack
+
+    @property
+    def show_keyword_call_banner(self) -> bool:
+        return self.library.scope_stack["show_keyword_call_banner"].get()
+
+    @property
+    def show_keyword_call_banner_stack(self) -> SettingsStack:
+        return self.library.scope_stack["show_keyword_call_banner"]
+
+    @show_keyword_call_banner_stack.setter
+    def show_keyword_call_banner_stack(self, stack: SettingsStack):
+        self.library.scope_stack["show_keyword_call_banner"] = stack
+
+    @property
+    def run_on_failure_keyword(self) -> DelayedKeyword:
+        return self.library.scope_stack["run_on_failure"].get()
+
+    @property
+    def run_on_failure_keyword_stack(self) -> SettingsStack:
+        return self.library.scope_stack["run_on_failure"]
+
+    @run_on_failure_keyword_stack.setter
+    def run_on_failure_keyword_stack(self, stack: SettingsStack):
+        self.library.scope_stack["run_on_failure"] = stack
+
+    @property
+    def timeout(self) -> float:
+        return self.library.scope_stack["timeout"].get()
+
+    @property
+    def timeout_stack(self) -> SettingsStack:
+        return self.library.scope_stack["timeout"]
+
+    @timeout_stack.setter
+    def timeout_stack(self, stack: SettingsStack):
+        self.library.scope_stack["timeout"] = stack
 
     @property
     def retry_assertions_for(self) -> float:
-        return self.library.retry_assertions_for
+        return self.library.scope_stack["retry_assertions_for"].get()
 
-    @retry_assertions_for.setter
-    def retry_assertions_for(self, value: float):
-        self.library.retry_assertions_for = value
+    @property
+    def retry_assertions_for_stack(self) -> SettingsStack:
+        return self.library.scope_stack["retry_assertions_for"]
+
+    @retry_assertions_for_stack.setter
+    def retry_assertions_for_stack(self, stack: SettingsStack):
+        self.library.scope_stack["retry_assertions_for"] = stack
+
+    @property
+    def selector_prefix(self) -> str:
+        return self.library.scope_stack["selector_prefix"].get()
+
+    @property
+    def selector_prefix_stack(self) -> SettingsStack:
+        return self.library.scope_stack["selector_prefix"]
+
+    @selector_prefix_stack.setter
+    def selector_prefix_stack(self, stack: SettingsStack):
+        self.library.scope_stack["selector_prefix"] = stack
+
+    def resolve_selector(self, selector: Optional[str]) -> str:
+        if not selector:
+            return ""
+        if selector.startswith("!prefix "):
+            logger.trace("Using selector prefix, but muting Prefix.")
+            return selector[8:]
+        if selector.startswith("element=") or not self.selector_prefix:
+            return selector
+        if selector.startswith(f"{self.selector_prefix} "):
+            return selector
+        logger.debug(
+            f"Using selector prefix. Selector: '{self.selector_prefix} {selector}'"
+        )
+        return f"{self.selector_prefix} {selector}"
 
     @property
     def unresolved_promises(self):
@@ -76,19 +156,27 @@ class LibraryComponent:
 
     @property
     def screenshots_output(self):
-        return self.browser_output / "screenshot"
+        return self.library.screenshots_output
 
     @property
     def video_output(self):
-        return self.browser_output / "video"
+        return self.library.video_output
 
     @property
     def traces_output(self):
-        return self.browser_output / "traces"
+        return self.library.traces_output
 
     @property
     def state_file(self):
-        return self.browser_output / "state"
+        return self.library.state_file
+
+    def initialize_js_extension(
+        self, js_extension_path: Union[Path, str]
+    ) -> Response.Keywords:
+        return self.library.init_js_extension(js_extension_path=js_extension_path)
+
+    def call_js_keyword(self, keyword_name: str, **args) -> Any:
+        return self.library.call_js_keyword(keyword_name, **args)
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         return self.library.get_timeout(timeout)
@@ -101,16 +189,54 @@ class LibraryComponent:
     def millisecs_to_timestr(self, timeout: float) -> str:
         return self.library.millisecs_to_timestr(timeout)
 
-    def resolve_secret(
-        self, secret_variable: Any, original_secret: Any, arg_name: str
-    ) -> str:
+    def resolve_secret(self, secret_variable: Any, arg_name: str) -> str:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
-        if secret == original_secret:
-            logger.warn(
-                f"Direct assignment of values as '{arg_name}' is deprecated. Use special "
-                "variable syntax to resolve variable. Example $var instead of ${var}."
+        secret = self.decrypt_with_crypto_library(secret)
+        if secret == secret_variable:
+            raise ValueError(
+                f"Direct assignment of values or variables as '{arg_name}' is not allowed. "
+                "Use special variable syntax ($var instead of ${var}) "
+                "to prevent variable values from being spoiled."
             )
         return secret
+
+    def decrypt_with_crypto_library(self, secret):
+        if not isinstance(secret, str) or not re.match(r"^crypt:(.*)", secret):
+            return secret
+        logger.trace("CryptoLibrary string pattern found.")
+        self._import_crypto_library()
+        if self._crypto:
+            try:
+                plain_text = self._crypto.decrypt_text(secret)
+                logger.trace("Successfully decrypted secret with CryptoLibrary.")
+                return plain_text
+            except Exception as excep:
+                logger.warn(excep)
+                logger.trace(traceback.format_exc())
+        return secret
+
+    def _import_crypto_library(self):
+        if self._crypto is None:
+            try:
+                try:
+                    logger.trace(
+                        "Trying to import CryptoLibrary instance from Robot Framework."
+                    )
+                    crypto_library = BuiltIn().get_library_instance("CryptoLibrary")
+                    self._crypto = crypto_library.crypto
+                except RuntimeError:
+                    logger.trace(
+                        "Getting CryptoLibrary failed, trying to import directly."
+                    )
+                    from CryptoLibrary.utils import CryptoUtility  # type: ignore
+
+                    self._crypto = CryptoUtility()
+            except ImportError:
+                logger.trace(traceback.format_exc())
+                logger.trace("CryptoLibrary import failed, using plain string.")
+                self._crypto = False
+                return
+            logger.trace("CryptoLibrary import succeeded.")
 
     def _replace_placeholder_variables(self, placeholder):
         if isinstance(placeholder, dict):
@@ -120,6 +246,8 @@ class LibraryComponent:
         return self._replace_placeholder_variable(placeholder)
 
     def _replace_placeholder_variable(self, placeholder):
+        if isinstance(placeholder, str) and len(placeholder) == 0:
+            return placeholder
         if not isinstance(placeholder, str) or placeholder[:1] not in "$%":
             return placeholder
         if placeholder.startswith("%"):
@@ -133,13 +261,65 @@ class LibraryComponent:
 
     @property
     def strict_mode(self) -> bool:
-        return self.library.strict_mode
+        return self.library.scope_stack["strict_mode"].get()
 
-    @strict_mode.setter
-    def strict_mode(self, mode: bool):
-        self.library.strict_mode = mode
+    @property
+    def strict_mode_stack(self) -> SettingsStack:
+        return self.library.scope_stack["strict_mode"]
+
+    @strict_mode_stack.setter
+    def strict_mode_stack(self, stack: SettingsStack):
+        self.library.scope_stack["strict_mode"] = stack
 
     def parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]
     ) -> DelayedKeyword:
         return self.library._parse_run_on_failure_keyword(keyword_name)
+
+    @property
+    def keyword_formatters(self) -> dict:
+        return self.library._keyword_formatters
+
+    @property
+    def get_presenter_mode(self) -> HighLightElement:
+        mode: Union[HighLightElement, Dict] = {}
+        if isinstance(self.library.presenter_mode, dict):
+            mode = copy(self.library.presenter_mode)
+        duration = mode.get("duration", "2 seconds")
+        if not isinstance(duration, timedelta):
+            duration = timedelta(seconds=timestr_to_secs(duration))
+        width = mode.get("width", "2px")
+        style = mode.get("style", "dotted")
+        color = mode.get("color", "blue")
+        return HighLightElement(
+            duration=duration, width=width, style=style, color=color
+        )
+
+    def presenter_mode(self, selector, strict):
+        selector = self.resolve_selector(selector)
+        if self.library.presenter_mode:
+            mode = self.get_presenter_mode
+            try:
+                self.library.scroll_to_element(selector)
+                self.library.highlight_elements(
+                    selector,
+                    duration=mode["duration"],
+                    width=mode["width"],
+                    style=mode["style"],
+                    color=mode["color"],
+                )
+            except Exception as error:
+                selector = self.library.record_selector(f'"{selector}" failure')
+                logger.debug(f"On presenter more supress {error}")
+            else:
+                sleep(mode["duration"].seconds)
+        return selector
+
+    def exec_scroll_function(self, function: str, selector: Optional[str] = None):
+        if selector:
+            element_selector = "(element) => element"
+        else:
+            element_selector = "document.scrollingElement"
+        return self.library.evaluate_javascript(
+            selector, f"{element_selector}.{function}"
+        )

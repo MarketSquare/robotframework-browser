@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Frame, Locator, Page } from 'playwright';
+import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
 import { LocatorCount, PlaywrightState } from './playwright-state';
 
-import * as pino from 'pino';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 /**
  * Resolve the playwright Locator on active page, frame or elementHandle.
@@ -75,12 +75,12 @@ async function findInFrames(
     firstOnly: boolean,
 ): Promise<Locator> {
     let selectors = splitFrameAndElementSelector(selector);
-    let frame = await findFrame(activePage, selectors.frameSelector, strictMode);
+    let frame = await findFrameLocator(activePage, selectors.frameSelector, strictMode);
     while (isFramePiercingSelector(selectors.elementSelector)) {
         selectors = splitFrameAndElementSelector(selectors.elementSelector);
-        frame = await findFrame(frame, selectors.frameSelector, strictMode);
+        frame = await findFrameLocator(frame, selectors.frameSelector, strictMode);
     }
-    if (nthLocator) {
+    if (nthLocator !== undefined) {
         logger.info(`Find ${nthLocator} locator in frame.`);
         return frame.locator(selectors.elementSelector).nth(nthLocator);
     } else if (strictMode) {
@@ -93,7 +93,7 @@ async function findInFrames(
             );
             return frame.locator(selectors.elementSelector).first();
         } else {
-            logger.info(`Strict mode is disabled and firstOnly is disbaled, return Locator: ${selector} in frame.`);
+            logger.info(`Strict mode is disabled and firstOnly is disabled, return Locator: ${selector} in frame.`);
             return frame.locator(selectors.elementSelector);
         }
     }
@@ -122,18 +122,18 @@ async function findLocatorNotStrict(
 ): Promise<Locator> {
     if (locator?.locator) {
         if (firstOnly) {
-            logger.info(`Strict mode is disbaled, return first Locator: ${selector} with locator.`);
+            logger.info(`Strict mode is disabled, return first Locator: ${selector} with locator.`);
             return locator.locator.locator(selector).first();
         } else {
-            logger.info(`Strict mode is disbaled, return Locator: ${selector} with locator.`);
+            logger.info(`Strict mode is disabled, return Locator: ${selector} with locator.`);
             return locator.locator.locator(selector);
         }
     } else {
         if (firstOnly) {
-            logger.info(`Strict mode is disbaled, return first Locator: ${selector} in page.`);
+            logger.info(`Strict mode is disabled, return first Locator: ${selector} in page.`);
             return (locator?.locator || activePage).locator(selector).first();
         } else {
-            logger.info(`Strict mode is disbaled, return Locator: ${selector} in page.`);
+            logger.info(`Strict mode is disabled, return Locator: ${selector} in page.`);
             return (locator?.locator || activePage).locator(selector);
         }
     }
@@ -198,11 +198,16 @@ function splitElementHandleAndElementSelector<T>(selector: string): { elementHan
     throw new Error(`Invalid element selector \`${selector}\`.`);
 }
 
-async function findFrame<T>(parent: Page | Frame, frameSelector: string, strictMode: boolean): Promise<Frame> {
-    logger.info(`Find frame with ${frameSelector} and strict mode ${strictMode}`);
-    const contentFrame = await (await parent.$(frameSelector, { strict: strictMode }))?.contentFrame();
-    exists(contentFrame, `Could not find frame with selector ${frameSelector}`);
-    return contentFrame;
+async function findFrameLocator<T>(
+    parent: Page | FrameLocator,
+    frameSelector: string,
+    strictMode: boolean,
+): Promise<FrameLocator> {
+    if (strictMode) {
+        return parent.frameLocator(frameSelector);
+    } else {
+        return parent.frameLocator(frameSelector).first();
+    }
 }
 
 // This is necessary for improved typescript inference

@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from approvaltests import verify  # type: ignore
+from approvaltests.approvals import verify  # type: ignore
 
 from Browser.base import ContextCache
 

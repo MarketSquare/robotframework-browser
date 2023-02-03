@@ -1,6 +1,14 @@
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import React, { useState } from 'react';
 
+// Remove after fix:
+// https://github.com/react-grid-layout/react-draggable/pull/648#issuecomment-1100110050
+declare module 'react-draggable' {
+    export interface DraggableProps {
+        children: React.ReactNode;
+    }
+}
+
 export function DragGame() {
     const goal = {
         top: 500,

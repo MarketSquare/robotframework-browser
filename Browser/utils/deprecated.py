@@ -12,28 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import inspect
-from functools import wraps
-from typing import Callable, Tuple
-
-from robot.api import logger  # type: ignore
-
-
-def attribute_warning(old_args: Tuple[str, str], new_args: Tuple[str, str]):
-    def actual_decorator(method):
-        @wraps(method)
-        def wrapper(*args, **kwargs):
-            kw_name = _method_to_keyword(method.__name__)
-            for index, old_arg in enumerate(old_args):
-                if _is_deprecated_attribute(method, old_arg, args, kwargs):
-                    logger.warn(
-                        f"Browser library {kw_name} keyword "
-                        f"has deprecated {old_arg}, use {new_args[index]}",
-                    )
-            return method(*args, **kwargs)
-
-        return wrapper
-
-    return actual_decorator
+from typing import Callable
 
 
 def _method_to_keyword(method: str) -> str:

@@ -16,8 +16,8 @@ import json
 from datetime import datetime
 from typing import List, Optional, Union
 
-from robot.libraries.DateTime import convert_date  # type: ignore
-from robot.utils import DotDict  # type: ignore
+from robot.libraries.DateTime import convert_date
+from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -39,6 +39,8 @@ class Cookie(LibraryComponent):
         If ``return_type`` is ``string`` or ``str``, then keyword returns the cookie as a string in format:
         ``name1=value1; name2=value2; name3=value3``. The return value contains only ``name`` and ``value`` keys of the
         cookie.
+
+        [https://forum.robotframework.org/t//4266|Comment >>]
         """
         response, cookies = self._get_cookies()
         if not response.log:
@@ -101,32 +103,25 @@ class Cookie(LibraryComponent):
     ):
         """Adds a cookie to currently active browser context.
 
-        ``name`` Name of the cookie.
 
-        ``value`` Given value for the cookie.
-
-        ``url`` Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
-
-        ``domain`` Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
-
-        ``path`` Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set.
-
-        ``expires`` Given expiry for the cookie. Can be of date format or unix time. Supports
-        the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime]
-        library or an epoch timestamp.
-        - example: 2027-09-28 16:21:35
-
-        ``httpOnly`` Sets the httpOnly token.
-
-        ``secure`` Sets the secure token.
-
-        ``samesite`` Sets the samesite mode.
+        | =Arguments= | =Description= |
+        | ``name`` | Name of the cookie. |
+        | ``value`` | Given value for the cookie. |
+        | ``url`` | Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
+        | ``domain`` | Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
+        | ``path`` | Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
+        | ``expires`` | Given expiry for the cookie. Can be of date format or unix time. Supports the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime] library or an epoch timestamp. - example: 2027-09-28 16:21:35 |
+        | ``httpOnly`` | Sets the httpOnly token. |
+        | ``secure`` | Sets the secure token. |
+        | ``samesite`` | Sets the samesite mode. |
 
         Example:
         | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
         | `Add Cookie`   foo   bar   domain=example.com                path=/foo/bar                     # Using domain and url arguments.
         | `Add Cookie`   foo   bar   http://address.com/path/to/site   expiry=2027-09-28 16:21:35        # Expiry as timestamp.
         | `Add Cookie`   foo   bar   http://address.com/path/to/site   expiry=1822137695                 # Expiry as epoch seconds.
+
+        [https://forum.robotframework.org/t//4233|Comment >>]
         """
         params = locals_to_params(locals())
         if expires:
@@ -149,14 +144,20 @@ class Cookie(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def delete_all_cookies(self):
-        """Deletes all cookies from the currently active browser context."""
+        """Deletes all cookies from the currently active browser context.
+
+        [https://forum.robotframework.org/t//4244|Comment >>]
+        """
         with self.playwright.grpc_channel() as stub:
             response = stub.DeleteAllCookies(Request.Empty())
         logger.info(response.log)
 
     @keyword
     def eat_all_cookies(self):
-        """Eat all cookies for all easter."""
+        """Eat all cookies for all easter.
+
+        [https://forum.robotframework.org/t//4250|Comment >>]
+        """
         self.delete_all_cookies()
         logger.info(
             """
@@ -176,7 +177,9 @@ class Cookie(LibraryComponent):
     ) -> Union[DotDict, str]:
         """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
 
-        ``cookie`` Name of the cookie to be retrieved.
+        | =Arguments= | =Description= |
+        | ``cookie`` | Name of the cookie to be retrieved. |
+        | ``return_type`` | Type of the return value. Can be either ``dictionary`` or ``string``. Defaults to ``dictionary``. |
 
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns a of Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary]
@@ -206,6 +209,8 @@ class Cookie(LibraryComponent):
         | ${cookie}=        `Get Cookie`              Foobar
         | Should Be Equal   ${cookie.value}           Tidii
         | Should Be Equal   ${cookie.expiry.year}     ${2020}
+
+        [https://forum.robotframework.org/t//4265|Comment >>]
         """
         _, cookies = self._get_cookies()
         for cookie_dict in cookies:

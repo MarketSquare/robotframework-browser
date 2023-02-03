@@ -12,35 +12,122 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import argparse
+import json
+import logging
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
+import traceback
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
+
+from robot import version as rf_version  # noqa
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"
 # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
 # But shell=True breaks our linux CI
 SHELL = True if platform.platform().startswith("Windows") else False
+CURRENT_FOLDER = Path(__file__).resolve().parent
+log_file = "rfbrowser.log"
+INSTALL_LOG = CURRENT_FOLDER / log_file
+try:
+    INSTALL_LOG.touch(exist_ok=True)
+except Exception as error:
+    print(f"Cound not wwrite to {INSTALL_LOG}, got error: {error}")
+    INSTALL_LOG = Path(os.getcwd()) / log_file
+    print(f"Writing install log to: {INSTALL_LOG}")
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)-8s] %(message)s",
+    handlers=[
+        RotatingFileHandler(INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a"),
+        logging.StreamHandler(sys.stdout),
+    ],
+)
+
+
+def _write_marker():
+    logging.info("=" * 110)
 
 
 def rfbrowser_init(skip_browser_install: bool):
-    print("Installing node dependencies...")
+    _write_marker()
+    try:
+        _rfbrowser_init(skip_browser_install)
+        _write_marker()
+    except Exception as error:
+        _write_marker()
+        logging.info(traceback.format_exc())
+        _python_info()
+        _node_info()
+        _log_install_dir()
+        raise error
+
+
+def _log_install_dir():
+    logging.info(
+        f"Installation directory `{INSTALLATION_DIR}` does not contain the required files"
+        "\nPrinting contents:\n"
+    )
+    for line in _walk_install_dir():
+        logging.info(line)
+    _write_marker()
+
+
+def _node_info():
+    process = subprocess.run(
+        ["npm", "-v"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=SHELL
+    )
+    logging.info("npm version is:n")
+    logging.info(process.stdout.decode("UTF-8"))
+    _write_marker()
+
+
+def _python_info():
+    _write_marker()
+    python_version = (
+        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    )
+    logging.info(f"Used Python is: {sys.executable}\nVersion: {python_version}")
+    _write_marker()
+    logging.info("pip freeze output:\n\n")
+    process = subprocess.run(
+        [sys.executable, "-m", "pip", "freeze"],
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+        timeout=60,
+    )
+    logging.info(process.stdout.decode("UTF-8"))
+    _write_marker()
+
+
+def _walk_install_dir():
+    lines = []
+    for root, _dirs, files in os.walk(INSTALLATION_DIR):
+        level = root.replace(INSTALLATION_DIR.__str__(), "").count(os.sep)
+        indent = " " * 4 * (level)
+        lines.append("{}{}/\n".format(indent, os.path.basename(root)))
+        subindent = " " * 4 * (level + 1)
+        for file in files:
+            lines.append("{}{}\n".format(subindent, file))
+    return lines
+
+
+def _rfbrowser_init(skip_browser_install: bool):
+    logging.info("Installing node dependencies...")
     if not (INSTALLATION_DIR / "package.json").is_file():
-        print(
-            f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json "
-            + "\nPrinting contents:"
+        logging.info(
+            f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json ",
+            "\nPrinting contents:\n",
         )
-        for root, _dirs, files in os.walk(INSTALLATION_DIR):
-            level = root.replace(INSTALLATION_DIR.__str__(), "").count(os.sep)
-            indent = " " * 4 * (level)
-            print("{}{}/".format(indent, os.path.basename(root)))
-            subindent = " " * 4 * (level + 1)
-            for f in files:
-                print("{}{}".format(subindent, f))
+        for line in _walk_install_dir():
+            logging.info(line)
         raise RuntimeError("Could not find robotframework-browser's package.json")
     if not os.access(INSTALLATION_DIR, os.W_OK):
         sys.tracebacklimit = 0
@@ -48,16 +135,16 @@ def rfbrowser_init(skip_browser_install: bool):
             f"`rfbrowser init` needs write permissions to {INSTALLATION_DIR}"
         )
 
-    print(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
+    logging.info(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
 
     try:
         subprocess.run(["npm", "-v"], stdout=DEVNULL, check=True, shell=SHELL)
     except (CalledProcessError, FileNotFoundError, PermissionError) as exception:
-        print(
+        logging.info(
             "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
             "See https://nodejs.org/ for documentation"
         )
-        sys.exit(exception)
+        raise exception
 
     if skip_browser_install:
         os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
@@ -66,7 +153,7 @@ def rfbrowser_init(skip_browser_install: bool):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
 
     process = Popen(
-        "npm install --production",
+        "npm ci --production --parseable true --progress false",
         shell=True,
         cwd=INSTALLATION_DIR,
         stdout=PIPE,
@@ -75,8 +162,11 @@ def rfbrowser_init(skip_browser_install: bool):
 
     while process.poll() is None:
         if process.stdout:
-            output = process.stdout.readline()
-            print(output.decode("utf-8"))
+            output = process.stdout.readline().decode("UTF-8")
+            try:
+                logging.info(output)
+            except Exception as error:
+                logging.info(f"While writing log file, got error: {error}")
 
     if process.returncode != 0:
         raise RuntimeError(
@@ -84,20 +174,21 @@ def rfbrowser_init(skip_browser_install: bool):
             + f"Node process returned with exit status {process.returncode}"
         )
 
-    print("rfbrowser init completed")
+    logging.info("rfbrowser init completed")
 
 
 def rfbrowser_clean_node():
     if not NODE_MODULES.is_dir():
-        print(f"Could not find {NODE_MODULES}, nothing to delete.")
+        logging.info(f"Could not find {NODE_MODULES}, nothing to delete.")
         return
-    print("Delete library node dependencies...")
+    logging.info("Delete library node dependencies...")
     shutil.rmtree(NODE_MODULES)
 
 
 def show_trace(file: str):
-    print(f"Opening file: {file}")
-    playwright = NODE_MODULES / "playwright"
+    absolute_file = Path(file).resolve(strict=True)
+    logging.info(f"Opening file: {absolute_file}")
+    playwright = NODE_MODULES / "playwright-core"
     local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
     env["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
@@ -105,9 +196,26 @@ def show_trace(file: str):
         "npx",
         "playwright",
         "show-trace",
-        file,
+        str(absolute_file),
     ]
-    subprocess.run(trace_arguments, env=env, shell=SHELL)
+    subprocess.run(trace_arguments, env=env, shell=SHELL, cwd=INSTALLATION_DIR)
+
+
+def show_versions():
+    _write_marker()
+    version_file = CURRENT_FOLDER / "version.py"
+    version_text = version_file.read_text()
+    match = re.search(r"\"\d+\.\d+.\d+\"", version_text)
+    browser_lib_version = match.group(0) if match else "unknown"
+    package_json = INSTALLATION_DIR / "package.json"
+    package_json_data = json.loads(package_json.read_text())
+    match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
+    pw_version = match.group(0) if match else "unknown"
+    logging.info(
+        f'Installed Browser library version is: {browser_lib_version} with RF "{rf_version.VERSION}"'
+    )
+    logging.info(f'Installed Playwright is: "{pw_version}"')
+    _write_marker()
 
 
 # Based on: https://stackoverflow.com/questions/3853722/how-to-insert-newlines-on-argparse-help-text
@@ -122,22 +230,41 @@ class SmartFormatter(argparse.HelpFormatter):
         return argparse.HelpFormatter._split_lines(self, text, width)
 
 
-def run():
+def runner(command, skip_browsers, trace_file):
+    if command == "init":
+        rfbrowser_init(skip_browsers)
+    elif command == "clean-node":
+        rfbrowser_clean_node()
+    elif command == "show-trace":
+        if not trace_file:
+            raise Exception("show-trace needs also --file argument")
+        show_trace(trace_file)
+    elif command == "version":
+        show_versions()
+    else:
+        raise Exception(
+            f"Command should be init, clean-node or show-trace, but it was {command}"
+        )
+
+
+def main():
     parser = argparse.ArgumentParser(
-        description="Robot Framework Browser library command line tool.",
+        description="Robot Framework Browser library command line tool. If there is error during command, debug "
+        "information is saved to <install dir>/Browser/rfbrowser.log file.",
         formatter_class=SmartFormatter,
     )
     parser.add_argument(
         "command",
         help=(
-            "Possible commands are:\ninit\nclean-node\nshow-trace\n\ninit command will install the required node "
+            "Possible commands are:\ninit\nclean-node\nshow-trace\nversion\n\ninit command will install the required node "
             "dependencies. init command is needed when library is installed or updated.\n\nclean-node is used to delete"
             "node side dependencies and installed browser binaries from the library default installation location. "
             "When upgrading browser library, it is recommended to clean old node side binaries after upgrading the "
             "Python side. Example:\n1) pip install -U robotframework-browser\n2) rfbrowser clean-node\n3)rfbrowser "
             "init.\nRun rfbrowser clean-node command also before uninstalling the library with pip. This makes sure "
             "that playwright browser binaries are not left in the disk after the pip uninstall command."
-            "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nSee the each command argument "
+            "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nversion command displays the "
+            "installed Browser library, Robot Framework and Playwright versions.\n\nSee the each command argument "
             "group for more details what (optional) arguments that command supports."
         ),
         type=str,
@@ -161,19 +288,10 @@ def run():
     )
     args = parser.parse_args()
     command = args.command.lower()
-    if command == "init":
-        rfbrowser_init(args.skip_browsers)
-    elif command == "clean-node":
-        rfbrowser_clean_node()
-    elif command == "show-trace":
-        if not args.file:
-            raise Exception("show-trace needs also --file argument")
-        show_trace(args.file)
-    else:
-        raise Exception(
-            f"Command should be init, clean-node or show-trace, but it was {command}"
-        )
+    skip_browsers = args.skip_browsers
+    trace_file = args.file
+    runner(command, skip_browsers, trace_file)
 
 
 if __name__ == "__main__":
-    run()
+    main()

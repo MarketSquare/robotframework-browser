@@ -98,10 +98,19 @@ class Playwright(LibraryComponent):
             os.environ["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
+        node_args = ["node"]
+        node_debug_options = os.environ.get(
+            "ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS"
+        )
+        if node_debug_options:
+            node_args.extend(node_debug_options.split(","))
+        node_args.append(str(playwright_script))
+        node_args.append(port)
         if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        logger.info(f"Node startup parameters: {node_args}")
         return Popen(
-            ["node", str(playwright_script), port],
+            node_args,
             shell=False,
             cwd=workdir,
             env=os.environ,
@@ -111,7 +120,7 @@ class Playwright(LibraryComponent):
 
     def wait_until_server_up(self):
         for _ in range(50):
-            with grpc.insecure_channel(f"localhost:{self.port}") as channel:
+            with grpc.insecure_channel(f"127.0.0.1:{self.port}") as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
                     response = stub.Health(Request().Empty())
@@ -128,7 +137,7 @@ class Playwright(LibraryComponent):
 
     @cached_property
     def _channel(self):
-        return grpc.insecure_channel(f"localhost:{self.port}")
+        return grpc.insecure_channel(f"127.0.0.1:{self.port}")
 
     @contextlib.contextmanager
     def grpc_channel(self, original_error=False):

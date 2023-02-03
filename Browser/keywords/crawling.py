@@ -1,8 +1,8 @@
 import urllib.parse
 from typing import List, Optional, Set, Tuple
 
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
-from robotlibcore import keyword  # type: ignore
+from robot.api.deco import keyword
+from robot.libraries.BuiltIn import BuiltIn
 
 from Browser.base import LibraryComponent
 
@@ -24,16 +24,13 @@ class Crawling(LibraryComponent):
 
         returns list of crawled urls.
 
-        ``url`` is the page to start crawling from.
+        | =Arguments= | =Description= |
+        | ``url`` | is the page to start crawling from. |
+        | ``page_crawl_keyword`` | is the keyword that will be executed on every page.  By default it will take a screenshot on every page. |
+        | ``max_number_of_page_to_crawl`` | is the upper limit of pages to crawl. Crawling will stop if the number of crawled pages goes over this. |
+        | ``max_depth_to_crawl`` | is the upper limit of consecutive links followed from the start page. Crawling will stop if there are no more links under this depth. |
 
-        ``page_crawl_keyword`` is the keyword that will be executed on every page.
-        By default it will take a screenshot on every page.
-
-        ``max_number_of_page_to_crawl`` is the upper limit of pages to crawl.
-        Crawling will stop if the number of crawled pages goes over this.
-
-        ``max_depth_to_crawl`` is the upper limit of consecutive links followed from the start page.
-        Crawling will stop if there are no more links under this depth.
+        [https://forum.robotframework.org/t//4243|Comment >>]
         """
         if url:
             self.library.new_page(url)
@@ -67,7 +64,11 @@ class Crawling(LibraryComponent):
             logger.console(
                 f"{len(crawled) + 1} / {len(crawled) + 1 + len(hrefs_to_crawl)} : Crawling url {href}"
             )
-            self.library.go_to(href)
+            try:
+                self.library.go_to(href)
+            except Exception as e:
+                logger.warn(f"Exception while crawling {href}: {e}")
+                continue
             BuiltIn().run_keyword(page_crawl_keyword)
             child_hrefs = self._gather_links(depth)
             crawled.add(href)
@@ -81,8 +82,8 @@ class Crawling(LibraryComponent):
         links: Set[str] = set()
         depth = parent_depth + 1
         for link_element in link_elements:
-            href, normal_link = self.library.execute_javascript(
-                "(e) => [e.href, !e.download]", link_element
+            href, normal_link = self.library.evaluate_javascript(
+                link_element, "(e) => [e.href, !e.download]"
             )
             if normal_link:
                 links.add(href)

@@ -2,17 +2,23 @@
 Library             Browser    run_on_failure=None    enable_playwright_debug=${True}
 Resource            imports.resource
 
-Suite Setup         New Browser
+Suite Setup         New Browser    headless=${HEADLESS}
 Suite Teardown      Close Browser
 
+Force Tags          timeout    no-iframe
+
 *** Variables ***
-${ErrorMessage} =       page.goto: Timeout 1ms exceeded.
+${err_goto} =       page.goto: Timeout 1ms exceeded.
+${err_click} =      SEPARATOR=
+...                 locator.click: Timeout 100ms exceeded.
+...                 *Use "Set Browser Timeout" for increasing the timeout or double check${SPACE}
+...                 your locator as the targeted element(s) couldn't be found.
 
 *** Test Cases ***
 Test GoTo With Short Default Timeout
     New Page
     Set Browser Timeout    1ms
-    Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
+    Run Keyword And Expect Error    *${err_goto}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 
 Test Overriding With Long
@@ -26,17 +32,17 @@ Test Overriding With Short
     Set Browser Timeout    10 s
     New Page    ${FORM_URL}
     Set Browser Timeout    1 ms
-    Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
+    Run Keyword And Expect Error    *${err_goto}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 
-Test assertion timeouts
+Test Assertion Timeouts
     New Context
     Set Browser Timeout    10 s
     New Page    ${LOGIN_URL}
-    ${old} =    Set retry assertions for    0s
-    Run Keyword And Expect Error    *    Get title    ==    Wrong title
-    Get title    ==    Login Page
-    set retry assertions for    ${old}
+    ${old} =    Set Retry Assertions For    0s
+    Run Keyword And Expect Error    *    Get Title    ==    Wrong title
+    Get Title    ==    Login Page
+    Set Retry Assertions For    ${old}
 
 Set Browser Timeout Should Return Old Value
     New Context
@@ -57,7 +63,11 @@ Set Browser Timeout Should Fail With Invalid Value And Not Change Existing Value
 Calling Set Browser Timeout Without Open Contex Should Not Fail
     [Documentation]
     ...    LOG 1:2    INFO    GLOB:    No context open.
-    ...    LOG 3:2    DEBUG    GLOB:    Suppress error Error: Browser has been closed*
     Set Browser Timeout    1s
     Close Browser    ALL
     Set Browser Timeout    1s
+
+Check Timeout Tips
+    New Page    ${LOGIN_URL}
+    Set Browser Timeout    0.1s
+    Run Keyword And Expect Error    *${err_click}*    Click    nothing

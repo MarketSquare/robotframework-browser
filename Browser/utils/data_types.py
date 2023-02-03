@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from enum import Enum, auto
+from datetime import timedelta
+from enum import Enum, IntFlag, auto
 from typing import Dict, Union
 
 from typing_extensions import TypedDict
@@ -45,7 +46,7 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
             for req_key in arg_type.__required_keys__:  # type: ignore
                 if req_key.lower() not in lower_case_dict:
                     raise RuntimeError(
-                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__}."
+                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__} for argument '{arg_name}'."
                         f"\nThe required key '{req_key}' in not set in given value."
                         f"\nExpected types: {arg_type.__annotations__}"
                     )
@@ -190,7 +191,7 @@ class Proxy(_Server, total=False):
     """
 
     bypass: str
-    Username: str
+    username: str
     password: str
 
 
@@ -205,20 +206,62 @@ class DownloadedFile(TypedDict):
     suggestedFilename: str
 
 
+class NewPageDetails(TypedDict):
+    """Return value of `New Page` keyword.
+
+    ``page_id`` is the UUID of the opened page.
+    ``video_path`` path to the video or empty string if video is not created.
+    """
+
+    page_id: str
+    video_path: str
+
+
+class HighLightElement(TypedDict):
+    """Presenter mode configuration options.
+
+    ``duration`` Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
+
+    ``width`` Sets the width of the higlight border. Defaults to 2px.
+
+    ``style`` Sets the style of the border. Defaults to dotted.
+
+    ``color`` Sets the color of the border, default is blue. Valid colors i.e. are:
+    ``red``, ``blue``, ``yellow``, ``pink``, ``black``
+    """
+
+    duration: timedelta
+    width: str
+    style: str
+    color: str
+
+
 class SelectionType(Enum):
     """Enum that defines if the current id or all ids shall be returned.
 
     ``ACTIVE`` / ``CURRENT`` defines to return only the id of the currently active
     instance of a Browser/Context/Page.
 
-    ``ALL`` / ``ANY`` defines to return ids of all instances.
+    ``ALL`` / ``ANY`` defines to return ids of all instances."""
 
-    Used by: `Get Browser IDs` `Get Context IDs` and `Get Page IDs`."""
-
-    ACTIVE = auto()
-    CURRENT = ACTIVE
-    ALL = auto()
+    CURRENT = "CURRENT"
+    ACTIVE = CURRENT
+    ALL = "ALL"
     ANY = ALL
+
+    @classmethod
+    def create(cls, value: Union[str, "SelectionType"]):
+        """Returns the enum value from the given string or not."""
+        if isinstance(value, cls):
+            return value
+        if isinstance(value, str):
+            try:
+                return cls[value.upper()]
+            except KeyError:
+                return value
+
+    def __str__(self):
+        return self.value
 
 
 class DialogAction(Enum):
@@ -243,9 +286,7 @@ CookieSameSite = Enum(
 
 
 class RequestMethod(Enum):
-    """Enum that defines the request type.
-
-    Used by: `HTTP` ."""
+    """Enum that defines the request type."""
 
     HEAD = auto()
     GET = auto()
@@ -264,9 +305,7 @@ class MouseButtonAction(Enum):
 
 
 class MouseButton(Enum):
-    """Enum that defines which mouse button to use.
-
-    Used by: `Click` and `Mouse Button`."""
+    """Enum that defines which mouse button to use."""
 
     left = auto()
     middle = auto()
@@ -353,14 +392,39 @@ ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
 
         See [https://playwright.dev/docs/api/class-page?_highlight=emulatemedia#pageemulatemediaparams |emulateMedia(options)]
         for more details.
+"""
 
-        Used by `New Context`. """
+
+class Permission(Enum):
+    """Enum that defines the permission to grant to a context.
+
+    See [https://playwright.dev/docs/api/class-browsercontext#browser-context-grant-permissions |grantPermissions(permissions)]
+    for more details.
+    """
+
+    geolocation = auto()
+    midi = auto()
+    midi_sysex = auto()
+    notifications = auto()
+    push = auto()
+    camera = auto()
+    microphone = auto()
+    background_sync = auto()
+    ambient_light_sensor = auto()
+    accelerometer = auto()
+    gyroscope = auto()
+    magnetometer = auto()
+    accessibility_events = auto()
+    clipboard_read = auto()
+    clipboard_write = auto()
+    payment_handler = auto()
 
 
 ScrollBehavior = Enum("ScrollBehavior", ["auto", "smooth"])
 ScrollBehavior.__doc__ = """Enum that controls the behavior of scrolling.
 
-``smooth`` """
+``smooth``
+"""
 
 
 class SizeFields(Enum):
@@ -368,9 +432,7 @@ class SizeFields(Enum):
 
     ``ALL`` defines that the size is returned as a dictionary. ``{'width': <float>, 'height': <float>}.``
 
-    ``width`` / ``height`` will return a single float value of the chosen dimension.
-
-    Used by: `Get Viewport Size`, `Get Scroll Size` and `Get Client Size`."""
+    ``width`` / ``height`` will return a single float value of the chosen dimension."""
 
     width = auto()
     height = auto()
@@ -379,8 +441,6 @@ class SizeFields(Enum):
 
 class AreaFields(Enum):
     """Enumeration that defines which coordinates of an area should be selected.
-
-    Used by `Get Scroll Position`.
 
     ``ALL`` defines that all fields are selected and a dictionary with all information
     is returned.
@@ -395,8 +455,6 @@ class AreaFields(Enum):
 
 class BoundingBoxFields(Enum):
     """Enumeration that defines which location information of an element should be selected.
-
-    Used by `Get BoundingBox`.
 
     ``x`` / ``y`` defines the position of the top left corner of an element.
 
@@ -421,9 +479,9 @@ class AutoClosingLevel(Enum):
     closed when the suite teardown ends.
 
     If automatic closing level is `SUITE`, all contexts and pages that are created during the test suite
-     are closed when the suite teardown ends.
+    are closed when the suite teardown ends.
 
-    If automatic closing level is `MANUAL`, nothing is closed automatically during the test execution
+    If automatic closing level is `MANUAL`, nothing is closed automatically while the test execution
     is ongoing.
 
     All browsers are automatically closed, always and regardless of the automatic closing level at
@@ -439,7 +497,7 @@ class AutoClosingLevel(Enum):
     MANUAL = auto()
 
 
-class ElementState(Enum):
+class ElementState(IntFlag):
     """Enum that defines the state an element can have.
 
     The following ``states`` are possible:
@@ -459,40 +517,28 @@ class ElementState(Enum):
     | ``checked``    | to be ``checked``. Can be used on <input>. |
     | ``unchecked``  | to not be ``checked``. |
     | ``stable``     | to be both ``visible`` and ``stable``. |
+    """
 
-    Used by: `Wait For Elements State`"""
-
-    attached = auto()
-    detached = auto()
-    visible = auto()
-    hidden = auto()
-    enabled = auto()
-    disabled = auto()
-    editable = auto()
-    readonly = auto()
-    selected = auto()
-    deselected = auto()
-    focused = auto()
-    defocused = auto()
-    checked = auto()
-    unchecked = auto()
-    stable = auto()
+    attached = 1
+    detached = 2
+    visible = 4
+    hidden = 8
+    enabled = 16
+    disabled = 32
+    editable = 64
+    readonly = 128
+    selected = 256
+    deselected = 512
+    focused = 1024
+    defocused = 2048
+    checked = 4096
+    unchecked = 8192
+    stable = 16384
 
 
-class ElementStateKey(Enum):
-    """Enum that defines the state an element can have directly.
-
-    See `ElementState` for explaination.
-
-    Used by: `Get Element State`"""
-
-    attached = auto()
-    visible = auto()
-    disabled = auto()
-    readonly = auto()
-    selected = auto()
-    focused = auto()
-    checked = auto()
+ElementStateKey = (
+    ElementState  # Deprecated. Remove after `Get Element State` is removed.
+)
 
 
 class ScreenshotFileTypes(Enum):
@@ -508,3 +554,98 @@ class PageLoadStates(Enum):
     load = auto()
     domcontentloaded = auto()
     networkidle = auto()
+    commit = auto()
+
+
+class ReduceMotion(Enum):
+    """Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`."""
+
+    reduce = auto()
+    no_preference = auto()
+
+
+class ForcedColors(Enum):
+    """Emulates `forced-colors` media feature, supported values are `active`, `none`."""
+
+    active = auto()
+    none = auto()
+
+
+class ConditionInputs(Enum):
+    """
+    Following values are allowed and represent the assertion keywords to use:
+    | =Value= | =Keyword= |
+    | ``Attribute`` | `Get Attribute` |
+    | ``Attribute Names`` | `Get Attribute Names` |
+    | ``BoundingBox`` | `Get BoundingBox` |
+    | ``Browser Catalog`` | `Get Browser Catalog` |
+    | ``Checkbox State`` | `Get Checkbox State` |
+    | ``Classes`` | `Get Classes` |
+    | ``Client Size`` | `Get Client Size` |
+    | ``Element Count`` | `Get Element Count` |
+    | ``Element States`` | `Get Element States` |
+    | ``Page Source`` | `Get Page Source` |
+    | ``Property`` | `Get Property` |
+    | ``Scroll Position`` | `Get Scroll Position` |
+    | ``Scroll Size`` | `Get Scroll Size` |
+    | ``Select Options`` | `Get Select Options` |
+    | ``Selected Options`` | `Get Selected Options` |
+    | ``Style`` | `Get Style` |
+    | ``Table Cell Index`` | `Get Table Cell Index` |
+    | ``Table Row Index`` | `Get Table Row Index` |
+    | ``Text`` | `Get Text` |
+    | ``Title`` | `Get Title` |
+    | ``Url`` | `Get Url` |
+    | ``Viewport Size`` | `Get Viewport Size` |
+    """
+
+    attribute = "get_attribute"
+    attribute_names = "get_attribute_names"
+    bounding_box = "get_bounding_box"
+    browser_catalog = "get_browser_catalog"
+    checkbox_state = "get_checkbox_state"
+    classes = "get_classes"
+    client_size = "get_client_size"
+    element_count = "get_element_count"
+    element_states = "get_element_states"
+    page_source = "get_page_source"
+    property = "get_property"
+    scroll_position = "get_scroll_position"
+    scroll_size = "get_scroll_size"
+    select_options = "get_select_options"
+    selected_options = "get_selected_options"
+    style = "get_style"
+    table_cell_index = "get_table_cell_index"
+    table_row_index = "get_table_row_index"
+    text = "get_text"
+    title = "get_title"
+    url = "get_url"
+    viewport_size = "get_viewport_size"
+
+
+class Scope(Enum):
+    """Some keywords which manipulates library settings have a scope argument.
+    With that scope argument one can set the "live time" of that setting.
+    Available Scopes are: ``Global``, ``Suite`` and ``Test`` / ``Task``.
+    Is a scope finished, this scoped setting, like timeout, will no longer be used and the previous higher scope setting applies again.
+
+    Live Times:
+
+    - A ``Global`` scope will live forever until it is overwritten by another Global scope.
+      Or locally temporarily overridden by a more narrow scope.
+    - A ``Suite`` scope will locally override the Global scope and
+      live until the end of the Suite within it is set, or if it is overwritten
+      by a later setting with Global or same scope.
+      Children suite does inherit the setting from the parent suite but also may have
+      its own local Suite setting that then will be inherited to its children suites.
+    - A ``Test`` or ``Task`` scope will be inherited from its parent suite but when set,
+      lives until the end of that particular test or task.
+
+    A new set higher order scope will always remove the lower order scope which may be in charge.
+    So the setting of a Suite scope from a test, will set that scope to the robot file suite where
+    that test is and removes the Test scope that may have been in place."""
+
+    Global = auto()
+    Suite = auto()
+    Test = auto()
+    Task = Test

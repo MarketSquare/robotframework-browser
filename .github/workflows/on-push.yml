@@ -14,101 +14,205 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
     strategy:
-      fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
-        python-version: [3.7, 3.8, 3.9]
-        node-version: [14.x]
-
+        os: [ "ubuntu-latest", "windows-latest" ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Use Node.js
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
-        node-version: ${{ matrix.node-version }}
-    - name: restore node_modules and playwright drivers
-      uses: actions/cache@v2
-      with:
-        path: |
-          node_modules
-          */*/node_modules
-          /home/runner/.cache/ms-playwright
-          C:\Users\runneradmin\AppData\Local\ms-playwright
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}-node-and-pw
+        node-version: 16.x
+        cache: 'npm'
     - name: Install nodejs dependencies
       env:
         PLAYWRIGHT_BROWSERS_PATH: 0
       run: |
-        yarn --frozen-lockfile install
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+        npm ci
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.9
+        cache: 'pip'
     - name: Install python dependencies
-      # flaky-tests-detection only in here because Spicy install problem on Apple M1 chip.
-      # https://github.com/scipy/scipy/issues/13409
       run: |
         python -m pip install --upgrade pip
+        pip install wheel
         pip install -r Browser/dev-requirements.txt
-        pip install flaky-tests-detection
+    - name: Build Protos and check with tsc
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        inv node-build
+        python -m Browser.gen_stub
+    - name: Build test app
+      run: |
+        inv create-test-app
+    - name: Create Distributable Package
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        inv docs
+        inv create-package
+    - uses: actions/upload-artifact@v3
+      if: matrix.os == 'ubuntu-latest'
+      with:
+        name: rfbrowser-wheel
+        path: dist/robotframework_browser-*-py3-none-any.whl
+    - name: Package demoapp
+      run: |
+        inv demo-app
+    - uses: actions/upload-artifact@v3
+      with:
+        name: demoapp
+        path: zip_results/demoapp
+  testing:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            python-version: "3.9"
+            node-version: 14.x
+            shard: 1
+          - os: windows-latest
+            python-version: "3.10"
+            node-version: 16.x
+            shard: 2
+          - os: ubuntu-latest
+            python-version: "3.10"
+            node-version: 14.x
+            shard: 3
+          - os: ubuntu-latest
+            python-version: "3.9"
+            node-version: 16.x
+            shard: 4
+          - os: windows-latest
+            python-version: "3.8"
+            node-version: 16.x
+            shard: 1
+          - os: ubuntu-latest
+            python-version: "3.10"
+            node-version: 14.x
+            shard: 2
+          - os: ubuntu-latest
+            python-version: "3.8"
+            node-version: 14.x
+            shard: 3
+          - os: ubuntu-latest
+            python-version: "3.9"
+            node-version: 16.x
+            shard: 4
+          - os: ubuntu-latest
+            python-version: "3.11"
+            node-version: 16.x
+            shard: 1
+          - os: macos-latest
+            python-version: "3.8"
+            node-version: 16.x
+            shard: 1
+          - os: macos-latest
+            python-version: "3.9"
+            node-version: 16.x
+            shard: 2
+          - os: macos-latest
+            python-version: "3.10"
+            node-version: 16.x
+            shard: 3
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - name: Install nodejs dependencies
+      env:
+        PLAYWRIGHT_BROWSERS_PATH: 0
+      run: |
+        npm ci
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - name: Install python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install wheel
+        pip install -r Browser/dev-requirements.txt
     - name: Build Protos and check with tsc
       run: |
         inv node-build
         python -m Browser.gen_stub
-    - name: Check types with mypy
+    - name: Check types with mypy on Linux
+      if: matrix.os == 'ubuntu-latest' && matrix.shard == 1 && matrix.python-version != '3.10'
       run: |
-        mypy --config-file Browser/mypy.ini Browser
+        inv lint-python
     - name: Lint atest
+      if: matrix.shard == 1
       run: |
         inv lint-robot
+    - name: Lint node
+      if: matrix.shard == 1
+      run: |
+        inv lint-node
     - name: Check with flake8
       run: |
         flake8 --config Browser/.flake8 Browser
+    - name: Build test app
+      run: |
+        inv create-test-app
     - name: Start xvfb on Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
         export DISPLAY=:99.0
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
+      if: matrix.shard == 1
       run: |
-       coverage run -m invoke utest
-       coverage report
+       invoke utest
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-        xvfb-run --auto-servernum inv atest  -z true
+        xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/4 -z true
     - name: Run Robot Framework tests on Windows
-      if: matrix.os != 'ubuntu-latest'
+      if: matrix.os == 'windows-latest'
       run: |
-        inv atest -z true
-    - name: Create Distributable Package
+        inv atest --shard ${{ matrix.shard }}/4 -z true
+    - name: Run Robot Framework tests on macOS
+      if: matrix.os == 'macos-latest'
       run: |
-        inv docs
-        inv create-package
-    - uses: actions/upload-artifact@v2
+        inv atest --shard ${{ matrix.shard }}/4 -z true
+    - uses: actions/upload-artifact@v3
       if: ${{ always() }}
       with:
         name: Test results
         path: zip_results/output
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rfbrowser-wheel 
-        path: dist/robotframework_browser-*-py3-none-any.whl
+    - name: Create Distributable Package
+      run: |
+        inv docs
+        inv create-package
     - name: Artifacts download for flaky test analysis
       if: ${{ failure() }}
+      # flaky-tests-detection and failures-analysis install is here because dependencies takes long
+      # time to install and not needed for the test-install
       run : |
+        pip install flaky-tests-detection failures-analysis
         python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
         inv copy-xunit
     - name: Flaky tests detection
       if: ${{ failure() }}
       run: |
         flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
+    - name: Failures analysis
+      if: ${{ failure() }}
+      run: |
+        failures-analysis ./flip_rate/xunit/
     - name: Package demoapp
       run: |
         inv demo-app
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: demoapp
         path: zip_results/demoapp
@@ -118,22 +222,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: [3.8]
-        node-version: [12.x, 14.x]
+        os: [windows-latest, ubuntu-latest]
+        python-version: [3.7, 3.9]
+        node-version: [14.x, 16.x]
+        exclude:
+          - python-version: 3.7
+            node-version: 14.x
+          - os: windows-latest
+            python-version: 3.7
+          - os: windows-latest
+            node-version: 14.x
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download package for install testing
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: rfbrowser-wheel
       - name: Download package for install testing
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: demoapp
           path: zip_results/demoapp
-      - name: Unzip demoapp in linux
-        if: matrix.os == 'ubuntu-latest'
+      - name: Unzip demoapp in linux or MacOS
+        if: matrix.os != 'windows-latest'
         run: |
           ls -l zip_results/demoapp
           unzip -o zip_results/demoapp/demo-app-linux.zip
@@ -143,13 +254,15 @@ jobs:
           dir zip_results/demoapp
           tar -xf zip_results/demoapp/demo-app-win32.zip
       - name: Use Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
       - name: Install Robot Framework Browser on unix-like
         run: |
           pip install ./robotframework_browser-*-py3-none-any.whl
@@ -161,65 +274,45 @@ jobs:
       - name: Install node deps and python deps for test running
         run: |
           rfbrowser init
+          pip install wheel
           pip install -r Browser/dev-requirements.txt
-      - name: Needed step for some reason
-        run: |
-          echo "nothing happening here"
-        env:
-          blank: ""
       - name: Test on unix-like os - serial mode
-        if: matrix.os != 'windows-latest'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           echo ${{ matrix.os }}
           rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          inv sitecustomize
-          xvfb-run --auto-servernum invoke atest-robot
-      - name: Run Robot Framework tests on windows
-        if: ${{ matrix.os == 'windows-latest' }}
+          xvfb-run --auto-servernum invoke atest-robot --smoke
+      - name: Run Robot Framework tests on windows or macOS
+        if: ${{ matrix.os != 'ubuntu-latest' }}
         run: |
-          inv atest-global-pythonpath
+          echo ${{ matrix.os }}
+          Remove-Item -Path .\Browser -Force -Recurse
+          invoke atest-robot --smoke
       - name: Artifacts download for flaky test analysis
         if: ${{ failure() }}
-        # flaky-tests-detection only in here because Spicy install problem on Apple M1 chip.
-        # https://github.com/scipy/scipy/issues/13409
+        # flaky-tests-detection and failures-analysis install is here because dependencies takes long
+        # time to install and not needed for the test-install
         run: |
-          pip install flaky-tests-detection
+          pip install flaky-tests-detection failures-analysis
           python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
           inv copy-xunit
       - name: Flaky tests detection
         if: ${{ failure() }}
         run: |
           flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
-      - name: Uninstall on Linux
+      - name: Failures analysis
+        if: ${{ failure() }}
+        run: |
+          failures-analysis ./flip_rate/xunit/
+      - name: Uninstall on Linux or MacOS
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           rfbrowser clean-node
           pip uninstall --yes robotframework-browser
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
-          name: ${{ matrix.os }} ${{ matrix.node-version }} Clean install results
+          name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
           path: atest/output
-  automerge:
-    name: Automerge Dependabot
-    runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
-    needs: test-install
-    steps:
-      - name: 'Wait for status checks'
-        id: waitforstatuschecks
-        uses: "WyriHaximus/github-action-wait-for-status@v1.2"
-        with:
-          ignoreActions: Automerge Dependabot
-          checkInterval: 13
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Merge pull requests
-        uses: pascalgn/automerge-action@v0.12.0
-        if: steps.waitforstatuschecks.outputs.status == 'success'
-        env:
-          MERGE_METHOD: "squash"
-          MERGE_LABELS: ""
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

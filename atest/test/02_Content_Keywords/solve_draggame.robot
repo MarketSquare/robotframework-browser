@@ -3,14 +3,16 @@ Resource        imports.resource
 
 Test Setup      New Page    ${DRAGGAME_URL}
 
+Force Tags      no-iframe
+
 *** Test Cases ***
-Move obstacle to goal and make a goal
-    Get text    h2    ==    Put the circle in the goal
+Move Obstacle To Goal And Make A Goal
+    Get Text    h2    ==    Put the circle in the goal
     Drag And Drop    css=.obstacle    css=.goal
     Drag And Drop    css=.circle    css=.goal
-    Get text    h2    ==    GOAL!!
+    Get Text    h2    ==    GOAL!!
 
-Move Obstacle away and drag and Drop
+Move Obstacle Away And Drag And Drop
     Hover    "Obstacle"
     Mouse Button    down
     Mouse Move Relative To    "Obstacle"    500
@@ -18,6 +20,7 @@ Move Obstacle away and drag and Drop
     Drag And Drop    "Circle"    "Goal"
 
 Test
+    [Tags]    slow
     [Setup]    New Page
     FOR    ${i}    IN RANGE    20
         Go To    ${SHELLGAME_URL}

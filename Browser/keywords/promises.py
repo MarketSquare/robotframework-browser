@@ -16,14 +16,16 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from os import PathLike
 from pathlib import Path
 from time import sleep
+from typing import Any, Dict, List
 
-from robot.api.deco import keyword  # type: ignore
-from robot.libraries.BuiltIn import EXECUTION_CONTEXTS  # type: ignore
-from robot.utils import DotDict  # type: ignore
+from assertionengine import AssertionOperator
+from robot.api.deco import keyword
+from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadedFile, logger
+from ..utils.data_types import DialogAction, ElementState, PageLoadStates
 
 
 class Promises(LibraryComponent):
@@ -42,36 +44,80 @@ class Promises(LibraryComponent):
 
         ``kw`` Keyword that will work async on background.
 
+        | =Arguments= | =Description= |
+        | ``kw`` | Keyword that will work async on background. |
+        | ``*args`` | Keyword arguments as normally used. |
+
         Example:
         | ${promise}=     `Promise To`            Wait For Response     matcher=     timeout=3
         | `Click`           \\#delayed_request
         | ${body}=        `Wait For`              ${promise}
-        """
-        browser_lib = EXECUTION_CONTEXTS.current.namespace._kw_store.get_library(
-            self.library
-        )
-        handler = browser_lib.handlers[kw]
-        positional, named = handler.resolve_arguments(
-            args, EXECUTION_CONTEXTS.current.variables
-        )
-        named = dict(named)
 
-        promise = self._executor.submit(handler.current_handler(), *positional, **named)
-        self.unresolved_promises.add(promise)
-        while not (promise.running() or promise.done()):
-            sleep(0.01)
+        [https://forum.robotframework.org/t//4312|Comment >>]
+        """
+        promise: Future = Future()
+        keyword_name = kw.strip().lower().replace(" ", "_")
+
+        if keyword_name in self.library.get_keyword_names():
+            positional, named = self.resolve_arguments(keyword_name, *args)
+            promise = self._executor.submit(
+                self.library.keywords[keyword_name], *positional, **(named or {})
+            )
+            self.unresolved_promises.add(promise)
+            while not (promise.running() or promise.done()):
+                sleep(0.01)
+
         return promise
+
+    def resolve_arguments(self, kw: str, *args):
+        positional: List[Any] = []
+        named: Dict[str, Any] = {}
+        logger.debug(f"*args {args}")
+
+        keyword_arguments = [
+            argument[0] if isinstance(argument, tuple) else argument
+            for argument in self.library.get_keyword_arguments(kw)
+        ]
+        for arg in args:
+            parts = arg.partition("=")
+            if parts[0].strip() in keyword_arguments:
+                if parts[2].strip().lower() in DialogAction.__members__:
+                    named[parts[0].strip()] = DialogAction[parts[2].strip().lower()]
+                elif parts[2].strip().lower() in PageLoadStates.__members__:
+                    named[parts[0].strip()] = PageLoadStates[parts[2].strip().lower()]
+                else:
+                    named[parts[0].strip()] = parts[2].strip()
+            else:
+                if arg.strip() in AssertionOperator.__members__:
+                    positional.append(AssertionOperator[arg.strip()])
+                elif arg.strip() in ElementState.__members__:
+                    positional.append(ElementState.__members__[arg.strip()])
+                elif arg.strip() in DialogAction.__members__:
+                    positional.append(DialogAction[arg.strip()])
+                elif arg.strip() in PageLoadStates.__members__:
+                    positional.append(PageLoadStates.__members__[arg.strip()])
+                else:
+                    positional.append(arg)
+
+        logger.debug(
+            f"named arguments: {named}, positional arguments: {tuple(positional)}"
+        )
+        return tuple(positional), named
 
     @keyword(tags=("Wait", "BrowserControl"))
     def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
         """Returns a promise that waits for next download event on page.
 
+        If you can get the URL for the file to download, ``Download`` keyword should be a consistent way to download the file.
+
         To enable downloads context's ``acceptDownloads`` needs to be true.
+
+        To configure download directory use New Browser's ``downloadsPath`` settings
 
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 
-        ``saveAs`` defines path where the file is saved. File will also temporarily be saved in playwright context's
-        default download location.
+        | =Arguments= | =Description= |
+        | ``saveAs`` | Defines path where the file is saved. File will also temporarily be saved in playwright context's default download location. |
 
         Waited promise returns a dictionary which contains saveAs and suggestedFilename as keys. The saveAs contains
         where the file is downloaded and suggestedFilename contains the name suggested name for the download.
@@ -87,6 +133,8 @@ class Promises(LibraryComponent):
         | ${file_obj}=           `Wait For`  ${dl_promise}
         | File Should Exist    ${file_obj}[saveAs]
         | Should Be True       ${file_obj.suggestedFilename}
+
+        [https://forum.robotframework.org/t//4314|Comment >>]
         """
         promise = self._executor.submit(self._wait_for_download, **{"saveAs": saveAs})
         self.unresolved_promises.add(promise)
@@ -118,12 +166,15 @@ class Promises(LibraryComponent):
 
         For general waiting of elements please see `Implicit waiting`.
 
-        ``promises`` *Work in progress*
+        | =Arguments= | =Description= |
+        | ``promises`` | Promises to wait for. |
 
         Example:
         | ${promise}=    `Promise To`            `Wait For Response`     matcher=     timeout=3
         | `Click`         \\#delayed_request
         | ${body}=       `Wait For`              ${promise}
+
+        [https://forum.robotframework.org/t//4342|Comment >>]
         """
         self.unresolved_promises -= {*promises}
         if len(promises) == 1:
@@ -140,6 +191,8 @@ class Promises(LibraryComponent):
         | `Promise To`               Wait For Response     matcher=     timeout=3
         | `Click`                    \\#delayed_request
         | `Wait For All Promises`
+
+        [https://forum.robotframework.org/t//4344|Comment >>]
         """
         self.wait_for(*self.unresolved_promises)
 
@@ -151,21 +204,27 @@ class Promises(LibraryComponent):
 
         Upload file from ``path`` into next file chooser dialog on page.
 
-        ``path`` Path to file to be uploaded.
+        | =Arguments= | =Description= |
+        | ``path`` | Path to file to be uploaded. |
 
         Example use:
 
-        | ${promise}=    `Promise To Upload File`    ${CURDIR}/test_upload_file
-        | `Click`          \\#file_chooser
-        | ${upload_result}=  `Wait For`  ${promise}
+        | ${promise}=    `Promise To Upload File`    ${CURDIR}/test_upload_file.txt
+        | `Click`          id=open_file_chooser_button
+        | ${upload_result}=    `Wait For`    ${promise}
+
+        Alternatively, you can use `Upload File By Selector` keyword.
+
+        [https://forum.robotframework.org/t//4313|Comment >>]
         """
-        promise = self._executor.submit(self._upload_file, **{"path": path})
+        p = Path(path)
+        if not p.is_file():
+            raise ValueError(f"Nonexistent input file path '{p.resolve()}'")
+        promise = self._executor.submit(self._upload_file, **{"path": str(p.resolve())})
         self.unresolved_promises.add(promise)
         return promise
 
-    def _upload_file(self, path: PathLike):
-        p = Path(path)
-        p.resolve(strict=True)
+    def _upload_file(self, path: str):
         with self.playwright.grpc_channel() as stub:
-            response = stub.UploadFile(Request().FilePath(path=str(p)))
+            response = stub.UploadFile(Request().FilePath(path=path))
             logger.debug(response.log)

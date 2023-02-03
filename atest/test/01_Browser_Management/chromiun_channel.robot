@@ -1,5 +1,7 @@
 *** Settings ***
-Resource    imports.resource
+Resource            imports.resource
+
+Suite Teardown      Close Browser    ALL
 
 *** Test Cases ***
 Wrong Browser With Channel

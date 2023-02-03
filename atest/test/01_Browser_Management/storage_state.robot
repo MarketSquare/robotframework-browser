@@ -1,10 +1,10 @@
 *** Settings ***
 Resource        imports.resource
 
-Suite Setup     New Browser
+Suite Setup     New Browser    headless=${HEADLESS}
 
 *** Test Cases ***
-Save storage state
+Save Storage State
     New Context
     New Page    ${LOGIN_URL}
     Add Cookies For Storage
@@ -35,4 +35,4 @@ Add Cookies For Storage
     ${url} =    Get Url
     Add Cookie    Foo    Bar    url=${url}
     Add Cookie    Key    Value    url=${url}
-    Execute JavaScript    localStorage.setItem('bgcolor', 'red');
+    Evaluate JavaScript    ${None}    localStorage.setItem('bgcolor', 'red');

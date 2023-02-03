@@ -17,28 +17,30 @@
 from .data_types import (
     AutoClosingLevel,
     ColorScheme,
+    ConditionInputs,
     CookieSameSite,
     CookieType,
     DownloadedFile,
     ElementState,
+    ForcedColors,
     GeoLocation,
+    HighLightElement,
     HttpCredentials,
+    NewPageDetails,
+    Permission,
     Proxy,
     RecordHar,
     RecordVideo,
+    ReduceMotion,
     RequestMethod,
+    Scope,
     SelectAttribute,
     SelectionType,
     SupportedBrowsers,
     ViewportDimensions,
     convert_typed_dict,
 )
-from .deprecated import attribute_warning
-from .js_utilities import (
-    exec_scroll_function,
-    get_abs_scroll_coordinates,
-    get_rel_scroll_coordinates,
-)
+from .js_utilities import get_abs_scroll_coordinates, get_rel_scroll_coordinates
 from .meta_python import find_by_id, locals_to_params
 from .misc import (
     find_free_port,
@@ -46,5 +48,7 @@ from .misc import (
     get_variable_value,
     is_same_keyword,
     keyword,
+    spawn_node_process,
 )
 from .robot_booleans import is_falsy, is_truthy
+from .settings_stack import ScopedSetting, SettingsStack

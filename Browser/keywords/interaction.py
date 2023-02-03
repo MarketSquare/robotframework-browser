@@ -14,17 +14,17 @@
 
 import json
 from datetime import timedelta
+from os import PathLike
+from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
-    exec_scroll_function,
     get_abs_scroll_coordinates,
     get_rel_scroll_coordinates,
     keyword,
-    locals_to_params,
     logger,
 )
 from ..utils.data_types import (
@@ -56,18 +56,11 @@ class Interaction(LibraryComponent):
         Sends a ``keydown``, ``keypress/input``, and ``keyup`` event for each
         character in the text.
 
-        ``selector`` Selector of the text field.
-        See the `Finding elements` section for details about the selectors.
-
-        ``txt`` Text for the text field.
-
-        ``delay`` Delay between the single key strokes. It may be either a
-        number or a Robot Framework time string. Time strings are fully
-        explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
-        Example: ``50 ms``
-
-        ``clear`` Set to false, if the field shall not be cleared before typing.
-        Defaults to true.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
+        | ``txt`` | Text for the text field. |
+        | ``delay`` | Delay between the single key strokes. It may be either a number or a Robot Framework time string. Time strings are fully explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``. Example: ``50 ms`` |
+        | ``clear`` | Set to false, if the field shall not be cleared before typing. Defaults to true. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -76,12 +69,20 @@ class Interaction(LibraryComponent):
         Example
         | `Type Text`    input#username_field    user
         | `Type Text`    input#username_field    user    delay=10 ms    clear=No
+
+        [https://forum.robotframework.org/t//4339|Comment >>]
         """
         logger.info(f"Types the text '{txt}' in the given field.")
-        self._type_text(selector, txt, delay, clear, strict=self.strict_mode)
+        self._type_text(
+            selector,
+            txt,
+            delay,
+            clear,
+            strict=self.strict_mode,
+        )
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_text(self, selector: str, txt: str):
+    def fill_text(self, selector: str, txt: str, force: bool = False):
         """Clears and fills the given ``txt`` into the text field found by ``selector``.
 
         This method waits for an element matching the ``selector`` to appear,
@@ -92,10 +93,11 @@ class Interaction(LibraryComponent):
         [contenteditable] element, this method throws an error. Note that
         you can pass an empty string as ``txt`` to clear the input field.
 
-        ``selector`` Selector of the text field.
-        See the `Finding elements` section for details about the selectors.
 
-        ``txt`` Text for the text field.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
+        | ``txt`` | Text for the text field. |
+        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -103,22 +105,27 @@ class Interaction(LibraryComponent):
 
         Example:
         | `Fill Text`    css=input#username_field    username
+
+        [https://forum.robotframework.org/t//4254|Comment >>]
         """
         logger.info(f"Fills the text '{txt}' in the given field.")
-        self._fill_text(selector, txt, strict=self.strict_mode)
+        self._fill_text(selector, txt, strict=self.strict_mode, force=force)
 
     @keyword(tags=("Setter", "PageContent"))
     def clear_text(self, selector: str):
         """Clears the text field found by ``selector``.
 
-        ``selector`` Selector of the text field.
-        See the `Finding elements` section for details about the selectors.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         See `Type Text` for emulating typing text character by character.
         See `Fill Text` for direct filling of the full text at once.
+
+        [https://forum.robotframework.org/t//4237|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearText(
                 Request().ClearText(selector=selector, strict=self.strict_mode)
@@ -141,20 +148,30 @@ class Interaction(LibraryComponent):
         the library import, secret will be always visible as plain text in the playwright
         debug logs, regardless of the Robot Framework log level.
 
-        ``selector`` Selector of the text field.
-        See the `Finding elements` section for details about the selectors.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
+        | ``secret`` | Environment variable name with % prefix or a local variable with $ prefix that has the secret text value. Variable names can be used with and without curly braces. |
+        | ``delay`` | Delay between the single key strokes. It may be either a number or a Robot Framework time string. Time strings are fully explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``. Example: ``50 ms`` |
+        | ``clear`` | Set to false, if the field shall not be cleared before typing. Defaults to true. |
 
-        ``secret`` Environment variable name with % prefix or a local
-        variable with $ prefix that has the secret text value.
-        Variable names can be used with and without curly braces.
+        This keyword does not log secret in Robot Framework logs, when
+        keyword resolves the ``secret`` variable internally.
+        When ``secret`` variable is prefixed with `$`, without the curly braces,
+        library will resolve the corresponding Robot Framework variable.
 
-        ``delay`` Delay between the single key strokes. It may be either a
-        number or a Robot Framework time string. Time strings are fully
-        explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``.
-        Example: ``50 ms``
+        If ``secret`` variable is prefixed with `%`, library will resolve
+        corresponding environment variable. Example `$Password`` will
+        resolve to ``${Password}`` Robot Framework variable.
+        Also ``%ENV_PWD`` will resolve to ``%{ENV_PWD}`` environment variable.
 
-        ``clear`` Set to false, if the field shall not be cleared before typing.
-        Defaults to true.
+        *Using normal Robot Framework variables like ``${password}`` will not work!*
+
+        *Normal plain text will not work.*
+        If you want to use plain text, use `Type Text` keyword instead.
+
+        This keyword will also work with a give cryptographic cipher text, that has been
+        encrypted by Crypto library.
+        See [https://github.com/Snooz82/robotframework-crypto | Crypto Library] for more details.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -164,56 +181,56 @@ class Interaction(LibraryComponent):
         | `Type Secret`    input#username_field    $username      # Keyword resolves ${username} variable value from Robot Framework variables
         | `Type Secret`    input#username_field    %username      # Keyword resolves $USERNAME/%USERNAME% variable value from environment variables
         | `Type Secret`    input#username_field    ${username}    # Robot Framework resolves the variable value, but secrect can leak to Robot framework output files.
-        """
-        originals = self._get_original_values(locals())
-        secret = self.resolve_secret(
-            secret, originals.get("secret") or secret, "secret"
-        )
-        self._type_text(
-            selector, secret, delay, clear, log_response=False, strict=self.strict_mode
-        )
 
-    def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
-        originals = locals_to_params(local_args)
-        if not self.library.current_arguments:
-            return originals
-        named_args = False
-        for idx, val in enumerate(self.library.current_arguments):
-            if idx > len(originals):
-                break
-            if "=" in val and not named_args:
-                named_args = val.split("=", 1)[0] in originals
-            if named_args:
-                arg_name, arg_value = val.split("=", 1)
-                originals[arg_name] = arg_value
-            else:
-                originals[list(originals.keys())[idx]] = val
-        return originals
+        [https://forum.robotframework.org/t//4338|Comment >>]
+        """
+        secret = self.resolve_secret(secret, "secret")
+        try:
+            self._type_text(
+                selector,
+                secret,
+                delay,
+                clear,
+                log_response=False,
+                strict=self.strict_mode,
+            )
+        except Exception as e:
+            raise Exception(str(e).replace(secret, "***"))
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_secret(self, selector: str, secret: str):
+    def fill_secret(self, selector: str, secret: str, force: bool = False):
         """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
 
+
+        | =Arguments= | =Description= |
+        | ``secret`` | The secret string that should be filled into the text field. |
+        | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
+        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+
+
         This keyword does not log secret in Robot Framework logs, when
-        keywords resolves the ``secret`` variable internally. When
-        ``secret`` variable is prefixed with `$`, without the curly braces,
-         library will resolve the corresponding Robot Framework variable.
-         If ``secret`` variable is prefixed with `%`, library will resolve
-         corresponding environment variable. Example `$Password`` will
-         resolve to ``${Password}`` Robot Framework variable. Also
-         ``%ENV_PWD``will resolve to ``%{ENV_PWD}`` environment variable.
-         Using normal Robt Framework variables or plain text will also work,
-         but then library can not prevent Robot Framework leaking the secrets
-         in the output files. Also library will log a warning if library
-         can not resolve the secret internally.
+        keyword resolves the ``secret`` variable internally.
+        When ``secret`` variable is prefixed with `$`, without the curly braces,
+        library will resolve the corresponding Robot Framework variable.
+
+        If ``secret`` variable is prefixed with `%`, library will resolve
+        corresponding environment variable. Example `$Password`` will
+        resolve to ``${Password}`` Robot Framework variable.
+        Also ``%ENV_PWD`` will resolve to ``%{ENV_PWD}`` environment variable.
+
+        *Using normal Robot Framework variables like ``${password}`` will not work!*
+
+        *Normal plain text will not work.*
+        If you want to use plain text, use `Fill Text` keyword instead.
+
+        This keyword will also work with a give cryptographic cipher text, that has been
+        encrypted by Crypto library.
+        See [https://github.com/Snooz82/robotframework-crypto | Crypto Library] for more details.
 
         If ``enable_playwright_debug`` is enabled in the library import,
         secret will be always visible as plain text in the playwright debug
         logs, regardless of the Robot Framework log level.
-
-        ``selector`` Selector of the text field.
-        See the `Finding elements` section for details about the selectors.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -222,36 +239,48 @@ class Interaction(LibraryComponent):
         Example:
         | `Fill Secret`    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
         | `Fill Secret`    input#username_field    %username    # Keyword resolves variable value from environment variables
+
+        [https://forum.robotframework.org/t//4253|Comment >>]
         """
-        originals = self._get_original_values(locals())
-        secret = self.resolve_secret(
-            secret, originals.get("secret") or secret, "secret"
-        )
-        self._fill_text(selector, secret, log_response=False, strict=self.strict_mode)
+        secret = self.resolve_secret(secret, "secret")
+        try:
+            self._fill_text(
+                selector,
+                secret,
+                log_response=False,
+                strict=self.strict_mode,
+                force=force,
+            )
+        except Exception as e:
+            raise Exception(str(e).replace(secret, "***"))
 
     @keyword(tags=("Setter", "PageContent"))
     def press_keys(self, selector: str, *keys: str):
         """Types the given key combination into element found by ``selector``.
 
-        ``selector`` Selector of the text field.
-        See the `Finding elements` section for details about the selectors.
+
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
+        | ``*keys`` | Keys to be press after each other. Using + to chain combine modifiers with a single keypress ``Control+Shift+T`` is supported. |
+
+
+        Supports values like "a, b" which will be automatically typed.
+
+        Also supports identifiers for keys like ``ArrowLeft`` or ``Backspace``.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        Supports values like "a, b" which will be automatically typed.
-        .
-        Also supports identifiers for keys like ``ArrowLeft`` or ``Backspace``.
-        Using + to chain combine modifiers with a single keypress
-        ``Control+Shift+T`` is supported.
-
         See playwright's documentation for a more comprehensive list of
         supported input keys.
-        [https://playwright.dev/docs/api/class-page#pagepressselector-key-options | Playwright docs for press.]
+        [https://playwright.dev/docs/api/class-page#page-press | Playwright docs for press.]
 
         Example:
         | # Keyword         Selector                    *Keys
         | `Press Keys`      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
-        """  # noqa
+
+        [https://forum.robotframework.org/t//4311|Comment >>]
+        """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(
                 Request().PressKeys(
@@ -283,39 +312,37 @@ class Interaction(LibraryComponent):
         - Use `Mouse Button` to click in the center of the element, or the specified position.
         - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
 
-        ``selector`` Selector element to click. See the `Finding elements` section for details about the selectors.
 
-        ``button`` Defaults to ``left`` if invalid.
-
-        ``clickCount`` Defaults to 1.
-
-        ``delay`` Time to wait between mouse-down and mouse-up. Defaults to 0.
-
-        ``position_x`` & ``position_y`` A point to click relative to the
-        top-left corner of element bounding-box. Only positive values within the bounding-box are allowed.
-        If not specified, clicks to some visible point of the element.
-
-        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
-
-        ``noWaitAfter`` Actions that initiate navigation, are waiting for these navigation to happen and
-        for pages to start loading. You can opt out of waiting via setting this flag. You would only need
-        this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
+        | ``button`` | Defaults to ``left`` if invalid. |
+        | ``clickCount`` | Defaults to 1. |
+        | ``delay`` | Time to wait between mouse-down and mouse-up. Defaults to 0. |
+        | ``position_x`` | & ``position_y`` A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
+        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``noWaitAfter`` | Actions that initiate navigation, are waiting for these navigation to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
-
-        ``*modifiers``
-        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
-        current modifiers back. If not specified, currently pressed modifiers are used.
 
         Example:
         | `Click`    id=button_location
         | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
 
+        ``*modifiers``
+        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
+        current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified
+        in any order, and multiple modifiers can be specified.
+        Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``.
+        Due to the fact that the argument `*modifiers` is a positional only argument,
+        all preceding keyword arguments have to be specified as positional arguments before `*modifiers`.
+
+        Example:
+        | `Click`    id=clickWithModifiers    left    1    None    None    None    False    False    Alt    Meta    Shift
+        | `Click`    id=clickWithModifier    right    2    None    None    None    False    False    Shift
+
+        [https://forum.robotframework.org/t/comments-for-click/4238|Comment >>]
         """
-        if self.library.presenter_mode:
-            self.hover(selector)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             options = {
                 "button": button.name,
@@ -347,7 +374,9 @@ class Interaction(LibraryComponent):
     ):
         """Record the selector that is under mouse.
 
-        ``label`` text to show when on the box in the page while recording.
+
+        | =Arguments= | =Description= |
+        | ``label`` | text to show when on the box in the page while recording. |
 
         Focus on the page and move mouse over the element you want to select.
 
@@ -356,6 +385,8 @@ class Interaction(LibraryComponent):
         | `Click`  ${selector}
         | ${selector2} =    `Record Selector`  Page header
         | `Get Text`  ${selector2}  ==  Expected text
+
+        [https://forum.robotframework.org/t//4315|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.RecordSelector(Request.Label(label=label or ""))
@@ -385,24 +416,22 @@ class Interaction(LibraryComponent):
         - Scroll the element into view if needed.
         - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
 
-        ``selector`` Selector element to hover. See the `Finding elements` section for details about the selectors.
 
-        ``position_x`` & ``position_y`` A point to hover relative to the top-left corner of element bounding box.
-        If not specified, hovers over some visible point of the element.
-        Only positive values within the bounding-box are allowed.
-
-        ``force`` Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks].
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector element to hover. See the `Finding elements` section for details about the selectors. |
+        | ``position_x`` & ``position_y`` | A point to hover relative to the top-left corner of element bounding box. If not specified, hovers over some visible point of the element. Only positive values within the bounding-box are allowed. |
+        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the hover, and then restores current modifiers back. If not specified, currently pressed modifiers are used. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
-
-        ``*modifiers`` Modifier keys to press. Ensures that only these modifiers are
-        pressed during the hover, and then restores current modifiers back.
-        If not specified, currently pressed modifiers are used.
 
         Example:
         | `Hover`    h1
         | `Hover`    h1    10   20    Alt
+
+        [https://forum.robotframework.org/t//4295|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             options: Dict[str, Any] = {"force": force}
             if position_x and position_y:
@@ -423,14 +452,17 @@ class Interaction(LibraryComponent):
     def focus(self, selector: str):
         """Moves focus on to the element found by ``selector``.
 
-        ``selector`` Selector of the element.
-        See the `Finding elements` section for details about the selectors.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the element. See the `Finding elements` section for details about the selectors. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         If there's no element matching selector, the method waits until a
         matching element appears in the DOM. Timeouts after 10 seconds.
+
+        [https://forum.robotframework.org/t//4255|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -447,23 +479,15 @@ class Interaction(LibraryComponent):
     ):
         """Scrolls an element or the page to an absolute position based on given coordinates.
 
-        ``selector`` Selector of the element. If the selector is ``${None}`` or ``${Empty}``
-        the page itself is scrolled. To ensure an element is in view use `Hover` instead.
-        See the `Finding elements` section for details about the selectors.
-
-        ``vertical`` defines where to scroll vertically.
-        It can be a positive number, like ``300``.
-        It can be a percentage value of the absolute scrollable size, like ``50%``.
-        It can be a string defining that top or the bottom of the scroll area. < ``top`` | ``bottom`` >
-        _Be aware that some pages do lazy loading and load more content once you scroll down._
-        Bottom defines the current known bottom coordinate.
-
-        ``horizontal`` defines where to scroll horizontally.
-        Works same as vertical but defines < ``left`` | ``right`` > as start and end.
-
-        ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the element. If the selector is ``${None}`` or ``${Empty}`` the page itself is scrolled. To ensure an element is in view use `Hover` instead. See the `Finding elements` section for details about the selectors. |
+        | ``vertical`` | defines where to scroll vertically. It can be a positive number, like ``300``. It can be a percentage value of the absolute scrollable size, like ``50%``. It can be a string defining that top or the bottom of the scroll area. < ``top`` | ``bottom`` > _Be aware that some pages do lazy loading and load more content once you scroll down._ Bottom defines the current known bottom coordinate. |
+        | ``horizontal`` | defines where to scroll horizontally. Works same as vertical but defines < ``left`` | ``right`` > as start and end. |
+        | ``behavior`` | defines whether the scroll happens directly or it scrolls smoothly. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        [https://forum.robotframework.org/t//4320|Comment >>]
         """
         scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
@@ -477,8 +501,7 @@ class Interaction(LibraryComponent):
         horizontal_px = get_abs_scroll_coordinates(
             horizontal, scroll_width - client_width, "left", "right"
         )
-        exec_scroll_function(
-            self,
+        self.exec_scroll_function(
             f'scrollTo({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
             selector,
         )
@@ -493,24 +516,15 @@ class Interaction(LibraryComponent):
     ):
         """Scrolls an element or the page relative from current position by the given values.
 
-        ``selector`` Selector of the element. If the selector is ``${None}`` or ``${Empty}``
-        the page itself is scrolled. To ensure an element is in view use `Hover` instead.
-        See the `Finding elements` section for details about the selectors.
-
-        ``vertical`` defines how far and in which direction to scroll vertically.
-        It can be a positive or negative number. Positive scrolls down, like ``50``, negative scrolls up, like ``-50``.
-        It can be a percentage value of the absolute scrollable size, like ``9.95%`` or negative like ``-10%``.
-        It can be the string ``height`` to defining to scroll exactly one visible height down or up with ``-height``.
-        _Be aware that some pages do lazy loading and load more content once you scroll down._
-        The percentage of the current scrollable height is used and may change.
-
-        ``horizontal`` defines where to scroll horizontally.
-        Works same as vertical but defines positive values for right and negative values for left.
-        ``width`` defines to scroll exactly one visible range to the right.
-
-        ``behavior`` defines whether the scroll happens directly or it scrolls smoothly.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the element. If the selector is ``${None}`` or ``${Empty}`` the page itself is scrolled. To ensure an element is in view use `Hover` instead. See the `Finding elements` section for details about the selectors. |
+        | ``vertical`` | defines how far and in which direction to scroll vertically. It can be a positive or negative number. Positive scrolls down, like ``50``, negative scrolls up, like ``-50``. It can be a percentage value of the absolute scrollable size, like ``9.95%`` or negative like ``-10%``. It can be the string ``height`` to defining to scroll exactly one visible height down or up with ``-height``. _Be aware that some pages do lazy loading and load more content once you scroll down._ The percentage of the current scrollable height is used and may change. |
+        | ``horizontal`` | defines where to scroll horizontally. Works same as vertical but defines positive values for right and negative values for left. ``width`` defines to scroll exactly one visible range to the right. |
+        | ``behavior`` | defines whether the scroll happens directly or it scrolls smoothly. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        [https://forum.robotframework.org/t//4319|Comment >>]
         """
         scroll_size = self.library.get_scroll_size(selector)
         scroll_width = scroll_size["width"]
@@ -524,43 +538,75 @@ class Interaction(LibraryComponent):
         horizontal_px = get_rel_scroll_coordinates(
             horizontal, scroll_width - client_width, client_width, "width"
         )
-        exec_scroll_function(
-            self,
+        self.exec_scroll_function(
             f'scrollBy({{"left": {horizontal_px}, "top": {vertical_px}, "behavior": "{behavior.name}"}})',
             selector,
         )
 
     @keyword(tags=("Setter", "PageContent"))
-    def check_checkbox(self, selector: str):
+    def scroll_to_element(self, selector: str):
+        """This method waits for actionability checks, then tries to scroll element into view,
+        unless it is completely visible.
+
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the checkbox. See the `Finding elements` section for details about the selectors. |
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Does nothing if the element is already visible.
+
+        [https://forum.robotframework.org/t//4321|Comment >>]
+        """
+        selector = self.resolve_selector(selector)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ScrollToElement(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def check_checkbox(self, selector: str, force: bool = False):
         """Checks the checkbox or selects radio button found by ``selector``.
 
-        ``selector`` Selector of the checkbox.
-        See the `Finding elements` section for details about the selectors.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the checkbox. See the `Finding elements` section for details about the selectors. |
+        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Does nothing if the element is already checked/selected.
+
+        [https://forum.robotframework.org/t//4235|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.CheckCheckbox(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+                Request().ElementSelector(
+                    selector=selector, strict=self.strict_mode, force=force
+                )
             )
         logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def uncheck_checkbox(self, selector: str):
+    def uncheck_checkbox(self, selector: str, force: bool = False):
         """Unchecks the checkbox found by ``selector``.
 
-        ``selector`` Selector of the checkbox.
-        See the `Finding elements` section for details about the selectors.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the checkbox. See the `Finding elements` section for details about the selectors. |
+        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Does nothing if the element is not checked/selected.
+
+        [https://forum.robotframework.org/t//4340|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.UncheckCheckbox(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+                Request().ElementSelector(
+                    selector=selector, strict=self.strict_mode, force=force
+                )
             )
         logger.debug(response.log)
 
@@ -570,30 +616,46 @@ class Interaction(LibraryComponent):
         selector: str,
         attribute: SelectAttribute,
         *values,
-    ):
+    ) -> List[Any]:
         """Selects options from select element found by ``selector``.
 
-        ``selector`` Selector of the select tag.
-        See the `Finding elements` section for details about the selectors.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the ``<select>`` tag. See the `Finding elements` section for details about the selectors. |
+        | ``attribute`` | Attribute to select options by. Can be ``value``, ``label``, ``text`` or ``index``. Where ``label`` and ``text`` are same. |
+        | ``*values`` | Values to select. |
 
-        Matches based on the chosen attribute with list of ``values``.
-        Possible attributes to match options by:
-        ``attribute``
+
+        Returns list of options which keyword was able to select. The type of
+        list item matches to ``attribute`` definition. Example if ``attribute``
+        equals to `label` returned list contains label values. Or in case of
+        `index` it contains list of selected indexes.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         If no values to select are passed will deselect options in element.
 
         Example:
-        | `Select Options By`    select[name=preferred_channel]    label    Direct mail
-        | `Select Options By`    select[name=interests]    value    males    females    others
-        | `Select Options By`    select[name=possible_channels]    index    0    2
-        | `Select Options By`    select[name=interests]    text     Males    Females
+        | ${selected} =    `Select Options By`    select[name=preferred_channel]    label    Direct mail
+        | List Should Contain Value    ${selected}    Direct mail
+        | ${selected} =    `Select Options By`    select[name=interests]    value    males    females    others
+        | List Should Contain Value    ${selected}    males
+        | List Should Contain Value    ${selected}    females
+        | List Should Contain Value    ${selected}    others
+        | Length Should Be    ${selected}    3
+        | ${selected} =    `Select Options By`    select[name=possible_channels]    index    0    2
+        | List Should Contain Value    ${selected}    0
+        | List Should Contain Value    ${selected}    2
+        | ${selected} =    `Select Options By`    select[name=interests]    text     Males    Females
+        | List Should Contain Value    ${selected}    Males
+        | List Should Contain Value    ${selected}    Females
+
+        [https://forum.robotframework.org/t//4322|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         matchers = ""
         if not values or len(values) == 1 and not values[0]:
             self.deselect_options(selector)
-            return
+            return []
 
         if attribute is SelectAttribute.value:
             matchers = json.dumps([{"value": s} for s in values])
@@ -601,23 +663,36 @@ class Interaction(LibraryComponent):
             matchers = json.dumps([{"label": s} for s in values])
         elif attribute is SelectAttribute.index:
             matchers = json.dumps([{"index": int(s)} for s in values])
+        else:
+            raise TypeError(
+                'Invalid type for `attribute`. Please specify SelectAttribute["value"], "label" or "index"'
+            )
+
         with self.playwright.grpc_channel() as stub:
             response = stub.SelectOption(
                 Request().SelectElementSelector(
                     selector=selector, matcherJson=matchers, strict=self.strict_mode
                 )
             )
-            logger.debug(response.log)
+        logger.debug(response)
+        return [getattr(sel, attribute.name) for sel in response.entry if sel.selected]
 
     @keyword(tags=("Setter", "PageContent"))
     def deselect_options(self, selector: str):
         """Deselects all options from select element found by ``selector``.
 
-        ``selector`` Selector of the select tag.
-        See the `Finding elements` section for details about the selectors.
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector of the select tag. See the `Finding elements` section for details about the selectors. |
+
+        If you just want to select one or more specific options and
+        currently more options are selected, use `Select Options By`
+        keyword with the options to be selected in the end.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        [https://forum.robotframework.org/t//4245|Comment >>]
         """
+        selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.DeselectOption(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
@@ -625,15 +700,19 @@ class Interaction(LibraryComponent):
         logger.debug(response.log)
 
     def _fill_text(
-        self, selector: str, txt: str, log_response: bool = True, strict: bool = True
+        self,
+        selector: str,
+        txt: str,
+        log_response: bool = True,
+        strict: bool = True,
+        force: bool = False,
     ):
-        if self.library.presenter_mode:
-            self.hover(selector, strict)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        selector = self.presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             response = stub.FillText(
-                Request().FillText(selector=selector, text=txt, strict=strict)
+                Request().FillText(
+                    selector=selector, text=txt, strict=strict, force=force
+                )
             )
             if log_response:
                 logger.debug(response.log)
@@ -647,10 +726,7 @@ class Interaction(LibraryComponent):
         log_response: bool = True,
         strict: bool = True,
     ):
-        if self.library.presenter_mode:
-            self.hover(selector, strict)
-            self.library.highlight_elements(selector, duration=timedelta(seconds=2))
-            sleep(2)
+        selector = self.presenter_mode(selector, strict)
         with self.playwright.grpc_channel() as stub:
             delay_ms = self.get_timeout(delay)
             response = stub.TypeText(
@@ -675,14 +751,15 @@ class Interaction(LibraryComponent):
 
         If a handler is not set dialogs are dismissed by default.
 
-            ``action`` How to handle the alert.
-
-            ``prompt_input`` The value to enter into prompt. Only valid if
-            ``action`` equals accept. Defaults to empty string.
+        | =Arguments= | =Description= |
+        | ``action`` | How to handle the alert. Can be ``accept`` or ``dismiss``. |
+        | ``prompt_input`` | The value to enter into prompt. Only valid if ``action`` argument equals ``accept``. Defaults to empty string. |
 
         Example:
         | `Handle Future Dialogs`    action=accept
         | `Click`                    \\#alerts
+
+        [https://forum.robotframework.org/t//4293|Comment >>]
         """
 
         with self.playwright.grpc_channel() as stub:
@@ -697,10 +774,15 @@ class Interaction(LibraryComponent):
     def wait_for_alert(
         self, action: DialogAction, prompt_input: str = "", text: Optional[str] = None
     ):
-        """Handle next dialog on page with ``action`` as promise.
+        """Returns a promise to wait for next dialog on page, handles it with ``action`` and optionally verifies the dialogs text.
 
-        See `Handle Future Dialogs` for more details about ``action`` and what
-        types of dialogues are supported.
+        Dialog/alert can be any of alert, beforeunload, confirm or prompt.
+
+        | =Arguments= | =Description= |
+        | ``action`` | How to handle the alert. Can be ``accept`` or ``dismiss``. |
+        | ``prompt_input`` | The value to enter into prompt. Only valid if ``action`` argument equals ``accept``. Defaults to empty string. |
+        | ``text`` | Optional text to verify the dialogs text. |
+
 
         The main difference between this keyword and `Handle Future Dialogs`
         is that `Handle Future Dialogs` keyword is automatically set as promise.
@@ -720,6 +802,8 @@ class Interaction(LibraryComponent):
         | ${promise} =       Promise To    Wait For Alert    action=accept    text=Am an alert
         | Click              id=alerts
         | ${text} =          Wait For      ${promise}
+
+        [https://forum.robotframework.org/t//4343|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitForAlert(
@@ -742,20 +826,25 @@ class Interaction(LibraryComponent):
         y: Optional[float] = None,
         button: MouseButton = MouseButton.left,
         clickCount: int = 1,
-        delay: int = 0,
+        delay: Union[int, timedelta] = timedelta(seconds=0),
+        # TODO: remove int special handling. Was only here since 09.2022 for removing delay ms to timedelta
     ):
         """Clicks, presses or releases a mouse button.
 
-        ``action`` Determines if it is a mouseclick, holding down a key or releasing it.
+        | =Arguments= | =Description= |
+        | ``action`` | Defines if it is a mouseclick (``click``), holding down a button (``down``) or releasing it (``up``). |
+        | ``x``, ``y`` | Coordinates to move before action is executed. |
+        | ``button`` | One of ``left``, ``middle`` or ``up``. Defaults to ``left``. |
+        | ``clickCount`` | Determine how often the button shall be clicked if action is equal to ``click``. Defaults to 1. |
+        | ``delay`` | Delay in Robot Framework time format between the mousedown and mouseup event. Can only be set if the action is ``click``. |
 
-        ``x`` and ``y`` Coordinates to move before.
+        *Attention:*
+        Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead.
+        For refactoring just add 'ms' after the delay number.
 
-        ``button`` Defaults to ``left``.
-
-        ``clickCount`` Determine how often shall be clicked. Defaults to 1.
-
-        ``delay`` Delay in ms between the mousedown and mouseup event.
-        Can only be set if the action is click.
+        Delay Example:
+        | `Mouse Button`    click    100 ms
+        | `Mouse Button`    click    ${dyn_delay} ms
 
         Moving the mouse between holding down and releasing it, is possible with `Mouse Move`.
 
@@ -764,7 +853,19 @@ class Interaction(LibraryComponent):
         | `Mouse Button`              down                 # Press mouse button down
         | `Mouse Move Relative To`    "Obstacle"    500    # Drag mouse
         | `Mouse Button`              up                   # Release mouse button
+
+        [https://forum.robotframework.org/t//4303|Comment >>]
         """
+        if isinstance(delay, int):
+            logger.warn(
+                "Keyword 'Mouse Button' will not support int in ms for 'delay' in the future. "
+                "Use timedelta with units ('ms' or 's') instead."
+            )
+            delay = timedelta(milliseconds=delay)
+            # ToDo: add in 15.0.0
+            # raise ValueError(
+            #     "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
+            # )
         with self.playwright.grpc_channel() as stub:
             if x and y:
                 self.mouse_move(x, y)
@@ -775,7 +876,7 @@ class Interaction(LibraryComponent):
             if action == MouseButtonAction.click:
                 for _ in range(clickCount):
                     self.mouse_button(MouseButtonAction.down, button=button)
-                    sleep(delay / 1000)
+                    sleep(delay.total_seconds())
                     self.mouse_button(MouseButtonAction.up, button=button)
                 return
             else:
@@ -797,6 +898,11 @@ class Interaction(LibraryComponent):
         """Executes a Drag&Drop operation from the element selected by ``selector_from``
         to the element selected by ``selector_to``.
 
+        | =Arguments= | =Description= |
+        | ``selector_from`` | Identifies the element, which center is the start-point. |
+        | ``selector_to`` | Identifies the element, which center is the end-point. |
+        | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
+
         See the `Finding elements` section for details about the selectors.
 
         First it moves the mouse to the start-point,
@@ -806,16 +912,12 @@ class Interaction(LibraryComponent):
 
         Start- and end-point are defined by the center of the elements boundingbox.
 
-        ``selector_from`` identifies the element, which center is the start-point.
-
-        ``selector_to`` identifies the element, which center is the end-point.
-
-        ``steps`` defines how many intermediate mouse move events are sent.
-
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example
         | `Drag And Drop`    "Circle"    "Goal"
+
+        [https://forum.robotframework.org/t//4247|Comment >>]
         """
         from_bbox = self.library.get_boundingbox(selector_from)
         from_xy = self._center_of_boundingbox(from_bbox)
@@ -827,7 +929,12 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def drag_and_drop_by_coordinates(
-        self, from_x: float, from_y: float, to_x: float, to_y: float, steps: int = 1
+        self,
+        from_x: float,
+        from_y: float,
+        to_x: float,
+        to_y: float,
+        steps: int = 1,
     ):
         """Executes a Drag&Drop operation from a coordinate to another coordinate.
 
@@ -839,18 +946,58 @@ class Interaction(LibraryComponent):
         Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
         the top left corner of the pages viewport.
 
-        ``from_x`` & ``from_y`` identify the start-point.
-
-        ``to_x`` & ``to_y`` identify the end-point.
-
-        ``steps`` defines how many intermediate mouse move events are sent.
+        | ``from_x`` & ``from_y`` | Identify the start-point on page. |
+        | ``to_x`` & ``to_y`` | Identify the end-point. |
+        | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         Example:
         | `Drag And Drop By Coordinates`
         | ...    from_x=30    from_y=30
-        | ...    to_x=10    to_y=10    steps=200
+        | ...    to_x=10    to_y=10    steps=20
+
+        [https://forum.robotframework.org/t//4248|Comment >>]
         """
         self.mouse_button(MouseButtonAction.down, x=from_x, y=from_y)
+        self.mouse_move(x=to_x, y=to_y, steps=steps)
+        self.mouse_button(MouseButtonAction.up)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def drag_and_drop_relative_to(
+        self,
+        selector_from: str,
+        x: float = 0.0,
+        y: float = 0.0,
+        steps: int = 1,
+    ):
+        """Executes a Drag&Drop operation from the element selected by ``selector_from``
+        to coordinates relative to the center of that element.
+
+        This keyword can be handy to simulate swipe actions.
+
+        | =Arguments= | =Description= |
+        | ``selector_from`` | identifies the element, which center is the start-point. |
+        | ``x`` & ``y`` | identifies the end-point which is relative to the start-point. |
+        | ``steps`` | defines how many intermediate mouse move events are sent. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
+
+        See the `Finding elements` section for details about the selectors.
+
+        First it moves the mouse to the start-point (center of boundingbox),
+        then presses the left mouse button,
+        then moves to the relative position with the given intermediate steps,
+        then releases the mouse button.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Example
+        | `Drag And Drop Relative to`    "Circle"    -20    0     # Slides the element 20 pixel to the left
+
+        [https://forum.robotframework.org/t//4249|Comment >>]
+        """
+        from_bbox = self.library.get_boundingbox(selector_from)
+        from_xy = self._center_of_boundingbox(from_bbox)
+        to_x = from_xy["x"] + x
+        to_y = from_xy["y"] + y
+        self.mouse_button(MouseButtonAction.down, **from_xy)
         self.mouse_move(x=to_x, y=to_y, steps=steps)
         self.mouse_button(MouseButtonAction.up)
 
@@ -871,15 +1018,17 @@ class Interaction(LibraryComponent):
     ):
         """Moves the mouse cursor relative to the selected element.
 
-        ``x`` ``y`` are relative coordinates to the center of the elements bounding box.
-
-        ``steps`` Number of intermediate steps for the mouse event.
-        This is sometime needed for websites to recognize the movement.
+        | =Arguments= | =Description= |
+        | ``selector`` | Identifies the element, which center is the start-point. |
+        | ``x`` & ``y`` | Are relative coordinates to the center of the elements bounding box. |
+        | ``steps`` | Number of intermediate steps for the mouse event. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
         | `Mouse Move Relative To`    id=indicator    -100
+
+        [https://forum.robotframework.org/t//4305|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             bbox = self.library.get_boundingbox(selector)
@@ -904,13 +1053,14 @@ class Interaction(LibraryComponent):
         """Instead of selectors command mouse with coordinates.
         The Click commands will leave the virtual mouse on the specified coordinates.
 
-        ``x`` ``y`` are absolute coordinates starting at the top left
-        of the page.
-
-        ``steps`` Number of intermediate steps for the mouse event.
+        | =Arguments= | =Description= |
+        | ``x`` & ``y`` | Are absolute coordinates starting at the top left of the page. |
+        | ``steps`` | Number of intermediate steps for the mouse event. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         Example:
         | `Mouse Move`    400    400
+
+        [https://forum.robotframework.org/t//4304|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
@@ -919,22 +1069,35 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
+    def mouse_wheel(self, deltaX: int, deltaY: int):
+        """Simulates the user rotation of a mouse wheel.
+
+        | =Arguments= | =Description= |
+        | ``deltaX`` & ``deltaY`` | Pixels that are scrolled horizontally & vertically. |
+
+        Example:
+        | # Before doing a mouse wheel interaction. A mouse needs to be posisioned on the browser window.
+        | `Hover`    body
+        | `Mouse Wheel`    0    250
+
+        [https://forum.robotframework.org/t//5186|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.MouseWheel(
+                Request().MouseWheel(deltaX=deltaX, deltaY=deltaY)
+            )
+            logger.info(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
     def keyboard_key(self, action: KeyAction, key: str):
         """Press a keyboard key on the virtual keyboard or set a key up or down.
 
-        ``action`` Determine whether the key should be released,
-        hold or pressed. ``down`` or ``up`` are useful for combinations i.e. with Shift.
+        | =Arguments= | =Description= |
+        | ``action`` | Determine whether the key should be released (``up``), hold (``down``) or pressed once (``press``). ``down`` or ``up`` are useful for combinations i.e. with Shift. |
+        | ``key`` | The key to be pressed. An example of valid keys are: ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA`` - ``KeyZ``, ``Backquote``, ``Minus``, ``Equal``, ``Backslash``, ``Backspace``, ``Tab``, ``Delete``, ``Escape``, ``ArrowDown``, ``End``, ``Enter``, ``Home``, ``Insert``, ``PageDown``, ``PageUp``, ``ArrowRight``, ``ArrowUp`` , etc. |
 
-
-        ``key`` The key to be pressed. An example of valid keys are:
-
-        ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA`` - ``KeyZ``, ``Backquote``, ``Minus``,
-        ``Equal``, ``Backslash``, ``Backspace``, ``Tab``, ``Delete``, ``Escape``, ``ArrowDown``,
-        ``End``, ``Enter``, ``Home``, ``Insert``, ``PageDown``, ``PageUp``, ``ArrowRight``, ``ArrowUp``
-        , etc.
 
         Useful keys for ``down`` and ``up`` for example are:
-
         ``Shift``, ``Control``, ``Alt``, ``Meta``, ``ShiftLeft``
 
         Example excecution:
@@ -945,6 +1108,8 @@ class Interaction(LibraryComponent):
         | `Keyboard Key`    up       Shift
 
         Note: Capital letters don't need to be written by the help of Shift. You can type them in directly.
+
+        [https://forum.robotframework.org/t//4298|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardKey(
@@ -953,16 +1118,23 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
+    def keyboard_input(
+        self,
+        action: KeyboardInputAction,
+        input: str,
+        delay: Union[int, timedelta] = timedelta(milliseconds=0),
+        # TODO: remove int special handling. Was only here since 09.2022 for removing delay ms to timedelta
+    ):
         """Input text into page with virtual keyboard.
 
-        ``action``
+        | =Arguments= | =Description= |
+        | ``action`` | ``insertText``: Dispatches only input event, does not emit the keydown, keyup or keypress events. ``type``: Sends a keydown, keypress/input, and keyup event for each character in the text. |
+        | ``input`` | The inputstring to be typed. _No special keys possible._ |
+        | ``delay`` | Time to wait between key presses in Robot Framework's time format. Defaults to 0. |
 
-            - ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
+        *Attention:*
+        Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format with units instead.
 
-            - ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
-
-        ``input`` The inputstring to be typed. No special keys possible.
 
         Note: To press a special key, like Control or ArrowDown, use keyboard.press.
         Modifier keys DO NOT effect these methods. For testing modifier effects use single key
@@ -970,11 +1142,55 @@ class Interaction(LibraryComponent):
 
         Example:
         | `Keyboard Input`    insertText    0123456789
+
+        [https://forum.robotframework.org/t//4297|Comment >>]
         """
+        if isinstance(delay, int):
+            logger.warn(
+                "Keyword 'Keyboard Input' will not support int in ms for 'delay' in the future. "
+                "Use timedelta with units ('ms' or 's') instead."
+            )
+            delay = timedelta(milliseconds=delay)
+            # TODO: add in 15.0.0
+            # raise ValueError(
+            #     "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
+            # )
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardInput(
                 Request().KeyboardInputOptions(
-                    action=action.name, input=input, delay=delay
+                    action=action.name,
+                    input=input,
+                    delay=int(delay.total_seconds() * 1000),
+                )
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def upload_file_by_selector(self, selector: str, path: PathLike):
+        """Uploads file from `path` to file input element matched by selector.
+
+        Fails if upload is not done before library timeout.
+        Therefor it may be necessary to increase the timeout with `Set Browser Timeout`.
+
+        | =Arguments= | =Description= |
+        | ``selector`` | Identifies the file input element. |
+        | ``path`` | Path to the file to be uploaded. |
+
+        Example:
+        | `Upload File By Selector`    //input[@type='file']    big_file.zip
+
+        [https://forum.robotframework.org/t//4341|Comment >>]
+        """
+        selector = self.resolve_selector(selector)
+        p = Path(path)
+        if not p.is_file():
+            raise ValueError(f"Nonexistent input file path '{p.resolve()}'")
+        with self.playwright.grpc_channel() as stub:
+            response = stub.UploadFileBySelector(
+                Request().FileBySelector(
+                    path=str(p.resolve()),
+                    selector=selector,
+                    strict=self.strict_mode,
                 )
             )
             logger.debug(response.log)

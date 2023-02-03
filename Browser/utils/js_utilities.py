@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 
 def get_abs_scroll_coordinates(
@@ -49,14 +49,4 @@ def get_rel_scroll_coordinates(query: Any, full: int, client: int, dimension_str
             return (full * float(m.group(1))) // 100
     raise ValueError(
         f"Argument must be int, percentage or string <width|height> but was {type(query)} with value `{query}`."
-    )
-
-
-def exec_scroll_function(Browser, function: str, selector: Optional[str] = None):
-    if selector:
-        element_selector = "(element) => element"
-    else:
-        element_selector = "document.scrollingElement"
-    return Browser.library.execute_javascript(
-        f"{element_selector}.{function}", selector
     )

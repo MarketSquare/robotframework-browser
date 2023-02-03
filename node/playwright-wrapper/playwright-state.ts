@@ -20,10 +20,11 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse, keywordsResponse, pageReportResponse, stringResponse } from './response-util';
 import { exists } from './playwright-invoke';
 
-import * as pino from 'pino';
 import { ServerWritableStream } from '@grpc/grpc-js';
+import { pino } from 'pino';
+import strip from 'strip-comments';
 
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
@@ -44,37 +45,67 @@ export interface LocatorCount {
     nth: number;
 }
 
+const extractArgumentsStringFromJavascript = (javascript: string): string => {
+    const regex = /\((.*?)\)/;
+    const match = regex.exec(strip(javascript).replace(/\r?\n/g, ''));
+    if (match) {
+        return match[1];
+    }
+    logger.error(`Could not extract arguments from javascript:\n${javascript}\ndefaulting to *args`);
+    return '*args';
+};
+
 export async function initializeExtension(
     request: Request.FilePath,
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
-    const extension: unknown = eval('require')(request.getPath());
-    state.extension = extension;
-    // @ts-ignore
-    return keywordsResponse(Object.keys(extension), 'ok');
+    logger.info(`Initializing extension: ${request.getPath()}`);
+    const extension: Record<string, (...args: unknown[]) => unknown> = eval('require')(request.getPath());
+    state.extensions.push(extension);
+    const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
+    logger.info(`Adding ${kws.length} keywords from JS Extension`);
+    return keywordsResponse(
+        kws,
+        kws.map((v) => {
+            return extractArgumentsStringFromJavascript(extension[v].toString());
+        }),
+        kws.map((v) => {
+            const typedV = extension[v] as { rfdoc?: string };
+            return typedV.rfdoc ?? 'TODO: Add rfdoc string to exposed function to create documentation';
+        }),
+        'ok',
+    );
 }
+
+const getArgumentNamesFromJavascriptKeyword = (keyword: CallableFunction) =>
+    extractArgumentsStringFromJavascript(keyword.toString())
+        .split(',')
+        .map((s) => s.trim().match(/^\w*/)?.[0] || s.trim());
 
 export async function extensionKeywordCall(
     request: Request.KeywordCall,
     call: ServerWritableStream<Request.KeywordCall, Response.Json>,
     state: PlaywrightState,
 ): Promise<Response.Json> {
-    const methodName = request.getName();
-    const args = request.getArgumentsList();
-    // @ts-ignore
-    const result = await state.extension[methodName](
-        state.getActivePage(),
-        args,
-        (msg: string) => {
-            call.write(jsonResponse(JSON.stringify(''), msg));
-        },
-        playwright,
+    const keywordName = request.getName();
+    const args = JSON.parse(request.getArguments()) as { arguments: [string, unknown][] };
+    const extension = state.extensions.find((extension) => Object.keys(extension).includes(keywordName));
+    if (!extension) throw Error(`Could not find keyword ${keywordName}`);
+    const keyword = extension[keywordName];
+    const namedArguments = Object.fromEntries(args['arguments']);
+    const apiArguments = new Map();
+    apiArguments.set('page', state.getActivePage());
+    apiArguments.set('logger', (msg: string) => call.write(jsonResponse(JSON.stringify(''), msg)));
+    apiArguments.set('playwright', playwright);
+    const functionArguments = getArgumentNamesFromJavascriptKeyword(keyword).map(
+        (argName) => apiArguments.get(argName) || namedArguments[argName],
     );
+    const result = await keyword(...functionArguments);
     return jsonResponse(JSON.stringify(result), 'ok');
 }
 
 interface BrowserAndConfs {
-    browser: Browser;
+    browser: Browser | null;
     browserType: 'chromium' | 'firefox' | 'webkit';
     headless: boolean;
     options?: Record<string, unknown>;
@@ -83,10 +114,11 @@ interface BrowserAndConfs {
 async function _newBrowser(
     browserType: 'chromium' | 'firefox' | 'webkit',
     headless: boolean,
+    timeout: number,
     options?: Record<string, unknown>,
 ): Promise<BrowserAndConfs> {
     let browser;
-    const launchOptions = { ...options, headless };
+    const launchOptions: playwright.LaunchOptions = { ...options, headless, timeout };
     if (browserType === 'firefox') {
         browser = await firefox.launch(launchOptions);
     } else if (browserType === 'chromium') {
@@ -152,8 +184,8 @@ async function _newBrowserContext(
         logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
         context.tracing.start({ screenshots: true, snapshots: true });
     }
-    c.c.on('page', (page) => {
-        c.pageStack.unshift(indexedPage(page));
+    c.c.on('page', async (page) => {
+        c.pageStack.unshift(await _newPage(c, page));
     });
     return c;
 }
@@ -177,17 +209,31 @@ function indexedPage(newPage: Page) {
     };
 }
 
-async function _newPage(context: BrowserContext): Promise<IndexedPage> {
-    return indexedPage(await context.newPage());
+async function _newPage(context: IndexedContext, page: Page | undefined = undefined): Promise<IndexedPage> {
+    const newPage = page === undefined ? await context.c.newPage() : page;
+    const contextPage = indexedPage(newPage);
+    newPage.on('close', () => {
+        const oldPageStackLength = context.pageStack.length;
+        const filteredPageStack = context.pageStack.filter((page: IndexedPage) => page.p != contextPage.p);
+
+        if (oldPageStackLength != filteredPageStack.length) {
+            context.pageStack = filteredPageStack;
+            logger.info('Removed ' + contextPage.id + ' from ' + context.id + ' page stack');
+        }
+    });
+    return contextPage;
 }
 
 export class PlaywrightState {
     constructor() {
         this.browserStack = [];
         this.locatorHandles = new Map();
+        this.extensions = [];
     }
-    extension: unknown;
-    browserStack: BrowserState[];
+    
+    extensions: Record<string, (...args: unknown[]) => unknown>[];
+    private browserStack: BrowserState[];
+    
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
@@ -208,11 +254,14 @@ export class PlaywrightState {
         return this.getActiveBrowser();
     };
 
-    public async getOrCreateActiveBrowser(browserType?: 'chromium' | 'firefox' | 'webkit'): Promise<IBrowserState> {
+    public async getOrCreateActiveBrowser(
+        browserType: 'chromium' | 'firefox' | 'webkit' | null,
+        timeout: number,
+    ): Promise<IBrowserState> {
         const currentBrowser = this.activeBrowser;
         logger.info('currentBrowser: ' + currentBrowser);
         if (currentBrowser === undefined) {
-            const browserAndConfs = await _newBrowser(browserType || 'chromium', true);
+            const browserAndConfs = await _newBrowser(browserType || 'chromium', true, timeout);
             const newState = new BrowserState(browserAndConfs);
             this.browserStack.push(newState);
             return { browser: newState, newBrowser: true };
@@ -223,8 +272,8 @@ export class PlaywrightState {
 
     public async closeAll(): Promise<void> {
         const browsers = this.browserStack;
-        for (const b of browsers) {
-            await b.close();
+        for (const browser of browsers) {
+            await browser.close();
         }
         this.browserStack = [];
     }
@@ -233,7 +282,7 @@ export class PlaywrightState {
         const pageToContents = async (page: IndexedPage) => {
             let title = null;
             const titlePromise = page.p.title();
-            const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 150));
+            const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 350));
             try {
                 title = await Promise.race([titlePromise, titleTimeout]);
             } catch (e) {}
@@ -275,8 +324,8 @@ export class PlaywrightState {
         return browserState;
     }
 
-    public popBrowser(): void {
-        this.browserStack.pop();
+    public popBrowser(): BrowserState | undefined {
+        return this.browserStack.pop();
     }
 
     public getActiveContext = (): BrowserContext | undefined => {
@@ -338,20 +387,32 @@ export class BrowserState {
         this.id = `browser=${uuidv4()}`;
     }
     private _contextStack: IndexedContext[];
-    browser: Browser;
+    browser: Browser | null;
     name?: string;
     id: Uuid;
     headless: boolean;
     options?: playwright.LaunchOptions;
 
     public async close(): Promise<void> {
+        for (const context of this.contextStack) {
+            const traceFile = context.traceFile;
+            if (traceFile) {
+                await context.c.tracing.stop({ path: traceFile });
+            }
+            await context.c.close();
+        }
         this._contextStack = [];
+        if (this.browser === null) {
+            return;
+        }
         await this.browser.close();
     }
 
     public async getOrCreateActiveContext(defaultTimeout: number): Promise<IIndexedContext> {
         if (this.context) {
             return { context: this.context, newContext: false };
+        } else if (this.browser === null) {
+            throw new Error('Invalid persistent context browser without context');
         } else {
             const activeBrowser = this.browser;
             const context = await _newBrowserContext(activeBrowser, defaultTimeout, '');
@@ -419,8 +480,8 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     if (currentBrowser === undefined) {
         return stringResponse('no-browser', 'No browser open, doing nothing');
     }
-    await currentBrowser.close();
     openBrowsers.popBrowser();
+    await currentBrowser.close();
     return stringResponse(currentBrowser.id, 'Closed browser');
 }
 
@@ -442,19 +503,19 @@ export async function closeContext(openBrowsers: PlaywrightState): Promise<Respo
 
 export async function closePage(openBrowsers: PlaywrightState): Promise<Response.PageReportResponse> {
     const activeBrowser = openBrowsers.getActiveBrowser();
-    await openBrowsers.getActivePage()?.close();
     const closedPage = activeBrowser.popPage();
     if (!closedPage) throw new Error('No open page');
+    await closedPage.p.close();
     return pageReportResponse('Successfully closed Page', closedPage);
 }
 
 export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {
-    const browserState = await openBrowsers.getOrCreateActiveBrowser();
-    const newBrowser = browserState.newBrowser;
     const defaultTimeout = request.getDefaulttimeout();
+    const browserState = await openBrowsers.getOrCreateActiveBrowser(null, defaultTimeout);
+    const newBrowser = browserState.newBrowser;
     const context = await browserState.browser.getOrCreateActiveContext(defaultTimeout);
 
-    const page = await _newPage(context.context.c);
+    const page = await _newPage(context.context);
     const videoPath = await page.p.video()?.path();
     logger.info('Video path: ' + videoPath);
     browserState.browser.pushPage(page);
@@ -481,10 +542,14 @@ export async function newContext(
 ): Promise<Response.NewContextResponse> {
     const hideRfBrowser = request.getHiderfbrowser();
     const options = JSON.parse(request.getRawoptions());
-    const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType);
     const defaultTimeout = request.getDefaulttimeout();
+    const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType, defaultTimeout);
     const traceFile = request.getTracefile();
     logger.info(`Trace file: ${traceFile}`);
+
+    if (browserState.browser.browser === null) {
+        throw new Error('Trying to create a new context when a persistentContext is active');
+    }
     const context = await _newBrowserContext(
         browserState.browser.browser,
         defaultTimeout,
@@ -492,6 +557,16 @@ export async function newContext(
         options,
         hideRfBrowser,
     );
+
+    return await _finishContextResponse(context, browserState, traceFile, options);
+}
+
+async function _finishContextResponse(
+    context: IndexedContext,
+    browserState: IBrowserState,
+    traceFile: string,
+    options: Record<string, unknown>,
+) {
     browserState.browser.pushContext(context);
     const response = new Response.NewContextResponse();
     response.setId(context.id);
@@ -547,6 +622,7 @@ function removeUnnecessaryOptions(obj: playwright.LaunchOptions): LaunchOptions 
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
     const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
+    
     const matchingBrowser = openBrowsers.browserStack.find((browser: BrowserState) => {
         return equalOptions(removeUnnecessaryOptions(browser.options ?? {}), removeUnnecessaryOptions(options));
     });
@@ -565,12 +641,96 @@ export async function newBrowser(request: Request.Browser, openBrowsers: Playwri
             extraWarning = `Consider skip_if_exists for improved performance and automatic browser re-use. Automatically detected that ${matchingBrowser.id} could have probably been re-used.`;
         }
     }
-    const browserAndConfs = await _newBrowser(browserType, options['headless'] as boolean, options);
+
+    const browserAndConfs = await _newBrowser(
+        browserType,
+        options['headless'] as boolean,
+        options['timeout'] as number,
+        options,
+    );
     const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(
         browserState.id,
         `${extraWarning}\nSuccessfully created browser with options: ${JSON.stringify(options)}`,
     );
+}
+
+export async function newPersistentContext(
+    request: Request.PersistentContext,
+    openBrowsers: PlaywrightState,
+): Promise<Response.NewContextResponse> {
+    const traceFile = request.getTracefile();
+    const timeout = request.getDefaulttimeout();
+    const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
+
+    const userDataDir = options?.userDataDir as string;
+
+    let browser;
+    if (options.browser === 'chromium') {
+        browser = chromium;
+    } else if (options.browser === 'firefox') {
+        browser = firefox;
+    } else {
+        throw new Error('Invalid browserType for New Persistent Context');
+    }
+
+    const persistentContext = await browser.launchPersistentContext(userDataDir, options);
+
+    const browserAndConfs = {
+        browserType: options.browser,
+        browser: null,
+        headless: options?.headless || true,
+    } as BrowserAndConfs;
+    openBrowsers.addBrowser(browserAndConfs);
+
+    const browserState = await openBrowsers.getOrCreateActiveBrowser(null, timeout);
+    if (browserState.newBrowser === true) {
+        throw new Error('A new browser was created in error while trying to create a persistent context');
+    }
+
+    if (!options.hideRfBrowser) {
+        await persistentContext.addInitScript(function () {
+            window.__SET_RFBROWSER_STATE__ = function (state: any) {
+                window.__RFBROWSER__ = state;
+                return state;
+            };
+        });
+    }
+    persistentContext.setDefaultTimeout(timeout);
+    const indexedContext = {
+        id: `context=${uuidv4()}`,
+        c: persistentContext,
+        pageStack: [] as IndexedPage[],
+        options: options,
+        traceFile: traceFile,
+    };
+    if (traceFile) {
+        logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
+        persistentContext.tracing.start({ screenshots: true, snapshots: true });
+    }
+
+    const page = indexedContext.c.pages()[0];
+    indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
+
+    browserState.browser.pushContext(indexedContext);
+    const response = new Response.NewPersistentContextResponse();
+    response.setId(indexedContext.id);
+    if (traceFile) {
+        response.setLog(`Successfully created context and trace file will be saved to: ${traceFile}`);
+        options.trace = { screenshots: true, snapshots: true };
+    } else {
+        response.setLog('Successfully created context. ');
+    }
+    response.setContextoptions(JSON.stringify(options));
+    response.setNewbrowser(browserState.newBrowser);
+    const currentBrowser = openBrowsers.activeBrowser;
+    const currentPage = indexedContext.pageStack[0];
+    const videoPath = await currentPage.p.video()?.path();
+    const video = { video_path: videoPath || null, contextUuid: indexedContext.id };
+    response.setVideo(JSON.stringify(video));
+    response.setPageid(currentPage.id);
+    response.setBrowserid(currentBrowser?.id || '');
+    return response;
 }
 
 export async function connectToBrowser(

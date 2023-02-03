@@ -13,10 +13,11 @@ Set Strict Mode
     Should Be True    ${old_mode}
 
 Use Strict Mode
+    [Tags]    slow
     New Page    ${FORM_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 12 elements*
+    ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Get Text    //input
 
 When Strict Is False Should Not Fail
@@ -24,41 +25,44 @@ When Strict Is False Should Not Fail
     Set Strict Mode    False
     Get Text    //input
 
-Strict Mode In invokePlaywrightMethodStrict With Frames
+Strict Mode In InvokePlaywrightMethodStrict With Frames
+    [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//iframe" resolved to 2 elements*
+    ...    *strict mode violation*//iframe*resolved to 2 elements*
     ...    Get Style    //iframe >>> //p    width
     Set Strict Mode    False
     ${width} =    Get Style    //iframe >>> //p    width
     Should End With    ${width}    px
 
-Strict Mode In invokePlaywrightMethodStrict With Frame Element
+Strict Mode In InvokePlaywrightMethodStrict With Frame Element
+    [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 2 elements*
+    ...    *strict mode violation*//input*resolved to 2 elements*
     ...    Get Style    id=left >>> //input    width
     Set Strict Mode    False
     ${width} =    Get Style    id=left >>> //input    width
     Should End With    ${width}    px
 
-Stirct Mode In invokePlaywrightMethodStrict Without Frame
+Stirct Mode In InvokePlaywrightMethodStrict Without Frame
+    [Tags]    slow
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//iframe" resolved to 2 elements*
+    ...    *strict mode violation*//iframe*resolved to 2 elements*
     ...    Get Style    //iframe    width
     Set Strict Mode    False
     ${width} =    Get Style    //iframe    width
     Should End With    ${width}    px
 
-Stirct Mode In invokePlaywrightMethodStrict Without Frame And
+Stirct Mode In InvokePlaywrightMethodStrict Without Frame And
     New Page    ${FRAMES_URL}
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//iframe" resolved to 2 elements*
+    ...    *strict mode violation*//iframe*resolved to 2 elements*
     ...    Click    //iframe
     Set Strict Mode    False
     Click    //iframe

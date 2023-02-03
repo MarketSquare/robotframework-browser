@@ -18,22 +18,23 @@ import shutil
 import string
 import sys
 import time
+import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
-from assertionengine import AssertionOperator
+from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
-from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
-from robot.result.model import TestCase as TestCaseResult  # type: ignore
-from robot.running.arguments import PythonArgumentParser  # type: ignore
-from robot.running.model import TestCase as TestCaseRunning  # type: ignore
-from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
-from robotlibcore import DynamicCore  # type: ignore
+from robot.errors import DataError
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
+from robot.running.arguments import PythonArgumentParser
+from robot.running.arguments.typeconverters import TypeConverter
+from robot.utils import secs_to_timestr, timestr_to_secs
+from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
 from .base import ContextCache, LibraryComponent
-from .generated.playwright_pb2 import Request
+from .generated.playwright_pb2 import Request, Response
 from .keywords import (
     Control,
     Cookie,
@@ -51,11 +52,50 @@ from .keywords import (
 )
 from .keywords.crawling import Crawling
 from .playwright import Playwright
-from .utils import AutoClosingLevel, get_normalized_keyword, is_falsy, keyword, logger
+from .utils import (
+    AutoClosingLevel,
+    Scope,
+    SettingsStack,
+    get_normalized_keyword,
+    is_falsy,
+    keyword,
+    logger,
+)
 
 # Importing this directly from .utils break the stub type checks
-from .utils.data_types import DelayedKeyword, SupportedBrowsers
+from .utils.data_types import DelayedKeyword, HighLightElement, SupportedBrowsers
 from .version import __version__ as VERSION
+
+KW_CALL_CONTENT_TEMPLATE = """body::before {{
+    content: '{keyword_call}';
+    position: fixed;
+    z-index: 9999;
+    border: 1px solid lightblue;
+    border-radius: 1rem;
+    background: #00008b90;
+    color: white;
+    padding: 2px 10px;
+    pointer-events: none;
+    font-family: monospace;
+    font-size: medium;
+    font-weight: normal;
+    white-space: pre;
+    bottom: 5px;
+    left: 5px;
+    {additional_styles}
+}}"""
+
+KW_CALL_BANNER_FUNCTION = """(content) => {
+    const kwCallBanner = document.getElementById('kwCallBanner');
+    if (kwCallBanner) {
+        kwCallBanner.textContent = content;
+    } else {
+        const kwCallBanner = document.createElement("style");
+        kwCallBanner.setAttribute("id", 'kwCallBanner');
+        kwCallBanner.textContent = content;
+        document.head.appendChild(kwCallBanner);
+    }
+}"""
 
 
 class Browser(DynamicCore):
@@ -100,7 +140,7 @@ class Browser(DynamicCore):
 
     All these browsers that cover more than 85% of the world wide used browsers,
     can be tested on Windows, Linux and MacOS.
-    Theres is not need for dedicated machines anymore.
+    There is no need for dedicated machines anymore.
 
     A browser process is started ``headless`` (without a GUI) by default.
     Run `New Browser` with specified arguments if a browser with a GUI is requested
@@ -110,7 +150,7 @@ class Browser(DynamicCore):
 
     == Contexts ==
 
-    A *context* corresponds to set of independent incognito pages in a browser
+    A *context* corresponds to a set of independent incognito pages in a browser
     that share cookies, sessions or profile settings. Pages in two separate
     contexts do not share cookies, sessions or profile settings.
     Compared to Selenium, these do *not* require their own browser process.
@@ -119,7 +159,10 @@ class Browser(DynamicCore):
     Robot Framework Browser about 10 times faster than with Selenium by
     just opening a `New Context` within the opened browser.
 
-    The context layer is useful e.g. for testing different users sessions on the
+    To make pages in the same suite share state, use the same context by opening the
+    context with `New Context` on suite setup.
+
+    The context layer is useful e.g. for testing different user sessions on the
     same webpage without opening a whole new browser context.
     Contexts can also have detailed configurations, such as geo-location, language settings,
     the viewport size or color scheme.
@@ -149,7 +192,7 @@ class Browser(DynamicCore):
     and `New Context` are executed with default values first.
 
     Each Browser, Context and Page has a unique ID with which they can be addressed.
-    A full catalog of what is open can be received by `Get Browser Catalog` as dictionary.
+    A full catalog of what is open can be received by `Get Browser Catalog` as a dictionary.
 
     = Automatic page and context closing =
 
@@ -165,7 +208,7 @@ class Browser(DynamicCore):
     strict mode. If strict mode is false, keyword does not fail if selector points
     many elements. Strict mode is enabled by default, but can be changed in library
     `importing` or `Set Strict Mode` keyword. Keyword documentation states if keyword
-    uses strict mode. If keyword does not state that is used strict mode, then strict
+    uses strict mode. If keyword does not state that strict mode is used, then strict
     mode is not applied for the keyword. For more details, see Playwright
     [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
 
@@ -291,14 +334,14 @@ class Browser(DynamicCore):
     Playwright node module: xpath, css, id and text. The strategy can either
     be explicitly specified with a prefix or the strategy can be implicit.
 
-    A major advantage of Browser is, that multiple selector engines can be used
+    A major advantage of Browser is that multiple selector engines can be used
     within one selector. It is possible to mix XPath, CSS and Text selectors while
     selecting a single element.
 
     Selectors are strings that consists of one or more clauses separated by
     ``>>`` token, e.g. ``clause1 >> clause2 >> clause3``. When multiple clauses
     are present, next one is queried relative to the previous one's result.
-    Browser library supports concatination of different selectors seperated by ``>>``.
+    Browser library supports concatenation of different selectors separated by ``>>``.
 
     For example:
     | `Highlight Elements`    "Hello" >> ../.. >> .select_button
@@ -309,12 +352,12 @@ class Browser(DynamicCore):
     a custom one). Selector ``body`` follows the format of the particular engine,
     e.g. for css engine it should be a [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector].
     Body format is assumed to ignore leading and trailing white spaces,
-    so that extra whitespace can be added for readability. If selector
+    so that extra whitespace can be added for readability. If the selector
     engine needs to include ``>>`` in the body, it should be escaped
     inside a string to not be confused with clause separator,
     e.g. ``text="some >> text"``.
 
-    Selector engine name can be prefixed with ``*`` to capture element that
+    Selector engine name can be prefixed with ``*`` to capture an element that
     matches the particular clause instead of the last one. For example,
     ``css=article >> text=Hello`` captures the element with the text ``Hello``,
     and ``*css=article >> text=Hello`` (note the *) captures the article element
@@ -355,7 +398,7 @@ class Browser(DynamicCore):
     == Frames ==
 
     By default, selector chains do not cross frame boundaries. It means that a
-    simple CSS selector is not able to select and element located inside an iframe
+    simple CSS selector is not able to select an element located inside an iframe
     or a frameset. For this use case, there is a special selector ``>>>`` which can
     be used to combine a selector for the frame and a selector for an element
     inside a frame.
@@ -378,6 +421,9 @@ class Browser(DynamicCore):
 
     The selectors on the left and right side of ``>>>`` can be any valid selectors.
     The selector clause directly before the frame opener ``>>>`` must select the frame element.
+    Frame selection is the only place where Browser Library modifies the selector, as explained in above.
+    In all cases, the library does not alter the selector in any way, instead it is passed as is to the
+    Playwright side.
 
     == WebComponents and Shadow DOM ==
 
@@ -386,15 +432,15 @@ class Browser(DynamicCore):
 
     Also other technologies claim that they can handle
     [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|Shadow DOM and Web Components].
-    However, non of them do pierce shadow roots automatically,
+    However, none of them do pierce shadow roots automatically,
     which may be inconvenient when working with Shadow DOM and Web Components.
 
-    For that reason, css engine pierces shadow roots. More specifically, every
+    For that reason, the css engine pierces shadow roots. More specifically, every
     [https://developer.mozilla.org/en-US/docs/Web/CSS/Descendant_combinator|Descendant combinator]
     pierces an arbitrary number of open shadow roots, including the implicit descendant combinator
     at the start of the selector.
 
-    That means, it is not nessesary to select each shadow host, open its shadow root and
+    That means, it is not necessary to select each shadow host, open its shadow root and
     select the next shadow host until you reach the element that should be controlled.
 
     === CSS:light ===
@@ -452,15 +498,19 @@ class Browser(DynamicCore):
 
     == Element reference syntax ==
 
-    It is possible to get a reference to an element by using `Get Element` keyword. This
-    reference can be used as a *first* part of a selector by using a special selector
+    It is possible to get a reference to a Locator by using `Get Element` and `Get Elements` keywords.
+    Keywords do not save reference to an element in the HTML document, instead it saves reference to a Playwright
+    [https://playwright.dev/docs/api/class-locator|Locator]. In nutshell Locator captures the logic of how to
+    retrieve that element from the page. Each time an action is performed, the locator re-searches the elements
+    in the page. This reference can be used as a *first* part of a selector by using a special selector
     syntax `element=`. like this:
 
     | ${ref}=    Get Element    .some_class
-    |            Click          ${ref} >> .some_child
+    |            Click          ${ref} >> .some_child     # Locator searches an element from the page.
+    |            Click          ${ref} >> .other_child    # Locator searches again an element from the page.
 
-    The `.some_child` selector in the example is relative to the element referenced by ${ref}.
-    Please note that frame piercing is not possible with element reference.
+    The `.some_child` and `.other_child` selectors in the example are relative to the element referenced
+    by ${ref}. Please note that frame piercing is not possible with element reference.
 
     = Assertions =
 
@@ -474,13 +524,13 @@ class Browser(DynamicCore):
 
     %ASSERTION_TABLE%
 
-    By default keywords will provide an error message if an assertion fails.
-    Default error message can be overwritten with a ``message`` argument.
+    By default, keywords will provide an error message if an assertion fails.
+    Default error messages can be overwritten with a ``message`` argument.
     The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
     `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
     options.
-    The `{value}` is value returned by the keyword and the `{expected}`
-    is expected value defined by the user, usually value in the
+    The `{value}` is the value returned by the keyword and the `{expected}`
+    is the expected value defined by the user, usually the value in the
     ``assertion_expected`` argument. The `{value_type}` and
     `{expected_type}` are the type definitions from `{value}` and `{expected}`
     arguments. In similar fashion as Python
@@ -489,20 +539,20 @@ class Browser(DynamicCore):
 
     The assertion ``assertion_expected`` value is not converted by the library and
     is used as is. Therefore when assertion is made, the ``assertion_expected``
-    argument value and value returned the keyword must have same type. If types
-    are not same, assertion will fail. Example `Get Text` always returns a string
+    argument value and value returned the keyword must have the same type. If types
+    are not the same, assertion will fail. Example `Get Text` always returns a string
     and has to be compared with a string, even the returned value might look like
     a number.
 
     Other Keywords have other specific types they return.
     `Get Element Count` always returns an integer.
     `Get Bounding Box` and `Get Viewport Size` can be filtered.
-    They return a dictionary without filter and a number when filtered.
+    They return a dictionary without a filter and a number when filtered.
     These Keywords do automatic conversion for the expected value if a number is returned.
 
     * < less or greater > With Strings*
-    Compairisons of strings with ``greater than`` or ``less than`` compares each character,
-    starting from 0 reagarding where it stands in the code page.
+    Comparisons of strings with ``greater than`` or ``less than`` compares each character,
+    starting from 0 regarding where it stands in the code page.
     Example: ``A < Z``, ``Z < a``, ``ac < dc`
     It does never compare the length of elements. Neither lists nor strings.
     The comparison stops at the first character that is different.
@@ -516,8 +566,8 @@ class Browser(DynamicCore):
     The getters `Get Page State` and `Get Browser Catalog` return a dictionary. Values of the dictionary can directly asserted.
     Pay attention of possible types because they are evaluated in Python. For example:
 
-    | Get Page State    validate    2020 >= value['year']                     # Compairsion of numbers
-    | Get Page State    validate    "IMPORTANT MESSAGE!" == value['message']  # Compairsion of strings
+    | Get Page State    validate    2020 >= value['year']                     # Comparison of numbers
+    | Get Page State    validate    "IMPORTANT MESSAGE!" == value['message']  # Comparison of strings
 
     == The 'then' or 'evaluate' closure ==
 
@@ -558,40 +608,71 @@ class Browser(DynamicCore):
 
     = Experimental: Re-using same node process =
 
-    Browser library integrated nodejs and python. NodeJS side can be also executed as a standalone process.
+    Browser library integrated nodejs and python. The NodeJS side can be also executed as a standalone process.
     Browser libraries running on the same machine can talk to that instead of starting new node processes.
     This can speed execution when running tests parallel.
-    To start node side run on the directory when Browser package is
+    To start node side run on the directory when the Browser package is
     ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js PORT``.
-    ``PORT`` is port you want to use for the node process.
+
+    ``PORT`` is the port you want to use for the node process.
     To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
+
+    = Experimental: Provide parameters to node process =
+
+    Browser library is integrated with NodeJSand and Python. Browser library starts a node process, to communicate
+    Playwright API in NodeJS side. It is possible to provide parameters for the started node process by defining
+    ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS environment variable, before starting the test execution. Example:
+    ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS=--inspect;robot path/to/tests``.
+    There can be multiple arguments defined in the environment variable and arguments must be separated with comma.
+
+    = Scope Setting =
+
+    Some keywords which manipulates library settings have a scope argument.
+    With that scope argument one can set the "live time" of that setting.
+    Available Scopes are: `Global`, `Suite` and `Test`/`Task`
+    See `Scope`.
+    Is a scope finished, this scoped setting, like timeout, will no longer be used.
+
+    Live Times:
+    - A `Global` scope will live forever until it is overwritten by another `Global` scope. Or locally temporarily overridden by a more narrow scope.
+    - A `Suite` scope will locally override the `Global` scope and live until the end of the Suite within it is set, or if it is overwritten by a later setting with `Global` or same scope. Children suite does inherit the setting from the parent suite but also may have its own local `Suite` setting that then will be inherited to its children suites.
+    - A `Test` or `Task` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
+
+    A new set higher order scope will always remove the lower order scope which may be in charge.
+    So the setting of a `Suite` scope from a test, will set that scope to the robot file suite where that test is and removes the `Test` scope that may have been in place.
 
     = Extending Browser library with a JavaScript module =
 
-    Browser library can be extended with JavaScript. Module must be in CommonJS format that Node.js uses.
+    Browser library can be extended with JavaScript. The module must be in CommonJS format that Node.js uses.
     You can translate your ES6 module to Node.js CommonJS style with Babel. Many other languages
     can be also translated to modules that can be used from Node.js. For example TypeScript, PureScript and
     ClojureScript just to mention few.
 
-    | async function myGoToKeyword(page, args, logger, playwright) {
+    | async function myGoToKeyword(url, args, page, logger, playwright) {
     |   logger(args.toString())
     |   playwright.coolNewFeature()
-    |   return await page.goto(args[0]);
+    |   return await page.goto(url);
     | }
+
+    Functions can contain any number of arguments and arguments may have default values.
+
+    There are some reserved arguments that are not accessible from Robot Framework side.
+    They are injected to the function if they are in the arguments:
 
     ``page``: [https://playwright.dev/docs/api/class-page|the playwright Page object].
 
-    ``args``: list of strings from Robot Framework keyword call.
+    ``args``: the rest of values from Robot Framework keyword call ``*args``.
 
-    !! A BIT UNSTABLE AND SUBJECT TO API CHANGES !!
     ``logger``: callback function that takes strings as arguments and writes them to robot log. Can be called multiple times.
 
     ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://playwright.dev/docs/api/class-playwright| API docs]
 
+    also argument name ``self`` can not be used.
+
     == Example module.js ==
 
-    | async function myGoToKeyword(page, args) {
-    |   await page.goto(args[0]);
+    | async function myGoToKeyword(pageUrl, page) {
+    |   await page.goto(pageUrl);
     |   return await page.title();
     | }
     | exports.__esModule = true;
@@ -608,11 +689,11 @@ class Browser(DynamicCore):
     |   ${title}=  myGoToKeyword  https://playwright.dev
     |   Should be equal  ${title}  Playwright
 
-    Also selector syntax can be extended withm custom selector with a js module
+    Also selector syntax can be extended with a custom selector using a js module
 
-    == Example module keyword for custom selector registerin ==
+    == Example module keyword for custom selector registering ==
 
-    | async function registerMySelector(page, args, log, playwright) {
+    | async function registerMySelector(playwright) {
     | playwright.selectors.register("myselector", () => ({
     |    // Returns the first element matching given selector in the root's subtree.
     |    query(root, selector) {
@@ -628,81 +709,112 @@ class Browser(DynamicCore):
     | }
     | exports.__esModule = true;
     | exports.registerMySelector = registerMySelector;
+
+    = Plugins =
+
+    Browser library offers plugins as a way to modify and add library keywords and modify some of the internal
+    functionality without creating a new library or hacking the source code. See plugin API
+    [https://github.com/MarketSquare/robotframework-browser/blob/main/docs/plugins/README.md | documentation] for
+    further details.
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
-    ROBOT_LISTENER_API_VERSION = 3
+    ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
+    ERROR_AUGMENTATION = {
+        re.compile(r"Timeout .+ exceeded."): lambda msg: (
+            f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout or '
+            "double check your locator as the targeted element(s) couldn't be found."
+        )
+    }
+
     _context_cache = ContextCache()
     _suite_cleanup_done = False
 
+    _old_init_args = {
+        "timeout": timedelta,
+        "enable_playwright_debug": bool,
+        "auto_closing_level": AutoClosingLevel,
+        "retry_assertions_for": timedelta,
+        "run_on_failure": str,
+        "external_browser_executable": Optional[Dict[SupportedBrowsers, str]],
+        "jsextension": Optional[str],
+        "enable_presenter_mode": Union[HighLightElement, bool],
+        "playwright_process_port": Optional[int],
+        "strict": bool,
+        "show_keyword_call_banner": Optional[bool],
+    }
+
     def __init__(
         self,
-        timeout: timedelta = timedelta(seconds=10),
-        enable_playwright_debug: bool = False,
+        *deprecated_pos_args,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
-        retry_assertions_for: timedelta = timedelta(seconds=1),
-        run_on_failure: str = "Take Screenshot  fail-screenshot-{index}",
+        enable_playwright_debug: bool = False,
+        enable_presenter_mode: Union[HighLightElement, bool] = False,
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Optional[str] = None,
-        enable_presenter_mode: bool = False,
         playwright_process_port: Optional[int] = None,
+        retry_assertions_for: timedelta = timedelta(seconds=1),
+        run_on_failure: str = "Take Screenshot  fail-screenshot-{index}",
+        selector_prefix: Optional[str] = None,
+        show_keyword_call_banner: Optional[bool] = None,
         strict: bool = True,
+        timeout: timedelta = timedelta(seconds=10),
+        plugins: Optional[str] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 
-        - ``timeout`` <str>
-          Timeout for keywords that operate on elements. The keywords will wait
-          for this time for the element to appear into the page. Defaults to "10s" => 10 seconds.
-        - ``enable_playwright_debug`` <bool>
-          Enable low level debug information from the playwright tool. Mainly
-          Useful for the library developers and for debugging purposes.
-        - ``auto_closing_level`` < ``TEST`` | ``SUITE`` | ``MANUAL`` >
-          Configure context and page automatic closing. Default is ``TEST``,
-          for more details, see `AutoClosingLevel`
-        - ``retry_assertions_for`` <str>
-          Timeout for retrying assertions on keywords before failing the keywords.
-          This timeout starts counting from the first failure.
-          Global ``timeout`` will still be in effect.
-          This allows stopping execution faster to assertion failure when element is found fast.
-        - ``run_on_failure`` <str>
-          Sets the keyword to execute in case of a failing Browser keyword.
-          It can be the name of any keyword. If the keyword has arguments those must be separated with
-          two spaces for example ``My keyword \\ arg1 \\ arg2``.
-          If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value.
-        - ``external_browser_executable`` <Dict <SupportedBrowsers, Path>>
-          Dict mapping name of browser to path of executable of a browser.
-          Will make opening new browsers of the given type use the set executablePath.
-          Currently only configuring of `chromium` to a separate executable (chrome,
-          chromium and Edge executables all work with recent versions) works.
-        - ``jsextension`` <str>
-          Path to Javascript module exposed as extra keywords. Module must be in CommonJS.
-        - ``enable_presenter_mode`` <bool>
-          Automatic highlights to interacted components, slowMo and a small pause at the end.
-        - ``strict`` <bool>
-          If keyword selector points multiple elements and keywords should interact with one element,
-          keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords
-          or by ```et Strict Mode`` keyword.
+        | =Argument=                        | =Description= |
+        | ``*deprecated_pos_args``          | Positional arguments are deprecated for Library import. Please use named arguments instead. We will remove positional arguments after RoboCon 2023 Online in March. Old positional order was: ``timeout``, ``enable_playwright_debug``, ``auto_closing_level``, ``retry_assertions_for``, ``run_on_failure``, ``external_browser_executable``, ``jsextension``, ``enable_presenter_mode``, ``playwright_process_port``, ``strict``, ``show_keyword_call_banner``. |
+        | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
+        | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. Mainly Useful for the library developers and for debugging purposes. Will og everything as plain text, also including secrects. |
+        | ``enable_presenter_mode``         | Automatic highlights to interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. |
+        | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
+        | ``jsextension``                   | Path to Javascript module exposed as extra keywords. The module must be in CommonJS. |
+        | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
+        | ``retry_assertions_for``          | Timeout for retrying assertions on keywords before failing the keywords. This timeout starts counting from the first failure. Global ``timeout`` will still be in effect. This allows stopping execution faster to assertion failure when element is found fast. |
+        | ``run_on_failure``                | Sets the keyword to execute in case of a failing Browser keyword. It can be the name of any keyword. If the keyword has arguments those must be separated with two spaces for example ``My keyword \\ arg1 \\ arg2``. If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value. Run on failure is not applied when library methods are executed directly from Python. |
+        | ``selector_prefix``               | Prefix for all selectors. This is useful when you need to use add an iframe selector before each selector. |
+        | ``show_keyword_call_banner``      | If set to ``True``, will show a banner with the keyword name and arguments before the keyword is executed at the bottom of the page. If set to ``False``, will not show the banner. If set to None, which is the default, will show the banner only if the presenter mode is enabled. `Get Page Source` and `Take Screenshot` will not show the banner, because that could negatively affect your test cases/tasks. This feature may be super helpful when you are debugging your tests and using tracing from `New Context` or `Video recording` features. |
+        | ``strict``                        | If keyword selector points multiple elements and keywords should interact with one element, keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords or by ```et Strict Mode`` keyword. |
+        | ``timeout``                       | Timeout for keywords that operate on elements. The keywords will wait for this time for the element to appear into the page. Defaults to "10s" => 10 seconds. |
+        | ``plugins``                       | Allows extending the Browser library with external Python classes. |
+
+        Old deprecated argument order:
+        ``timeout``, ``enable_playwright_debug``, ``auto_closing_level``, ``retry_assertions_for``, ``run_on_failure``,
+        ``external_browser_executable``, ``jsextension``, ``enable_presenter_mode``, ``playwright_process_port``,
+        ``strict``, ``show_keyword_call_banner``
+
         """
-        self.timeout = self.convert_timeout(timeout)
-        self.retry_assertions_for = self.convert_timeout(retry_assertions_for)
         self.ROBOT_LIBRARY_LISTENER = self
-        self._execution_stack: List[dict] = []
-        self._running_on_failure_keyword = False
-        self._pause_on_failure: Set["Browser"] = set()
-        self.external_browser_executable: Dict[SupportedBrowsers, str] = (
-            external_browser_executable or {}
-        )
-        self._unresolved_promises: Set[Future] = set()
+        self.scope_stack: Dict = {}
+        old_args_list = list(self._old_init_args.items())
+        pos_params = {}
+        for index, pos_arg in enumerate(deprecated_pos_args):
+            argument_name = old_args_list[index][0]
+            argument_type = old_args_list[index][1]
+            converted_pos = TypeConverter.converter_for(argument_type).convert(
+                argument_name, pos_arg
+            )
+            pos_params[argument_name] = converted_pos
+        if pos_params:
+            logger.warn(
+                "Deprecated positional arguments are used in 'Library import of Browser library'. Please use named arguments instead."
+            )
+        params = dict(locals())
+        params = {**pos_params, **params}
+
         self._playwright_state = PlaywrightState(self)
+        self._browser_control = Control(self)
         libraries = [
             self._playwright_state,
-            Control(self),
+            self._browser_control,
             Cookie(self),
             Crawling(self),
             Devices(self),
             Evaluation(self),
+            Formatter(self),
             Interaction(self),
             Getters(self),
             Network(self),
@@ -713,17 +825,70 @@ class Browser(DynamicCore):
             WebAppState(self),
         ]
         self.playwright = Playwright(
-            self, enable_playwright_debug, playwright_process_port
+            self, params["enable_playwright_debug"], playwright_process_port
         )
-        self._auto_closing_level = auto_closing_level
-        self.current_arguments = ()
-        if jsextension is not None:
-            libraries.append(self._initialize_jsextension(jsextension))
-        self.presenter_mode = enable_presenter_mode
-        self.strict_mode = strict
-        DynamicCore.__init__(self, libraries)
+        self._auto_closing_level: AutoClosingLevel = params["auto_closing_level"]
         # Parsing needs keywords to be discovered.
-        self.run_on_failure_keyword = self._parse_run_on_failure_keyword(run_on_failure)
+        self.external_browser_executable: Dict[SupportedBrowsers, str] = (
+            params["external_browser_executable"] or {}
+        )
+        if params["jsextension"] is not None:
+            libraries.append(
+                self._create_lib_component_from_jsextension(params["jsextension"])
+            )
+        if params["plugins"] is not None:
+            parser = PluginParser(LibraryComponent, [self])
+            parsed_plugins = parser.parse_plugins(params["plugins"])
+            libraries.extend(parsed_plugins)
+            self._plugin_keywords = parser.get_plugin_keywords(parsed_plugins)
+        else:
+            self._plugin_keywords = []
+        self.presenter_mode: Union[HighLightElement, bool] = params[
+            "enable_presenter_mode"
+        ]
+        self._execution_stack: List[dict] = []
+        self._running_on_failure_keyword = False
+        self.pause_on_failure: Set[str] = set()
+        self._unresolved_promises: Set[Future] = set()
+        self._keyword_formatters: dict = {}
+        self._current_loglevel: Optional[str] = None
+        self.is_test_case_running = False
+
+        DynamicCore.__init__(self, libraries)
+
+        self.scope_stack["timeout"] = SettingsStack(
+            self.convert_timeout(params["timeout"]),
+            self,
+            self._browser_control.set_playwright_timeout,
+        )
+        self.scope_stack["retry_assertions_for"] = SettingsStack(
+            self.convert_timeout(params["retry_assertions_for"]), self
+        )
+        self.scope_stack["strict_mode"] = SettingsStack(params["strict"], self)
+        self.scope_stack["selector_prefix"] = SettingsStack(selector_prefix, self)
+        self.scope_stack["run_on_failure"] = SettingsStack(
+            self._parse_run_on_failure_keyword(params["run_on_failure"]), self
+        )
+        self.scope_stack["show_keyword_call_banner"] = SettingsStack(
+            params["show_keyword_call_banner"], self
+        )
+        self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
+
+    @property
+    def keyword_call_banner_add_style(self):
+        return self.scope_stack["keyword_call_banner_add_style"].get()
+
+    @property
+    def show_keyword_call_banner(self):
+        return self.scope_stack["show_keyword_call_banner"].get()
+
+    @property
+    def run_on_failure_keyword(self) -> DelayedKeyword:
+        return self.scope_stack["run_on_failure"].get()
+
+    @property
+    def timeout(self):
+        return self.scope_stack["timeout"].get()
 
     def _parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]
@@ -749,30 +914,120 @@ class Browser(DynamicCore):
             normalized_keyword_name, keyword_name, tuple(varargs), kwargs
         )
 
-    def _initialize_jsextension(self, jsextension: str) -> LibraryComponent:
+    def _create_lib_component_from_jsextension(
+        self, jsextension: str
+    ) -> LibraryComponent:
         component = LibraryComponent(self)
-        with self.playwright.grpc_channel() as stub:
-            response = stub.InitializeExtension(
-                Request().FilePath(path=os.path.abspath(jsextension))
-            )
-            for name in response.keywords:
-                setattr(component, name, self._jskeyword_call(name))
+        response = self.init_js_extension(Path(jsextension))
+        for name, args, doc in zip(
+            response.keywords,
+            response.keywordArguments,
+            response.keywordDocumentations,
+        ):
+            self._jskeyword_call(component, name, args, doc)
         return component
 
-    def _jskeyword_call(self, name: str):
-        @keyword
-        def func(*args):
-            with self.playwright.grpc_channel() as stub:
-                responses = stub.CallExtensionKeyword(
-                    Request().KeywordCall(name=name, arguments=args)
+    def init_js_extension(
+        self, js_extension_path: Union[Path, str]
+    ) -> Response.Keywords:
+        with self.playwright.grpc_channel() as stub:
+            response = stub.InitializeExtension(
+                Request().FilePath(
+                    path=str(Path(js_extension_path).resolve().absolute())
                 )
-                for response in responses:
-                    logger.info(response.log)
-                if response.json == "":
-                    return
-                return json.loads(response.json)
+            )
+            return response
 
-        return func
+    def _js_value_to_python_value(self, value: str) -> str:
+        return {
+            "true": "True",
+            "false": "False",
+            "null": "None",
+            "undefined": "None",
+            "NaN": "float('nan')",
+            "Infinity": "float('inf')",
+            "-Infinity": "float('-inf')",
+        }.get(value, value)
+
+    def _jskeyword_call(
+        self,
+        component: LibraryComponent,
+        name: str,
+        argument_names_and_default_values: str,
+        doc: str,
+    ):
+        argument_names_and_vals = [
+            [a.strip() for a in arg.split("=")]
+            for arg in (argument_names_and_default_values or "").split(",")
+            if arg
+        ]
+        argument_names_and_default_values_texts = []
+        arg_set_texts = []
+        for item in argument_names_and_vals:
+            arg_name = item[0]
+            if arg_name in ["logger", "playwright", "page"]:
+                arg_set_texts.append(f'("{arg_name}", "RESERVED")')
+            else:
+                arg_set_texts.append(f'("{arg_name}", {arg_name})')
+                if arg_name == "args":
+                    argument_names_and_default_values_texts.append("*args")
+                elif len(item) > 1:
+                    argument_names_and_default_values_texts.append(
+                        f"{arg_name}={self._js_value_to_python_value(item[1])}"
+                    )
+                else:
+                    argument_names_and_default_values_texts.append(f"{arg_name}")
+        text = f"""
+@keyword
+def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
+    \"\"\"{doc}\"\"\"
+    _args_browser_internal = dict()
+    _args_browser_internal["arguments"] = [{", ".join(arg_set_texts)}]
+    with self.playwright.grpc_channel() as stub:
+        responses = stub.CallExtensionKeyword(
+            Request().KeywordCall(name="{name}", arguments=json.dumps(_args_browser_internal))
+        )
+        for response in responses:
+            logger.info(response.log)
+        if response.json == "":
+            return
+        return json.loads(response.json)
+"""
+        try:
+            exec(
+                text,
+                {**globals(), "keyword": keyword, "json": json},
+                component.__dict__,
+            )
+            setattr(
+                component, name, types.MethodType(component.__dict__[name], component)
+            )
+        except SyntaxError as e:
+            raise DataError(f"{e.msg} in {name}")
+
+    def call_js_keyword(self, keyword_name: str, **args) -> Any:
+        reserved = {
+            "logger": "RESERVED",
+            "playwright": "RESERVED",
+            "page": "RESERVED",
+        }
+        _args_browser_internal = {
+            "arguments": [
+                (arg_name, reserved.get(arg_name, value))
+                for arg_name, value in args.items()
+            ]
+        }
+        with self.playwright.grpc_channel() as stub:
+            responses = stub.CallExtensionKeyword(
+                Request().KeywordCall(
+                    name=keyword_name, arguments=json.dumps(_args_browser_internal)
+                )
+            )
+            for response in responses:
+                logger.info(response.log)
+            if response.json == "":
+                return
+            return json.loads(response.json)
 
     @property
     def outputdir(self) -> str:
@@ -785,27 +1040,101 @@ class Browser(DynamicCore):
     def browser_output(self) -> Path:
         return Path(self.outputdir, "browser")
 
-    def _start_suite(self, suite, result):
-        if not self._suite_cleanup_done and self.browser_output.is_dir():
-            self._suite_cleanup_done = True
-            logger.debug(f"Removing: {self.browser_output}")
-            shutil.rmtree(str(self.browser_output), ignore_errors=True)
+    @property
+    def screenshots_output(self):
+        return self.browser_output / "screenshot"
+
+    @property
+    def video_output(self):
+        return self.browser_output / "video"
+
+    @property
+    def traces_output(self):
+        return self.browser_output / "traces"
+
+    @property
+    def state_file(self):
+        return self.browser_output / "state"
+
+    def _start_suite(self, _name, attrs):
+        self._add_to_scope_stack(attrs, Scope.Suite)
+        if not Browser._suite_cleanup_done:
+            Browser._suite_cleanup_done = True
+            for path in [
+                self.screenshots_output,
+                self.video_output,
+                self.traces_output,
+                self.state_file,
+            ]:
+                if path.is_dir():
+                    logger.debug(f"Removing: {path}")
+                    shutil.rmtree(str(path), ignore_errors=True)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
             except ConnectionError as e:
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, test, result):
+    def _start_test(self, _name, attrs):
+        self._add_to_scope_stack(attrs, Scope.Test)
+        self.is_test_case_running = True
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
-    def _end_test(self, test: TestCaseRunning, result: TestCaseResult):
+    def _start_keyword(self, _name, attrs):
+        if not (
+            self.show_keyword_call_banner is False
+            or (self.show_keyword_call_banner is None and not self.presenter_mode)
+            or attrs["libname"] != "Browser"
+            or attrs["status"] == "NOT RUN"
+        ):
+            self._show_keyword_call(attrs)
+        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+            self._set_logging(False)
+
+        if attrs["type"] == "Teardown":
+            timeout_pattern = "Test timeout .* exceeded."
+            test = EXECUTION_CONTEXTS.current.test
+            if (
+                test is not None
+                and test.status == "FAIL"
+                and re.match(timeout_pattern, test.message)
+            ):
+                self.screenshot_on_failure(test.name)
+
+    def run_keyword(self, name, args, kwargs=None):
+        try:
+            return DynamicCore.run_keyword(self, name, args, kwargs)
+        except AssertionError as e:
+            self.keyword_error()
+            e.args = self._alter_keyword_error(e.args)
+            if self.pause_on_failure:
+                sys.__stdout__.write(f"\n[ FAIL ] {e}")
+                sys.__stdout__.write(
+                    "\n[Paused on failure] Press Enter to continue..\n"
+                )
+                sys.__stdout__.flush()
+                input()
+            raise e
+
+    def get_keyword_tags(self, name: str) -> list:
+        tags = list(DynamicCore.get_keyword_tags(self, name))
+        if name in self._plugin_keywords:
+            tags.append("plugin")
+        return tags
+
+    def _end_keyword(self, _name, attrs):
+        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+            self._set_logging(True)
+
+    def _end_test(self, name, attrs):
+        self._remove_from_scope_stack(attrs)
+        self.is_test_case_running = False
         if len(self._unresolved_promises) > 0:
-            logger.warn(f"Waiting unresolved promises at the end of test '{test.name}'")
+            logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
             if self.presenter_mode:
@@ -818,11 +1147,12 @@ class Browser(DynamicCore):
                 catalog_before_test = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_test)
             except AssertionError as e:
-                logger.debug(f"Test Case: {test.name}, End Test: {e}")
+                logger.debug(f"Test Case: {name}, End Test: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
-    def _end_suite(self, suite, result):
+    def _end_suite(self, name, attrs):
+        self._remove_from_scope_stack(attrs)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")
@@ -831,9 +1161,17 @@ class Browser(DynamicCore):
                 catalog_before_suite = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_suite)
             except AssertionError as e:
-                logger.debug(f"Test Suite: {suite.name}, End Suite: {e}")
+                logger.debug(f"Test Suite: {name}, End Suite: {e}")
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
+
+    def _add_to_scope_stack(self, attrs: Dict[str, Any], scope: Scope):
+        for stack in self.scope_stack.values():
+            stack.start(attrs["id"], scope)
+
+    def _remove_from_scope_stack(self, attrs: Dict[str, Any]):
+        for stack in self.scope_stack.values():
+            stack.end(attrs["id"])
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
         catalog_after = self.get_browser_catalog()
@@ -860,45 +1198,61 @@ class Browser(DynamicCore):
         for page_id, ctx_id in new_page_ids:
             self._playwright_state.close_page(page_id, ctx_id)
 
-    def run_keyword(self, name, args, kwargs=None):
+    @classmethod
+    def _alter_keyword_error(cls, args: tuple) -> tuple:
+        if not (args and isinstance(args, tuple)):
+            return args
+
+        message = args[0]
+        for regex, augment in cls.ERROR_AUGMENTATION.items():
+            if regex.search(message):
+                message = augment(message)
+        return (message,) + args[1:]
+
+    def _set_logging(self, status: bool):
         try:
-            return DynamicCore.run_keyword(self, name, args, kwargs)
-        except AssertionError as e:
-            self.keyword_error()
-            if self._pause_on_failure:
-                sys.__stdout__.write(f"\n[ FAIL ] {e}")
-                sys.__stdout__.write(
-                    "\n[Paused on failure] Press Enter to continue..\n"
+            context = BuiltIn()._context.output
+        except DataError:
+            context = BuiltIn()
+        if status:
+            if self._current_loglevel:
+                context.set_log_level(self._current_loglevel)
+                self._current_loglevel = None
+        else:
+            self._current_loglevel = context.set_log_level("NONE")
+
+    def _show_keyword_call(self, attrs):
+        try:
+            if attrs["kwname"] in ["Take Screenshot", "Get Page Source"]:
+                self.set_keyword_call_banner()
+            else:
+                args = "    ".join(attrs["args"])
+                args = BuiltIn().replace_variables(args)
+                content = f"{attrs['kwname']}{'    ' * bool(attrs['args'])}{args}"
+                self.set_keyword_call_banner(content)
+        except Exception:
+            pass
+
+    def set_keyword_call_banner(self, keyword_call=None):
+        if keyword_call:
+            keyword_call = keyword_call.replace("'", "\\'")
+            content = KW_CALL_CONTENT_TEMPLATE.format(
+                keyword_call=keyword_call,
+                additional_styles=self.keyword_call_banner_add_style,
+            )
+        else:
+            content = "body::before{}"
+
+        with self.playwright.grpc_channel() as stub:
+            stub.EvaluateJavascript(
+                Request().EvaluateAll(
+                    selector="",
+                    script=KW_CALL_BANNER_FUNCTION,
+                    arg=json.dumps(content),
+                    allElements=False,
+                    strict=False,
                 )
-                sys.__stdout__.flush()
-                input()
-            raise e
-
-    def start_keyword(self, name, attrs):
-        """Take screenshot of tests that have failed due to timeout.
-
-        This method is part of the Listener API implemented by the library.
-
-        This can be done with BuiltIn keyword `Run Keyword If Timeout
-        Occurred`, but the problem there is that you have to remember to
-        put it into your Suite/Test Teardown. Since taking screenshot is
-        the most obvious thing to do on failure, let's do it automatically.
-
-        This cannot be implemented as a `end_test` listener method, since at
-        that time, the teardown has already been executed and browser may have
-        been closed already. This implementation will take the screenshot
-        before the teardown begins to execute.
-        """
-        self.current_arguments = tuple(attrs["args"])
-        if attrs["type"] == "Teardown":
-            timeout_pattern = "Test timeout .* exceeded."
-            test = EXECUTION_CONTEXTS.current.test
-            if (
-                test is not None
-                and test.status == "FAIL"
-                and re.match(timeout_pattern, test.message)
-            ):
-                self.screenshot_on_failure(test.name)
+            )
 
     def keyword_error(self):
         """Runs keyword on failure."""
@@ -913,7 +1267,7 @@ class Browser(DynamicCore):
                     self.run_on_failure_keyword.name == "take_screenshot"
                     and not varargs
                 ):
-                    varargs = [self._failure_screenshot_path()]
+                    varargs = (self._failure_screenshot_path(),)
                 self.keywords[self.run_on_failure_keyword.name](*varargs, **kwargs)
             else:
                 BuiltIn().run_keyword(
@@ -937,7 +1291,7 @@ class Browser(DynamicCore):
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         if timeout is None:
-            return self.timeout
+            return self.scope_stack["timeout"].get()
         return self.convert_timeout(timeout)
 
     def convert_timeout(
@@ -957,4 +1311,8 @@ class Browser(DynamicCore):
         if name == "__intro__":
             doc = doc.replace("%ASSERTION_TABLE%", AssertionOperator.__doc__)
             doc = doc.replace("%AUTO_CLOSING_LEVEL%", AutoClosingLevel.__doc__)
+        elif name == "set_assertion_formatters":
+            doc = doc.replace('"Keyword Name"', '"Get Text"')
+            doc = f"{doc}\n    | ${{value}} =    `Get Text`    //div    ==    ${{SPACE}}Expected${{SPACE * 2}}Text"
+            doc = f"{doc}\n    | Should Be Equal    ${{value}}    Expected Text\n"
         return doc

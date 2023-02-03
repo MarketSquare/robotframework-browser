@@ -1,0 +1,154 @@
+<html>
+
+<head>
+    <title>tables.html</title>
+</head>
+
+<body>
+    <div>
+        <input id="divscroll" type="button" value="Make Div Scrollable"
+        onclick="document.getElementById('scrollable').style='width: 90vw;height: 90vh;overflow: auto;'">
+        <input id="pagescroll" type="button" value="Make Page Scrollable"
+        onclick="document.getElementById('scrollable').style=''">
+    </div>
+    <div id="scrollable">
+        <div>
+            <table id="table1" style="width: 95vw;">
+                <caption>Drone Shop</caption>
+                <tr>
+                    <th></th>
+                    <th>Smart35</th>
+                    <th>Babyhawk</th>
+                    <th>MERICA</th>
+                </tr>
+                <tr>
+                    <th>Model</th>
+                    <td>SMART 35 HD Vista Nebula Nano</td>
+                    <td>Babyhawk II HD</td>
+                    <td>MERICA (3 TO 3.5 INCH)</td>
+                </tr>
+                <tr>
+                    <th>Weight</th>
+                    <td>137.6g</td>
+                    <td>141g</td>
+                    <td>153g</td>
+                </tr>
+                <tr>
+                    <th>Wheelbase</th>
+                    <td>155mm</td>
+                    <td>155mm</td>
+                    <td>160mm</td>
+                </tr>
+                <tr>
+                    <th>ESC</th>
+                    <td>STM32F411</td>
+                    <td>25A BLHeli_S 4in1 ESC</td>
+                    <td>25A ESC</td>
+                </tr>
+                <tr>
+                    <th>Motors</th>
+                    <td>GR1404-3850KV</td>
+                    <td>Emax ECO 1404 3700KV Motor</td>
+                    <td>3700KV Motor</td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td>
+                        <input id="drone1" type="button" value="Order"
+                            onclick="document.getElementById('selection').innerText='Smart35'">
+                    </td>
+                    <td>
+                        <input id="drone2" type="button" value="Order"
+                            onclick="document.getElementById('selection').innerText='Babyhawk'">
+                    </td>
+                    <td>
+                        <input id="drone3" type="button" value="Order"
+                            onclick="document.getElementById('selection').innerText='MERICA'">
+                    </td>
+                </tr>
+
+            </table>
+        </div>
+        <div id="selection"></div>
+        <h2 style="margin-top: 600px;margin-bottom: 600px;">The other one with thead, tbody, tfoot...</h2>
+        <div style="margin-left: 1000;">
+            <table id="table2" style="width: 95vw;">
+                <caption>Drone Shop</caption>
+                <colgroup>
+                    <col span="2" style="background-color:red">
+                    <col style="background-color:yellow">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Smart35</th>
+                        <th>Babyhawk</th>
+                        <th>MERICA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Model</th>
+                        <td>SMART 35 HD Vista Nebula Nano</td>
+                        <td>Babyhawk II HD</td>
+                        <td>MERICA (3 TO 3.5 INCH)</td>
+                    </tr>
+                    <tr>
+                        <th>Weight</th>
+                        <td>137.6g</td>
+                        <td>141g</td>
+                        <td>
+                            <table>
+                                <tr>
+                                    <td>one</td>
+                                    <td>two</td>
+                                </tr>
+                                <tr>
+                                    <td>1</td>
+                                    <td>2</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Wheelbase</th>
+                        <td>155mm</td>
+                        <td>155mm</td>
+                        <td>160mm</td>
+                    </tr>
+                    <tr>
+                        <th>ESC</th>
+                        <td>STM32F411</td>
+                        <td>25A BLHeli_S 4in1 ESC</td>
+                        <td>25A ESC</td>
+                    </tr>
+                    <tr>
+                        <th>Motors</th>
+                        <td>GR1404-3850KV</td>
+                        <td>Emax ECO 1404 3700KV Motor</td>
+                        <td>3700KV Motor</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th></th>
+                        <td>
+                            <input id="drone1" type="button" value="Order"
+                                onclick="document.getElementById('selection').innerText='Smart35'">
+                        </td>
+                        <td>
+                            <input id="drone2" type="button" value="Order"
+                                onclick="document.getElementById('selection').innerText='Babyhawk'">
+                        </td>
+                        <td>
+                            <input id="drone3" type="button" value="Order"
+                                onclick="document.getElementById('selection').innerText='MERICA'">
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</body>
+
+</html>

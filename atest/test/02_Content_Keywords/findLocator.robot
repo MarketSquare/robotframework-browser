@@ -1,7 +1,9 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Test Setup      findLocator Setup
+Suite Setup         Setup Keyword
+Suite Teardown      Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
+Test Setup          Ensure Open Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Normal Selector
@@ -10,20 +12,20 @@ Normal Selector
 
 Normal With Strict Mode
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//button" resolved to 11 elements:*
+    ...    *strict mode violation*//button*resolved to 11 elements:*
     ...    Click    //button
     Set Strict Mode    False
     Click    //button
     [Teardown]    Set Strict Mode    True
 
 Frame With Strict Mode
-    Go To    ${FRAMES_URL}
+    [Setup]    Go To    ${FRAMES_URL}
     Click    iframe[name="left"] >>> "foo"
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//iframe" resolved to 2 elements:*
+    ...    *strict mode violation*//iframe*resolved to 2 elements:*
     ...    Click    //iframe >>> "foo"
     Run Keyword And Expect Error
-    ...    *Error: strict mode violation: "//input" resolved to 2 elements:*
+    ...    *strict mode violation*//input*resolved to 2 elements:*
     ...    Click    iframe[name="left"] >>> //input
     Set Strict Mode    False
     Click    //iframe >>> "foo"
@@ -31,7 +33,7 @@ Frame With Strict Mode
     [Teardown]    Set Strict Mode    True
 
 Nested Frame With Strict Mode
-    Go To    ${DEEP_FRAMES_URL}
+    [Setup]    Go To    ${DEEP_FRAMES_URL}
     Click    id=b >>> id=c >>> id=cc
     ${element} =    Get Element    id=b >>> id=c >>> id=cc
     Should Start With    ${element}    element
@@ -45,45 +47,41 @@ Get Element And Get Elements
     Length Should Be    ${elements}    4
     FOR    ${element}    IN    @{elements}
         Should Start With    ${element}    element
-
     END
 
 Click With Element ID
-    ${element} =    Get Element    //tbody/tr[2]
+    ${element} =    Get Element    //tbody/tr[2] >> nth=0
+    ${Timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
-    ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
+    ...    TimeoutError: locator.click: Timeout 200ms exceeded.*
     ...    Click    ${element} >> css=input#login_button
+    Set Browser Timeout    ${Timeout}
     Get Text    text=Login Page
-    ${element} =    Get Element    //tbody/tr[3]
+    ${element} =    Get Element    //tbody/tr[3] >> nth=0
     Click    ${element} >> css=input#login_button
     Get Text    text=Login failed. Invalid user name and/or password.
 
 Frames With Element ID
-    Go To    ${FRAMES_URL}
+    [Setup]    Go To    ${FRAMES_URL}
     ${element} =    Get Element    iframe[name="left"]
+    ${Timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
-    ...    TimeoutError: locator.click: Timeout 3000ms exceeded.*
+    ...    TimeoutError: locator.click: Timeout 200ms exceeded.*
     ...    Click    ${element} >>> "foo"
+    [Teardown]    Set Browser Timeout    ${Timeout}
 
-Get Element Count In iFrame
-    Go To    ${FRAMES_URL}
+Get Element Count In IFrame
+    [Setup]    Go To    ${FRAMES_URL}
     Get Element Count    iframe[name="left"] >>> //input    ==    2
 
 Get Element Should Wait For Attached State
-    New Page    ${WAIT_URL}
+    [Setup]    Go To    ${WAIT_URL}
     Select Options By    \#dropdown    value    True    attached
     Click    \#submit    noWaitAfter=True
     ${locator} =    Get Element    id=victim
     Should Not Be Empty    ${locator}
 
-Get Element Should Wait For Attached State
-    New Page    ${WAIT_URL}
-    Select Options By    \#dropdown    value    True    attached
-    Click    \#submit    noWaitAfter=True
-    ${locator} =    Get Elements    id=victim
-    Should Not Be Empty    ${locator}
-
 *** Keywords ***
-findLocator Setup
+Setup Keyword
     Set Browser Timeout    3 seconds
-    New Page    ${LOGIN_URL}
+    Ensure Open Page

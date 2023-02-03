@@ -4,18 +4,20 @@ Resource        ../imports.resource
 
 Suite Setup     New Page    ${ERROR_URL}
 
+Force Tags      no-iframe
+
 *** Test Cases ***
-Resource leaker
-    New context
+Resource Leaker
+    New Context
     New Page    ${WELCOME_URL}
 
-New context is not closed after test
-    Get title    ==    Welcome Page
+New Context Is Not Closed After Test
+    Get Title    ==    Welcome Page
 
-Page leaker
-    Go to    ${WELCOME_URL}
+Page Leaker
+    Go To    ${WELCOME_URL}
     New Page    ${FORM_URL}
-    Get title    ==    prefilled_email_form.html
+    Get Title    ==    prefilled_email_form.html
 
-New page is not closed after test
-    Get title    ==    prefilled_email_form.html
+New Page Is Not Closed After Test
+    Get Title    ==    prefilled_email_form.html
