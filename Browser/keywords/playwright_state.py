@@ -144,11 +144,14 @@ class PlaywrightState(LibraryComponent):
 
             response = stub.CloseBrowser(Request.Empty())
             closed_browser_id = response.body
-            for option_hash, browser_id in list(self.browser_arg_mapping.items()):
-                if browser_id == closed_browser_id:
-                    del self.browser_arg_mapping[option_hash]
+            self.delete_browser_id_from_arg_mapping(closed_browser_id)
             self.library.pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
+
+    def delete_browser_id_from_arg_mapping(self, closed_browser_id):
+        for option_hash, browser_id in list(self.browser_arg_mapping.items()):
+            if browser_id == closed_browser_id:
+                del self.browser_arg_mapping[option_hash]
 
     @keyword(tags=("Setter", "BrowserControl"))
     def close_context(
@@ -422,14 +425,16 @@ class PlaywrightState(LibraryComponent):
         if not reuse_existing:
             return None
         existing_browser_id = self.browser_arg_mapping.get(parameter_hash)
-        if existing_browser_id:
+        if existing_browser_id is None:
+            return None
+        try:
+            self.switch_browser(existing_browser_id)
             logger.info(f"Reusing existing browser with id: {existing_browser_id}")
-            try:
-                self.switch_browser(existing_browser_id)
-            except AssertionError:
-                self.browser_arg_mapping.pop(parameter_hash)
-                existing_browser_id = None
-        return existing_browser_id
+            return existing_browser_id
+        except AssertionError:
+            self.browser_arg_mapping.pop(parameter_hash, None)
+            return None
+
 
     def _get_parameter_hash(self, params):
         params.pop("reuse_existing", None)
