@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, ConsoleMessage, Locator, Page, chromium, firefox, webkit, LaunchOptions } from 'playwright';
+import { Browser, BrowserContext, ConsoleMessage, Locator, Page, chromium, firefox, webkit } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -108,7 +108,6 @@ interface BrowserAndConfs {
     browser: Browser | null;
     browserType: 'chromium' | 'firefox' | 'webkit';
     headless: boolean;
-    options?: Record<string, unknown>;
 }
 
 async function _newBrowser(
@@ -132,7 +131,6 @@ async function _newBrowser(
         browser,
         browserType,
         headless,
-        options,
     };
 }
 
@@ -230,10 +228,8 @@ export class PlaywrightState {
         this.locatorHandles = new Map();
         this.extensions = [];
     }
-    
     extensions: Record<string, (...args: unknown[]) => unknown>[];
     private browserStack: BrowserState[];
-    
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
@@ -382,7 +378,6 @@ export class BrowserState {
         this.name = browserAndConfs.browserType;
         this.browser = browserAndConfs.browser;
         this.headless = browserAndConfs.headless;
-        this.options = browserAndConfs.options;
         this._contextStack = [];
         this.id = `browser=${uuidv4()}`;
     }
@@ -391,7 +386,6 @@ export class BrowserState {
     name?: string;
     id: Uuid;
     headless: boolean;
-    options?: playwright.LaunchOptions;
 
     public async close(): Promise<void> {
         for (const context of this.contextStack) {
@@ -581,67 +575,9 @@ async function _finishContextResponse(
     return response;
 }
 
-function equalOptions(x: playwright.LaunchOptions, y: playwright.LaunchOptions): boolean {
-    // TODO: array equality without order mattering
-    if (!arrayEqual(x['args'], y['args'])) return false;
-    if (!objectEqual(x['proxy'], y['proxy'])) return false;
-    return false;
-}
-
-function arrayEqual<T>(x?: Array<T>, y?: Array<T>) {
-    if (x === null || x === undefined || y === null || y === undefined) {
-        return x === y;
-    }
-    if (x.length !== y.length) return false;
-    return x.every((i) => {
-        i in y;
-    });
-}
-
-function objectEqual(x?: Record<string, string>, y?: Record<string, string>): boolean {
-    if (x === null || x === undefined || y === null || y === undefined) {
-        return x === y;
-    }
-    // recursive object equality check
-    const p = Object.keys(x);
-    return Object.keys(y).every((i) => p.indexOf(i) !== -1);
-}
-
-function omit(key: keyof LaunchOptions, obj: LaunchOptions) {
-    const { [key]: omitted, ...rest } = obj;
-    return rest;
-}
-
-function removeUnnecessaryOptions(obj: playwright.LaunchOptions): LaunchOptions {
-    // We need to omit all options here that do not affect equality.
-    // Could also do this by implementing browserOptions as it's own class and implementing a custom .equals method
-    // This is not strictly playwright.LaunchOptions because the rfbrowser python side might give us basically anything as input
-    return omit('skip_if_exists', omit('tracesDir', obj));
-}
-
 export async function newBrowser(request: Request.Browser, openBrowsers: PlaywrightState): Promise<Response.String> {
     const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
-    
-    const matchingBrowser = openBrowsers.browserStack.find((browser: BrowserState) => {
-        return equalOptions(removeUnnecessaryOptions(browser.options ?? {}), removeUnnecessaryOptions(options));
-    });
-
-    let extraWarning = '';
-    if (matchingBrowser) {
-        if (options.skip_if_exists) {
-            openBrowsers.switchTo(matchingBrowser.id);
-            return stringResponse(
-                matchingBrowser.id,
-                'Successfully skipped creating new browser, found matching browser with options: ' +
-                    JSON.stringify(options),
-            );
-        } else {
-            // If there is already a browser with requested options, print a warning. Could make this default in the future.
-            extraWarning = `Consider skip_if_exists for improved performance and automatic browser re-use. Automatically detected that ${matchingBrowser.id} could have probably been re-used.`;
-        }
-    }
-
     const browserAndConfs = await _newBrowser(
         browserType,
         options['headless'] as boolean,
@@ -649,10 +585,7 @@ export async function newBrowser(request: Request.Browser, openBrowsers: Playwri
         options,
     );
     const browserState = openBrowsers.addBrowser(browserAndConfs);
-    return stringResponse(
-        browserState.id,
-        `${extraWarning}\nSuccessfully created browser with options: ${JSON.stringify(options)}`,
-    );
+    return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
 }
 
 export async function newPersistentContext(

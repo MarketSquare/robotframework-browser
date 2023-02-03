@@ -51,6 +51,10 @@ from ..utils import (
 class PlaywrightState(LibraryComponent):
     """Keywords to manage Playwright side Browsers, Contexts and Pages."""
 
+    def __init__(self, library):
+        LibraryComponent.__init__(self, library)
+        self._existing_browsers: Dict[str, str] = {}
+
     # Helpers for Switch_ and Close_ keywords
 
     def _correct_browser(self, browser: Union[SelectionType, str]):
@@ -402,12 +406,25 @@ class PlaywrightState(LibraryComponent):
         options = json.dumps(params, default=str)
         logger.info(options)
 
+        # Check if we have an existing browser with same options
+        options_hash = hash(options)
+        existing_browser = self._existing_browsers.get(options_hash)
+        if existing_browser:
+            if skip_if_exists:
+                logger.info("Skipping opening new browser")
+                return existing_browser
+            else:
+                # TODO: should this be a warn?
+                logger.info(f"There was a browser open with matching options, id: {existing_browser}. Use New Context with a single browser and skip_if_exists to make automations faster.")
+
 
         with self.playwright.grpc_channel() as stub:
             response = stub.NewBrowser(
                 Request().Browser(browser=browser.name, rawOptions=options)
             )
             logger.info(response.log)
+
+            self._existing_browsers[options_hash] = response.body
             return response.body
 
     old_new_context_args = {
