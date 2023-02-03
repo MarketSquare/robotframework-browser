@@ -137,12 +137,16 @@ class PlaywrightState(LibraryComponent):
                 response = stub.CloseAllBrowsers(Request().Empty())
                 self.library.pause_on_failure.clear()
                 logger.info(response.log)
+                self.browser_arg_mapping.clear()
                 return
             if browser != SelectionType.CURRENT:
                 self.switch_browser(browser)
 
             response = stub.CloseBrowser(Request.Empty())
             closed_browser_id = response.body
+            for option_hash, browser_id in list(self.browser_arg_mapping.items()):
+                if browser_id == closed_browser_id:
+                    del self.browser_arg_mapping[option_hash]
             self.library.pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
 
@@ -341,6 +345,7 @@ class PlaywrightState(LibraryComponent):
         handleSIGTERM: bool = True,
         ignoreDefaultArgs: Optional[List[str]] = None,
         proxy: Optional[Proxy] = None,
+        reuse_existing: bool = True,
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
     ) -> str:
@@ -355,19 +360,20 @@ class PlaywrightState(LibraryComponent):
         | ``browser`` | Opens the specified [#type-SupportedBrowsers|browser]. Defaults to chromium. |
         | ``headless`` | Set to False if you want a GUI. Defaults to True. |
         | ``*deprecated_pos_args`` | Other positional arguments are deprecated for `New Browser`. Please use named arguments in the future. We will remove positional arguments after RoboCon 2023 Online in March. Old order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``. |
-        | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
         | ``args`` | Additional arguments to pass to the browser instance. The list of Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/|here]. Defaults to None. |
-        | ``ignoreDefaultArgs`` | If an array is given, then filters out the given default arguments. Defaults to None. |
-        | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}`` |
+        | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
+        | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
         | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. |
+        | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
+        | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
+        | ``handleSIGHUP`` | Close the browser process on SIGHUP. Defaults to True. |
         | ``handleSIGINT`` | Close the browser process on Ctrl-C. Defaults to True. |
         | ``handleSIGTERM`` | Close the browser process on SIGTERM. Defaults to True. |
-        | ``handleSIGHUP`` | Close the browser process on SIGHUP. Defaults to True. |
-        | ``timeout`` | Maximum time in Robot Framework time format to wait for the browser instance to start. Defaults to 30 seconds. Pass 0 to disable timeout. |
-        | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
-        | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
+        | ``ignoreDefaultArgs`` | If an array is given, then filters out the given default arguments. Defaults to None. |
+        | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}`` |
+        | ``reuse_existing`` | If set to True, then the existing browser instance will be reused. Defaults to True. |
         | ``slowMo`` | Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay. |
-        | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
+        | ``timeout`` | Maximum time in Robot Framework time format to wait for the browser instance to start. Defaults to 30 seconds. Pass 0 to disable timeout. |
 
 
         Old deprecated argument order:
@@ -392,6 +398,12 @@ class PlaywrightState(LibraryComponent):
                 "Deprecated positional arguments are used in 'New Browser'. Please use named arguments instead."
             )
         params = {**pos_params, **params}
+        parameter_hash = self._get_parameter_hash(params)
+        existing_browser_id = self._switch_to_existing_browser(
+            reuse_existing, parameter_hash
+        )
+        if existing_browser_id:
+            return existing_browser_id
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
         options = json.dumps(params, default=str)
         logger.info(options)
@@ -401,7 +413,28 @@ class PlaywrightState(LibraryComponent):
                 Request().Browser(browser=browser.name, rawOptions=options)
             )
             logger.info(response.log)
+            self.browser_arg_mapping[parameter_hash] = response.body
             return response.body
+
+    def _switch_to_existing_browser(
+        self, reuse_existing: bool, parameter_hash: int
+    ) -> Optional[str]:
+        if not reuse_existing:
+            return None
+        existing_browser_id = self.browser_arg_mapping.get(parameter_hash)
+        if existing_browser_id:
+            logger.info(f"Reusing existing browser with id: {existing_browser_id}")
+            try:
+                self.switch_browser(existing_browser_id)
+            except AssertionError:
+                self.browser_arg_mapping.pop(parameter_hash)
+                existing_browser_id = None
+        return existing_browser_id
+
+    def _get_parameter_hash(self, params):
+        params.pop("reuse_existing", None)
+        parameter_hash = hash(repr(params))
+        return parameter_hash
 
     old_new_context_args = {
         "acceptDownloads": bool,

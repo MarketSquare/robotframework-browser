@@ -35,7 +35,7 @@ Get Empty Context IDs From Browser
 Get Empty Context ID From Empty Browser
     [Tags]    slow
     ${browser} =    New Browser    headless=${HEADLESS}
-    New Browser    headless=${HEADLESS}
+    New Browser    headless=${HEADLESS}    reuse_existing=False
     New Context
     Switch Browser    ${browser}
     Check Return Value Is Empty List    Get Context Ids    Active    Active

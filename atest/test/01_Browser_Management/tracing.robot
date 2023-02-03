@@ -27,7 +27,7 @@ Enable Tracing To File With Two Browsers
     ${browser1} =    New Browser    headless=${HEADLESS}
     New Context    tracing=trace_1.zip
     New Page    ${LOGIN_URL}
-    ${browser2} =    New Browser    headless=${HEADLESS}
+    ${browser2} =    New Browser    headless=${HEADLESS}    reuse_existing=False
     New Context    tracing=trace_2.zip
     New Page    ${FORM_URL}
     Click    //input[@name="submit"]

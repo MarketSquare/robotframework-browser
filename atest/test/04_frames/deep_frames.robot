@@ -1,7 +1,7 @@
 *** Settings ***
 Resource            imports.resource
 
-Suite Setup         Ensure Open Browser
+Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
 Suite Teardown      Close Browser
 Test Setup          Ensure Location    ${DEEP_FRAMES_URL}
 
