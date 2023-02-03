@@ -788,6 +788,13 @@ export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<
     return jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
 }
 
+export async function getConsoleLog(openBrowsers: PlaywrightState): Promise<Response.PageReportResponse> {
+    const activeBrowser = openBrowsers.getActiveBrowser();
+    const activePage = activeBrowser.page;
+    if (!activePage) throw new Error('No open page');
+    return pageReportResponse('Returned Console Logs', activePage);
+}
+
 export async function saveStorageState(
     request: Request.FilePath,
     browserState?: BrowserState,

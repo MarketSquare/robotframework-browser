@@ -991,6 +991,66 @@ class PlaywrightState(LibraryComponent):
                 formatter,
             )
 
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    @with_assertion_polling
+    def get_console_log(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+    ) -> Dict:
+        """Returns the console log of the active page.
+
+
+        | =Arguments= | =Description= |
+        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
+        | assertion_expected | Optional expected value. See `Assertions` for more information. |
+        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+
+        [https://forum.robotframework.org/t//4259|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetConsoleLog(Request().Empty())
+            if response.log:
+                logger.info(response.log)
+            return verify_assertion(
+                json.loads(response.console),
+                assertion_operator,
+                assertion_expected,
+                "Console Log",
+                message,
+            )
+
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    @with_assertion_polling
+    def get_page_errors(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+    ) -> Dict:
+        """Returns the page errors of the active page.
+
+
+        | =Arguments= | =Description= |
+        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
+        | assertion_expected | Optional expected value. See `Assertions` for more information. |
+        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+
+        [https://forum.robotframework.org/t//4259|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetConsoleLog(Request().Empty())
+            if response.log:
+                logger.info(response.log)
+            return verify_assertion(
+                json.loads(response.errors),
+                assertion_operator,
+                assertion_expected,
+                "Page Errors",
+                message,
+            )
+
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_browser(self, id: str) -> str:
         """Switches the currently active Browser to another open Browser.
