@@ -148,7 +148,7 @@ class PlaywrightState(LibraryComponent):
             self.library.pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
 
-    def delete_browser_id_from_arg_mapping(self, closed_browser_id):
+    def delete_browser_id_from_arg_mapping(self, closed_browser_id: str) -> None:
         for option_hash, browser_id in list(self.browser_arg_mapping.items()):
             if browser_id == closed_browser_id:
                 del self.browser_arg_mapping[option_hash]
@@ -435,8 +435,7 @@ class PlaywrightState(LibraryComponent):
             self.browser_arg_mapping.pop(parameter_hash, None)
             return None
 
-
-    def _get_parameter_hash(self, params):
+    def _get_parameter_hash(self, params: Dict[str, Any]) -> int:
         params.pop("reuse_existing", None)
         parameter_hash = hash(repr(params))
         return parameter_hash
