@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import inspect
-from typing import Callable
+from typing import Any, Callable, Dict, Tuple
+
+from robot.running import TypeConverter
+
+from Browser.utils import logger
 
 
 def _method_to_keyword(method: str) -> str:
@@ -40,3 +44,26 @@ def _is_deprecated_attribute(method: Callable, deprecated_arg, args, kwargs):
             if len(args) == index + 1:
                 deprecated = True
     return deprecated
+
+
+def convert_pos_args_to_named(
+    deprecated_pos_args: Tuple[Any, ...],
+    old_args: Dict[str, Any],
+    keyword_name: str,
+    additional_msg: str = "",
+):
+    old_args_list = list(old_args.items())
+    pos_params = {}
+    for index, pos_arg in enumerate(deprecated_pos_args):
+        argument_name = old_args_list[index][0]
+        argument_type = old_args_list[index][1]
+        converted_pos = TypeConverter.converter_for(argument_type).convert(
+            argument_name, pos_arg
+        )
+        pos_params[argument_name] = converted_pos
+    if pos_params:
+        logger.warn(
+            f"Deprecated positional arguments are used in '{keyword_name}'. "
+            f"Please use named arguments instead.{additional_msg}"
+        )
+    return pos_params

@@ -548,6 +548,21 @@ class ScreenshotFileTypes(Enum):
     jpeg = auto()
 
 
+class ScreenshotReturnType(Enum):
+    """Enum that defines what `Take Screenshot` keyword returns.
+
+    - ``path`` returns the path to the screenshot file as ``pathlib.Path`` object.
+    - ``path_string`` returns the path to the screenshot file as string.
+    - ``bytes`` returns the screenshot itself as bytes.
+    - ``base64`` returns the screenshot itself as base64 encoded string.
+    """
+
+    path = auto()
+    path_string = auto()
+    bytes = auto()
+    base64 = auto()
+
+
 class PageLoadStates(Enum):
     """Enum that defines available page load states."""
 

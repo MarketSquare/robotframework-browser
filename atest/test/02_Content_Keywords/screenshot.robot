@@ -96,8 +96,8 @@ Screenshotting Without Path
 
 Screenshot Filename Incrementation
     [Documentation]
-    ...    LOG 1:4    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png"><img src="test_screenshot_1.png" width="800px"></a>
-    ...    LOG 2:4    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png"><img src="test_screenshot_2.png" width="800px"></a>
+    ...    LOG 1:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png"><img src="test_screenshot_1.png" width="800px"></a>
+    ...    LOG 2:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png"><img src="test_screenshot_2.png" width="800px"></a>
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
     File Should Exist    ${TestScreenshot}_1.png

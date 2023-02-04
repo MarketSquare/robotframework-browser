@@ -20,7 +20,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
-from robot.running.arguments.typeconverters import TypeConverter
 from robot.utils import get_link_path
 
 from ..assertion_engine import with_assertion_polling
@@ -46,6 +45,7 @@ from ..utils import (
     locals_to_params,
     logger,
 )
+from ..utils.deprecated import convert_pos_args_to_named
 
 
 class PlaywrightState(LibraryComponent):
@@ -387,19 +387,12 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t/comments-for-new-browser/4306|Comment >>]
         """
         params = locals_to_params(locals())
-        old_args_list = list(self.old_new_browser_args.items())
-        pos_params = {}
-        for index, pos_arg in enumerate(deprecated_pos_args):
-            argument_name = old_args_list[index][0]
-            argument_type = old_args_list[index][1]
-            converted_pos = TypeConverter.converter_for(argument_type).convert(
-                argument_name, pos_arg
-            )
-            pos_params[argument_name] = converted_pos
-        if pos_params:
-            logger.warn(
-                "Deprecated positional arguments are used in 'New Browser'. Please use named arguments instead."
-            )
+        pos_params = convert_pos_args_to_named(
+            deprecated_pos_args,
+            self.old_new_browser_args,
+            "New Browser",
+            " Will be removed after March 2023.",
+        )
         params = {**pos_params, **params}
         parameter_hash = self._get_parameter_hash(params)
         existing_browser_id = self._switch_to_existing_browser(
@@ -566,20 +559,12 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
-        old_args_list = list(self.old_new_context_args.items())
-        pos_params = {}
-        for index, pos_arg in enumerate(deprecated_pos_args):
-            argument_name = old_args_list[index][0]
-            argument_type = old_args_list[index][1]
-            converted_pos = TypeConverter.converter_for(argument_type).convert(
-                argument_name, pos_arg
-            )
-            pos_params[argument_name] = converted_pos
-        if pos_params:
-            logger.warn(
-                "Deprecated positional arguments are used in 'New Context'. "
-                "Please use named arguments instead. Will be removed after March 2023."
-            )
+        pos_params = convert_pos_args_to_named(
+            deprecated_pos_args,
+            self.old_new_context_args,
+            "New Context",
+            " Will be removed after March 2023.",
+        )
         params = {**pos_params, **params}
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(params, httpCredentials, storageState)
@@ -725,19 +710,12 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
-        old_args_list = list(self.old_new_perse_context_args.items())
-        pos_params = {}
-        for index, pos_arg in enumerate(deprecated_pos_args):
-            argument_name = old_args_list[index][0]
-            argument_type = old_args_list[index][1]
-            converted_pos = TypeConverter.converter_for(argument_type).convert(
-                argument_name, pos_arg
-            )
-            pos_params[argument_name] = converted_pos
-        if pos_params:
-            logger.warn(
-                "Deprecated positional arguments are used in 'New Persistent Context'. Please use named arguments instead."
-            )
+        pos_params = convert_pos_args_to_named(
+            deprecated_pos_args,
+            self.old_new_perse_context_args,
+            "New Persistent Context",
+            " Will be removed after March 2023.",
+        )
         params = {**pos_params, **params}
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
