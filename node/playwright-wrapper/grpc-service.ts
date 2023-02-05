@@ -150,8 +150,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     closeContext = this.wrappingState(playwrightState.closeContext);
     closePage = this.wrappingState(playwrightState.closePage);
     getBrowserCatalog = this.wrappingState(playwrightState.getBrowserCatalog);
-    getConsoleLog = this.wrappingState(playwrightState.getConsoleLog);
-    getErrorMessages = this.wrappingState(playwrightState.getErrorMessages);
+    getConsoleLog = this.wrapping(playwrightState.getConsoleLog);
+    getErrorMessages = this.wrapping(playwrightState.getErrorMessages);
 
     async getCookies(
         call: ServerUnaryCall<Request.Empty, Response.Json>,

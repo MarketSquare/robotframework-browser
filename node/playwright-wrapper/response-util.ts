@@ -43,17 +43,23 @@ export function pageReportResponse(log: string, page: IndexedPage): Response.Pag
     return response;
 }
 
-export function getConsoleLogResponse(page: IndexedPage, log: string): Response.Json {
+export function getConsoleLogResponse(page: IndexedPage, fullLog: boolean, message: string): Response.Json {
     const response = new Response.Json();
-    response.setLog(log);
-    response.setJson(JSON.stringify(page.consoleMessages));
+    const consoleMessages = page.consoleMessages;
+    const reponseMessages = fullLog ? consoleMessages : consoleMessages.slice(page.consoleIndex);
+    page.consoleIndex = consoleMessages.length;
+    response.setLog(message);
+    response.setJson(JSON.stringify(reponseMessages));
     return response;
 }
 
-export function getErrorMessagesResponse(page: IndexedPage, log: string): Response.Json {
+export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, message: string): Response.Json {
     const response = new Response.Json();
-    response.setLog(log);
-    response.setJson(JSON.stringify(page.pageErrors));
+    const pageErrors = page.pageErrors;
+    const reponseErrors = fullLog ? pageErrors : pageErrors.slice(page.errorIndex);
+    page.errorIndex = pageErrors.length;
+    response.setLog(message);
+    response.setJson(JSON.stringify(reponseErrors));
     return response;
 }
 

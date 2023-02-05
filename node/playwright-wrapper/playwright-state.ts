@@ -210,7 +210,7 @@ async function _newBrowserContext(
     return c;
 }
 
-function indexedPage(newPage: Page) {
+function indexedPage(newPage: Page): IndexedPage {
     const timestamp = new Date().getTime() / 1000;
     const pageErrors: TimedError[] = [];
     const consoleMessages: TimedConsoleMessage[] = [];
@@ -237,7 +237,9 @@ function indexedPage(newPage: Page) {
         p: newPage,
         timestamp,
         pageErrors,
+        errorIndex: 0,
         consoleMessages,
+        consoleIndex: 0,
     };
 }
 
@@ -398,7 +400,9 @@ export type IndexedPage = {
     id: Uuid;
     timestamp: number;
     pageErrors: TimedError[];
+    errorIndex: number;
     consoleMessages: TimedConsoleMessage[];
+    consoleIndex: number;
 };
 
 type Uuid = string;
@@ -822,18 +826,16 @@ export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<
     return jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
 }
 
-export async function getConsoleLog(openBrowsers: PlaywrightState): Promise<Response.Json> {
-    const activeBrowser = openBrowsers.getActiveBrowser();
-    const activePage = activeBrowser.page;
+export async function getConsoleLog(request: Request.Bool, openBrowsers: PlaywrightState): Promise<Response.Json> {
+    const activePage = openBrowsers.getActiveBrowser().page;
     if (!activePage) throw new Error('No open page');
-    return getConsoleLogResponse(activePage, 'Console log received');
+    return getConsoleLogResponse(activePage, request.getValue(), 'Console log received');
 }
 
-export async function getErrorMessages(openBrowsers: PlaywrightState): Promise<Response.Json> {
-    const activeBrowser = openBrowsers.getActiveBrowser();
-    const activePage = activeBrowser.page;
+export async function getErrorMessages(request: Request.Bool, openBrowsers: PlaywrightState): Promise<Response.Json> {
+    const activePage = openBrowsers.getActiveBrowser().page;
     if (!activePage) throw new Error('No open page');
-    return getErrorMessagesResponse(activePage, 'Error messages received');
+    return getErrorMessagesResponse(activePage, request.getValue(), 'Error messages received');
 }
 
 export async function saveStorageState(

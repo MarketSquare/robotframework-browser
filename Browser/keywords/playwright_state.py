@@ -14,7 +14,7 @@
 
 import json
 from copy import copy
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
@@ -998,6 +998,8 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
+        full: bool = False,
+        last: Union[int, timedelta, None] = None,
     ) -> Dict:
         """Returns the console log of the active page.
 
@@ -1006,15 +1008,19 @@ class PlaywrightState(LibraryComponent):
         | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
         | assertion_expected | Optional expected value. See `Assertions` for more information. |
         | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+        | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
+        | last               | If set, returns only the last n entries. Can be `int` for number of entries or `timedelta` for time period. |
 
         [https://forum.robotframework.org/t//4259|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetConsoleLog(Request().Empty())
+            response = stub.GetConsoleLog(Request().Bool(value=full))
             if response.log:
                 logger.info(response.log)
+            log_messages = json.loads(response.json)
+            returned_messages = self._slice_messages(log_messages, last)
             return verify_assertion(
-                json.loads(response.json),
+                returned_messages,
                 assertion_operator,
                 assertion_expected,
                 "Console Log",
@@ -1028,6 +1034,8 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
+        full: bool = False,
+        last: Union[int, timedelta, None] = None,
     ) -> Dict:
         """Returns the page errors of the active page.
 
@@ -1036,20 +1044,38 @@ class PlaywrightState(LibraryComponent):
         | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
         | assertion_expected | Optional expected value. See `Assertions` for more information. |
         | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+        | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
+        | last               | If set, returns only the last n entries. Can be `int` for number of entries or `timedelta` for time period. |
 
         [https://forum.robotframework.org/t//4259|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetErrorMessages(Request().Empty())
+            response = stub.GetErrorMessages(Request().Bool(value=full))
             if response.log:
                 logger.info(response.log)
+            errors = json.loads(response.json)
+            returned_errors = self._slice_messages(errors, last)
             return verify_assertion(
-                json.loads(response.json),
+                returned_errors,
                 assertion_operator,
                 assertion_expected,
                 "Page Errors",
                 message,
             )
+
+    def _slice_messages(self, message, last):
+        if isinstance(last, int):
+            returned_messages = message[-last:]
+        elif isinstance(last, timedelta):
+            returned_messages = []
+            now = datetime.now(timezone.utc)
+            for msg in reversed(message):
+                if datetime.fromisoformat(msg["time"]) < now - last:
+                    break
+                returned_messages.append(msg)
+        else:
+            returned_messages = message
+        return returned_messages
 
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_browser(self, id: str) -> str:
