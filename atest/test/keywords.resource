@@ -97,21 +97,13 @@ Delete Files On Teardown
 
 Ensure Open Page
     [Arguments]    ${url}=${NONE}
-    Ensure Open Browser
+    New Browser    ${BROWSER}    headless=${HEADLESS}
     ${IDs} =    Get Page Ids
     IF    len($IDs) == 0
         New Page    ${url}
     ELSE
         Switch To Page    ${IDs}[0]
         IF    $url    Go To    ${url}
-    END
-
-Ensure Open Browser
-    ${IDs} =    Get Browser Ids
-    IF    len($IDs) == 0
-        New Browser    ${BROWSER}    headless=${HEADLESS}
-    ELSE
-        Switch Browser    ${IDs}[0]
     END
 
 Ensure Location

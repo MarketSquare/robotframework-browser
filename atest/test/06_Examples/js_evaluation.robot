@@ -1,7 +1,7 @@
 *** Settings ***
 Resource        imports.resource
 
-Suite Setup     Ensure Open Browser
+Suite Setup     New Browser    ${BROWSER}    headless=${HEADLESS}
 Test Setup      New Page    ${LOGIN_URL}
 
 *** Test Cases ***

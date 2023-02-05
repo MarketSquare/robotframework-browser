@@ -22,7 +22,7 @@ class TypedDictDummy(TypedDict):
     pass
 
 
-def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:   # noqa: C901
+def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noqa: C901
     for arg_name, arg_type in function_annotations.items():
         if arg_name not in params or params[arg_name] is None:
             continue

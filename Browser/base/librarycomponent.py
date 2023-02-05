@@ -42,6 +42,7 @@ class LibraryComponent:
         """
         self.library = library
         self._crypto: Optional[Any] = None
+        self.browser_arg_mapping: Dict[int, str] = {}
 
     @property
     def playwright(self):

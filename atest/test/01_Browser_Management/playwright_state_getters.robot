@@ -11,7 +11,7 @@ Get Multiple Browsers
     New Page    ${FORM_URL}
     New Context
     New Page    ${LOGIN_URL}
-    New Browser    headless=${HEADLESS}
+    New Browser    headless=${HEADLESS}    reuse_existing=False
     New Context
     ${oldtimeout} =    Set Browser Timeout    15s
     New Page    http://example.com
@@ -69,7 +69,7 @@ Multicontext Order
 
 Multibrowser Order
     [Tags]    slow
-    New Browser    browser=chromium
+    New Browser    browser=chromium    reuse_existing=False
     New Page    ${ERROR_URL}
     Get Title    ==    Error Page
     Browser Encapsulating Keyword
@@ -78,7 +78,7 @@ Multibrowser Order
 
 Get Browser Catalog After First Popup Close
     [Tags]    no-iframe
-    New Browser    headless=${HEADLESS}
+    New Browser    headless=${HEADLESS}    reuse_existing=False
     New Page    ${CREATE_POPUPS_URL}
     Get Title    ==    Call Popups Page
     ${pages} =    Get Browser Catalog    then    value[1]['contexts'][0]['pages']
@@ -93,7 +93,7 @@ Get Browser Catalog After First Popup Close
 
 Get Browser Catalog After Second Popup Close
     [Tags]    no-iframe
-    New Browser    headless=${HEADLESS}
+    New Browser    headless=${HEADLESS}    reuse_existing=False
     New Page    ${CREATE_POPUPS_URL}
     Get Title    ==    Call Popups Page
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 1
@@ -126,7 +126,7 @@ Context Encapsulating Keyword
     [Teardown]    Close Context
 
 Browser Encapsulating Keyword
-    New Browser    browser=${BROWSER}
+    New Browser    browser=${BROWSER}    reuse_existing=False
     New Page    ${WELCOME_URL}
     Get Title    ==    Welcome Page
     [Teardown]    Close Browser
