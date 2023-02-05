@@ -199,9 +199,8 @@ class Control(LibraryComponent):
                 ScreenshotReturnType.bytes,
                 ScreenshotReturnType.base64,
             ):
-                with screenshot_path.open("rb") as png_file:
-                    screenshot_bytes = png_file.read()
-                    base64_screenshot = base64.b64encode(screenshot_bytes)
+                screenshot_bytes = screenshot_path.read_bytes()
+                base64_screenshot = base64.b64encode(screenshot_bytes)
                 if log_screenshot and self._is_embed(filename):
                     logger.debug("Embedding image to log.html.")
                     self._embed_to_log(base64_screenshot)
@@ -209,7 +208,9 @@ class Control(LibraryComponent):
             if log_screenshot and not self._is_embed(filename):
                 self._log_image_link(screenshot_path_str)
 
-            self._unlink_screenshot(filename, return_as, screenshot_path)
+            self._unlink_screenshot(
+                log_screenshot, filename, return_as, screenshot_path
+            )
             if return_as is ScreenshotReturnType.path_string:
                 return "EMBED" if self._is_embed(filename) else screenshot_path_str
             if return_as is ScreenshotReturnType.path:
@@ -260,11 +261,14 @@ class Control(LibraryComponent):
             mask_selectors = None
         return mask_selectors
 
-    def _unlink_screenshot(self, filename, return_as, screenshot_path):
+    def _unlink_screenshot(self, log_screenshot, filename, return_as, screenshot_path):
         if (
             filename is None
             or self._is_embed(filename)
-            or return_as in (ScreenshotReturnType.bytes, ScreenshotReturnType.base64)
+            or (
+                return_as in (ScreenshotReturnType.bytes, ScreenshotReturnType.base64)
+                and not log_screenshot
+            )
         ):
             try:
                 screenshot_path.unlink()
@@ -275,16 +279,17 @@ class Control(LibraryComponent):
         relative_path = get_link_path(file_path, self.outputdir)
         logger.info(
             '</td></tr><tr><td colspan="3">'
-            f'<a href="{relative_path}"><img src="{relative_path}" width="800px"></a>',
+            f'<a href="{relative_path}" target="_blank"><img src="{relative_path}" width="800px"></a>',
             html=True,
         )
 
-    def _embed_to_log(self, base64_screenshot: bytes) -> str:
+    @staticmethod
+    def _embed_to_log(base64_screenshot: bytes) -> str:
         # log statement is copied from:
         # https://github.com/robotframework/SeleniumLibrary/blob/master/src/SeleniumLibrary/keywords/screenshot.py
         logger.info(
             '</td></tr><tr><td colspan="3">'
-            '<img alt="screenshot" class="robot-seleniumlibrary-screenshot" '
+            '<img alt="screenshot" '
             f'src="data:image/png;base64,{base64_screenshot.decode()}" width="900px">',
             html=True,
         )

@@ -183,3 +183,38 @@ Screenshot With Omit Background
     ${color} =    Get Pixel Color    ${path}    ${width//2}    ${height//2}
     Should Be Equal    ${color}    ${{(0,0,0,0)}}
     [Teardown]    Remove File    ${path}
+
+Screenshot Returns Base64 And Path
+    [Timeout]    10 minutes
+    ${path} =    Take Screenshot    return_as=path
+    ${base64} =    Take Screenshot    return_as=base64
+    Type Text    id=username_field    Hello
+    ${base64_diff} =    Take Screenshot    return_as=base64
+    Should Be True    isinstance($path, pathlib.Path)
+    ${bytes} =    Evaluate    base64.b64decode($base64)
+    Compare Images    ${path.absolute().resolve()}    ${bytes}
+    Should Not Be Equal    ${base64}    ${base64_diff}
+    ${bytes_diff} =    Evaluate    base64.b64decode($base64_diff)
+    TRY
+        Compare Images    ${path}    ${bytes_diff}
+        Fail    Should have failed
+    EXCEPT    AssertionError
+        Log    correct error
+    END
+
+Screenshot Returns Bytes And Path String
+    [Timeout]    10 minutes
+    ${path} =    Take Screenshot    return_as=path_string
+    ${bytes} =    Take Screenshot    return_as=bytes
+    Type Text    id=username_field    Hello
+    ${bytes_diff} =    Take Screenshot    return_as=bytes
+    Should Be True    isinstance($path, str)
+    Should Be True    isinstance($bytes, bytes)
+    Compare Images    ${path}    ${bytes}
+    Should Not Be Equal    ${bytes}    ${bytes_diff}
+    TRY
+        Compare Images    ${path}    ${bytes_diff}
+        Fail    Should have failed
+    EXCEPT    AssertionError
+        Log    correct error
+    END
