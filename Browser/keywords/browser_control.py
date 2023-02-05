@@ -269,7 +269,7 @@ class Control(LibraryComponent):
             try:
                 screenshot_path.unlink()
             except Exception:
-                pass
+                logger.trace(f"Could not delete screenshot '{screenshot_path}'.")
 
     def _log_image_link(self, file_path: str) -> None:
         relative_path = get_link_path(file_path, self.outputdir)
