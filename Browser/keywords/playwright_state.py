@@ -998,6 +998,7 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
+        *_,
         full: bool = False,
         last: Union[int, timedelta, None] = None,
     ) -> Dict:
@@ -1010,6 +1011,41 @@ class PlaywrightState(LibraryComponent):
         | message            | Optional custom message to use on failure. See `Assertions` for more information. |
         | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
         | last               | If set, returns only the last n entries. Can be `int` for number of entries or `timedelta` for time period. |
+
+        The returned data is a `list` of log messages.
+
+        A log message is a `dict` with the following structure:
+        | {
+        |   "type": str,
+        |   "text": str,
+        |   "location": {
+        |     "url": str,
+        |     "lineNumber": int,
+        |     "columnNumber": int
+        |   },
+        |   "time": str
+        | }
+
+        Example:
+        | [{
+        |   'type': 'log',
+        |   'text': 'Stuff loaded...',
+        |   'location': {
+        |     'url': 'https://example.com/js/chunk-769742de.6a462276.js',
+        |     'lineNumber': 60,
+        |     'columnNumber': 63771
+        |   },
+        |   'time': '2023-02-05T17:42:52.064Z'
+        | }]
+
+        Keys:
+        | =Key= | =Description= |
+        | ``type`` | One of the following values: ``log``, ``debug``, ``info``, ``error``, ``warning``, ``dir``, ``dirxml``, ``table``, ``trace``, ``clear``, ``startGroup``, ``startGroupCollapsed``, ``endGroup``, ``assert``, ``profile``, ``profileEnd``, ``count``, ``timeEnd`` |
+        | ``text`` | The text of the console message. |
+        | ``location.url`` | The URL of the resource that generated this message. |
+        | ``location.lineNumber`` | The line number in the resource that generated this message (0-based). |
+        | ``location.columnNumber`` | The column number in the resource that generated this message (0-based). |
+        | ``time`` | The timestamp of the log message as ISO 8601 string. |
 
         [https://forum.robotframework.org/t//4259|Comment >>]
         """
@@ -1034,6 +1070,7 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
+        *_,
         full: bool = False,
         last: Union[int, timedelta, None] = None,
     ) -> Dict:
@@ -1046,6 +1083,31 @@ class PlaywrightState(LibraryComponent):
         | message            | Optional custom message to use on failure. See `Assertions` for more information. |
         | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
         | last               | If set, returns only the last n entries. Can be `int` for number of entries or `timedelta` for time period. |
+
+        The returned data is a `list` of error messages.
+
+        An error message is a `dict` with the following structure:
+        | {
+        |   "name": str,
+        |   "message": str,
+        |   "stack": str,
+        |   "time": str
+        | }
+
+        Example:
+        | [{
+        |   'name': 'ReferenceError',
+        |   'message': 'YT is not defined',
+        |   'stack': 'ReferenceError: YT is not defined\\n    at HTMLIFrameElement.onload (https://example.com/:20:2245)',
+        |   'time': '2023-02-05T20:08:48.912Z'
+        | }]
+
+        Keys:
+        | =Key= | =Description= |
+        | ``name`` | The name/type of the error. |
+        | ``message`` | The human readable error message. |
+        | ``stack`` | The stack trace of the error, if given. |
+        | ``time`` | The timestamp of the error as ISO 8601 string. |
 
         [https://forum.robotframework.org/t//4259|Comment >>]
         """
