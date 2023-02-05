@@ -29,9 +29,10 @@ export function pageReportResponse(log: string, page: IndexedPage): Response.Pag
     response.setConsole(
         JSON.stringify(
             page.consoleMessages.map((m) => ({
-                type: m.type(),
-                text: m.text(),
-                ...m.location(),
+                time: m.time,
+                type: m.type,
+                text: m.text,
+                location: m.location,
             })),
         ),
     );
@@ -39,6 +40,20 @@ export function pageReportResponse(log: string, page: IndexedPage): Response.Pag
         JSON.stringify(page.pageErrors.map((e) => (e ? `${e.name}: ${e.message}\n${e.stack}` : 'unknown error'))),
     );
     response.setPageid(page.id);
+    return response;
+}
+
+export function getConsoleLogResponse(page: IndexedPage, log: string): Response.Json {
+    const response = new Response.Json();
+    response.setLog(log);
+    response.setJson(JSON.stringify(page.consoleMessages));
+    return response;
+}
+
+export function getErrorMessagesResponse(page: IndexedPage, log: string): Response.Json {
+    const response = new Response.Json();
+    response.setLog(log);
+    response.setJson(JSON.stringify(page.pageErrors));
     return response;
 }
 

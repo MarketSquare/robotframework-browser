@@ -1014,7 +1014,7 @@ class PlaywrightState(LibraryComponent):
             if response.log:
                 logger.info(response.log)
             return verify_assertion(
-                json.loads(response.console),
+                json.loads(response.json),
                 assertion_operator,
                 assertion_expected,
                 "Console Log",
@@ -1040,11 +1040,11 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4259|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetConsoleLog(Request().Empty())
+            response = stub.GetErrorMessages(Request().Empty())
             if response.log:
                 logger.info(response.log)
             return verify_assertion(
-                json.loads(response.errors),
+                json.loads(response.json),
                 assertion_operator,
                 assertion_expected,
                 "Page Errors",

@@ -467,7 +467,8 @@ service  Playwright {
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
   rpc ClosePage(Request.Empty) returns (Response.PageReportResponse);
-  rpc GetConsoleLog(Request.Empty) returns (Response.PageReportResponse);
+  rpc GetConsoleLog(Request.Empty) returns (Response.Json);
+  rpc GetErrorMessages(Request.Empty) returns (Response.Json);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
   rpc SaveStorageState(Request.FilePath) returns (Response.Empty);
 
