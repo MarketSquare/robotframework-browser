@@ -992,7 +992,6 @@ class PlaywrightState(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
-    @with_assertion_polling
     def get_console_log(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -1004,6 +1003,7 @@ class PlaywrightState(LibraryComponent):
     ) -> Dict:
         """Returns the console log of the active page.
 
+        If assertions are used and fail, this keyword will fail immediately without retrying.
 
         | =Arguments= | =Description= |
         | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
@@ -1064,7 +1064,6 @@ class PlaywrightState(LibraryComponent):
             )
 
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
-    @with_assertion_polling
     def get_page_errors(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -1076,6 +1075,7 @@ class PlaywrightState(LibraryComponent):
     ) -> Dict:
         """Returns the page errors of the active page.
 
+        If assertions are used and fail, this keyword will fail immediately without retrying.
 
         | =Arguments= | =Description= |
         | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
