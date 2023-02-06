@@ -98,7 +98,7 @@ class PlaywrightState(LibraryComponent):
         | ``chromium``    | [https://www.chromium.org/Home|Chromium]             |
         | ``webkit``      | [https://webkit.org/|webkit]                         |
 
-        [https://forum.robotframework.org/t/comments-for-open-browser/4310|Comment >>]
+        [https://forum.robotframework.org/t//4310|Comment >>]
         """
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
@@ -384,7 +384,7 @@ class PlaywrightState(LibraryComponent):
         ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``
 
 
-        [https://forum.robotframework.org/t/comments-for-new-browser/4306|Comment >>]
+        [https://forum.robotframework.org/t//4306|Comment >>]
         """
         params = locals_to_params(locals())
         pos_params = convert_pos_args_to_named(
@@ -555,7 +555,7 @@ class PlaywrightState(LibraryComponent):
 
         If there's no open Browser this keyword will open one. Does not create pages.
 
-        [https://forum.robotframework.org/t/comments-for-new-context/4307|Comment >>]
+        [https://forum.robotframework.org/t//4307|Comment >>]
         """
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
@@ -1047,7 +1047,7 @@ class PlaywrightState(LibraryComponent):
         | ``location.columnNumber`` | The column number in the resource that generated this message (0-based). |
         | ``time`` | The timestamp of the log message as ISO 8601 string. |
 
-        [https://forum.robotframework.org/t//4259|Comment >>]
+        [https://forum.robotframework.org/t//5267|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetConsoleLog(Request().Bool(value=full))
@@ -1109,7 +1109,7 @@ class PlaywrightState(LibraryComponent):
         | ``stack`` | The stack trace of the error, if given. |
         | ``time`` | The timestamp of the error as ISO 8601 string. |
 
-        [https://forum.robotframework.org/t//4259|Comment >>]
+        [https://forum.robotframework.org/t//5268|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetErrorMessages(Request().Bool(value=full))

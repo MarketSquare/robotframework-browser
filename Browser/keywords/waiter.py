@@ -59,10 +59,8 @@ class Waiter(LibraryComponent):
         | `Wait For Elements State`    //h1    visible    timeout=2 s
         | `Wait For Elements State`    //hi    focused    1s
 
-        [https://forum.robotframework.org/t/comments-for-wait-for-elements-state/4345|Comment >>]
+        [https://forum.robotframework.org/t//4345|Comment >>]
         """
-        # self.wait_for_condition(ConditionInputs.element_states, selector, AssertionOperator.contains, state, timeout=timeout, message=message)  #For Future Use...
-
         if state in [ElementState.focused, ElementState.defocused] and (
             (self.selector_prefix and ">>>" in self.selector_prefix)
             or ">>>" in selector
@@ -261,7 +259,7 @@ class Waiter(LibraryComponent):
         | `Wait For Condition`    Title    should start with    Robot
         | `Wait For Condition`    Url    should end with    robotframework.org
 
-        [https://forum.robotframework.org/t//4346|Comment >>]
+        [https://forum.robotframework.org/t//5269|Comment >>]
         """
         if isinstance(timeout, timedelta):
             assertion_timeout = self.library.convert_timeout(timeout)
