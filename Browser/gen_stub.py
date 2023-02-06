@@ -41,7 +41,7 @@ def get_method_name_for_keyword(keyword_name: str) -> str:
 
 def get_type_string_from_type(argument_type: type) -> str:
     if PY310 and str(argument_type).startswith("typing."):
-        return str(argument_type)
+        return str(argument_type).replace("NoneType", "None")
     if hasattr(argument_type, "__name__"):
         return argument_type.__name__
     else:

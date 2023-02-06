@@ -15,7 +15,7 @@ def get_pixel_color(img_path: str, x: int, y: int) -> Tuple[int, int]:
     pix = im.load()
     return pix[x,y]
 
-def compare_images(img1_path: str, img2_bytes: bytes) -> bool:
+def compare_images(img1_path: str, img2_bytes: bytes):
     """Returns True if the images are the same, False otherwise"""
     im1: Image.Image = Image.open(img1_path).convert('RGB')
     im2: Image.Image = Image.open(BytesIO(img2_bytes)).convert('RGB')

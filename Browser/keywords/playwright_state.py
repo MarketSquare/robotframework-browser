@@ -14,7 +14,7 @@
 
 import json
 from copy import copy
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
@@ -98,7 +98,7 @@ class PlaywrightState(LibraryComponent):
         | ``chromium``    | [https://www.chromium.org/Home|Chromium]             |
         | ``webkit``      | [https://webkit.org/|webkit]                         |
 
-        [https://forum.robotframework.org/t/comments-for-open-browser/4310|Comment >>]
+        [https://forum.robotframework.org/t//4310|Comment >>]
         """
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
@@ -384,7 +384,7 @@ class PlaywrightState(LibraryComponent):
         ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``
 
 
-        [https://forum.robotframework.org/t/comments-for-new-browser/4306|Comment >>]
+        [https://forum.robotframework.org/t//4306|Comment >>]
         """
         params = locals_to_params(locals())
         pos_params = convert_pos_args_to_named(
@@ -555,7 +555,7 @@ class PlaywrightState(LibraryComponent):
 
         If there's no open Browser this keyword will open one. Does not create pages.
 
-        [https://forum.robotframework.org/t/comments-for-new-context/4307|Comment >>]
+        [https://forum.robotframework.org/t//4307|Comment >>]
         """
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
@@ -990,6 +990,155 @@ class PlaywrightState(LibraryComponent):
                 message,
                 formatter,
             )
+
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    def get_console_log(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+        *_,
+        full: bool = False,
+        last: Union[int, timedelta, None] = None,
+    ) -> Dict:
+        """Returns the console log of the active page.
+
+        If assertions are used and fail, this keyword will fail immediately without retrying.
+
+        | =Arguments= | =Description= |
+        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
+        | assertion_expected | Optional expected value. See `Assertions` for more information. |
+        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+        | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
+        | last               | If set, returns only the last n entries. Can be `int` for number of entries or `timedelta` for time period. |
+
+        The returned data is a `list` of log messages.
+
+        A log message is a `dict` with the following structure:
+        | {
+        |   "type": str,
+        |   "text": str,
+        |   "location": {
+        |     "url": str,
+        |     "lineNumber": int,
+        |     "columnNumber": int
+        |   },
+        |   "time": str
+        | }
+
+        Example:
+        | [{
+        |   'type': 'log',
+        |   'text': 'Stuff loaded...',
+        |   'location': {
+        |     'url': 'https://example.com/js/chunk-769742de.6a462276.js',
+        |     'lineNumber': 60,
+        |     'columnNumber': 63771
+        |   },
+        |   'time': '2023-02-05T17:42:52.064Z'
+        | }]
+
+        Keys:
+        | =Key= | =Description= |
+        | ``type`` | One of the following values: ``log``, ``debug``, ``info``, ``error``, ``warning``, ``dir``, ``dirxml``, ``table``, ``trace``, ``clear``, ``startGroup``, ``startGroupCollapsed``, ``endGroup``, ``assert``, ``profile``, ``profileEnd``, ``count``, ``timeEnd`` |
+        | ``text`` | The text of the console message. |
+        | ``location.url`` | The URL of the resource that generated this message. |
+        | ``location.lineNumber`` | The line number in the resource that generated this message (0-based). |
+        | ``location.columnNumber`` | The column number in the resource that generated this message (0-based). |
+        | ``time`` | The timestamp of the log message as ISO 8601 string. |
+
+        [https://forum.robotframework.org/t//5267|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetConsoleLog(Request().Bool(value=full))
+            if response.log:
+                logger.info(response.log)
+            log_messages = json.loads(response.json)
+            returned_messages = self._slice_messages(log_messages, last)
+            return verify_assertion(
+                returned_messages,
+                assertion_operator,
+                assertion_expected,
+                "Console Log",
+                message,
+            )
+
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    def get_page_errors(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+        *_,
+        full: bool = False,
+        last: Union[int, timedelta, None] = None,
+    ) -> Dict:
+        """Returns the page errors of the active page.
+
+        If assertions are used and fail, this keyword will fail immediately without retrying.
+
+        | =Arguments= | =Description= |
+        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
+        | assertion_expected | Optional expected value. See `Assertions` for more information. |
+        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+        | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
+        | last               | If set, returns only the last n entries. Can be `int` for number of entries or `timedelta` for time period. |
+
+        The returned data is a `list` of error messages.
+
+        An error message is a `dict` with the following structure:
+        | {
+        |   "name": str,
+        |   "message": str,
+        |   "stack": str,
+        |   "time": str
+        | }
+
+        Example:
+        | [{
+        |   'name': 'ReferenceError',
+        |   'message': 'YT is not defined',
+        |   'stack': 'ReferenceError: YT is not defined\\n    at HTMLIFrameElement.onload (https://example.com/:20:2245)',
+        |   'time': '2023-02-05T20:08:48.912Z'
+        | }]
+
+        Keys:
+        | =Key= | =Description= |
+        | ``name`` | The name/type of the error. |
+        | ``message`` | The human readable error message. |
+        | ``stack`` | The stack trace of the error, if given. |
+        | ``time`` | The timestamp of the error as ISO 8601 string. |
+
+        [https://forum.robotframework.org/t//5268|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetErrorMessages(Request().Bool(value=full))
+            if response.log:
+                logger.info(response.log)
+            errors = json.loads(response.json)
+            returned_errors = self._slice_messages(errors, last)
+            return verify_assertion(
+                returned_errors,
+                assertion_operator,
+                assertion_expected,
+                "Page Errors",
+                message,
+            )
+
+    def _slice_messages(self, message, last):
+        if isinstance(last, int):
+            returned_messages = message[-last:]
+        elif isinstance(last, timedelta):
+            returned_messages = []
+            now = datetime.now(timezone.utc)
+            for msg in reversed(message):
+                if datetime.strptime(msg["time"], '%Y-%m-%dT%H:%M:%S.%f%z') < now - last:
+                    # Only from python 3.11 and later... datetime.fromisoformat(msg["time"]) < now - last:
+                    break
+                returned_messages.append(msg)
+        else:
+            returned_messages = message
+        return returned_messages
 
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_browser(self, id: str) -> str:

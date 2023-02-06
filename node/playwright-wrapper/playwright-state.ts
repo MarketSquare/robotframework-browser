@@ -17,7 +17,15 @@ import { Browser, BrowserContext, ConsoleMessage, Locator, Page, chromium, firef
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsonResponse, keywordsResponse, pageReportResponse, stringResponse } from './response-util';
+import {
+    emptyWithLog,
+    getConsoleLogResponse,
+    getErrorMessagesResponse,
+    jsonResponse,
+    keywordsResponse,
+    pageReportResponse,
+    stringResponse,
+} from './response-util';
 import { exists } from './playwright-invoke';
 
 import { ServerWritableStream } from '@grpc/grpc-js';
@@ -43,6 +51,20 @@ interface IIndexedContext {
 export interface LocatorCount {
     locator: Locator;
     nth: number;
+}
+
+export interface TimedError {
+    name: string;
+    message: string;
+    stack?: string;
+    time: Date;
+}
+
+export interface TimedConsoleMessage {
+    type: string;
+    text: string;
+    location: { url: string; lineNumber: number; columnNumber: number };
+    time: Date;
 }
 
 const extractArgumentsStringFromJavascript = (javascript: string): string => {
@@ -188,22 +210,36 @@ async function _newBrowserContext(
     return c;
 }
 
-function indexedPage(newPage: Page) {
+function indexedPage(newPage: Page): IndexedPage {
     const timestamp = new Date().getTime() / 1000;
-    const pageErrors: Error[] = [];
-    const consoleMessages: ConsoleMessage[] = [];
+    const pageErrors: TimedError[] = [];
+    const consoleMessages: TimedConsoleMessage[] = [];
     newPage.on('pageerror', (error) => {
-        pageErrors.push(error);
+        const timedError = {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+            time: new Date(),
+        };
+        pageErrors.push(timedError);
     });
     newPage.on('console', (message) => {
-        consoleMessages.push(message);
+        const timedMessage = {
+            type: message.type(),
+            text: message.text(),
+            location: message.location(),
+            time: new Date(),
+        };
+        consoleMessages.push(timedMessage);
     });
     return {
         id: `page=${uuidv4()}`,
         p: newPage,
         timestamp,
         pageErrors,
+        errorIndex: 0,
         consoleMessages,
+        consoleIndex: 0,
     };
 }
 
@@ -363,8 +399,10 @@ export type IndexedPage = {
     p: Page;
     id: Uuid;
     timestamp: number;
-    pageErrors: Error[];
-    consoleMessages: ConsoleMessage[];
+    pageErrors: TimedError[];
+    errorIndex: number;
+    consoleMessages: TimedConsoleMessage[];
+    consoleIndex: number;
 };
 
 type Uuid = string;
@@ -786,6 +824,18 @@ export async function switchBrowser(request: Request.Index, openBrowsers: Playwr
 
 export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<Response.Json> {
     return jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
+}
+
+export async function getConsoleLog(request: Request.Bool, openBrowsers: PlaywrightState): Promise<Response.Json> {
+    const activePage = openBrowsers.getActiveBrowser().page;
+    if (!activePage) throw new Error('No open page');
+    return getConsoleLogResponse(activePage, request.getValue(), 'Console log received');
+}
+
+export async function getErrorMessages(request: Request.Bool, openBrowsers: PlaywrightState): Promise<Response.Json> {
+    const activePage = openBrowsers.getActiveBrowser().page;
+    if (!activePage) throw new Error('No open page');
+    return getErrorMessagesResponse(activePage, request.getValue(), 'Error messages received');
 }
 
 export async function saveStorageState(

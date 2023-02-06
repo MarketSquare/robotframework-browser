@@ -208,7 +208,7 @@ class Getters(LibraryComponent):
                | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
                | ${text} =    `Get Text`    //input         ==    root              # Returns input element text with assertion.
 
-               [https://forum.robotframework.org/t/comments-for-get-text/4285|Comment >>]
+               [https://forum.robotframework.org/t//4285|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         response = self._get_text(selector)
@@ -883,7 +883,7 @@ class Getters(LibraryComponent):
         | ${option_value} =    `Get Property`    ${element} >> optionOne    value    # Locator is resolved from the page.
         | ${option_value} =    `Get Property`    ${element} >> optionTwo    value    # Locator is resolved again from the page.
 
-        [https://forum.robotframework.org/t/comments-for-get-element/4269|Comment >>]
+        [https://forum.robotframework.org/t//4269|Comment >>]
         """
         selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
@@ -1289,7 +1289,7 @@ class Getters(LibraryComponent):
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        [https://forum.robotframework.org/t/comments-for-get-element-states/4272|Comment >>]
+        [https://forum.robotframework.org/t//4272|Comment >>]
         """
         selector = self.resolve_selector(selector)
 

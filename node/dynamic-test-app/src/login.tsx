@@ -125,21 +125,26 @@ export default function Site() {
     function eventMouseDown(e: any) {
         mouseDownTime = new Date().getTime();
         mouseButton.current!.innerHTML = '';
-        if (e.button == 0) mouseButton.current!.innerHTML = 'left';
-        if (e.button == 1) mouseButton.current!.innerHTML = 'middle';
-        if (e.button == 2) mouseButton.current!.innerHTML = 'right';
+        const mouseButtons = ['left', 'middle', 'right'];
+        mouseButton.current!.innerHTML = mouseButtons[e.button];
+        console.log(`Mouse button: ${mouseButtons[e.button]}, X: ${e.pageX}, Y: ${e.pageY}, Time: ${new Date()}`);
         altKey.current!.innerHTML = e.altKey.toString();
         shiftKey.current!.innerHTML = e.shiftKey.toString();
         ctrlKey.current!.innerHTML = e.ctrlKey.toString();
         metaKey.current!.innerHTML = e.metaKey.toString();
         coordinatesDivX.current!.innerHTML = e.pageX.toString();
         coordinatesDivY.current!.innerHTML = e.pageY.toString();
+        if (e.altKey && e.shiftKey) {
+            throw new EvalError('You are not allowed to use this site');
+        }
     }
 
     function eventMouseUp() {
         const mouseupTime = new Date().getTime();
         mouseDelay = mouseupTime - mouseDownTime;
         click_Count += 1;
+        console.error(`${click_Count.toString()}`);
+        console.warn(`${mouseDelay.toString()}`);
         clickCount.current!.innerHTML = click_Count.toString();
         mouseDelayDiv.current!.innerHTML = mouseDelay.toString();
     }

@@ -340,7 +340,7 @@ class Interaction(LibraryComponent):
         | `Click`    id=clickWithModifiers    left    1    None    None    None    False    False    Alt    Meta    Shift
         | `Click`    id=clickWithModifier    right    2    None    None    None    False    False    Shift
 
-        [https://forum.robotframework.org/t/comments-for-click/4238|Comment >>]
+        [https://forum.robotframework.org/t//4238|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
