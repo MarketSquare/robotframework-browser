@@ -53,7 +53,7 @@ export interface LocatorCount {
     nth: number;
 }
 
-export interface TimedError extends Error {
+export interface TimedError {
     name: string;
     message: string;
     stack?: string;
