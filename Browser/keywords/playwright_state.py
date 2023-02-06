@@ -1132,7 +1132,8 @@ class PlaywrightState(LibraryComponent):
             returned_messages = []
             now = datetime.now(timezone.utc)
             for msg in reversed(message):
-                if datetime.fromisoformat(msg["time"]) < now - last:
+                if datetime.strptime(msg["time"], '%Y-%m-%dT%H:%M:%S.%f%z') < now - last:
+                    # Only from python 3.11 and later... datetime.fromisoformat(msg["time"]) < now - last:
                     break
                 returned_messages.append(msg)
         else:

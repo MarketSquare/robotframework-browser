@@ -313,7 +313,7 @@ Get Element States Return Flags
     ${pwd_state} =    Get Element States    [name="enabled_password"]    return_names=False
     Should Be Equal    ${input_state}    ${pwd_state}
 
-Get Console Log
+Get Console Log Test
     [Timeout]    10 min
     [Setup]    Setup
     ${first} =    Get Console Log    then    len(value)
@@ -331,7 +331,7 @@ Get Console Log
     Should Be Equal    ${errors}[0][message]    You are not allowed to use this site
     ${last_time} =    Set Variable    ${errors}[-1][time]
     Should Be True
-    ...    datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.fromisoformat($last_time) < datetime.timedelta(seconds=1)
+    ...    datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime($last_time, '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=1)
     Get Console Log    validate    len(value) == 0
     Get Page Errors    validate    len(value) == 0
     Sleep    500ms
@@ -340,8 +340,8 @@ Get Console Log
     Get Console Log    validate    len(value) == $first + len($logs) + len($last)    full=True
     Get Page Errors    validate    len(value) == 2
     ${now} =    Evaluate    datetime.datetime.now(datetime.timezone.utc)
-    ${first_log} =    Get Console Log    then    value[0]    full=True    last=500ms
-    Should Be True    $now - datetime.datetime.fromisoformat($first_log['time']) < datetime.timedelta(seconds=0.5)
+    ${first_log} =    Get Console Log   then    value[0]    full=True    last=500ms
+    Should Be True    $now - datetime.datetime.strptime($first_log['time'], '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=0.5)
 
 *** Keywords ***
 Setup
