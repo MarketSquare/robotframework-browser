@@ -11,7 +11,6 @@ New Persistent Context Creates A Browser And A Context
     Should Not Be Equal    ${browser_id}    NO CONTEXT OPEN
     ${context_id} =    Switch Context    CURRENT
     Should Not Be Equal    ${context_id}    NO CONTEXT OPEN
-
     Close Context
 
 Switching Between Two Persistent Contexts Works
@@ -58,3 +57,12 @@ New Persistent Context Creates An Empty Page
     ${catalog} =    Get Browser Catalog
     Get Title    ==    ${EMPTY}
     Get Url    ==    about:blank
+
+New Persistent Context Open New Pages
+    Close Browser    ALL
+    New Persistent Context    url=${WELCOME_URL}
+    Click    "Open html"
+    Get Browser Catalog    validate    len(value[0]['contexts'][0]['pages']) == 2
+    Get Url    ==    ${WELCOME_URL}
+    Switch Page    NEW
+    Get Url    ==    ${ERROR_URL}

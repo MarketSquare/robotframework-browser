@@ -675,6 +675,9 @@ export async function newPersistentContext(
         options: options,
         traceFile: traceFile,
     };
+    indexedContext.c.on('page', async (page) => {
+        indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
+    });
     if (traceFile) {
         logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
         persistentContext.tracing.start({ screenshots: true, snapshots: true });

@@ -340,8 +340,9 @@ Get Console Log Test
     Get Console Log    validate    len(value) == $first + len($logs) + len($last)    full=True
     Get Page Errors    validate    len(value) == 2
     ${now} =    Evaluate    datetime.datetime.now(datetime.timezone.utc)
-    ${first_log} =    Get Console Log   then    value[0]    full=True    last=500ms
-    Should Be True    $now - datetime.datetime.strptime($first_log['time'], '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=0.5)
+    ${first_log} =    Get Console Log    then    value[0]    full=True    last=500ms
+    Should Be True
+    ...    $now - datetime.datetime.strptime($first_log['time'], '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=0.5)
 
 *** Keywords ***
 Setup
