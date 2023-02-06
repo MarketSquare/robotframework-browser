@@ -39,8 +39,13 @@ def test_library_keyword(browser: Browser.Browser):
     keyword = browser._parse_run_on_failure_keyword("tAke sCreenshot  filename.png  //button  True")
     assert keyword.name == "take_screenshot"
     assert keyword.original_name == "tAke sCreenshot"
-    assert keyword.args == ("filename.png", "//button", True)
+    assert keyword.args == ("filename.png", "//button", 'True')
     assert keyword.kwargs == {}
+    keyword = browser._parse_run_on_failure_keyword("tAke sCreenshot  filename.png  //button  fullPage=True")
+    assert keyword.name == "take_screenshot"
+    assert keyword.original_name == "tAke sCreenshot"
+    assert keyword.args == ("filename.png", "//button")
+    assert keyword.kwargs == {'fullPage': True}
 
 
 def test_library_keyword_with_named_args(browser: Browser.Browser):

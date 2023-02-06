@@ -96,8 +96,8 @@ Screenshotting Without Path
 
 Screenshot Filename Incrementation
     [Documentation]
-    ...    LOG 1:4    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png"><img src="test_screenshot_1.png" width="800px"></a>
-    ...    LOG 2:4    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png"><img src="test_screenshot_2.png" width="800px"></a>
+    ...    LOG 1:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png" target="_blank"><img src="test_screenshot_1.png" width="800px"/></a>
+    ...    LOG 2:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png" target="_blank"><img src="test_screenshot_2.png" width="800px"/></a>
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
     File Should Exist    ${TestScreenshot}_1.png
@@ -106,14 +106,14 @@ Screenshot Filename Incrementation
 
 Embed ScreenShot To Log.html File
     [Documentation]
-    ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" src="data:image/png;base64
     ${path} =    Take Screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
     Should Be Equal    ${path}    EMBED
 
 Embed Element Picture To Log.html File
     [Documentation]
-    ...    LOG 1:*    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 1:*    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" src="data:image/png;base64
     ${path} =    Take Screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
@@ -183,3 +183,38 @@ Screenshot With Omit Background
     ${color} =    Get Pixel Color    ${path}    ${width//2}    ${height//2}
     Should Be Equal    ${color}    ${{(0,0,0,0)}}
     [Teardown]    Remove File    ${path}
+
+Screenshot Returns Base64 And Path
+    [Timeout]    10 minutes
+    ${path} =    Take Screenshot    return_as=path
+    ${base64} =    Take Screenshot    return_as=base64
+    Type Text    id=username_field    Hello
+    ${base64_diff} =    Take Screenshot    return_as=base64
+    Should Be True    isinstance($path, pathlib.Path)
+    ${bytes} =    Evaluate    base64.b64decode($base64)
+    Compare Images    ${path.absolute().resolve()}    ${bytes}
+    Should Not Be Equal    ${base64}    ${base64_diff}
+    ${bytes_diff} =    Evaluate    base64.b64decode($base64_diff)
+    TRY
+        Compare Images    ${path}    ${bytes_diff}
+        Fail    Should have failed
+    EXCEPT    AssertionError
+        Log    correct error
+    END
+
+Screenshot Returns Bytes And Path String
+    [Timeout]    10 minutes
+    ${path} =    Take Screenshot    return_as=path_string
+    ${bytes} =    Take Screenshot    return_as=bytes
+    Type Text    id=username_field    Hello
+    ${bytes_diff} =    Take Screenshot    return_as=bytes
+    Should Be True    isinstance($path, str)
+    Should Be True    isinstance($bytes, bytes)
+    Compare Images    ${path}    ${bytes}
+    Should Not Be Equal    ${bytes}    ${bytes_diff}
+    TRY
+        Compare Images    ${path}    ${bytes_diff}
+        Fail    Should have failed
+    EXCEPT    AssertionError
+        Log    correct error
+    END
