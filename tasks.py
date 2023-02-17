@@ -282,6 +282,7 @@ def clean_atest(c):
 def atest(
     c,
     suite=None,
+    test=None,
     include=None,
     shard=None,
     zip=None,
@@ -295,6 +296,7 @@ def atest(
 
     Args:
         suite: Select which suite to run.
+        test: Select which test to run.
         include: Select test by tag
         shard: Shard tests
         zip: Create zip file from output files.
@@ -319,6 +321,8 @@ def atest(
     )
     if suite:
         args.extend(["--suite", suite])
+    if test:
+        args.extend(["--test", test])
     if include:
         args.extend(["--include", include])
     if debug:
