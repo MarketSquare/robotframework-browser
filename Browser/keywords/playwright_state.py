@@ -997,7 +997,7 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-        *_,
+        *,
         full: bool = False,
         last: Union[int, timedelta, None] = None,
     ) -> Dict:
@@ -1069,7 +1069,7 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-        *_,
+        *,
         full: bool = False,
         last: Union[int, timedelta, None] = None,
     ) -> Dict:
