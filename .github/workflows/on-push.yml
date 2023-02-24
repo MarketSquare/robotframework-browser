@@ -198,7 +198,7 @@ jobs:
       # flaky-tests-detection and failures-analysis install is here because dependencies takes long
       # time to install and not needed for the test-install
       run : |
-        pip install flaky-tests-detection failures-analysis
+        pip install flaky-tests-detection failures-analysis requests python-dateutil
         python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
         inv copy-xunit
     - name: Flaky tests detection
