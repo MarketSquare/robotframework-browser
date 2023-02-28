@@ -1011,6 +1011,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "alexinoDr",
+      "name": "alexinoDr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/126524368?v=4",
+      "profile": "https://github.com/alexinoDr",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
