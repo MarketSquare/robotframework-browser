@@ -667,14 +667,14 @@ def docker_stable_image(c):
     from Browser.version import __version__ as VERSION
 
     c.run(
-        f"docker buildx build --platform linux/amd64,linux/arm64/v8 --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
+        f"docker buildx build --platform linux/amd64 --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
     )
 
 
 @task
 def docker_tester(c):
     c.run(
-        "docker buildx build --platform linux/amd64,linux/arm64/v8 --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
+        "docker buildx build --platform linux/amd64 --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
     )
 
 
