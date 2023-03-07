@@ -36,11 +36,11 @@ jobs:
           file: docker/Dockerfile.latest_release
           platforms: linux/arm64/v8,linux/amd64
 
-            #  - name: Push tag :latest to Docker Hub
-            #    uses: docker/build-push-action@v4
-            #    with:
-            #      tags: marketsquare/browser:latest
-            #      file: docker/Dockerfile.latest_release
+      - name: Push tag :latest to Docker Hub
+        uses: docker/build-push-action@v4
+        with:
+          tags: marketsquare/browser:test_release
+          file: docker/Dockerfile.latest_release
 
       - name: Docker meta
         id: meta_github
@@ -58,7 +58,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           platforms: linux/arm64/v8,linux/amd64
-          repository: marketsquare/robotframework-browser/rfbrowser-stable
           file: docker/Dockerfile.latest_release
           tags: ${{ steps.meta_github.outputs.tags }}
 
