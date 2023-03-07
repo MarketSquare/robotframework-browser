@@ -25,5 +25,7 @@ jobs:
           run: invoke deps
         - name: build testing docker image
           run: invoke docker-tester
+        - name: set permissions
+          run: chmod -R 777 atest/
         - name: Run tests with latest stable docker image
           run: invoke docker-test
