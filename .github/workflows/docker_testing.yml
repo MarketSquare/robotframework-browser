@@ -23,6 +23,8 @@ jobs:
             pip install -r Browser/dev-requirements.txt
         - name: Install invoke deps
           run: invoke deps
+        - name: Pull docker 
+          run: echo ${{ secrets.GITHUB_TOKEN }} |docker login ghcr.io -u ${{ github.actor }} --password-stdin docker pull docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:latest
         - name: build testing docker image
           run: invoke docker-tester
         - name: Run tests with latest stable docker image
