@@ -32,3 +32,8 @@ jobs:
           continue-on-error: true
           run: |
             invoke docker-test
+        - uses: actions/upload-artifact@v3
+          if: ${{ always() }}
+          with:
+            name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
+            path: atest/output
