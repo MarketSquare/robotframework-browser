@@ -1,6 +1,5 @@
 name: manuals
 on: 
-  workflow_dispatch:
   push:
     branches: [ main ]
   pull_request:
@@ -29,7 +28,6 @@ jobs:
           run: chmod -R 777 atest/
         - name: Run tests with latest stable docker image
           # continue on error until all docker tests pass
-          continue-on-error: true
           run: |
             invoke docker-test
         - uses: actions/upload-artifact@v3

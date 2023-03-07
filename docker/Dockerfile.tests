@@ -1,6 +1,4 @@
-# FROM marketsquare/robotframework-browser:latest AS StableTester 
-# tempoerarily on branch test with the dev image
-FROM marketsquare/robotframework-browser:16.1.0-dev AS StableTester
+FROM marketsquare/robotframework-browser:latest AS StableTester
 
 USER pwuser
 
