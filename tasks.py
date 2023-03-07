@@ -97,7 +97,7 @@ def deps(c):
     else:
         print("no changes in Browser/dev-requirements.txt, skipping pip install")
     if os.environ.get("CI"):
-        shutil.rmtree("node_modules")
+        shutil.rmtree("node_modules", ignore_errors=True)
 
     if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
         arch = " --target_arch=x64" if platform.processor() == "arm" else ""
@@ -663,40 +663,36 @@ def lint(c):
 
 
 @task
-def docker_base(c):
-    c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file docker/Dockerfile.playwright20.04 ."
-    )
-
-
-@task
-def docker_builder(c):
-    c.run("DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file docker/Dockerfile .")
-
-
-@task
 def docker_stable_image(c):
     from Browser.version import __version__ as VERSION
 
     c.run(
-        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
+        f"docker buildx build --load --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
+    )
+
+
+@task
+def docker_tester(c):
+    c.run(
+        f"docker buildx build --load --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
     )
 
 
 @task(clean_atest, create_test_app, build)
 def docker_test(c):
     c.run("mkdir atest/output")
+    c.run("chmod -R 777 atest/output")
     c.run(
-        """docker run\
+        f"""docker run\
 	    --rm \
 	    --ipc=host\
 	    --security-opt seccomp=docker/seccomp_profile.json \
 	    -v $(pwd)/atest/:/app/atest \
 	    -v $(pwd)/node/:/app/node/ \
 	    --workdir /app \
-	    rfbrowser \
-	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude not-implemented --outputdir /app/atest/output /app/atest/test"
-          """
+	    rfbrowser-tests \
+	    sh -c "xvfb-run python3 -m invoke atest-robot"
+        """
     )
 
 
