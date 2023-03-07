@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up QEMU for cross-platform builds
+      - name: Set up QEMU for cross-platforms builds
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -33,14 +33,14 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           tags: ${{ steps.meta.outputs.tags }}
-          dockerfile: docker/Dockerfile.latest_release
-          platform: linux/arm64/v8,linux/amd64
+          file: docker/Dockerfile.latest_release
+          platforms: linux/arm64/v8,linux/amd64
 
             #  - name: Push tag :latest to Docker Hub
             #    uses: docker/build-push-action@v4
             #    with:
             #      tags: marketsquare/browser:latest
-            #      dockerfile: docker/Dockerfile.latest_release
+            #      file: docker/Dockerfile.latest_release
 
       - name: Docker meta
         id: meta_github
@@ -57,9 +57,9 @@ jobs:
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v4
         with:
-          platform: linux/arm64/v8,linux/amd64
+          platforms: linux/arm64/v8,linux/amd64
           repository: marketsquare/robotframework-browser/rfbrowser-stable
-          dockerfile: docker/Dockerfile.latest_release
+          file: docker/Dockerfile.latest_release
           tags: ${{ steps.meta_github.outputs.tags }}
 
   test-docker-image:
