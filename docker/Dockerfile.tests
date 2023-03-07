@@ -1,4 +1,4 @@
-FROM docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:16.1.0-dev AS StableTester
+FROM docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable AS StableTester
 
 USER pwuser
 
