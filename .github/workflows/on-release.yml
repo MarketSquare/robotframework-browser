@@ -10,32 +10,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Push to GitHub Packages
-        uses: docker/build-push-action@v1
+      - name: Set up QEMU for cross-platform builds
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          # Weirdly the image "name" is required and has to be here
-          repository: marketsquare/robotframework-browser/rfbrowser-stable
-          tag_with_ref: true
-          dockerfile: docker/Dockerfile.latest_release
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: marketsquare/robotframework-browser
+          tags: type=ref,event=branch
+      
       - name: Push tag :version_number to Docker Hub
         uses: docker/build-push-action@v1
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-          repository: marketsquare/robotframework-browser
-          tag_with_ref: true
+          tags: ${{ steps.meta.outputs.tags }}
           dockerfile: docker/Dockerfile.latest_release
+
       - name: Push tag :latest to Docker Hub
+        uses: docker/build-push-action@v4
+        with:
+          tags: marketsquare/browser:latest
+          dockerfile: docker/Dockerfile.latest_release
+
+      - name: Docker meta
+        id: meta_github
+        uses: docker/metadata-action@v4
+        with:
+          images: marketsquare/robotframework-browser/rfbrowser-stable
+          tags: type=semver,pattern={{version}}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push to GitHub Packages
         uses: docker/build-push-action@v1
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-          repository: marketsquare/robotframework-browser
-          tag_with_ref: false
-          tags: latest
+          # Weirdly the image "name" is required and has to be here
+          repository: marketsquare/robotframework-browser/rfbrowser-stable
           dockerfile: docker/Dockerfile.latest_release
 
   test-docker-image:
