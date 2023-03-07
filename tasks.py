@@ -663,18 +663,6 @@ def lint(c):
 
 
 @task
-def docker_base(c):
-    c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file docker/Dockerfile.playwright20.04 ."
-    )
-
-
-@task
-def docker_builder(c):
-    c.run("DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file docker/Dockerfile .")
-
-
-@task
 def docker_stable_image(c):
     from Browser.version import __version__ as VERSION
 
@@ -683,19 +671,26 @@ def docker_stable_image(c):
     )
 
 
+@task
+def docker_tester(c):
+    c.run(
+        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
+    )
+
+
 @task(clean_atest, create_test_app, build)
 def docker_test(c):
     c.run("mkdir atest/output")
     c.run(
-        """docker run\
+        f"""docker run\
 	    --rm \
 	    --ipc=host\
 	    --security-opt seccomp=docker/seccomp_profile.json \
 	    -v $(pwd)/atest/:/app/atest \
 	    -v $(pwd)/node/:/app/node/ \
 	    --workdir /app \
-	    rfbrowser \
-	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude not-implemented --outputdir /app/atest/output /app/atest/test"
+	    rfbrowser-tests \
+	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin xvfb-run pabot --pabotlib --loglevel debug --exclude not-implemented --outputdir /app/atest/output /app/atest/test"
           """
     )
 
