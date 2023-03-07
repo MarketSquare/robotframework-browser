@@ -6,10 +6,10 @@ name: Continuous integration
 on:
   push:
     branches: [ main ]
-      # pull_request:
-      #   branches: [ main ]
-      # schedule:
-      #   - cron: '15 10 * * *'
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '15 10 * * *'
 
 jobs:
   build:
