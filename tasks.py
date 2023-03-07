@@ -667,20 +667,21 @@ def docker_stable_image(c):
     from Browser.version import __version__ as VERSION
 
     c.run(
-        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
+        f"DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
     )
 
 
 @task
 def docker_tester(c):
     c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
+        "DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
     )
 
 
 @task(clean_atest, create_test_app, build)
 def docker_test(c):
     c.run("mkdir atest/output")
+    c.run("chmod -R 777 atest/output")
     c.run(
         f"""docker run\
 	    --rm \
