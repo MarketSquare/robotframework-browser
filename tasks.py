@@ -97,7 +97,7 @@ def deps(c):
     else:
         print("no changes in Browser/dev-requirements.txt, skipping pip install")
     if os.environ.get("CI"):
-        shutil.rmtree("node_modules")
+        shutil.rmtree("node_modules", ignore_errors=True)
 
     if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
         arch = " --target_arch=x64" if platform.processor() == "arm" else ""
