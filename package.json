@@ -17,7 +17,7 @@
     "esbuild": "^0.16.17",
     "esbuild-node-externals": "^1.6.0",
     "eslint": "^8.35.0",
-    "eslint-config-prettier": "^8.6.0",
+    "eslint-config-prettier": "^8.7.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
     "express": "^4.18.2",
