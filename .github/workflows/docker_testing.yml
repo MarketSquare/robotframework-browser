@@ -27,7 +27,9 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: marketsquare/robotframework-browser
-          tags: type=ref,event=branch
+          tags: |
+            type=ref,event=branch
+            type=raw,value=testing_unstable
       
       - name: Push tag :version_number to Docker Hub
         uses: docker/build-push-action@v4
@@ -35,12 +37,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           file: docker/Dockerfile.latest_release
           platforms: linux/arm64/v8,linux/amd64
-
-      - name: Push tag :latest to Docker Hub
-        uses: docker/build-push-action@v4
-        with:
-          tags: marketsquare/browser:test_release
-          file: docker/Dockerfile.latest_release
+          push: true
 
       - name: Docker meta
         id: meta_github
@@ -60,6 +57,7 @@ jobs:
           platforms: linux/arm64/v8,linux/amd64
           file: docker/Dockerfile.latest_release
           tags: ${{ steps.meta_github.outputs.tags }}
+          push: true
 
   test-docker-image:
     needs: docker-image
