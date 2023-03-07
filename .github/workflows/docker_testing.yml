@@ -21,5 +21,8 @@ jobs:
             python -m pip install --upgrade pip
             pip install wheel
             pip install -r Browser/dev-requirements.txt
+        - name: Install invoke deps
+          run: |
+            invoke deps
         - name: Run tests with latest stable docker image
-          run: inv docker-test
+          run: invoke docker-test
