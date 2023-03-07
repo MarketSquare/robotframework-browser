@@ -831,6 +831,12 @@ def version(c, version):
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
     setup_py_file = ROOT_DIR / "setup.py"
     _replace_version(setup_py_file, node_version_matcher, f'"version": "{version}"')
+
+    dockerfile = ROOT_DIR / "docker" / "Dockerfile.latest_release"
+    docker_version_matcher = re.compile("robotframework-browser==.*")
+    _replace_version(
+        dockerfile, docker_version_matcher, f"robotframework-browser=={version}"
+    )
     # workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
     # workflow_version_matcher = re.compile("VERSION: .*")
     # _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")
