@@ -72,44 +72,6 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "URL", message, formatter
             )
 
-    # @keyword(tags=("Getter", "Assertion", "BrowserControl"))
-    # Not published as keyword due to missing of good docs.
-    @with_assertion_polling
-    def get_page_state(
-        self,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-    ) -> Any:
-        """Returns page model state object as a dictionary.
-
-        | =Arguments= | =Description= |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
-
-        This must be given on the page to ``window.__SET_RFBROWSER_STATE__``
-
-        For example:
-
-        ``let mystate = {'login': true, 'name': 'George', 'age': 123};``
-
-        ``window.__SET_RFBROWSER_STATE__ && window.__SET_RFBROWSER_STATE__(mystate);``
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetPageState(Request().Empty())
-            logger.debug(response.log)
-            value = json.loads(response.result)
-            formatter = self.keyword_formatters.get(self.get_page_state)
-            return verify_assertion(
-                value,
-                assertion_operator,
-                assertion_expected,
-                "State",
-                message,
-                formatter,
-            )
-
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_page_source(
