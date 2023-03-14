@@ -87,7 +87,6 @@ Library was tested with Playwright REPLACE_PW_VERSION
 
 @task
 def deps(c):
-
     if _sources_changed(
         [ROOT_DIR / "Browser/dev-requirements.txt"], python_deps_timestamp_file
     ):

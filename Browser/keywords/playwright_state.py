@@ -352,7 +352,6 @@ class PlaywrightState(LibraryComponent):
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
     ) -> str:
-
         """Create a new playwright Browser with specified options.
 
         See `Browser, Context and Page` for more information about Browser and related concepts.

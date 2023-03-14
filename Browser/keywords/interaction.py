@@ -318,8 +318,8 @@ class Interaction(LibraryComponent):
         | ``button`` | Defaults to ``left`` if invalid. |
         | ``clickCount`` | Defaults to 1. |
         | ``delay`` | Time to wait between mouse-down and mouse-up. Defaults to 0. |
-        | ``position_x`` | & ``position_y`` A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
-        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
+        | ``force`` | Set to True to skip Playwright's Actionability checks (https://playwright.dev/docs/actionability). |
         | ``noWaitAfter`` | Actions that initiate navigation, are waiting for these navigation to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
