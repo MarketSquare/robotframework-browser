@@ -55,7 +55,6 @@ class Promises(LibraryComponent):
         [https://forum.robotframework.org/t//4312|Comment >>]
         """
         promise: Future = Future()
-        # keyword_name = kw.strip().lower().replace(" ", "_")
         known_keyword = self.get_known_keyword(kw)
         if not known_keyword:
             raise ValueError(
