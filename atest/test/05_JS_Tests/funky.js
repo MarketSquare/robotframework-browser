@@ -1,5 +1,5 @@
 async function myFunkyKeyword(page, args, logger) {
-    const h = await page.$(args[0]);
+    const h = await page.locator(args[0]);
     logger("Logging something funky");
     return await h.evaluate((e) => e.textContent = "Funk yeah!");
 }
