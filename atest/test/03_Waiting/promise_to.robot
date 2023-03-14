@@ -18,3 +18,13 @@ Promise To Convert Type
     Get Text    id=click_count    ==    4
     Get Text    id=mouse_delay_time    validate    int(value) > 100 and int(value) < 300
     Get Text    id=mouse_button    ==    left
+
+Could Not Find Keyword W Promise To
+    [Setup]    NONE
+    TRY
+        Promise To    Could Not Find Keyword
+    EXCEPT   ValueError: Unknown keyword 'Could Not Find Keyword'! 'Promise To' can only be used with Browser keywords.   AS    ${e}
+        Log     ${e}
+    ELSE
+        FAIL    Should have failed
+    END

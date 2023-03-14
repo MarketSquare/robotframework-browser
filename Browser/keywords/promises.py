@@ -55,18 +55,33 @@ class Promises(LibraryComponent):
         [https://forum.robotframework.org/t//4312|Comment >>]
         """
         promise: Future = Future()
-        keyword_name = kw.strip().lower().replace(" ", "_")
-
-        if keyword_name in self.library.get_keyword_names():
-            positional, named = self.resolve_arguments(keyword_name, *args)
-            promise = self._executor.submit(
-                self.library.keywords[keyword_name], *positional, **(named or {})
+        known_keyword = self.get_known_keyword(kw)
+        if not known_keyword:
+            raise ValueError(
+                f"Unknown keyword '{kw}'! 'Promise To' can only be used with Browser keywords."
             )
-            self.unresolved_promises.add(promise)
-            while not (promise.running() or promise.done()):
-                sleep(0.01)
-
+        positional, named = self.resolve_arguments(known_keyword, *args)
+        promise = self._executor.submit(
+            self.library.keywords[known_keyword], *positional, **(named or {})
+        )
+        self.unresolved_promises.add(promise)
+        while not (promise.running() or promise.done()):
+            sleep(0.01)
         return promise
+
+    def get_known_keyword(self, kw: str) -> str:
+        normalized_kw = self.normalized_keyword_name(kw)
+        for keyword_name in self.library.get_keyword_names():
+            if normalized_kw == self.normalized_keyword_name(keyword_name):
+                return keyword_name
+        return ""
+
+    def normalized_keyword_name(self, kw: str) -> str:
+        """Returns normalized keyword name.
+
+        Keyword name is normalized by removing spaces and converting to lower case.
+        """
+        return kw.lower().replace(" ", "").replace("_", "")
 
     def resolve_arguments(self, kw: str, *args):
         positional: List[Any] = []
