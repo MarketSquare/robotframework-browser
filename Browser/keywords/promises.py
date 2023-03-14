@@ -20,6 +20,7 @@ from typing import Any, Dict, List
 
 from assertionengine import AssertionOperator
 from robot.api.deco import keyword
+from robot.running.arguments.typeconverters import TypeConverter
 from robot.utils import DotDict
 
 from ..base import LibraryComponent
@@ -74,35 +75,35 @@ class Promises(LibraryComponent):
         named: Dict[str, Any] = {}
         logger.debug(f"*args {args}")
 
-        keyword_arguments = [
+        arg_names = [
             argument[0] if isinstance(argument, tuple) else argument
             for argument in self.library.get_keyword_arguments(kw)
         ]
-        for arg in args:
-            parts = arg.partition("=")
-            if parts[0].strip() in keyword_arguments:
-                if parts[2].strip().lower() in DialogAction.__members__:
-                    named[parts[0].strip()] = DialogAction[parts[2].strip().lower()]
-                elif parts[2].strip().lower() in PageLoadStates.__members__:
-                    named[parts[0].strip()] = PageLoadStates[parts[2].strip().lower()]
-                else:
-                    named[parts[0].strip()] = parts[2].strip()
+        for index, arg in enumerate(args):
+            arg_name, has_equal, arg_value = arg.partition("=")
+            arg_name = arg_name.strip()
+            arg_value = arg_value.strip()
+
+            if not named and (not has_equal or arg_name not in arg_names):
+                positional.append(self.convert_keyword_arg(kw, arg_names[index], arg))
+            elif arg_name in arg_names:
+                named[arg_name] = self.convert_keyword_arg(kw, arg_name, arg_value)
             else:
-                if arg.strip() in AssertionOperator.__members__:
-                    positional.append(AssertionOperator[arg.strip()])
-                elif arg.strip() in ElementState.__members__:
-                    positional.append(ElementState.__members__[arg.strip()])
-                elif arg.strip() in DialogAction.__members__:
-                    positional.append(DialogAction[arg.strip()])
-                elif arg.strip() in PageLoadStates.__members__:
-                    positional.append(PageLoadStates.__members__[arg.strip()])
-                else:
-                    positional.append(arg)
+                raise ValueError(
+                    f"Invalid argument '{arg_name}' for keyword '{kw}'. "
+                    f"Valid arguments are: {', '.join(arg_names)}"
+                )
 
         logger.debug(
             f"named arguments: {named}, positional arguments: {tuple(positional)}"
         )
         return tuple(positional), named
+
+    def convert_keyword_arg(self, kw: str, arg_name: str, arg_value: Any) -> Any:
+        argument_type = self.library.get_keyword_types(kw).get(arg_name)
+        if argument_type is not None:
+            return TypeConverter.converter_for(argument_type).convert(arg_name, arg_value)
+        return arg_value
 
     @keyword(tags=("Wait", "BrowserControl"))
     def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
