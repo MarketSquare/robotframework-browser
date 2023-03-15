@@ -3,11 +3,6 @@ name: Docker image and tests
 on:
   release:
     types: [ published ]
-  push:
-    # Pattern matched against refs/tags
-    tags:
-      - '**'           # Push events to every tag including hierarchical tags like v1.0/beta
-
   workflow_dispatch:
 
 
