@@ -12,7 +12,7 @@ robotframework-pabot >= 2.8.0
 twine >= 4.0.1
 robotstatuschecker >= 2.2.0
 rellu >= 0.7
-approvaltests == 8.2.0
+approvaltests == 8.2.4
 pytest-mock==3.10.0
 Pillow==9.4.0
 # Required for injecting google analytics tags on release
