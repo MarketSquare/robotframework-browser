@@ -7,7 +7,7 @@ Force Tags      no-iframe
 *** Test Cases ***
 Promise To Call Custom Js Keyword
     New Page
-    ${promise}    Promise To    My Funky keyword    h1
+    ${promise} =    Promise To    My Funky keyword    h1
     Go To    ${LOGIN_URL}
     Wait For    ${promise}
     Get Text    h1    ==    Funk yeah!
