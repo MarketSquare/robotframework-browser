@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-from typing import Any
+from typing import Any, Optional
 
 from assertionengine import AssertionOperator, verify_assertion
 
@@ -29,9 +29,9 @@ class WebAppState(LibraryComponent):
     def local_storage_get_item(
         self,
         key: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Get saved data from the local storage.
 
@@ -133,8 +133,8 @@ class WebAppState(LibraryComponent):
     def session_storage_get_item(
         self,
         key: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
     ) -> Any:
         """Get saved data from from session storage.
 

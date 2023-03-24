@@ -13,10 +13,11 @@
 # limitations under the License.
 
 import time
-from typing import Union, get_args, get_origin
+from typing import Optional, Union
 
 import wrapt  # type: ignore
 from assertionengine import AssertionOperator
+from typing_extensions import get_args, get_origin
 
 from .utils import logger
 
@@ -26,9 +27,10 @@ def assertion_operator_is_set(wrapped, args, kwargs):
     assertion_op_name = None
     assertion_op_index = None
     for index, (_arg, typ) in enumerate(wrapped.__annotations__.items()):
-        if get_origin(typ) is Union and AssertionOperator in get_args(typ):
-            assertion_op_index = index
-            break
+        if get_origin(typ) is Union:
+            if AssertionOperator in get_args(typ):
+                assertion_op_index = index
+                break
         if typ is AssertionOperator:
             assertion_op_index = index
             break
@@ -42,10 +44,10 @@ def assertion_operator_is_set(wrapped, args, kwargs):
 
 @wrapt.decorator
 def with_assertion_polling(wrapped, instance, args, kwargs):
-    start = time.monotonic()
-    timeout: float = instance.timeout / 1000
-    retry_assertions_until: float = instance.retry_assertions_for / 1000
-    retries_start: float | None = None
+    start = time.time()
+    timeout = instance.timeout / 1000
+    retry_assertions_until = instance.retry_assertions_for / 1000
+    retries_start: Optional[float] = None
     tries = 1
     try:
         logger.stash_this_thread()
@@ -54,13 +56,13 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
                 return wrapped(*args, **kwargs)
             except AssertionError as e:
                 if retries_start is None:
-                    retries_start = time.monotonic()
-                elapsed = time.monotonic() - start
-                elapsed_retries = time.monotonic() - retries_start
+                    retries_start = time.time()
+                elapsed = time.time() - start
+                elapsed_retries = time.time() - retries_start
                 if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
                     raise e
                 tries += 1
-                if timeout - elapsed > 0.01:  # noqa: PLR2004
+                if timeout - elapsed > 0.01:
                     time.sleep(0.01)
                 logger.clear_thread_stash()
     finally:

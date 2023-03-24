@@ -14,7 +14,7 @@
 
 import json
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from robot.utils import DotDict
 
@@ -27,7 +27,7 @@ class Evaluation(LibraryComponent):
     @keyword(name="Evaluate JavaScript", tags=("Setter", "Getter", "PageContent"))
     def evaluate_javascript(
         self,
-        selector: str | None = None,
+        selector: Optional[str] = None,
         *function: str,
         arg: Any = None,
         all_elements: bool = False,

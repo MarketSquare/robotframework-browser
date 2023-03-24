@@ -14,7 +14,7 @@
 
 import json
 import re
-from typing import Any
+from typing import Any, List, Optional, Union
 
 import grpc  # type: ignore
 from assertionengine import (
@@ -47,9 +47,9 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_url(
         self,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the current URL.
 
@@ -76,9 +76,9 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_page_source(
         self,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets pages HTML source as a string.
 
@@ -110,9 +110,9 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_title(
         self,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the title of the current page.
 
@@ -146,9 +146,9 @@ class Getters(LibraryComponent):
     def get_text(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
 
@@ -197,10 +197,10 @@ class Getters(LibraryComponent):
     def get_property(
         self,
         selector: str,
-        property: str,  # noqa: A002
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        property: str,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
@@ -256,9 +256,9 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         attribute: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
@@ -318,9 +318,9 @@ class Getters(LibraryComponent):
     def get_attribute_names(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
-        message: str | None = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns all HTML attribute names of an element as a list.
 
@@ -364,9 +364,9 @@ class Getters(LibraryComponent):
     def get_classes(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
-        message: str | None = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns all classes of an element as a list.
 
@@ -412,9 +412,9 @@ class Getters(LibraryComponent):
     def get_select_options(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
 
@@ -472,9 +472,9 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         option_attribute: SelectAttribute = SelectAttribute.label,
-        assertion_operator: AssertionOperator | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
-        message: str | None = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the specified attribute of selected options of the ``select`` element.
 
@@ -515,7 +515,7 @@ class Getters(LibraryComponent):
             )
         logger.info(response)
         expected = list(assertion_expected)
-        selected: list[int] | list[str]
+        selected: Union[List[int], List[str]]
 
         if option_attribute is SelectAttribute.index:
             expected = [int(exp) for exp in expected]
@@ -535,9 +535,9 @@ class Getters(LibraryComponent):
     def get_checkbox_state(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: bool | str = "Unchecked",
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Union[bool, str] = "Unchecked",
+        message: Optional[str] = None,
     ) -> bool:
         """Returns the state of the checkbox found by ``selector``.
 
@@ -587,9 +587,9 @@ class Getters(LibraryComponent):
     def get_element_count(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: int | str = 0,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Union[int, str] = 0,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the count of elements found with ``selector``.
 
@@ -629,9 +629,9 @@ class Getters(LibraryComponent):
     def get_viewport_size(
         self,
         key: SizeFields = SizeFields.ALL,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the current viewport dimensions.
 
@@ -656,7 +656,7 @@ class Getters(LibraryComponent):
             logger.info(response.log)
             response_json = json.loads(response.json)
             if response_json is None:
-                return None
+                return
             parsed = DotDict(response_json)
             logger.debug(parsed)
             if self.keyword_formatters.get(self.get_viewport_size):
@@ -669,14 +669,15 @@ class Getters(LibraryComponent):
                     "Viewport size is",
                     message,
                 )
-            logger.info(f"Value of '{key}'': {parsed[key.name]}")
-            return float_str_verify_assertion(
-                parsed[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"{key} is",
-                message,
-            )
+            else:
+                logger.info(f"Value of '{key}'': {parsed[key.name]}")
+                return float_str_verify_assertion(
+                    parsed[key.name],
+                    assertion_operator,
+                    assertion_expected,
+                    f"{key} is",
+                    message,
+                )
 
     @keyword(tags=("Getter", "PageContent"))
     def get_table_cell_element(self, table: str, column: str, row: str) -> str:
@@ -737,9 +738,9 @@ class Getters(LibraryComponent):
     def get_table_cell_index(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: int | str = 0,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Union[int, str] = 0,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the index (0 based) of a table cell within its row.
 
@@ -784,9 +785,9 @@ class Getters(LibraryComponent):
     def get_table_row_index(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: int | str = 0,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Union[int, str] = 0,
+        message: Optional[str] = None,
     ) -> Any:
         """Returns the index (0 based) of a table row.
 
@@ -855,7 +856,7 @@ class Getters(LibraryComponent):
             return response.body
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_elements(self, selector: str) -> list[str]:
+    def get_elements(self, selector: str) -> List[str]:
         """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
         for all matched elements by ``selector``.
 
@@ -893,11 +894,11 @@ class Getters(LibraryComponent):
     def get_style(
         self,
         selector: str,
-        key: str | None = "ALL",
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
-        pseudo_element: str | None = None,
+        key: Optional[str] = "ALL",
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+        pseudo_element: Optional[str] = None,
     ) -> Any:
         """Gets the computed style properties of the element selected by ``selector``.
 
@@ -936,7 +937,7 @@ class Getters(LibraryComponent):
             )
         parsed_response = json.loads(response.json)
         formatter = self.keyword_formatters.get(self.get_style)
-        if not key or isinstance(parsed_response, dict):
+        if key == "" or isinstance(parsed_response, dict):
             if formatter:
                 logger.warn(
                     "Formatter is not supported by Get Style keyword with key 'ALL'."
@@ -948,16 +949,17 @@ class Getters(LibraryComponent):
                 "Computed style is",
                 message,
             )
-        logger.info(f"Value of key: {key}")
-        logger.info(f"Value of selected property: {parsed_response}")
-        return verify_assertion(
-            parsed_response,
-            assertion_operator,
-            assertion_expected,
-            f"Style value for {key} is",
-            message,
-            formatter,
-        )
+        else:
+            logger.info(f"Value of key: {key}")
+            logger.info(f"Value of selected property: {parsed_response}")
+            return verify_assertion(
+                parsed_response,
+                assertion_operator,
+                assertion_expected,
+                f"Style value for {key} is",
+                message,
+                formatter,
+            )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -965,9 +967,9 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         key: BoundingBoxFields = BoundingBoxFields.ALL,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
@@ -1009,24 +1011,25 @@ class Getters(LibraryComponent):
             return int_dict_verify_assertion(
                 parsed, assertion_operator, assertion_expected, "BoundingBox is"
             )
-        logger.info(f"Value of '{key}'': {parsed[key.name]}")
-        return float_str_verify_assertion(
-            parsed[key.name],
-            assertion_operator,
-            assertion_expected,
-            f"BoundingBox {key.name} is",
-            message,
-        )
+        else:
+            logger.info(f"Value of '{key}'': {parsed[key.name]}")
+            return float_str_verify_assertion(
+                parsed[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"BoundingBox {key.name} is",
+                message,
+            )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_scroll_size(
         self,
-        selector: str | None = None,
+        selector: Optional[str] = None,
         key: SizeFields = SizeFields.ALL,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
 
@@ -1067,24 +1070,25 @@ class Getters(LibraryComponent):
                 "Scroll size is",
                 message,
             )
-        logger.info(f"Value of '{key}'': {scroll_size[key.name]}")
-        return float_str_verify_assertion(
-            scroll_size[key.name],
-            assertion_operator,
-            assertion_expected,
-            f"Scroll {key.name} is",
-            message,
-        )
+        else:
+            logger.info(f"Value of '{key}'': {scroll_size[key.name]}")
+            return float_str_verify_assertion(
+                scroll_size[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"Scroll {key.name} is",
+                message,
+            )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_scroll_position(
         self,
-        selector: str | None = None,
+        selector: Optional[str] = None,
         key: AreaFields = AreaFields.ALL,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
 
@@ -1125,24 +1129,25 @@ class Getters(LibraryComponent):
                 "Scroll position is",
                 message,
             )
-        logger.info(f"Value of '{key}'': {scroll_position[key.name]}")
-        return float_str_verify_assertion(
-            scroll_position[key.name],
-            assertion_operator,
-            assertion_expected,
-            f"Scroll position {key.name} is",
-            message,
-        )
+        else:
+            logger.info(f"Value of '{key}'': {scroll_position[key.name]}")
+            return float_str_verify_assertion(
+                scroll_position[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"Scroll position {key.name} is",
+                message,
+            )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_client_size(
         self,
-        selector: str | None = None,
+        selector: Optional[str] = None,
         key: SizeFields = SizeFields.ALL,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
@@ -1177,23 +1182,24 @@ class Getters(LibraryComponent):
                 "Client size is",
                 message,
             )
-        logger.info(f"Value of '{key}'': {client_size[key.name]}")
-        return float_str_verify_assertion(
-            client_size[key.name],
-            assertion_operator,
-            assertion_expected,
-            f"Client {key.name} is",
-            message,
-        )
+        else:
+            logger.info(f"Value of '{key}'': {client_size[key.name]}")
+            return float_str_verify_assertion(
+                client_size[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"Client {key.name} is",
+                message,
+            )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_element_states(
         self,
         selector: str,
-        assertion_operator: AssertionOperator | None = None,
-        *assertion_expected: ElementState | str,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected: Union[ElementState, str],
+        message: Optional[str] = None,
         return_names=True,
     ) -> Any:
         """Get the active states from the element found by ``selector``.
@@ -1266,8 +1272,9 @@ class Getters(LibraryComponent):
             "Elements states",
             message,
         )
-        if not return_names or not isinstance(result, ElementState):
+        if return_names and isinstance(result, ElementState):
+            state_list = [flag.name for flag in ElementState if flag in result]
+            logger.info(f"States are: {state_list}")
+            return state_list
+        else:
             return result
-        state_list = [flag.name for flag in ElementState if flag in result]
-        logger.info(f"States are: {state_list}")
-        return state_list

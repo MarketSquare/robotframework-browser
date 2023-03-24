@@ -17,8 +17,8 @@ import inspect
 import os
 import socket
 import subprocess
-from pathlib import Path
-from typing import Any
+from os import PathLike
+from typing import Any, Tuple
 
 from robot.libraries.BuiltIn import BuiltIn
 
@@ -32,7 +32,7 @@ def find_free_port() -> int:
         return s.getsockname()[1]
 
 
-def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
+def spawn_node_process(output_dir: PathLike) -> Tuple[subprocess.Popen, str]:
     """
     Spawn an rfbrowser node process, that can be shared between library instances.
 
@@ -48,7 +48,7 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
 
 
     """
-    logfile = Path(output_dir).open("w")
+    logfile = open(output_dir, "w")
     os.environ["DEBUG"] = "pw:api"
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
     port = str(find_free_port())
@@ -67,14 +67,15 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
 def is_same_keyword(first: str, second: str) -> bool:
     if isinstance(first, str) and isinstance(second, str):
         return get_normalized_keyword(first) == get_normalized_keyword(second)
-    return False
+    else:
+        return False
 
 
 def get_normalized_keyword(keyword: str) -> str:
     return keyword.lower().replace(" ", "_")
 
 
-def keyword(name: Any = None, tags: tuple = (), types: tuple = ()):
+def keyword(name: Any = None, tags: Tuple = (), types: Tuple = ()):
     if inspect.isroutine(name):
         return keyword()(name)
 

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import inspect
-from collections.abc import Callable
-from typing import Any
+from typing import Any, Callable, Dict, Tuple
 
 from robot.running import TypeConverter
 
@@ -41,14 +40,15 @@ def _is_deprecated_attribute(method: Callable, deprecated_arg, args, kwargs):
     if deprecated_arg in kwargs:
         deprecated = True
     for index, argspec_arg in enumerate(argspec_args):
-        if argspec_arg in deprecated_arg and len(args) == index + 1:
-            deprecated = True
+        if argspec_arg in deprecated_arg:
+            if len(args) == index + 1:
+                deprecated = True
     return deprecated
 
 
 def convert_pos_args_to_named(
-    deprecated_pos_args: tuple[Any, ...],
-    old_args: dict[str, Any],
+    deprecated_pos_args: Tuple[Any, ...],
+    old_args: Dict[str, Any],
     keyword_name: str,
     additional_msg: str = "",
 ):

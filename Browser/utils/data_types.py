@@ -13,7 +13,7 @@
 # limitations under the License.
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
-from typing import Union
+from typing import Dict, Union
 
 from typing_extensions import TypedDict
 
@@ -22,7 +22,7 @@ class TypedDictDummy(TypedDict):
     pass
 
 
-def convert_typed_dict(function_annotations: dict, params: dict) -> dict:  # noqa: C901
+def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noqa: C901
     for arg_name, arg_type in function_annotations.items():
         if arg_name not in params or params[arg_name] is None:
             continue
@@ -33,7 +33,7 @@ def convert_typed_dict(function_annotations: dict, params: dict) -> dict:  # noq
                     union_type, type(TypedDictDummy)
                 ):
                     continue
-                arg_type = union_type  # noqa: PLW2901
+                arg_type = union_type
                 break
         if isinstance(arg_type, type(TypedDictDummy)):
             if not isinstance(arg_value, dict):
@@ -62,17 +62,17 @@ def convert_typed_dict(function_annotations: dict, params: dict) -> dict:  # noq
 class DelayedKeyword:
     def __init__(
         self,
-        name: str | None,
-        original_name: str | None,
+        name: Union[str, None],
+        original_name: Union[str, None],
         args: tuple,
         kwargs: dict,
-    ) -> None:
+    ):
         self.name = name
         self.original_name = original_name
         self.args = args
         self.kwargs = kwargs
 
-    def __str__(self) -> str:
+    def __str__(self):
         args = [str(arg) for arg in self.args]
         kwargs = [f"{key}={value}" for key, value in self.kwargs.items()]
         return f"{self.original_name}  {'  '.join(args)}  {'  '.join(kwargs)}".strip()
@@ -109,7 +109,7 @@ class RecordVideo(TypedDict, total=False):
     |  New Context  recordVideo={'dir': '${OUTPUT_DIR}/video'}
     """
 
-    dir: str  # noqa: A003
+    dir: str
     size: ViewportDimensions
 
 
@@ -259,9 +259,8 @@ class SelectionType(Enum):
                 return cls[value.upper()]
             except KeyError:
                 return value
-        return None
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.value
 
 
@@ -276,9 +275,9 @@ class CookieType(Enum):
     """Enum that defines the Cookie type."""
 
     dictionary = auto()
-    dict = dictionary  # noqa: A003
+    dict = dictionary
     string = auto()
-    str = string  # noqa: A003
+    str = string
 
 
 CookieSameSite = Enum(
@@ -329,7 +328,7 @@ class KeyboardInputAction(Enum):
     ``type`` is similar to typing by pressing keys on the keyboard."""
 
     insertText = auto()
-    type = auto()  # noqa: A003
+    type = auto()
 
 
 class KeyboardModifier(Enum):
@@ -560,7 +559,7 @@ class ScreenshotReturnType(Enum):
 
     path = auto()
     path_string = auto()
-    bytes = auto()  # noqa: A003
+    bytes = auto()
     base64 = auto()
 
 
@@ -625,7 +624,7 @@ class ConditionInputs(Enum):
     element_count = "get_element_count"
     element_states = "get_element_states"
     page_source = "get_page_source"
-    property = "get_property"  # noqa: A003
+    property = "get_property"
     scroll_position = "get_scroll_position"
     scroll_size = "get_scroll_size"
     select_options = "get_select_options"

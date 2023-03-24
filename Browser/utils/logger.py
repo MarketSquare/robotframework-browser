@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import threading
-from collections.abc import Callable
-from typing import Any
+from typing import Any, Callable, Dict, List
 
 from robot.api import logger
 
-_THREAD_STASHES: dict[int, list[list[Callable]]] = {}
+_THREAD_STASHES: Dict[int, List[List[Callable]]] = {}
 
 
 def _stashing_logger(funk: Callable):
@@ -60,9 +59,9 @@ def console(msg: Any):
 
 
 def stash_this_thread():
-    identifier = threading.get_ident()
-    if identifier in _THREAD_STASHES:
-        _THREAD_STASHES[identifier].append([])
+    id = threading.get_ident()
+    if id in _THREAD_STASHES:
+        _THREAD_STASHES[id].append([])
     else:
         _THREAD_STASHES[threading.get_ident()] = [[]]
 

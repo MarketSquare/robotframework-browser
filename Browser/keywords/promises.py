@@ -16,7 +16,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any
+from typing import Any, Dict, List
 
 from robot.api.deco import keyword
 from robot.running.arguments.typeconverters import TypeConverter
@@ -28,7 +28,7 @@ from ..utils import DownloadedFile, logger
 
 
 class Promises(LibraryComponent):
-    def __init__(self, library) -> None:
+    def __init__(self, library):
         LibraryComponent.__init__(self, library)
         self._executor = ThreadPoolExecutor(max_workers=256)
 
@@ -84,8 +84,8 @@ class Promises(LibraryComponent):
         return kw.lower().replace(" ", "").replace("_", "")
 
     def resolve_arguments(self, kw: str, *args):
-        positional: list[Any] = []
-        named: dict[str, Any] = {}
+        positional: List[Any] = []
+        named: Dict[str, Any] = {}
         logger.debug(f"*args {args}")
 
         arg_names = [
@@ -152,7 +152,7 @@ class Promises(LibraryComponent):
 
         [https://forum.robotframework.org/t//4314|Comment >>]
         """
-        promise = self._executor.submit(self._wait_for_download, saveAs=saveAs)
+        promise = self._executor.submit(self._wait_for_download, **{"saveAs": saveAs})
         self.unresolved_promises.add(promise)
         return promise
 
@@ -236,7 +236,7 @@ class Promises(LibraryComponent):
         p = Path(path)
         if not p.is_file():
             raise ValueError(f"Nonexistent input file path '{p.resolve()}'")
-        promise = self._executor.submit(self._upload_file, path=str(p.resolve()))
+        promise = self._executor.submit(self._upload_file, **{"path": str(p.resolve())})
         self.unresolved_promises.add(promise)
         return promise
 

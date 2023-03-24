@@ -16,7 +16,7 @@ import json
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
@@ -53,14 +53,14 @@ class PlaywrightState(LibraryComponent):
 
     # Helpers for Switch_ and Close_ keywords
 
-    def _correct_browser(self, browser: SelectionType | str):
+    def _correct_browser(self, browser: Union[SelectionType, str]):
         if browser == SelectionType.ALL:
             raise ValueError
         if browser == SelectionType.CURRENT:
             return
         self.switch_browser(browser)
 
-    def _correct_context(self, context: SelectionType | str):
+    def _correct_context(self, context: Union[SelectionType, str]):
         if context == SelectionType.ALL:
             raise ValueError
         if context == SelectionType.CURRENT:
@@ -70,7 +70,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def open_browser(
         self,
-        url: str | None = None,
+        url: Optional[str] = None,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = False,
         pause_on_failure: bool = True,
@@ -110,7 +110,7 @@ class PlaywrightState(LibraryComponent):
             self.library.pause_on_failure.add(browser_id)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def close_browser(self, browser: SelectionType | str = SelectionType.CURRENT):
+    def close_browser(self, browser: Union[SelectionType, str] = SelectionType.CURRENT):
         """Closes the current browser.
 
         Active browser is set to the browser that was active before this one. Closes all context and pages belonging
@@ -156,8 +156,8 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def close_context(
         self,
-        context: SelectionType | str = SelectionType.CURRENT,
-        browser: SelectionType | str = SelectionType.CURRENT,
+        context: Union[SelectionType, str] = SelectionType.CURRENT,
+        browser: Union[SelectionType, str] = SelectionType.CURRENT,
     ):
         """Closes a Context.
 
@@ -206,7 +206,7 @@ class PlaywrightState(LibraryComponent):
                 return []
         return [find_by_id(context, contexts)]
 
-    def _get_browser_ids(self, browser) -> list:
+    def _get_browser_ids(self, browser) -> List:
         catalog = self.get_browser_catalog()
         if browser == SelectionType.ALL:
             browser_ids = [browser_instance["id"] for browser_instance in catalog]
@@ -220,8 +220,8 @@ class PlaywrightState(LibraryComponent):
         return [find_by_id(browser_id, catalog) for browser_id in browser_ids]
 
     def _get_context_id(
-        self, context_selection: str | SelectionType, contexts: list
-    ) -> list:
+        self, context_selection: Union[str, SelectionType], contexts: List
+    ) -> List:
         if context_selection == SelectionType.CURRENT:
             current_ctx = self.switch_context("CURRENT")
             if current_ctx == "NO CONTEXT OPEN":
@@ -234,9 +234,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def close_page(
         self,
-        page: SelectionType | str = SelectionType.CURRENT,
-        context: SelectionType | str = SelectionType.CURRENT,
-        browser: SelectionType | str = SelectionType.CURRENT,
+        page: Union[SelectionType, str] = SelectionType.CURRENT,
+        context: Union[SelectionType, str] = SelectionType.CURRENT,
+        browser: Union[SelectionType, str] = SelectionType.CURRENT,
     ):
         """Closes the ``page`` in ``context`` in ``browser``.
 
@@ -277,7 +277,7 @@ class PlaywrightState(LibraryComponent):
 
                     for page_id in pages_ids:
                         if page_id == "NO PAGE OPEN":
-                            return None
+                            return
                         if page != SelectionType.CURRENT:
                             self.switch_page(page_id)
                         response = stub.ClosePage(Request().Empty())
@@ -317,15 +317,15 @@ class PlaywrightState(LibraryComponent):
 
     old_new_browser_args = {
         "executablePath": Optional[str],
-        "args": Optional[list[str]],
-        "ignoreDefaultArgs": Optional[list[str]],
+        "args": Optional[List[str]],
+        "ignoreDefaultArgs": Optional[List[str]],
         "proxy": Optional[Proxy],
         "downloadsPath": Optional[str],
         "handleSIGINT": bool,
         "handleSIGTERM": bool,
         "handleSIGHUP": bool,
         "timeout": timedelta,
-        "env": Optional[dict],
+        "env": Optional[Dict],
         "devtools": bool,
         "slowMo": timedelta,
         "channel": Optional[str],
@@ -337,17 +337,17 @@ class PlaywrightState(LibraryComponent):
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
         *deprecated_pos_args,
-        args: list[str] | None = None,
-        channel: str | None = None,
+        args: Optional[List[str]] = None,
+        channel: Optional[str] = None,
         devtools: bool = False,
-        downloadsPath: str | None = None,
-        env: dict | None = None,
-        executablePath: str | None = None,
+        downloadsPath: Optional[str] = None,
+        env: Optional[Dict] = None,
+        executablePath: Optional[str] = None,
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        ignoreDefaultArgs: list[str] | None = None,
-        proxy: Proxy | None = None,
+        ignoreDefaultArgs: Optional[List[str]] = None,
+        proxy: Optional[Proxy] = None,
         reuse_existing: bool = True,
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
@@ -413,7 +413,7 @@ class PlaywrightState(LibraryComponent):
 
     def _switch_to_existing_browser(
         self, reuse_existing: bool, parameter_hash: int
-    ) -> str | None:
+    ) -> Optional[str]:
         if not reuse_existing:
             return None
         existing_browser_id = self.browser_arg_mapping.get(parameter_hash)
@@ -427,9 +427,10 @@ class PlaywrightState(LibraryComponent):
             self.browser_arg_mapping.pop(parameter_hash, None)
             return None
 
-    def _get_parameter_hash(self, params: dict[str, Any]) -> int:
+    def _get_parameter_hash(self, params: Dict[str, Any]) -> int:
         params.pop("reuse_existing", None)
-        return hash(repr(params))
+        parameter_hash = hash(repr(params))
+        return parameter_hash
 
     old_new_context_args = {
         "acceptDownloads": bool,
@@ -444,8 +445,8 @@ class PlaywrightState(LibraryComponent):
         "timezoneId": Optional[str],
         "geolocation": Optional[GeoLocation],
         "locale": Optional[str],
-        "permissions": Optional[list[Permission]],
-        "extraHTTPHeaders": Optional[dict[str, str]],
+        "permissions": Optional[List[Permission]],
+        "extraHTTPHeaders": Optional[Dict[str, str]],
         "offline": bool,
         "httpCredentials": Optional[HttpCredentials],
         "colorScheme": Optional[ColorScheme],
@@ -456,7 +457,7 @@ class PlaywrightState(LibraryComponent):
         "recordVideo": Optional[RecordVideo],
         "recordHar": Optional[RecordHar],
         "tracing": Optional[str],
-        "screen": Optional[dict[str, int]],
+        "screen": Optional[Dict[str, int]],
         "storageState": Optional[str],
         "reducedMotion": ReduceMotion,
         "forcedColors": ForcedColors,
@@ -468,31 +469,32 @@ class PlaywrightState(LibraryComponent):
         *deprecated_pos_args,
         acceptDownloads: bool = True,
         bypassCSP: bool = False,
-        colorScheme: ColorScheme | None = None,
-        defaultBrowserType: SupportedBrowsers | None = None,
-        deviceScaleFactor: float | None = None,
-        extraHTTPHeaders: dict[str, str] | None = None,
+        colorScheme: Optional[ColorScheme] = None,
+        defaultBrowserType: Optional[SupportedBrowsers] = None,
+        deviceScaleFactor: Optional[float] = None,
+        extraHTTPHeaders: Optional[Dict[str, str]] = None,
         forcedColors: ForcedColors = ForcedColors.none,
-        geolocation: GeoLocation | None = None,
-        hasTouch: bool | None = None,
+        geolocation: Optional[GeoLocation] = None,
+        hasTouch: Optional[bool] = None,
         hideRfBrowser: bool = False,
-        httpCredentials: HttpCredentials | None = None,
+        httpCredentials: Optional[HttpCredentials] = None,
         ignoreHTTPSErrors: bool = False,
-        isMobile: bool | None = None,
+        isMobile: Optional[bool] = None,
         javaScriptEnabled: bool = True,
-        locale: str | None = None,
+        locale: Optional[str] = None,
         offline: bool = False,
-        permissions: list[Permission] | None = None,
-        recordHar: RecordHar | None = None,
-        recordVideo: RecordVideo | None = None,
+        permissions: Optional[List[Permission]] = None,
+        recordHar: Optional[RecordHar] = None,
+        recordVideo: Optional[RecordVideo] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
-        screen: dict[str, int] | None = None,
-        storageState: str | None = None,
-        timezoneId: str | None = None,
-        tracing: str | None = None,
-        userAgent: str | None = None,
-        viewport: ViewportDimensions
-        | None = ViewportDimensions(width=1280, height=720),
+        screen: Optional[Dict[str, int]] = None,
+        storageState: Optional[str] = None,
+        timezoneId: Optional[str] = None,
+        tracing: Optional[str] = None,
+        userAgent: Optional[str] = None,
+        viewport: Optional[ViewportDimensions] = ViewportDimensions(
+            width=1280, height=720
+        ),
     ) -> str:
         """Create a new BrowserContext with specified options.
 
@@ -580,15 +582,15 @@ class PlaywrightState(LibraryComponent):
 
     old_new_perse_context_args = {
         "executablePath": Optional[str],
-        "args": Optional[list[str]],
-        "ignoreDefaultArgs": Optional[list[str]],
+        "args": Optional[List[str]],
+        "ignoreDefaultArgs": Optional[List[str]],
         "proxy": Optional[Proxy],
         "downloadsPath": Optional[str],
         "handleSIGINT": bool,
         "handleSIGTERM": bool,
         "handleSIGHUP": bool,
         "timeout": timedelta,
-        "env": Optional[dict],
+        "env": Optional[Dict],
         "devtools": bool,
         "slowMo": timedelta,
         "channel": Optional[str],
@@ -604,8 +606,8 @@ class PlaywrightState(LibraryComponent):
         "timezoneId": Optional[str],
         "geolocation": Optional[GeoLocation],
         "locale": Optional[str],
-        "permissions": Optional[list[Permission]],
-        "extraHTTPHeaders": Optional[dict[str, str]],
+        "permissions": Optional[List[Permission]],
+        "extraHTTPHeaders": Optional[Dict[str, str]],
         "offline": bool,
         "httpCredentials": Optional[HttpCredentials],
         "colorScheme": Optional[ColorScheme],
@@ -616,7 +618,7 @@ class PlaywrightState(LibraryComponent):
         "recordVideo": Optional[RecordVideo],
         "recordHar": Optional[RecordHar],
         "tracing": Optional[str],
-        "screen": Optional[dict[str, int]],
+        "screen": Optional[Dict[str, int]],
         "storageState": Optional[str],
         "reducedMotion": ReduceMotion,
         "forcedColors": ForcedColors,
@@ -631,46 +633,47 @@ class PlaywrightState(LibraryComponent):
         headless: bool = True,
         *deprecated_pos_args,
         acceptDownloads: bool = True,
-        args: list[str] | None = None,
+        args: Optional[List[str]] = None,
         bypassCSP: bool = False,
-        channel: str | None = None,
-        colorScheme: ColorScheme | None = None,
-        defaultBrowserType: SupportedBrowsers | None = None,
-        deviceScaleFactor: float | None = None,
+        channel: Optional[str] = None,
+        colorScheme: Optional[ColorScheme] = None,
+        defaultBrowserType: Optional[SupportedBrowsers] = None,
+        deviceScaleFactor: Optional[float] = None,
         devtools: bool = False,
-        downloadsPath: str | None = None,
-        env: dict | None = None,
-        executablePath: str | None = None,
-        extraHTTPHeaders: dict[str, str] | None = None,
+        downloadsPath: Optional[str] = None,
+        env: Optional[Dict] = None,
+        executablePath: Optional[str] = None,
+        extraHTTPHeaders: Optional[Dict[str, str]] = None,
         forcedColors: ForcedColors = ForcedColors.none,
-        geolocation: GeoLocation | None = None,
+        geolocation: Optional[GeoLocation] = None,
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        hasTouch: bool | None = None,
+        hasTouch: Optional[bool] = None,
         hideRfBrowser: bool = False,
-        httpCredentials: HttpCredentials | None = None,
-        ignoreDefaultArgs: list[str] | None = None,
+        httpCredentials: Optional[HttpCredentials] = None,
+        ignoreDefaultArgs: Optional[List[str]] = None,
         ignoreHTTPSErrors: bool = False,
-        isMobile: bool | None = None,
+        isMobile: Optional[bool] = None,
         javaScriptEnabled: bool = True,
-        locale: str | None = None,
+        locale: Optional[str] = None,
         offline: bool = False,
-        permissions: list[Permission] | None = None,
-        proxy: Proxy | None = None,
-        recordHar: RecordHar | None = None,
-        recordVideo: RecordVideo | None = None,
+        permissions: Optional[List[Permission]] = None,
+        proxy: Optional[Proxy] = None,
+        recordHar: Optional[RecordHar] = None,
+        recordVideo: Optional[RecordVideo] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
-        screen: dict[str, int] | None = None,
+        screen: Optional[Dict[str, int]] = None,
         slowMo: timedelta = timedelta(seconds=0),
-        storageState: str | None = None,
+        storageState: Optional[str] = None,
         timeout: timedelta = timedelta(seconds=30),
-        timezoneId: str | None = None,
-        tracing: str | None = None,
-        url: str | None = None,
-        userAgent: str | None = None,
-        viewport: ViewportDimensions
-        | None = ViewportDimensions(width=1280, height=720),
+        timezoneId: Optional[str] = None,
+        tracing: Optional[str] = None,
+        url: Optional[str] = None,
+        userAgent: Optional[str] = None,
+        viewport: Optional[ViewportDimensions] = ViewportDimensions(
+            width=1280, height=720
+        ),
     ):
         """Open a new
         [https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context | persistent context].
@@ -779,9 +782,11 @@ class PlaywrightState(LibraryComponent):
         return params
 
     # Only to ease unit test mocking.
-    def _new_context(self, options: str, hide_rf_browser: bool, trace_file: Path | str):
+    def _new_context(
+        self, options: str, hide_rf_browser: bool, trace_file: Union[Path, str]
+    ):
         with self.playwright.grpc_channel() as stub:
-            return stub.NewContext(
+            response = stub.NewContext(
                 Request().Context(
                     rawOptions=options,
                     hideRfBrowser=hide_rf_browser,
@@ -789,6 +794,7 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
+            return response
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
@@ -809,7 +815,7 @@ class PlaywrightState(LibraryComponent):
         params["recordVideo"]["dir"] = Path(vid_path).resolve().absolute()
         return params
 
-    def _get_record_video_size(self, params) -> tuple[int | None, int | None]:
+    def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
         width = params.get("recordVideo", {}).get("size", {}).get("width")
         height = params.get("recordVideo", {}).get("size", {}).get("height")
         return int(width) if width else None, int(height) if height else None
@@ -829,7 +835,7 @@ class PlaywrightState(LibraryComponent):
         return {"width": 1280, "height": 720}
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def new_page(self, url: str | None = None) -> NewPageDetails:
+    def new_page(self, url: Optional[str] = None) -> NewPageDetails:
         """Open a new Page.
 
         A Page is the Playwright equivalent to a tab. See `Browser, Context and Page`
@@ -891,10 +897,10 @@ class PlaywrightState(LibraryComponent):
     @with_assertion_polling
     def get_browser_catalog(
         self,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
-    ) -> list:
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+    ) -> List:
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
         See `Browser, Context and Page` for more information about these concepts.
@@ -987,13 +993,13 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     def get_console_log(
         self,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
         *,
         full: bool = False,
-        last: int | timedelta | None = None,
-    ) -> dict:
+        last: Union[int, timedelta, None] = None,
+    ) -> Dict:
         """Returns the console log of the active page.
 
         If assertions are used and fail, this keyword will fail immediately without retrying.
@@ -1059,13 +1065,13 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     def get_page_errors(
         self,
-        assertion_operator: AssertionOperator | None = None,
-        assertion_expected: Any | None = None,
-        message: str | None = None,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
         *,
         full: bool = False,
-        last: int | timedelta | None = None,
-    ) -> dict:
+        last: Union[int, timedelta, None] = None,
+    ) -> Dict:
         """Returns the page errors of the active page.
 
         If assertions are used and fail, this keyword will fail immediately without retrying.
@@ -1137,7 +1143,7 @@ class PlaywrightState(LibraryComponent):
         return returned_messages
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def switch_browser(self, id: str) -> str:  # noqa: A002
+    def switch_browser(self, id: str) -> str:
         """Switches the currently active Browser to another open Browser.
 
         Returns a stable identifier for the previous browser.
@@ -1156,9 +1162,7 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_context(
-        self,
-        id: str,  # noqa: A002
-        browser: SelectionType | str = SelectionType.CURRENT,
+        self, id: str, browser: Union[SelectionType, str] = SelectionType.CURRENT
     ) -> str:
         """Switches the active BrowserContext to another open context.
 
@@ -1180,7 +1184,7 @@ class PlaywrightState(LibraryComponent):
         """
         logger.info(f"Switching context to {id} in {browser}")
         browser = SelectionType.create(browser)
-        id = SelectionType.create(id)  # noqa: A001
+        id = SelectionType.create(id)
 
         if isinstance(id, str):
             parent_browser_id = self._get_context_parent_id(id)
@@ -1195,7 +1199,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    def _get_page_uid(self, id) -> str:  # noqa: A002
+    def _get_page_uid(self, id) -> str:
         if isinstance(id, dict):
             uid = id.get("page_id")
             if not uid:
@@ -1213,9 +1217,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_page(
         self,
-        id: NewPageDetails | str,  # noqa: A002
-        context: SelectionType | str = SelectionType.CURRENT,
-        browser: SelectionType | str = SelectionType.CURRENT,
+        id: Union[NewPageDetails, str],
+        context: Union[SelectionType, str] = SelectionType.CURRENT,
+        browser: Union[SelectionType, str] = SelectionType.CURRENT,
     ) -> str:
         """Switches the active browser page to another open page by ``id`` or ``NEW``.
 
@@ -1282,7 +1286,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    def _get_page_parent_ids(self, page_id: str) -> tuple[str, str]:
+    def _get_page_parent_ids(self, page_id: str) -> Tuple[str, str]:
         browser_catalog = self.get_browser_catalog()
         for browser in browser_catalog:
             for context in browser["contexts"]:
@@ -1300,7 +1304,7 @@ class PlaywrightState(LibraryComponent):
         raise ValueError(f"No context with requested id '{context_id}' found.")
 
     @keyword(tags=("Getter", "BrowserControl"))
-    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> list:
+    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> List:
         """Returns a list of ids from open browsers.
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
@@ -1329,7 +1333,7 @@ class PlaywrightState(LibraryComponent):
         self,
         context: SelectionType = SelectionType.ALL,
         browser: SelectionType = SelectionType.ALL,
-    ) -> list:
+    ) -> List:
         """Returns a list of context ids based on the browser selection.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
@@ -1349,20 +1353,22 @@ class PlaywrightState(LibraryComponent):
             if context == SelectionType.CURRENT:
                 if "activeContext" in browser_item:
                     return [browser_item["activeContext"]]
-            elif "contexts" in browser_item:
-                return [context["id"] for context in browser_item["contexts"]]
-        elif context == SelectionType.CURRENT:
-            context_ids = []
-            for browser_item in self.get_browser_catalog():
-                if "activeContext" in browser_item:
-                    context_ids.append(browser_item["activeContext"])
-            return context_ids
+            else:
+                if "contexts" in browser_item:
+                    return [context["id"] for context in browser_item["contexts"]]
         else:
-            context_ids = []
-            for browser_item in self.get_browser_catalog():
-                for context_item in browser_item["contexts"]:
-                    context_ids.append(context_item["id"])
-            return context_ids
+            if context == SelectionType.CURRENT:
+                context_ids = list()
+                for browser_item in self.get_browser_catalog():
+                    if "activeContext" in browser_item:
+                        context_ids.append(browser_item["activeContext"])
+                return context_ids
+            else:
+                context_ids = list()
+                for browser_item in self.get_browser_catalog():
+                    for context_item in browser_item["contexts"]:
+                        context_ids.append(context_item["id"])
+                return context_ids
         return []
 
     @keyword(tags=("Getter", "BrowserControl"))
@@ -1371,7 +1377,7 @@ class PlaywrightState(LibraryComponent):
         page: SelectionType = SelectionType.ALL,
         context: SelectionType = SelectionType.ALL,
         browser: SelectionType = SelectionType.ALL,
-    ) -> list:
+    ) -> List:
         """Returns a list of page ids based on the context and browser selection.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
@@ -1404,11 +1410,12 @@ class PlaywrightState(LibraryComponent):
                     return self._get_page_ids_from_context_list(
                         page, self._get_active_context_item(browser_item)
                     )
-                return self._get_page_ids_from_context_list(
-                    page, browser_item["contexts"]
-                )
+                else:
+                    return self._get_page_ids_from_context_list(
+                        page, browser_item["contexts"]
+                    )
         else:
-            context_list = []
+            context_list = list()
             for browser_item in self.get_browser_catalog():
                 if "contexts" in browser_item:
                     if context == SelectionType.CURRENT:
@@ -1422,7 +1429,7 @@ class PlaywrightState(LibraryComponent):
     def _get_page_ids_from_context_list(
         page_selection_type: SelectionType, context_list
     ):
-        page_ids = []
+        page_ids = list()
         for context_item in context_list:
             if page_selection_type == SelectionType.CURRENT:
                 if "activePage" in context_item:
