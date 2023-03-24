@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-import os
 import re
 import shutil
 import string
@@ -22,7 +21,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Optional, Union
 
 from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
@@ -738,7 +737,7 @@ class Browser(DynamicCore):
         "auto_closing_level": AutoClosingLevel,
         "retry_assertions_for": timedelta,
         "run_on_failure": str,
-        "external_browser_executable": Optional[Dict[SupportedBrowsers, str]],
+        "external_browser_executable": Optional[dict[SupportedBrowsers, str]],
         "jsextension": Optional[str],
         "enable_presenter_mode": Union[HighLightElement, bool],
         "playwright_process_port": Optional[int],
@@ -751,18 +750,18 @@ class Browser(DynamicCore):
         *deprecated_pos_args,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
         enable_playwright_debug: bool = False,
-        enable_presenter_mode: Union[HighLightElement, bool] = False,
-        external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
-        jsextension: Optional[str] = None,
-        playwright_process_port: Optional[int] = None,
+        enable_presenter_mode: HighLightElement | bool = False,
+        external_browser_executable: dict[SupportedBrowsers, str] | None = None,
+        jsextension: str | None = None,
+        playwright_process_port: int | None = None,
         retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot  fail-screenshot-{index}",
-        selector_prefix: Optional[str] = None,
-        show_keyword_call_banner: Optional[bool] = None,
+        selector_prefix: str | None = None,
+        show_keyword_call_banner: bool | None = None,
         strict: bool = True,
         timeout: timedelta = timedelta(seconds=10),
-        plugins: Optional[str] = None,
-    ):
+        plugins: str | None = None,
+    ) -> None:
         """Browser library can be taken into use with optional arguments:
 
         | =Argument=                        | =Description= |
@@ -788,7 +787,7 @@ class Browser(DynamicCore):
 
         """
         self.ROBOT_LIBRARY_LISTENER = self
-        self.scope_stack: Dict = {}
+        self.scope_stack: dict = {}
         old_args_list = list(self._old_init_args.items())
         pos_params = {}
         for index, pos_arg in enumerate(deprecated_pos_args):
@@ -829,7 +828,7 @@ class Browser(DynamicCore):
         )
         self._auto_closing_level: AutoClosingLevel = params["auto_closing_level"]
         # Parsing needs keywords to be discovered.
-        self.external_browser_executable: Dict[SupportedBrowsers, str] = (
+        self.external_browser_executable: dict[SupportedBrowsers, str] = (
             params["external_browser_executable"] or {}
         )
         if params["jsextension"] is not None:
@@ -843,15 +842,13 @@ class Browser(DynamicCore):
             self._plugin_keywords = parser.get_plugin_keywords(parsed_plugins)
         else:
             self._plugin_keywords = []
-        self.presenter_mode: Union[HighLightElement, bool] = params[
-            "enable_presenter_mode"
-        ]
-        self._execution_stack: List[dict] = []
+        self.presenter_mode: HighLightElement | bool = params["enable_presenter_mode"]
+        self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
-        self.pause_on_failure: Set[str] = set()
-        self._unresolved_promises: Set[Future] = set()
+        self.pause_on_failure: set[str] = set()
+        self._unresolved_promises: set[Future] = set()
         self._keyword_formatters: dict = {}
-        self._current_loglevel: Optional[str] = None
+        self._current_loglevel: str | None = None
         self.is_test_case_running = False
 
         DynamicCore.__init__(self, libraries)
@@ -890,11 +887,9 @@ class Browser(DynamicCore):
     def timeout(self):
         return self.scope_stack["timeout"].get()
 
-    def _parse_run_on_failure_keyword(
-        self, keyword_name: Union[str, None]
-    ) -> DelayedKeyword:
+    def _parse_run_on_failure_keyword(self, keyword_name: str | None) -> DelayedKeyword:
         if keyword_name is None or is_falsy(keyword_name):
-            return DelayedKeyword(None, None, tuple(), {})
+            return DelayedKeyword(None, None, (), {})
         parts = keyword_name.split("  ")
         keyword_name = parts[0]
         normalized_keyword_name = get_normalized_keyword(keyword_name)
@@ -923,20 +918,18 @@ class Browser(DynamicCore):
             response.keywords,
             response.keywordArguments,
             response.keywordDocumentations,
+            strict=True,
         ):
             self._jskeyword_call(component, name, args, doc)
         return component
 
-    def init_js_extension(
-        self, js_extension_path: Union[Path, str]
-    ) -> Response.Keywords:
+    def init_js_extension(self, js_extension_path: Path | str) -> Response.Keywords:
         with self.playwright.grpc_channel() as stub:
-            response = stub.InitializeExtension(
+            return stub.InitializeExtension(
                 Request().FilePath(
                     path=str(Path(js_extension_path).resolve().absolute())
                 )
             )
-            return response
 
     def _js_value_to_python_value(self, value: str) -> str:
         return {
@@ -1025,16 +1018,15 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             )
             for response in responses:
                 logger.info(response.log)
-            if response.json == "":
-                return
+            if response.json == "":  # noqa: PLC1901
+                return None
             return json.loads(response.json)
 
     @property
     def outputdir(self) -> str:
         if EXECUTION_CONTEXTS.current:
             return BuiltIn().get_variable_value("${OUTPUTDIR}")
-        else:
-            return "."
+        return "."
 
     @property
     def browser_output(self) -> Path:
@@ -1165,11 +1157,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
-    def _add_to_scope_stack(self, attrs: Dict[str, Any], scope: Scope):
+    def _add_to_scope_stack(self, attrs: dict[str, Any], scope: Scope):
         for stack in self.scope_stack.values():
             stack.start(attrs["id"], scope)
 
-    def _remove_from_scope_stack(self, attrs: Dict[str, Any]):
+    def _remove_from_scope_stack(self, attrs: dict[str, Any]):
         for stack in self.scope_stack.values():
             stack.end(attrs["id"])
 
@@ -1281,22 +1273,19 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._running_on_failure_keyword = False
 
     def _failure_screenshot_path(self):
-        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        valid_chars = f"-_.() {string.ascii_letters}{string.digits}"
         test_name = BuiltIn().get_variable_value("${TEST NAME}", "GENERIC")
-        return os.path.join(
-            self.outputdir,
+        return Path(self.outputdir) / (
             "".join(c for c in test_name if c in valid_chars).replace(" ", "_")
             + "_FAILURE_SCREENSHOT_{index}",
         )
 
-    def get_timeout(self, timeout: Union[timedelta, None]) -> float:
+    def get_timeout(self, timeout: timedelta | None) -> float:
         if timeout is None:
             return self.scope_stack["timeout"].get()
         return self.convert_timeout(timeout)
 
-    def convert_timeout(
-        self, timeout: Union[timedelta, float], to_ms: bool = True
-    ) -> float:
+    def convert_timeout(self, timeout: timedelta | float, to_ms: bool = True) -> float:
         convert = 1000 if to_ms else 1
         if isinstance(timeout, timedelta):
             return timeout.total_seconds() * convert

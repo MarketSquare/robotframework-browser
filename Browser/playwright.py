@@ -18,12 +18,12 @@ import os
 import time
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import grpc  # type: ignore
 from backports.cached_property import cached_property
 
-import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
+from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
 from .base import LibraryComponent
@@ -37,21 +37,21 @@ from .utils import find_free_port, logger
 class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwirght process."""
 
-    port: Optional[str]
+    port: str | None
 
     def __init__(
         self,
         library: "Browser",
         enable_playwright_debug: bool,
-        port: Optional[int] = None,
-    ):
+        port: int | None = None,
+    ) -> None:
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
         self.ensure_node_dependencies()
         self.port = str(port) if port else None
 
     @cached_property
-    def _playwright_process(self) -> Optional[Popen]:
+    def _playwright_process(self) -> Popen | None:
         process = self.start_playwright()
         atexit.register(self.close)
         self.wait_until_server_up()
@@ -81,7 +81,7 @@ class Playwright(LibraryComponent):
             "Run `rfbrowser init` to install the dependencies."
         )
 
-    def start_playwright(self) -> Optional[Popen]:
+    def start_playwright(self) -> Popen | None:
         existing_port = self.port or os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
         if existing_port is not None:
             self.port = existing_port
@@ -92,7 +92,7 @@ class Playwright(LibraryComponent):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
+        logfile = Path(self.outputdir, "playwright-log.txt").open("w")
         port = str(find_free_port())
         if self.enable_playwright_debug:
             os.environ["DEBUG"] = "pw:api"
@@ -159,10 +159,10 @@ class Playwright(LibraryComponent):
         except grpc.RpcError as error:
             if original_error:
                 raise error
-            raise AssertionError(error.details())
+            raise AssertionError(error.details()) from None
         except Exception as error:
             logger.debug(f"Unknown error received: {error}")
-            raise AssertionError(str(error))
+            raise AssertionError(str(error)) from None
 
     def close(self):
         logger.debug("Closing all open browsers, contexts and pages in Playwright")

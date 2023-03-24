@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from enum import Enum
-from typing import Dict, List, TypeVar
+from typing import TypeVar
 
 
-def locals_to_params(args: Dict) -> Dict:
-    copy = dict()
+def locals_to_params(args: dict) -> dict:
+    copy = {}
     for key in args:
         if key == "self":
             continue
@@ -33,7 +33,7 @@ def locals_to_params(args: Dict) -> Dict:
 T = TypeVar("T")
 
 
-def find_by_id(_id: str, item_list: List[Dict[str, T]], log_error=True) -> Dict[str, T]:
+def find_by_id(_id: str, item_list: list[dict[str, T]], log_error=True) -> dict[str, T]:
     from ..utils import logger
 
     def filter_fn(item):
@@ -45,6 +45,7 @@ def find_by_id(_id: str, item_list: List[Dict[str, T]], log_error=True) -> Dict[
     except StopIteration:
         if log_error:
             logger.error(
-                f"No item with correct id {_id}. Existing ids: {[item['id'] for item in item_list]}"
+                f"No item with correct id {_id}. "
+                f"Existing ids: {[item['id'] for item in item_list]}"
             )
         raise

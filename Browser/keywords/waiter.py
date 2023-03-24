@@ -16,7 +16,7 @@ import json
 import re
 import time
 from datetime import timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from robot.libraries.BuiltIn import BuiltIn
 
@@ -33,8 +33,8 @@ class Waiter(LibraryComponent):
         self,
         selector: str,
         state: ElementState = ElementState.visible,
-        timeout: Optional[timedelta] = None,
-        message: Optional[str] = None,
+        timeout: timedelta | None = None,
+        message: str | None = None,
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
@@ -122,17 +122,18 @@ class Waiter(LibraryComponent):
                 timeout=timeout,
                 message=message,
             )
+            return None
 
     def _wait_for_elements_state(
         self,
         selector: str,
         state: ElementState = ElementState.visible,
-        timeout: Optional[timedelta] = None,
+        timeout: timedelta | None = None,
         strict: bool = True,
     ):
         selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
-            options: Dict[str, object] = {"state": state.name}
+            options: dict[str, object] = {"state": state.name}
             if timeout:
                 options["timeout"] = self.get_timeout(timeout)
             options_json = json.dumps(options)
@@ -148,9 +149,9 @@ class Waiter(LibraryComponent):
         self,
         function: str,
         selector: str = "",
-        polling: Union[str, timedelta] = "raf",
-        timeout: Optional[timedelta] = None,
-        message: Optional[str] = None,
+        polling: str | timedelta = "raf",
+        timeout: timedelta | None = None,
+        message: str | None = None,
     ):
         """Polls JavaScript expression or function in browser until it returns a (JavaScript) truthy value.
 
@@ -196,13 +197,13 @@ class Waiter(LibraryComponent):
         self,
         function: str,
         selector: str = "",
-        polling: Union[str, timedelta] = "raf",
-        timeout: Optional[timedelta] = None,
+        polling: str | timedelta = "raf",
+        timeout: timedelta | None = None,
         strict: bool = True,
     ):
         selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
-            options: Dict[str, int] = {}
+            options: dict[str, int] = {}
             if polling != "raf":
                 options["polling"] = self.convert_timeout(polling)  # type: ignore
             if timeout:
@@ -224,8 +225,8 @@ class Waiter(LibraryComponent):
         self,
         condition: ConditionInputs,
         *args: Any,
-        timeout: Optional[timedelta] = None,
-        message: Optional[str] = None,
+        timeout: timedelta | None = None,
+        message: str | None = None,
     ) -> Any:
         """Waits for a condition, defined with Browser getter keywords to become True.
 

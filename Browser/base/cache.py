@@ -1,5 +1,5 @@
 class ContextCache:
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache = {}
 
     def add(self, cache_uuid: str, item: dict):

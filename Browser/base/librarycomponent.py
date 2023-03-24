@@ -19,7 +19,7 @@ from copy import copy, deepcopy
 from datetime import timedelta
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Union
+from typing import TYPE_CHECKING, Any
 
 from robot.libraries.BuiltIn import BuiltIn
 from robot.utils import timestr_to_secs
@@ -41,8 +41,8 @@ class LibraryComponent:
         :param library: The library itself as a context object.
         """
         self.library = library
-        self._crypto: Optional[Any] = None
-        self.browser_arg_mapping: Dict[int, str] = {}
+        self._crypto: Any | None = None
+        self.browser_arg_mapping: dict[int, str] = {}
 
     @property
     def playwright(self):
@@ -120,7 +120,7 @@ class LibraryComponent:
     def selector_prefix_stack(self, stack: SettingsStack):
         self.library.scope_stack["selector_prefix"] = stack
 
-    def resolve_selector(self, selector: Optional[str]) -> str:
+    def resolve_selector(self, selector: str | None) -> str:
         if not selector:
             return ""
         if selector.startswith("!prefix "):
@@ -140,7 +140,7 @@ class LibraryComponent:
         return self.library._unresolved_promises
 
     @unresolved_promises.setter
-    def unresolved_promises(self, value: Set[Future]):
+    def unresolved_promises(self, value: set[Future]):
         self.library._unresolved_promises = value
 
     @property
@@ -172,19 +172,17 @@ class LibraryComponent:
         return self.library.state_file
 
     def initialize_js_extension(
-        self, js_extension_path: Union[Path, str]
+        self, js_extension_path: Path | str
     ) -> Response.Keywords:
         return self.library.init_js_extension(js_extension_path=js_extension_path)
 
     def call_js_keyword(self, keyword_name: str, **args) -> Any:
         return self.library.call_js_keyword(keyword_name, **args)
 
-    def get_timeout(self, timeout: Union[timedelta, None]) -> float:
+    def get_timeout(self, timeout: timedelta | None) -> float:
         return self.library.get_timeout(timeout)
 
-    def convert_timeout(
-        self, timeout: Union[timedelta, float], to_ms: bool = True
-    ) -> float:
+    def convert_timeout(self, timeout: timedelta | float, to_ms: bool = True) -> float:
         return self.library.convert_timeout(timeout, to_ms)
 
     def millisecs_to_timestr(self, timeout: float) -> str:
@@ -272,9 +270,7 @@ class LibraryComponent:
     def strict_mode_stack(self, stack: SettingsStack):
         self.library.scope_stack["strict_mode"] = stack
 
-    def parse_run_on_failure_keyword(
-        self, keyword_name: Union[str, None]
-    ) -> DelayedKeyword:
+    def parse_run_on_failure_keyword(self, keyword_name: str | None) -> DelayedKeyword:
         return self.library._parse_run_on_failure_keyword(keyword_name)
 
     @property
@@ -283,7 +279,7 @@ class LibraryComponent:
 
     @property
     def get_presenter_mode(self) -> HighLightElement:
-        mode: Union[HighLightElement, Dict] = {}
+        mode: HighLightElement | dict = {}
         if isinstance(self.library.presenter_mode, dict):
             mode = copy(self.library.presenter_mode)
         duration = mode.get("duration", "2 seconds")
@@ -316,7 +312,7 @@ class LibraryComponent:
                 sleep(mode["duration"].seconds)
         return selector
 
-    def exec_scroll_function(self, function: str, selector: Optional[str] = None):
+    def exec_scroll_function(self, function: str, selector: str | None = None):
         if selector:
             element_selector = "(element) => element"
         else:

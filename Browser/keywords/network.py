@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import json
 from datetime import timedelta
-from typing import Any, Dict, Optional
-
-from typing_extensions import Literal
+from typing import Any, Literal
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -24,7 +23,7 @@ from ..utils import keyword, logger
 from ..utils.data_types import PageLoadStates, RequestMethod
 
 
-def _get_headers(body: str, headers: Dict):
+def _get_headers(body: str, headers: dict):
     try:
         json.loads(body)
         return {"Content-Type": "application/json", **headers}
@@ -32,7 +31,7 @@ def _get_headers(body: str, headers: Dict):
         return headers
 
 
-def _format_response(response: Dict):
+def _format_response(response: dict):
     _jsonize_content(response, "body")
     if "request" in response:
         request = response["request"]
@@ -44,16 +43,13 @@ def _format_response(response: Dict):
 def _jsonize_content(data, bodykey):
     headers = json.loads(data["headers"])
     data["headers"] = headers
-    lower_headers = dict((k.lower(), v) for k, v in headers.items())
+    lower_headers = {k.lower(): v for k, v in headers.items()}
     if (
         "content-type" in lower_headers
         and "application/json" in lower_headers["content-type"]
     ):
-        try:
+        with contextlib.suppress(json.decoder.JSONDecodeError):
             data[bodykey] = json.loads(data[bodykey])
-        except json.decoder.JSONDecodeError:
-            pass
-
 
 class Network(LibraryComponent):
     @keyword(tags=("HTTP",))
@@ -61,8 +57,8 @@ class Network(LibraryComponent):
         self,
         url: str,
         method: RequestMethod = RequestMethod.GET,
-        body: Optional[str] = None,
-        headers: Optional[dict] = None,
+        body: str | None = None,
+        headers: dict | None = None,
     ) -> Any:
         """Performs an HTTP request in the current browser context
 
@@ -123,7 +119,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
-        self, matcher: str = "", timeout: Optional[timedelta] = None
+        self, matcher: str = "", timeout: timedelta | None = None
     ) -> Any:
         """Waits for request matching matcher to be made.
 
@@ -152,7 +148,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_response(
-        self, matcher: str = "", timeout: Optional[timedelta] = None
+        self, matcher: str = "", timeout: timedelta | None = None
     ) -> Any:
         """Waits for response matching matcher and returns python dict with contents.
 
@@ -192,7 +188,7 @@ class Network(LibraryComponent):
         return self._wait_for_http("Response", matcher, timeout)
 
     @keyword(tags=("Wait", "HTTP"))
-    def wait_until_network_is_idle(self, timeout: Optional[timedelta] = None):
+    def wait_until_network_is_idle(self, timeout: timedelta | None = None):
         """Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
 
         Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
@@ -216,7 +212,7 @@ class Network(LibraryComponent):
     def wait_for_navigation(
         self,
         url: str,
-        timeout: Optional[timedelta] = None,
+        timeout: timedelta | None = None,
         wait_until: PageLoadStates = PageLoadStates.load,
     ):
         """Waits until page has navigated to given ``url``.

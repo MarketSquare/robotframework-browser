@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from .data_types import Scope
 
@@ -18,11 +19,11 @@ class SettingsStack:
         self,
         global_setting: Any,
         ctx: "Browser",
-        setter_function: Optional[Callable] = None,
-    ):
+        setter_function: Callable | None = None,
+    ) -> None:
         self.library = ctx
         self.setter_function = setter_function
-        self._stack: Dict[str, ScopedSetting] = {
+        self._stack: dict[str, ScopedSetting] = {
             "g": ScopedSetting(Scope.Global, global_setting)
         }
 
@@ -34,16 +35,16 @@ class SettingsStack:
     def _last_setting(self) -> ScopedSetting:
         return list(self._stack.values())[-1]
 
-    def start(self, id: str, typ: Scope):
+    def start(self, identifier: str, typ: Scope):
         parent_setting = self._last_setting.setting
-        self._stack[id] = ScopedSetting(typ, parent_setting)
+        self._stack[identifier] = ScopedSetting(typ, parent_setting)
 
-    def end(self, id):
-        previous = self._stack.pop(id, None)
+    def end(self, identifier: str):
+        previous = self._stack.pop(identifier, None)
         if self.setter_function and previous != self._last_setting:
             self.setter_function(self._last_setting.setting)
 
-    def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):
+    def set(self, setting: Any, scope: Scope | None = Scope.Global):  # noqa: A003
         original = self.get()
         if scope == Scope.Global:
             for value in self._stack.values():

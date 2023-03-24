@@ -14,7 +14,6 @@
 
 import json
 from datetime import datetime
-from typing import List, Optional, Union
 
 from robot.libraries.DateTime import convert_date
 from robot.utils import DotDict
@@ -28,7 +27,7 @@ class Cookie(LibraryComponent):
     @keyword(tags=("Getter", "PageContent"))
     def get_cookies(
         self, return_type: CookieType = CookieType.dictionary
-    ) -> Union[List[DotDict], str]:
+    ) -> list[DotDict] | str:
         """Returns cookies from the current active browser context.
 
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns list of Robot Framework
@@ -46,8 +45,7 @@ class Cookie(LibraryComponent):
         if not response.log:
             logger.info("No cookies found.")
             return []
-        else:
-            logger.info(f"Found cookies: {response.log}")
+        logger.info(f"Found cookies: {response.log}")
         if return_type is CookieType.dictionary:
             return self._format_cookies_as_dot_dict(cookies)
         return self._format_cookies_as_string(cookies)
@@ -57,7 +55,7 @@ class Cookie(LibraryComponent):
             response = stub.GetCookies(Request().Empty())
             return response, json.loads(response.json)
 
-    def _format_cookies_as_string(self, cookies: List[dict]):
+    def _format_cookies_as_string(self, cookies: list[dict]):
         pairs = []
         for cookie in cookies:
             pairs.append(self._cookie_as_string(cookie))
@@ -66,7 +64,7 @@ class Cookie(LibraryComponent):
     def _cookie_as_string(self, cookie: dict) -> str:
         return f'{cookie["name"]}={cookie["value"]}'
 
-    def _format_cookies_as_dot_dict(self, cookies: List[dict]):
+    def _format_cookies_as_dot_dict(self, cookies: list[dict]):
         as_list = []
         for cookie in cookies:
             as_list.append(self._cookie_as_dot_dict(cookie))
@@ -78,7 +76,9 @@ class Cookie(LibraryComponent):
             if key == "expires":
                 # In Windows OS, expires value might be -1 and it causes OSError.
                 try:
-                    dot_dict[key] = datetime.fromtimestamp(cookie[key])
+                    dot_dict[key] = datetime.fromtimestamp(
+                        cookie[key], tz=datetime.timezone.utc
+                    )
                 except OSError:
                     logger.debug(
                         f"Invalid expiry seen in: {cookie}, setting expiry as None"
@@ -93,13 +93,13 @@ class Cookie(LibraryComponent):
         self,
         name: str,
         value: str,
-        url: Optional[str] = None,
-        domain: Optional[str] = None,
-        path: Optional[str] = None,
-        expires: Optional[str] = None,
-        httpOnly: Optional[bool] = None,
-        secure: Optional[bool] = None,
-        sameSite: Optional[CookieSameSite] = None,
+        url: str | None = None,
+        domain: str | None = None,
+        path: str | None = None,
+        expires: str | None = None,
+        httpOnly: bool | None = None,
+        secure: bool | None = None,
+        sameSite: CookieSameSite | None = None,
     ):
         """Adds a cookie to currently active browser context.
 
@@ -174,7 +174,7 @@ class Cookie(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl"))
     def get_cookie(
         self, cookie: str, return_type: CookieType = CookieType.dictionary
-    ) -> Union[DotDict, str]:
+    ) -> DotDict | str:
         """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
 
         | =Arguments= | =Description= |

@@ -13,12 +13,11 @@
 # limitations under the License.
 import base64
 import json
-import os
 import uuid
 from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from robot.utils import get_link_path
 
@@ -58,7 +57,7 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def go_to(self, url: str, timeout: Optional[timedelta] = None):
+    def go_to(self, url: str, timeout: timedelta | None = None):
         """Navigates to the given ``url``.
 
         | =Arguments= | =Description= |
@@ -73,11 +72,10 @@ class Control(LibraryComponent):
             )
             logger.info(response.log)
 
-    def _get_screenshot_path(self, filename: str, fileType: str) -> Path:
-        if os.path.isabs(filename):
-            d, file = os.path.split(filename)
-            directory = Path(d)
-            filename = os.path.splitext(file)[0]
+    def _get_screenshot_path(self, filename: Path, fileType: str) -> Path:
+        if filename.absolute:
+            directory = filename.parent
+            filename = filename.stem
         else:
             directory = self.screenshots_output
         # Filename didn't contain {index}
@@ -99,27 +97,27 @@ class Control(LibraryComponent):
         "timeout": Optional[timedelta],
         "crop": Optional[BoundingBox],
         "disableAnimations": bool,
-        "mask": Union[List[str], str],
+        "mask": Union[list[str], str],
         "omitBackground": bool,
     }
 
     @keyword(tags=("PageContent",))
     def take_screenshot(
         self,
-        filename: Optional[str] = "robotframework-browser-screenshot-{index}",
-        selector: Optional[str] = None,
+        filename: str | None = "robotframework-browser-screenshot-{index}",
+        selector: str | None = None,
         *deprecated_pos_args,
-        crop: Optional[BoundingBox] = None,
+        crop: BoundingBox | None = None,
         disableAnimations: bool = False,
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
         fullPage: bool = False,
         log_screenshot: bool = True,
-        mask: Union[List[str], str] = "",
+        mask: list[str] | str = "",
         omitBackground: bool = False,
-        quality: Optional[int] = None,
+        quality: int | None = None,
         return_as: ScreenshotReturnType = ScreenshotReturnType.path_string,
-        timeout: Optional[timedelta] = None,
-    ) -> Union[str, bytes, Path]:
+        timeout: timedelta | None = None,
+    ) -> str | bytes | Path:
         """Takes a screenshot of the current window or element and saves it to disk.
 
         | =Arguments= | =Description= |
@@ -171,7 +169,7 @@ class Control(LibraryComponent):
             else filename
         )
         string_path_no_extension = str(
-            self._get_screenshot_path(file_name, fileType.name)
+            self._get_screenshot_path(Path(file_name), fileType.name)
         )
         with self.playwright.grpc_channel() as stub:
             options = self._create_screenshot_options(
@@ -219,6 +217,7 @@ class Control(LibraryComponent):
                 return screenshot_bytes
             if return_as is ScreenshotReturnType.base64:
                 return base64_screenshot.decode()
+            return None
 
     def _create_screenshot_options(
         self,
@@ -248,7 +247,7 @@ class Control(LibraryComponent):
 
     def _get_mask_selectors(self, mask):
         if mask:
-            mask_selectors: Optional[List[str]]
+            mask_selectors: list[str] | None
             if isinstance(mask, str):
                 mask_selectors = [self.resolve_selector(mask)]
             elif isinstance(mask, Iterable):
@@ -295,7 +294,7 @@ class Control(LibraryComponent):
         )
         return "EMBED"
 
-    def _is_embed(self, filename: Optional[str]) -> bool:
+    def _is_embed(self, filename: str | None) -> bool:
         return filename is None or filename.upper() == "EMBED"
 
     @keyword(tags=("Setter", "Config"))
@@ -363,7 +362,7 @@ class Control(LibraryComponent):
 
     @keyword(tags=("Setter", "Config"))
     def set_selector_prefix(
-        self, prefix: Optional[str], scope: Scope = Scope.Suite
+        self, prefix: str | None, scope: Scope = Scope.Suite
     ) -> str:
         """Sets the prefix for all selectors in the given scope.
 
@@ -390,7 +389,7 @@ class Control(LibraryComponent):
     @keyword(tags=("Setter", "Config"))
     def show_keyword_banner(
         self, show: bool = True, style: str = "", scope: Scope = Scope.Suite
-    ) -> Dict[str, Union[None, bool, str]]:
+    ) -> dict[str, None | bool | str]:
         """Controls if the keyword banner is shown on page or not.
 
         Keyword call banner is a css overlay that shows the currently executed keyword directly on page.
@@ -459,7 +458,7 @@ class Control(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def set_geolocation(
-        self, latitude: float, longitude: float, accuracy: Optional[float] = None
+        self, latitude: float, longitude: float, accuracy: float | None = None
     ):
         """Updated the correct Context's geolocation.
 
@@ -499,7 +498,7 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def grant_permissions(self, *permissions: Permission, origin: Optional[str] = None):
+    def grant_permissions(self, *permissions: Permission, origin: str | None = None):
         """Grants permissions to the current context.
 
         | =Arguments= | =Description= |
