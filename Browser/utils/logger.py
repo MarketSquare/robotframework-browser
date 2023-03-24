@@ -59,9 +59,9 @@ def console(msg: Any):
 
 
 def stash_this_thread():
-    id = threading.get_ident()
-    if id in _THREAD_STASHES:
-        _THREAD_STASHES[id].append([])
+    identifier = threading.get_ident()
+    if identifier in _THREAD_STASHES:
+        _THREAD_STASHES[identifier].append([])
     else:
         _THREAD_STASHES[threading.get_ident()] = [[]]
 

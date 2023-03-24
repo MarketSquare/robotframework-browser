@@ -277,7 +277,7 @@ class PlaywrightState(LibraryComponent):
 
                     for page_id in pages_ids:
                         if page_id == "NO PAGE OPEN":
-                            return
+                            return None
                         if page != SelectionType.CURRENT:
                             self.switch_page(page_id)
                         response = stub.ClosePage(Request().Empty())
@@ -429,8 +429,7 @@ class PlaywrightState(LibraryComponent):
 
     def _get_parameter_hash(self, params: Dict[str, Any]) -> int:
         params.pop("reuse_existing", None)
-        parameter_hash = hash(repr(params))
-        return parameter_hash
+        return hash(repr(params))
 
     old_new_context_args = {
         "acceptDownloads": bool,
@@ -528,7 +527,7 @@ class PlaywrightState(LibraryComponent):
         | ``reduceMotion``         | Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`. |
         | ``screen``               | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
         | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must mbe full path to the file. |
-        | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU’s metaZones.txt] for a list of supported timezone IDs. |
+        | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
         | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace -F /path/to/trace.zip``. |
         | ``userAgent``            | Specific user agent to use in this context. |
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
@@ -786,7 +785,7 @@ class PlaywrightState(LibraryComponent):
         self, options: str, hide_rf_browser: bool, trace_file: Union[Path, str]
     ):
         with self.playwright.grpc_channel() as stub:
-            response = stub.NewContext(
+            return stub.NewContext(
                 Request().Context(
                     rawOptions=options,
                     hideRfBrowser=hide_rf_browser,
@@ -794,7 +793,6 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            return response
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
@@ -1143,7 +1141,7 @@ class PlaywrightState(LibraryComponent):
         return returned_messages
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def switch_browser(self, id: str) -> str:
+    def switch_browser(self, id: str) -> str:  # noqa: A002
         """Switches the currently active Browser to another open Browser.
 
         Returns a stable identifier for the previous browser.
@@ -1162,7 +1160,9 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_context(
-        self, id: str, browser: Union[SelectionType, str] = SelectionType.CURRENT
+        self,
+        id: str,  # noqa: A002
+        browser: Union[SelectionType, str] = SelectionType.CURRENT,
     ) -> str:
         """Switches the active BrowserContext to another open context.
 
@@ -1184,7 +1184,7 @@ class PlaywrightState(LibraryComponent):
         """
         logger.info(f"Switching context to {id} in {browser}")
         browser = SelectionType.create(browser)
-        id = SelectionType.create(id)
+        id = SelectionType.create(id)  # noqa: A001
 
         if isinstance(id, str):
             parent_browser_id = self._get_context_parent_id(id)
@@ -1199,7 +1199,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    def _get_page_uid(self, id) -> str:
+    def _get_page_uid(self, id) -> str:  # noqa: A002
         if isinstance(id, dict):
             uid = id.get("page_id")
             if not uid:
@@ -1217,7 +1217,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_page(
         self,
-        id: Union[NewPageDetails, str],
+        id: Union[NewPageDetails, str],  # noqa: A002
         context: Union[SelectionType, str] = SelectionType.CURRENT,
         browser: Union[SelectionType, str] = SelectionType.CURRENT,
     ) -> str:
@@ -1353,22 +1353,20 @@ class PlaywrightState(LibraryComponent):
             if context == SelectionType.CURRENT:
                 if "activeContext" in browser_item:
                     return [browser_item["activeContext"]]
-            else:
-                if "contexts" in browser_item:
-                    return [context["id"] for context in browser_item["contexts"]]
+            elif "contexts" in browser_item:
+                return [context["id"] for context in browser_item["contexts"]]
+        elif context == SelectionType.CURRENT:
+            context_ids = []
+            for browser_item in self.get_browser_catalog():
+                if "activeContext" in browser_item:
+                    context_ids.append(browser_item["activeContext"])
+            return context_ids
         else:
-            if context == SelectionType.CURRENT:
-                context_ids = list()
-                for browser_item in self.get_browser_catalog():
-                    if "activeContext" in browser_item:
-                        context_ids.append(browser_item["activeContext"])
-                return context_ids
-            else:
-                context_ids = list()
-                for browser_item in self.get_browser_catalog():
-                    for context_item in browser_item["contexts"]:
-                        context_ids.append(context_item["id"])
-                return context_ids
+            context_ids = []
+            for browser_item in self.get_browser_catalog():
+                for context_item in browser_item["contexts"]:
+                    context_ids.append(context_item["id"])
+            return context_ids
         return []
 
     @keyword(tags=("Getter", "BrowserControl"))
@@ -1410,12 +1408,11 @@ class PlaywrightState(LibraryComponent):
                     return self._get_page_ids_from_context_list(
                         page, self._get_active_context_item(browser_item)
                     )
-                else:
-                    return self._get_page_ids_from_context_list(
-                        page, browser_item["contexts"]
-                    )
+                return self._get_page_ids_from_context_list(
+                    page, browser_item["contexts"]
+                )
         else:
-            context_list = list()
+            context_list = []
             for browser_item in self.get_browser_catalog():
                 if "contexts" in browser_item:
                     if context == SelectionType.CURRENT:
@@ -1429,7 +1426,7 @@ class PlaywrightState(LibraryComponent):
     def _get_page_ids_from_context_list(
         page_selection_type: SelectionType, context_list
     ):
-        page_ids = list()
+        page_ids = []
         for context_item in context_list:
             if page_selection_type == SelectionType.CURRENT:
                 if "activePage" in context_item:

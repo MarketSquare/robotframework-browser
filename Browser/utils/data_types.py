@@ -33,7 +33,7 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noq
                     union_type, type(TypedDictDummy)
                 ):
                     continue
-                arg_type = union_type
+                arg_type = union_type  # noqa: PLW2901
                 break
         if isinstance(arg_type, type(TypedDictDummy)):
             if not isinstance(arg_value, dict):
@@ -109,7 +109,7 @@ class RecordVideo(TypedDict, total=False):
     |  New Context  recordVideo={'dir': '${OUTPUT_DIR}/video'}
     """
 
-    dir: str
+    dir: str  # noqa: A003
     size: ViewportDimensions
 
 
@@ -259,6 +259,7 @@ class SelectionType(Enum):
                 return cls[value.upper()]
             except KeyError:
                 return value
+        return None
 
     def __str__(self):
         return self.value
@@ -275,9 +276,9 @@ class CookieType(Enum):
     """Enum that defines the Cookie type."""
 
     dictionary = auto()
-    dict = dictionary
+    dict = dictionary  # noqa: A003
     string = auto()
-    str = string
+    str = string  # noqa: A003
 
 
 CookieSameSite = Enum(
@@ -328,7 +329,7 @@ class KeyboardInputAction(Enum):
     ``type`` is similar to typing by pressing keys on the keyboard."""
 
     insertText = auto()
-    type = auto()
+    type = auto()  # noqa: A003
 
 
 class KeyboardModifier(Enum):
@@ -559,7 +560,7 @@ class ScreenshotReturnType(Enum):
 
     path = auto()
     path_string = auto()
-    bytes = auto()
+    bytes = auto()  # noqa: A003
     base64 = auto()
 
 
@@ -624,7 +625,7 @@ class ConditionInputs(Enum):
     element_count = "get_element_count"
     element_states = "get_element_states"
     page_source = "get_page_source"
-    property = "get_property"
+    property = "get_property"  # noqa: A003
     scroll_position = "get_scroll_position"
     scroll_size = "get_scroll_size"
     select_options = "get_select_options"
