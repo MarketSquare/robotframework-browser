@@ -1,5 +1,5 @@
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -36,4 +36,4 @@ def test_as_dot_dict(cookie: Cookie):
     if sys.platform == "win32":
         assert dot_dict[0].expires is None
     else:
-        assert dot_dict[0].expires == datetime.fromtimestamp(-1)
+        assert dot_dict[0].expires == datetime.fromtimestamp(-1, tz=timezone.utc)
