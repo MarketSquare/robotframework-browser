@@ -159,7 +159,7 @@ jobs:
         inv lint-node
     - name: Check with ruff
       run: |
-        ruff --config Browser/pyproject.toml Browser
+        ruff Browser
     - name: Build test app
       run: |
         inv create-test-app
