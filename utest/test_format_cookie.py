@@ -33,7 +33,4 @@ def test_as_dot_dict(cookie: Cookie):
     )
     assert dot_dict[0].name == "tidii"
     assert dot_dict[0].value == 1111
-    if sys.platform == "win32":
-        assert dot_dict[0].expires is None
-    else:
-        assert dot_dict[0].expires == datetime.fromtimestamp(-1, tz=timezone.utc)
+    assert dot_dict[0].expires == datetime.fromtimestamp(-1, tz=timezone.utc)
