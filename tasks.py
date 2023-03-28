@@ -593,8 +593,6 @@ def lint_python(c):
             "mypy --exclude .venv --show-error-codes --config-file Browser/mypy.ini Browser/"
         )
         c.run("black --config Browser/pyproject.toml tasks.py Browser/")
-        # c.run("flake8 --config Browser/.flake8 Browser/ utest/")
-        # c.run("isort Browser/")
         c.run("ruff check --config Browser/pyproject.toml Browser/")
         python_lint_timestamp_file.touch()
     else:
