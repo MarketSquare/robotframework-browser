@@ -13,7 +13,6 @@
 # limitations under the License.
 import base64
 import json
-import os
 import uuid
 from collections.abc import Iterable
 from datetime import timedelta
@@ -74,10 +73,9 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     def _get_screenshot_path(self, filename: str, fileType: str) -> Path:
-        if os.path.isabs(filename):
-            d, file = os.path.split(filename)
-            directory = Path(d)
-            filename = os.path.splitext(file)[0]
+        if Path(filename).is_absolute():
+            directory = Path(filename).parent
+            filename = Path(filename).stem
         else:
             directory = self.screenshots_output
         # Filename didn't contain {index}
@@ -219,6 +217,7 @@ class Control(LibraryComponent):
                 return screenshot_bytes
             if return_as is ScreenshotReturnType.base64:
                 return base64_screenshot.decode()
+            return None
 
     def _create_screenshot_options(
         self,

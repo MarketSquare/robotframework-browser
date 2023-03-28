@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import json
 from datetime import timedelta
 from typing import Any, Dict, Optional
@@ -44,15 +45,13 @@ def _format_response(response: Dict):
 def _jsonize_content(data, bodykey):
     headers = json.loads(data["headers"])
     data["headers"] = headers
-    lower_headers = dict((k.lower(), v) for k, v in headers.items())
+    lower_headers = {k.lower(): v for k, v in headers.items()}
     if (
         "content-type" in lower_headers
         and "application/json" in lower_headers["content-type"]
     ):
-        try:
+        with contextlib.suppress(json.decoder.JSONDecodeError):
             data[bodykey] = json.loads(data[bodykey])
-        except json.decoder.JSONDecodeError:
-            pass
 
 
 class Network(LibraryComponent):

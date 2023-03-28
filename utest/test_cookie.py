@@ -1,5 +1,5 @@
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -14,13 +14,10 @@ def cookie():
 def test_cookie_as_dot_dict_expiry(cookie: Cookie):
     epoch = 1604698517
     data = cookie._cookie_as_dot_dict({"expires": epoch})
-    assert data.expires == datetime.fromtimestamp(epoch)
+    assert data.expires == datetime.fromtimestamp(epoch, tz=timezone.utc)
 
 
 def test_cookie_as_dot_dict_negative_expiry(cookie: Cookie):
     epoch = -1
     data = cookie._cookie_as_dot_dict({"expires": epoch})
-    if sys.platform == "win32":
-        assert data.expires is None
-    else:
-        assert data.expires == datetime.fromtimestamp(epoch)
+    assert data.expires == datetime.fromtimestamp(epoch, tz=timezone.utc)

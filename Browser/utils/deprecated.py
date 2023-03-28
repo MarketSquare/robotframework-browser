@@ -40,9 +40,8 @@ def _is_deprecated_attribute(method: Callable, deprecated_arg, args, kwargs):
     if deprecated_arg in kwargs:
         deprecated = True
     for index, argspec_arg in enumerate(argspec_args):
-        if argspec_arg in deprecated_arg:
-            if len(args) == index + 1:
-                deprecated = True
+        if argspec_arg in deprecated_arg and len(args) == index + 1:
+            deprecated = True
     return deprecated
 
 

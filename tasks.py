@@ -332,7 +332,7 @@ def atest(
         args.extend(["--variable", "SUFFIX:framing.html?url="])
         args.extend(["--variable", "SELECTOR_PREFIX:id=iframe_id >>>"])
         args.extend(["--exclude", "no-iframe"])
-    os.mkdir(ATEST_OUTPUT)
+    ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
 
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
@@ -593,8 +593,7 @@ def lint_python(c):
             "mypy --exclude .venv --show-error-codes --config-file Browser/mypy.ini Browser/"
         )
         c.run("black --config Browser/pyproject.toml tasks.py Browser/")
-        c.run("flake8 --config Browser/.flake8 Browser/ utest/")
-        c.run("isort Browser/")
+        c.run("ruff check --config Browser/pyproject.toml Browser/")
         python_lint_timestamp_file.touch()
     else:
         print("no changes in .py files, skipping python lint")

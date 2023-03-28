@@ -197,7 +197,7 @@ class Getters(LibraryComponent):
     def get_property(
         self,
         selector: str,
-        property: str,
+        property: str,  # noqa:  A002
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
@@ -656,7 +656,7 @@ class Getters(LibraryComponent):
             logger.info(response.log)
             response_json = json.loads(response.json)
             if response_json is None:
-                return
+                return None
             parsed = DotDict(response_json)
             logger.debug(parsed)
             if self.keyword_formatters.get(self.get_viewport_size):
@@ -669,15 +669,14 @@ class Getters(LibraryComponent):
                     "Viewport size is",
                     message,
                 )
-            else:
-                logger.info(f"Value of '{key}'': {parsed[key.name]}")
-                return float_str_verify_assertion(
-                    parsed[key.name],
-                    assertion_operator,
-                    assertion_expected,
-                    f"{key} is",
-                    message,
-                )
+            logger.info(f"Value of '{key}'': {parsed[key.name]}")
+            return float_str_verify_assertion(
+                parsed[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"{key} is",
+                message,
+            )
 
     @keyword(tags=("Getter", "PageContent"))
     def get_table_cell_element(self, table: str, column: str, row: str) -> str:
@@ -937,7 +936,7 @@ class Getters(LibraryComponent):
             )
         parsed_response = json.loads(response.json)
         formatter = self.keyword_formatters.get(self.get_style)
-        if key == "" or isinstance(parsed_response, dict):
+        if not key or isinstance(parsed_response, dict):
             if formatter:
                 logger.warn(
                     "Formatter is not supported by Get Style keyword with key 'ALL'."
@@ -949,17 +948,16 @@ class Getters(LibraryComponent):
                 "Computed style is",
                 message,
             )
-        else:
-            logger.info(f"Value of key: {key}")
-            logger.info(f"Value of selected property: {parsed_response}")
-            return verify_assertion(
-                parsed_response,
-                assertion_operator,
-                assertion_expected,
-                f"Style value for {key} is",
-                message,
-                formatter,
-            )
+        logger.info(f"Value of key: {key}")
+        logger.info(f"Value of selected property: {parsed_response}")
+        return verify_assertion(
+            parsed_response,
+            assertion_operator,
+            assertion_expected,
+            f"Style value for {key} is",
+            message,
+            formatter,
+        )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1011,15 +1009,14 @@ class Getters(LibraryComponent):
             return int_dict_verify_assertion(
                 parsed, assertion_operator, assertion_expected, "BoundingBox is"
             )
-        else:
-            logger.info(f"Value of '{key}'': {parsed[key.name]}")
-            return float_str_verify_assertion(
-                parsed[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"BoundingBox {key.name} is",
-                message,
-            )
+        logger.info(f"Value of '{key}'': {parsed[key.name]}")
+        return float_str_verify_assertion(
+            parsed[key.name],
+            assertion_operator,
+            assertion_expected,
+            f"BoundingBox {key.name} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1070,15 +1067,14 @@ class Getters(LibraryComponent):
                 "Scroll size is",
                 message,
             )
-        else:
-            logger.info(f"Value of '{key}'': {scroll_size[key.name]}")
-            return float_str_verify_assertion(
-                scroll_size[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"Scroll {key.name} is",
-                message,
-            )
+        logger.info(f"Value of '{key}'': {scroll_size[key.name]}")
+        return float_str_verify_assertion(
+            scroll_size[key.name],
+            assertion_operator,
+            assertion_expected,
+            f"Scroll {key.name} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1129,15 +1125,14 @@ class Getters(LibraryComponent):
                 "Scroll position is",
                 message,
             )
-        else:
-            logger.info(f"Value of '{key}'': {scroll_position[key.name]}")
-            return float_str_verify_assertion(
-                scroll_position[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"Scroll position {key.name} is",
-                message,
-            )
+        logger.info(f"Value of '{key}'': {scroll_position[key.name]}")
+        return float_str_verify_assertion(
+            scroll_position[key.name],
+            assertion_operator,
+            assertion_expected,
+            f"Scroll position {key.name} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1182,15 +1177,14 @@ class Getters(LibraryComponent):
                 "Client size is",
                 message,
             )
-        else:
-            logger.info(f"Value of '{key}'': {client_size[key.name]}")
-            return float_str_verify_assertion(
-                client_size[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"Client {key.name} is",
-                message,
-            )
+        logger.info(f"Value of '{key}'': {client_size[key.name]}")
+        return float_str_verify_assertion(
+            client_size[key.name],
+            assertion_operator,
+            assertion_expected,
+            f"Client {key.name} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1276,5 +1270,4 @@ class Getters(LibraryComponent):
             state_list = [flag.name for flag in ElementState if flag in result]
             logger.info(f"States are: {state_list}")
             return state_list
-        else:
-            return result
+        return result

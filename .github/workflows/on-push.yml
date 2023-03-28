@@ -157,9 +157,9 @@ jobs:
       if: matrix.shard == 1
       run: |
         inv lint-node
-    - name: Check with flake8
+    - name: Check with ruff
       run: |
-        flake8 --config Browser/.flake8 Browser
+        ruff Browser
     - name: Build test app
       run: |
         inv create-test-app

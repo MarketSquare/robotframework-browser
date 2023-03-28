@@ -152,7 +152,7 @@ class Promises(LibraryComponent):
 
         [https://forum.robotframework.org/t//4314|Comment >>]
         """
-        promise = self._executor.submit(self._wait_for_download, **{"saveAs": saveAs})
+        promise = self._executor.submit(self._wait_for_download, saveAs=saveAs)
         self.unresolved_promises.add(promise)
         return promise
 
@@ -236,7 +236,7 @@ class Promises(LibraryComponent):
         p = Path(path)
         if not p.is_file():
             raise ValueError(f"Nonexistent input file path '{p.resolve()}'")
-        promise = self._executor.submit(self._upload_file, **{"path": str(p.resolve())})
+        promise = self._executor.submit(self._upload_file, path=str(p.resolve()))
         self.unresolved_promises.add(promise)
         return promise
 

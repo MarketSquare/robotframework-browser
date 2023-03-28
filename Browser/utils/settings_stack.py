@@ -34,16 +34,16 @@ class SettingsStack:
     def _last_setting(self) -> ScopedSetting:
         return list(self._stack.values())[-1]
 
-    def start(self, id: str, typ: Scope):
+    def start(self, identifier: str, typ: Scope):
         parent_setting = self._last_setting.setting
-        self._stack[id] = ScopedSetting(typ, parent_setting)
+        self._stack[identifier] = ScopedSetting(typ, parent_setting)
 
-    def end(self, id):
-        previous = self._stack.pop(id, None)
+    def end(self, identifier):
+        previous = self._stack.pop(identifier, None)
         if self.setter_function and previous != self._last_setting:
             self.setter_function(self._last_setting.setting)
 
-    def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):
+    def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):  # noqa: A003
         original = self.get()
         if scope == Scope.Global:
             for value in self._stack.values():

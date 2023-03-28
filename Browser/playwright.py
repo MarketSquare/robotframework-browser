@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Optional
 import grpc  # type: ignore
 from backports.cached_property import cached_property
 
-import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
+from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
 from .base import LibraryComponent
@@ -92,7 +92,7 @@ class Playwright(LibraryComponent):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
+        logfile = Path(self.outputdir, "playwright-log.txt").open("w")
         port = str(find_free_port())
         if self.enable_playwright_debug:
             os.environ["DEBUG"] = "pw:api"

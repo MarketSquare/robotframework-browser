@@ -122,6 +122,7 @@ class Waiter(LibraryComponent):
                 timeout=timeout,
                 message=message,
             )
+            return None
 
     def _wait_for_elements_state(
         self,
@@ -269,7 +270,7 @@ class Waiter(LibraryComponent):
             raise TypeError(f"Invalid timeout type: {type(timeout)}")
         scope = Scope.Test if self.library.is_test_case_running else Scope.Suite
         if message is not None:
-            args = args + (f"message={message}",)
+            args = (*args, f"message={message}")
         original_assert_retry = self.retry_assertions_for_stack.set(
             assertion_timeout, scope=scope
         )

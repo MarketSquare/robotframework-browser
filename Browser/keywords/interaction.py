@@ -879,10 +879,9 @@ class Interaction(LibraryComponent):
                     sleep(delay.total_seconds())
                     self.mouse_button(MouseButtonAction.up, button=button)
                 return
-            else:
-                if delay:
-                    raise ValueError("Delay is only valid on 'click' action.")
-                body = {"options": {"button": button.name, "clickCount": clickCount}}
+            if delay:
+                raise ValueError("Delay is only valid on 'click' action.")
+            body = {"options": {"button": button.name, "clickCount": clickCount}}
             response = stub.MouseButton(
                 Request().MouseButtonOptions(action=action.name, json=json.dumps(body))
             )
@@ -1121,7 +1120,7 @@ class Interaction(LibraryComponent):
     def keyboard_input(
         self,
         action: KeyboardInputAction,
-        input: str,
+        input: str,  # noqa: A002
         delay: Union[int, timedelta] = timedelta(milliseconds=0),
         # TODO: remove int special handling. Was only here since 09.2022 for removing delay ms to timedelta
     ):

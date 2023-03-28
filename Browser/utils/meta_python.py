@@ -16,7 +16,7 @@ from typing import Dict, List, TypeVar
 
 
 def locals_to_params(args: Dict) -> Dict:
-    copy = dict()
+    copy = {}
     for key in args:
         if key == "self":
             continue

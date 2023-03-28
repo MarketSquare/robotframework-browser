@@ -24,23 +24,24 @@ import traceback
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from subprocess import DEVNULL, PIPE, STDOUT, CalledProcessError, Popen
+from typing import List
 
-from robot import version as rf_version  # noqa
+from robot import version as rf_version
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"
 # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
 # But shell=True breaks our linux CI
-SHELL = True if platform.platform().startswith("Windows") else False
+SHELL = bool(platform.platform().startswith("Windows"))
 CURRENT_FOLDER = Path(__file__).resolve().parent
 log_file = "rfbrowser.log"
 INSTALL_LOG = CURRENT_FOLDER / log_file
 try:
     INSTALL_LOG.touch(exist_ok=True)
 except Exception as error:
-    print(f"Cound not wwrite to {INSTALL_LOG}, got error: {error}")
-    INSTALL_LOG = Path(os.getcwd()) / log_file
-    print(f"Writing install log to: {INSTALL_LOG}")
+    print(f"Cound not wwrite to {INSTALL_LOG}, got error: {error}")  # noqa: T201
+    INSTALL_LOG = Path.cwd() / log_file
+    print(f"Writing install log to: {INSTALL_LOG}")  # noqa: T201
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -112,10 +113,10 @@ def _walk_install_dir():
     for root, _dirs, files in os.walk(INSTALLATION_DIR):
         level = root.replace(INSTALLATION_DIR.__str__(), "").count(os.sep)
         indent = " " * 4 * (level)
-        lines.append("{}{}/\n".format(indent, os.path.basename(root)))
+        lines.append(f"{indent}{Path(root).name}/\n")
         subindent = " " * 4 * (level + 1)
         for file in files:
-            lines.append("{}{}\n".format(subindent, file))
+            lines.append(f"{subindent}{file}\n")
     return lines
 
 
@@ -153,9 +154,8 @@ def _rfbrowser_init(skip_browser_install: bool):
     logging.info(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
     if skip_browser_install:
         os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
-    else:
-        if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
-            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+    elif not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
 
     process = Popen(
         "npm ci --production --parseable true --progress false",
@@ -176,7 +176,7 @@ def _rfbrowser_init(skip_browser_install: bool):
     if process.returncode != 0:
         raise RuntimeError(
             "Problem installing node dependencies."
-            + f"Node process returned with exit status {process.returncode}"
+            f"Node process returned with exit status {process.returncode}"
         )
 
     logging.info("rfbrowser init completed")
@@ -227,10 +227,10 @@ def show_versions():
 class SmartFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
         if text.startswith("Possible commands are:"):
-            parts = []
+            parts: List[str] = []
             for part in text.splitlines():
-                part = argparse.HelpFormatter._split_lines(self, part, width)
-                parts.extend(part if part else "\n")
+                parsed_part = argparse.HelpFormatter._split_lines(self, part, width)
+                parts.extend(parsed_part if parsed_part else "\n")
             return parts
         return argparse.HelpFormatter._split_lines(self, text, width)
 
