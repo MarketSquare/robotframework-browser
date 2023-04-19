@@ -352,6 +352,9 @@ class Getters(LibraryComponent):
         attribute_names = self.library.evaluate_javascript(
             selector, "(element) => element.getAttributeNames()"
         )
+        if "__playwright_target__" in attribute_names:
+            logger.debug("Remove __playwright_target__ from attribute names")
+            attribute_names.remove("__playwright_target__")
         expected = list(assertion_expected)
         if self.keyword_formatters.get(self.get_attribute_names):
             logger.warn("Formatter is not supported by Get Attribute Names keyword.")
