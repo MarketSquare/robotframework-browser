@@ -176,4 +176,4 @@ Highlight Element With Element Selector
 Page State
     [Tags]    not-implemented
     Log    Is that art???
-    #Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
+    # Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
