@@ -228,7 +228,7 @@ Fill Secret Env Placeholder In Robot Var
     Fill Secret    css=input#password_field    ${var}
     Get Text    css=input#password_field    ==    ENV_password123
 
-Fill Secret With Direct $value Not Resolvable
+Fill Secret With Direct $Value Not Resolvable
     TRY
         Type Secret    css=input#username_field    $Direct Value
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
