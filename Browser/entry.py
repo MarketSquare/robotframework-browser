@@ -53,17 +53,19 @@ logging.basicConfig(
 )
 
 
-def _write_marker():
+def _write_marker(silent_mode: bool = False):
+    if silent_mode:
+        return
     logging.info("=" * 110)
 
 
-def rfbrowser_init(skip_browser_install: bool):
-    _write_marker()
+def rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
+    _write_marker(silent_mode)
     try:
-        _rfbrowser_init(skip_browser_install)
-        _write_marker()
+        _rfbrowser_init(skip_browser_install, silent_mode)
+        _write_marker(silent_mode)
     except Exception as error:
-        _write_marker()
+        _write_marker(silent_mode)
         logging.info(traceback.format_exc())
         _python_info()
         _node_info()
@@ -147,11 +149,17 @@ def _check_files_and_access():
         )
 
 
-def _rfbrowser_init(skip_browser_install: bool):
-    logging.info("Installing node dependencies...")
+def _log(message: str, silent_mode: bool = False):
+    if silent_mode:
+        return
+    logging.info(message)
+
+
+def _rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
+    _log("Installing node dependencies...", silent_mode)
     _check_files_and_access()
     _check_npm()
-    logging.info(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}")
+    _log(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}", silent_mode)
     if skip_browser_install:
         os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
     elif not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
@@ -169,7 +177,7 @@ def _rfbrowser_init(skip_browser_install: bool):
         if process.stdout:
             output = process.stdout.readline().decode("UTF-8")
             try:
-                logging.info(output)
+                _log(output, silent_mode)
             except Exception as error:
                 logging.info(f"While writing log file, got error: {error}")
 
@@ -178,8 +186,7 @@ def _rfbrowser_init(skip_browser_install: bool):
             "Problem installing node dependencies."
             f"Node process returned with exit status {process.returncode}"
         )
-
-    logging.info("rfbrowser init completed")
+    _log("rfbrowser init completed", silent_mode)
 
 
 def rfbrowser_clean_node():
@@ -235,9 +242,9 @@ class SmartFormatter(argparse.HelpFormatter):
         return argparse.HelpFormatter._split_lines(self, text, width)
 
 
-def runner(command, skip_browsers, trace_file):
+def runner(command, skip_browsers, trace_file, silent_mode: bool):
     if command == "init":
-        rfbrowser_init(skip_browsers)
+        rfbrowser_init(skip_browsers, silent_mode)
     elif command == "clean-node":
         rfbrowser_clean_node()
     elif command == "show-trace":
@@ -281,6 +288,12 @@ def main():
         default=False,
         action="store_true",
     )
+    install.add_argument(
+        "--silent",
+        help="Does not log anything, not even in the log file. Argument is optional",
+        default=False,
+        action="store_true",
+    )
     trace = parser.add_argument_group("show-trace options")
     trace.add_argument(
         "--file",
@@ -295,7 +308,8 @@ def main():
     command = args.command.lower()
     skip_browsers = args.skip_browsers
     trace_file = args.file
-    runner(command, skip_browsers, trace_file)
+    silent_mode = args.silent
+    runner(command, skip_browsers, trace_file, silent_mode)
 
 
 if __name__ == "__main__":
