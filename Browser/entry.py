@@ -47,7 +47,9 @@ logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)-8s] %(message)s",
     handlers=[
-        RotatingFileHandler(INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a"),
+        RotatingFileHandler(
+            INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-16"
+        ),
         logging.StreamHandler(sys.stdout),
     ],
 )
