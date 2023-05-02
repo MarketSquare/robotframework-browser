@@ -25,7 +25,6 @@ esbuild.build(
     outfile: "./node/dynamic-test-app/dist/index.js",
   }
 ).catch(() => process.exit(1));
-
 /* Build testApp backend */
 esbuild.build(
   {
@@ -35,8 +34,5 @@ esbuild.build(
     platform: "node",
     outfile: "./node/dynamic-test-app/dist/server.js",
     /* plugins: [nodeExternalsPlugin()], */
-
   }
 ).catch(() => process.exit(1));
-
-
