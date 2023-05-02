@@ -19,10 +19,10 @@ from copy import copy, deepcopy
 from datetime import timedelta
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Union
 
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
-from robot.utils import timestr_to_secs  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn
+from robot.utils import timestr_to_secs
 
 from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger
@@ -41,47 +41,84 @@ class LibraryComponent:
         :param library: The library itself as a context object.
         """
         self.library = library
-        self._crypto = None
+        self._crypto: Optional[Any] = None
+        self.browser_arg_mapping: Dict[int, str] = {}
 
     @property
     def playwright(self):
         return self.library.playwright
 
     @property
+    def keyword_call_banner_add_style(self) -> str:
+        return self.library.scope_stack["keyword_call_banner_add_style"].get()
+
+    @property
+    def keyword_call_banner_add_style_stack(self) -> SettingsStack:
+        return self.library.scope_stack["keyword_call_banner_add_style"]
+
+    @keyword_call_banner_add_style_stack.setter
+    def keyword_call_banner_add_style_stack(self, stack: SettingsStack):
+        self.library.scope_stack["keyword_call_banner_add_style"] = stack
+
+    @property
+    def show_keyword_call_banner(self) -> bool:
+        return self.library.scope_stack["show_keyword_call_banner"].get()
+
+    @property
+    def show_keyword_call_banner_stack(self) -> SettingsStack:
+        return self.library.scope_stack["show_keyword_call_banner"]
+
+    @show_keyword_call_banner_stack.setter
+    def show_keyword_call_banner_stack(self, stack: SettingsStack):
+        self.library.scope_stack["show_keyword_call_banner"] = stack
+
+    @property
+    def run_on_failure_keyword(self) -> DelayedKeyword:
+        return self.library.scope_stack["run_on_failure"].get()
+
+    @property
+    def run_on_failure_keyword_stack(self) -> SettingsStack:
+        return self.library.scope_stack["run_on_failure"]
+
+    @run_on_failure_keyword_stack.setter
+    def run_on_failure_keyword_stack(self, stack: SettingsStack):
+        self.library.scope_stack["run_on_failure"] = stack
+
+    @property
     def timeout(self) -> float:
-        return self.library.timeout_stack.get()
+        return self.library.scope_stack["timeout"].get()
 
     @property
     def timeout_stack(self) -> SettingsStack:
-        return self.library.timeout_stack
+        return self.library.scope_stack["timeout"]
 
     @timeout_stack.setter
     def timeout_stack(self, stack: SettingsStack):
-        self.library.timeout_stack = stack
+        self.library.scope_stack["timeout"] = stack
 
     @property
     def retry_assertions_for(self) -> float:
-        return self.library.retry_assertions_for_stack.get()
+        return self.library.scope_stack["retry_assertions_for"].get()
 
     @property
     def retry_assertions_for_stack(self) -> SettingsStack:
-        return self.library.retry_assertions_for_stack
+        return self.library.scope_stack["retry_assertions_for"]
 
     @retry_assertions_for_stack.setter
     def retry_assertions_for_stack(self, stack: SettingsStack):
-        self.library.retry_assertions_for_stack = stack
+        self.library.scope_stack["retry_assertions_for"] = stack
 
     @property
     def selector_prefix(self) -> str:
-        return self.library.selector_prefix_stack.get()
+        return self.library.scope_stack["selector_prefix"].get()
 
     @property
     def selector_prefix_stack(self) -> SettingsStack:
-        return self.library.selector_prefix_stack
+        return self.library.scope_stack["selector_prefix"]
 
     @selector_prefix_stack.setter
     def selector_prefix_stack(self, stack: SettingsStack):
-        self.library.selector_prefix_stack = stack
+        self.library.scope_stack["selector_prefix"] = stack
 
     def resolve_selector(self, selector: Optional[str]) -> str:
         if not selector:
@@ -153,12 +190,10 @@ class LibraryComponent:
     def millisecs_to_timestr(self, timeout: float) -> str:
         return self.library.millisecs_to_timestr(timeout)
 
-    def resolve_secret(
-        self, secret_variable: Any, original_secret: Any, arg_name: str
-    ) -> str:
+    def resolve_secret(self, secret_variable: Any, arg_name: str) -> str:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         secret = self.decrypt_with_crypto_library(secret)
-        if secret == original_secret:
+        if secret == secret_variable:
             raise ValueError(
                 f"Direct assignment of values or variables as '{arg_name}' is not allowed. "
                 "Use special variable syntax ($var instead of ${var}) "
@@ -227,15 +262,15 @@ class LibraryComponent:
 
     @property
     def strict_mode(self) -> bool:
-        return self.library.strict_mode_stack.get()
+        return self.library.scope_stack["strict_mode"].get()
 
     @property
     def strict_mode_stack(self) -> SettingsStack:
-        return self.library.strict_mode_stack
+        return self.library.scope_stack["strict_mode"]
 
     @strict_mode_stack.setter
     def strict_mode_stack(self, stack: SettingsStack):
-        self.library.strict_mode_stack = stack
+        self.library.scope_stack["strict_mode"] = stack
 
     def parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]
@@ -248,16 +283,18 @@ class LibraryComponent:
 
     @property
     def get_presenter_mode(self) -> HighLightElement:
-        mode: dict = {}
+        mode: Union[HighLightElement, Dict] = {}
         if isinstance(self.library.presenter_mode, dict):
-            mode = copy(self.library.presenter_mode)  # type: ignore
+            mode = copy(self.library.presenter_mode)
         duration = mode.get("duration", "2 seconds")
         if not isinstance(duration, timedelta):
             duration = timedelta(seconds=timestr_to_secs(duration))
         width = mode.get("width", "2px")
         style = mode.get("style", "dotted")
         color = mode.get("color", "blue")
-        return {"duration": duration, "width": width, "style": style, "color": color}
+        return HighLightElement(
+            duration=duration, width=width, style=style, color=color
+        )
 
     def presenter_mode(self, selector, strict):
         selector = self.resolve_selector(selector)

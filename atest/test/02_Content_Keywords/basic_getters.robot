@@ -133,6 +133,10 @@ Get Classes And Assert
     Get Classes    id=draggable    contains    react-draggable
     Get Classes    id=draggable    ==    react-draggable    box
     Get Classes    id=draggable    validate    "react-draggable-dragged" not in value
+    Drag And Drop Relative To    id=draggable    10    10    steps=2
+    Get Classes    id=draggable    *=    react-draggable    box
+    Get Classes    id=draggable    ==    react-draggable    box    react-draggable-dragged
+    Get Classes    id=draggable    validate    "react-draggable-dragged" in value
 
 Get Element Count
     [Setup]    Ensure Location    ${LOGIN_URL}
@@ -308,6 +312,37 @@ Get Element States Return Flags
     Wait For Elements State    [name="enabled_password"]    stable
     ${pwd_state} =    Get Element States    [name="enabled_password"]    return_names=False
     Should Be Equal    ${input_state}    ${pwd_state}
+
+Get Console Log Test
+    [Timeout]    10 min
+    [Setup]    Setup
+    ${first} =    Get Console Log    then    len(value)
+    Click    "Click with Options"    left    1    100ms    ${None}    ${None}    False    False    ALT    SHIFT
+    ${logs} =    Get Console Log    validate    len(value) == 3
+    Should Be Equal    ${logs}[0][type]    log
+    Should Start With    ${logs}[0][text]    Mouse button: left
+    Should Be True    $logs[0]['location']['url'].startswith('${LOGIN_URL[:-2]}')
+    Should Be Equal    ${logs}[1][type]    error
+    Should Be Equal    ${logs}[1][text]    1
+    Should Be Equal    ${logs}[2][type]    warning
+    Should Be True    ${logs}[2][text] > 0
+    ${errors} =    Get Page Errors    validate    len(value) == 2
+    Should Be Equal    ${errors}[0][name]    EvalError
+    Should Be Equal    ${errors}[0][message]    You are not allowed to use this site
+    ${last_time} =    Set Variable    ${errors}[-1][time]
+    Should Be True
+    ...    datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime($last_time, '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=1)
+    Get Console Log    validate    len(value) == 0
+    Get Page Errors    validate    len(value) == 0
+    Sleep    500ms
+    Click    "Click with Options"    left    1    100ms    ${None}    ${None}    False    False    ALT    SHIFT
+    ${last} =    Get Console Log    validate    len(value) == 3
+    Get Console Log    validate    len(value) == $first + len($logs) + len($last)    full=True
+    Get Page Errors    validate    len(value) == 2
+    ${now} =    Evaluate    datetime.datetime.now(datetime.timezone.utc)
+    ${first_log} =    Get Console Log    then    value[0]    full=True    last=500ms
+    Should Be True
+    ...    $now - datetime.datetime.strptime($first_log['time'], '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=0.5)
 
 *** Keywords ***
 Setup

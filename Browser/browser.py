@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-import os
 import re
 import shutil
 import string
@@ -26,11 +25,11 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
-from robot.errors import DataError  # type: ignore
-from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn  # type: ignore
-from robot.running.arguments import PythonArgumentParser  # type: ignore
-from robot.running.arguments.typeconverters import TypeConverter  # type: ignore
-from robot.utils import secs_to_timestr, timestr_to_secs  # type: ignore
+from robot.errors import DataError
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
+from robot.running.arguments import PythonArgumentParser
+from robot.running.arguments.typeconverters import TypeConverter
+from robot.utils import secs_to_timestr, timestr_to_secs
 from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
 from .base import ContextCache, LibraryComponent
@@ -617,6 +616,14 @@ class Browser(DynamicCore):
     ``PORT`` is the port you want to use for the node process.
     To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
 
+    = Experimental: Provide parameters to node process =
+
+    Browser library is integrated with NodeJSand and Python. Browser library starts a node process, to communicate
+    Playwright API in NodeJS side. It is possible to provide parameters for the started node process by defining
+    ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS environment variable, before starting the test execution. Example:
+    ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS=--inspect;robot path/to/tests``.
+    There can be multiple arguments defined in the environment variable and arguments must be separated with comma.
+
     = Scope Setting =
 
     Some keywords which manipulates library settings have a scope argument.
@@ -724,7 +731,7 @@ class Browser(DynamicCore):
     _context_cache = ContextCache()
     _suite_cleanup_done = False
 
-    old_init_args = {
+    _old_init_args = {
         "timeout": timedelta,
         "enable_playwright_debug": bool,
         "auto_closing_level": AutoClosingLevel,
@@ -760,7 +767,7 @@ class Browser(DynamicCore):
         | =Argument=                        | =Description= |
         | ``*deprecated_pos_args``          | Positional arguments are deprecated for Library import. Please use named arguments instead. We will remove positional arguments after RoboCon 2023 Online in March. Old positional order was: ``timeout``, ``enable_playwright_debug``, ``auto_closing_level``, ``retry_assertions_for``, ``run_on_failure``, ``external_browser_executable``, ``jsextension``, ``enable_presenter_mode``, ``playwright_process_port``, ``strict``, ``show_keyword_call_banner``. |
         | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
-        | ``enable_playwright_debug``       | Enable low level debug information from the playwright tool. Mainly Useful for the library developers and for debugging purposes. |
+        | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. Mainly Useful for the library developers and for debugging purposes. Will og everything as plain text, also including secrects. |
         | ``enable_presenter_mode``         | Automatic highlights to interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. |
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
         | ``jsextension``                   | Path to Javascript module exposed as extra keywords. The module must be in CommonJS. |
@@ -780,8 +787,8 @@ class Browser(DynamicCore):
 
         """
         self.ROBOT_LIBRARY_LISTENER = self
-
-        old_args_list = list(self.old_init_args.items())
+        self.scope_stack: Dict = {}
+        old_args_list = list(self._old_init_args.items())
         pos_params = {}
         for index, pos_arg in enumerate(deprecated_pos_args):
             argument_name = old_args_list[index][0]
@@ -798,9 +805,10 @@ class Browser(DynamicCore):
         params = {**pos_params, **params}
 
         self._playwright_state = PlaywrightState(self)
+        self._browser_control = Control(self)
         libraries = [
             self._playwright_state,
-            Control(self),
+            self._browser_control,
             Cookie(self),
             Crawling(self),
             Devices(self),
@@ -815,17 +823,10 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self.timeout_stack = SettingsStack(
-            self.convert_timeout(params["timeout"]), self
-        )
         self.playwright = Playwright(
             self, params["enable_playwright_debug"], playwright_process_port
         )
         self._auto_closing_level: AutoClosingLevel = params["auto_closing_level"]
-        self.retry_assertions_for_stack = SettingsStack(
-            self.convert_timeout(params["retry_assertions_for"]),
-            self,
-        )
         # Parsing needs keywords to be discovered.
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
             params["external_browser_executable"] or {}
@@ -844,33 +845,55 @@ class Browser(DynamicCore):
         self.presenter_mode: Union[HighLightElement, bool] = params[
             "enable_presenter_mode"
         ]
-        self.strict_mode_stack = SettingsStack(params["strict"], self)
-        self.show_keyword_call_banner = params["show_keyword_call_banner"]
-        self.selector_prefix_stack = SettingsStack(selector_prefix, self)
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self.pause_on_failure: Set[str] = set()
         self._unresolved_promises: Set[Future] = set()
-        self.current_arguments = ()
-        self.keyword_call_banner_add_style: str = ""
         self._keyword_formatters: dict = {}
         self._current_loglevel: Optional[str] = None
         self.is_test_case_running = False
 
         DynamicCore.__init__(self, libraries)
-        self.run_on_failure_keyword = self._parse_run_on_failure_keyword(
-            params["run_on_failure"]
+
+        self.scope_stack["timeout"] = SettingsStack(
+            self.convert_timeout(params["timeout"]),
+            self,
+            self._browser_control.set_playwright_timeout,
         )
+        self.scope_stack["retry_assertions_for"] = SettingsStack(
+            self.convert_timeout(params["retry_assertions_for"]), self
+        )
+        self.scope_stack["strict_mode"] = SettingsStack(params["strict"], self)
+        self.scope_stack["selector_prefix"] = SettingsStack(selector_prefix, self)
+        self.scope_stack["run_on_failure"] = SettingsStack(
+            self._parse_run_on_failure_keyword(params["run_on_failure"]), self
+        )
+        self.scope_stack["show_keyword_call_banner"] = SettingsStack(
+            params["show_keyword_call_banner"], self
+        )
+        self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
+
+    @property
+    def keyword_call_banner_add_style(self):
+        return self.scope_stack["keyword_call_banner_add_style"].get()
+
+    @property
+    def show_keyword_call_banner(self):
+        return self.scope_stack["show_keyword_call_banner"].get()
+
+    @property
+    def run_on_failure_keyword(self) -> DelayedKeyword:
+        return self.scope_stack["run_on_failure"].get()
 
     @property
     def timeout(self):
-        return self.timeout_stack.get()
+        return self.scope_stack["timeout"].get()
 
     def _parse_run_on_failure_keyword(
         self, keyword_name: Union[str, None]
     ) -> DelayedKeyword:
         if keyword_name is None or is_falsy(keyword_name):
-            return DelayedKeyword(None, None, tuple(), {})
+            return DelayedKeyword(None, None, (), {})
         parts = keyword_name.split("  ")
         keyword_name = parts[0]
         normalized_keyword_name = get_normalized_keyword(keyword_name)
@@ -907,12 +930,11 @@ class Browser(DynamicCore):
         self, js_extension_path: Union[Path, str]
     ) -> Response.Keywords:
         with self.playwright.grpc_channel() as stub:
-            response = stub.InitializeExtension(
+            return stub.InitializeExtension(
                 Request().FilePath(
                     path=str(Path(js_extension_path).resolve().absolute())
                 )
             )
-            return response
 
     def _js_value_to_python_value(self, value: str) -> str:
         return {
@@ -1001,16 +1023,15 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             )
             for response in responses:
                 logger.info(response.log)
-            if response.json == "":
-                return
+            if response.json == "":  # noqa: PLC1901
+                return None
             return json.loads(response.json)
 
     @property
     def outputdir(self) -> str:
         if EXECUTION_CONTEXTS.current:
             return BuiltIn().get_variable_value("${OUTPUTDIR}")
-        else:
-            return "."
+        return "."
 
     @property
     def browser_output(self) -> Path:
@@ -1032,7 +1053,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def state_file(self):
         return self.browser_output / "state"
 
-    def _start_suite(self, name, attrs):
+    def _start_suite(self, _name, attrs):
         self._add_to_scope_stack(attrs, Scope.Suite)
         if not Browser._suite_cleanup_done:
             Browser._suite_cleanup_done = True
@@ -1051,7 +1072,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, name, attrs):
+    def _start_test(self, _name, attrs):
         self._add_to_scope_stack(attrs, Scope.Test)
         self.is_test_case_running = True
         if self._auto_closing_level == AutoClosingLevel.TEST:
@@ -1060,16 +1081,14 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
-    def _start_keyword(self, name, attrs):
-        if (
+    def _start_keyword(self, _name, attrs):
+        if not (
             self.show_keyword_call_banner is False
             or (self.show_keyword_call_banner is None and not self.presenter_mode)
             or attrs["libname"] != "Browser"
             or attrs["status"] == "NOT RUN"
         ):
-            return
-        self._show_keyword_call(attrs)
-        self.current_arguments = tuple(attrs["args"])
+            self._show_keyword_call(attrs)
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
             self._set_logging(False)
 
@@ -1104,7 +1123,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             tags.append("plugin")
         return tags
 
-    def _end_keyword(self, name, attrs):
+    def _end_keyword(self, _name, attrs):
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
             self._set_logging(True)
 
@@ -1144,16 +1163,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
     def _add_to_scope_stack(self, attrs: Dict[str, Any], scope: Scope):
-        self.timeout_stack.start(attrs["id"], scope)
-        self.strict_mode_stack.start(attrs["id"], scope)
-        self.retry_assertions_for_stack.start(attrs["id"], scope)
-        self.selector_prefix_stack.start(attrs["id"], scope)
+        for stack in self.scope_stack.values():
+            stack.start(attrs["id"], scope)
 
     def _remove_from_scope_stack(self, attrs: Dict[str, Any]):
-        self.timeout_stack.end(attrs["id"])
-        self.strict_mode_stack.end(attrs["id"])
-        self.retry_assertions_for_stack.end(attrs["id"])
-        self.selector_prefix_stack.end(attrs["id"])
+        for stack in self.scope_stack.values():
+            stack.end(attrs["id"])
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
         catalog_after = self.get_browser_catalog()
@@ -1249,7 +1264,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     self.run_on_failure_keyword.name == "take_screenshot"
                     and not varargs
                 ):
-                    varargs = [self._failure_screenshot_path()]
+                    varargs = (self._failure_screenshot_path(),)
                 self.keywords[self.run_on_failure_keyword.name](*varargs, **kwargs)
             else:
                 BuiltIn().run_keyword(
@@ -1263,17 +1278,19 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._running_on_failure_keyword = False
 
     def _failure_screenshot_path(self):
-        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        valid_chars = f"-_.() {string.ascii_letters}{string.digits}"
         test_name = BuiltIn().get_variable_value("${TEST NAME}", "GENERIC")
-        return os.path.join(
-            self.outputdir,
-            "".join(c for c in test_name if c in valid_chars).replace(" ", "_")
-            + "_FAILURE_SCREENSHOT_{index}",
+        return str(
+            Path(self.outputdir)
+            / Path(
+                "".join(c for c in test_name if c in valid_chars).replace(" ", "_")
+                + "_FAILURE_SCREENSHOT_{index}"
+            )
         )
 
     def get_timeout(self, timeout: Union[timedelta, None]) -> float:
         if timeout is None:
-            return self.timeout_stack.get()
+            return self.scope_stack["timeout"].get()
         return self.convert_timeout(timeout)
 
     def convert_timeout(

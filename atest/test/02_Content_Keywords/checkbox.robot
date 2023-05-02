@@ -1,7 +1,7 @@
 *** Settings ***
 Resource        imports.resource
 
-Suite Setup     Setup To Form Url
+Suite Setup     Ensure Open Page    ${FORM_URL}
 
 *** Test Cases ***
 Get Checkbox State Checked
@@ -99,8 +99,3 @@ Uncheck Checkbox With Waiting
     Click    \#submit    noWaitAfter=True
     Uncheck Checkbox    \#victim
     Get Checkbox State    \#victim    ==    ${False}
-
-*** Keywords ***
-Setup To Form Url
-    Ensure Open Browser
-    Ensure Open Page    ${FORM_URL}

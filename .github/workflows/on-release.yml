@@ -4,43 +4,7 @@ on:
   release:
     types: [ published ]
 
-
 jobs:
-  docker-image:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build prerequisite Playwright-focal image
-        run: |
-          DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file docker/Dockerfile.playwright20.04 .
-      - name: Push to GitHub Packages
-        uses: docker/build-push-action@v3
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          # Weirdly the image "name" is required and has to be here
-          repository: marketsquare/robotframework-browser/rfbrowser-stable
-          tag_with_ref: true
-          dockerfile: docker/Dockerfile.latest_release
-      - name: Push tag :version_number to Docker Hub
-        uses: docker/build-push-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-          repository: marketsquare/robotframework-browser
-          tag_with_ref: true
-          dockerfile: docker/Dockerfile.latest_release
-      - name: Push tag :latest to Docker Hub
-        uses: docker/build-push-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-          repository: marketsquare/robotframework-browser
-          tag_with_ref: false
-          tags: latest
-          dockerfile: docker/Dockerfile.latest_release
-
   gh-pages:
     runs-on: ubuntu-latest
     steps:
@@ -48,7 +12,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 14.x
       - name: Set up Python 3.8

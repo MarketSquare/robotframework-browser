@@ -14,14 +14,13 @@
 
 import json
 from copy import copy
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
-from robot.running.arguments.typeconverters import TypeConverter  # type: ignore
-from robot.utils import get_link_path  # type: ignore
+from robot.utils import get_link_path
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
@@ -46,6 +45,7 @@ from ..utils import (
     locals_to_params,
     logger,
 )
+from ..utils.deprecated import convert_pos_args_to_named
 
 
 class PlaywrightState(LibraryComponent):
@@ -98,7 +98,7 @@ class PlaywrightState(LibraryComponent):
         | ``chromium``    | [https://www.chromium.org/Home|Chromium]             |
         | ``webkit``      | [https://webkit.org/|webkit]                         |
 
-        [https://forum.robotframework.org/t/comments-for-open-browser/4310|Comment >>]
+        [https://forum.robotframework.org/t//4310|Comment >>]
         """
         logger.warn(
             "Open Browser is for quick experimentation and debugging only. Use New Page for production."
@@ -137,14 +137,21 @@ class PlaywrightState(LibraryComponent):
                 response = stub.CloseAllBrowsers(Request().Empty())
                 self.library.pause_on_failure.clear()
                 logger.info(response.log)
+                self.browser_arg_mapping.clear()
                 return
             if browser != SelectionType.CURRENT:
                 self.switch_browser(browser)
 
             response = stub.CloseBrowser(Request.Empty())
             closed_browser_id = response.body
+            self.delete_browser_id_from_arg_mapping(closed_browser_id)
             self.library.pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
+
+    def delete_browser_id_from_arg_mapping(self, closed_browser_id: str) -> None:
+        for option_hash, browser_id in list(self.browser_arg_mapping.items()):
+            if browser_id == closed_browser_id:
+                del self.browser_arg_mapping[option_hash]
 
     @keyword(tags=("Setter", "BrowserControl"))
     def close_context(
@@ -171,7 +178,7 @@ class PlaywrightState(LibraryComponent):
         """
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
-        for browser_instance in self._get_browser_instances(browser):
+        for browser_instance in self._get_browser_ids(browser):
             if browser_instance["id"] == "NO BROWSER OPEN":
                 logger.info("No browsers open. can not closing context.")
                 return
@@ -199,15 +206,30 @@ class PlaywrightState(LibraryComponent):
                 return []
         return [find_by_id(context, contexts)]
 
-    def _get_browser_instances(self, browser):
+    def _get_browser_ids(self, browser) -> List:
         catalog = self.get_browser_catalog()
         if browser == SelectionType.ALL:
             browser_ids = [browser_instance["id"] for browser_instance in catalog]
         elif browser == SelectionType.CURRENT:
-            browser_ids = [self.switch_browser("CURRENT")]
+            current_browser = self.switch_browser("CURRENT")
+            browser_ids = [current_browser]
+            if current_browser == "NO BROWSER OPEN":
+                browser_ids = []
         else:
             browser_ids = [browser]
         return [find_by_id(browser_id, catalog) for browser_id in browser_ids]
+
+    def _get_context_id(
+        self, context_selection: Union[str, SelectionType], contexts: List
+    ) -> List:
+        if context_selection == SelectionType.CURRENT:
+            current_ctx = self.switch_context("CURRENT")
+            if current_ctx == "NO CONTEXT OPEN":
+                return []
+            contexts = [find_by_id(current_ctx, contexts)]
+        elif context_selection != SelectionType.ALL:
+            contexts = [find_by_id(str(context_selection), contexts)]
+        return contexts
 
     @keyword(tags=("Setter", "BrowserControl"))
     def close_page(
@@ -240,44 +262,24 @@ class PlaywrightState(LibraryComponent):
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
         result = []
+        browser_ids = self._get_browser_ids(browser)
         with self.playwright.grpc_channel() as stub:
-            catalog = self.library.get_browser_catalog()
-
-            if browser == SelectionType.ALL:
-                browser_ids = [b["id"] for b in catalog]
-            elif browser == SelectionType.CURRENT:
-                current_browser = self.switch_browser("CURRENT")
-                browser_ids = [current_browser]
-                if current_browser == "NO BROWSER OPEN":
-                    return
-            else:
-                browser_ids = [browser]
-
-            browsers = [find_by_id(b_id, catalog) for b_id in browser_ids]
-
-            for b in browsers:
-                self.switch_browser(b["id"])
-                contexts = b["contexts"]
-                if context == SelectionType.CURRENT:
-                    current_ctx = self.switch_context("CURRENT")
-                    if current_ctx == "NO CONTEXT OPEN":
-                        return
-                    contexts = [find_by_id(current_ctx, contexts)]
-                elif context != SelectionType.ALL:
-                    contexts = [find_by_id(str(context), contexts)]
-                for c in contexts:
-
-                    self.switch_context(c["id"])
+            for browser_id in browser_ids:
+                self.switch_browser(browser_id["id"])
+                contexts_ids = browser_id["contexts"]
+                contexts_ids = self._get_context_id(context, contexts_ids)
+                for context_id in contexts_ids:
+                    self.switch_context(context_id["id"])
                     if page == SelectionType.ALL:
-                        page_ids = [p["id"] for p in c["pages"]]
+                        pages_ids = [p["id"] for p in context_id["pages"]]
                     else:
-                        page_ids = [page]
+                        pages_ids = [page]
 
-                    for p in page_ids:
-                        if p == "NO PAGE OPEN":
-                            return
+                    for page_id in pages_ids:
+                        if page_id == "NO PAGE OPEN":
+                            return None
                         if page != SelectionType.CURRENT:
-                            self.switch_page(p)
+                            self.switch_page(page_id)
                         response = stub.ClosePage(Request().Empty())
                         if response.log:
                             logger.info(response.log)
@@ -346,10 +348,10 @@ class PlaywrightState(LibraryComponent):
         handleSIGTERM: bool = True,
         ignoreDefaultArgs: Optional[List[str]] = None,
         proxy: Optional[Proxy] = None,
+        reuse_existing: bool = True,
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
     ) -> str:
-
         """Create a new playwright Browser with specified options.
 
         See `Browser, Context and Page` for more information about Browser and related concepts.
@@ -360,19 +362,20 @@ class PlaywrightState(LibraryComponent):
         | ``browser`` | Opens the specified [#type-SupportedBrowsers|browser]. Defaults to chromium. |
         | ``headless`` | Set to False if you want a GUI. Defaults to True. |
         | ``*deprecated_pos_args`` | Other positional arguments are deprecated for `New Browser`. Please use named arguments in the future. We will remove positional arguments after RoboCon 2023 Online in March. Old order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``. |
-        | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
         | ``args`` | Additional arguments to pass to the browser instance. The list of Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/|here]. Defaults to None. |
-        | ``ignoreDefaultArgs`` | If an array is given, then filters out the given default arguments. Defaults to None. |
-        | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}`` |
+        | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
+        | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
         | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. |
+        | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
+        | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
+        | ``handleSIGHUP`` | Close the browser process on SIGHUP. Defaults to True. |
         | ``handleSIGINT`` | Close the browser process on Ctrl-C. Defaults to True. |
         | ``handleSIGTERM`` | Close the browser process on SIGTERM. Defaults to True. |
-        | ``handleSIGHUP`` | Close the browser process on SIGHUP. Defaults to True. |
-        | ``timeout`` | Maximum time in Robot Framework time format to wait for the browser instance to start. Defaults to 30 seconds. Pass 0 to disable timeout. |
-        | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
-        | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
+        | ``ignoreDefaultArgs`` | If an array is given, then filters out the given default arguments. Defaults to None. |
+        | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}`` |
+        | ``reuse_existing`` | If set to True, an existing browser instance, that matches the same arguments, will be reused. If no same configured Browser exist, a new one is started. Defaults to True. |
         | ``slowMo`` | Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay. |
-        | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
+        | ``timeout`` | Maximum time in Robot Framework time format to wait for the browser instance to start. Defaults to 30 seconds. Pass 0 to disable timeout. |
 
 
         Old deprecated argument order:
@@ -380,23 +383,22 @@ class PlaywrightState(LibraryComponent):
         ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``
 
 
-        [https://forum.robotframework.org/t/comments-for-new-browser/4306|Comment >>]
+        [https://forum.robotframework.org/t//4306|Comment >>]
         """
         params = locals_to_params(locals())
-        old_args_list = list(self.old_new_browser_args.items())
-        pos_params = {}
-        for index, pos_arg in enumerate(deprecated_pos_args):
-            argument_name = old_args_list[index][0]
-            argument_type = old_args_list[index][1]
-            converted_pos = TypeConverter.converter_for(argument_type).convert(
-                argument_name, pos_arg
-            )
-            pos_params[argument_name] = converted_pos
-        if pos_params:
-            logger.warn(
-                "Deprecated positional arguments are used in 'New Browser'. Please use named arguments instead."
-            )
+        pos_params = convert_pos_args_to_named(
+            deprecated_pos_args,
+            self.old_new_browser_args,
+            "New Browser",
+            " Will be removed after March 2023.",
+        )
         params = {**pos_params, **params}
+        parameter_hash = self._get_parameter_hash(params)
+        existing_browser_id = self._switch_to_existing_browser(
+            reuse_existing, parameter_hash
+        )
+        if existing_browser_id:
+            return existing_browser_id
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
         options = json.dumps(params, default=str)
         logger.info(options)
@@ -406,7 +408,28 @@ class PlaywrightState(LibraryComponent):
                 Request().Browser(browser=browser.name, rawOptions=options)
             )
             logger.info(response.log)
+            self.browser_arg_mapping[parameter_hash] = response.body
             return response.body
+
+    def _switch_to_existing_browser(
+        self, reuse_existing: bool, parameter_hash: int
+    ) -> Optional[str]:
+        if not reuse_existing:
+            return None
+        existing_browser_id = self.browser_arg_mapping.get(parameter_hash)
+        if existing_browser_id is None:
+            return None
+        try:
+            self.switch_browser(existing_browser_id)
+            logger.info(f"Reusing existing browser with id: {existing_browser_id}")
+            return existing_browser_id
+        except AssertionError:
+            self.browser_arg_mapping.pop(parameter_hash, None)
+            return None
+
+    def _get_parameter_hash(self, params: Dict[str, Any]) -> int:
+        params.pop("reuse_existing", None)
+        return hash(repr(params))
 
     old_new_context_args = {
         "acceptDownloads": bool,
@@ -504,7 +527,7 @@ class PlaywrightState(LibraryComponent):
         | ``reduceMotion``         | Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`. |
         | ``screen``               | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
         | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must mbe full path to the file. |
-        | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU’s metaZones.txt] for a list of supported timezone IDs. |
+        | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
         | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace -F /path/to/trace.zip``. |
         | ``userAgent``            | Specific user agent to use in this context. |
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
@@ -530,24 +553,16 @@ class PlaywrightState(LibraryComponent):
 
         If there's no open Browser this keyword will open one. Does not create pages.
 
-        [https://forum.robotframework.org/t/comments-for-new-context/4307|Comment >>]
+        [https://forum.robotframework.org/t//4307|Comment >>]
         """
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
-        old_args_list = list(self.old_new_context_args.items())
-        pos_params = {}
-        for index, pos_arg in enumerate(deprecated_pos_args):
-            argument_name = old_args_list[index][0]
-            argument_type = old_args_list[index][1]
-            converted_pos = TypeConverter.converter_for(argument_type).convert(
-                argument_name, pos_arg
-            )
-            pos_params[argument_name] = converted_pos
-        if pos_params:
-            logger.warn(
-                "Deprecated positional arguments are used in 'New Context'. "
-                "Please use named arguments instead. Will be removed after March 2023."
-            )
+        pos_params = convert_pos_args_to_named(
+            deprecated_pos_args,
+            self.old_new_context_args,
+            "New Context",
+            " Will be removed after March 2023.",
+        )
         params = {**pos_params, **params}
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(params, httpCredentials, storageState)
@@ -693,19 +708,12 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
-        old_args_list = list(self.old_new_perse_context_args.items())
-        pos_params = {}
-        for index, pos_arg in enumerate(deprecated_pos_args):
-            argument_name = old_args_list[index][0]
-            argument_type = old_args_list[index][1]
-            converted_pos = TypeConverter.converter_for(argument_type).convert(
-                argument_name, pos_arg
-            )
-            pos_params[argument_name] = converted_pos
-        if pos_params:
-            logger.warn(
-                "Deprecated positional arguments are used in 'New Persistent Context'. Please use named arguments instead."
-            )
+        pos_params = convert_pos_args_to_named(
+            deprecated_pos_args,
+            self.old_new_perse_context_args,
+            "New Persistent Context",
+            " Will be removed after March 2023.",
+        )
         params = {**pos_params, **params}
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
@@ -751,9 +759,7 @@ class PlaywrightState(LibraryComponent):
                 f"storageState argument value '{storageState}' is not file, but it should be."
             )
         if "httpCredentials" in params and params["httpCredentials"] is not None:
-            secret = self.resolve_secret(
-                httpCredentials, params.get("httpCredentials"), "httpCredentials"
-            )
+            secret = self.resolve_secret(httpCredentials, "httpCredentials")
             params["httpCredentials"] = secret
         masked_params = self._mask_credentials(params.copy())
         logger.info(json.dumps(masked_params, default=str, indent=2))
@@ -779,7 +785,7 @@ class PlaywrightState(LibraryComponent):
         self, options: str, hide_rf_browser: bool, trace_file: Union[Path, str]
     ):
         with self.playwright.grpc_channel() as stub:
-            response = stub.NewContext(
+            return stub.NewContext(
                 Request().Context(
                     rawOptions=options,
                     hideRfBrowser=hide_rf_browser,
@@ -787,7 +793,6 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            return response
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
@@ -891,9 +896,9 @@ class PlaywrightState(LibraryComponent):
     def get_browser_catalog(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Dict:
+    ) -> List:
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
         See `Browser, Context and Page` for more information about these concepts.
@@ -983,8 +988,160 @@ class PlaywrightState(LibraryComponent):
                 formatter,
             )
 
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    def get_console_log(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+        *,
+        full: bool = False,
+        last: Union[int, timedelta, None] = None,
+    ) -> Dict:
+        """Returns the console log of the active page.
+
+        If assertions are used and fail, this keyword will fail immediately without retrying.
+
+        | =Arguments= | =Description= |
+        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
+        | assertion_expected | Optional expected value. See `Assertions` for more information. |
+        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+        | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
+        | last               | If set, returns only the last n entries. Can be `int` for number of entries or `timedelta` for time period. |
+
+        The returned data is a `list` of log messages.
+
+        A log message is a `dict` with the following structure:
+        | {
+        |   "type": str,
+        |   "text": str,
+        |   "location": {
+        |     "url": str,
+        |     "lineNumber": int,
+        |     "columnNumber": int
+        |   },
+        |   "time": str
+        | }
+
+        Example:
+        | [{
+        |   'type': 'log',
+        |   'text': 'Stuff loaded...',
+        |   'location': {
+        |     'url': 'https://example.com/js/chunk-769742de.6a462276.js',
+        |     'lineNumber': 60,
+        |     'columnNumber': 63771
+        |   },
+        |   'time': '2023-02-05T17:42:52.064Z'
+        | }]
+
+        Keys:
+        | =Key= | =Description= |
+        | ``type`` | One of the following values: ``log``, ``debug``, ``info``, ``error``, ``warning``, ``dir``, ``dirxml``, ``table``, ``trace``, ``clear``, ``startGroup``, ``startGroupCollapsed``, ``endGroup``, ``assert``, ``profile``, ``profileEnd``, ``count``, ``timeEnd`` |
+        | ``text`` | The text of the console message. |
+        | ``location.url`` | The URL of the resource that generated this message. |
+        | ``location.lineNumber`` | The line number in the resource that generated this message (0-based). |
+        | ``location.columnNumber`` | The column number in the resource that generated this message (0-based). |
+        | ``time`` | The timestamp of the log message as ISO 8601 string. |
+
+        [https://forum.robotframework.org/t//5267|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetConsoleLog(Request().Bool(value=full))
+            if response.log:
+                logger.info(response.log)
+            log_messages = json.loads(response.json)
+            returned_messages = self._slice_messages(log_messages, last)
+            return verify_assertion(
+                returned_messages,
+                assertion_operator,
+                assertion_expected,
+                "Console Log",
+                message,
+            )
+
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    def get_page_errors(
+        self,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+        *,
+        full: bool = False,
+        last: Union[int, timedelta, None] = None,
+    ) -> Dict:
+        """Returns the page errors of the active page.
+
+        If assertions are used and fail, this keyword will fail immediately without retrying.
+
+        | =Arguments= | =Description= |
+        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
+        | assertion_expected | Optional expected value. See `Assertions` for more information. |
+        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+        | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
+        | last               | If set, returns only the last n entries. Can be `int` for number of entries or `timedelta` for time period. |
+
+        The returned data is a `list` of error messages.
+
+        An error message is a `dict` with the following structure:
+        | {
+        |   "name": str,
+        |   "message": str,
+        |   "stack": str,
+        |   "time": str
+        | }
+
+        Example:
+        | [{
+        |   'name': 'ReferenceError',
+        |   'message': 'YT is not defined',
+        |   'stack': 'ReferenceError: YT is not defined\\n    at HTMLIFrameElement.onload (https://example.com/:20:2245)',
+        |   'time': '2023-02-05T20:08:48.912Z'
+        | }]
+
+        Keys:
+        | =Key= | =Description= |
+        | ``name`` | The name/type of the error. |
+        | ``message`` | The human readable error message. |
+        | ``stack`` | The stack trace of the error, if given. |
+        | ``time`` | The timestamp of the error as ISO 8601 string. |
+
+        [https://forum.robotframework.org/t//5268|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetErrorMessages(Request().Bool(value=full))
+            if response.log:
+                logger.info(response.log)
+            errors = json.loads(response.json)
+            returned_errors = self._slice_messages(errors, last)
+            return verify_assertion(
+                returned_errors,
+                assertion_operator,
+                assertion_expected,
+                "Page Errors",
+                message,
+            )
+
+    def _slice_messages(self, message, last):
+        if isinstance(last, int):
+            returned_messages = message[-last:]
+        elif isinstance(last, timedelta):
+            returned_messages = []
+            now = datetime.now(timezone.utc)
+            for msg in reversed(message):
+                if (
+                    datetime.strptime(msg["time"], "%Y-%m-%dT%H:%M:%S.%f%z")
+                    < now - last
+                ):
+                    # Only from python 3.11 and later... datetime.fromisoformat(msg["time"]) < now - last:
+                    break
+                returned_messages.append(msg)
+        else:
+            returned_messages = message
+        return returned_messages
+
     @keyword(tags=("Setter", "BrowserControl"))
-    def switch_browser(self, id: str) -> str:
+    def switch_browser(self, id: str) -> str:  # noqa: A002
         """Switches the currently active Browser to another open Browser.
 
         Returns a stable identifier for the previous browser.
@@ -1003,7 +1160,9 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_context(
-        self, id: str, browser: Union[SelectionType, str] = SelectionType.CURRENT
+        self,
+        id: str,  # noqa: A002
+        browser: Union[SelectionType, str] = SelectionType.CURRENT,
     ) -> str:
         """Switches the active BrowserContext to another open context.
 
@@ -1025,7 +1184,7 @@ class PlaywrightState(LibraryComponent):
         """
         logger.info(f"Switching context to {id} in {browser}")
         browser = SelectionType.create(browser)
-        id = SelectionType.create(id)
+        id = SelectionType.create(id)  # noqa: A001
 
         if isinstance(id, str):
             parent_browser_id = self._get_context_parent_id(id)
@@ -1040,10 +1199,25 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
+    def _get_page_uid(self, id) -> str:  # noqa: A002
+        if isinstance(id, dict):
+            uid = id.get("page_id")
+            if not uid:
+                raise ValueError(
+                    f"Invalid page id format: {id} . Expected format: {NewPageDetails.__annotations__}"
+                )
+        else:
+            uid = SelectionType.create(id)
+        if isinstance(uid, str) and not (
+            uid.lower().startswith("page=") or uid.upper() == "NEW"
+        ):
+            raise ValueError(f"Malformed page `id`: {uid}")
+        return uid
+
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_page(
         self,
-        id: Union[NewPageDetails, str],
+        id: Union[NewPageDetails, str],  # noqa: A002
         context: Union[SelectionType, str] = SelectionType.CURRENT,
         browser: Union[SelectionType, str] = SelectionType.CURRENT,
     ) -> str:
@@ -1070,22 +1244,7 @@ class PlaywrightState(LibraryComponent):
         browser = SelectionType.create(browser)
         correct_context_selected = True
         correct_browser_selected = True
-
-        def _all(value: Union[SelectionType, str]) -> bool:
-            return value == SelectionType.ALL
-
-        if isinstance(id, dict):
-            uid = id.get("page_id")
-            if not uid:
-                raise ValueError(
-                    f"Invalid page id format: {id} . Expected format: {NewPageDetails.__annotations__}"
-                )
-        else:
-            uid = SelectionType.create(id)
-        if isinstance(uid, str) and not (
-            uid.lower().startswith("page=") or uid.upper() == "NEW"
-        ):
-            raise ValueError(f"Malformed page `id`: {uid}")
+        uid = self._get_page_uid(id)
 
         if (
             not (isinstance(uid, str) and uid.upper() == "NEW")
@@ -1194,22 +1353,20 @@ class PlaywrightState(LibraryComponent):
             if context == SelectionType.CURRENT:
                 if "activeContext" in browser_item:
                     return [browser_item["activeContext"]]
-            else:
-                if "contexts" in browser_item:
-                    return [context["id"] for context in browser_item["contexts"]]
+            elif "contexts" in browser_item:
+                return [context["id"] for context in browser_item["contexts"]]
+        elif context == SelectionType.CURRENT:
+            context_ids = []
+            for browser_item in self.get_browser_catalog():
+                if "activeContext" in browser_item:
+                    context_ids.append(browser_item["activeContext"])
+            return context_ids
         else:
-            if context == SelectionType.CURRENT:
-                context_ids = list()
-                for browser_item in self.get_browser_catalog():
-                    if "activeContext" in browser_item:
-                        context_ids.append(browser_item["activeContext"])
-                return context_ids
-            else:
-                context_ids = list()
-                for browser_item in self.get_browser_catalog():
-                    for context_item in browser_item["contexts"]:
-                        context_ids.append(context_item["id"])
-                return context_ids
+            context_ids = []
+            for browser_item in self.get_browser_catalog():
+                for context_item in browser_item["contexts"]:
+                    context_ids.append(context_item["id"])
+            return context_ids
         return []
 
     @keyword(tags=("Getter", "BrowserControl"))
@@ -1251,12 +1408,11 @@ class PlaywrightState(LibraryComponent):
                     return self._get_page_ids_from_context_list(
                         page, self._get_active_context_item(browser_item)
                     )
-                else:
-                    return self._get_page_ids_from_context_list(
-                        page, browser_item["contexts"]
-                    )
+                return self._get_page_ids_from_context_list(
+                    page, browser_item["contexts"]
+                )
         else:
-            context_list = list()
+            context_list = []
             for browser_item in self.get_browser_catalog():
                 if "contexts" in browser_item:
                     if context == SelectionType.CURRENT:
@@ -1270,7 +1426,7 @@ class PlaywrightState(LibraryComponent):
     def _get_page_ids_from_context_list(
         page_selection_type: SelectionType, context_list
     ):
-        page_ids = list()
+        page_ids = []
         for context_item in context_list:
             if page_selection_type == SelectionType.CURRENT:
                 if "activePage" in context_item:

@@ -1,17 +1,19 @@
-FROM playwright-focal AS CleanInstallTester
+FROM mcr.microsoft.com/playwright:v1.30.0-focal
+
 # Add pip
 USER root
 RUN apt-get update
-RUN apt-get install -y python3-pip
-USER pwuser
+RUN apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --user robotframework
-RUN pip3 install --user robotframework-browser
-# Hard to update PATH for all shells in a docker image so we run python scripts with manual paths
-RUN ~/.local/bin/rfbrowser init
-
-ENV NODE_PATH=/usr/lib/node_modules
 ENV PATH="/home/pwuser/.local/bin:${PATH}"
+ENV NODE_PATH=/usr/lib/node_modules
 # What were these used for previously
 # RUN mv /root/.cache/ /home/pwuser/.cache
 # RUN chmod a+rwx -R /home/pwuser/.cache
+
+USER pwuser
+RUN pip3 install --no-cache-dir --upgrade pip wheel
+RUN pip3 --version
+RUN pip3 install --no-cache-dir --user --upgrade robotframework robotframework-browser==16.0.4
+
+RUN python3 -m Browser.entry init

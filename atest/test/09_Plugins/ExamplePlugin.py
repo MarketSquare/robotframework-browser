@@ -8,12 +8,25 @@ from robot.utils import DotDict
 from Browser import Browser
 from Browser.base.librarycomponent import LibraryComponent
 from Browser.generated.playwright_pb2 import Request
+from Browser.utils import SettingsStack, Scope
 
 
 class ExamplePlugin(LibraryComponent):
+    ROBOT_LISTENER_API_VERSION = 2
+
     def __init__(self, library: Browser):
         super().__init__(library)
         self.initialize_js_extension(Path(__file__).parent.resolve() / "jsplugin.js")
+        library.scope_stack["last_log_message"] = SettingsStack("", library)
+
+    def end_keyword(self, _kw, _args):
+        msg = self.library.scope_stack["last_log_message"].get()
+        if msg:
+            logger.info(msg)
+
+    @keyword
+    def set_last_log_message(self, msg: str, scope: Scope):
+        self.library.scope_stack["last_log_message"].set(msg, scope)
 
     @keyword
     def new_plugin_cookie_keyword(self) -> dict:
@@ -36,4 +49,4 @@ class ExamplePlugin(LibraryComponent):
     @keyword
     def mouse_wheel(self, x: int, y: int):
         """This keyword calls a custom javascript keyword from the file jsplugin.js."""
-        return self.call_js_keyword("mouseWheel", x=x, y=y, logger=None, page=None)
+        return self.call_js_keyword("mouseWheel", y=y, x=x)

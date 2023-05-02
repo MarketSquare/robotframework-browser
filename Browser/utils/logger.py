@@ -14,7 +14,7 @@
 import threading
 from typing import Any, Callable, Dict, List
 
-from robot.api import logger  # type: ignore
+from robot.api import logger
 
 _THREAD_STASHES: Dict[int, List[List[Callable]]] = {}
 
@@ -59,9 +59,9 @@ def console(msg: Any):
 
 
 def stash_this_thread():
-    id = threading.get_ident()
-    if id in _THREAD_STASHES:
-        _THREAD_STASHES[id].append([])
+    identifier = threading.get_ident()
+    if identifier in _THREAD_STASHES:
+        _THREAD_STASHES[identifier].append([])
     else:
         _THREAD_STASHES[threading.get_ident()] = [[]]
 

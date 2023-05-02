@@ -28,7 +28,7 @@ Get Page IDs
 *** Keywords ***
 Create Browser Catalog State
     Close Browser    ALL
-    ${Browser1} =    New Browser    headless=${HEADLESS}
+    ${Browser1} =    New Browser    headless=${HEADLESS}    reuse_existing=False
     ${Context1.1} =    New Context
     ${Page1.1.1} =    New Page
     ${ActivePage1.1} =    New Page
@@ -36,10 +36,10 @@ Create Browser Catalog State
     ${ActivePage1.2} =    New Page
     ${Page1.2.2} =    New Page
     Switch Page    ${ActivePage1.2}
-    ${Browser2} =    New Browser    headless=${HEADLESS}
+    ${Browser2} =    New Browser    headless=${HEADLESS}    reuse_existing=False
     ${ActiveContext2} =    New Context
     ${ActivePage2.1} =    New Page
-    ${CurrentBrowser} =    New Browser    headless=${HEADLESS}
+    ${CurrentBrowser} =    New Browser    headless=${HEADLESS}    reuse_existing=False
     ${Context3.1} =    New Context
     ${ActivePage3.1} =    New Page
     ${CurrentContext} =    New Context

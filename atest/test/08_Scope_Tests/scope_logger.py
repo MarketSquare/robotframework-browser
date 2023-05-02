@@ -6,10 +6,10 @@ from typing import Optional
 
 def log_all_scopes(exp_timeout: float, exp_retry_assertions_for: float, exp_strict_mode: bool, exp_selector_prefix: Optional[str] = None):
     b: Browser = BuiltIn().get_library_instance("Browser")
-    timeout = b.timeout_stack.get()
-    retry_assertions_for = b.retry_assertions_for_stack.get()
-    strict_mode = b.strict_mode_stack.get()
-    selector_prefix = b.selector_prefix_stack.get()
+    timeout = b.scope_stack["timeout"].get()
+    retry_assertions_for = b.scope_stack["retry_assertions_for"].get()
+    strict_mode = b.scope_stack["strict_mode"].get()
+    selector_prefix = b.scope_stack["selector_prefix"].get()
 
     assert timeout == exp_timeout, f"timeout: {timeout} ({type(timeout)}) != {exp_timeout} ({type(exp_timeout)})"
     assert retry_assertions_for == exp_retry_assertions_for, f"retry_assertions_for: {retry_assertions_for} ({type(retry_assertions_for)}) != {exp_retry_assertions_for} ({type(exp_retry_assertions_for)})"

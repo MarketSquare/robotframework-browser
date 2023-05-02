@@ -27,10 +27,9 @@ def assertion_operator_is_set(wrapped, args, kwargs):
     assertion_op_name = None
     assertion_op_index = None
     for index, (_arg, typ) in enumerate(wrapped.__annotations__.items()):
-        if get_origin(typ) is Union:
-            if AssertionOperator in get_args(typ):
-                assertion_op_index = index
-                break
+        if get_origin(typ) is Union and AssertionOperator in get_args(typ):
+            assertion_op_index = index
+            break
         if typ is AssertionOperator:
             assertion_op_index = index
             break
@@ -62,7 +61,7 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
                 if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
                     raise e
                 tries += 1
-                if timeout - elapsed > 0.01:
+                if timeout - elapsed > 0.01:  # noqa: PLR2004
                     time.sleep(0.01)
                 logger.clear_thread_stash()
     finally:

@@ -23,7 +23,7 @@ Get Attribute Names Does Not Support Formatter:
     Get Attribute Names    id=two    ==    id
     [Teardown]    Formatter TearDown
 
-Get Attribute Names Does Not Support Formatter:
+Get Attribute Names Does Not Support Formatter2:
     [Documentation]
     ...    LOG 1:*    DEBUG    GLOB:    Assertion polling statistics:*
     [Setup]    Go To    ${SPACES_URL}
@@ -45,14 +45,52 @@ InEqual
 
 Greater Than
     Get Style    //*[@id="progress"]    width    >    100
-    Get Style    //*[@id="progress"]    width    greater than    100
+    Get Style    id=progress    width    greater than    100
 
 Greater Or Equal
-    Get Style    //*[@id="progress"]    width    >=    400
+    Get Style    css=#progress    width    >=    400
 
 Less
     Get Style    //*[@id="progress"]    width    <    401
     Get Style    //*[@id="progress"]    width    less than    401
+
+Pseudo Elements And Keyword Banner Activated Scope Suite
+    Show Keyword Banner    show=True    scope=Suite
+    Get Title
+    Get Style    body    bottom    ==    5px    pseudo_element=::before
+    Get Style    body    background-color    ==    rgba(0, 0, 139, 0.565)    pseudo_element=::before
+    Get Style    body    font-size    ==    13px    pseudo_element=::before
+    Get Style    body    color    ==    rgb(255, 255, 255)    pseudo_element=::before
+
+Pseudo Elements And Keyword Banner Styled Scope Test
+    Show Keyword Banner
+    ...    show=True
+    ...    style=top: 5px; bottom: auto; left: 5px; background-color: #00909077; font-size: 9px; color: black;
+    ...    scope=Test
+    Get Title
+    Get Style    body    top    ==    5px    pseudo_element=::before
+    Get Style    body    background-color    ==    rgba(0, 144, 144, 0.467)    pseudo_element=::before
+    Get Style    body    font-size    ==    9px    pseudo_element=::before
+    Get Style    body    color    ==    rgb(0, 0, 0)    pseudo_element=::before
+    Get Style    body    ALL    pseudo_element=::before
+    Get Style    body    ${None}    pseudo_element=::before
+
+Pseudo Elements And Keyword Banner Off Scope Test
+    Show Keyword Banner    show=False    scope=Test
+    Get Title
+    Get Style    body    top    ==    auto    pseudo_element=::before
+    Get Style    body    background-color    ==    rgba(0, 0, 0, 0)    pseudo_element=::before
+    Get Style    body    font-size    ==    16px    pseudo_element=::before
+    Get Style    body    color    ==    rgb(0, 0, 0)    pseudo_element=::before
+    Get Style    body    content    ==    none    pseudo_element=::before
+
+Pseudo Elements And Keyword Banner Scope Test
+    Get Title
+    Get Style    body    bottom    ==    5px    pseudo_element=::before
+    Get Style    body    background-color    ==    rgba(0, 0, 139, 0.565)    pseudo_element=::before
+    Get Style    body    font-size    ==    13px    pseudo_element=::before
+    Get Style    body    color    ==    rgb(255, 255, 255)    pseudo_element=::before
+    Show Keyword Banner    show=False    scope=Suite
 
 Contains
     Get Title    *=    Page

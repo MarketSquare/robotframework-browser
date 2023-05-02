@@ -18,14 +18,13 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, List
 
-from assertionengine import AssertionOperator
-from robot.api.deco import keyword  # type: ignore
-from robot.utils import DotDict  # type: ignore
+from robot.api.deco import keyword
+from robot.running.arguments.typeconverters import TypeConverter
+from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadedFile, logger
-from ..utils.data_types import DialogAction, ElementState, PageLoadStates
 
 
 class Promises(LibraryComponent):
@@ -56,53 +55,70 @@ class Promises(LibraryComponent):
         [https://forum.robotframework.org/t//4312|Comment >>]
         """
         promise: Future = Future()
-        keyword_name = kw.strip().lower().replace(" ", "_")
-
-        if keyword_name in self.library.get_keyword_names():
-            positional, named = self.resolve_arguments(keyword_name, *args)
-            promise = self._executor.submit(
-                self.library.keywords[keyword_name], *positional, **(named or {})
+        known_keyword = self.get_known_keyword(kw)
+        if not known_keyword:
+            raise ValueError(
+                f"Unknown keyword '{kw}'! 'Promise To' can only be used with Browser keywords."
             )
-            self.unresolved_promises.add(promise)
-            while not (promise.running() or promise.done()):
-                sleep(0.01)
-
+        positional, named = self.resolve_arguments(known_keyword, *args)
+        promise = self._executor.submit(
+            self.library.keywords[known_keyword], *positional, **(named or {})
+        )
+        self.unresolved_promises.add(promise)
+        while not (promise.running() or promise.done()):
+            sleep(0.01)
         return promise
+
+    def get_known_keyword(self, kw: str) -> str:
+        normalized_kw = self.normalized_keyword_name(kw)
+        for keyword_name in self.library.get_keyword_names():
+            if normalized_kw == self.normalized_keyword_name(keyword_name):
+                return keyword_name
+        return ""
+
+    def normalized_keyword_name(self, kw: str) -> str:
+        """Returns normalized keyword name.
+
+        Keyword name is normalized by removing spaces and converting to lower case.
+        """
+        return kw.lower().replace(" ", "").replace("_", "")
 
     def resolve_arguments(self, kw: str, *args):
         positional: List[Any] = []
         named: Dict[str, Any] = {}
         logger.debug(f"*args {args}")
 
-        keyword_arguments = [
+        arg_names = [
             argument[0] if isinstance(argument, tuple) else argument
             for argument in self.library.get_keyword_arguments(kw)
         ]
-        for arg in args:
-            parts = arg.partition("=")
-            if parts[0].strip() in keyword_arguments:
-                if parts[2].strip().lower() in DialogAction.__members__:
-                    named[parts[0].strip()] = DialogAction[parts[2].strip().lower()]
-                elif parts[2].strip().lower() in PageLoadStates.__members__:
-                    named[parts[0].strip()] = PageLoadStates[parts[2].strip().lower()]
-                else:
-                    named[parts[0].strip()] = parts[2].strip()
+        for index, arg in enumerate(args):
+            arg_name, has_equal, arg_value = arg.partition("=")
+            arg_name = arg_name.strip()
+            arg_value = arg_value.strip()
+
+            if not named and (not has_equal or arg_name not in arg_names):
+                positional.append(self.convert_keyword_arg(kw, arg_names[index], arg))
+            elif arg_name in arg_names:
+                named[arg_name] = self.convert_keyword_arg(kw, arg_name, arg_value)
             else:
-                if arg.strip() in AssertionOperator.__members__:
-                    positional.append(AssertionOperator[arg.strip()])
-                elif arg.strip() in ElementState.__members__:
-                    positional.append(ElementState.__members__[arg.strip()])
-                elif arg.strip() in DialogAction.__members__:
-                    positional.append(DialogAction[arg.strip()])
-                elif arg.strip() in PageLoadStates.__members__:
-                    positional.append(PageLoadStates.__members__[arg.strip()])
-                else:
-                    positional.append(arg)
+                raise ValueError(
+                    f"Invalid argument '{arg_name}' for keyword '{kw}'. "
+                    f"Valid arguments are: {', '.join(arg_names)}"
+                )
 
         logger.debug(
             f"named arguments: {named}, positional arguments: {tuple(positional)}"
         )
         return tuple(positional), named
+
+    def convert_keyword_arg(self, kw: str, arg_name: str, arg_value: Any) -> Any:
+        argument_type = self.library.get_keyword_types(kw).get(arg_name)
+        if argument_type is not None:
+            return TypeConverter.converter_for(argument_type).convert(
+                arg_name, arg_value
+            )
+        return arg_value
 
     @keyword(tags=("Wait", "BrowserControl"))
     def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
@@ -136,7 +152,7 @@ class Promises(LibraryComponent):
 
         [https://forum.robotframework.org/t//4314|Comment >>]
         """
-        promise = self._executor.submit(self._wait_for_download, **{"saveAs": saveAs})
+        promise = self._executor.submit(self._wait_for_download, saveAs=saveAs)
         self.unresolved_promises.add(promise)
         return promise
 
@@ -220,7 +236,7 @@ class Promises(LibraryComponent):
         p = Path(path)
         if not p.is_file():
             raise ValueError(f"Nonexistent input file path '{p.resolve()}'")
-        promise = self._executor.submit(self._upload_file, **{"path": str(p.resolve())})
+        promise = self._executor.submit(self._upload_file, path=str(p.resolve()))
         self.unresolved_promises.add(promise)
         return promise
 

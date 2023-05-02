@@ -13,18 +13,24 @@
 # limitations under the License.
 import base64
 import json
-import os
+import uuid
 from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from robot.utils import get_link_path  # type: ignore
+from robot.utils import get_link_path
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import Scope, keyword, logger
-from ..utils.data_types import BoundingBox, Permission, ScreenshotFileTypes
+from ..utils.data_types import (
+    BoundingBox,
+    Permission,
+    ScreenshotFileTypes,
+    ScreenshotReturnType,
+)
+from ..utils.deprecated import convert_pos_args_to_named
 
 
 class Control(LibraryComponent):
@@ -67,10 +73,9 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     def _get_screenshot_path(self, filename: str, fileType: str) -> Path:
-        if os.path.isabs(filename):
-            d, file = os.path.split(filename)
-            directory = Path(d)
-            filename = os.path.splitext(file)[0]
+        if Path(filename).is_absolute():
+            directory = Path(filename).parent
+            filename = Path(filename).stem
         else:
             directory = self.screenshots_output
         # Filename didn't contain {index}
@@ -85,123 +90,212 @@ class Control(LibraryComponent):
             if not path.with_suffix(f".{fileType}").is_file():
                 return path
 
+    old_take_screenshot_args = {
+        "fullPage": bool,
+        "fileType": ScreenshotFileTypes,
+        "quality": Optional[int],
+        "timeout": Optional[timedelta],
+        "crop": Optional[BoundingBox],
+        "disableAnimations": bool,
+        "mask": Union[List[str], str],
+        "omitBackground": bool,
+    }
+
     @keyword(tags=("PageContent",))
     def take_screenshot(
         self,
-        filename: str = "robotframework-browser-screenshot-{index}",
+        filename: Optional[str] = "robotframework-browser-screenshot-{index}",
         selector: Optional[str] = None,
-        fullPage: bool = False,
-        fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
-        quality: Optional[int] = None,
-        timeout: Optional[timedelta] = None,
+        *deprecated_pos_args,
         crop: Optional[BoundingBox] = None,
         disableAnimations: bool = False,
+        fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
+        fullPage: bool = False,
+        log_screenshot: bool = True,
         mask: Union[List[str], str] = "",
         omitBackground: bool = False,
-    ) -> str:
+        quality: Optional[int] = None,
+        return_as: ScreenshotReturnType = ScreenshotReturnType.path_string,
+        timeout: Optional[timedelta] = None,
+    ) -> Union[str, bytes, Path]:
         """Takes a screenshot of the current window or element and saves it to disk.
 
         | =Arguments= | =Description= |
-        | ``filename`` | Filename into which to save. The file will be saved into the robot framework  ${OUTPUTDIR}/browser/screenshot directory by default, but it can overwritten by providing  custom path or filename. String ``{index}`` in filename will be replaced with a rolling  number. Use this to not override filenames. If filename equals to EMBED (case insensitive),  then screenshot is embedded as Base64 image to the log.html. The image is saved temporally  to the disk and warning is displayed if removing the temporary file fails. The ${OUTPUTDIR}/browser/ is removed at the first suite startup. |
+        | ``filename`` | Filename into which to save. The file will be saved into the robot framework  ${OUTPUTDIR}/browser/screenshot directory by default, but it can be overwritten by providing custom path or filename. String ``{index}`` in filename will be replaced with a rolling  number. Use this to not override filenames. If filename equals to EMBED (case insensitive) or ${NONE},  then screenshot is embedded as Base64 image to the log.html. The image is saved temporally  to the disk and warning is displayed if removing the temporary file fails. The ${OUTPUTDIR}/browser/ is removed at the first suite startup. |
         | ``selector`` | Take a screenshot of the element matched by selector. See the `Finding elements` section for details about the selectors. If not provided take a screenshot of current viewport. |
-        | ``fullPage`` | When True, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to False. |
-        | ``fileType`` | <"png"|"jpeg"> Specify screenshot type, defaults to png. |
-        | ``quality`` | The quality of the image, between 0-100. Not applicable to png images. |
-        | ``timeout`` | Maximum time how long taking screenshot can last, defaults to library timeout. Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout. The default value can be changed by using the `Set Browser Timeout` keyword. |
         | ``crop`` | Crops the taken screenshot to the given box. It takes same dictionary as returned from `Get BoundingBox`. Cropping only works on page screenshot, so if no selector is given. |
         | ``disableAnimations`` | When set to ``True``, stops CSS animations, CSS transitions and Web Animations. Animations get different treatment depending on their duration:  - finite animations are fast-forwarded to completion, so they'll fire transitionend event.  - infinite animations are canceled to initial state, and then played over after the screenshot. |
+        | ``fileType`` | <"png"|"jpeg"> Specify screenshot type, defaults to png. |
+        | ``fullPage`` | When True, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to False. |
+        | ``log_screenshot`` | When set to ``False`` the screenshot is taken but not logged into log.html. |
         | ``mask`` | Specify selectors that should be masked when the screenshot is taken. Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box. Argument can take a single selector string or a list of selector strings if multiple different elements should be masked. |
         | ``omitBackground`` | Hides default white background and allows capturing screenshots with transparency. Not applicable to jpeg images. |
+        | ``quality`` | The quality of the image, between 0-100. Not applicable to png images. |
+        | ``return_as`` | Defines what this keyword returns. Possible values are documented in `ScreenshotReturnType`. It can be either a path to the screenshot file as string or Path object, or the image data as bytes or base64 encoded string. |
+        | ``timeout`` | Maximum time how long taking screenshot can last, defaults to library timeout. Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout. The default value can be changed by using the `Set Browser Timeout` keyword. |
 
         Keyword uses strict mode if selector is defined. See `Finding elements` for more details
         about strict mode.
+
+        Old deprecated argument order:
+        ``fullPage``, ``fileType``, ``quality``, ``timeout``, ``crop``, ``disableAnimations``, ``mask``, ``omitBackground``
 
         Example
         | `Take Screenshot`                                 # Takes screenshot from page with default filename
         | `Take Screenshot`   selector=id=username_field    # Captures element in image
         | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
         | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
+        | `Take Screenshot`   EMBED                         # Screenshot is embedded as Base64 image to the log.html.
 
         [https://forum.robotframework.org/t//4337|Comment >>]
         """
-        if self._is_embed(filename):
-            logger.debug("Embedding image to log.html.")
-        else:
-            logger.debug(f"Using {filename} to take screenshot.")
+        pos_params = convert_pos_args_to_named(
+            deprecated_pos_args,
+            self.old_take_screenshot_args,
+            "Take Screenshot",
+            " Will be removed end of 2023.",
+        )
+        fullPage = pos_params.get("fullPage", fullPage)
+        fileType = pos_params.get("fileType", fileType)
+        quality = pos_params.get("quality", quality)
+        timeout = pos_params.get("timeout", timeout)
+        crop = pos_params.get("crop", crop)
+        disableAnimations = pos_params.get("disableAnimations", disableAnimations)
+        mask = pos_params.get("mask", mask)
+        omitBackground = pos_params.get("omitBackground", omitBackground)
+        file_name = (
+            uuid.uuid4().hex
+            if filename is None or self._is_embed(filename)
+            else filename
+        )
         string_path_no_extension = str(
-            self._get_screenshot_path(filename, fileType.name)
+            self._get_screenshot_path(file_name, fileType.name)
         )
         with self.playwright.grpc_channel() as stub:
-            options = {
-                "path": f"{string_path_no_extension}.{fileType.name}",
-                "fileType": fileType.name,
-                "fullPage": fullPage,
-                "timeout": int(self.get_timeout(timeout)),
-                "omitBackground": omitBackground,
-            }
-            if mask:
-                mask_selectors: Optional[List[str]]
-                if isinstance(mask, str):
-                    mask_selectors = [self.resolve_selector(mask)]
-                elif isinstance(mask, Iterable):
-                    mask_selectors = [self.resolve_selector(str(s)) for s in mask]
-                else:
-                    raise ValueError(
-                        f"'mask' argument is neither string nor list of string. It is {type(mask)}"
-                    )
-            else:
-                mask_selectors = None
-
-            if quality is not None:
-                options["quality"] = max(min(100, quality), 0)
-            if disableAnimations:
-                options["animations"] = "disabled"
-            if crop:
-                options["clip"] = crop
+            options = self._create_screenshot_options(
+                crop,
+                disableAnimations,
+                fileType,
+                fullPage,
+                omitBackground,
+                quality,
+                string_path_no_extension,
+                timeout,
+            )
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
                     selector=self.resolve_selector(selector) or "",
-                    mask=json.dumps(mask_selectors),
+                    mask=json.dumps(self._get_mask_selectors(mask)),
                     options=json.dumps(options),
                     strict=self.strict_mode,
                 )
             )
             logger.debug(response.log)
-            file_path = response.body
+            screenshot_path_str = response.body
+            screenshot_path = Path(screenshot_path_str)
+            if (log_screenshot and self._is_embed(filename)) or return_as in (
+                ScreenshotReturnType.bytes,
+                ScreenshotReturnType.base64,
+            ):
+                screenshot_bytes = screenshot_path.read_bytes()
+                base64_screenshot = base64.b64encode(screenshot_bytes)
+                if log_screenshot and self._is_embed(filename):
+                    logger.debug("Embedding image to log.html.")
+                    self._embed_to_log(base64_screenshot)
 
-            if self._is_embed(filename):
-                return self._embed_to_log(file_path)
-            return self._log_image_link(file_path)
+            if log_screenshot and not self._is_embed(filename):
+                self._log_image_link(screenshot_path_str)
 
-    def _log_image_link(self, file_path: str) -> str:
+            self._unlink_screenshot(
+                log_screenshot, filename, return_as, screenshot_path
+            )
+            if return_as is ScreenshotReturnType.path_string:
+                return "EMBED" if self._is_embed(filename) else screenshot_path_str
+            if return_as is ScreenshotReturnType.path:
+                return screenshot_path
+            if return_as is ScreenshotReturnType.bytes:
+                return screenshot_bytes
+            if return_as is ScreenshotReturnType.base64:
+                return base64_screenshot.decode()
+            return None
+
+    def _create_screenshot_options(
+        self,
+        crop,
+        disableAnimations,
+        fileType,
+        fullPage,
+        omitBackground,
+        quality,
+        string_path_no_extension,
+        timeout,
+    ):
+        options = {
+            "path": f"{string_path_no_extension}.{fileType.name}",
+            "fileType": fileType.name,
+            "fullPage": fullPage,
+            "timeout": int(self.get_timeout(timeout)),
+            "omitBackground": omitBackground,
+        }
+        if quality is not None:
+            options["quality"] = max(min(100, quality), 0)
+        if disableAnimations:
+            options["animations"] = "disabled"
+        if crop:
+            options["clip"] = crop
+        return options
+
+    def _get_mask_selectors(self, mask):
+        if mask:
+            mask_selectors: Optional[List[str]]
+            if isinstance(mask, str):
+                mask_selectors = [self.resolve_selector(mask)]
+            elif isinstance(mask, Iterable):
+                mask_selectors = [self.resolve_selector(str(s)) for s in mask]
+            else:
+                raise ValueError(
+                    f"'mask' argument is neither string nor list of string. It is {type(mask)}"
+                )
+        else:
+            mask_selectors = None
+        return mask_selectors
+
+    def _unlink_screenshot(self, log_screenshot, filename, return_as, screenshot_path):
+        if (
+            filename is None
+            or self._is_embed(filename)
+            or (
+                return_as in (ScreenshotReturnType.bytes, ScreenshotReturnType.base64)
+                and not log_screenshot
+            )
+        ):
+            try:
+                screenshot_path.unlink()
+            except Exception:
+                logger.trace(f"Could not delete screenshot '{screenshot_path}'.")
+
+    def _log_image_link(self, file_path: str) -> None:
         relative_path = get_link_path(file_path, self.outputdir)
         logger.info(
             '</td></tr><tr><td colspan="3">'
-            f'<a href="{relative_path}"><img src="{relative_path}" width="800px"></a>',
+            f'<a href="{relative_path}" target="_blank"><img src="{relative_path}" width="800px"/></a>',
             html=True,
         )
-        return file_path
 
-    def _embed_to_log(self, file_path) -> str:
-        png = Path(file_path)
-        with png.open("rb") as png_file:
-            encoded_string = base64.b64encode(png_file.read())
+    @staticmethod
+    def _embed_to_log(base64_screenshot: bytes) -> str:
         # log statement is copied from:
         # https://github.com/robotframework/SeleniumLibrary/blob/master/src/SeleniumLibrary/keywords/screenshot.py
         logger.info(
             '</td></tr><tr><td colspan="3">'
-            '<img alt="screenshot" class="robot-seleniumlibrary-screenshot" '
-            f'src="data:image/png;base64,{encoded_string.decode()}" width="900px">',
+            '<img alt="screenshot" '
+            f'src="data:image/png;base64,{base64_screenshot.decode()}" width="900px"/>',
             html=True,
         )
-        try:
-            png.unlink()
-        except Exception:
-            logger.warn(f"Could not remove {png}")
         return "EMBED"
 
-    def _is_embed(self, filename: str) -> bool:
-        return True if filename.upper() == "EMBED" else False
+    def _is_embed(self, filename: Optional[str]) -> bool:
+        return filename is None or filename.upper() == "EMBED"
 
     @keyword(tags=("Setter", "Config"))
     def set_browser_timeout(
@@ -211,7 +305,7 @@ class Control(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``timeout`` | Timeout of it is for current playwright context and for new contexts. Supports Robot Framework [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format|time format] . Returns the previous value of the timeout. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope Settings` for more details. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Settings` for more details. |
 
         Example:
         | ${old_timeout} =    `Set Browser Timeout`    1m 30 seconds
@@ -222,16 +316,18 @@ class Control(LibraryComponent):
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
         self.timeout_stack.set(self.convert_timeout(timeout), scope)
+        return old_timeout
+
+    def set_playwright_timeout(self, timeout):
         try:
             with self.playwright.grpc_channel() as stub:
-                response = stub.SetTimeout(Request().Timeout(timeout=self.timeout))
+                response = stub.SetTimeout(Request().Timeout(timeout=timeout))
                 logger.info(response.log)
         except Exception as error:  # Suppress  all errors
             if "Browser has been closed" in str(error):
                 logger.debug(f"Suppress error {error} when setting timeout.")
             else:
                 raise
-        return old_timeout
 
     @keyword(tags=("Setter", "Config"))
     def set_retry_assertions_for(
@@ -241,7 +337,7 @@ class Control(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``timeout`` | Assertion retry timeout will determine how long Browser library will retry an assertion to be true. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope` for more details. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
         The other keyword `Set Browser timeout` controls how long Playwright
         will perform waiting in the node side for Elements to fulfill the
@@ -272,7 +368,7 @@ class Control(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``prefix``   | Prefix for all selectors. Prefix and selector will be separated by a single space. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope` for more details. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
         Returns the previous value of the prefix.
 
@@ -292,7 +388,7 @@ class Control(LibraryComponent):
 
     @keyword(tags=("Setter", "Config"))
     def show_keyword_banner(
-        self, show: bool = True, style: str = ""
+        self, show: bool = True, style: str = "", scope: Scope = Scope.Suite
     ) -> Dict[str, Union[None, bool, str]]:
         """Controls if the keyword banner is shown on page or not.
 
@@ -305,7 +401,7 @@ class Control(LibraryComponent):
         | =Arguments= | =Description= |
         | ``show`` | If `True` banner is shown on page. If `False` banner is not shown on page. If `None` banner is shown on page only when running in presenter mode. |
         | ``style`` | Additional css styles to be applied to the banner. These styles are css settings and may override the existing ones for the banner. |
-
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
         Example:
         | Show Keyword Banner     True    top: 5px; bottom: auto; left: 5px; background-color: #00909077; font-size: 9px; color: black;   # Show banner on top left corner with custom styles
@@ -313,10 +409,10 @@ class Control(LibraryComponent):
 
         [https://forum.robotframework.org/t//4716|Comment >>]
         """
-        original_state = self.library.show_keyword_call_banner
-        original_style = self.library.keyword_call_banner_add_style
-        self.library.show_keyword_call_banner = show
-        self.library.keyword_call_banner_add_style = style
+        original_state = self.show_keyword_call_banner
+        original_style = self.keyword_call_banner_add_style
+        self.show_keyword_call_banner_stack.set(show, scope)
+        self.keyword_call_banner_add_style_stack.set(style, scope)
         if not show:
             self.library.set_keyword_call_banner()
         return {"show": original_state, "style": original_style}

@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: 16.x
         cache: 'npm'
@@ -104,7 +104,7 @@ jobs:
             node-version: 16.x
             shard: 4
           - os: ubuntu-latest
-            python-version: "3.10"
+            python-version: "3.11"
             node-version: 16.x
             shard: 1
           - os: macos-latest
@@ -122,7 +122,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -157,9 +157,9 @@ jobs:
       if: matrix.shard == 1
       run: |
         inv lint-node
-    - name: Check with flake8
+    - name: Check with ruff
       run: |
-        flake8 --config Browser/.flake8 Browser
+        ruff Browser
     - name: Build test app
       run: |
         inv create-test-app
@@ -198,7 +198,7 @@ jobs:
       # flaky-tests-detection and failures-analysis install is here because dependencies takes long
       # time to install and not needed for the test-install
       run : |
-        pip install flaky-tests-detection failures-analysis
+        pip install flaky-tests-detection failures-analysis requests python-dateutil
         python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
         inv copy-xunit
     - name: Flaky tests detection
@@ -254,7 +254,7 @@ jobs:
           dir zip_results/demoapp
           tar -xf zip_results/demoapp/demo-app-win32.zip
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'

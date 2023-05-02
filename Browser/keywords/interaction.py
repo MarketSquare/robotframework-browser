@@ -25,7 +25,6 @@ from ..utils import (
     get_abs_scroll_coordinates,
     get_rel_scroll_coordinates,
     keyword,
-    locals_to_params,
     logger,
 )
 from ..utils.data_types import (
@@ -185,10 +184,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4338|Comment >>]
         """
-        originals = self._get_original_values(locals())
-        secret = self.resolve_secret(
-            secret, originals.get("secret") or secret, "secret"
-        )
+        secret = self.resolve_secret(secret, "secret")
         try:
             self._type_text(
                 selector,
@@ -200,23 +196,6 @@ class Interaction(LibraryComponent):
             )
         except Exception as e:
             raise Exception(str(e).replace(secret, "***"))
-
-    def _get_original_values(self, local_args: Dict[str, Any]) -> Dict[str, Any]:
-        originals = locals_to_params(local_args)
-        if not self.library.current_arguments:
-            return originals
-        named_args = False
-        for idx, val in enumerate(self.library.current_arguments):
-            if idx > len(originals):
-                break
-            if "=" in val and not named_args:
-                named_args = val.split("=", 1)[0] in originals
-            if named_args:
-                arg_name, arg_value = val.split("=", 1)
-                originals[arg_name] = arg_value
-            else:
-                originals[list(originals.keys())[idx]] = val
-        return originals
 
     @keyword(tags=("Setter", "PageContent"))
     def fill_secret(self, selector: str, secret: str, force: bool = False):
@@ -263,10 +242,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4253|Comment >>]
         """
-        originals = self._get_original_values(locals())
-        secret = self.resolve_secret(
-            secret, originals.get("secret") or secret, "secret"
-        )
+        secret = self.resolve_secret(secret, "secret")
         try:
             self._fill_text(
                 selector,
@@ -342,8 +318,8 @@ class Interaction(LibraryComponent):
         | ``button`` | Defaults to ``left`` if invalid. |
         | ``clickCount`` | Defaults to 1. |
         | ``delay`` | Time to wait between mouse-down and mouse-up. Defaults to 0. |
-        | ``position_x`` | & ``position_y`` A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
-        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
+        | ``force`` | Set to True to skip Playwright's Actionability checks (https://playwright.dev/docs/actionability). |
         | ``noWaitAfter`` | Actions that initiate navigation, are waiting for these navigation to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
@@ -364,7 +340,7 @@ class Interaction(LibraryComponent):
         | `Click`    id=clickWithModifiers    left    1    None    None    None    False    False    Alt    Meta    Shift
         | `Click`    id=clickWithModifier    right    2    None    None    None    False    False    Shift
 
-        [https://forum.robotframework.org/t/comments-for-click/4238|Comment >>]
+        [https://forum.robotframework.org/t//4238|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
@@ -903,10 +879,9 @@ class Interaction(LibraryComponent):
                     sleep(delay.total_seconds())
                     self.mouse_button(MouseButtonAction.up, button=button)
                 return
-            else:
-                if delay:
-                    raise ValueError("Delay is only valid on 'click' action.")
-                body = {"options": {"button": button.name, "clickCount": clickCount}}
+            if delay:
+                raise ValueError("Delay is only valid on 'click' action.")
+            body = {"options": {"button": button.name, "clickCount": clickCount}}
             response = stub.MouseButton(
                 Request().MouseButtonOptions(action=action.name, json=json.dumps(body))
             )
@@ -1093,6 +1068,26 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
+    def mouse_wheel(self, deltaX: int, deltaY: int):
+        """Simulates the user rotation of a mouse wheel.
+
+        | =Arguments= | =Description= |
+        | ``deltaX`` & ``deltaY`` | Pixels that are scrolled horizontally & vertically. |
+
+        Example:
+        | # Before doing a mouse wheel interaction. A mouse needs to be posisioned on the browser window.
+        | `Hover`    body
+        | `Mouse Wheel`    0    250
+
+        [https://forum.robotframework.org/t//5186|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.MouseWheel(
+                Request().MouseWheel(deltaX=deltaX, deltaY=deltaY)
+            )
+            logger.info(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
     def keyboard_key(self, action: KeyAction, key: str):
         """Press a keyboard key on the virtual keyboard or set a key up or down.
 
@@ -1125,7 +1120,7 @@ class Interaction(LibraryComponent):
     def keyboard_input(
         self,
         action: KeyboardInputAction,
-        input: str,
+        input: str,  # noqa: A002
         delay: Union[int, timedelta] = timedelta(milliseconds=0),
         # TODO: remove int special handling. Was only here since 09.2022 for removing delay ms to timedelta
     ):

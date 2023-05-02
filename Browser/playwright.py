@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Optional
 import grpc  # type: ignore
 from backports.cached_property import cached_property
 
-import Browser.generated.playwright_pb2_grpc as playwright_pb2_grpc
+from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
 from .base import LibraryComponent
@@ -92,16 +92,25 @@ class Playwright(LibraryComponent):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        logfile = open(Path(self.outputdir, "playwright-log.txt"), "w")
+        logfile = Path(self.outputdir, "playwright-log.txt").open("w")
         port = str(find_free_port())
         if self.enable_playwright_debug:
             os.environ["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port
+        node_args = ["node"]
+        node_debug_options = os.environ.get(
+            "ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS"
+        )
+        if node_debug_options:
+            node_args.extend(node_debug_options.split(","))
+        node_args.append(str(playwright_script))
+        node_args.append(port)
         if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        logger.info(f"Node startup parameters: {node_args}")
         return Popen(
-            ["node", str(playwright_script), port],
+            node_args,
             shell=False,
             cwd=workdir,
             env=os.environ,

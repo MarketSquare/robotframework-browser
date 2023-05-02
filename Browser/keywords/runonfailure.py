@@ -23,19 +23,20 @@ from typing import Optional
 
 from ..base import LibraryComponent
 from ..utils import keyword, logger
-from ..utils.data_types import DelayedKeyword
+from ..utils.data_types import DelayedKeyword, Scope
 
 
 class RunOnFailureKeywords(LibraryComponent):
     @keyword(tags=("Config",))
     def register_keyword_to_run_on_failure(
-        self, keyword: Optional[str], *args: str
+        self, keyword: Optional[str], *args: str, scope: Scope = Scope.Global
     ) -> DelayedKeyword:
         """Sets the keyword to execute, when a Browser keyword fails.
 
         | =Arguments= | =Description= |
         | ``keyword`` | The name of a keyword that will be executed if a Browser keyword fails. It is possible to use any available keyword, including user keywords or keywords from other libraries. |
         | ``*args`` | The arguments to the keyword if any. |
+        | ``scope`` | Scope defines the live time of this setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Settings` for more details. |
 
         The initial keyword to use is set when `importing` the library, and
         the keyword that is used by default is `Take Screenshot`.
@@ -60,11 +61,11 @@ class RunOnFailureKeywords(LibraryComponent):
 
         [https://forum.robotframework.org/t//4316|Comment >>]
         """
-        old_keyword = self.library.run_on_failure_keyword
+        old_keyword = self.run_on_failure_keyword
         new_keyword = self.parse_run_on_failure_keyword(
             f"{keyword}  {'  '.join(args)}".strip()
         )
-        self.library.run_on_failure_keyword = new_keyword
+        self.run_on_failure_keyword_stack.set(new_keyword, scope)
         if new_keyword.name:
             logger.info(f"'{new_keyword}' will be run on failure.")
         else:

@@ -13,14 +13,15 @@
 # limitations under the License.
 import sys
 from datetime import timedelta
+from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from robotlibcore import KeywordBuilder  # type: ignore
 
 import Browser
-from Browser.utils.data_types import SelectionType
 
-PY310 = sys.version_info.major == 3 and sys.version_info.minor >= 10
+PY310 = sys.version_info.major == 3 and sys.version_info.minor >= 10  # noqa: PLR2004
 
 
 def is_named_method(keyword_name: str) -> bool:
@@ -33,7 +34,7 @@ def is_named_method(keyword_name: str) -> bool:
 
 def get_method_name_for_keyword(keyword_name: str) -> str:
     if is_named_method(keyword_name):
-        for key in br.attributes.keys():
+        for key in br.attributes:
             if key != keyword_name and keyword_name == br.attributes[key].robot_name:
                 return key
     return keyword_name
@@ -41,12 +42,11 @@ def get_method_name_for_keyword(keyword_name: str) -> str:
 
 def get_type_string_from_type(argument_type: type) -> str:
     if PY310 and str(argument_type).startswith("typing."):
-        return str(argument_type)
+        return str(argument_type).replace("NoneType", "None")
     if hasattr(argument_type, "__name__"):
         return argument_type.__name__
-    else:
-        arg_type_str = str(argument_type.__repr__()).lstrip("typing.")
-        return arg_type_str.replace("NoneType", "None")
+    arg_type_str = str(argument_type.__repr__()).lstrip("typing.")
+    return arg_type_str.replace("NoneType", "None")
 
 
 def get_type_string_from_argument(argument_string: str, argument_types: dict) -> str:
@@ -59,7 +59,7 @@ def get_type_string_from_argument(argument_string: str, argument_types: dict) ->
 
 
 def get_function_list_from_keywords(keywords):
-    functions = list()
+    functions = []
     for keyword in keywords:
         method_name = get_method_name_for_keyword(keyword)
         keyword_arguments = br.get_keyword_arguments(keyword)
@@ -70,7 +70,7 @@ def get_function_list_from_keywords(keywords):
 
 
 def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
-    arguments_list = list()
+    arguments_list = []
     for argument in keyword_arguments:
         if isinstance(argument, tuple):
             arg_str = argument[0]
@@ -82,9 +82,9 @@ def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
                 default_value = f"'{default_value}'"
             elif isinstance(default_value, timedelta):
                 default_value = f"timedelta(seconds={default_value.total_seconds()})"
-            elif isinstance(default_value, SelectionType):
-                default_value = f"SelectionType.{default_value}"
-            arg_str = f"{arg_str} = {default_value}"
+            elif isinstance(default_value, Enum):
+                default_value = f"{type(default_value).__name__}.{default_value.name}"
+            arg_str = f"{arg_str} = {str(default_value)}"
         else:
             arg_str = argument
             arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
@@ -110,11 +110,20 @@ from typing import Any
 
 import assertionengine
 
+from robotlibcore import DynamicCore  # type: ignore
+
 from .utils.data_types import *
+from .base import LibraryComponent
 
 
-class Browser:
+class Browser(DynamicCore):
     timeout: Any = ...
+    scope_stack: typing.Dict = ...
+    _old_init_args: typing.Dict = ...
+    _playwright_state: Any = ...
+    _browser_control: Any = ...
+
+
 """
 
 pyi_non_kw_methods = """\
@@ -123,11 +132,12 @@ pyi_non_kw_methods = """\
     def millisecs_to_timestr(self, timeout: float)  -> str: ...
     def get_strict_mode(self, strict: Union[bool, None]) -> bool: ...
     def _parse_run_on_failure_keyword(self, keyword_name: Union[str, None]) -> DelayedKeyword: ...
+    def _create_lib_component_from_jsextension(self, jsextension: str) -> LibraryComponent: ...
 
 """
 
 init_method = KeywordBuilder.build(br.__init__)
-with open("Browser/__init__.pyi", "w") as stub_file:
+with Path("Browser/browser.pyi").open("w") as stub_file:
     stub_file.write(pyi_boilerplate)
     init_string = keyword_line(
         init_method.argument_specification, init_method.argument_types, "__init__"

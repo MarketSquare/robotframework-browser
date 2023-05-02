@@ -71,9 +71,9 @@ from previous release with pip_, run
    pip install --upgrade robotframework-browser
    rfbrowser clean-node
    rfbrowser init
-Alternatively you can download the source distribution from PyPI_ and 
-install it manually. Browser library {version} was released on {date}. 
-Browser supports Python 3.7+, Node 14/16 LTS and Robot Framework 4.0+. 
+Alternatively you can download the source distribution from PyPI_ and
+install it manually. Browser library {version} was released on {date}.
+Browser supports Python 3.7+, Node 14/16 LTS and Robot Framework 4.0+.
 Library was tested with Playwright REPLACE_PW_VERSION
 
 .. _Robot Framework: http://robotframework.org
@@ -81,13 +81,12 @@ Library was tested with Playwright REPLACE_PW_VERSION
 .. _Playwright: https://github.com/microsoft/playwright
 .. _pip: http://pip-installer.org
 .. _PyPI: https://pypi.python.org/pypi/robotframework-browser
-.. _issue tracker: https://github.com/MarketSquare/robotframework-browser/milestones%3A{version.milestone}
+.. _issue tracker: https://github.com/MarketSquare/robotframework-browser/milestones/{version.milestone}
 """
 
 
 @task
 def deps(c):
-
     if _sources_changed(
         [ROOT_DIR / "Browser/dev-requirements.txt"], python_deps_timestamp_file
     ):
@@ -97,7 +96,7 @@ def deps(c):
     else:
         print("no changes in Browser/dev-requirements.txt, skipping pip install")
     if os.environ.get("CI"):
-        shutil.rmtree("node_modules")
+        shutil.rmtree("node_modules", ignore_errors=True)
 
     if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
         arch = " --target_arch=x64" if platform.processor() == "arm" else ""
@@ -282,6 +281,7 @@ def clean_atest(c):
 def atest(
     c,
     suite=None,
+    test=None,
     include=None,
     shard=None,
     zip=None,
@@ -295,6 +295,7 @@ def atest(
 
     Args:
         suite: Select which suite to run.
+        test: Select which test to run.
         include: Select test by tag
         shard: Shard tests
         zip: Create zip file from output files.
@@ -319,6 +320,8 @@ def atest(
     )
     if suite:
         args.extend(["--suite", suite])
+    if test:
+        args.extend(["--test", test])
     if include:
         args.extend(["--include", include])
     if debug:
@@ -329,7 +332,7 @@ def atest(
         args.extend(["--variable", "SUFFIX:framing.html?url="])
         args.extend(["--variable", "SELECTOR_PREFIX:id=iframe_id >>>"])
         args.extend(["--exclude", "no-iframe"])
-    os.mkdir(ATEST_OUTPUT)
+    ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
 
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
@@ -586,10 +589,11 @@ def lint_python(c):
         (ROOT_DIR / "utest").glob("**/*.py")
     )
     if _sources_changed(all_py_sources, python_lint_timestamp_file):
-        c.run("mypy --show-error-codes --config-file Browser/mypy.ini Browser/ utest/")
+        c.run(
+            "mypy --exclude .venv --show-error-codes --config-file Browser/mypy.ini Browser/"
+        )
         c.run("black --config Browser/pyproject.toml tasks.py Browser/")
-        c.run("flake8 --config Browser/.flake8 Browser/ utest/")
-        c.run("isort Browser/")
+        c.run("ruff check --config Browser/pyproject.toml Browser/")
         python_lint_timestamp_file.touch()
     else:
         print("no changes in .py files, skipping python lint")
@@ -657,40 +661,36 @@ def lint(c):
 
 
 @task
-def docker_base(c):
-    c.run(
-        "DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file docker/Dockerfile.playwright20.04 ."
-    )
-
-
-@task
-def docker_builder(c):
-    c.run("DOCKER_BUILDKIT=1 docker build --tag rfbrowser --file docker/Dockerfile .")
-
-
-@task
 def docker_stable_image(c):
     from Browser.version import __version__ as VERSION
 
     c.run(
-        f"DOCKER_BUILDKIT=1 docker build --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
+        f"docker buildx build --load --tag docker.pkg.github.com/marketsquare/robotframework-browser/rfbrowser-stable:{VERSION} --file docker/Dockerfile.latest_release ."
+    )
+
+
+@task
+def docker_tester(c):
+    c.run(
+        f"docker buildx build --load --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
     )
 
 
 @task(clean_atest, create_test_app, build)
 def docker_test(c):
     c.run("mkdir atest/output")
+    c.run("chmod -R 777 atest/output")
     c.run(
-        """docker run\
+        f"""docker run\
 	    --rm \
 	    --ipc=host\
 	    --security-opt seccomp=docker/seccomp_profile.json \
 	    -v $(pwd)/atest/:/app/atest \
 	    -v $(pwd)/node/:/app/node/ \
 	    --workdir /app \
-	    rfbrowser \
-	    sh -c "ROBOT_SYSLOG_FILE=/app/atest/output/syslog.txt PATH=$PATH:~/.local/bin pabot --pabotlib --loglevel debug --exclude not-implemented --outputdir /app/atest/output /app/atest/test"
-          """
+	    rfbrowser-tests \
+	    sh -c "xvfb-run python3 -m invoke atest-robot"
+        """
     )
 
 
@@ -829,6 +829,12 @@ def version(c, version):
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
     setup_py_file = ROOT_DIR / "setup.py"
     _replace_version(setup_py_file, node_version_matcher, f'"version": "{version}"')
+
+    dockerfile = ROOT_DIR / "docker" / "Dockerfile.latest_release"
+    docker_version_matcher = re.compile("robotframework-browser==.*")
+    _replace_version(
+        dockerfile, docker_version_matcher, f"robotframework-browser=={version}"
+    )
     # workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
     # workflow_version_matcher = re.compile("VERSION: .*")
     # _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")

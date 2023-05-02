@@ -6,6 +6,7 @@ import pytest
 from assertionengine import AssertionOperator
 import logging
 
+import Browser
 from Browser import SupportedBrowsers
 
 
@@ -20,8 +21,6 @@ def application_server():
 
 @pytest.fixture()
 def browser():
-    import Browser
-
     browser = Browser.Browser()
     yield browser
     browser.close_browser("ALL")
@@ -63,8 +62,6 @@ def test_new_browser_with_default_timeout(browser):
 
 
 def test_playwright_exit_handler(atexit_register):
-    import Browser
-
     browser = Browser.Browser()
     try:
         atexit_register.assert_not_called()
@@ -75,8 +72,6 @@ def test_playwright_exit_handler(atexit_register):
 
 
 def test_playwright_double_close():
-    import Browser
-
     browser = Browser.Browser()
     browser.new_browser()
     browser.playwright.close()
@@ -107,7 +102,7 @@ def test_promise_to_wait_for_response_with_name_arguments(browser):
 def test_promise_to_wait_for_alert_with_name_arguments(browser):
     browser.new_page()
     promise = browser.promise_to(
-        "Wait For Alert", "action=ignore", "prompt_input=Kala", "text=Wrong Text"
+        "Wait For Alert", "action=accept", "prompt_input=Kala", "text=Wrong Text"
     )
     browser.go_to(url="https://www.google.com")
     assert (promise.running() or promise.done()) is True

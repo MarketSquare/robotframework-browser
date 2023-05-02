@@ -22,7 +22,7 @@ class StrictMode(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``mode`` | When set to ``True``, keywords that are searching elements will use Playwright [https://playwright.dev/docs/api/class-page#page-query-selector|strict mode]. Keyword changes library strict mode value and keyword also return the previous strict mode value. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test``/``Task``. See `Scope` for more details. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
 
         Example:

@@ -27,7 +27,7 @@ Switch Context
     ${ctx} =    New Context
     ${pg} =    New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    ${br2} =    New Browser    headless=True
+    ${br2} =    New Browser    headless=True    reuse_existing=False
     ${ctx2} =    New Context
     ${pg2} =    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
@@ -55,7 +55,7 @@ Switch Page
     ${ctx} =    New Context
     ${pg} =    New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    ${br2} =    New Browser    headless=True
+    ${br2} =    New Browser    headless=True    reuse_existing=False
     ${ctx2} =    New Context
     ${pg2} =    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login

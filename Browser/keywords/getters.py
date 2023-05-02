@@ -27,7 +27,7 @@ from assertionengine import (
     list_verify_assertion,
     verify_assertion,
 )
-from robot.utils import DotDict  # type: ignore
+from robot.utils import DotDict
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
@@ -48,7 +48,7 @@ class Getters(LibraryComponent):
     def get_url(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the current URL.
@@ -72,50 +72,12 @@ class Getters(LibraryComponent):
                 value, assertion_operator, assertion_expected, "URL", message, formatter
             )
 
-    # @keyword(tags=("Getter", "Assertion", "BrowserControl"))
-    # Not published as keyword due to missing of good docs.
-    @with_assertion_polling
-    def get_page_state(
-        self,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
-        message: Optional[str] = None,
-    ) -> Any:
-        """Returns page model state object as a dictionary.
-
-        | =Arguments= | =Description= |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
-
-        This must be given on the page to ``window.__SET_RFBROWSER_STATE__``
-
-        For example:
-
-        ``let mystate = {'login': true, 'name': 'George', 'age': 123};``
-
-        ``window.__SET_RFBROWSER_STATE__ && window.__SET_RFBROWSER_STATE__(mystate);``
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetPageState(Request().Empty())
-            logger.debug(response.log)
-            value = json.loads(response.result)
-            formatter = self.keyword_formatters.get(self.get_page_state)
-            return verify_assertion(
-                value,
-                assertion_operator,
-                assertion_expected,
-                "State",
-                message,
-                formatter,
-            )
-
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     def get_page_source(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets pages HTML source as a string.
@@ -149,7 +111,7 @@ class Getters(LibraryComponent):
     def get_title(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the title of the current page.
@@ -168,6 +130,7 @@ class Getters(LibraryComponent):
             response = stub.GetTitle(Request().Empty())
             logger.debug(response.log)
             value = response.body
+            logger.info(f"Title: {value!r}")
             formatter = self.keyword_formatters.get(self.get_title)
             return verify_assertion(
                 value,
@@ -184,7 +147,7 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns text attribute of the element found by ``selector``.
@@ -207,11 +170,12 @@ class Getters(LibraryComponent):
                | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
                | ${text} =    `Get Text`    //input         ==    root              # Returns input element text with assertion.
 
-               [https://forum.robotframework.org/t/comments-for-get-text/4285|Comment >>]
+               [https://forum.robotframework.org/t//4285|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         response = self._get_text(selector)
         logger.debug(response.log)
+        logger.info(f"Text: {response.body!r}")
         formatter = self.keyword_formatters.get(self.get_text)
         return verify_assertion(
             response.body,
@@ -233,9 +197,9 @@ class Getters(LibraryComponent):
     def get_property(
         self,
         selector: str,
-        property: str,
+        property: str,  # noqa:  A002
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
@@ -271,6 +235,7 @@ class Getters(LibraryComponent):
         logger.debug(response.log)
         if response.body:
             value = json.loads(response.body)
+            logger.info(f"Property: {value!r}")
         elif assertion_operator is not None:
             value = None
         else:
@@ -292,7 +257,7 @@ class Getters(LibraryComponent):
         selector: str,
         attribute: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
@@ -337,7 +302,7 @@ class Getters(LibraryComponent):
         value = json.loads(response.body)
         if assertion_operator is None and value is None:
             raise AttributeError(f"Attribute '{attribute}' not found!")
-        logger.debug(f"Attribute is: {value}")
+        logger.info(f"Attribute is: {value!r}")
         formatter = self.keyword_formatters.get(self.get_attribute)
         return verify_assertion(
             value,
@@ -373,8 +338,8 @@ class Getters(LibraryComponent):
         is not done.
 
         Available assertions:
-        - ``==`` and ``!=`` can work with multiple values
-        - ``contains`` / ``*=`` only accepts one single expected value
+        - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
+        - ``validate`` and ``evaluate`` only accepts one single expected value
 
         Other operators are not allowed.
 
@@ -387,6 +352,9 @@ class Getters(LibraryComponent):
         attribute_names = self.library.evaluate_javascript(
             selector, "(element) => element.getAttributeNames()"
         )
+        if "__playwright_target__" in attribute_names:
+            logger.debug("Remove __playwright_target__ from attribute names")
+            attribute_names.remove("__playwright_target__")
         expected = list(assertion_expected)
         if self.keyword_formatters.get(self.get_attribute_names):
             logger.warn("Formatter is not supported by Get Attribute Names keyword.")
@@ -419,8 +387,8 @@ class Getters(LibraryComponent):
         is not done.
 
         Available assertions:
-        - ``==`` and ``!=`` can work with multiple values
-        - ``contains`` / ``*=`` only accepts one single expected value
+        - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
+        - ``validate`` and ``evaluate`` only accepts one single expected value
 
         Other operators are not allowed.
 
@@ -448,7 +416,7 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
@@ -526,8 +494,8 @@ class Getters(LibraryComponent):
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
-        - ``==`` and ``!=`` can work with multiple values
-        - ``contains`` / ``*=`` only accepts one single expected value
+        - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
+        - ``validate`` and ``evaluate`` only accepts one single expected value
 
         Other operators are not allowed.
 
@@ -665,7 +633,7 @@ class Getters(LibraryComponent):
         self,
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Returns the current viewport dimensions.
@@ -691,7 +659,7 @@ class Getters(LibraryComponent):
             logger.info(response.log)
             response_json = json.loads(response.json)
             if response_json is None:
-                return
+                return None
             parsed = DotDict(response_json)
             logger.debug(parsed)
             if self.keyword_formatters.get(self.get_viewport_size):
@@ -704,15 +672,14 @@ class Getters(LibraryComponent):
                     "Viewport size is",
                     message,
                 )
-            else:
-                logger.info(f"Value of '{key}'': {parsed[key.name]}")
-                return float_str_verify_assertion(
-                    parsed[key.name],
-                    assertion_operator,
-                    assertion_expected,
-                    f"{key} is",
-                    message,
-                )
+            logger.info(f"Value of '{key}'': {parsed[key.name]}")
+            return float_str_verify_assertion(
+                parsed[key.name],
+                assertion_operator,
+                assertion_expected,
+                f"{key} is",
+                message,
+            )
 
     @keyword(tags=("Getter", "PageContent"))
     def get_table_cell_element(self, table: str, column: str, row: str) -> str:
@@ -880,7 +847,7 @@ class Getters(LibraryComponent):
         | ${option_value} =    `Get Property`    ${element} >> optionOne    value    # Locator is resolved from the page.
         | ${option_value} =    `Get Property`    ${element} >> optionTwo    value    # Locator is resolved again from the page.
 
-        [https://forum.robotframework.org/t/comments-for-get-element/4269|Comment >>]
+        [https://forum.robotframework.org/t//4269|Comment >>]
         """
         selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
@@ -929,10 +896,11 @@ class Getters(LibraryComponent):
     def get_style(
         self,
         selector: str,
-        key: str = "ALL",
+        key: Optional[str] = "ALL",
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
+        pseudo_element: Optional[str] = None,
     ) -> Any:
         """Gets the computed style properties of the element selected by ``selector``.
 
@@ -941,10 +909,13 @@ class Getters(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector from which the style shall be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``key`` | Key of the requested CSS property. Retrieves "ALL" styles by default. |
+        | ``key`` | Key of the requested CSS property. Retrieves "ALL" styles as dictionary by default. All css settings can be used as keys even if they are not all returned in the dictionary. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``assertion_expected`` | Expected value for the counting |
         | ``message`` | overrides the default error message for assertion. |
+        | ``pseudo_element`` | Pseudo element to match. Defaults to None. Pseudo elements are special css |
+
+        [ https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements | Pseudo element ] is a css fuctionality to add styles. Example `::before` or `::after`.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -955,36 +926,41 @@ class Getters(LibraryComponent):
         [https://forum.robotframework.org/t//4281|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
+        if key == "ALL" or key is None:
+            key = ""
         with self.playwright.grpc_channel() as stub:
             response = stub.GetStyle(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+                Request().ElementStyle(
+                    selector=selector,
+                    styleKey=key,
+                    pseudo=pseudo_element or "",
+                    strict=self.strict_mode,
+                )
             )
-        parsed = DotDict(json.loads(response.json))
+        parsed_response = json.loads(response.json)
         formatter = self.keyword_formatters.get(self.get_style)
-        if key == "ALL":
+        if not key or isinstance(parsed_response, dict):
             if formatter:
                 logger.warn(
                     "Formatter is not supported by Get Style keyword with key 'ALL'."
                 )
             return dict_verify_assertion(
-                parsed,
+                DotDict(parsed_response),
                 assertion_operator,
                 assertion_expected,
                 "Computed style is",
                 message,
             )
-        else:
-            item = parsed.get(key, "NOT_FOUND")
-            logger.info(f"Value of key: {key}")
-            logger.info(f"Value of selected property: {item}")
-            return verify_assertion(
-                item,
-                assertion_operator,
-                assertion_expected,
-                f"Style value for {key} is",
-                message,
-                formatter,
-            )
+        logger.info(f"Value of key: {key}")
+        logger.info(f"Value of selected property: {parsed_response}")
+        return verify_assertion(
+            parsed_response,
+            assertion_operator,
+            assertion_expected,
+            f"Style value for {key} is",
+            message,
+            formatter,
+        )
 
     @keyword(name="Get BoundingBox", tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -993,7 +969,7 @@ class Getters(LibraryComponent):
         selector: str,
         key: BoundingBoxFields = BoundingBoxFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
@@ -1036,15 +1012,14 @@ class Getters(LibraryComponent):
             return int_dict_verify_assertion(
                 parsed, assertion_operator, assertion_expected, "BoundingBox is"
             )
-        else:
-            logger.info(f"Value of '{key}'': {parsed[key.name]}")
-            return float_str_verify_assertion(
-                parsed[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"BoundingBox {key.name} is",
-                message,
-            )
+        logger.info(f"Value of '{key}'': {parsed[key.name]}")
+        return float_str_verify_assertion(
+            parsed[key.name],
+            assertion_operator,
+            assertion_expected,
+            f"BoundingBox {key.name} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1053,7 +1028,7 @@ class Getters(LibraryComponent):
         selector: Optional[str] = None,
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
@@ -1095,15 +1070,14 @@ class Getters(LibraryComponent):
                 "Scroll size is",
                 message,
             )
-        else:
-            logger.info(f"Value of '{key}'': {scroll_size[key.name]}")
-            return float_str_verify_assertion(
-                scroll_size[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"Scroll {key.name} is",
-                message,
-            )
+        logger.info(f"Value of '{key}'': {scroll_size[key.name]}")
+        return float_str_verify_assertion(
+            scroll_size[key.name],
+            assertion_operator,
+            assertion_expected,
+            f"Scroll {key.name} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1112,7 +1086,7 @@ class Getters(LibraryComponent):
         selector: Optional[str] = None,
         key: AreaFields = AreaFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
@@ -1154,15 +1128,14 @@ class Getters(LibraryComponent):
                 "Scroll position is",
                 message,
             )
-        else:
-            logger.info(f"Value of '{key}'': {scroll_position[key.name]}")
-            return float_str_verify_assertion(
-                scroll_position[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"Scroll position {key.name} is",
-                message,
-            )
+        logger.info(f"Value of '{key}'': {scroll_position[key.name]}")
+        return float_str_verify_assertion(
+            scroll_position[key.name],
+            assertion_operator,
+            assertion_expected,
+            f"Scroll position {key.name} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1171,7 +1144,7 @@ class Getters(LibraryComponent):
         selector: Optional[str] = None,
         key: SizeFields = SizeFields.ALL,
         assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Any = None,
+        assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
     ) -> Any:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
@@ -1207,15 +1180,14 @@ class Getters(LibraryComponent):
                 "Client size is",
                 message,
             )
-        else:
-            logger.info(f"Value of '{key}'': {client_size[key.name]}")
-            return float_str_verify_assertion(
-                client_size[key.name],
-                assertion_operator,
-                assertion_expected,
-                f"Client {key.name} is",
-                message,
-            )
+        logger.info(f"Value of '{key}'': {client_size[key.name]}")
+        return float_str_verify_assertion(
+            client_size[key.name],
+            assertion_operator,
+            assertion_expected,
+            f"Client {key.name} is",
+            message,
+        )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
@@ -1276,7 +1248,7 @@ class Getters(LibraryComponent):
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        [https://forum.robotframework.org/t/comments-for-get-element-states/4272|Comment >>]
+        [https://forum.robotframework.org/t//4272|Comment >>]
         """
         selector = self.resolve_selector(selector)
 
@@ -1301,5 +1273,4 @@ class Getters(LibraryComponent):
             state_list = [flag.name for flag in ElementState if flag in result]
             logger.info(f"States are: {state_list}")
             return state_list
-        else:
-            return result
+        return result
