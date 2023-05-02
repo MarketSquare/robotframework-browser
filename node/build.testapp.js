@@ -15,23 +15,20 @@ const indexHtmlSource = path.resolve(__dirname, './dynamic-test-app/static/index
 const indexHtmlTarget = path.resolve(distPath, './index.html')
 fs.copyFileSync(indexHtmlSource,  indexHtmlTarget)
 
-const frontendContext = await esbuild.context({
+/* Build testApp frontend */
+esbuild.build({
   logLevel: "info",
   entryPoints: ['./node/dynamic-test-app/src/index.tsx'],
   bundle: true,
   platform: "browser",
   outfile: "./node/dynamic-test-app/dist/index.js",
-}).catch(() => process.exit(1));
-/* Build testApp frontend */
-await frontendContext.build().catch(() => process.exit(1));
-
+})
 /* Build testApp backend */
-const backendContext = await esbuild.context({
+esbuild.build({
   logLevel: "info",
   entryPoints: ["./node/dynamic-test-app/src/server.ts"],
   bundle: true,
   platform: "node",
   outfile: "./node/dynamic-test-app/dist/server.js",
   /* plugins: [nodeExternalsPlugin()], */
-}).catch(() => process.exit(1));
-await backendContext.build().catch(() => process.exit(1));
+})
