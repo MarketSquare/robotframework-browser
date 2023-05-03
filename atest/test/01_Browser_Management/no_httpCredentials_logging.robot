@@ -32,3 +32,15 @@ New Context HttpCredentials Resolved
     ${pwd} =    Set Variable    pwd
     ${username} =    Set Variable    name
     New Context    httpCredentials={'username': '$username', 'password': '$pwd'}
+
+New Context HttpCredentials Resolved As Dict
+    [Documentation]    ...
+    ...    LOG 4:2    INFO    REGEXP:    .*"httpCredentials": "XXX".*
+    ...    LOG 4:2    INFO    REGEXP:    .*ignoreHTTPSErrors.*
+    ...    LOG 4:4    INFO    REGEXP:    .*httpCredentials(\"|'):\\s(\"|')XXX(\"|').*
+    ...    LOG 4:4    INFO    REGEXP:    .*ignoreHTTPSErrors.*
+    [Tags]    no-mac-support
+    ${pwd} =    Set Variable    pwd
+    ${username} =    Set Variable    name
+    ${credentials} =    Create Dictionary    username=$username    password=$pwd
+    New Context    httpCredentials=${credentials}

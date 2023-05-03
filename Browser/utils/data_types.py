@@ -136,14 +136,23 @@ class RecordHar(TypedDict, total=False):
 class HttpCredentials(TypedDict):
     """Sets the credentials for http basic-auth.
 
-    Can be defined as robot dictionary or as string literal.
+    Can be defined as robot dictionary or as string literal. Does not reveal secrets
+    in Robot Framework logs. Instead, username and password values are resolved internally.
+    Please note that if ``enable_playwright_debug`` is enabled in the library import,
+    secret will be always visible as plain text in the playwright debug logs, regardless
+    of the Robot Framework log level.
 
     Example as literal:
-    | `New Context`    httpCredentials={'username': 'admin', 'password': '123456'}
+    | ${pwd} =    Set Variable    1234
+    | ${username} =    Set Variable    admin
+    | `New Context`
+    | ...    httpCredentials={'username': '$username', 'password': '$pwd'}
 
     Example as robot variable
     | ***** *Variables* *****
-    | &{credentials}=    username=admin    password=123456
+    | ${username}=       admin
+    | ${pwd}=            1234
+    | ${credentials}=    username=$username    password=$pwd
     |
     | ***** *Keywords* *****
     | Open Context
