@@ -116,8 +116,8 @@ class RecordVideo(TypedDict, total=False):
 class RecordHar(TypedDict, total=False):
     """Enables HAR recording for all pages into to a file.
 
-    If not specified, the HAR is not recorded. Make sure to await context to close for the
-    [http://www.softwareishard.com/blog/har-12-spec/|HAR] to be saved.
+    If not specified, the HAR is not recorded. Make sure to await context to close for
+    the [http://www.softwareishard.com/blog/har-12-spec/|HAR] to be saved.
 
     `omitContent`: Optional setting to control whether to omit request content
     from the HAR. Default is False
