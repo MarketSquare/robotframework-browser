@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from enum import Enum
-from typing import Dict, List, TypeVar
+from typing import Any, Dict, List, TypeVar
 
 
 def locals_to_params(args: Dict) -> Dict:
-    copy = {}
+    copy: Dict[str, Any] = {}
     for key in args:
         if key == "self":
             continue
@@ -24,6 +24,10 @@ def locals_to_params(args: Dict) -> Dict:
             value = args[key]
             if isinstance(value, Enum):
                 copy[key] = value.name
+            elif isinstance(value, list):
+                copy[key] = [
+                    item.name if isinstance(item, Enum) else item for item in value
+                ]
             else:
                 copy[key] = value
     return copy
