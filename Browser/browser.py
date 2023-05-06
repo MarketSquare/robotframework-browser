@@ -823,8 +823,12 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
+        self._playwright_log = Path(self.outputdir, "playwright-log.txt")
         self.playwright = Playwright(
-            self, params["enable_playwright_debug"], playwright_process_port
+            self,
+            params["enable_playwright_debug"],
+            playwright_process_port,
+            self._playwright_log,
         )
         self._auto_closing_level: AutoClosingLevel = params["auto_closing_level"]
         # Parsing needs keywords to be discovered.
@@ -1275,6 +1279,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 f"Keyword '{self.run_on_failure_keyword}' could not be run on failure:\n{err}"
             )
         finally:
+            logger.info(
+                f"See also {self._playwright_log.as_uri()} for additional details."
+            )
             self._running_on_failure_keyword = False
 
     def _failure_screenshot_path(self):
