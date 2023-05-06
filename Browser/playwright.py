@@ -44,11 +44,13 @@ class Playwright(LibraryComponent):
         library: "Browser",
         enable_playwright_debug: bool,
         port: Optional[int] = None,
+        playwright_log: Path = Path(Path.cwd()),
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
         self.ensure_node_dependencies()
         self.port = str(port) if port else None
+        self.playwright_log = playwright_log
 
     @cached_property
     def _playwright_process(self) -> Optional[Popen]:
@@ -92,7 +94,7 @@ class Playwright(LibraryComponent):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        logfile = Path(self.outputdir, "playwright-log.txt").open("w")
+        logfile = self.playwright_log.open("w")
         port = str(find_free_port())
         if self.enable_playwright_debug:
             os.environ["DEBUG"] = "pw:api"
