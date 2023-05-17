@@ -1491,7 +1491,7 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4318|Comment >>]
         """
-        file = str(self.state_file / f"{str(uuid4())}.json")
+        file = str(self.state_file / f"{uuid4()!s}.json")
         self.state_file.mkdir(parents=True, exist_ok=True)
         log = self._save_storage_state(file)
         logger.info(log)
