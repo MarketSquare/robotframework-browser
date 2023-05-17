@@ -84,7 +84,7 @@ def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
                 default_value = f"timedelta(seconds={default_value.total_seconds()})"
             elif isinstance(default_value, Enum):
                 default_value = f"{type(default_value).__name__}.{default_value.name}"
-            arg_str = f"{arg_str} = {str(default_value)}"
+            arg_str = f"{arg_str} = {default_value!s}"
         else:
             arg_str = argument
             arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
