@@ -367,6 +367,72 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
+    @keyword(tags=("Setter", "PageContent"))
+    def tab(
+        self,
+        selector: str,
+        force: bool = False,
+        noWaitAfter: bool = False,
+        position_x: Optional[int] = None,
+        position_y: Optional[int] = None,
+        trial: bool = False,
+        *modifiers: KeyboardModifier,
+    ):
+        """Simulates tab on the element found by ``selector``.
+
+        Requires that the ``hasTouch`` option of the `New Context` be set to true.
+        This method taps the element by performing the following steps:
+        - Wait for actionability checks on the element, unless force option is set.
+        - Scroll the element into view if needed.
+        - Use page.touchscreen to tap the center of the element, or the specified position.
+        - Wait for initiated navigations to either succeed or fail, unless noWaitAfter option is set.
+
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
+        | ``force`` | Whether to bypass the actionability checks. Defaults to false. |
+        | ``noWaitAfter`` | Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
+        | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
+        | ``trial`` | When set, this method only performs the actionability checks and skips the action. Defaults to ``False``.  |
+
+        Example:
+        | New Context    hasTouch=${False}
+        | New Page    ${URL}
+        | Tab    css=input#login_button
+
+        ``*modifiers``
+
+        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
+        current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified
+        in any order, and multiple modifiers can be specified.
+        Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``.
+        Due to the fact that the argument `*modifiers` is a positional only argument,
+        all preceding keyword arguments have to be specified as positional arguments before `*modifiers`.
+
+        Example:
+        | `Tab`    id=clickWithOptions    False    False    None    None    False    Shift
+        | `Tab`    id=clickWithOptions    False    False    None    None    False    Shift    Alt
+        """
+        selector = self.presenter_mode(selector, self.strict_mode)
+        options: Dict[str, object] = {
+            "force": force,
+            "noWaitAfter": noWaitAfter,
+            "trial": trial,
+        }
+        if position_x is not None and position_y is not None:
+            positions: Dict[str, int] = {"x": position_x, "y": position_y}
+            options["position"] = positions
+        if modifiers:
+            options["modifiers"] = [modifier.name for modifier in modifiers]
+        options_json = json.dumps(options)
+        with self.playwright.grpc_channel() as stub:
+            logger.debug(f"Tab options are: {options_json}")
+            response = stub.Tab(
+                Request().ElementSelectorWithOptions(
+                    selector=selector, options=options_json, strict=self.strict_mode
+                )
+            )
+            logger.debug(response.log)
+
     @keyword(tags=("PageContent",))
     def record_selector(
         self,
