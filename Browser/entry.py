@@ -77,7 +77,8 @@ def rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
 
 def _log_install_dir():
     logging.info(
-        f"Installation directory `{INSTALLATION_DIR}` does not contain the required files"
+        f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for."
+        "unknown reason. Investigate the npm output and fix possible problems."
         "\nPrinting contents:\n"
     )
     for line in _walk_install_dir():
