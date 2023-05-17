@@ -105,6 +105,18 @@ export async function click(
     return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
 }
 
+export async function tab(
+    request: Request.ElementSelectorWithOptions,
+    state: PlaywrightState,
+): Promise<Response.Empty> {
+    const selector = request.getSelector();
+    const options = request.getOptions();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.tap(JSON.parse(options));
+    return emptyWithLog(`Tab element: '${selector}' with options: '${options}'`);
+}
+
 export async function internalClick(selector: string, strictMode: boolean, options: string, state: PlaywrightState) {
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.click(JSON.parse(options));
