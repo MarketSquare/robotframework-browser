@@ -129,8 +129,8 @@ Also update Browser libdoc.
 4. Install package from PyPi and test that it works.
 
 ### Announce release
-1. Announce new release, at least in Slack, [Forum](https://forum.robotframework.org/t/browser-library-releases/685) and user group mailing list.
-1. Change version to dev `inv version <new_version>` example if release version is 1.4.0, then next version could be: `inv version 1.5.0-dev`
+Announce new release, at least in Slack, [Forum](https://forum.robotframework.org/t/browser-library-releases/685)
+and user group mailing list.
 
 ## Code style
 Python code style is enforced with flake8 and black. These are executed in a
