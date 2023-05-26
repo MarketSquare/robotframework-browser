@@ -85,9 +85,7 @@ and Node components.
 
 ```
 inv version $VERSION
-git add Browser/version.py
-git add package.json
-git add setup.py
+git add Browser/version.py package.json setup.py docker/Dockerfile.latest_release
 git commit -m "Updateversion to: $VERSION"
 ```
 
