@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-112-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-113-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -307,6 +307,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/alexinoDr"><img src="https://avatars.githubusercontent.com/u/126524368?v=4?s=100" width="100px;" alt="alexinoDr"/><br /><sub><b>alexinoDr</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AalexinoDr" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/trybuskrzysztof"><img src="https://avatars.githubusercontent.com/u/27352125?v=4?s=100" width="100px;" alt="trybuskrzysztof"/><br /><sub><b>trybuskrzysztof</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Atrybuskrzysztof" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Aino1980"><img src="https://avatars.githubusercontent.com/u/25761977?v=4?s=100" width="100px;" alt="Aino1980"/><br /><sub><b>Aino1980</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AAino1980" title="Bug reports">🐛</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/BjornAhmark"><img src="https://avatars.githubusercontent.com/u/134600409?v=4?s=100" width="100px;" alt="BjornAhmark"/><br /><sub><b>BjornAhmark</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ABjornAhmark" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
