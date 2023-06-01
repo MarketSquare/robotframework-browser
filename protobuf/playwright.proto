@@ -396,7 +396,7 @@ service  Playwright {
   /* Adds a <style> to head of site. */
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
-  rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty);
+  rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Int);
   /* Download url content */
   rpc Download(Request.Url) returns (Response.Json);
   /* Clicks element specified by selector and options */

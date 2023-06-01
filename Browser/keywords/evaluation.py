@@ -89,6 +89,10 @@ class Evaluation(LibraryComponent):
     ):
         """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment.
 
+        Returns the number of highlighted elements. Keyword does not fail, if `locator` matched zero elements in
+        the page. Keyword does not scroll elements to viewport and highlighted element might be outside the
+        viewport. Use `Scroll To Element` keyword to scroll element in viewport.
+
         | =Arguments= | =Description= |
         | ``selector`` | Selectors which shall be highlighted. See the `Finding elements` section for details about the selectors. |
         | ``duration`` | Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds. |
@@ -100,7 +104,8 @@ class Evaluation(LibraryComponent):
 
         Example:
         | `Highlight Elements`    input#login_button    duration=200ms
-        | `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF
+        | ${count} =    `Highlight Elements`    input#login_button    duration=200ms    width=4px    style=solid    color=\\#FF00FF
+        | Should Be Equal    ${count}    ${5}
 
         [https://forum.robotframework.org/t//4294|Comment >>]
         """
@@ -115,7 +120,12 @@ class Evaluation(LibraryComponent):
                     strict=False,
                 )
             )
+        count: int = response.body
+        if count == 0:
+            logger.info("Could not find elements to highlight.")
+        else:
             logger.info(response.log)
+        return count
 
     @keyword(tags=("Setter", "PageContent"))
     def add_style_tag(self, content: str):
