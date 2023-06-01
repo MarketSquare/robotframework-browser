@@ -137,9 +137,10 @@ Highlight Element On Page
     Sleep    200ms
     Get Element Count    .robotframework-browser-highlight    ==    0
     Set Strict Mode    False
-    Highlight Elements    .pure-button    duration=1000ms
+    ${count} =    Highlight Elements    .pure-button    duration=1000ms
     Set Strict Mode    True
     Get Element Count    .robotframework-browser-highlight    ==    5
+    Should Be Equal    ${count}    ${5}
     Sleep    1500ms
     Get Element Count    .robotframework-browser-highlight    ==    0
 

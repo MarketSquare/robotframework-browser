@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, jsResponse, jsonResponse, stringResponse } from './response-util';
+import { emptyWithLog, intResponse, jsResponse, jsonResponse, stringResponse } from './response-util';
 import { findLocator } from './playwright-invoke';
 
 import { click, internalClick } from './interaction';
@@ -303,7 +303,7 @@ export async function highlightElements(
     const color = request.getColor();
     const strictMode = request.getStrict();
     const count = await highlightAll(selector, duration, width, style, color, strictMode, state);
-    return emptyWithLog(`Highlighted ${count} elements for ${duration}.`);
+    return intResponse(count, `Highlighted ${count} elements for ${duration}.`);
 }
 
 async function highlightAll(
