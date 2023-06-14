@@ -18,6 +18,9 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
 import { exists, findLocator } from './playwright-invoke';
+import { pino } from 'pino';
+
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function grantPermissions(request: Request.Permissions, state: PlaywrightState): Promise<Response.Empty> {
     const browserContext = state.getActiveContext();
@@ -66,7 +69,9 @@ export async function takeScreenshot(
         }
         options.mask = mask_locators;
     }
+    logger.info({ 'Take screenshot with options: ': options });
     if (selector) {
+        logger.info({ 'Using selecotr: ': selector });
         const locator = await findLocator(state, selector, strictMode, undefined, true);
         await locator.screenshot(options);
     } else {

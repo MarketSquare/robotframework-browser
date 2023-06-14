@@ -27,6 +27,7 @@ from ..utils import Scope, keyword, logger
 from ..utils.data_types import (
     BoundingBox,
     Permission,
+    Scale,
     ScreenshotFileTypes,
     ScreenshotReturnType,
 )
@@ -113,8 +114,10 @@ class Control(LibraryComponent):
         fullPage: bool = False,
         log_screenshot: bool = True,
         mask: Union[List[str], str] = "",
+        maskColor: Optional[str] = None,
         omitBackground: bool = False,
         quality: Optional[int] = None,
+        scale: Optional[Scale] = None,
         return_as: ScreenshotReturnType = ScreenshotReturnType.path_string,
         timeout: Optional[timedelta] = None,
     ) -> Union[str, bytes, Path]:
@@ -129,8 +132,10 @@ class Control(LibraryComponent):
         | ``fullPage`` | When True, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to False. |
         | ``log_screenshot`` | When set to ``False`` the screenshot is taken but not logged into log.html. |
         | ``mask`` | Specify selectors that should be masked when the screenshot is taken. Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box. Argument can take a single selector string or a list of selector strings if multiple different elements should be masked. |
+        | ``maskColor`` | Specify the color of the overlay box for masked elements, in CSS color format. Default color is pink #FF00FF. |
         | ``omitBackground`` | Hides default white background and allows capturing screenshots with transparency. Not applicable to jpeg images. |
         | ``quality`` | The quality of the image, between 0-100. Not applicable to png images. |
+        | ``scale`` | <css|device>. css will reduce the image size and device keeps image in original size. Defaults to "device".|
         | ``return_as`` | Defines what this keyword returns. Possible values are documented in `ScreenshotReturnType`. It can be either a path to the screenshot file as string or Path object, or the image data as bytes or base64 encoded string. |
         | ``timeout`` | Maximum time how long taking screenshot can last, defaults to library timeout. Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout. The default value can be changed by using the `Set Browser Timeout` keyword. |
 
@@ -162,6 +167,8 @@ class Control(LibraryComponent):
         crop = pos_params.get("crop", crop)
         disableAnimations = pos_params.get("disableAnimations", disableAnimations)
         mask = pos_params.get("mask", mask)
+        maskColor = pos_params.get("maskColor", maskColor)
+        scale = pos_params.get("scale", scale)
         omitBackground = pos_params.get("omitBackground", omitBackground)
         file_name = (
             uuid.uuid4().hex
@@ -181,6 +188,8 @@ class Control(LibraryComponent):
                 quality,
                 string_path_no_extension,
                 timeout,
+                maskColor,
+                scale,
             )
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
@@ -229,6 +238,8 @@ class Control(LibraryComponent):
         quality,
         string_path_no_extension,
         timeout,
+        maskColor,
+        scale,
     ):
         options = {
             "path": f"{string_path_no_extension}.{fileType.name}",
@@ -243,6 +254,10 @@ class Control(LibraryComponent):
             options["animations"] = "disabled"
         if crop:
             options["clip"] = crop
+        if maskColor:
+            options["maskColor"] = maskColor
+        if scale:
+            options["scale"] = scale.name
         return options
 
     def _get_mask_selectors(self, mask):

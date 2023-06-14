@@ -245,6 +245,19 @@ class HighLightElement(TypedDict):
     color: str
 
 
+class Scale(Enum):
+    """Enum that defines the scale of the screenshot.
+
+    When set to "css", screenshot will have a single pixel per each css pixel on the page.
+    For high-dpi devices, this will keep screenshots small. Using "device" option will
+    produce a single pixel per each device pixel, so screenshots of high-dpi devices will
+    be twice as large or even larger.
+    """
+
+    css = auto()
+    device = auto()
+
+
 class SelectionType(Enum):
     """Enum that defines if the current id or all ids shall be returned.
 
