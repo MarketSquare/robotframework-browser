@@ -162,7 +162,16 @@ Screenshot With Cropping, Masking, Omitting Background(png)
     ...    crop=${box}
     ...    mask=input >> nth=1
     ...    omitBackground=True
-    [Teardown]    Remove File    ${path}
+    ${path 2} =    Take Screenshot    crop=${box}    mask=input >> nth=1    maskColor=#2F4E4A    omitBackground=True
+    File Should Exist    ${path 2}
+    [Teardown]    Remove Files    ${path}    ${path 2}
+
+Screenshot With Scale
+    ${path 1} =    Take Screenshot    EMBED    scale=css
+    # File Should Exist    ${path 1}
+    ${path 2} =    Take Screenshot    EMBED    scale=device
+    # File Should Exist    ${path 2}
+    [Teardown]    Remove Files    ${path 1}    ${path 2}
 
 Screenshot With Fixed Cropping
     ${path} =    Take Screenshot    crop={"x": 200, "y": 100, "height": 123, "width": 654}
