@@ -1066,6 +1066,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "lasselindqvist",
+      "name": "lasselindqvist",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13466645?v=4",
+      "profile": "https://github.com/lasselindqvist",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
