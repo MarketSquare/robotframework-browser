@@ -3,6 +3,14 @@
         
         <script>
             var victimaction;
+            var delay;
+            delay = 700;
+
+            function setDelay() {
+                delay = document.getElementById("delay-setting").value;
+                document.getElementById("delay-display").value = delay;
+            }
+
             function sleep(ms) {
                 return new Promise(resolve => setTimeout(resolve, ms));
             }
@@ -13,6 +21,12 @@
                 victimaction = this.value;
                 switch(this.value) {
                     case "attached":
+                        // no victim yet
+                        break;
+                    case "attached-checked":
+                        // no victim yet
+                        break;
+                    case "attached-unchecked":
                         // no victim yet
                         break;
                     case "detached":
@@ -62,10 +76,20 @@
             }
 
             async function submit(event) {
-                await sleep(500);
+                await sleep(Number(delay));
                 switch(victimaction) {
                     case "attached":
                         document.getElementById("place").innerHTML = "<div id='victim'>victim</div>"
+                        break;
+                    case "attached-checked":
+                        document.getElementById("place").innerHTML = "<input checked hidden type='checkbox' id='victim' />"
+                        await sleep(50);
+                        document.getElementById("victim").removeAttribute("hidden");
+                        break;
+                    case "attached-unchecked":
+                        document.getElementById("place").innerHTML = "<input hidden type='checkbox' id='victim' />"
+                        await sleep(50);
+                        document.getElementById("victim").removeAttribute("hidden");
                         break;
                     case "detached":
                         document.getElementById("place").innerHTML = "";
@@ -112,11 +136,13 @@
                 }
             }
         </script>
-        <!--form onsubmit="submit.call(this, event)"-->
-            <label for="dd">Choose a Wait for element state:</label>
+        <div>
+            <label for="dropdown">Choose a Wait for element state:</label>
             <select name="dd" id="dropdown" onchange="waiter.call(this, event)">
-                <option value="--">--</option>
+              <option value="--">--</option>
               <option value="attached">attached</option>
+              <option value="attached-checked">attached-checked</option>
+              <option value="attached-unchecked">attached-unchecked</option>
               <option value="detached">detached</option>
               <option value="visible">visible</option>
               <option value="hidden">hidden</option>
@@ -134,7 +160,16 @@
             </select>
             <br><br>
             <button id="submit" type="submit" value="Submit" onclick="submit.call(this, event)">Go</button>
-        <!--/form-->
+        </div>
         <div id="place"></div>
+        <div>
+            <label for="delay-display">Delay is:</label>
+            <input type="text" readonly disabled id="delay-display" value="700">
+        </div> 
+        <div>
+            <label for="delay-setting">Delay:</label>
+            <input type="text" id="delay-setting" />
+            <button id="setdelay" onclick="setDelay.call(this, event)">Set Delay</button>
+        </div>
     </body>
 </html>

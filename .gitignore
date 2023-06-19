@@ -2,7 +2,9 @@ Browser/wrapper/*.js
 Browser/wrapper
 Browser/generated
 Browser/__init__.pyi
+Browser/browser.pyi
 Browser/**/*.pyc
+Browser/rfbrowser.log
 node/playwright-wrapper/generated
 
 docs/Browser.html
@@ -19,10 +21,14 @@ __pycache__
 robotframework_browser.egg-info/
 .venv
 zip_results
+utest/output
+flip_rate
 
 node/.linted
 node/.built
+node/dynamic-test-app/.built
 Browser/.linted
+Browser/.installed
 
 # Robot Framework outputs
 log.html
@@ -38,3 +44,8 @@ build
 pip-wheel-metadata
 tmp
 .vscode
+
+# coverage
+.coverage
+htmlcov
+results

@@ -1,18 +1,24 @@
 *** Settings ***
-Resource          imports.resource
-Library           OperatingSystem
-Test Setup        Go To    ${LOGIN_URL}
+Library         OperatingSystem
+Library         CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR}/keys/
+Resource        imports.resource
+
+Suite Setup     New Page
+Test Setup      Go To    ${LOGIN_URL}
 
 *** Test Cases ***
-Type Text with Clearing
+Type Text With Clearing
     Type Text    input#username_field    Wrong Text
     Type Text    input#username_field    user
     Type Text    input#username_field    name    clear=No
     Get Text    css=input#username_field    ==    username
 
 Type Text With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Type Text    notamatch    text
+    Run Keyword And Expect Error
+    ...    *    TimeoutError: locator.fill: Timeout 50ms exceeded.*waiting For Locator('notamatch')*
+    ...    Type Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Clear Text
@@ -23,167 +29,324 @@ Clear Text
     Type Text    input#username_field    username    clear=No
     Get Text    css=input#username_field    ==    username
 
+Clear Text With Strict
+    Run Keyword And Expect Error
+    ...    *strict mode violation*//input*resolved to 4 elements:*
+    ...    Clear Text    //input
+    Set Strict Mode    False
+    Clear Text    //input
+    [Teardown]    Set Strict Mode    True
+
 Clear Text With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Clear Text    notamatch
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Clear Text    notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Fill with css selector
+Fill With Css Selector
     Fill Text    css=input#username_field    username
     Get Text    css=input#username_field    ==    username
 
+Fill Text With Force
+    Fill Text    css=input#username_field    username    force=True
+    Get Text    css=input#username_field    ==    username
+
 Fill Text With Nonmatching Selector
+    [Tags]    no-iframe
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Text    notamatch    text
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Fill Text    notamatch    text
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Fill Secret Direct Value
-    Type Secret    css=input#username_field    Direct Value    200 ms    True
-    Get Text    css=input#username_field    ==    Direct Value
-    Fill Secret    css=input#password_field    Direct Value
-    Get Text    css=input#password_field    ==    Direct Value
+Fill Text With Strict
+    Run Keyword And Expect Error
+    ...    *strict mode violation*//input*resolved to 4 elements:*
+    ...    Fill Text    //input    something
+    Set Strict Mode    False
+    Fill Text    //input    something
+    [Teardown]    Set Strict Mode    True
 
-Fill Secret placeholder-env-var
+Fill Secret Direct Value
+    TRY
+        Type Secret    css=input#username_field    Direct Value 1    10 ms    True
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#username_field    ==    ${EMPTY}
+    TRY
+        Fill Secret    css=input#password_field    Direct Value 2
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#password_field    ==    ${EMPTY}
+
+Fill Secret With Strict
+    Run Keyword And Expect Error
+    ...    *strict mode violation*//input*resolved to 4 elements:*
+    ...    Fill Secret    //input    $LOGIN_URL
+    Set Strict Mode    False
+    Fill Secret    //input    $LOGIN_URL
+    [Teardown]    Set Strict Mode    True
+
+Type Secret With Strict
+    Run Keyword And Expect Error
+    ...    *strict mode violation*//input*resolved to 4 elements:*
+    ...    Type Secret    //input    $LOGIN_URL
+    Set Strict Mode    False
+    Type Secret    //input    $LOGIN_URL
+    [Teardown]    Set Strict Mode    True
+
+Fill Secret Placeholder-env-var
+    [Documentation]    ...
+    ...    LOG 2:2    NONE
+    ...    LOG 4:2    NONE
+    [Tags]    no-iframe
     Set Environment Variable    PH_ENV_VAR    password11
-    Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.2}    ${TRUE}
+    Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.02}    ${TRUE}
     Get Text    css=input#username_field    ==    password11
     Fill Secret    css=input#password_field    %PH_ENV_VAR
     Get Text    css=input#password_field    ==    password11
 
-Fill Secret robot-env-var
-    Set Environment Variable    WAITTIMER    100 ms
+Fill Secret Robot-env-var
+    Set Environment Variable    WAITTIMER    10 ms
     Set Environment Variable    ENV_VAR    password12
-    Type Secret    css=input#username_field    %{ENV_VAR}    %{WAITTIMER}    clear=True
+    TRY
+        Type Secret    css=input#username_field    %{ENV_VAR}    %{WAITTIMER}    clear=True
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Type Secret    css=input#username_field    %ENV_VAR    %{WAITTIMER}    clear=True
     Get Text    css=input#username_field    ==    password12
-    Fill Secret    css=input#password_field    %{ENV_VAR}
+    TRY
+        Fill Secret    css=input#password_field    %{ENV_VAR}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Fill Secret    css=input#password_field    %ENV_VAR
     Get Text    css=input#password_field    ==    password12
 
-Fill Secret robot-env-var mixed
+Fill Secret Robot-env-var Mixed
     Set Environment Variable    ENV_VAR    password13
-    Type Secret    css=input#username_field    %{ENV_VAR}XXX
-    Get Text    css=input#username_field    ==    password13XXX
-    Fill Secret    css=input#password_field    %{ENV_VAR}XXX
-    Get Text    css=input#password_field    ==    password13XXX
+    TRY
+        Type Secret    css=input#username_field    %{ENV_VAR}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    %{ENV_VAR}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
-Fill Secret robot-env-var mixed2
+Fill Secret Robot-env-var Mixed2
     Set Environment Variable    ENV_VAR    password13
-    Type Secret    css=input#username_field    XXX%{ENV_VAR}XXX
-    Get Text    css=input#username_field    ==    XXXpassword13XXX
-    Fill Secret    css=input#password_field    XXX%{ENV_VAR}XXX
-    Get Text    css=input#password_field    ==    XXXpassword13XXX
+    TRY
+        Type Secret    css=input#username_field    XXX%{ENV_VAR}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#username_field    ==    ${EMPTY}
+    TRY
+        Fill Secret    css=input#password_field    XXX%{ENV_VAR}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#password_field    ==    ${EMPTY}
 
-Fill Secret placeholder-robot-var
-    ${var}=    Set Variable    password123
+Fill Secret Placeholder-robot-var
+    [Documentation]
+    ...    LOG 2:2    NONE
+    ...    LOG 4:2    NONE
+    [Tags]    no-iframe
+    ${var} =    Set Variable    password123
     Type Secret    css=input#username_field    $var
     Get Text    css=input#username_field    ==    password123
     Fill Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password123
 
-Fill Secret robot var
-    ${var}=    Set Variable    password321
-    Type Secret    css=input#username_field    ${var}
-    Get Text    css=input#username_field    ==    password321
-    Fill Secret    css=input#password_field    ${var}
-    Get Text    css=input#password_field    ==    password321
+Fill Secret Robot Var
+    ${var} =    Set Variable    password321
+    TRY
+        Type Secret    css=input#username_field    ${var}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    ${var}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
-Fill Secret robot var mixed
-    ${var}=    Set Variable    password321
-    Type Secret    css=input#username_field    ${var}XXX
-    Get Text    css=input#username_field    ==    password321XXX
-    Fill Secret    css=input#password_field    ${var}XXX
-    Get Text    css=input#password_field    ==    password321XXX
+Fill Secret Robot Var Mixed
+    ${var} =    Set Variable    password321
+    TRY
+        Type Secret    css=input#username_field    ${var}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    ${var}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
-Fill Secret robot var mixed2
-    ${var}=    Set Variable    password321
-    Type Secret    css=input#username_field    xxx${var}XXX
-    Get Text    css=input#username_field    ==    xxxpassword321XXX
-    Fill Secret    css=input#password_field    xxx${var}XXX
-    Get Text    css=input#password_field    ==    xxxpassword321XXX
+Fill Secret Robot Var Mixed2
+    ${var} =    Set Variable    password321
+    TRY
+        Type Secret    css=input#username_field    xxx${var}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    xxx${var}XXX
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
-Fill Secret placeholder in robot var
+Fill Secret Placeholder In Robot Var
     Set Global Variable    ${global}    password666
-    ${var}=    Set Variable    $global
-    Type Secret    css=input#username_field    ${var}
-    Get Text    css=input#username_field    ==    password666
-    Fill Secret    css=input#password_field    ${var}
-    Get Text    css=input#password_field    ==    password666
+    ${var} =    Set Variable    $global
+    TRY
+        Type Secret    css=input#username_field    ${var}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    TRY
+        Fill Secret    css=input#password_field    ${var}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
 
-Fill Secret env placeholder in robot var
+Fill Secret Env Placeholder In Robot Var
     Set Environment Variable    pwd_TWO    ENV_password123
-    ${var}=    Set Variable    %pwd_TWO
+    ${var} =    Set Variable    %pwd_TWO
     Type Secret    css=input#username_field    ${var}
     Get Text    css=input#username_field    ==    ENV_password123
     Fill Secret    css=input#password_field    ${var}
     Get Text    css=input#password_field    ==    ENV_password123
 
-Fill Secret with direct $value not resolvable
-    Type Secret    css=input#username_field    $Direct Value
-    Get Text    css=input#username_field    ==    $Direct Value
-    Fill Secret    css=input#password_field    $Direct Value
-    Get Text    css=input#password_field    ==    $Direct Value
+Fill Secret With Direct $Value Not Resolvable
+    TRY
+        Type Secret    css=input#username_field    $Direct Value
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#username_field    ==    ${EMPTY}
+    TRY
+        Fill Secret    css=input#password_field    $Direct Value
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
+        Log    correct error
+    END
+    Get Text    css=input#password_field    ==    ${EMPTY}
 
-Fill Secret fails when variable is not set
-    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret    css=input#username_field    ${NONE_EXISTING_ENV_VARIABLE}
-    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret    css=input#password_field    ${NONE_EXISTING_ENV_VARIABLE}
+Fill Secret Fails When Variable Is Not Set
+    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret
+    ...    css=input#username_field    ${NONE_EXISTING_ENV_VARIABLE}
+    Run Keyword And Expect Error    Variable '\${NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret
+    ...    css=input#password_field    ${NONE_EXISTING_ENV_VARIABLE}
 
-Fill Secret fails when env variable is not set
-    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret    css=input#username_field    %{NONE_EXISTING_ENV_VARIABLE}
-    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret    css=input#password_field    %{NONE_EXISTING_ENV_VARIABLE}
+Fill Secret Fails When Env Variable Is Not Set
+    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Type Secret
+    ...    css=input#username_field    %{NONE_EXISTING_ENV_VARIABLE}
+    Run Keyword And Expect Error    Environment variable '\%{NONE_EXISTING_ENV_VARIABLE}' not found.    Fill Secret
+    ...    css=input#password_field    %{NONE_EXISTING_ENV_VARIABLE}
 
-Type Secret env
+Type Secret Env
+    [Tags]    no-iframe    log 2:2    none
     Set Environment Variable    TYPE_SECRET    password22
     Type Secret    css=input#password_field    %TYPE_SECRET
     Get Text    css=input#password_field    ==    password22
 
-Type Secret local
-    ${var}=    Set Variable    password321
+Type Secret Local
+    [Documentation]
+    ...    LOG 2:2    NONE
+    [Tags]    no-iframe
+    ${var} =    Set Variable    password321
     Type Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password321
 
 Fill Secret With Nonmatching Selector
+    [Tags]    no-iframe
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
     Set Browser Timeout    50ms
-    Run Keyword And Expect Error    *Timeout 50ms exceeded.*waiting for selector "notamatch"*    Fill Secret    notamatch    %MY_RFBROWSER_SECRET
+    Run Keyword And Expect Error
+    ...    *TimeoutError: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    Fill Secret    notamatch    %MY_RFBROWSER_SECRET
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
-Type Text with Delay
+Type Text With Delay
     Type Text    input#username_field    username    delay=10 ms
     Get Text    css=input#username_field    ==    username
 
-Type and Fill Text with text selector
+Type Text With Strict
+    Run Keyword And Expect Error
+    ...    *strict mode violation:*//input*resolved to 4 elements:*
+    ...    Type Text    //input    username
+    Set Strict Mode    False
+    Type Text    //input    username
+    [Teardown]    Set Strict Mode    True
+
+Type And Fill Text With Text Selector
     Type Text    input#username_field    Text field
     Type Text    text=User Name:    txt=some text
     Get Text    input#username_field    ==    some text
     Fill Text    text=User Name:    txt=another text
     Get Text    input#username_field    ==    another text
 
-Type and Fill Secret with text selector
-    Type Secret    input#password_field    pwfield
-    Type Secret    text=Password:    some text
+Type And Fill Secret With Text Selector
+    ${var} =    Set Variable    pwfield
+    Type Secret    input#password_field    $var
+    ${var} =    Set Variable    some text
+    Type Secret    text=Password:    $var
     Get Text    input#password_field    ==    some text
-    Fill Secret    text=Password:    another text
+    ${var} =    Set Variable    another text
+    Fill Secret    text=Password:    $var
     Get Text    input#password_field    ==    another text
 
-Fill Text with Clearing
+Secret With Empty Value
+    Type Secret    css=input#password_field    $EMPTY
+    Fill Secret    css=input#password_field    $EMPTY
+
+Fill Text With Clearing
     Fill Text    input#username_field    Wrong Text
     Fill Text    input#username_field    username
     Get Text    css=input#username_field    ==    username
 
 Get Text Default Error
+    Set Retry Assertions For    100ms
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Text 'Wrong Text' (str) should be 'username' (str)
     ...    Get Text    css=input#username_field    ==    username
+    [Teardown]    Set Retry Assertions For    1s
 
 Get Text Custom Error
+    Set Retry Assertions For    100ms
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Text    css=input#username_field    ==    username    Tidii
+    [Teardown]    Set Retry Assertions For    1s
 
-Text Area access
+Text Area Access
     Get Text    id=textarea51    ==    Some initial text
     Type Text    id=textarea51    Area 51
     Get Text    id=textarea51    ==    Area 51
     Type Text    id=textarea51    Ufo detected
     Get Text    id=textarea51    ==    Ufo detected
+
+Type Secret With CryptoLibrary
+    Type Secret
+    ...    input#username_field
+    ...    crypt:/kfGGEGSwlcPsxBzVjMsnBWsYPXfFDF8BPj3APzN6AKS2W0mjOuh4coJljnb+MqZOmB5BG1oGpON7QC7nQ==
+    ...    delay=10 ms
+    Get Text    css=input#username_field    ==    FunkyPassword
+
+Fill Secret With CryptoLibrary
+    Fill Secret
+    ...    input#username_field
+    ...    crypt:1hYdLAcm9cANzOCussOyLS2wX4Nem6DAEGDacu8p9DCHHwZ0i+9MUkkeBHnf6UrrQLMcTQMbHoYoTH8f0do9fyk5itHBBjr91n4=
+    Get Text    css=input#username_field    ==    AnotherFunkySecretPassword

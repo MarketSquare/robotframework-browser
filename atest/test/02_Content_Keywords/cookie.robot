@@ -1,16 +1,15 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        Open Browser To Form Page
+Resource            imports.resource
+
+Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
+Test Setup          Open New Context To Form Page
+Test Teardown       Close Context    ALL
+
+Force Tags          no-iframe
 
 *** Test Cases ***
-Cookies From Closed Context
-    Close Browser    ALL
-    Run Keyword And Expect Error
-    ...    Error: no open context.
-    ...    Get Cookies
-
 Get Cookies Should Return Empty List When No Cookies Are Available
-    ${empty_list}    Create List
+    ${empty_list} =    Create List
     ${cookies} =    Get Cookies    dictionary
     Should Be Equal    ${cookies}    ${empty_list}
     ${cookies} =    Get Cookies    dict
@@ -24,20 +23,13 @@ Get Cookies With String Type
     ${cookies} =    Get Cookies    string
     Should Be Equal    Foo=Bar    ${cookies}
 
-Add Cookie Without Url, Path and Domain
+Add Cookie Without Url, Path And Domain
     Run Keyword And Expect Error
     ...    Error: browserContext.addCookies: Cookie should have a url or a domain/path pair
     ...    Add Cookie    Foo    Bar
 
-Add Cookie Should Fail If Context Is Not Open
-    ${url} =    Get Url
-    Close Browser    ALL
-    Run Keyword And Expect Error
-    ...    Error: no open context.
-    ...    Add Cookie    Foo    Bar    url=${url}
-
 Add Cookie With Url
-    [Tags]    No-Windows-Support
+    [Tags]    no-windows-support
     ${url} =    Get Url
     Add Cookie    Foo    Bar    url=${url}
     ${cookies} =    Get Cookies
@@ -45,9 +37,9 @@ Add Cookie With Url
     Should Be Equal    ${cookies}[0][path]    /
 
 Add Cookie With Domain And Path
-    [Tags]    No-Windows-Support
+    [Tags]    no-windows-support
     ${url} =    Get Url
-    ${parsed_url} =    common.Parse Url    ${url}
+    ${parsed_url} =    Common.Parse Url    ${url}
     Add Cookie    Foo    Bar    domain=${parsed_url.netloc}    path=${parsed_url.path}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
@@ -55,7 +47,7 @@ Add Cookie With Domain And Path
 
 Add Cookie With URL And Domain Should Fail
     ${url} =    Get Url
-    ${parsed_url} =    common.Parse Url    ${url}
+    ${parsed_url} =    Common.Parse Url    ${url}
     Run Keyword And Expect Error
     ...    Error: browserContext.addCookies: Cookie should have either url or domain
     ...    Add Cookie
@@ -85,7 +77,7 @@ Add Cookie With All Settings
     Should Be Equal    ${cookies}[0][httpOnly]    ${True}
     Should Be Equal    ${cookies}[0][secure]    ${False}
 
-Add Cookie With All Settings As string
+Add Cookie With All Settings As String
     ${url} =    Get Url
     ${date_string} =    Get Current Date    increment=1 day
     Add Cookie
@@ -118,7 +110,7 @@ Add Cookie With Expiry As Epoch String
     Check Cookie    ${cookies}    1    Foo    Bar
     ${epoch_as_str} =    Convert To String    ${cookies}[0][expires]
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
-    ${expires}    Set Variable    ${cookies}[0][expires]
+    ${expires} =    Set Variable    ${cookies}[0][expires]
     Should Be Equal    ${expires.year}    ${expires.year}
 
 Add Cookie With Expiry As Epoch Int
@@ -133,7 +125,7 @@ Add Cookie With Expiry As Epoch Int
     Check Cookie    ${cookies}    1    Foo    Bar
     ${epoch_as_str} =    Convert To String    ${cookies}[0][expires]
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
-    ${expires}    Set Variable    ${cookies}[0][expires]
+    ${expires} =    Set Variable    ${cookies}[0][expires]
     ${date_time} =    Convert Date    ${epoch}
     Should Be Equal    ${expires.year}    ${expires.year}
 
@@ -163,12 +155,6 @@ Delete All Cookies
     ${cookies} =    Get Cookies
     Should Be Empty    ${cookies}
 
-Delete All Cookies From Closed Context
-    Close Browser    ALL
-    Run Keyword And Expect Error
-    ...    Error: no open context.
-    ...    Delete All Cookies
-
 Delete All Cookies When Cookies Does Not Exist
     Delete All Cookies
     ${cookies} =    Get Cookies
@@ -178,7 +164,7 @@ Eat All Cookies
     Eat All Cookies
 
 Get Cookie
-    [Tags]    No-Windows-Support
+    [Tags]    no-windows-support
     ${url} =    Get Url
     Add Cookie
     ...    Foo
@@ -233,7 +219,7 @@ Get Cookie Should Fail If Cookie Is Not Found
     ...    Get Cookie
     ...    FOO
 
-Get Cookie Should Fail With Invalid return_type
+Get Cookie Should Fail With Invalid Return_type
     Run Keyword And Expect Error
     ...    ValueError: Argument 'return_type' got value 'invalid_type' that cannot be converted to CookieType*
     ...    Get Cookie
@@ -248,6 +234,10 @@ Get Cookie And No Expiry
     Get Cookie    tidii    return_type=dict
 
 *** Keywords ***
+Open New Context To Form Page
+    New Context
+    New Page    ${FORM_URL}
+
 Check Cookie
     [Arguments]    ${cookies}    ${len}    ${name}    ${value}
     ${cookies_len} =    Get Length    ${cookies}

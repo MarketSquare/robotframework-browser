@@ -1,6 +1,9 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${LOGIN_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${LOGIN_URL}
+
+Force Tags      no-iframe
 
 *** Test Cases ***
 Add Style

@@ -1,24 +1,31 @@
 *** Settings ***
-Library           Browser    timeout=3s
-Resource          ../imports.resource
-Suite Setup       New Page    ${ERROR_URL}
+Resource        ../imports.resource
+
+Suite Setup     Setup Suite
 
 *** Test Cases ***
-Resource leaker
-    New context
+Resource Leaker
+    New Context
     New Page    ${WELCOME_URL}
 
-New context is closed after test
-    Get title    ==    Error Page
+New Context Is Closed After Test
+    Get Title    ==    Error Page
 
-Page leaker
-    Go to    ${WELCOME_URL}
+Page Leaker
+    Go To    ${WELCOME_URL}
     New Page    ${FORM_URL}
-    Get title    ==    prefilled_email_form.html
+    Get Title    ==    prefilled_email_form.html
 
-New page in same context is closed after test
-    Get title    ==    Welcome Page
+New Page In Same Context Is Closed After Test
+    Get Title    ==    Welcome Page
 
-Unhandled alert does not block execution
+Unhandled Alert Does Not Block Execution
+    [Tags]    debug
+    [Timeout]    1000s
     New Page    ${ERROR_URL}
     Click    text="Do not click!"
+
+*** Keywords ***
+Setup Suite
+    New Page    ${ERROR_URL}
+    Set Browser Timeout    3s    Suite

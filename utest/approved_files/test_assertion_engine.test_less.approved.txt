@@ -1,4 +1,0 @@
-Less
-
-0) 2
-1) custom '2' (int) should be greater than '3' (int)

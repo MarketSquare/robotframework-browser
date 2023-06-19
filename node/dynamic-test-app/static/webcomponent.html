@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web component</title>
+  <script>
+    class MyWebComponent extends HTMLElement {
+      connectedCallback() {
+        this.innerHTML = 'Hello hoard';
+      }
+    }
+
+    customElements.define('my-web-component', MyWebComponent);
+  </script>
+</head>
+<body>
+<div id="container"></div>
+<my-web-component></my-web-component>
+</body>
+<script>
+    (function (){
+        const container = document.getElementById("container");
+    const root = container.attachShadow( { mode: "open" } )
+
+    //Inside element
+    const h1 = document.createElement( "h1" )
+    h1.textContent = "Inside Shadow DOM"
+    h1.id = "inside"
+    root.appendChild( h1 )
+    })()
+</script>
+</html>

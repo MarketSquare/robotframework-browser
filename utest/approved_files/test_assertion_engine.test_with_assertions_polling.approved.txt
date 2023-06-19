@@ -1,5 +1,0 @@
-Assertion polling
-
-0) 3
-1) '2' (int) should be '3' (int)
-2) 2

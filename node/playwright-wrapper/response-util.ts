@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { IndexedPage } from './playwright-state';
 import { Response } from './generated/playwright_pb';
 import { errors } from 'playwright';
 import { status } from '@grpc/grpc-js';
@@ -19,6 +20,46 @@ import { status } from '@grpc/grpc-js';
 export function emptyWithLog(text: string): Response.Empty {
     const response = new Response.Empty();
     response.setLog(text);
+    return response;
+}
+
+export function pageReportResponse(log: string, page: IndexedPage): Response.PageReportResponse {
+    const response = new Response.PageReportResponse();
+    response.setLog(log);
+    response.setConsole(
+        JSON.stringify(
+            page.consoleMessages.map((m) => ({
+                time: m.time,
+                type: m.type,
+                text: m.text,
+                location: m.location,
+            })),
+        ),
+    );
+    response.setErrors(
+        JSON.stringify(page.pageErrors.map((e) => (e ? `${e.name}: ${e.message}\n${e.stack}` : 'unknown error'))),
+    );
+    response.setPageid(page.id);
+    return response;
+}
+
+export function getConsoleLogResponse(page: IndexedPage, fullLog: boolean, message: string): Response.Json {
+    const response = new Response.Json();
+    const consoleMessages = page.consoleMessages;
+    const reponseMessages = fullLog ? consoleMessages : consoleMessages.slice(page.consoleIndex);
+    page.consoleIndex = consoleMessages.length;
+    response.setLog(message);
+    response.setJson(JSON.stringify(reponseMessages));
+    return response;
+}
+
+export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, message: string): Response.Json {
+    const response = new Response.Json();
+    const pageErrors = page.pageErrors;
+    const reponseErrors = fullLog ? pageErrors : pageErrors.slice(page.errorIndex);
+    page.errorIndex = pageErrors.length;
+    response.setLog(message);
+    response.setJson(JSON.stringify(reponseErrors));
     return response;
 }
 
@@ -56,21 +97,29 @@ export function jsResponse(result: string, logMessage: string) {
     return response;
 }
 
-export function errorResponse(e: Error) {
+export function errorResponse(e: unknown) {
     console.log('================= Original suppressed error =================');
     console.log(e);
     console.log('=============================================================');
+    if (!(e instanceof Error)) return null;
     const errorMessage: string = e.toString().substring(0, 5000);
     let errorCode = status.RESOURCE_EXHAUSTED;
     if (e instanceof errors.TimeoutError) {
         errorCode = status.DEADLINE_EXCEEDED;
     }
-    return { code: status.DEADLINE_EXCEEDED, message: errorMessage };
+    return { code: errorCode, message: errorMessage };
 }
 
-export function keywordsResponse(keywords: string[], logMessage: string) {
+export function keywordsResponse(
+    keywords: string[],
+    keywordArguments: string[],
+    keywordDocs: string[],
+    logMessage: string,
+) {
     const response = new Response.Keywords();
     response.setKeywordsList(keywords);
+    response.setKeyworddocumentationsList(keywordDocs);
+    response.setKeywordargumentsList(keywordArguments);
     response.setLog(logMessage);
     return response;
 }

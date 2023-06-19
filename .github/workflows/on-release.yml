@@ -4,63 +4,25 @@ on:
   release:
     types: [ published ]
 
-
 jobs:
-  docker-image:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Build prerequisite Playwright-focal image
-        run: |
-          DOCKER_BUILDKIT=1 docker build --tag playwright-focal --file atest/docker/Dockerfile.playwright20.04 .
-      - name: Push to GitHub Packages
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          # Weirdly the image "name" is required and has to be here
-          repository: marketsquare/robotframework-browser/rfbrowser-stable
-          tag_with_ref: true
-          dockerfile: atest/docker/Dockerfile.latest_release
-      - name: Push tag :version_number to Docker Hub
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-          repository: marketsquare/robotframework-browser
-          tag_with_ref: true
-          dockerfile: atest/docker/Dockerfile.latest_release
-      - name: Push tag :latest to Docker Hub
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-          repository: marketsquare/robotframework-browser
-          tag_with_ref: false
-          tags: latest
-          dockerfile: atest/docker/Dockerfile.latest_release
-
   gh-pages:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           persist-credentials: false
       - name: Use Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: 12.x
+          node-version: 14.x
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
       - name: Dependencies for building docs # TODO: thin a bit
         run: |
-          yarn --frozen-lockfile install
+          npm ci
           python -m pip install --upgrade pip
-          # use pre-release version of RF to have latest docs improvements
-          pip install --pre robotframework==4.0b1
           pip install -r Browser/dev-requirements.txt
           inv build
       - name: Build docs
@@ -68,7 +30,7 @@ jobs:
           inv docs
           inv gh-pages-index
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+        uses: JamesIves/github-pages-deploy-action@v4.4.2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.

@@ -25,7 +25,7 @@ subprocess.run(
 activate_script = (
     "source .venv/bin/activate"
     if not platform.platform().startswith("Windows")
-    else ".venv\Scripts\\activate.bat"
+    else ".venv\\Scripts\\activate.bat"
 )
 print(f"Virtualenv `{venv_dir}` is ready and up-to-date.")
 print(f"Run `{activate_script}` to activate the virtualenv.")

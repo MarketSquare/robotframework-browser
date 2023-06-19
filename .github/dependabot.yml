@@ -12,3 +12,8 @@ updates:
     ignore:
       - dependency-name: "grpcio-*"
         versions: ["1.34.x"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"

@@ -1,0 +1,20 @@
+tasks:
+  - init: |
+      pip install robotframework
+    command: |
+      python -m pip install --upgrade pip
+      pip install -r Browser/dev-requirements.txt
+      inv deps
+      npx --yes playwright install-deps
+      inv build
+      pip install -e .
+image: gitpod/workspace-full-vnc
+ports:
+  - port: 6080
+    onOpen: open-preview
+vscode:
+  extensions:
+    - ms-python.python
+    - d-biehl.robotcode
+    - eamodio.gitlens
+    - dbaeumer.vscode-eslint

@@ -1,10 +1,22 @@
 *** Settings ***
-Library           Browser    timeout=15s    run_on_failure=None
-Resource          imports.resource
-Suite Setup       New Browser
-Suite Teardown    Close Browser
+Resource            imports.resource
+
+Suite Setup         Setup
+Suite Teardown      Teardown
 
 *** Test Cases ***
-New Page will not timeout
+New Page Will Not Timeout
+    [Tags]    slow
     New Page    ${SLOW_PAGE}
-    get title    ==    Slow page
+    Get Title    ==    Slow page
+
+*** Keywords ***
+Setup
+    Set Browser Timeout    15s    scope=Suite
+    ${original} =    Register Keyword To Run On Failure    ${None}
+    Set Suite Variable    $original
+    New Browser    headless=${HEADLESS}
+
+Teardown
+    Register Keyword To Run On Failure    ${original}
+    Close Browser

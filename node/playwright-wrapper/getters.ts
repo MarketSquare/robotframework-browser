@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ElementHandle, Page } from 'playwright';
+import { ElementHandle, Locator, Page } from 'playwright';
+import { errors } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
-import { determineElement, invokePlaywrightMethod, waitUntilElementExists } from './playwirght-invoke';
+import { exists, findLocator } from './playwright-invoke';
 
-import * as pino from 'pino';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function getTitle(page: Page): Promise<Response.String> {
     const title = await page.title();
@@ -34,8 +35,37 @@ export async function getUrl(page: Page): Promise<Response.String> {
 
 export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
     const selector = request.getSelector();
-    const response: Array<ElementHandle> = await invokePlaywrightMethod(state, '$$', selector);
-    return intResponse(response.length, 'Found ' + response.length + 'element(s).');
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const count = await locator.count();
+    return intResponse(count, `Found ${count} element(s).`);
+}
+
+export async function getSelections(locator: Locator) {
+    const response = new Response.Select();
+    const selectElement = await locator.elementHandle();
+    const selectOptions = await selectElement?.evaluate((e) => {
+        return Array.from((e as HTMLSelectElement).options).map((option) => ({
+            label: option.label,
+            value: option.value,
+            index: option.index,
+            selected: option.selected,
+        }));
+    });
+    if (selectOptions) {
+        const entries = selectOptions.map((e) => {
+            const entry = new Types.SelectEntry();
+            entry.setLabel(e.label);
+            entry.setValue(e.value);
+            entry.setIndex(e.index);
+            entry.setSelected(e.selected);
+            return entry;
+        });
+        logger.info(`Option entries: ${entries.length}`);
+        logger.info(`Selected entries: ${entries.filter((e) => e.getSelected()).length}`);
+        entries.forEach((e) => response.addEntry(e));
+    }
+    return response;
 }
 
 export async function getSelectContent(
@@ -43,23 +73,10 @@ export async function getSelectContent(
     state: PlaywrightState,
 ): Promise<Response.Select> {
     const selector = request.getSelector();
-    await waitUntilElementExists(state, selector);
-
-    type Value = [string, string, boolean];
-    const content: Value[] = await invokePlaywrightMethod(state, '$$eval', selector + ' option', (elements: any) =>
-        (elements as HTMLOptionElement[]).map((elem) => [elem.label, elem.value, elem.selected]),
-    );
-
-    const response = new Response.Select();
-    content.forEach((option) => {
-        const [label, value, selected] = [option[0], option[1], option[2]];
-        const entry = new Types.SelectEntry();
-        entry.setLabel(label);
-        entry.setValue(value);
-        entry.setSelected(selected);
-        response.addEntry(entry);
-    });
-    return response;
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
+    return await getSelections(locator);
 }
 
 export async function getDomProperty(
@@ -70,26 +87,31 @@ export async function getDomProperty(
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
-async function getTextContentProperty(element: ElementHandle<Node>): Promise<string> {
+async function getTextContent(locator: Locator): Promise<string> {
+    const element = await locator.elementHandle();
+    exists(element, 'Locator did not resolve to elementHandle.');
     const tag = await (await element.getProperty('tagName')).jsonValue();
     if (tag === 'INPUT' || tag === 'TEXTAREA') {
-        return 'value';
+        return await (await element.getProperty('value')).jsonValue();
     }
-    return 'innerText';
+    return await element.innerText();
 }
 
 export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
     const selector = request.getSelector();
-    const element = await waitUntilElementExists(state, selector);
+    const strict = request.getStrict();
+    const locator = await findLocator(state, selector, strict, undefined, true);
     let content: string;
     try {
-        content = await (await element.getProperty(await getTextContentProperty(element))).jsonValue();
+        content = await getTextContent(locator);
         logger.info(`Retrieved text for element ${selector} containing ${content}`);
     } catch (e) {
-        logger.error(e);
+        if (e instanceof Error) {
+            logger.error(e);
+        }
         throw e;
     }
-    return stringResponse(JSON.stringify(content), 'Text received successfully.');
+    return stringResponse(content, 'Text received successfully.');
 }
 
 export async function getBoolProperty(
@@ -103,15 +125,19 @@ export async function getBoolProperty(
 
 async function getProperty<T>(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
-    const element = await waitUntilElementExists(state, selector);
+    const strictMode = request.getStrict();
+    const locator = findLocator(state, selector, strictMode, undefined, true);
     try {
+        const element = await (await locator).elementHandle();
         const propertyName = request.getProperty();
-        const property = await element.getProperty(propertyName);
-        const content = await property.jsonValue();
+        const property = await element?.getProperty(propertyName);
+        const content = await property?.jsonValue();
         logger.info(`Retrieved dom property for element ${selector} containing ${content}`);
         return content;
     } catch (e) {
-        logger.error(e);
+        if (e instanceof Error) {
+            logger.error(e);
+        }
         throw e;
     }
 }
@@ -126,28 +152,106 @@ export async function getElementAttribute(
 
 async function getAttributeValue(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
-    const element = await waitUntilElementExists(state, selector);
+    const strictMode = request.getStrict();
     const attributeName = request.getProperty();
-    const attribute = await element.getAttribute(attributeName);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    await locator.elementHandle();
+    const attribute = await locator.getAttribute(attributeName);
     logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
     return attribute;
 }
 
-export async function getStyle(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
+const stateEnum = {
+    attached: 1,
+    detached: 2,
+    visible: 4,
+    hidden: 8,
+    enabled: 16,
+    disabled: 32,
+    editable: 64,
+    readonly: 128,
+    selected: 256,
+    deselected: 512,
+    focused: 1024,
+    defocused: 2048,
+    checked: 4096,
+    unchecked: 8192,
+    stable: 16384,
+};
+
+async function getCheckedState(locator: Locator) {
+    try {
+        return (await locator.isChecked()) ? stateEnum.checked : stateEnum.unchecked;
+    } catch {
+        return 0;
+    }
+}
+
+async function getSelectState(element: ElementHandle) {
+    if (await element.evaluate((e) => 'selected' in e)) {
+        return (await element.evaluate((e) => (e as HTMLOptionElement).selected))
+            ? stateEnum.selected
+            : stateEnum.deselected;
+    } else {
+        return 0;
+    }
+}
+
+export async function getElementStates(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Json> {
     const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    let states = 0;
+    try {
+        await locator.waitFor({ state: 'attached', timeout: 250 });
+        states = stateEnum.attached;
+        states += (await locator.isVisible()) ? stateEnum.visible : stateEnum.hidden;
+        states += (await locator.isEnabled()) ? stateEnum.enabled : stateEnum.disabled;
+        states += (await locator.isEditable()) ? stateEnum.editable : stateEnum.readonly;
+        states += await getCheckedState(locator);
+        try {
+            const element = await locator.elementHandle();
+            exists(element, 'Locator did not resolve to elementHandle.');
+            states += await getSelectState(element);
+            states += (await element.evaluate((e) => document.activeElement === e))
+                ? stateEnum.focused
+                : stateEnum.defocused;
+        } catch {}
+    } catch (e) {
+        if (e instanceof errors.TimeoutError) {
+            states = stateEnum.detached;
+        } else {
+            logger.error(e);
+            throw e;
+        }
+    }
+    return jsonResponse(JSON.stringify(states), 'Returned state.');
+}
+
+export async function getStyle(request: Request.ElementStyle, state: PlaywrightState): Promise<Response.Json> {
+    const selector = request.getSelector();
+    const option = {
+        styleKey: request.getStylekey() || null,
+        pseudoElement: request.getPseudo() || null,
+    };
+    const strictMode = request.getStrict();
 
     logger.info('Getting css of element on page');
-    const result = await invokePlaywrightMethod(state, '$eval', selector, function (element: Element) {
-        const rawStyle = window.getComputedStyle(element);
-        const mapped: Record<string, string> = {};
-        // This is necessary because JSON.stringify doesn't handle CSSStyleDeclarations correctly
-        for (let i = 0; i < rawStyle.length; i++) {
-            const name = rawStyle[i];
-            mapped[name] = rawStyle.getPropertyValue(name);
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const result = await locator.evaluate((element: Element, option) => {
+        const cssStyleDeclaration = window.getComputedStyle(element, option.pseudoElement);
+        if (option.styleKey) {
+            return cssStyleDeclaration.getPropertyValue(option.styleKey);
+        } else {
+            return Object.fromEntries(
+                Array.from(cssStyleDeclaration).map((key) => [key, cssStyleDeclaration.getPropertyValue(key)]),
+            );
         }
-        return JSON.stringify(mapped);
-    });
-    return jsonResponse(result, 'Style get succesfully.');
+    }, option);
+    return jsonResponse(JSON.stringify(result), 'Style get successfully.');
 }
 
 export async function getViewportSize(page: Page): Promise<Response.Json> {
@@ -157,16 +261,73 @@ export async function getViewportSize(page: Page): Promise<Response.Json> {
 
 export async function getBoundingBox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
     const selector = request.getSelector();
-    const elem = await determineElement(state, selector);
-    if (!elem) {
-        throw new Error(`No element matching ${selector} found`);
-    }
-    const boundingBox = await elem.boundingBox();
-    return jsonResponse(JSON.stringify(boundingBox), '');
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const boundingBox = await locator.boundingBox();
+    return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box successfully.');
 }
 
 export async function getPageSource(page: Page): Promise<Response.String> {
     const result = await page.content();
     logger.info(result);
-    return stringResponse(JSON.stringify(result), 'Page source obtained succesfully.');
+    return stringResponse(JSON.stringify(result), 'Page source obtained successfully.');
+}
+
+export async function getTableCellIndex(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Int> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const element = await locator.elementHandle();
+    exists(element, 'Locator did not resolve to elementHandle.');
+    const count = await element.evaluate((element) => {
+        while (!['TD', 'TH'].includes(element.nodeName)) {
+            const parent = element.parentElement;
+            if (!parent) {
+                throw Error('Selector does not select a table cell!');
+            }
+            element = parent;
+        }
+        return Array.prototype.indexOf.call(element.parentNode?.children, element);
+    });
+    return intResponse(count, `Cell index in row is ${count}.`);
+}
+
+export async function getTableRowIndex(
+    request: Request.ElementSelector,
+    state: PlaywrightState,
+): Promise<Response.Int> {
+    const selector = request.getSelector();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const element = await locator.elementHandle();
+    exists(element, 'Locator did not resolve to elementHandle.');
+    const count = await element.evaluate((element) => {
+        let table_row = null;
+        while (element.nodeName !== 'TABLE') {
+            if (element.nodeName === 'TR') {
+                table_row = element;
+            }
+            const parent = element.parentElement;
+            if (!parent) {
+                throw Error('Selector does not select a table cell!');
+            }
+            element = parent;
+        }
+        let rows = element.querySelectorAll(':scope > * > tr');
+        if (rows.length == 0) {
+            rows = element.querySelectorAll(':scope > tr');
+        }
+        if (rows.length == 0) {
+            throw Error(
+                `Table rows could not be found. ChildNodes are: ${Array.prototype.slice
+                    .call(element.childNodes)
+                    .map((e) => `${e.nodeName}.${e.className}`)}`,
+            );
+        }
+        return Array.prototype.indexOf.call(rows, table_row);
+    });
+    return intResponse(count, `Row index in table is ${count}.`);
 }

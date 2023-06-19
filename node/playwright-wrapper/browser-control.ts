@@ -16,39 +16,75 @@ import { BrowserContext, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { determineElement, exists } from './playwirght-invoke';
 import { emptyWithLog, stringResponse } from './response-util';
+import { exists, findLocator } from './playwright-invoke';
+import { pino } from 'pino';
+
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+
+export async function grantPermissions(request: Request.Permissions, state: PlaywrightState): Promise<Response.Empty> {
+    const browserContext = state.getActiveContext();
+    if (!browserContext) {
+        return emptyWithLog(`No browser context is active. Use 'Open Browser' to open a new one.`);
+    }
+    await browserContext.grantPermissions(request.getPermissionsList(), {
+        ...(request.getOrigin().length > 0 && { origin: request.getOrigin() }),
+    });
+    return emptyWithLog(
+        `Granted permissions "${request.getPermissionsList().join(', ')}"` +
+            (request.getOrigin().length > 0 ? ` for origin "${request.getOrigin()}"` : ''),
+    );
+}
+
+export async function clearPermissions(request: Request.Empty, state: PlaywrightState): Promise<Response.Empty> {
+    const browserContext = state.getActiveContext();
+    if (!browserContext) {
+        return emptyWithLog(`No browser context is active. Use 'Open Browser' to open a new one.`);
+    }
+    await browserContext.clearPermissions();
+    return emptyWithLog('Cleared all permissions');
+}
 
 export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
     const url = request.getUrl();
     const timeout = request.getDefaulttimeout();
     await page.goto(url, { timeout });
-    return emptyWithLog(`Succesfully opened URL ${url}`);
+    return emptyWithLog(`Successfully opened URL ${url}`);
 }
 
 export async function takeScreenshot(
     request: Request.ScreenshotOptions,
     state: PlaywrightState,
 ): Promise<Response.String> {
-    // Add the file extension here because the image type is defined by playwrights defaults
-    const path = request.getPath() + '.png';
-    const fullPage = request.getFullpage();
     const selector = request.getSelector();
-    if (selector) {
-        const elem = await determineElement(state, selector);
-        exists(elem, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
-        await elem.screenshot({ path: path });
-    } else {
-        const page = state.getActivePage();
-        exists(page, 'Tried to take screenshot, but no page was open.');
-        await page.screenshot({ path, fullPage });
+    const options = JSON.parse(request.getOptions());
+    const mask = JSON.parse(request.getMask());
+    const strictMode = request.getStrict();
+    const page = state.getActivePage();
+    exists(page, 'Tried to take screenshot, but no page was open.');
+    if (mask) {
+        const mask_locators = [];
+        for (const sel of mask) {
+            mask_locators.push(await findLocator(state, sel, false, undefined, false));
+        }
+        options.mask = mask_locators;
     }
-    const message = 'Screenshot succesfully captured to: ' + path;
-    return stringResponse(path, message);
+    logger.info({ 'Take screenshot with options: ': options });
+    if (selector) {
+        logger.info({ 'Using selecotr: ': selector });
+        const locator = await findLocator(state, selector, strictMode, undefined, true);
+        await locator.screenshot(options);
+    } else {
+        await page.screenshot(options);
+    }
+    const message = 'Screenshot successfully captured to: ' + options.path;
+    return stringResponse(options.path, message);
 }
 
 export async function setTimeout(request: Request.Timeout, context?: BrowserContext): Promise<Response.Empty> {
-    exists(context, 'Tried to set timeout, no open context');
+    if (!context) {
+        return emptyWithLog(`No context open.`);
+    }
     const timeout = request.getTimeout();
     context.setDefaultTimeout(timeout);
     return emptyWithLog(`Set timeout to: ${timeout}`);

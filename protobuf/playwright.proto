@@ -17,19 +17,30 @@ syntax = "proto3";
 message Request {
   message Empty {}
 
+  message Label {
+    string label = 1;
+  }
+
+
   message ScreenshotOptions {
-    string path = 1;
-    string selector = 2;
-    bool fullPage = 3;
+    string selector = 1;
+    string mask = 2;
+    string options = 3;
+    bool strict = 4;
   }
 
   message KeywordCall {
     string name = 1;
-    repeated string arguments = 2;
+    string arguments = 2;
   }
 
   message FilePath {
     string path = 1;
+  }
+  message FileBySelector {
+    string path = 1;
+    string selector = 2;
+    bool strict = 3;
   }
 
   message Json {
@@ -39,6 +50,11 @@ message Request {
   message MouseButtonOptions {
     string action = 1;
     string json = 2;
+  }
+
+  message MouseWheel {
+    int32 deltaX = 1;
+    int32 deltaY = 2;
   }
 
   message KeyboardKeypress {
@@ -54,19 +70,37 @@ message Request {
 
   message Browser {
     string browser = 1;
-    bool headless = 2;
-    string rawOptions = 3;
+    string rawOptions = 2;
   }
 
   message Context {
     string rawOptions = 1;
     bool hideRfBrowser = 2;
     int32 defaultTimeout = 3;
+    string traceFile = 4;
+  }
+
+  message PersistentContext {
+    string browser = 1;
+    string rawOptions = 2;
+    bool hideRfBrowser = 3;
+    int32 defaultTimeout = 4;
+    string traceFile = 5;
+  }
+
+  message Permissions {
+    repeated string permissions = 1;
+    string origin = 2;
   }
 
   message Url {
     string url= 1;
     int32 defaultTimeout = 2;
+  }
+
+  message UrlOptions {
+    Url url = 1;
+    string waitUntil = 2;
   }
 
   message ConnectBrowser {
@@ -83,6 +117,7 @@ message Request {
   message ElementProperty {
     string selector = 1;
     string property = 2;
+    bool strict = 3;
   }
 
   message TypeText {
@@ -90,24 +125,31 @@ message Request {
     string text = 2;
     int32 delay = 3;
     bool clear = 4;
+    bool strict = 5;
   }
 
   message FillText {
     string selector = 1;
     string text = 2;
+    bool strict = 3;
+    bool force = 4;
   }
 
   message ClearText {
     string selector = 1;
+    bool strict = 2;
   }
 
   message PressKeys {
     string selector = 1;
-    repeated string key = 2;
+    bool strict = 2;
+    repeated string key = 3;
   }
 
   message ElementSelector {
     string selector = 1;
+    bool strict = 2;
+    bool force = 3;
   }
 
   message Timeout {
@@ -129,6 +171,7 @@ message Request {
   message ElementSelectorWithOptions {
     string selector = 1;
     string options = 2;
+    bool strict = 3;
   }
 
   message ElementSelectorWithDuration {
@@ -137,22 +180,26 @@ message Request {
     string width = 3;
     string style = 4;
     string color = 5;
+    bool strict = 6;
   }
 
   message SelectElementSelector {
     string selector = 1;
     string matcherJson = 2;
+    bool strict = 3;
   }
 
   message JavascriptCode {
     string script = 1;
     string selector = 2;
+    bool strict = 3;
   }
 
   message WaitForFunctionOptions {
     string script = 1;
     string selector = 2;
     string options = 3;
+    bool strict = 4;
   }
 
   message PlaywrightObject {
@@ -182,11 +229,26 @@ message Request {
 
   message AlertAction {
     string alertAction = 1;
-    string promptInput = 2;  
+    string promptInput = 2;
   }
 
   message Bool {
     bool value = 1;
+  }
+
+  message EvaluateAll {
+    string selector = 1;
+    string script = 2;
+    string arg = 3;
+    bool allElements = 4;
+    bool strict = 5;
+  }
+
+  message ElementStyle {
+    string selector = 1;
+    string pseudo = 2;
+    string styleKey = 3;
+    bool strict = 4;
   }
 }
 
@@ -194,7 +256,8 @@ message Types {
   message SelectEntry {
     string value = 2;
     string label = 3;
-    bool selected = 4;
+    int32 index = 4;
+    bool selected = 5;
   }
 }
 
@@ -211,6 +274,8 @@ message Response {
   message Keywords {
     string log = 1;
     repeated string keywords = 2;
+    repeated string keywordDocumentations = 3;
+    repeated string keywordArguments = 4;
   }
 
   message Bool {
@@ -237,10 +302,36 @@ message Response {
     string result = 2;
   }
 
+  message NewContextResponse {
+    string id = 1;
+    string log = 2;
+    string contextOptions = 3;
+    bool newBrowser = 4;
+  }
+
+  message NewPersistentContextResponse {
+    string id = 1;
+    string log = 2;
+    string contextOptions = 3;
+    bool newBrowser = 4;
+    string video = 5;
+    string pageId = 6;
+    string browserId = 7;
+  }
+
   message NewPageResponse {
     string log = 1;
     string body = 2;
     string video = 3;
+    bool newBrowser = 4;
+    bool newContext = 5;
+  }
+
+  message PageReportResponse {
+    string log = 1;
+    string errors = 2;
+    string console = 3;
+    string pageId = 4;
   }
 }
 
@@ -261,8 +352,6 @@ service  Playwright {
   rpc GetTitle(Request.Empty) returns (Response.String);
   /* Returns the count of elements found with selector */
   rpc GetElementCount(Request.ElementSelector) returns (Response.Int);
-  /* Wraps playwrights page.fill to input text into input specified with selector */
-  rpc InputText(Request.TextInput) returns (Response.Empty);
    /* Wraps playwrights page.type to type text into input specified with selector */
   rpc TypeText(Request.TypeText) returns (Response.Empty);
   /* Wraps playwrights page.fill to fill text of input specified with selector */
@@ -287,7 +376,7 @@ service  Playwright {
   /* Gets the Select element specified by selector and returns the contents */
   rpc GetSelectContent(Request.ElementSelector) returns (Response.Select);
   /* Selects option matching matcher in Select element matching selector */
-  rpc SelectOption(Request.SelectElementSelector) returns (Response.Empty);
+  rpc SelectOption(Request.SelectElementSelector) returns (Response.Select);
   /* Deselects options in Select element matching selector */
   rpc DeselectOption(Request.ElementSelector) returns (Response.Empty);
   /* Checks checkbox specified by selector */
@@ -300,16 +389,20 @@ service  Playwright {
   rpc GetElement(Request.ElementSelector) returns (Response.String);
   /* Returns references to multiple Playwirght element handles.*/
   rpc GetElements(Request.ElementSelector) returns (Response.Json);
+  /* Returns all Element states as IntFlag */
+  rpc GetElementStates(Request.ElementSelector) returns (Response.Json);
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
-  rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Empty);
+  rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Int);
   /* Download url content */
   rpc Download(Request.Url) returns (Response.Json);
   /* Clicks element specified by selector and options */
   rpc Click(Request.ElementSelectorWithOptions) returns (Response.Empty);
+  /* Tabs element specified by selector and options */
+  rpc Tab(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Hovers an element specified by selector and options */
   rpc Hover(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */
@@ -320,11 +413,14 @@ service  Playwright {
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
   /* Executes javascript on the active page */
   rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
+  rpc EvaluateJavascript(Request.EvaluateAll) returns (Response.JavascriptExecutionResult);
+
+  rpc RecordSelector(Request.Label) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc GetPageState(Request.Empty) returns (Response.JavascriptExecutionResult);
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
-  rpc GetStyle(Request.ElementSelector) returns (Response.Json);
+  rpc GetStyle(Request.ElementStyle) returns (Response.Json);
   /* Gets elements x, y coordinates and width, height as json object */ 
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the browser */
@@ -333,7 +429,7 @@ service  Playwright {
   rpc WaitForResponse(Request.HttpCapture) returns (Response.Json);
   rpc WaitForDownload(Request.FilePath) returns (Response.Json);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
-  rpc WaitForNavigation(Request.Url) returns (Response.Empty);
+  rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);
   /* Geolocation */
   rpc SetGeolocation(Request.Json) returns (Response.Empty);
 
@@ -341,15 +437,22 @@ service  Playwright {
   rpc GetDevices(Request.Empty) returns (Response.Json);
 
   rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
+  rpc WaitForAlert(Request.AlertAction) returns (Response.String);
 
   rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);
   rpc MouseMove(Request.Json) returns (Response.Empty);
+  rpc MouseWheel(Request.MouseWheel) returns (Response.Empty);
 
   rpc KeyboardKey(Request.KeyboardKeypress) returns (Response.Empty);
   rpc KeyboardInput(Request.KeyboardInputOptions) returns (Response.Empty);
 
-  rpc UploadFile(Request.FilePath) returns (Response.Empty);
+  rpc GetTableRowIndex(Request.ElementSelector) returns (Response.Int);
+  rpc GetTableCellIndex(Request.ElementSelector) returns (Response.Int);
 
+  rpc UploadFile(Request.FilePath) returns (Response.Empty);
+  rpc UploadFileBySelector(Request.FileBySelector) returns (Response.Empty);
+
+  rpc ScrollToElement(Request.ElementSelector) returns (Response.Empty);
   rpc SetOffline(Request.Bool) returns (Response.Empty);
   rpc Reload(Request.Empty) returns (Response.Empty);
 
@@ -358,16 +461,25 @@ service  Playwright {
   rpc SwitchContext(Request.Index) returns (Response.String);
   rpc SwitchBrowser(Request.Index) returns (Response.String);
   rpc NewPage(Request.Url) returns (Response.NewPageResponse);
-  rpc NewContext(Request.Context) returns (Response.String);
+  rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
+  rpc NewPersistentContext(Request.PersistentContext) returns (Response.NewPersistentContextResponse);
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
-  rpc ClosePage(Request.Empty) returns (Response.Empty);
+  rpc ClosePage(Request.Empty) returns (Response.PageReportResponse);
+  rpc GetConsoleLog(Request.Bool) returns (Response.Json);
+  rpc GetErrorMessages(Request.Bool) returns (Response.Json);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
+  rpc SaveStorageState(Request.FilePath) returns (Response.Empty);
+
+  rpc GrantPermissions(Request.Permissions) returns (Response.Empty);
+  rpc ClearPermissions(Request.Empty) returns (Response.Empty);
 
   /* Extension handling */
   rpc InitializeExtension(Request.FilePath) returns (Response.Keywords);
   rpc CallExtensionKeyword(Request.KeywordCall) returns (stream Response.Json);
+
+  rpc SetPeerId(Request.Index) returns (Response.String);
 }

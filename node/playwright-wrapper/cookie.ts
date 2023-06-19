@@ -17,8 +17,8 @@ import { BrowserContext, Cookie } from 'playwright';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse } from './response-util';
 
-import * as pino from 'pino';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 interface CookieData {
     name: string;

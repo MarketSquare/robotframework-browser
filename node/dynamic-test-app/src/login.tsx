@@ -34,7 +34,7 @@ function ProgressBar() {
             id="progress"
             style={{
                 position: 'absolute',
-                top: '500px',
+                top: '660px',
                 left: '0px',
                 width: '400px',
                 height: '30px',
@@ -64,10 +64,10 @@ async function delayedRequest() {
 
 function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
-    if (files && files[0].name === 'test_upload_file') {
-        uploadResultElement.current!.innerHTML = 'test_upload_file';
+    if (files) {
+        uploadResultElement.current!.innerHTML = files[0].name;
     } else {
-        uploadResultElement.current!.innerHTML = 'wrong_upload_filename';
+        uploadResultElement.current!.innerHTML = 'no uploaded file';
     }
 }
 
@@ -112,6 +112,10 @@ export default function Site() {
     const coordinatesDivX = React.createRef<HTMLDivElement>();
     const coordinatesDivY = React.createRef<HTMLDivElement>();
     const keypresses = React.createRef<HTMLDivElement>();
+    const altKey = React.createRef<HTMLDivElement>();
+    const shiftKey = React.createRef<HTMLDivElement>();
+    const ctrlKey = React.createRef<HTMLDivElement>();
+    const metaKey = React.createRef<HTMLDivElement>();
 
     let mouseDelay: number;
     let mouseDownTime: number;
@@ -121,17 +125,26 @@ export default function Site() {
     function eventMouseDown(e: any) {
         mouseDownTime = new Date().getTime();
         mouseButton.current!.innerHTML = '';
-        if (e.button == 0) mouseButton.current!.innerHTML = 'left';
-        if (e.button == 1) mouseButton.current!.innerHTML = 'middle';
-        if (e.button == 2) mouseButton.current!.innerHTML = 'right';
+        const mouseButtons = ['left', 'middle', 'right'];
+        mouseButton.current!.innerHTML = mouseButtons[e.button];
+        console.log(`Mouse button: ${mouseButtons[e.button]}, X: ${e.pageX}, Y: ${e.pageY}, Time: ${new Date()}`);
+        altKey.current!.innerHTML = e.altKey.toString();
+        shiftKey.current!.innerHTML = e.shiftKey.toString();
+        ctrlKey.current!.innerHTML = e.ctrlKey.toString();
+        metaKey.current!.innerHTML = e.metaKey.toString();
         coordinatesDivX.current!.innerHTML = e.pageX.toString();
         coordinatesDivY.current!.innerHTML = e.pageY.toString();
+        if (e.altKey && e.shiftKey) {
+            throw new EvalError('You are not allowed to use this site');
+        }
     }
 
     function eventMouseUp() {
         const mouseupTime = new Date().getTime();
         mouseDelay = mouseupTime - mouseDownTime;
         click_Count += 1;
+        console.error(`${click_Count.toString()}`);
+        console.warn(`${mouseDelay.toString()}`);
         clickCount.current!.innerHTML = click_Count.toString();
         mouseDelayDiv.current!.innerHTML = mouseDelay.toString();
     }
@@ -172,6 +185,9 @@ export default function Site() {
 
     function PreSubmit() {
         document.title = 'Login Page';
+        const tableStyle = {
+            fontSize: 'small',
+        };
         return (
             <>
                 <h1>Login Page</h1>
@@ -204,7 +220,7 @@ export default function Site() {
                         </tbody>
                     </table>
                 </form>
-                <textarea id="textarea51">Some initial text</textarea>
+                <textarea id="textarea51" defaultValue="Some initial text" />
                 <button id="goes_hidden" onClick={goesInvisible}>
                     Visible
                 </button>
@@ -232,13 +248,98 @@ export default function Site() {
                 <button id="clickWithOptions" onMouseDown={eventMouseDown} onMouseUp={eventMouseUp}>
                     Click with Options
                 </button>
-                <div id="upload_result" ref={uploadResult}></div>
-                <div id="mouse_delay_time" ref={mouseDelayDiv}></div>
-                <div id="click_count" ref={clickCount}></div>
-                <div id="mouse_button" ref={mouseButton}></div>
-                <div id="coordinatesX" ref={coordinatesDivX}></div>
-                <div id="coordinatesY" ref={coordinatesDivY}></div>
-                <div id="countKeyPress" ref={keypresses}></div>
+                <table style={tableStyle}>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <label htmlFor="upload_result">Upload Result:</label>
+                            </td>
+                            <td>
+                                <div id="upload_result" ref={uploadResult} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="mouse_delay_time">Mouse Delay:</label>
+                            </td>
+                            <td>
+                                <div id="mouse_delay_time" ref={mouseDelayDiv} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="mouse_button">Mouse Button:</label>
+                            </td>
+                            <td>
+                                <div id="mouse_button" ref={mouseButton} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="coordinatesX">Coordinates X:</label>
+                            </td>
+                            <td>
+                                <div id="coordinatesX" ref={coordinatesDivX} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="coordinatesY">Coordinates Y:</label>
+                            </td>
+                            <td>
+                                <div id="coordinatesY" ref={coordinatesDivY} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="click_count">Click Count:</label>
+                            </td>
+                            <td>
+                                <div id="click_count" ref={clickCount} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="countKeyPress">Keypresses:</label>
+                            </td>
+                            <td>
+                                <div id="countKeyPress" ref={keypresses} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="alt_key">Alt Key:</label>
+                            </td>
+                            <td>
+                                <div id="alt_key" ref={altKey} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="ctrl_key">Ctrl Key:</label>
+                            </td>
+                            <td>
+                                <div id="ctrl_key" ref={ctrlKey} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="shift_key">Shift Key:</label>
+                            </td>
+                            <td>
+                                <div id="shift_key" ref={shiftKey} />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label htmlFor="meta_key">Meta Key:</label>
+                            </td>
+                            <td>
+                                <div id="meta_key" ref={metaKey} />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
                 <input
                     type="file"

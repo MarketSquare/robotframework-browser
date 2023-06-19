@@ -11,12 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import sys
 from datetime import timedelta
+from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from robotlibcore import KeywordBuilder  # type: ignore
 
 import Browser
+
+PY310 = sys.version_info.major == 3 and sys.version_info.minor >= 10  # noqa: PLR2004
 
 
 def is_named_method(keyword_name: str) -> bool:
@@ -29,29 +34,32 @@ def is_named_method(keyword_name: str) -> bool:
 
 def get_method_name_for_keyword(keyword_name: str) -> str:
     if is_named_method(keyword_name):
-        for key in br.attributes.keys():
+        for key in br.attributes:
             if key != keyword_name and keyword_name == br.attributes[key].robot_name:
                 return key
     return keyword_name
 
 
 def get_type_string_from_type(argument_type: type) -> str:
+    if PY310 and str(argument_type).startswith("typing."):
+        return str(argument_type).replace("NoneType", "None")
     if hasattr(argument_type, "__name__"):
         return argument_type.__name__
-    else:
-        arg_type_str = str(argument_type.__repr__()).lstrip("typing.")
-        return arg_type_str.replace("NoneType", "None")
+    arg_type_str = str(argument_type.__repr__()).lstrip("typing.")
+    return arg_type_str.replace("NoneType", "None")
 
 
 def get_type_string_from_argument(argument_string: str, argument_types: dict) -> str:
     agrument_name = argument_string.lstrip("*")
     if agrument_name in argument_types:
-        return get_type_string_from_type(argument_types[agrument_name])
+        type_string = get_type_string_from_type(argument_types[agrument_name])
+        type_string = type_string.replace("Browser.utils.data_types.", "")
+        return type_string
     return ""
 
 
 def get_function_list_from_keywords(keywords):
-    functions = list()
+    functions = []
     for keyword in keywords:
         method_name = get_method_name_for_keyword(keyword)
         keyword_arguments = br.get_keyword_arguments(keyword)
@@ -62,21 +70,21 @@ def get_function_list_from_keywords(keywords):
 
 
 def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
-    arguments_list = list()
+    arguments_list = []
     for argument in keyword_arguments:
         if isinstance(argument, tuple):
             arg_str = argument[0]
             default_value = argument[1]
             arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
             if arg_type_str:
-                if default_value is None:
-                    arg_type_str = f"Optional[{arg_type_str}]"
                 arg_str = f"{arg_str}: {arg_type_str}"
             if isinstance(default_value, str):
                 default_value = f"'{default_value}'"
-            if isinstance(default_value, timedelta):
+            elif isinstance(default_value, timedelta):
                 default_value = f"timedelta(seconds={default_value.total_seconds()})"
-            arg_str = f"{arg_str} = {default_value}"
+            elif isinstance(default_value, Enum):
+                default_value = f"{type(default_value).__name__}.{default_value.name}"
+            arg_str = f"{arg_str} = {default_value!s}"
         else:
             arg_str = argument
             arg_type_str = get_type_string_from_argument(arg_str, keyword_types)
@@ -95,33 +103,41 @@ function_list = get_function_list_from_keywords(br.get_keyword_names())
 
 pyi_boilerplate = """\
 import datetime
+import typing
 from concurrent.futures import Future
-from datetime import timedelta
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Union,
-    Tuple,
-)
+from os import PathLike
+from typing import Any
+
+import assertionengine
+
+from robotlibcore import DynamicCore  # type: ignore
 
 from .utils.data_types import *
+from .base import LibraryComponent
 
 
-class Browser:
+class Browser(DynamicCore):
     timeout: Any = ...
+    scope_stack: typing.Dict = ...
+    _old_init_args: typing.Dict = ...
+    _playwright_state: Any = ...
+    _browser_control: Any = ...
+
+
 """
 
 pyi_non_kw_methods = """\
     def get_timeout(self, timeout: Union[timedelta, None]) -> float: ...
-    def convert_timeout(self, timeout: Union[timedelta, float]) -> float: ...
+    def convert_timeout(self, timeout: Union[timedelta, float], to_ms: bool = True) -> float: ...
     def millisecs_to_timestr(self, timeout: float)  -> str: ...
+    def get_strict_mode(self, strict: Union[bool, None]) -> bool: ...
+    def _parse_run_on_failure_keyword(self, keyword_name: Union[str, None]) -> DelayedKeyword: ...
+    def _create_lib_component_from_jsextension(self, jsextension: str) -> LibraryComponent: ...
 
 """
 
 init_method = KeywordBuilder.build(br.__init__)
-with open("Browser/__init__.pyi", "w") as stub_file:
+with Path("Browser/browser.pyi").open("w") as stub_file:
     stub_file.write(pyi_boilerplate)
     init_string = keyword_line(
         init_method.argument_specification, init_method.argument_types, "__init__"

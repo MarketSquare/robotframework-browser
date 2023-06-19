@@ -12,28 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import inspect
-from functools import wraps
-from typing import Callable, Tuple
+from typing import Any, Callable, Dict, Tuple
 
-from robot.api import logger  # type: ignore
+from robot.running import TypeConverter
 
-
-def attribute_warning(old_args: Tuple[str, str], new_args: Tuple[str, str]):
-    def actual_decorator(method):
-        @wraps(method)
-        def wrapper(*args, **kwargs):
-            kw_name = _method_to_keyword(method.__name__)
-            for index, old_arg in enumerate(old_args):
-                if _is_deprecated_attribute(method, old_arg, args, kwargs):
-                    logger.warn(
-                        f"Browser library {kw_name} keyword "
-                        f"has deprecated {old_arg}, use {new_args[index]}",
-                    )
-            return method(*args, **kwargs)
-
-        return wrapper
-
-    return actual_decorator
+from Browser.utils import logger
 
 
 def _method_to_keyword(method: str) -> str:
@@ -57,7 +40,29 @@ def _is_deprecated_attribute(method: Callable, deprecated_arg, args, kwargs):
     if deprecated_arg in kwargs:
         deprecated = True
     for index, argspec_arg in enumerate(argspec_args):
-        if argspec_arg in deprecated_arg:
-            if len(args) == index + 1:
-                deprecated = True
+        if argspec_arg in deprecated_arg and len(args) == index + 1:
+            deprecated = True
     return deprecated
+
+
+def convert_pos_args_to_named(
+    deprecated_pos_args: Tuple[Any, ...],
+    old_args: Dict[str, Any],
+    keyword_name: str,
+    additional_msg: str = "",
+):
+    old_args_list = list(old_args.items())
+    pos_params = {}
+    for index, pos_arg in enumerate(deprecated_pos_args):
+        argument_name = old_args_list[index][0]
+        argument_type = old_args_list[index][1]
+        converted_pos = TypeConverter.converter_for(argument_type).convert(
+            argument_name, pos_arg
+        )
+        pos_params[argument_name] = converted_pos
+    if pos_params:
+        logger.warn(
+            f"Deprecated positional arguments are used in '{keyword_name}'. "
+            f"Please use named arguments instead.{additional_msg}"
+        )
+    return pos_params

@@ -1,0 +1,2 @@
+--suite Test.00 Clean Output Dir
+--suite Test.08 Scope Tests

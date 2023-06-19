@@ -15,9 +15,9 @@
 import { PlaywrightServer } from './grpc-service';
 import { Server, ServerCredentials, ServiceDefinition, UntypedServiceImplementation } from '@grpc/grpc-js';
 
-import * as pino from 'pino';
 import { PlaywrightService } from './generated/playwright_grpc_pb';
-const logger = pino.default({ timestamp: pino.stdTimeFunctions.isoTime });
+import { pino } from 'pino';
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 const port = process.argv.slice(2);
 if (Object.keys(port).length == 0) {
@@ -25,10 +25,10 @@ if (Object.keys(port).length == 0) {
 }
 const server = new Server();
 server.addService(
-    (PlaywrightService as unknown) as ServiceDefinition<UntypedServiceImplementation>,
-    (new PlaywrightServer() as unknown) as UntypedServiceImplementation,
+    PlaywrightService as unknown as ServiceDefinition<UntypedServiceImplementation>,
+    new PlaywrightServer() as unknown as UntypedServiceImplementation,
 );
-server.bindAsync(`localhost:${port}`, ServerCredentials.createInsecure(), () => {
+server.bindAsync(`127.0.0.1:${port}`, ServerCredentials.createInsecure(), () => {
     logger.info(`Listening on ${port}`);
     server.start();
 });

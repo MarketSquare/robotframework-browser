@@ -1,5 +1,0 @@
-Test equals
-
-0) actual
-1) partial error 'actual' (str) should be 'unexpected' (str)
-2) '1' (int) should be '1' (str)

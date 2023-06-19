@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from enum import Enum, auto
+from datetime import timedelta
+from enum import Enum, IntFlag, auto
 from typing import Dict, Union
 
 from typing_extensions import TypedDict
@@ -22,7 +22,7 @@ class TypedDictDummy(TypedDict):
     pass
 
 
-def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
+def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noqa: C901
     for arg_name, arg_type in function_annotations.items():
         if arg_name not in params or params[arg_name] is None:
             continue
@@ -33,7 +33,7 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
                     union_type, type(TypedDictDummy)
                 ):
                     continue
-                arg_type = union_type
+                arg_type = union_type  # noqa: PLW2901
                 break
         if isinstance(arg_type, type(TypedDictDummy)):
             if not isinstance(arg_value, dict):
@@ -46,7 +46,7 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
             for req_key in arg_type.__required_keys__:  # type: ignore
                 if req_key.lower() not in lower_case_dict:
                     raise RuntimeError(
-                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__}."
+                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__} for argument '{arg_name}'."
                         f"\nThe required key '{req_key}' in not set in given value."
                         f"\nExpected types: {arg_type.__annotations__}"
                     )
@@ -57,6 +57,25 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:
                 typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])  # type: ignore
             params[arg_name] = typed_dict
     return params
+
+
+class DelayedKeyword:
+    def __init__(
+        self,
+        name: Union[str, None],
+        original_name: Union[str, None],
+        args: tuple,
+        kwargs: dict,
+    ):
+        self.name = name
+        self.original_name = original_name
+        self.args = args
+        self.kwargs = kwargs
+
+    def __str__(self):
+        args = [str(arg) for arg in self.args]
+        kwargs = [f"{key}={value}" for key, value in self.kwargs.items()]
+        return f"{self.original_name}  {'  '.join(args)}  {'  '.join(kwargs)}".strip()
 
 
 class BoundingBox(TypedDict, total=False):
@@ -83,21 +102,57 @@ class ViewportDimensions(TypedDict):
 
 
 class RecordVideo(TypedDict, total=False):
-    dir: str
+    """Enables Video recording
+
+    Examples:
+    |  New Context  recordVideo={'dir':'videos', 'size':{'width':400, 'height':200}}
+    |  New Context  recordVideo={'dir': '${OUTPUT_DIR}/video'}
+    """
+
+    dir: str  # noqa: A003
     size: ViewportDimensions
+
+
+class RecordHar(TypedDict, total=False):
+    """Enables HAR recording for all pages into to a file.
+
+    If not specified, the HAR is not recorded. Make sure to await context to close for the
+    [http://www.softwareishard.com/blog/har-12-spec/|HAR] to be saved.
+
+    `omitContent`: Optional setting to control whether to omit request content
+    from the HAR. Default is False
+
+    `path`: Path on the filesystem to write the HAR file to.
+
+    Example:
+    | ${har} =    Create Dictionary     path=/path/to/har.file    omitContent=True
+    | New Context    recordHar=${har}
+    """
+
+    omitContent: bool
+    path: str
 
 
 class HttpCredentials(TypedDict):
     """Sets the credentials for http basic-auth.
 
-    Can be defined as robot dictionary or as string literal.
+    Can be defined as robot dictionary or as string literal. Does not reveal secrets
+    in Robot Framework logs. Instead, username and password values are resolved internally.
+    Please note that if ``enable_playwright_debug`` is enabled in the library import,
+    secret will be always visible as plain text in the playwright debug logs, regardless
+    of the Robot Framework log level.
 
     Example as literal:
-    | `New Context`    httpCredentials={'username': 'admin', 'password': '123456'}
+    | ${pwd} =    Set Variable    1234
+    | ${username} =    Set Variable    admin
+    | `New Context`
+    | ...    httpCredentials={'username': '$username', 'password': '$pwd'}
 
     Example as robot variable
     | ***** *Variables* *****
-    | &{credentials}=    username=admin    password=123456
+    | ${username}=       admin
+    | ${pwd}=            1234
+    | ${credentials}=    username=$username    password=$pwd
     |
     | ***** *Keywords* *****
     | Open Context
@@ -145,7 +200,7 @@ class Proxy(_Server, total=False):
     """
 
     bypass: str
-    Username: str
+    username: str
     password: str
 
 
@@ -160,20 +215,76 @@ class DownloadedFile(TypedDict):
     suggestedFilename: str
 
 
+class NewPageDetails(TypedDict):
+    """Return value of `New Page` keyword.
+
+    ``page_id`` is the UUID of the opened page.
+    ``video_path`` path to the video or empty string if video is not created.
+    """
+
+    page_id: str
+    video_path: str
+
+
+class HighLightElement(TypedDict):
+    """Presenter mode configuration options.
+
+    ``duration`` Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
+
+    ``width`` Sets the width of the higlight border. Defaults to 2px.
+
+    ``style`` Sets the style of the border. Defaults to dotted.
+
+    ``color`` Sets the color of the border, default is blue. Valid colors i.e. are:
+    ``red``, ``blue``, ``yellow``, ``pink``, ``black``
+    """
+
+    duration: timedelta
+    width: str
+    style: str
+    color: str
+
+
+class Scale(Enum):
+    """Enum that defines the scale of the screenshot.
+
+    When set to "css", screenshot will have a single pixel per each css pixel on the page.
+    For high-dpi devices, this will keep screenshots small. Using "device" option will
+    produce a single pixel per each device pixel, so screenshots of high-dpi devices will
+    be twice as large or even larger.
+    """
+
+    css = auto()
+    device = auto()
+
+
 class SelectionType(Enum):
     """Enum that defines if the current id or all ids shall be returned.
 
     ``ACTIVE`` / ``CURRENT`` defines to return only the id of the currently active
     instance of a Browser/Context/Page.
 
-    ``ALL`` / ``ANY`` defines to return ids of all instances.
+    ``ALL`` / ``ANY`` defines to return ids of all instances."""
 
-    Used by: `Get Browser IDs` `Get Context IDs` and `Get Page IDs`."""
-
-    ACTIVE = auto()
-    CURRENT = ACTIVE
-    ALL = auto()
+    CURRENT = "CURRENT"
+    ACTIVE = CURRENT
+    ALL = "ALL"
     ANY = ALL
+
+    @classmethod
+    def create(cls, value: Union[str, "SelectionType"]):
+        """Returns the enum value from the given string or not."""
+        if isinstance(value, cls):
+            return value
+        if isinstance(value, str):
+            try:
+                return cls[value.upper()]
+            except KeyError:
+                return value
+        return None
+
+    def __str__(self):
+        return self.value
 
 
 class DialogAction(Enum):
@@ -187,9 +298,9 @@ class CookieType(Enum):
     """Enum that defines the Cookie type."""
 
     dictionary = auto()
-    dict = dictionary
+    dict = dictionary  # noqa: A003
     string = auto()
-    str = string
+    str = string  # noqa: A003
 
 
 CookieSameSite = Enum(
@@ -198,9 +309,7 @@ CookieSameSite = Enum(
 
 
 class RequestMethod(Enum):
-    """Enum that defines the request type.
-
-    Used by: `HTTP` ."""
+    """Enum that defines the request type."""
 
     HEAD = auto()
     GET = auto()
@@ -219,9 +328,7 @@ class MouseButtonAction(Enum):
 
 
 class MouseButton(Enum):
-    """Enum that defines which mouse button to use.
-
-    Used by: `Click` and `Mouse Button`."""
+    """Enum that defines which mouse button to use."""
 
     left = auto()
     middle = auto()
@@ -244,7 +351,7 @@ class KeyboardInputAction(Enum):
     ``type`` is similar to typing by pressing keys on the keyboard."""
 
     insertText = auto()
-    type = auto()
+    type = auto()  # noqa: A003
 
 
 class KeyboardModifier(Enum):
@@ -308,14 +415,39 @@ ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
 
         See [https://playwright.dev/docs/api/class-page?_highlight=emulatemedia#pageemulatemediaparams |emulateMedia(options)]
         for more details.
+"""
 
-        Used by `New Context`. """
+
+class Permission(Enum):
+    """Enum that defines the permission to grant to a context.
+
+    See [https://playwright.dev/docs/api/class-browsercontext#browser-context-grant-permissions |grantPermissions(permissions)]
+    for more details.
+    """
+
+    geolocation = auto()
+    midi = auto()
+    midi_sysex = auto()
+    notifications = auto()
+    push = auto()
+    camera = auto()
+    microphone = auto()
+    background_sync = auto()
+    ambient_light_sensor = auto()
+    accelerometer = auto()
+    gyroscope = auto()
+    magnetometer = auto()
+    accessibility_events = auto()
+    clipboard_read = auto()
+    clipboard_write = auto()
+    payment_handler = auto()
 
 
 ScrollBehavior = Enum("ScrollBehavior", ["auto", "smooth"])
 ScrollBehavior.__doc__ = """Enum that controls the behavior of scrolling.
 
-``smooth`` """
+``smooth``
+"""
 
 
 class SizeFields(Enum):
@@ -323,9 +455,7 @@ class SizeFields(Enum):
 
     ``ALL`` defines that the size is returned as a dictionary. ``{'width': <float>, 'height': <float>}.``
 
-    ``width`` / ``height`` will return a single float value of the chosen dimension.
-
-    Used by: `Get Viewport Size`, `Get Scroll Size` and `Get Client Size`."""
+    ``width`` / ``height`` will return a single float value of the chosen dimension."""
 
     width = auto()
     height = auto()
@@ -334,8 +464,6 @@ class SizeFields(Enum):
 
 class AreaFields(Enum):
     """Enumeration that defines which coordinates of an area should be selected.
-
-    Used by `Get Scroll Position`.
 
     ``ALL`` defines that all fields are selected and a dictionary with all information
     is returned.
@@ -350,8 +478,6 @@ class AreaFields(Enum):
 
 class BoundingBoxFields(Enum):
     """Enumeration that defines which location information of an element should be selected.
-
-    Used by `Get BoundingBox`.
 
     ``x`` / ``y`` defines the position of the top left corner of an element.
 
@@ -369,12 +495,23 @@ class BoundingBoxFields(Enum):
 
 
 class AutoClosingLevel(Enum):
-    """Library will close pages and contexts that are created during test execution.
+    """Controls when contexts and pages are closed during the test execution.
 
-    Pages and contexts created before test in Suite Setup or Suite Teardown will be closed after that suite.
-    This will remove the burden of closing these resources in teardowns.
-    *Browsers will not be automatically closed.* A browser is expensive to create and should be reused.
-    Automatic closing can be configured or switched off with the auto_closing_level library parameter.
+    If automatic closing level is `TEST`, contexts and pages that are created during a single test are
+    automatically closed when the test ends. Contexts and pages that are created during suite setup are
+    closed when the suite teardown ends.
+
+    If automatic closing level is `SUITE`, all contexts and pages that are created during the test suite
+    are closed when the suite teardown ends.
+
+    If automatic closing level is `MANUAL`, nothing is closed automatically while the test execution
+    is ongoing.
+
+    All browsers are automatically closed, always and regardless of the automatic closing level at
+    the end of the test execution. This will also close all remaining pages and contexts.
+
+    Automatic closing can be configured or switched off with the auto_closing_level library import
+    parameter.
 
     See: `Importing`"""
 
@@ -383,7 +520,7 @@ class AutoClosingLevel(Enum):
     MANUAL = auto()
 
 
-class ElementState(Enum):
+class ElementState(IntFlag):
     """Enum that defines the state an element can have.
 
     The following ``states`` are possible:
@@ -402,144 +539,151 @@ class ElementState(Enum):
     | ``defocused``  | to not be the ``activeElement``. |
     | ``checked``    | to be ``checked``. Can be used on <input>. |
     | ``unchecked``  | to not be ``checked``. |
-
-    Used by: `Wait For Elements State`"""
-
-    attached = auto()
-    detached = auto()
-    visible = auto()
-    hidden = auto()
-    enabled = auto()
-    disabled = auto()
-    editable = auto()
-    readonly = auto()
-    selected = auto()
-    deselected = auto()
-    focused = auto()
-    defocused = auto()
-    checked = auto()
-    unchecked = auto()
-
-
-class ElementStateKey(Enum):
-    """Enum that defines the state an element can have directly.
-
-    See `ElementState` for explaination.
-
-    Used by: `Get Element State`"""
-
-    attached = auto()
-    visible = auto()
-    disabled = auto()
-    readonly = auto()
-    selected = auto()
-    focused = auto()
-    checked = auto()
-
-
-AssertionOperator = Enum(
-    "AssertionOperator",
-    {
-        "equal": "==",
-        "==": "==",
-        "should be": "==",
-        "inequal": "!=",
-        "!=": "!=",
-        "should not be": "!=",
-        "less than": "<",
-        "<": "<",
-        "greater than": ">",
-        ">": ">",
-        "<=": "<=",
-        ">=": ">=",
-        "contains": "*=",
-        "*=": "*=",
-        "starts": "^=",
-        "^=": "^=",
-        "should start with": "^=",
-        "ends": "$=",
-        "should end with": "$=",
-        "$=": "$=",
-        "matches": "$",
-        "validate": "validate",
-        "then": "then",
-        "evaluate": "then",
-    },
-)
-AssertionOperator.__doc__ = """
-    Enum that defines the ``assertion_operator`` <`AssertionOperator`>.
-
-    Currently supported assertion operators are:
-
-    |      = Operator =   |   = Alternative Operators =       |              = Description =                                         | = Validate Equivalent =              |
-    | ``==``              | ``equal``, ``should be``          | Checks if returned value is equal to expected value.                 | ``value == expected``                |
-    | ``!=``              | ``inequal``, ``should not be``    | Checks if returned value is not equal to expected value.             | ``value != expected``                |
-    | ``>``               | ``greater than``                  | Checks if returned value is greater than expected value.             | ``value > expected``                 |
-    | ``>=``              |                                   | Checks if returned value is greater than or equal to expected value. | ``value >= expected``                |
-    | ``<``               | ``less than``                     | Checks if returned value is less than expected value.                | ``value < expected``                 |
-    | ``<=``              |                                   | Checks if returned value is less than or equal to expected value.    | ``value <= expected``                |
-    | ``*=``              | ``contains``                      | Checks if returned value contains expected value as substring.       | ``expected in value``                |
-    | ``^=``              | ``should start with``, ``starts`` | Checks if returned value starts with expected value.                 | ``re.search(f"^{expected}", value)`` |
-    | ``$=``              | ``should end with``, ``ends``     | Checks if returned value ends with expected value.                   | ``re.search(f"{expected}$", value)`` |
-    | ``matches``         |                                   | Checks if given RegEx matches minimum once in returned value.        | ``re.search(expected, value)``       |
-    | ``validate``        |                                   | Checks if given Python expression evaluates to ``True``.             |                                      |
-    | ``evaluate``        |  ``then``                         | When using this operator, the keyword does return the evaluated Python expression. |                        |
-
-
-    The assertion keywords will provide an error message if the assertion fails.
-    Assertions will retry until ``timeout`` has expired if they do not pass.
-
-    The assertion ``assertion_expected`` value is not converted by the library and
-    is used as is. Therefore when assertion is made, the ``assertion_expected``
-    argument value and value returned the keyword must have same type. If types
-    are not same, assertion will fail. Example `Get Text` always returns a string
-    and has to be compared with a string, even the returnd value might look like
-    a number.
-
-    Other Keywords have other specific types they return.
-    `Get Element Count` always returns an integer.
-    `Get Bounding Box` and `Get Viewport Size` can be filtered.
-    They return a dictionary without filter and a number when filtered.
-    These Keywords do autoconvert the expected value if a number is returned.
-
-    * < less or greater > With Strings*
-    Compairisons of strings with ``greater than`` or ``less than`` compares each character,
-    starting from 0 reagarding where it stands in the code page.
-    Example: ``A < Z``, ``Z < a``, ``ac < dc`
-    It does never compare the length of elements. Neither lists nor strings.
-    The comparison stops at the first character that is different.
-    Examples: ``'abcde' < 'abd'``, ``'100.000' < '2'``
-    In Python 3 and therefore also in Browser it is not possible to compare numbers
-    with strings with a greater or less operator.
-    On keywords that return numbers, the given expected value is automatically
-    converted to a number before comparison.
-
-
-    The getters `Get Page State` and `Get Browser Catalog` return a dictionary. Values of the dictionary can directly asserted.
-    Pay attention of possible types because they are evaluated in Python. For example:
-
-    | Get Page State    validate    2020 >= value['year']                     # Compairsion of numbers
-    | Get Page State    validate    "IMPORTANT MESSAGE!" == value['message']  # Compairsion of strings
-
-    == The 'then' or 'evaluate' closure ==
-
-    Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
-    can optionally also use ``then`` or ``evaluate`` closure to modify the returned value with
-    BuiltIn Evaluate. Actual value can be accessed with ``value``.
-
-    For example ``Get Title  then  'TITLE: '+value``.
-    See
-    [https://robotframework.org/robotframework/latest/libraries/BuiltIn.html#Evaluating%20expressions|
-    Builtin Evaluating expressions]
-    for more info on the syntax.
-
-    == Examples ==
-
-    | # *Keyword*    *Selector*                    *Key*        *Assertion Operator*    *Assertion Expected*
-    | Get Title                                           equal                 Page Title
-    | Get Title                                           ^=                    Page
-    | Get Style    //*[@id="div-element"]      width      >                     100
-    | Get Title                                           matches               \\\\w+\\\\s\\\\w+
-    | Get Title                                           validate              value == "Login Page"
-    | Get Title                                           evaluate              value if value == "some value" else "something else"
+    | ``stable``     | to be both ``visible`` and ``stable``. |
     """
+
+    attached = 1
+    detached = 2
+    visible = 4
+    hidden = 8
+    enabled = 16
+    disabled = 32
+    editable = 64
+    readonly = 128
+    selected = 256
+    deselected = 512
+    focused = 1024
+    defocused = 2048
+    checked = 4096
+    unchecked = 8192
+    stable = 16384
+
+
+ElementStateKey = (
+    ElementState  # Deprecated. Remove after `Get Element State` is removed.
+)
+
+
+class ScreenshotFileTypes(Enum):
+    """Enum that defines available file types for screenshots."""
+
+    png = auto()
+    jpeg = auto()
+
+
+class ScreenshotReturnType(Enum):
+    """Enum that defines what `Take Screenshot` keyword returns.
+
+    - ``path`` returns the path to the screenshot file as ``pathlib.Path`` object.
+    - ``path_string`` returns the path to the screenshot file as string.
+    - ``bytes`` returns the screenshot itself as bytes.
+    - ``base64`` returns the screenshot itself as base64 encoded string.
+    """
+
+    path = auto()
+    path_string = auto()
+    bytes = auto()  # noqa: A003
+    base64 = auto()
+
+
+class PageLoadStates(Enum):
+    """Enum that defines available page load states."""
+
+    load = auto()
+    domcontentloaded = auto()
+    networkidle = auto()
+    commit = auto()
+
+
+class ReduceMotion(Enum):
+    """Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`."""
+
+    reduce = auto()
+    no_preference = auto()
+
+
+class ForcedColors(Enum):
+    """Emulates `forced-colors` media feature, supported values are `active`, `none`."""
+
+    active = auto()
+    none = auto()
+
+
+class ConditionInputs(Enum):
+    """
+    Following values are allowed and represent the assertion keywords to use:
+    | =Value= | =Keyword= |
+    | ``Attribute`` | `Get Attribute` |
+    | ``Attribute Names`` | `Get Attribute Names` |
+    | ``BoundingBox`` | `Get BoundingBox` |
+    | ``Browser Catalog`` | `Get Browser Catalog` |
+    | ``Checkbox State`` | `Get Checkbox State` |
+    | ``Classes`` | `Get Classes` |
+    | ``Client Size`` | `Get Client Size` |
+    | ``Element Count`` | `Get Element Count` |
+    | ``Element States`` | `Get Element States` |
+    | ``Page Source`` | `Get Page Source` |
+    | ``Property`` | `Get Property` |
+    | ``Scroll Position`` | `Get Scroll Position` |
+    | ``Scroll Size`` | `Get Scroll Size` |
+    | ``Select Options`` | `Get Select Options` |
+    | ``Selected Options`` | `Get Selected Options` |
+    | ``Style`` | `Get Style` |
+    | ``Table Cell Index`` | `Get Table Cell Index` |
+    | ``Table Row Index`` | `Get Table Row Index` |
+    | ``Text`` | `Get Text` |
+    | ``Title`` | `Get Title` |
+    | ``Url`` | `Get Url` |
+    | ``Viewport Size`` | `Get Viewport Size` |
+    """
+
+    attribute = "get_attribute"
+    attribute_names = "get_attribute_names"
+    bounding_box = "get_bounding_box"
+    browser_catalog = "get_browser_catalog"
+    checkbox_state = "get_checkbox_state"
+    classes = "get_classes"
+    client_size = "get_client_size"
+    element_count = "get_element_count"
+    element_states = "get_element_states"
+    page_source = "get_page_source"
+    property = "get_property"  # noqa: A003
+    scroll_position = "get_scroll_position"
+    scroll_size = "get_scroll_size"
+    select_options = "get_select_options"
+    selected_options = "get_selected_options"
+    style = "get_style"
+    table_cell_index = "get_table_cell_index"
+    table_row_index = "get_table_row_index"
+    text = "get_text"
+    title = "get_title"
+    url = "get_url"
+    viewport_size = "get_viewport_size"
+
+
+class Scope(Enum):
+    """Some keywords which manipulates library settings have a scope argument.
+    With that scope argument one can set the "live time" of that setting.
+    Available Scopes are: ``Global``, ``Suite`` and ``Test`` / ``Task``.
+    Is a scope finished, this scoped setting, like timeout, will no longer be used and the previous higher scope setting applies again.
+
+    Live Times:
+
+    - A ``Global`` scope will live forever until it is overwritten by another Global scope.
+      Or locally temporarily overridden by a more narrow scope.
+    - A ``Suite`` scope will locally override the Global scope and
+      live until the end of the Suite within it is set, or if it is overwritten
+      by a later setting with Global or same scope.
+      Children suite does inherit the setting from the parent suite but also may have
+      its own local Suite setting that then will be inherited to its children suites.
+    - A ``Test`` or ``Task`` scope will be inherited from its parent suite but when set,
+      lives until the end of that particular test or task.
+
+    A new set higher order scope will always remove the lower order scope which may be in charge.
+    So the setting of a Suite scope from a test, will set that scope to the robot file suite where
+    that test is and removes the Test scope that may have been in place."""
+
+    Global = auto()
+    Suite = auto()
+    Test = auto()
+    Task = Test

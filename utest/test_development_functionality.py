@@ -5,7 +5,7 @@ def test_pause_on_failure():
     def whole_lib():
         pass
 
-    whole_lib._pause_on_failure = set()
+    whole_lib.pause_on_failure = set()
     whole_lib.playwright = whole_lib
     browser = PlaywrightState(whole_lib)
 
@@ -16,4 +16,4 @@ def test_pause_on_failure():
     browser.new_context = func
     browser.new_page = func
     browser.open_browser()
-    assert whole_lib._pause_on_failure
+    assert whole_lib.pause_on_failure

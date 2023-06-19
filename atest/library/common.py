@@ -1,12 +1,10 @@
 import os
-from subprocess import Popen, PIPE, STDOUT
-from typing import NamedTuple, Dict
+from pathlib import Path
+from subprocess import PIPE, STDOUT, Popen
+from typing import Dict, NamedTuple
 from urllib.parse import urlparse
 
-from pathlib import Path
-
 from Browser.utils import find_free_port
-
 
 SERVERS: Dict = {}
 

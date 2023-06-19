@@ -1,9 +1,10 @@
 *** Settings ***
-Resource          imports.resource
-Test Setup        New Page    ${FORM_URL}
+Resource        imports.resource
+
+Test Setup      New Page    ${FORM_URL}
 
 *** Test Cases ***
-Keyboard Key Inputs characters
+Keyboard Key Inputs Characters
     Clear Text    input[name="name"]
     Click    input[name="name"]
     Keyboard Key    press    H
@@ -13,7 +14,7 @@ Keyboard Key Inputs characters
     Keyboard Key    press    o
     Get Text    input[name="name"]    ==    Hello
 
-Select list options
+Select List Options
     Click    select[name="possible_channels"] > option[value="email"]
     Keyboard Key    down    Shift
     Keyboard Key    press    ArrowDown
