@@ -47,13 +47,6 @@ run following commands:
 1. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
 2. Uninstall with pip: `pip uninstall robotframework-browser`
 
-## Update instructions
-
-To upgrade your already installed robotframework-browser library
-
-1. Update from commandline: `pip install -U robotframework-browser`
-2. Install the node dependencies for the newly installed version: `rfbrowser init`
-
 # Examples
 
 ### Testing with [Robot Framework](https://robotframework.org)
