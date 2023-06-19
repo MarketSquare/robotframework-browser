@@ -1124,7 +1124,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def get_keyword_tags(self, name: str) -> list:
         tags = list(DynamicCore.get_keyword_tags(self, name))
         if name in self._plugin_keywords:
-            tags.append("plugin")
+            tags.append("Plugin")
         return tags
 
     def _end_keyword(self, _name, attrs):
