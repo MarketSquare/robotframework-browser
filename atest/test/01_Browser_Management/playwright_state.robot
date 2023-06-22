@@ -276,6 +276,8 @@ When Page Without Context Is Created This Is Logged For User
     New Page
 
 Switch Page With ALL Browsers
+    [Tags]    slow
+    [Timeout]    60s
     ${browser1} =    New Browser    headless=${HEADLESS}    reuse_existing=False
     ${context11} =    New Context
     ${page111} =    New Page

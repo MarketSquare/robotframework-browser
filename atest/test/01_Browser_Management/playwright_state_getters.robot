@@ -22,6 +22,8 @@ Get Multiple Browsers
     Should Be Equal    ${browsers}    ${expected}
 
 Get Closed Browsers
+    [Tags]    slow
+    [Timeout]    60s
     New Browser    headless=${HEADLESS}
     Close Browser
     ${browsers} =    Get Browser Catalog
