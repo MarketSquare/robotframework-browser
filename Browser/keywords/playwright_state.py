@@ -1275,9 +1275,9 @@ class PlaywrightState(LibraryComponent):
             elif context == SelectionType.CURRENT and isinstance(browser, str):
                 self.switch_browser(browser)
 
-        logger.debug(uid)
-        logger.debug(context)
-        logger.debug(browser)
+        logger.debug(f"Page:    {uid}")
+        logger.debug(f"Context: {context}")
+        logger.debug(f"Browser: {browser}")
 
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchPage(
