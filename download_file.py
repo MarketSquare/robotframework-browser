@@ -12,10 +12,7 @@ from dateutil import parser as du_parser
 import requests
 
 SAVED_ARTIFACTS = [
-    "ubuntu-latest 16.x Clean install results",
-    "ubuntu-latest 18.x Clean install results",
-    "windows-latest 16.x Clean install results",
-    "windows-latest 18.x Clean install results",
+    "Clean install results",
     "Test results",
 ]
 
