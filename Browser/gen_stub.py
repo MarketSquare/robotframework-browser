@@ -53,8 +53,7 @@ def get_type_string_from_argument(argument_string: str, argument_types: dict) ->
     agrument_name = argument_string.lstrip("*")
     if agrument_name in argument_types:
         type_string = get_type_string_from_type(argument_types[agrument_name])
-        type_string = type_string.replace("Browser.utils.data_types.", "")
-        return type_string
+        return type_string.replace("Browser.utils.data_types.", "")
     return ""
 
 

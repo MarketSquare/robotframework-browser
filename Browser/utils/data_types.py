@@ -109,7 +109,7 @@ class RecordVideo(TypedDict, total=False):
     |  New Context  recordVideo={'dir': '${OUTPUT_DIR}/video'}
     """
 
-    dir: str  # noqa: A003
+    dir: str
     size: ViewportDimensions
 
 
