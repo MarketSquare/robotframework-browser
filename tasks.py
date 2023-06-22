@@ -189,7 +189,7 @@ def _node_protobuf_gen(c):
         ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     )
     cmd = (
-        "npm run grpc_tools_node_protoc --"
+        "npm run grpc_tools_node_protoc -- "
         f"--js_out=import_style=commonjs,binary:{node_protobuf_dir} "
         f"--grpc_out=grpc_js:{node_protobuf_dir} "
         f"--plugin=protoc-gen-grpc={protoc_plugin} "
