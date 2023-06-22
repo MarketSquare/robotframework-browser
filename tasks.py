@@ -45,7 +45,6 @@ node_dir = ROOT_DIR / "node"
 npm_deps_timestamp_file = ROOT_DIR / "node_modules" / ".installed"
 python_deps_timestamp_file = ROOT_DIR / "Browser" / ".installed"
 node_lint_timestamp_file = node_dir / ".linted"
-python_lint_timestamp_file = PYTHON_SRC_DIR / ".linted"
 ATEST_TIMEOUT = 900
 cpu_count = os.cpu_count() or 1
 EXECUTOR_COUNT = str(cpu_count - 1 or 1)
@@ -130,7 +129,6 @@ def clean(c):
     for file in [
         npm_deps_timestamp_file,
         node_lint_timestamp_file,
-        python_lint_timestamp_file,
         python_deps_timestamp_file,
         Path("./playwright-log.txt"),
         Path("./.coverage"),
@@ -584,19 +582,15 @@ def _add_skips(default_args, include_mac=False):
 
 
 @task
-def lint_python(c):
-    all_py_sources = list(PYTHON_SRC_DIR.glob("**/*.py")) + list(
-        (ROOT_DIR / "utest").glob("**/*.py")
+def lint_python(c, fix=False):
+    c.run(
+        "mypy --exclude .venv --show-error-codes --config-file Browser/mypy.ini Browser/"
     )
-    if _sources_changed(all_py_sources, python_lint_timestamp_file):
-        c.run(
-            "mypy --exclude .venv --show-error-codes --config-file Browser/mypy.ini Browser/"
-        )
-        c.run("black --config Browser/pyproject.toml tasks.py Browser/")
-        c.run("ruff check --config Browser/pyproject.toml Browser/")
-        python_lint_timestamp_file.touch()
-    else:
-        print("no changes in .py files, skipping python lint")
+    c.run("black --config Browser/pyproject.toml tasks.py Browser/")
+    ruff_cmd = "ruff check --config Browser/pyproject.toml Browser/"
+    if fix:
+        ruff_cmd = f"{ruff_cmd} --fix"
+    c.run(ruff_cmd)
 
 
 @task
