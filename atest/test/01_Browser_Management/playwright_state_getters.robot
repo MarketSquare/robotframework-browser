@@ -87,7 +87,7 @@ Get Browser Catalog After First Popup Close
     Click    id=first_popup
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
     Switch Page    NEW
-    Press Keys    id=close_popup    Enter
+    Click    id=close_popup    force=True
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 1
     [Teardown]    Close Browser
 
@@ -100,7 +100,7 @@ Get Browser Catalog After Second Popup Close
     Click    id=first_popup
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
     Switch Page    NEW
-    Press Keys    id=close_popup    Enter
+    Click    id=second_popup    force=True
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
     [Teardown]    Close Browser
 
