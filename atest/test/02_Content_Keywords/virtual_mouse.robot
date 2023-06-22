@@ -55,6 +55,7 @@ Drag And Drop With Strict
 
 Drag And Drop With Coordinates
     [Tags]    slow
+    [Timeout]    60s
     ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
     ${obj_dim} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Dim_Func}
     ${dest_center} =    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
