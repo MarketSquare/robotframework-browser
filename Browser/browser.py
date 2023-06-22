@@ -21,7 +21,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, ClassVar, Dict, List, Optional, Pattern, Set, Union
 
 from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
@@ -721,7 +721,7 @@ class Browser(DynamicCore):
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    ERROR_AUGMENTATION = {
+    ERROR_AUGMENTATION: ClassVar[Pattern[str]] = {
         re.compile(r"Timeout .+ exceeded."): lambda msg: (
             f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout or '
             "double check your locator as the targeted element(s) couldn't be found."
@@ -731,7 +731,7 @@ class Browser(DynamicCore):
     _context_cache = ContextCache()
     _suite_cleanup_done = False
 
-    _old_init_args = {
+    _old_init_args: ClassVar[dict] = {
         "timeout": timedelta,
         "enable_playwright_debug": bool,
         "auto_closing_level": AutoClosingLevel,
@@ -1027,7 +1027,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             )
             for response in responses:
                 logger.info(response.log)
-            if response.json == "":  # noqa: PLC1901
+            if response.json == "":
                 return None
             return json.loads(response.json)
 

@@ -17,7 +17,7 @@ import uuid
 from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import ClassVar, Dict, List, Optional, Union
 
 from robot.utils import get_link_path
 
@@ -91,7 +91,7 @@ class Control(LibraryComponent):
             if not path.with_suffix(f".{fileType}").is_file():
                 return path
 
-    old_take_screenshot_args = {
+    old_take_screenshot_args: ClassVar[dict] = {
         "fullPage": bool,
         "fileType": ScreenshotFileTypes,
         "quality": Optional[int],

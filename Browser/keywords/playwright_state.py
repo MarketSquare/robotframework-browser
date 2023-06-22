@@ -16,7 +16,7 @@ import json
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
@@ -315,7 +315,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    old_new_browser_args = {
+    old_new_browser_args: ClassVar[dict] = {
         "executablePath": Optional[str],
         "args": Optional[List[str]],
         "ignoreDefaultArgs": Optional[List[str]],
@@ -431,7 +431,7 @@ class PlaywrightState(LibraryComponent):
         params.pop("reuse_existing", None)
         return hash(repr(params))
 
-    old_new_context_args = {
+    old_new_context_args: ClassVar[dict] = {
         "acceptDownloads": bool,
         "ignoreHTTPSErrors": bool,
         "bypassCSP": bool,
@@ -579,7 +579,7 @@ class PlaywrightState(LibraryComponent):
         self.context_cache.add(response.id, self._get_video_size(params))
         return response.id
 
-    old_new_perse_context_args = {
+    old_new_perse_context_args: ClassVar[dict] = {
         "executablePath": Optional[str],
         "args": Optional[List[str]],
         "ignoreDefaultArgs": Optional[List[str]],
