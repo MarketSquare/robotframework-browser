@@ -19,7 +19,6 @@ try:
     import bs4
     import pytest
     import robotstatuschecker
-    from pabot import pabot
     from rellu import ReleaseNotesGenerator, Version
     from robot import __version__ as rf_version
     from robot import rebot_cli
@@ -189,21 +188,21 @@ def _node_protobuf_gen(c):
     protoc_ts_plugin = (
         ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     )
-    c.run(
-        f"npm run grpc_tools_node_protoc -- \
-		--js_out=import_style=commonjs,binary:{node_protobuf_dir} \
-		--grpc_out=grpc_js:{node_protobuf_dir} \
-		--plugin=protoc-gen-grpc={protoc_plugin} \
-		-I ./protobuf \
-		protobuf/*.proto"
+    cmd = (
+        "npm run grpc_tools_node_protoc --"
+        f"--js_out=import_style=commonjs,binary:{node_protobuf_dir} "
+        f"--grpc_out=grpc_js:{node_protobuf_dir} "
+        f"--plugin=protoc-gen-grpc={protoc_plugin} "
+        "-I ./protobuf protobuf/*.proto"
     )
-    c.run(
-        f"npm run grpc_tools_node_protoc -- \
-		--plugin=protoc-gen-ts={protoc_ts_plugin} \
-		--ts_out={node_protobuf_dir} \
-		-I ./protobuf \
-		protobuf/*.proto"
+    c.run(cmd)
+    cmd = (
+        "npm run grpc_tools_node_protoc -- "
+        f"--plugin=protoc-gen-ts={protoc_ts_plugin} "
+        f"--ts_out={node_protobuf_dir} "
+        "-I ./protobuf protobuf/*.proto"
     )
+    c.run(cmd)
 
 
 @task(protobuf)
@@ -227,7 +226,7 @@ def _sources_changed(source_files: Iterable[Path], timestamp_file: Path):
     if timestamp_file.exists():
         last_built = timestamp_file.lstat().st_mtime
         src_last_modified = [f.lstat().st_mtime for f in source_files]
-        return not all([last_built >= modified for modified in src_last_modified])
+        return not all(last_built >= modified for modified in src_last_modified)
     return True
 
 
@@ -359,7 +358,7 @@ def _clean_pabot_results(rc: int):
         pabot_results = ATEST_OUTPUT / "pabot_results"
         shutil.rmtree(pabot_results, onerror=on_error)
     else:
-        print(f"Not deleting pabot_results on error")
+        print("Not deleting pabot_results on error")
 
 
 def _create_zip(rc: int, shard: str):
@@ -572,12 +571,12 @@ def _add_skips(default_args, include_mac=False):
     if platform.platform().lower().startswith("windows"):
         print("Running in Windows exclude no-windows-support tags")
         default_args.extend(["--exclude", "no-windows-support"])
-    if not include_mac:
-        if platform.platform().lower().startswith(
-            "mac"
-        ) or platform.platform().lower().startswith("darwin"):
-            print("Running in Mac exclude no-mac-support tags")
-            default_args.extend(["--exclude", "no-mac-support"])
+    if not include_mac and (
+        platform.platform().lower().startswith("mac")
+        or platform.platform().lower().startswith("darwin")
+    ):
+        print("Running in Mac exclude no-mac-support tags")
+        default_args.extend(["--exclude", "no-mac-support"])
     return default_args
 
 
@@ -632,7 +631,7 @@ def lint_robot(c):
         base_commnd.insert(1, "--check")
         base_commnd.insert(1, "--diff")
     for file in Path(atest_folder).glob("*"):
-        if not file.name == "keywords.resource":
+        if file.name != "keywords.resource":
             configure_command.append(str(file))
             c.run(" ".join(configure_command))
             configure_command.pop()
@@ -666,7 +665,7 @@ def docker_stable_image(c):
 @task
 def docker_tester(c):
     c.run(
-        f"docker buildx build --load --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
+        "docker buildx build --load --tag rfbrowser-tests:latest --file docker/Dockerfile.tests ."
     )
 
 
@@ -675,7 +674,7 @@ def docker_test(c):
     c.run("mkdir atest/output")
     c.run("chmod -R 777 atest/output")
     c.run(
-        f"""docker run\
+        """docker run\
 	    --rm \
 	    --ipc=host\
 	    --security-opt seccomp=docker/seccomp_profile.json \
@@ -799,7 +798,7 @@ def release_notes(c, version=None, username=None, password=None, write=False):
 
 
 def _get_pw_version() -> str:
-    with open(ROOT_DIR / "package.json", "r") as file:
+    with open(ROOT_DIR / "package.json") as file:
         data = json.load(file)
     version = data["dependencies"]["playwright"]
     match = re.search(r"\d+\.\d+\.\d+", version)
