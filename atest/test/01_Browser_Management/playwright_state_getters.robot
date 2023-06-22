@@ -87,7 +87,7 @@ Get Browser Catalog After First Popup Close
     Click    id=first_popup
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
     Switch Page    NEW
-    Click    id=close_popup   noWaitAfter=True
+    Click    id=close_popup    noWaitAfter=True
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 1
     [Teardown]    Close Browser
 
@@ -100,7 +100,7 @@ Get Browser Catalog After Second Popup Close
     Click    id=first_popup
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
     Switch Page    NEW
-    Click    id=second_popup   noWaitAfter=True
+    Click    id=second_popup    noWaitAfter=True
     Get Browser Catalog    validate    len(value[1]['contexts'][0]['pages']) == 2
     [Teardown]    Close Browser
 
