@@ -101,8 +101,14 @@ export async function click(
     const selector = request.getSelector();
     const options = request.getOptions();
     const strictMode = request.getStrict();
-    await internalClick(selector, strictMode, options, state);
-    return emptyWithLog(`Clicked element: '${selector}' with options: '${options}'`);
+    const result = await internalClick(selector, strictMode, options, state);
+    if (result) {
+        return emptyWithLog(`Clicked element: '${selector}' with options: '${options}' successfully.`);
+    } else {
+        return emptyWithLog(
+            `Clicked element: '${selector}' with options: '${options}' but silenced Target closed error.`,
+        );
+    }
 }
 
 export async function tab(
@@ -117,14 +123,21 @@ export async function tab(
     return emptyWithLog(`Tab element: '${selector}' with options: '${options}'`);
 }
 
-export async function internalClick(selector: string, strictMode: boolean, options: string, state: PlaywrightState) {
+export async function internalClick(
+    selector: string,
+    strictMode: boolean,
+    options: string,
+    state: PlaywrightState,
+): Promise<boolean> {
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     try {
         await locator.click(JSON.parse(options));
+        return true;
     } catch (error: unknown) {
         if (error instanceof Error) {
             if (error.message.startsWith('locator.click: Target closed')) {
                 logger.warn('Supress locator.click: Target closed error');
+                return false;
             } else {
                 throw error;
             }
