@@ -21,8 +21,6 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, intResponse, jsResponse, jsonResponse, stringResponse } from './response-util';
 import { findLocator } from './playwright-invoke';
 
-import { click, internalClick } from './interaction';
-import { getText } from './getters';
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
