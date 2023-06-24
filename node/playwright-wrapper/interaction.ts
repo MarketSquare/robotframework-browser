@@ -119,7 +119,19 @@ export async function tab(
 
 export async function internalClick(selector: string, strictMode: boolean, options: string, state: PlaywrightState) {
     const locator = await findLocator(state, selector, strictMode, undefined, true);
-    await locator.click(JSON.parse(options));
+    try {
+        await locator.click(JSON.parse(options));
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            if (error.message.startsWith('locator.click: Target closed')) {
+                logger.warn('Supress locator.click: Target closed error');
+            } else {
+                throw error;
+            }
+        } else {
+            throw error;
+        }
+    }
 }
 
 export async function hover(
