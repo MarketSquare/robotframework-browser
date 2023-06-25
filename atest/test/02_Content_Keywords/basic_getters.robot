@@ -111,6 +111,10 @@ Get Attribute Names And Assert Single And Multiple
     Get Attribute Names    [name="readonly_input"]    ==    type    name    value    readonly
     Get Attribute Names    [name="disabled_input"]    contains    disabled
     Get Attribute Names    [name="disabled_input"]    validate    value[-1] == "disabled"
+    ${names} =    Get Attribute Names    //title
+    Length Should Be    ${names}    0
+    ${names} =    Get Attribute Names    [name="select"]
+    Length Should Be    ${names}    1
 
 Get Classes
     [Setup]    Ensure Location    ${LOGIN_URL}
