@@ -321,7 +321,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> List:
         """Returns all HTML attribute names of an element as a list.
 
 
@@ -355,6 +355,12 @@ class Getters(LibraryComponent):
         if "__playwright_target__" in attribute_names:
             logger.debug("Remove __playwright_target__ from attribute names")
             attribute_names.remove("__playwright_target__")
+        if attribute_names:
+            logger.debug(
+                f"Received attributes names: {', '.join(attribute_names)} for selector {selector}"
+            )
+        else:
+            logger.debug(f"Did not receive attribute names for selector {selector}")
         expected = list(assertion_expected)
         if self.keyword_formatters.get(self.get_attribute_names):
             logger.warn("Formatter is not supported by Get Attribute Names keyword.")
