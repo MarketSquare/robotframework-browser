@@ -126,7 +126,7 @@ Get Viewport Size  # returns { "width": 375, "height": 812 }
 ```
 ### Sending HTTP requests and parsing their responses
 ```RobotFramework
-&{response}=    HTTP    /api/post    POST    {"name": "John"}
+${response}=    HTTP    /api/post    POST    {"name": "John"}
 Should Be Equal    ${response.status}    ${200}
 ```
 
