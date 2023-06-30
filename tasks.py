@@ -72,6 +72,9 @@ from previous release with pip_, run
 Alternatively you can download the source distribution from PyPI_ and
 install it manually. Browser library {version} was released on {date}.
 Browser supports Python 3.7+, Node 16/18 LTS and Robot Framework 5.0+.
+Support for Python 3.7 has been deprecated and release 16.4 will drop the
+support for Python 3.7. Users are strong advised to upgrade their
+Python version to one which supported by Python community.
 Library was tested with Playwright REPLACE_PW_VERSION
 
 .. _Robot Framework: http://robotframework.org
