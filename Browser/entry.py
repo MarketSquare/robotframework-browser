@@ -53,7 +53,7 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout),
     ],
 )
-IS_PYTHON_37 = (sys.version_info.major, sys.version_info.minor) == (3, 11)
+IS_PYTHON_37 = (sys.version_info.major, sys.version_info.minor) == (3, 7)
 PYTHON_37_EOL = (
     "\nPython 3.7 end of life was 2023-06-27. Support for Python 3.7 has been deprecated and"
     "support for Python will been dropped in release 16.4. It is strongly advised users to "
