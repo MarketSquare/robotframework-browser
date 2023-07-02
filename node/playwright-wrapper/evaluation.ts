@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { Frame, Page, selectors } from 'playwright';
-import { v4 as uuidv4 } from 'uuid';
+import { Frame, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
@@ -40,9 +39,7 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
     const selector = request.getSelector();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.elementHandle();
-    // const id = uuidv4();
-    // state.addLocator(id, locator, 0);
-    return stringResponse(locator._selector, 'Locator found successfully.');
+    return stringResponse(locator._selector, 'Locator found successfully.'); // eslint-disable-line
 }
 
 /** Resolve a list of Locator, create global UUIDs for them, and store the
@@ -64,11 +61,8 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     logger.info(`Found ${count} elements.`);
     const response: string[] = [];
     for (let i = 0; i < count; i++) {
-        // const id = uuidv4();
         const locator = await findLocator(state, selector, strictMode, i, false);
-        // state.addLocator(id, locator, i);
-        // response.push(`element=${id}`);
-        response.push(await locator._selector);
+        response.push(await locator._selector); // eslint-disable-line
     }
     return jsonResponse(JSON.stringify(response), `Found ${count} Locators successfully.`);
 }
