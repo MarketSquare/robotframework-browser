@@ -104,11 +104,10 @@ export async function click(
     const result = await internalClick(selector, strictMode, options, state);
     if (result) {
         return emptyWithLog(`Clicked element: '${selector}' with options: '${options}' successfully.`);
-    } else {
-        return emptyWithLog(
-            `Clicked element: '${selector}' with options: '${options}' but silenced Target closed error.`,
-        );
     }
+    return emptyWithLog(
+        `Clicked element: '${selector}' with options: '${options}' but silenced: "Target closed error".`,
+    );
 }
 
 export async function tab(
@@ -134,16 +133,11 @@ export async function internalClick(
         await locator.click(JSON.parse(options));
         return true;
     } catch (error: unknown) {
-        if (error instanceof Error) {
-            if (error.message.startsWith('locator.click: Target closed')) {
-                logger.warn('Supress locator.click: Target closed error');
-                return false;
-            } else {
-                throw error;
-            }
-        } else {
-            throw error;
+        if (error instanceof Error && error.message.startsWith('locator.click: Target closed')) {
+            logger.warn('Supress locator.click: Target closed error');
+            return false;
         }
+        throw error;
     }
 }
 
