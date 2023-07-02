@@ -73,7 +73,7 @@ Click Table Element
 Select Wrong Table Element
     ${subtable_parent} =    Get Table Cell Element    id=table2    "MERICA"    "Weight"
     Run Keyword And Expect Error
-    ...    REGEXP:ValueError: Selector element=.*? must select a <table> element but selects <td>\.
+    ...    REGEXP:ValueError: Selector id=.*? must select a <table> element but selects <td>\.
     ...    Get Table Cell Element    ${subtable_parent}    "two"    "1"
 
 Get Table Cell Element With Multiple Elements
