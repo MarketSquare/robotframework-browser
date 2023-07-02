@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-import re
 import time
 from datetime import timedelta
 from typing import Any, Dict, Optional, Union
@@ -61,18 +60,6 @@ class Waiter(LibraryComponent):
 
         [https://forum.robotframework.org/t//4345|Comment >>]
         """
-        if state in [ElementState.focused, ElementState.defocused] and (
-            (self.selector_prefix and ">>>" in self.selector_prefix)
-            or ">>>" in selector
-        ):
-            escaped_selector = re.sub(r"^#", "\\#", selector)
-            raise ValueError(
-                f"State '{state.name}' is not supported with iframe selectors.\n"
-                f"Use "
-                f"'Wait For Condition    Element States    {escaped_selector}   contains    {state.name}'"
-                f" instead."
-            )
-
         timeout_as_str = self.millisecs_to_timestr(self.get_timeout(timeout))
         funct = {
             ElementState.readonly: "e => e.readOnly",

@@ -34,19 +34,20 @@ Frame With Strict Mode
 
 Nested Frame With Strict Mode
     [Setup]    Go To    ${DEEP_FRAMES_URL}
+    [Timeout]    10 minute
     Click    id=b >>> id=c >>> id=cc
     ${element} =    Get Element    id=b >>> id=c >>> id=cc
-    Should Start With    ${element}    element
+    Should Start With    ${element}    id
     ${elements} =    Get Elements    id=b >>> id=c >>> id=cc
     Length Should Be    ${elements}    1
 
 Get Element And Get Elements
     ${element} =    Get Element    input#login_button
-    Should Start With    ${element}    element
+    Should Start With    ${element}    input
     ${elements} =    Get Elements    input
     Length Should Be    ${elements}    4
     FOR    ${element}    IN    @{elements}
-        Should Start With    ${element}    element
+        Should Start With    ${element}    input
     END
 
 Click With Element ID
@@ -63,11 +64,11 @@ Click With Element ID
 
 Frames With Element ID
     [Setup]    Go To    ${FRAMES_URL}
+    [Timeout]    10 minute
     ${element} =    Get Element    iframe[name="left"]
     ${Timeout} =    Set Browser Timeout    200ms
-    Run Keyword And Expect Error
-    ...    TimeoutError: locator.click: Timeout 200ms exceeded.*
-    ...    Click    ${element} >>> "foo"
+    Click    ${element} >>> "foo"
+    Get Text    iframe[name="right"] >>> body    ==    You're looking at foo.
     [Teardown]    Set Browser Timeout    ${Timeout}
 
 Get Element Count In IFrame

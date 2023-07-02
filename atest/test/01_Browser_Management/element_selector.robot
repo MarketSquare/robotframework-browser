@@ -20,7 +20,7 @@ Get Element With Strict
     ...    Get Element    //input
     Set Strict Mode    False
     ${element} =    Get Element    //input
-    Should Start With    ${element}    element=
+    Should Start With    ${element}    //input
     [Teardown]    Set Strict Mode    True
 
 Get Element With Nonmatching Child Selector
@@ -33,10 +33,10 @@ Get Element With Nonmatching Child Selector
 
 Using Invalid Element Reference Fails
     Run Keyword And Expect Error
-    ...    Error: No locator handle found with "1234-4321".
+    ...    Error: locator.click: Unknown engine "element"*
     ...    Click    element=1234-4321
     Run Keyword And Expect Error
-    ...    Error: No locator handle found with "1234-4321".
+    ...    Error: locator.click: Unknown engine "element"*
     ...    Click    element=1234-4321 >> .css
 
 Get Element From Frame

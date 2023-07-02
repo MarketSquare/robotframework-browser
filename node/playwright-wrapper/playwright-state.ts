@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, ConsoleMessage, Locator, Page, chromium, firefox, webkit } from 'playwright';
+import { Browser, BrowserContext, Locator, Page, chromium, firefox, webkit } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -261,7 +261,6 @@ async function _newPage(context: IndexedContext, page: Page | undefined = undefi
 export class PlaywrightState {
     constructor() {
         this.browserStack = [];
-        this.locatorHandles = new Map();
         this.extensions = [];
     }
     extensions: Record<string, (...args: unknown[]) => unknown>[];
@@ -269,7 +268,6 @@ export class PlaywrightState {
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
-    locatorHandles: Map<string, LocatorCount>;
     public getActiveBrowser = (): BrowserState => {
         const currentBrowser = this.activeBrowser;
         if (currentBrowser === undefined) {
@@ -370,18 +368,6 @@ export class PlaywrightState {
     public getActivePage = (): Page | undefined => {
         return this.activeBrowser?.page?.p;
     };
-
-    public addLocator(id: string, pwLocator: Locator, nth: number): void {
-        this.locatorHandles.set(id, { locator: pwLocator, nth: nth });
-    }
-
-    public getLocator(id: string): LocatorCount {
-        const locator = this.locatorHandles.get(id);
-        if (locator) {
-            return locator;
-        }
-        throw new Error(`No locator handle found with "${id}".`);
-    }
 }
 
 /*
