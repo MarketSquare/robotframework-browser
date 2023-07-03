@@ -21,7 +21,10 @@ __pycache__
 robotframework_browser.egg-info/
 .venv
 zip_results
+
+# utest
 utest/output
+.pytest_cache
 flip_rate
 
 node/.linted
@@ -49,3 +52,6 @@ tmp
 .coverage
 htmlcov
 results
+
+# linting
+.ruff_cache
