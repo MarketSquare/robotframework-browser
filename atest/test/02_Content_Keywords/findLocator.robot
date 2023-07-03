@@ -34,7 +34,6 @@ Frame With Strict Mode
 
 Nested Frame With Strict Mode
     [Setup]    Go To    ${DEEP_FRAMES_URL}
-    [Timeout]    10 minute
     Click    id=b >>> id=c >>> id=cc
     ${element} =    Get Element    id=b >>> id=c >>> id=cc
     Should Start With    ${element}    id
@@ -64,7 +63,6 @@ Click With Element ID
 
 Frames With Element ID
     [Setup]    Go To    ${FRAMES_URL}
-    [Timeout]    10 minute
     ${element} =    Get Element    iframe[name="left"]
     ${Timeout} =    Set Browser Timeout    200ms
     Click    ${element} >>> "foo"

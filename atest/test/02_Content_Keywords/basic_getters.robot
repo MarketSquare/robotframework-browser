@@ -318,7 +318,6 @@ Get Element States Return Flags
     Should Be Equal    ${input_state}    ${pwd_state}
 
 Get Console Log Test
-    [Timeout]    10 min
     [Setup]    Setup
     ${first} =    Get Console Log    then    len(value)
     Click    "Click with Options"    left    1    100ms    ${None}    ${None}    False    False    ALT    SHIFT
