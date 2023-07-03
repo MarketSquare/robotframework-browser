@@ -35,7 +35,7 @@ ignore = [
   "N999",  # Invalid module name: 'Browser'
   "PLR0913",  # too many arguments
 ]
-target-version = "py37"
+target-version = "py38"
 select = [
   "E",
   "F",

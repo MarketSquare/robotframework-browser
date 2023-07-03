@@ -223,13 +223,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
-        python-version: [3.7, 3.11]
+        python-version: [3.8, 3.11]
         node-version: [16.x, 18.x]
         exclude:
-          - python-version: 3.7
+          - python-version: 3.8
             node-version: 16.x
           - os: windows-latest
-            python-version: 3.7
+            python-version: 3.8
           - os: windows-latest
             node-version: 16.x
     steps:
