@@ -194,7 +194,6 @@ Screenshot With Omit Background
     [Teardown]    Remove File    ${path}
 
 Screenshot Returns Base64 And Path
-    [Timeout]    10 minutes
     ${path} =    Take Screenshot    return_as=path
     ${base64} =    Take Screenshot    return_as=base64
     Type Text    id=username_field    Hello
@@ -212,7 +211,6 @@ Screenshot Returns Base64 And Path
     END
 
 Screenshot Returns Bytes And Path String
-    [Timeout]    10 minutes
     ${path} =    Take Screenshot    return_as=path_string
     ${bytes} =    Take Screenshot    return_as=bytes
     Type Text    id=username_field    Hello

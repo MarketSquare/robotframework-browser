@@ -37,7 +37,14 @@ export async function getElementCount(request: Request.ElementSelector, state: P
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, false);
-    const count = await locator.count();
+    let count = 0;
+    try {
+        count = await locator.count();
+    } catch (e) {
+        if (!(e instanceof Error && e.message.includes('failed to find frame for selector'))) {
+            throw e;
+        }
+    }
     return intResponse(count, `Found ${count} element(s).`);
 }
 
