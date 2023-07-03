@@ -952,7 +952,7 @@ class Getters(LibraryComponent):
             response = stub.GetByX(
                 Request().TextOptions(
                     strategy="Role",
-                    text=role.name,
+                    text=role.name.lower(),
                     options=json.dumps(options),
                     strict=self.strict_mode,
                 )
