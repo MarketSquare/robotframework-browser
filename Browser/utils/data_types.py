@@ -60,15 +60,16 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noq
 
 
 class ElementRole(Enum):
-    """Role selector does not replace accessibility audits and conformance tests, 
+    """Role selector does not replace accessibility audits and conformance tests,
     but rather gives early feedback about the ARIA guidelines.
 
-    Many html elements have an implicitly 
+    Many html elements have an implicitly
     [https://w3c.github.io/html-aam/#html-element-role-mappings|defined role]
     that is recognized by the role selector.
-    You can find all the [https://www.w3.org/TR/wai-aria-1.2/#role_definitions|supported roles] here. 
+    You can find all the [https://www.w3.org/TR/wai-aria-1.2/#role_definitions|supported roles] here.
     ARIA guidelines do not recommend duplicating implicit roles and attributes
     by setting role and/or aria-* attributes to default values."""
+
     ALERT = auto()
     ALERTDIALOG = auto()
     APPLICATION = auto()
@@ -151,7 +152,6 @@ class ElementRole(Enum):
     TREE = auto()
     TREEGRID = auto()
     TREEITEM = auto()
-
 
 
 class DelayedKeyword:
