@@ -135,6 +135,8 @@ def clean(c):
         Path("./playwright-log.txt"),
         Path("./.coverage"),
         pyi_file,
+        Path("./.ruff_cache"),
+        Path("./.pytest_cache"),
     ]:
         try:
             # python 3.7 doesn't support missing_ok so we need a try catch
