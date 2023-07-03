@@ -21,6 +21,12 @@ message Request {
     string label = 1;
   }
 
+  message TextOptions {
+    string strategy = 1;
+    string text = 2;
+    string options = 3;
+    bool strict = 4;
+  }
 
   message ScreenshotOptions {
     string selector = 1;
@@ -383,6 +389,8 @@ service  Playwright {
   rpc GetElement(Request.ElementSelector) returns (Response.String);
   /* Returns references to multiple Playwirght element handles.*/
   rpc GetElements(Request.ElementSelector) returns (Response.Json);
+  /* Returns references to a Playwirght element handle.*/
+  rpc GetByX(Request.TextOptions) returns (Response.String);
   /* Returns all Element states as IntFlag */
   rpc GetElementStates(Request.ElementSelector) returns (Response.Json);
   /* Set's  playwright timeout */

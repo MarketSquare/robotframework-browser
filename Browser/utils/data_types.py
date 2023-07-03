@@ -59,6 +59,101 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noq
     return params
 
 
+class ElementRole(Enum):
+    """Role selector does not replace accessibility audits and conformance tests, 
+    but rather gives early feedback about the ARIA guidelines.
+
+    Many html elements have an implicitly 
+    [https://w3c.github.io/html-aam/#html-element-role-mappings|defined role]
+    that is recognized by the role selector.
+    You can find all the [https://www.w3.org/TR/wai-aria-1.2/#role_definitions|supported roles] here. 
+    ARIA guidelines do not recommend duplicating implicit roles and attributes
+    by setting role and/or aria-* attributes to default values."""
+    ALERT = auto()
+    ALERTDIALOG = auto()
+    APPLICATION = auto()
+    ARTICLE = auto()
+    BANNER = auto()
+    BLOCKQUOTE = auto()
+    BUTTON = auto()
+    CAPTION = auto()
+    CELL = auto()
+    CHECKBOX = auto()
+    CODE = auto()
+    COLUMNHEADER = auto()
+    COMBOBOX = auto()
+    COMPLEMENTARY = auto()
+    CONTENTINFO = auto()
+    DEFINITION = auto()
+    DELETION = auto()
+    DIALOG = auto()
+    DIRECTORY = auto()
+    DOCUMENT = auto()
+    EMPHASIS = auto()
+    FEED = auto()
+    FIGURE = auto()
+    FORM = auto()
+    GENERIC = auto()
+    GRID = auto()
+    GRIDCELL = auto()
+    GROUP = auto()
+    HEADING = auto()
+    IMG = auto()
+    INSERTION = auto()
+    LINK = auto()
+    LIST = auto()
+    LISTBOX = auto()
+    LISTITEM = auto()
+    LOG = auto()
+    MAIN = auto()
+    MARQUEE = auto()
+    MATH = auto()
+    METER = auto()
+    MENU = auto()
+    MENUBAR = auto()
+    MENUITEM = auto()
+    MENUITEMCHECKBOX = auto()
+    MENUITEMRADIO = auto()
+    NAVIGATION = auto()
+    NONE = auto()
+    NOTE = auto()
+    OPTION = auto()
+    PARAGRAPH = auto()
+    PRESENTATION = auto()
+    PROGRESSBAR = auto()
+    RADIO = auto()
+    RADIOGROUP = auto()
+    REGION = auto()
+    ROW = auto()
+    ROWGROUP = auto()
+    ROWHEADER = auto()
+    SCROLLBAR = auto()
+    SEARCH = auto()
+    SEARCHBOX = auto()
+    SEPARATOR = auto()
+    SLIDER = auto()
+    SPINBUTTON = auto()
+    STATUS = auto()
+    STRONG = auto()
+    SUBSCRIPT = auto()
+    SUPERSCRIPT = auto()
+    SWITCH = auto()
+    TAB = auto()
+    TABLE = auto()
+    TABLIST = auto()
+    TABPANEL = auto()
+    TERM = auto()
+    TEXTBOX = auto()
+    TIME = auto()
+    TIMER = auto()
+    TOOLBAR = auto()
+    TOOLTIP = auto()
+    TREE = auto()
+    TREEGRID = auto()
+    TREEITEM = auto()
+
+
+
 class DelayedKeyword:
     def __init__(
         self,

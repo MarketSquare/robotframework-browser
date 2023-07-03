@@ -36,6 +36,7 @@ from ..utils import keyword, logger
 from ..utils.data_types import (
     AreaFields,
     BoundingBoxFields,
+    ElementRole,
     ElementState,
     SelectAttribute,
     SizeFields,
@@ -896,6 +897,69 @@ class Getters(LibraryComponent):
             ):
                 return []
             raise error
+    
+    @keyword(tags=("Getter", "PageContent"))
+    def get_by_role(
+        self,
+        role: ElementRole,
+        *,
+        checked: Optional[bool] = None,
+        disabled: Optional[bool] = None,
+        exact: Optional[bool] = None,
+        expanded: Optional[bool] = None,
+        include_hidden: Optional[bool] = None,
+        level: Optional[int] = None,
+        name: Optional[str] = None,
+        pressed: Optional[bool] = None,
+        selected: Optional[bool] = None,
+    ) -> str:
+        """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
+        for the first matched element by ``role``.
+        
+        | =Arguments= | =Description= |
+        | ``role`` | Role from which shall be retrieved. |
+        | ``checked`` | An attribute that is usually set by aria-checked or native <input type=checkbox> controls. |
+        | ``disabled`` | An attribute that is usually set by aria-disabled or disabled. |
+        | ``exact`` | Whether name is matched exactly: case-sensitive and whole-string. Defaults to false. Ignored when name is a regular expression. Note that exact match still trims whitespace. |
+        | ``expanded`` | An attribute that is usually set by aria-expanded. |
+        | ``include_hidden`` | Option that controls whether hidden elements are matched. By default, only non-hidden elements, as defined by ARIA, are matched by role selector. |
+        | ``level`` | A number attribute that is usually present for roles heading, listitem, row, treeitem, with default values for <h1>-<h6> elements. |
+        | ``name`` | Option to match the accessible name. By default, matching is case-insensitive and searches for a substring, use exact to control this behavior. |
+        | ``pressed`` | An attribute that is usually set by aria-pressed. |
+        | ``selected`` | An attribute that is usually set by aria-selected. |
+        
+        """
+        options = {}
+        if checked is not None:
+            options["checked"] = checked
+        if disabled is not None:
+            options["disabled"] = disabled
+        if exact is not None:
+            options["exact"] = exact
+        if expanded is not None:
+            options["expanded"] = expanded
+        if include_hidden is not None:
+            options["include_hidden"] = include_hidden
+        if level is not None:
+            options["level"] = level
+        if name is not None:
+            options["name"] = name
+        if pressed is not None:
+            options["pressed"] = pressed
+        if selected is not None:
+            options["selected"] = selected
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetByX(
+                Request().TextOptions(
+                    strategy="Role",
+                    text=role.name,
+                    options=json.dumps(options),
+                    strict=self.strict_mode
+                )
+            )
+            logger.info(response.log)
+            return response.body
+
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
