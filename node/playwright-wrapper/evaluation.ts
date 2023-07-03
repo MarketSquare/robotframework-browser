@@ -39,7 +39,9 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
     const selector = request.getSelector();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.elementHandle();
-    return stringResponse(locator._selector, 'Locator found successfully.'); // eslint-disable-line
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return stringResponse(locator._selector, 'Locator found successfully.');
 }
 
 /** Resolve a list of Locator, create global UUIDs for them, and store the
@@ -62,6 +64,8 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     const response: string[] = [];
     for (let i = 0; i < count; i++) {
         const locator = await findLocator(state, selector, strictMode, i, false);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         response.push(await locator._selector); // eslint-disable-line
     }
     return jsonResponse(JSON.stringify(response), `Found ${count} Locators successfully.`);
