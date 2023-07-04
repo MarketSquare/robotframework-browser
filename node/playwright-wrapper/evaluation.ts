@@ -38,7 +38,7 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
     const strictMode = request.getStrict();
     const selector = request.getSelector();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
-    await locator.elementHandle();
+    await locator.waitFor({ state: 'attached' });
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return stringResponse(locator._selector, 'Locator found successfully.');
@@ -49,26 +49,20 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
  * in RF keywords.
  */
 export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
-    const strictMode = request.getStrict();
     const selector = request.getSelector();
-    const allLocators = await findLocator(state, selector, strictMode, undefined, false);
+    const locator = await findLocator(state, selector, false, undefined, false);
     logger.info(`Wait element to reach attached state.`);
-    const firstLocator = allLocators.first();
     try {
-        await firstLocator.waitFor({ state: 'attached' });
+        await locator.first().waitFor({ state: 'attached' });
     } catch (e) {
-        logger.info(`Attached state not reached, supress error: ${e}.`);
+        logger.debug(`Attached state not reached, supress error: ${e}.`);
     }
-    const count = await allLocators.count();
-    logger.info(`Found ${count} elements.`);
-    const response: string[] = [];
-    for (let i = 0; i < count; i++) {
-        const locator = await findLocator(state, selector, strictMode, i, false);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        response.push(await locator._selector); // eslint-disable-line
-    }
-    return jsonResponse(JSON.stringify(response), `Found ${count} Locators successfully.`);
+    const allLocators = await locator.all();
+    logger.info(`Found ${allLocators.length} elements.`);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const allSelectors = allLocators.map((locator) => locator._selector);
+    return jsonResponse(JSON.stringify(allSelectors), `Found ${allLocators} Locators successfully.`);
 }
 
 function parseRegExpOrKeepString(str: string): RegExp | string {
@@ -84,6 +78,90 @@ function parseRegExpOrKeepString(str: string): RegExp | string {
     }
     return str;
 }
+
+type AriaRole =
+    | 'alert'
+    | 'alertdialog'
+    | 'application'
+    | 'article'
+    | 'banner'
+    | 'blockquote'
+    | 'button'
+    | 'caption'
+    | 'cell'
+    | 'checkbox'
+    | 'code'
+    | 'columnheader'
+    | 'combobox'
+    | 'complementary'
+    | 'contentinfo'
+    | 'definition'
+    | 'deletion'
+    | 'dialog'
+    | 'directory'
+    | 'document'
+    | 'emphasis'
+    | 'feed'
+    | 'figure'
+    | 'form'
+    | 'generic'
+    | 'grid'
+    | 'gridcell'
+    | 'group'
+    | 'heading'
+    | 'img'
+    | 'insertion'
+    | 'link'
+    | 'list'
+    | 'listbox'
+    | 'listitem'
+    | 'log'
+    | 'main'
+    | 'marquee'
+    | 'math'
+    | 'meter'
+    | 'menu'
+    | 'menubar'
+    | 'menuitem'
+    | 'menuitemcheckbox'
+    | 'menuitemradio'
+    | 'navigation'
+    | 'none'
+    | 'note'
+    | 'option'
+    | 'paragraph'
+    | 'presentation'
+    | 'progressbar'
+    | 'radio'
+    | 'radiogroup'
+    | 'region'
+    | 'row'
+    | 'rowgroup'
+    | 'rowheader'
+    | 'scrollbar'
+    | 'search'
+    | 'searchbox'
+    | 'separator'
+    | 'slider'
+    | 'spinbutton'
+    | 'status'
+    | 'strong'
+    | 'subscript'
+    | 'superscript'
+    | 'switch'
+    | 'tab'
+    | 'table'
+    | 'tablist'
+    | 'tabpanel'
+    | 'term'
+    | 'textbox'
+    | 'time'
+    | 'timer'
+    | 'toolbar'
+    | 'tooltip'
+    | 'tree'
+    | 'treegrid'
+    | 'treeitem';
 
 export async function getByX(request: Request.GetByOptions, state: PlaywrightState): Promise<Response.Json> {
     const strategy = request.getStrategy();
@@ -108,89 +186,6 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
             break;
         }
         case 'Role': {
-            type AriaRole =
-                | 'alert'
-                | 'alertdialog'
-                | 'application'
-                | 'article'
-                | 'banner'
-                | 'blockquote'
-                | 'button'
-                | 'caption'
-                | 'cell'
-                | 'checkbox'
-                | 'code'
-                | 'columnheader'
-                | 'combobox'
-                | 'complementary'
-                | 'contentinfo'
-                | 'definition'
-                | 'deletion'
-                | 'dialog'
-                | 'directory'
-                | 'document'
-                | 'emphasis'
-                | 'feed'
-                | 'figure'
-                | 'form'
-                | 'generic'
-                | 'grid'
-                | 'gridcell'
-                | 'group'
-                | 'heading'
-                | 'img'
-                | 'insertion'
-                | 'link'
-                | 'list'
-                | 'listbox'
-                | 'listitem'
-                | 'log'
-                | 'main'
-                | 'marquee'
-                | 'math'
-                | 'meter'
-                | 'menu'
-                | 'menubar'
-                | 'menuitem'
-                | 'menuitemcheckbox'
-                | 'menuitemradio'
-                | 'navigation'
-                | 'none'
-                | 'note'
-                | 'option'
-                | 'paragraph'
-                | 'presentation'
-                | 'progressbar'
-                | 'radio'
-                | 'radiogroup'
-                | 'region'
-                | 'row'
-                | 'rowgroup'
-                | 'rowheader'
-                | 'scrollbar'
-                | 'search'
-                | 'searchbox'
-                | 'separator'
-                | 'slider'
-                | 'spinbutton'
-                | 'status'
-                | 'strong'
-                | 'subscript'
-                | 'superscript'
-                | 'switch'
-                | 'tab'
-                | 'table'
-                | 'tablist'
-                | 'tabpanel'
-                | 'term'
-                | 'textbox'
-                | 'time'
-                | 'timer'
-                | 'toolbar'
-                | 'tooltip'
-                | 'tree'
-                | 'treegrid'
-                | 'treeitem';
             if (options?.name) {
                 options.name = parseRegExpOrKeepString(options.name);
             }

@@ -1011,9 +1011,7 @@ class Getters(LibraryComponent):
 
         ``page.getByRole`` is supported by `Get Element By Role` keyword.
         """
-        options = {}
-        if exact is not None:
-            options["exact"] = exact
+        options = {"exact": exact} if exact is not None else {}
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
                 Request().GetByOptions(
