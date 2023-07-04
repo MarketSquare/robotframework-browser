@@ -49,9 +49,12 @@ export async function goTo(request: Request.UrlOptions, page: Page): Promise<Res
     const url = <string>request.getUrl()?.getUrl();
     const timeout = request.getUrl()?.getDefaulttimeout();
     const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getWaituntil();
-    logger.info({ 'Go to: ': url, 'with timeout: ': timeout, 'with load option: ': waitUntil });
-    await page.goto(url, { waitUntil, timeout });
-    return emptyWithLog(`Successfully opened URL ${url} within ${timeout} on wait untill ${waitUntil}`);
+    const referer = request.getReferer();
+    logger.info({ 'Go to: ': url, 'with timeout: ': timeout, 'with load option: ': waitUntil, 'referrer :': referer });
+    await page.goto(url, { referer, timeout, waitUntil });
+    return emptyWithLog(
+        `Successfully opened URL… ${url} within: ${timeout} on wait until: ${waitUntil} referrer: ${referer}`,
+    );
 }
 
 export async function takeScreenshot(
