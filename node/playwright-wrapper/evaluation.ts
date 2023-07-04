@@ -79,23 +79,6 @@ const tryToTransformStringToFunction = (str: string): string | (() => unknown) =
     }
 };
 
-export async function executeJavascript(
-    request: Request.JavascriptCode,
-    state: PlaywrightState,
-    page: Page,
-): Promise<Response.JavascriptExecutionResult> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const script = tryToTransformStringToFunction(request.getScript());
-    let elem;
-    if (selector) {
-        const locator = await findLocator(state, selector, strictMode, undefined, true);
-        elem = await locator.elementHandle();
-    }
-    const result = await page.evaluate(script, elem);
-    return jsResponse(result as string, 'JavaScript executed successfully.');
-}
-
 export async function evaluateJavascript(
     request: Request.EvaluateAll,
     state: PlaywrightState,
