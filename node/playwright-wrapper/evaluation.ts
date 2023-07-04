@@ -71,9 +71,23 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     return jsonResponse(JSON.stringify(response), `Found ${count} Locators successfully.`);
 }
 
+function parseRegExpOrKeepString(str: string): RegExp | string {
+    const regex = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/
+    const match = str.match(regex);
+    if (match) {
+        try {
+            const { matcher, flags } = match.groups!;
+            return new RegExp(matcher, flags);
+        } catch (e) {
+            return str;
+        }
+    }
+    return str;
+}
+
 export async function getByX(request: Request.TextOptions, state: PlaywrightState): Promise<Response.String> {
     const strategy = request.getStrategy();
-    const text = request.getText();
+    const text = parseRegExpOrKeepString(request.getText());
     const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
     const activePage = state.getActivePage();
@@ -90,6 +104,9 @@ export async function getByX(request: Request.TextOptions, state: PlaywrightStat
         } 
         case "Role": {
             type AriaRole = "alert"|"alertdialog"|"application"|"article"|"banner"|"blockquote"|"button"|"caption"|"cell"|"checkbox"|"code"|"columnheader"|"combobox"|"complementary"|"contentinfo"|"definition"|"deletion"|"dialog"|"directory"|"document"|"emphasis"|"feed"|"figure"|"form"|"generic"|"grid"|"gridcell"|"group"|"heading"|"img"|"insertion"|"link"|"list"|"listbox"|"listitem"|"log"|"main"|"marquee"|"math"|"meter"|"menu"|"menubar"|"menuitem"|"menuitemcheckbox"|"menuitemradio"|"navigation"|"none"|"note"|"option"|"paragraph"|"presentation"|"progressbar"|"radio"|"radiogroup"|"region"|"row"|"rowgroup"|"rowheader"|"scrollbar"|"search"|"searchbox"|"separator"|"slider"|"spinbutton"|"status"|"strong"|"subscript"|"superscript"|"switch"|"tab"|"table"|"tablist"|"tabpanel"|"term"|"textbox"|"time"|"timer"|"toolbar"|"tooltip"|"tree"|"treegrid"|"treeitem";
+            if (options?.name) {
+                options.name = parseRegExpOrKeepString(options.name);
+            }
             locator = activePage.getByRole(text as AriaRole, options);
             break;
         }
