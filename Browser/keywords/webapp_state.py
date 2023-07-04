@@ -24,6 +24,19 @@ from ..utils import keyword, logger
 
 
 class WebAppState(LibraryComponent):
+
+    def eval_js(self, script: str) -> Any:
+        with self.playwright.grpc_channel() as stub:
+            return stub.EvaluateJavascript(
+                Request().EvaluateAll(
+                    selector="",
+                    script=script,
+                    arg="null",
+                    allElements=False,
+                    strict=False,
+                )
+            )
+
     @keyword(name="localStorage get Item", tags=("PageContent", "Assertion", "Getter"))
     @with_assertion_polling
     def local_storage_get_item(
@@ -50,9 +63,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4300|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(script=f'window.localStorage.getItem("{key}")')
-            )
+            response = self.eval_js(f'window.localStorage.getItem("{key}")')
             logger.info(response.log)
             formatter = self.keyword_formatters.get(self.local_storage_get_item)
             return verify_assertion(
@@ -78,10 +89,8 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4302|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(
-                    script=f'window.localStorage.setItem("{key}", "{value}")'
-                )
+            response = self.eval_js(
+                f'window.localStorage.setItem("{key}", "{value}")'
             )
             logger.info(response.log)
 
@@ -101,11 +110,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4301|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(
-                    script=f'window.localStorage.removeItem("{key}")'
-                )
-            )
+            response = self.eval_js(f'window.localStorage.removeItem("{key}")')
             logger.info(response.log)
 
     @keyword(name="localStorage clear", tags=("Setter", "PageContent"))
@@ -121,9 +126,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4299|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(script="window.localStorage.clear()")
-            )
+            response = self.eval_js(f'window.localStorage.clear()')
             logger.info(response.log)
 
     @keyword(
@@ -151,11 +154,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4324|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(
-                    script=f'window.sessionStorage.getItem("{key}")'
-                )
-            )
+            response = self.eval_js(f'window.sessionStorage.getItem("{key}")')
             logger.info(response.log)
             formatter = self.keyword_formatters.get(self.session_storage_get_item)
             return verify_assertion(
@@ -180,10 +179,8 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4326|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(
-                    script=f'window.sessionStorage.setItem("{key}", "{value}")'
-                )
+            response = self.eval_js(
+                f'window.sessionStorage.setItem("{key}", "{value}")'
             )
             logger.info(response.log)
 
@@ -203,11 +200,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4325|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(
-                    script=f'window.sessionStorage.removeItem("{key}")'
-                )
-            )
+            response = self.eval_js(f'window.sessionStorage.removeItem("{key}")')
             logger.info(response.log)
 
     @keyword(name="sessionStorage clear", tags=("Setter", "PageContent"))
@@ -222,7 +215,5 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4323|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.ExecuteJavascript(
-                Request().JavascriptCode(script="window.sessionStorage.clear()")
-            )
+            response = self.eval_js(f'window.sessionStorage.clear()')
             logger.info(response.log)

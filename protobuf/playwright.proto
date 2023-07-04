@@ -189,12 +189,6 @@ message Request {
     bool strict = 3;
   }
 
-  message JavascriptCode {
-    string script = 1;
-    string selector = 2;
-    bool strict = 3;
-  }
-
   message WaitForFunctionOptions {
     string script = 1;
     string selector = 2;
@@ -411,8 +405,7 @@ service  Playwright {
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Executes javascript on the active page and retries until the expression is true */
   rpc WaitForFunction(Request.WaitForFunctionOptions) returns (Response.Json);
-  /* Executes javascript on the active page */
-  rpc ExecuteJavascript(Request.JavascriptCode) returns (Response.JavascriptExecutionResult);
+  /* Evaluates javascript on the active page */
   rpc EvaluateJavascript(Request.EvaluateAll) returns (Response.JavascriptExecutionResult);
 
   rpc RecordSelector(Request.Label) returns (Response.JavascriptExecutionResult);
