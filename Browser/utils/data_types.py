@@ -60,6 +60,59 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noq
     return params
 
 
+class SelectionStrategy(Enum):
+    """SelectionStrategy to be used. Refers to Playwrights ``page.getBy***`` functions. See [https://playwright.dev/docs/locators|Playwright Locators]
+
+    == AltText ==
+    All images should have an alt attribute that describes the image. You can locate an image based on the text alternative using page.getByAltText().
+
+    For example, consider the following DOM structure.
+    | <img alt="playwright logo" src="/img/playwright-logo.svg" width="100" />
+
+    == Label ==
+    Allows locating input elements by the text of the associated ``<label>`` or ``aria-labelledby`` element, or by the ``aria-label`` attribute.
+
+    For example, this method will find inputs by label "Username" and "Password" in the following DOM:
+
+    | <input aria-label="Username">
+    | <label for="password-input">Password:</label>
+    | <input id="password-input">
+
+    == Placeholder ==
+    Allows locating input elements by the placeholder text.
+
+    Example:
+    | <input type="email" placeholder="name@example.com" />
+
+    == TestId ==
+    Locate element by the test id.
+
+    Example:
+    | <button data-testid="directions">Itinéraire</button>
+
+    == Text ==
+    Allows locating elements that contain given text.
+
+    Matching by text always normalizes whitespace, even with exact match.
+    For example, it turns multiple spaces into one, turns line breaks into spaces and ignores leading and trailing whitespace.
+    Input elements of the type button and submit are matched by their value instead of the text content.
+    For example, locating by text "Log in" matches <input type=button value="Log in">.
+
+    == Title ==
+    Allows locating elements by their title attribute.
+
+    Example:
+    | <img alt="playwright logo" src="/img/playwright-logo.svg" title="Playwright" width="100" />
+    """
+
+    AltText = "AltText"
+    Label = "Label"
+    Placeholder = "Placeholder"
+    TestID = "TestId"
+    Text = "Text"
+    Title = "Title"
+
+
 class RegExp(str):
     @classmethod
     def from_string(cls, string: str) -> "RegExp":

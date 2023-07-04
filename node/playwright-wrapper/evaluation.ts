@@ -103,6 +103,10 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
             locator = activePage.getByLabel(text, options);
             break;
         }
+        case 'Placeholder': {
+            locator = activePage.getByPlaceholder(text, options);
+            break;
+        }
         case 'Role': {
             type AriaRole =
                 | 'alert'

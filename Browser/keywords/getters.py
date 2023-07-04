@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import json
 import re
 from typing import Any, Dict, List, Optional, Union
@@ -40,6 +39,7 @@ from ..utils.data_types import (
     ElementState,
     RegExp,
     SelectAttribute,
+    SelectionStrategy,
     SizeFields,
 )
 
@@ -919,6 +919,7 @@ class Getters(LibraryComponent):
         for the first matched element by ``role``.
 
         | =Arguments= | =Description= |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
         | ``role`` | Role from which shall be retrieved. |
         | ``checked`` | An attribute that is usually set by aria-checked or native <input type=checkbox> controls. |
         | ``disabled`` | An attribute that is usually set by aria-disabled or disabled. |
@@ -964,7 +965,9 @@ class Getters(LibraryComponent):
             return json.loads(response.json)
 
     @keyword(name="Get By AltText", tags=("Getter", "PageContent"))
-    def get_by_alt_text(self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False) -> str:
+    def get_by_alt_text(
+        self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False
+    ) -> str:
         """Allows locating elements by their alt text.
 
         For example, this method will find the image by alt text "Playwright logo":
@@ -974,6 +977,7 @@ class Getters(LibraryComponent):
         | =Arguments= | =Description= |
         | ``text`` | Text to locate the element for. |
         | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Default to False. Ignored when locating by a regular expression. Note that exact match still trims whitespace. |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
         """
         options = {}
         if exact is not None:
@@ -992,7 +996,9 @@ class Getters(LibraryComponent):
             return json.loads(response.json)
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_label(self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False) -> str:
+    def get_by_label(
+        self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False
+    ) -> str:
         """Allows locating input elements by the text of the associated ``<label>`` or ``aria-labelledby`` element, or by the ``aria-label`` attribute.
 
         For example, this method will find inputs by label "Username" and "Password" in the following DOM:
@@ -1004,6 +1010,7 @@ class Getters(LibraryComponent):
         | =Arguments= | =Description= |
         | ``text`` | Text to locate the element for. |
         | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Default to false. Ignored when locating by a regular expression. Note that exact match still trims whitespace. |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
         """
         options = {}
         if exact is not None:
@@ -1022,7 +1029,9 @@ class Getters(LibraryComponent):
             return json.loads(response.json)
 
     @keyword(name="Get By TestID", tags=("Getter", "PageContent"))
-    def get_by_test_id(self, test_id: Union[str, RegExp], all_elements: bool = False) -> str:
+    def get_by_test_id(
+        self, test_id: Union[str, RegExp], all_elements: bool = False
+    ) -> str:
         """Locate element by the test id.
 
         Consider the following DOM structure:
@@ -1036,25 +1045,30 @@ class Getters(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``test_id`` | Id to locate the element by. |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
                 Request().GetByOptions(
-                    strategy="TestId", text=test_id, strict=self.strict_mode, all=all_elements
+                    strategy="TestId",
+                    text=test_id,
+                    strict=self.strict_mode,
+                    all=all_elements,
                 )
             )
             logger.info(response.log)
             return json.loads(response.json)
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_text(self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False) -> str:
+    def get_by_text(
+        self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False
+    ) -> str:
         """Allows locating elements that contain given text.
-
-        See also `locator.filter()` that allows to match by another criteria, like an accessible role, and then filter by the text content.
 
         | =Arguments= | =Description= |
         | ``text`` | Text to locate the element for. |
         | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Default to false. Ignored when locating by a regular expression. Note that exact match still trims whitespace. |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
 
         Matching by text always normalizes whitespace, even with exact match. For example, it turns multiple spaces into one, turns line breaks into spaces and ignores leading and trailing whitespace.
         Input elements of the type button and submit are matched by their value instead of the text content. For example, locating by text "Log in" matches <input type=button value="Log in">.
@@ -1076,12 +1090,15 @@ class Getters(LibraryComponent):
             return json.loads(response.json)
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_title(self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False) -> str:
+    def get_by_title(
+        self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False
+    ) -> str:
         """Allows locating elements by their title attribute.
 
         | =Arguments= | =Description= |
         | ``text`` | Text to locate the element for. |
         | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Default to false. Ignored when locating by a regular expression. Note that exact match still trims whitespace. |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
         """
         options = {}
         if exact is not None:
@@ -1090,6 +1107,51 @@ class Getters(LibraryComponent):
             response = stub.GetByX(
                 Request().GetByOptions(
                     strategy="Title",
+                    text=text,
+                    options=json.dumps(options),
+                    strict=self.strict_mode,
+                    all=all_elements,
+                )
+            )
+            logger.info(response.log)
+            return json.loads(response.json)
+
+    @keyword(tags=("Getter", "PageContent"))
+    def get_element_by(
+        self,
+        selection_strategy: SelectionStrategy,
+        text: Union[str, RegExp],
+        exact: bool = False,
+        all_elements: bool = False,
+    ) -> str:
+        """Allows locating elements by their features.
+
+        Selection strategies can be several Playwright strategies like AltText or Label.
+        See [https://playwright.dev/docs/locators|Playwright Locators] for more information.
+
+        | =Arguments= | =Description= |
+        | ``locator_type`` | SelectionStrategy to be used. Refers to Playwrights ``page.getBy***`` functions. See https://playwright.dev/docs/locators |
+        | ``text`` | Text to locate the element for. |
+        | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Default to false. Ignored when locating by a regular expression. Note that exact match still trims whitespace. This has no effect if RegExp is used or if TestID is used as strategy. |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
+
+        This keywords implements the following Playwright functions:
+        - [https://playwright.dev/docs/api/class-page#page-get-by-alt-text|page.getByAltText]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-label|page.getByLabel]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-placeholder|page.getByPlaceholder]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-test-id|page.getByTestId]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-text|page.getByText]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-title|page.getByTitle]
+
+        ``page.getByRole`` is supported by `Get By Role` keyword.
+        """
+        options = {}
+        if exact is not None:
+            options["exact"] = exact
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetByX(
+                Request().GetByOptions(
+                    strategy=selection_strategy.value,
                     text=text,
                     options=json.dumps(options),
                     strict=self.strict_mode,
