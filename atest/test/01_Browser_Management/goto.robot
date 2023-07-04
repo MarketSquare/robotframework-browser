@@ -41,6 +41,13 @@ Timeouting Go To With Custom Timeout
     ...    Go To    ${WELCOME_URL}    3 ms
     [Teardown]    Close Context
 
+Go To With Page LoadS Tates
+    [Setup]    New Page    ${LOGIN_URL}
+    Go To    ${WELCOME_URL}    wait_until=load
+    Go To    ${LOGIN_URL}    wait_until=domcontentloaded
+    Go To    ${WELCOME_URL}    wait_until=networkidle
+    Go To    ${LOGIN_URL}    wait_until=commit
+
 *** Keywords ***
 Teardown For Timeouting Go To
     [Arguments]    ${timeout}

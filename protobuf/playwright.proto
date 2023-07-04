@@ -101,6 +101,7 @@ message Request {
   message UrlOptions {
     Url url = 1;
     string waitUntil = 2;
+    string referer = 3;
   }
 
   message ConnectBrowser {
@@ -343,7 +344,7 @@ service  Playwright {
   /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
-  rpc GoTo(Request.Url) returns (Response.Empty);
+  rpc GoTo(Request.UrlOptions) returns (Response.Empty);
   /* Navigate to the next page in history */
   rpc GoBack(Request.Empty) returns (Response.Empty);
   /* Navigate to the previous page in history. */
