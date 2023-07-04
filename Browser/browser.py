@@ -25,6 +25,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Pattern, Set, Union
 
 from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
+from robot.api.deco import library
 from robot.errors import DataError
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.running.arguments import PythonArgumentParser
@@ -62,7 +63,12 @@ from .utils import (
 )
 
 # Importing this directly from .utils break the stub type checks
-from .utils.data_types import DelayedKeyword, HighLightElement, SupportedBrowsers
+from .utils.data_types import (
+    DelayedKeyword,
+    HighLightElement,
+    RegExp,
+    SupportedBrowsers,
+)
 from .version import __version__ as VERSION
 
 KW_CALL_CONTENT_TEMPLATE = """body::before {{
@@ -97,6 +103,7 @@ KW_CALL_BANNER_FUNCTION = """(content) => {
 }"""
 
 
+@library(converters={RegExp: RegExp.from_string})
 class Browser(DynamicCore):
     """Browser library is a browser automation library for Robot Framework.
 

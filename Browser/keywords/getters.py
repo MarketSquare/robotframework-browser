@@ -38,6 +38,7 @@ from ..utils.data_types import (
     BoundingBoxFields,
     ElementRole,
     ElementState,
+    RegExp,
     SelectAttribute,
     SizeFields,
 )
@@ -909,7 +910,7 @@ class Getters(LibraryComponent):
         expanded: Optional[bool] = None,
         include_hidden: Optional[bool] = None,
         level: Optional[int] = None,
-        name: Optional[str] = None,
+        name: Union[str, RegExp, None] = None,
         pressed: Optional[bool] = None,
         selected: Optional[bool] = None,
     ) -> str:
@@ -961,7 +962,7 @@ class Getters(LibraryComponent):
             return response.body
 
     @keyword(name="Get By AltText", tags=("Getter", "PageContent"))
-    def get_by_alt_text(self, text: str, exact: bool = False):
+    def get_by_alt_text(self, text: Union[str, RegExp], exact: bool = False):
         """Allows locating elements by their alt text.
 
         For example, this method will find the image by alt text "Playwright logo":
@@ -988,7 +989,7 @@ class Getters(LibraryComponent):
             return response.body
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_label(self, text: str, exact: bool = False):
+    def get_by_label(self, text: Union[str, RegExp], exact: bool = False):
         """Allows locating input elements by the text of the associated ``<label>`` or ``aria-labelledby`` element, or by the ``aria-label`` attribute.
 
         For example, this method will find inputs by label "Username" and "Password" in the following DOM:
@@ -1017,7 +1018,7 @@ class Getters(LibraryComponent):
             return response.body
 
     @keyword(name="Get By TestID", tags=("Getter", "PageContent"))
-    def get_by_test_id(self, test_id: str):
+    def get_by_test_id(self, test_id: Union[str, RegExp]):
         """Locate element by the test id.
 
         Consider the following DOM structure:
@@ -1042,7 +1043,7 @@ class Getters(LibraryComponent):
             return response.body
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_text(self, text: str, exact: bool = False):
+    def get_by_text(self, text: Union[str, RegExp], exact: bool = False):
         """Allows locating elements that contain given text.
 
         See also `locator.filter()` that allows to match by another criteria, like an accessible role, and then filter by the text content.
@@ -1070,7 +1071,7 @@ class Getters(LibraryComponent):
             return response.body
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_title(self, text: str, exact: bool = False):
+    def get_by_title(self, text: Union[str, RegExp], exact: bool = False):
         """Allows locating elements by their title attribute.
 
         | =Arguments= | =Description= |

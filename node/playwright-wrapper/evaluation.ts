@@ -72,7 +72,7 @@ export async function getElements(request: Request.ElementSelector, state: Playw
 }
 
 function parseRegExpOrKeepString(str: string): RegExp | string {
-    const regex = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/
+    const regex = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
     const match = str.match(regex);
     if (match) {
         try {
@@ -93,37 +93,119 @@ export async function getByX(request: Request.TextOptions, state: PlaywrightStat
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     let locator: Locator | null = null;
-    switch(strategy) { 
-        case "AltText": { 
+    switch (strategy) {
+        case 'AltText': {
             locator = activePage.getByAltText(text, options);
-            break; 
-        } 
-        case "Label": { 
-            locator = activePage.getByLabel(text, options); 
-            break; 
-        } 
-        case "Role": {
-            type AriaRole = "alert"|"alertdialog"|"application"|"article"|"banner"|"blockquote"|"button"|"caption"|"cell"|"checkbox"|"code"|"columnheader"|"combobox"|"complementary"|"contentinfo"|"definition"|"deletion"|"dialog"|"directory"|"document"|"emphasis"|"feed"|"figure"|"form"|"generic"|"grid"|"gridcell"|"group"|"heading"|"img"|"insertion"|"link"|"list"|"listbox"|"listitem"|"log"|"main"|"marquee"|"math"|"meter"|"menu"|"menubar"|"menuitem"|"menuitemcheckbox"|"menuitemradio"|"navigation"|"none"|"note"|"option"|"paragraph"|"presentation"|"progressbar"|"radio"|"radiogroup"|"region"|"row"|"rowgroup"|"rowheader"|"scrollbar"|"search"|"searchbox"|"separator"|"slider"|"spinbutton"|"status"|"strong"|"subscript"|"superscript"|"switch"|"tab"|"table"|"tablist"|"tabpanel"|"term"|"textbox"|"time"|"timer"|"toolbar"|"tooltip"|"tree"|"treegrid"|"treeitem";
+            break;
+        }
+        case 'Label': {
+            locator = activePage.getByLabel(text, options);
+            break;
+        }
+        case 'Role': {
+            type AriaRole =
+                | 'alert'
+                | 'alertdialog'
+                | 'application'
+                | 'article'
+                | 'banner'
+                | 'blockquote'
+                | 'button'
+                | 'caption'
+                | 'cell'
+                | 'checkbox'
+                | 'code'
+                | 'columnheader'
+                | 'combobox'
+                | 'complementary'
+                | 'contentinfo'
+                | 'definition'
+                | 'deletion'
+                | 'dialog'
+                | 'directory'
+                | 'document'
+                | 'emphasis'
+                | 'feed'
+                | 'figure'
+                | 'form'
+                | 'generic'
+                | 'grid'
+                | 'gridcell'
+                | 'group'
+                | 'heading'
+                | 'img'
+                | 'insertion'
+                | 'link'
+                | 'list'
+                | 'listbox'
+                | 'listitem'
+                | 'log'
+                | 'main'
+                | 'marquee'
+                | 'math'
+                | 'meter'
+                | 'menu'
+                | 'menubar'
+                | 'menuitem'
+                | 'menuitemcheckbox'
+                | 'menuitemradio'
+                | 'navigation'
+                | 'none'
+                | 'note'
+                | 'option'
+                | 'paragraph'
+                | 'presentation'
+                | 'progressbar'
+                | 'radio'
+                | 'radiogroup'
+                | 'region'
+                | 'row'
+                | 'rowgroup'
+                | 'rowheader'
+                | 'scrollbar'
+                | 'search'
+                | 'searchbox'
+                | 'separator'
+                | 'slider'
+                | 'spinbutton'
+                | 'status'
+                | 'strong'
+                | 'subscript'
+                | 'superscript'
+                | 'switch'
+                | 'tab'
+                | 'table'
+                | 'tablist'
+                | 'tabpanel'
+                | 'term'
+                | 'textbox'
+                | 'time'
+                | 'timer'
+                | 'toolbar'
+                | 'tooltip'
+                | 'tree'
+                | 'treegrid'
+                | 'treeitem';
             if (options?.name) {
                 options.name = parseRegExpOrKeepString(options.name);
             }
             locator = activePage.getByRole(text as AriaRole, options);
             break;
         }
-        case "TestId": {
+        case 'TestId': {
             locator = activePage.getByTestId(text);
             break;
         }
-        case "Text": {
+        case 'Text': {
             locator = activePage.getByText(text, options);
             break;
         }
-        case "Title": {
+        case 'Title': {
             locator = activePage.getByTitle(text, options);
             break;
         }
-        default: { 
-           throw new Error(`Strategy ${strategy} not supported.`);
+        default: {
+            throw new Error(`Strategy ${strategy} not supported.`);
         }
     }
     if (!strictMode) {
@@ -133,7 +215,7 @@ export async function getByX(request: Request.TextOptions, state: PlaywrightStat
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return stringResponse(locator._selector, 'Locator found successfully.');
-};
+}
 
 const tryToTransformStringToFunction = (str: string): string | (() => unknown) => {
     try {
