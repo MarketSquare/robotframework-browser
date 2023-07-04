@@ -85,11 +85,12 @@ function parseRegExpOrKeepString(str: string): RegExp | string {
     return str;
 }
 
-export async function getByX(request: Request.TextOptions, state: PlaywrightState): Promise<Response.String> {
+export async function getByX(request: Request.GetByOptions, state: PlaywrightState): Promise<Response.Json> {
     const strategy = request.getStrategy();
     const text = parseRegExpOrKeepString(request.getText());
     const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
+    const allElements = request.getAll();
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     let locator: Locator | null = null;
@@ -208,13 +209,20 @@ export async function getByX(request: Request.TextOptions, state: PlaywrightStat
             throw new Error(`Strategy ${strategy} not supported.`);
         }
     }
-    if (!strictMode) {
-        locator = locator.first();
+    if (!allElements) {
+        if (!strictMode) {
+            locator = locator.first();
+        }
+        await locator.waitFor({ state: 'attached' });
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return jsonResponse(JSON.stringify(locator._selector), 'Locator found successfully.');
     }
-    await locator.waitFor({ state: 'attached' });
+    await locator.first().waitFor({ state: 'attached' });
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return stringResponse(locator._selector, 'Locator found successfully.');
+    const allSelectors = await locator.all().then((locators) => locators.map((loc) => loc._selector));
+    return jsonResponse(JSON.stringify(allSelectors), `${allSelectors.length} locators found successfully.`);
 }
 
 const tryToTransformStringToFunction = (str: string): string | (() => unknown) => {

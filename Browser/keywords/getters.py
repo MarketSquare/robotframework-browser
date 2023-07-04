@@ -904,6 +904,7 @@ class Getters(LibraryComponent):
         self,
         role: ElementRole,
         *,
+        all_elements: bool = False,
         checked: Optional[bool] = None,
         disabled: Optional[bool] = None,
         exact: Optional[bool] = None,
@@ -924,7 +925,7 @@ class Getters(LibraryComponent):
         | ``exact`` | Whether name is matched exactly: case-sensitive and whole-string. Defaults to false. Ignored when name is a regular expression. Note that exact match still trims whitespace. |
         | ``expanded`` | An attribute that is usually set by aria-expanded. |
         | ``include_hidden`` | Option that controls whether hidden elements are matched. By default, only non-hidden elements, as defined by ARIA, are matched by role selector. |
-        | ``level`` | A number attribute that is usually present for roles heading, listitem, row, treeitem, with default values for <h1>-<h6> elements. |
+        | ``level`` | A number attribute that is usually present for roles heading, list item, row, treeitem, with default values for <h1>-<h6> elements. |
         | ``name`` | Option to match the accessible name. By default, matching is case-insensitive and searches for a substring, use exact to control this behavior. |
         | ``pressed`` | An attribute that is usually set by aria-pressed. |
         | ``selected`` | An attribute that is usually set by aria-selected. |
@@ -951,18 +952,19 @@ class Getters(LibraryComponent):
             options["selected"] = selected
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
-                Request().TextOptions(
+                Request().GetByOptions(
                     strategy="Role",
                     text=role.name.lower(),
                     options=json.dumps(options),
                     strict=self.strict_mode,
+                    all=all_elements,
                 )
             )
             logger.info(response.log)
-            return response.body
+            return json.loads(response.json)
 
     @keyword(name="Get By AltText", tags=("Getter", "PageContent"))
-    def get_by_alt_text(self, text: Union[str, RegExp], exact: bool = False):
+    def get_by_alt_text(self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False) -> str:
         """Allows locating elements by their alt text.
 
         For example, this method will find the image by alt text "Playwright logo":
@@ -978,18 +980,19 @@ class Getters(LibraryComponent):
             options["exact"] = exact
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
-                Request().TextOptions(
+                Request().GetByOptions(
                     strategy="AltText",
                     text=text,
                     options=json.dumps(options),
                     strict=self.strict_mode,
+                    all=all_elements,
                 )
             )
             logger.info(response.log)
-            return response.body
+            return json.loads(response.json)
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_label(self, text: Union[str, RegExp], exact: bool = False):
+    def get_by_label(self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False) -> str:
         """Allows locating input elements by the text of the associated ``<label>`` or ``aria-labelledby`` element, or by the ``aria-label`` attribute.
 
         For example, this method will find inputs by label "Username" and "Password" in the following DOM:
@@ -1007,18 +1010,19 @@ class Getters(LibraryComponent):
             options["exact"] = exact
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
-                Request().TextOptions(
+                Request().GetByOptions(
                     strategy="Label",
                     text=text,
                     options=json.dumps(options),
                     strict=self.strict_mode,
+                    all=all_elements,
                 )
             )
             logger.info(response.log)
-            return response.body
+            return json.loads(response.json)
 
     @keyword(name="Get By TestID", tags=("Getter", "PageContent"))
-    def get_by_test_id(self, test_id: Union[str, RegExp]):
+    def get_by_test_id(self, test_id: Union[str, RegExp], all_elements: bool = False) -> str:
         """Locate element by the test id.
 
         Consider the following DOM structure:
@@ -1035,15 +1039,15 @@ class Getters(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
-                Request().TextOptions(
-                    strategy="TestId", text=test_id, strict=self.strict_mode
+                Request().GetByOptions(
+                    strategy="TestId", text=test_id, strict=self.strict_mode, all=all_elements
                 )
             )
             logger.info(response.log)
-            return response.body
+            return json.loads(response.json)
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_text(self, text: Union[str, RegExp], exact: bool = False):
+    def get_by_text(self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False) -> str:
         """Allows locating elements that contain given text.
 
         See also `locator.filter()` that allows to match by another criteria, like an accessible role, and then filter by the text content.
@@ -1060,18 +1064,19 @@ class Getters(LibraryComponent):
             options["exact"] = exact
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
-                Request().TextOptions(
+                Request().GetByOptions(
                     strategy="Text",
                     text=text,
                     options=json.dumps(options),
                     strict=self.strict_mode,
+                    all=all_elements,
                 )
             )
             logger.info(response.log)
-            return response.body
+            return json.loads(response.json)
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_by_title(self, text: Union[str, RegExp], exact: bool = False):
+    def get_by_title(self, text: Union[str, RegExp], exact: bool = False, all_elements: bool = False) -> str:
         """Allows locating elements by their title attribute.
 
         | =Arguments= | =Description= |
@@ -1083,15 +1088,16 @@ class Getters(LibraryComponent):
             options["exact"] = exact
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
-                Request().TextOptions(
+                Request().GetByOptions(
                     strategy="Title",
                     text=text,
                     options=json.dumps(options),
                     strict=self.strict_mode,
+                    all=all_elements,
                 )
             )
             logger.info(response.log)
-            return response.body
+            return json.loads(response.json)
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
