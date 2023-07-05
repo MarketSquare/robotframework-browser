@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-118-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-119-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -315,6 +315,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/lasselindqvist"><img src="https://avatars.githubusercontent.com/u/13466645?v=4?s=100" width="100px;" alt="lasselindqvist"/><br /><sub><b>lasselindqvist</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Alasselindqvist" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/david-ns"><img src="https://avatars.githubusercontent.com/u/50212780?v=4?s=100" width="100px;" alt="David Nieto Sanz"/><br /><sub><b>David Nieto Sanz</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Adavid-ns" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://gil.badall.net"><img src="https://avatars.githubusercontent.com/u/1155680?v=4?s=100" width="100px;" alt="Gil Forcada Codinachs"/><br /><sub><b>Gil Forcada Codinachs</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=gforcada" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://nathanhannig.com"><img src="https://avatars.githubusercontent.com/u/8210763?v=4?s=100" width="100px;" alt="Nathan Hannig"/><br /><sub><b>Nathan Hannig</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Anathanhannig" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
