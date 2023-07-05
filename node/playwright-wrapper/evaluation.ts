@@ -55,7 +55,7 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     try {
         await locator.first().waitFor({ state: 'attached' });
     } catch (e) {
-        logger.debug(`Attached state not reached, supress error: ${e}.`);
+        logger.debug(`Attached state not reached, suppress error: ${e}.`);
     }
     const allLocators = await locator.all();
     logger.info(`Found ${allLocators.length} elements.`);
@@ -217,10 +217,15 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
         // @ts-ignore
         return jsonResponse(JSON.stringify(locator._selector), 'Locator found successfully.');
     }
-    await locator.first().waitFor({ state: 'attached' });
+    let allSelectors: string[] = [];
+    try {
+        await locator.first().waitFor({ state: 'attached' });
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const allSelectors = await locator.all().then((locators) => locators.map((loc) => loc._selector));
+    allSelectors = await locator.all().then((locators) => locators.map((loc) => loc._selector));
+    } catch (e) {
+        logger.debug(`Attached state not reached, suppress error: ${e}.`);
+    }
     return jsonResponse(JSON.stringify(allSelectors), `${allSelectors.length} locators found successfully.`);
 }
 

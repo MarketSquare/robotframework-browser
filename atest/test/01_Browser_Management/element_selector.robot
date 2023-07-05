@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation       Tests for Get Element and `element=<ref>` selector syntax
 
+Library    RobotDebug
 Resource            imports.resource
 
 Suite Setup         Ensure Open Page
@@ -80,3 +81,48 @@ Get Element And Click
     FOR    ${elem}    IN    @{refs}
         Click    ${elem}
     END
+
+
+Get Element By Role
+    [Documentation]    This test does not only test the Get Element By Role keyword.
+    ...
+    ...    It also tests the ``all_elements`` argument and ``strict_mode``.
+    ...    Due to the JS implementation these two things do not need to be tested
+    ...    with the other Get Element By keyword.
+    ${e}    Get Element By Role    textbox    name=Name:
+    Get Element States    ${e}    *=    visible
+    ${e}    Get Element By Role    textbox    name=/.*label.email$/i
+    Get Element States    ${e}    *=    visible
+    ${e}    Get Element By Role    textbox    name=Website:
+    Get Text    ${e}    ==    https://example.com
+    Evaluate JavaScript    ${e}    e => e.disabled = true
+    ${e}    Get Element By Role    textbox    disabled=True
+    Get Text    ${e}    ==    https://example.com
+    ${e}    Get Element By Role    radio    all_elements=True
+    FOR    ${e}    IN    @{e}
+        Get Element States    ${e}    *=    visible
+    END
+    ${e}    Get Element By Role    radio    checked=True
+    Get Element States    ${e}    *=    visible
+    ${exp_list}    Create List    Telephone    Email    Telephone    Option 1    0    DEFAULT OPTION
+    ${element_list}    Get Element By Role    option    selected=True    all_elements=True
+    FOR    ${el}    ${exp_text}    IN ZIP   ${element_list}   ${exp_list}
+        Get Text    ${el}    ==    ${exp_text}
+    END
+    Set Browser Timeout    timeout=100ms    scope=Test
+    ${e}    Get Element By Role    role=heading    all_elements=True
+    Should Be Empty    ${e}
+    Run Keyword And Expect Error    *Error: strict mode violation: getByRole('textbox') resolved to 4 elements*
+    ...    Get Element By Role    role=textbox
+    Set Strict Mode    False
+    ${e}    Get Element By Role    role=textbox
+    Get Text    ${e}    ==    Prefilled Name
+
+Get Element By - AltText        
+    ${e}    Get Element By     AltText    Logo
+    Get BoundingBox    ${e}    ALL    ==    {'x': 8, 'y': 8, 'width': 50, 'height': 50}
+    ${e}    Get Element By     AltText    logo    exact=True
+    Get BoundingBox    ${e}    ALL    ==    {'x': 8, 'y': 8, 'width': 50, 'height': 50}
+    ${e}    Get Element By     AltText    /.ogo/
+    Get BoundingBox    ${e}    ALL    ==    {'x': 8, 'y': 8, 'width': 50, 'height': 50}
+    

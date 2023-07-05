@@ -968,7 +968,6 @@ class Getters(LibraryComponent):
                 "selected",
             ]
         }
-        logger.console(options)
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
                 Request().GetByOptions(
