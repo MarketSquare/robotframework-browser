@@ -150,6 +150,5 @@ Get Element By - Text
     Run Keyword And Expect Error    *    Get Element By    Text    name    exact=True
 
 Get Element By - Title
-    [Timeout]    None
     ${e} =    Get Element By    Title    /^name$/i
     Get Text    ${e}    ==    Prefilled Name
