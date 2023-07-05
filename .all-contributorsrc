@@ -1095,6 +1095,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "nathanhannig",
+      "name": "Nathan Hannig",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8210763?v=4",
+      "profile": "https://nathanhannig.com",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
