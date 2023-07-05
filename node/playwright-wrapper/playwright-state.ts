@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, Locator, Page, chromium, firefox, webkit } from 'playwright';
+import { Browser, BrowserContext, BrowserType, Locator, Page, chromium, firefox, webkit } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -621,14 +621,19 @@ export async function newPersistentContext(
     const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
 
     const userDataDir = options?.userDataDir as string;
-
-    let browser;
-    if (options.browser === 'chromium') {
-        browser = chromium;
-    } else if (options.browser === 'firefox') {
-        browser = firefox;
-    } else {
-        throw new Error('Invalid browserType for New Persistent Context');
+    let browser: BrowserType;
+    switch (options.browser) {
+        case 'chromium':
+            browser = chromium;
+            break;
+        case 'firefox':
+            browser = firefox;
+            break;
+        case 'webkit':
+            browser = webkit;
+            break;
+        default:
+            throw new Error(`"${options.browser} is an unsupported browser."`);
     }
 
     const persistentContext = await browser.launchPersistentContext(userDataDir, options);
