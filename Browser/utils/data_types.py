@@ -87,6 +87,8 @@ class SelectionStrategy(Enum):
     == TestId ==
     Locate element by the test id.
 
+    Currently only the exact attribute ``data-testid`` is supported.
+
     Example:
     | <button data-testid="directions">Itinéraire</button>
 

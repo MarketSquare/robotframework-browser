@@ -9,11 +9,11 @@
 	    <table border="0">
 		<tr>
 		    <td><label for="input_name">Name:</label></td>
-		    <td><input type="text" id="input_name" name="name" value="Prefilled Name"/></td>
+		    <td><input title="Name" placeholder="fill name here" type="text" id="input_name" name="name" value="Prefilled Name"/></td>
 		</tr>
 		<tr>
 		    <td>Email:</td>
-		    <td><input aria-label="Aria Label Email" type="email" name="email" value="Prefilled Email"/></td>
+		    <td><input title="E-Mail" placeholder="fill email here" aria-label="Aria Label Email" type="email" name="email" value="Prefilled Email"/></td>
 		</tr>
 		<tr>
 		    <td id="ws_label">Website:</td>
@@ -26,8 +26,8 @@
 		<tr>
 		    <td>Opt-in settings:</td>
 		    <td>
-			<input type="checkbox" name="can_send_email" checked /> Can send email?<br/>
-			<input type="checkbox" name="can_send_sms" /> Can send SMS?
+			<input data-testid="testid-mail" type="checkbox" name="can_send_email" checked /> Can send email?<br/>
+			<input data-testid="testid-sms" type="checkbox" name="can_send_sms" /> Can send SMS?
 		    </td>
 		</tr>
 		<tr>

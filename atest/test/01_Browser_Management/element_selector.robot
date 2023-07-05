@@ -124,3 +124,32 @@ Get Element By - AltText
     Get BoundingBox    ${e}    ALL    ==    {'x': 8, 'y': 8, 'width': 50, 'height': 50}
     ${e} =    Get Element By    AltText    /.ogo/
     Get BoundingBox    ${e}    ALL    ==    {'x': 8, 'y': 8, 'width': 50, 'height': 50}
+
+Get Element By - Label
+    ${e} =    Get Element By    Label    Name:    exact=True
+    Get Text    ${e}    ==    Prefilled Name
+
+Get Element By - Placeholder
+    ${e} =    Get Element By    Placeholder    /FiLl.*hErE/i    all_elements=true
+    FOR    ${el}    ${placeholder}    IN ZIP    ${e}    ${{['fill name here', 'fill email here']}}
+        Get Attribute    ${el}    placeholder    ==    ${placeholder}
+    END
+
+Get Element By - TestID
+    Get Element By    TestID    testid-mail
+    Get Element By    TestID    testid-sms
+    ${e} =    Get Element By    TestID    /testid/    all_elements=True
+    Length Should Be    ${e}    2
+    Set Browser Timeout    100ms    Test
+    Run Keyword And Expect Error    *    Get Element By    TestID    testid-not-existing
+
+Get Element By - Text
+    Get Element By    Text    name    exact=False
+    Get Element By    Text    Name:    exact=True
+    Set Browser Timeout    100ms    Test
+    Run Keyword And Expect Error    *    Get Element By    Text    name    exact=True
+
+Get Element By - Title
+    [Timeout]    None
+    ${e} =    Get Element By    Title    /^name$/i
+    Get Text    ${e}    ==    Prefilled Name
