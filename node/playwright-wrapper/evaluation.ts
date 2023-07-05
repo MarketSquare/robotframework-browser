@@ -220,9 +220,9 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
     let allSelectors: string[] = [];
     try {
         await locator.first().waitFor({ state: 'attached' });
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    allSelectors = await locator.all().then((locators) => locators.map((loc) => loc._selector));
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        allSelectors = await locator.all().then((locators) => locators.map((loc) => loc._selector));
     } catch (e) {
         logger.debug(`Attached state not reached, suppress error: ${e}.`);
     }
