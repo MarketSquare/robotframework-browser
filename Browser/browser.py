@@ -29,7 +29,6 @@ from robot.api.deco import library
 from robot.errors import DataError
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.running.arguments import PythonArgumentParser
-from robot.running.arguments.typeconverters import TypeConverter
 from robot.utils import secs_to_timestr, timestr_to_secs
 from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
@@ -738,41 +737,26 @@ class Browser(DynamicCore):
     _context_cache = ContextCache()
     _suite_cleanup_done = False
 
-    _old_init_args: ClassVar[dict] = {
-        "timeout": timedelta,
-        "enable_playwright_debug": bool,
-        "auto_closing_level": AutoClosingLevel,
-        "retry_assertions_for": timedelta,
-        "run_on_failure": str,
-        "external_browser_executable": Optional[Dict[SupportedBrowsers, str]],
-        "jsextension": Optional[str],
-        "enable_presenter_mode": Union[HighLightElement, bool],
-        "playwright_process_port": Optional[int],
-        "strict": bool,
-        "show_keyword_call_banner": Optional[bool],
-    }
-
     def __init__(
         self,
-        *deprecated_pos_args,
+        *_,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
         enable_playwright_debug: bool = False,
         enable_presenter_mode: Union[HighLightElement, bool] = False,
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
-        jsextension: Optional[str] = None,
+        jsextension: Union[List[str], str, None] = None,
         playwright_process_port: Optional[int] = None,
+        plugins: Union[List[str], str, None] = None,
         retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot  fail-screenshot-{index}",
         selector_prefix: Optional[str] = None,
         show_keyword_call_banner: Optional[bool] = None,
         strict: bool = True,
         timeout: timedelta = timedelta(seconds=10),
-        plugins: Optional[str] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 
         | =Argument=                        | =Description= |
-        | ``*deprecated_pos_args``          | Positional arguments are deprecated for Library import. Please use named arguments instead. We will remove positional arguments after RoboCon 2023 Online in March. Old positional order was: ``timeout``, ``enable_playwright_debug``, ``auto_closing_level``, ``retry_assertions_for``, ``run_on_failure``, ``external_browser_executable``, ``jsextension``, ``enable_presenter_mode``, ``playwright_process_port``, ``strict``, ``show_keyword_call_banner``. |
         | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
         | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. Mainly Useful for the library developers and for debugging purposes. Will og everything as plain text, also including secrects. |
         | ``enable_presenter_mode``         | Automatic highlights to interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. |
@@ -786,31 +770,11 @@ class Browser(DynamicCore):
         | ``strict``                        | If keyword selector points multiple elements and keywords should interact with one element, keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords or by ```et Strict Mode`` keyword. |
         | ``timeout``                       | Timeout for keywords that operate on elements. The keywords will wait for this time for the element to appear into the page. Defaults to "10s" => 10 seconds. |
         | ``plugins``                       | Allows extending the Browser library with external Python classes. |
-
-        Old deprecated argument order:
-        ``timeout``, ``enable_playwright_debug``, ``auto_closing_level``, ``retry_assertions_for``, ``run_on_failure``,
-        ``external_browser_executable``, ``jsextension``, ``enable_presenter_mode``, ``playwright_process_port``,
-        ``strict``, ``show_keyword_call_banner``
-
         """
+        if _:
+            raise ValueError("Browser library does not accept positional arguments.")
         self.ROBOT_LIBRARY_LISTENER = self
         self.scope_stack: Dict = {}
-        old_args_list = list(self._old_init_args.items())
-        pos_params = {}
-        for index, pos_arg in enumerate(deprecated_pos_args):
-            argument_name = old_args_list[index][0]
-            argument_type = old_args_list[index][1]
-            converted_pos = TypeConverter.converter_for(argument_type).convert(
-                argument_name, pos_arg
-            )
-            pos_params[argument_name] = converted_pos
-        if pos_params:
-            logger.warn(
-                "Deprecated positional arguments are used in 'Library import of Browser library'. Please use named arguments instead."
-            )
-        params = dict(locals())
-        params = {**pos_params, **params}
-
         self._playwright_state = PlaywrightState(self)
         self._browser_control = Control(self)
         libraries = [
@@ -833,29 +797,31 @@ class Browser(DynamicCore):
         self._playwright_log = Path(self.outputdir, "playwright-log.txt")
         self.playwright = Playwright(
             self,
-            params["enable_playwright_debug"],
+            enable_playwright_debug,
             playwright_process_port,
             self._playwright_log,
         )
-        self._auto_closing_level: AutoClosingLevel = params["auto_closing_level"]
+        self._auto_closing_level: AutoClosingLevel = auto_closing_level
         # Parsing needs keywords to be discovered.
         self.external_browser_executable: Dict[SupportedBrowsers, str] = (
-            params["external_browser_executable"] or {}
+            external_browser_executable or {}
         )
-        if params["jsextension"] is not None:
-            libraries.append(
-                self._create_lib_component_from_jsextension(params["jsextension"])
+        if jsextension:
+            jsextensions = (
+                jsextension.split(",") if isinstance(jsextension, str) else jsextension
             )
-        if params["plugins"] is not None:
+            for js_ext in jsextensions:
+                libraries.append(self._create_lib_component_from_jsextension(js_ext))
+        if plugins:
+            if isinstance(plugins, list):
+                plugins = ",".join(plugins)
             parser = PluginParser(LibraryComponent, [self])
-            parsed_plugins = parser.parse_plugins(params["plugins"])
+            parsed_plugins = parser.parse_plugins(plugins)
             libraries.extend(parsed_plugins)
             self._plugin_keywords = parser.get_plugin_keywords(parsed_plugins)
         else:
             self._plugin_keywords = []
-        self.presenter_mode: Union[HighLightElement, bool] = params[
-            "enable_presenter_mode"
-        ]
+        self.presenter_mode: Union[HighLightElement, bool] = enable_presenter_mode
         self._execution_stack: List[dict] = []
         self._running_on_failure_keyword = False
         self.pause_on_failure: Set[str] = set()
@@ -867,20 +833,20 @@ class Browser(DynamicCore):
         DynamicCore.__init__(self, libraries)
 
         self.scope_stack["timeout"] = SettingsStack(
-            self.convert_timeout(params["timeout"]),
+            self.convert_timeout(timeout),
             self,
             self._browser_control.set_playwright_timeout,
         )
         self.scope_stack["retry_assertions_for"] = SettingsStack(
-            self.convert_timeout(params["retry_assertions_for"]), self
+            self.convert_timeout(retry_assertions_for), self
         )
-        self.scope_stack["strict_mode"] = SettingsStack(params["strict"], self)
+        self.scope_stack["strict_mode"] = SettingsStack(strict, self)
         self.scope_stack["selector_prefix"] = SettingsStack(selector_prefix, self)
         self.scope_stack["run_on_failure"] = SettingsStack(
-            self._parse_run_on_failure_keyword(params["run_on_failure"]), self
+            self._parse_run_on_failure_keyword(run_on_failure), self
         )
         self.scope_stack["show_keyword_call_banner"] = SettingsStack(
-            params["show_keyword_call_banner"], self
+            show_keyword_call_banner, self
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
 
@@ -901,17 +867,19 @@ class Browser(DynamicCore):
         return self.scope_stack["timeout"].get()
 
     def _parse_run_on_failure_keyword(
-        self, keyword_name: Union[str, None]
+        self, keyword: Union[str, None]
     ) -> DelayedKeyword:
-        if keyword_name is None or is_falsy(keyword_name):
+        if keyword is None or is_falsy(keyword):
             return DelayedKeyword(None, None, (), {})
-        parts = keyword_name.split("  ")
+        parts = keyword.split("  ")
         keyword_name = parts[0]
         normalized_keyword_name = get_normalized_keyword(keyword_name)
         args = parts[1:]
         if normalized_keyword_name not in self.keywords:
             return DelayedKeyword(keyword_name, keyword_name, tuple(args), {})
-        spec = PythonArgumentParser().parse(self.keywords[normalized_keyword_name])
+        spec = PythonArgumentParser().parse(
+            self.keywords[normalized_keyword_name], keyword_name
+        )
         varargs = []
         kwargs = {}
         for arg in spec.resolve(args):

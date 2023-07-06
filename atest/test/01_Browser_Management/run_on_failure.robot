@@ -46,7 +46,7 @@ Register Kw With Custom Path
 
 Register Keyword With Arguments
     Type Text    css=input#username_field    username
-    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    image-{index}    ${EMPTY}    True
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    image-{index}    fullPage=True
     Run Keyword And Expect Error
     ...    *'username' (str) should be 'not_username' (str)
     ...    Get Text    css=input#username_field    ==    not_username
@@ -65,6 +65,15 @@ Register Keyword With Named Arguments
     File Should Exist    ${FailureScreenshot3}
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot3}
+
+Register Keyword With Wrong Arguments
+    Run Keyword And Expect Error
+    ...    Keyword 'Take Screenshot' expected 0 to 2 non-named arguments, got 3.
+    ...    Register Keyword To Run On Failure
+    ...    Take Screenshot
+    ...    image-{index}
+    ...    ${NONE}
+    ...    True
 
 Register User Keyword
     ${prev} =    Register Keyword To Run On Failure    Custom User Keyword    Foobar

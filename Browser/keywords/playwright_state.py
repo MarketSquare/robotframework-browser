@@ -16,7 +16,7 @@ import json
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
@@ -45,7 +45,6 @@ from ..utils import (
     locals_to_params,
     logger,
 )
-from ..utils.deprecated import convert_pos_args_to_named
 
 
 class PlaywrightState(LibraryComponent):
@@ -315,28 +314,12 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    old_new_browser_args: ClassVar[dict] = {
-        "executablePath": Optional[str],
-        "args": Optional[List[str]],
-        "ignoreDefaultArgs": Optional[List[str]],
-        "proxy": Optional[Proxy],
-        "downloadsPath": Optional[str],
-        "handleSIGINT": bool,
-        "handleSIGTERM": bool,
-        "handleSIGHUP": bool,
-        "timeout": timedelta,
-        "env": Optional[Dict],
-        "devtools": bool,
-        "slowMo": timedelta,
-        "channel": Optional[str],
-    }
-
     @keyword(tags=("Setter", "BrowserControl"))
     def new_browser(
         self,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
-        *deprecated_pos_args,
+        *,
         args: Optional[List[str]] = None,
         channel: Optional[str] = None,
         devtools: bool = False,
@@ -361,7 +344,6 @@ class PlaywrightState(LibraryComponent):
         | =Arguments= | =Description= |
         | ``browser`` | Opens the specified [#type-SupportedBrowsers|browser]. Defaults to chromium. |
         | ``headless`` | Set to False if you want a GUI. Defaults to True. |
-        | ``*deprecated_pos_args`` | Other positional arguments are deprecated for `New Browser`. Please use named arguments in the future. We will remove positional arguments after RoboCon 2023 Online in March. Old order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``. |
         | ``args`` | Additional arguments to pass to the browser instance. The list of Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/|here]. Defaults to None. |
         | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
         | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
@@ -378,21 +360,9 @@ class PlaywrightState(LibraryComponent):
         | ``timeout`` | Maximum time in Robot Framework time format to wait for the browser instance to start. Defaults to 30 seconds. Pass 0 to disable timeout. |
 
 
-        Old deprecated argument order:
-        ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``,
-        ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``
-
-
         [https://forum.robotframework.org/t//4306|Comment >>]
         """
         params = locals_to_params(locals())
-        pos_params = convert_pos_args_to_named(
-            deprecated_pos_args,
-            self.old_new_browser_args,
-            "New Browser",
-            " Will be removed after March 2023.",
-        )
-        params = {**pos_params, **params}
         parameter_hash = self._get_parameter_hash(params)
         existing_browser_id = self._switch_to_existing_browser(
             reuse_existing, parameter_hash
@@ -431,41 +401,10 @@ class PlaywrightState(LibraryComponent):
         params.pop("reuse_existing", None)
         return hash(repr(params))
 
-    old_new_context_args: ClassVar[dict] = {
-        "acceptDownloads": bool,
-        "ignoreHTTPSErrors": bool,
-        "bypassCSP": bool,
-        "viewport": Optional[ViewportDimensions],
-        "userAgent": Optional[str],
-        "deviceScaleFactor": Optional[float],
-        "isMobile": Optional[bool],
-        "hasTouch": Optional[bool],
-        "javaScriptEnabled": bool,
-        "timezoneId": Optional[str],
-        "geolocation": Optional[GeoLocation],
-        "locale": Optional[str],
-        "permissions": Optional[List[Permission]],
-        "extraHTTPHeaders": Optional[Dict[str, str]],
-        "offline": bool,
-        "httpCredentials": Optional[HttpCredentials],
-        "colorScheme": Optional[ColorScheme],
-        "videosPath": Optional[str],
-        "videoSize": Optional[ViewportDimensions],
-        "defaultBrowserType": Optional[SupportedBrowsers],
-        "hideRfBrowser": bool,
-        "recordVideo": Optional[RecordVideo],
-        "recordHar": Optional[RecordHar],
-        "tracing": Optional[str],
-        "screen": Optional[Dict[str, int]],
-        "storageState": Optional[str],
-        "reducedMotion": ReduceMotion,
-        "forcedColors": ForcedColors,
-    }
-
     @keyword(tags=("Setter", "BrowserControl"))
     def new_context(
         self,
-        *deprecated_pos_args,
+        *,
         acceptDownloads: bool = True,
         bypassCSP: bool = False,
         colorScheme: Optional[ColorScheme] = None,
@@ -504,7 +443,6 @@ class PlaywrightState(LibraryComponent):
 
 
         | =Arguments=              | =Description= |
-        | ``*deprecated_pos_args`` | Positional arguments are deprecated for New Context. Please use named arguments in the future. We will remove positional arguments after RoboCon 2023 Online in March. Old positional order was ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``, ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``, ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``, ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``, ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``. |
         | ``acceptDownloads``      | Whether to automatically download all the attachments. Defaults to True where all the downloads are accepted. |
         | ``bypassCSP``            | Toggles bypassing page's Content-Security-Policy. Defaults to False. |
         | ``colorScheme``          | Emulates `'prefers-colors-scheme'` media feature, supported values are `'light'`, `'dark'`, `'no-preference'`. |
@@ -533,13 +471,6 @@ class PlaywrightState(LibraryComponent):
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
 
 
-        Old deprecated argument order:
-        ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``,
-        ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``,
-        ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``,
-        ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``,
-        ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``
-
         Example:
         | Test an iPhone
         |     ${device}=    `Get Device`    iPhone X
@@ -557,13 +488,6 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
-        pos_params = convert_pos_args_to_named(
-            deprecated_pos_args,
-            self.old_new_context_args,
-            "New Context",
-            " Will be removed after March 2023.",
-        )
-        params = {**pos_params, **params}
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
@@ -579,58 +503,13 @@ class PlaywrightState(LibraryComponent):
         self.context_cache.add(response.id, self._get_video_size(params))
         return response.id
 
-    old_new_perse_context_args: ClassVar[dict] = {
-        "executablePath": Optional[str],
-        "args": Optional[List[str]],
-        "ignoreDefaultArgs": Optional[List[str]],
-        "proxy": Optional[Proxy],
-        "downloadsPath": Optional[str],
-        "handleSIGINT": bool,
-        "handleSIGTERM": bool,
-        "handleSIGHUP": bool,
-        "timeout": timedelta,
-        "env": Optional[Dict],
-        "devtools": bool,
-        "slowMo": timedelta,
-        "channel": Optional[str],
-        "acceptDownloads": bool,
-        "ignoreHTTPSErrors": bool,
-        "bypassCSP": bool,
-        "viewport": Optional[ViewportDimensions],
-        "userAgent": Optional[str],
-        "deviceScaleFactor": Optional[float],
-        "isMobile": Optional[bool],
-        "hasTouch": Optional[bool],
-        "javaScriptEnabled": bool,
-        "timezoneId": Optional[str],
-        "geolocation": Optional[GeoLocation],
-        "locale": Optional[str],
-        "permissions": Optional[List[Permission]],
-        "extraHTTPHeaders": Optional[Dict[str, str]],
-        "offline": bool,
-        "httpCredentials": Optional[HttpCredentials],
-        "colorScheme": Optional[ColorScheme],
-        "videosPath": Optional[str],
-        "videoSize": Optional[ViewportDimensions],
-        "defaultBrowserType": Optional[SupportedBrowsers],
-        "hideRfBrowser": bool,
-        "recordVideo": Optional[RecordVideo],
-        "recordHar": Optional[RecordHar],
-        "tracing": Optional[str],
-        "screen": Optional[Dict[str, int]],
-        "storageState": Optional[str],
-        "reducedMotion": ReduceMotion,
-        "forcedColors": ForcedColors,
-        "url": Optional[str],
-    }
-
     @keyword()
     def new_persistent_context(
         self,
         userDataDir: str = "",  # TODO: change to PurePath
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
-        *deprecated_pos_args,
+        *,
         acceptDownloads: bool = True,
         args: Optional[List[str]] = None,
         bypassCSP: bool = False,
@@ -685,7 +564,6 @@ class PlaywrightState(LibraryComponent):
         | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. Old positional order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``, ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``, ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``, ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``, ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``, ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``, ``url``. |
         | ``browser``              | Browser type to use. Default is Chromium. |
         | ``headless``             | Whether to run browser in headless mode. Defaults to ``True``. |
-        | ``*deprecated_pos_args`` | Other positional arguments are deprecated for `New Persistent Context`. Please use named arguments in the future. We will remove positional arguments after RoboCon 2023 Online in March. |
         | other arguments          | Please see `New Browser`, `New Context` and `New Page` for more information about the other arguments. |
 
         If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
@@ -695,26 +573,10 @@ class PlaywrightState(LibraryComponent):
 
         Check `New Browser`, `New Context` and `New Page` for the specific argument docs.
 
-        Old deprecated argument order:
-        ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``,
-        ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``,
-        ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``,
-        ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``,
-        ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``,
-        ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``,
-        ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``, ``url``
-
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
         params = locals_to_params(locals())
         params["viewport"] = copy(viewport)
-        pos_params = convert_pos_args_to_named(
-            deprecated_pos_args,
-            self.old_new_perse_context_args,
-            "New Persistent Context",
-            " Will be removed after March 2023.",
-        )
-        params = {**pos_params, **params}
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
         params = self._set_context_options(params, httpCredentials, storageState)
