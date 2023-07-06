@@ -52,3 +52,4 @@ from .misc import (
 )
 from .robot_booleans import is_falsy, is_truthy
 from .settings_stack import ScopedSetting, SettingsStack
+from robot.utils import DotDict

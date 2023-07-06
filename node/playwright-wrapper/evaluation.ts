@@ -17,7 +17,14 @@ import { Frame, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, intResponse, jsResponse, jsonResponse, stringResponse } from './response-util';
+import {
+    emptyWithLog,
+    intResponse,
+    jsResponse,
+    jsonResponse,
+    parseRegExpOrKeepString,
+    stringResponse,
+} from './response-util';
 import { exists, findLocator } from './playwright-invoke';
 
 import { pino } from 'pino';

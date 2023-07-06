@@ -15,14 +15,14 @@
 import contextlib
 import json
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from typing_extensions import Literal
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import keyword, logger
-from ..utils.data_types import PageLoadStates, RequestMethod
+from ..utils import DotDict, keyword, logger
+from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
 
 
 def _get_headers(body: str, headers: Dict):
@@ -33,7 +33,7 @@ def _get_headers(body: str, headers: Dict):
         return headers
 
 
-def _format_response(response: Dict):
+def _format_response(response: Dict) -> Dict:
     _jsonize_content(response, "body")
     if "request" in response:
         request = response["request"]
@@ -122,57 +122,94 @@ class Network(LibraryComponent):
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
-        self, matcher: str = "", timeout: Optional[timedelta] = None
+        self, matcher: Union[str, RegExp] = "", timeout: Optional[timedelta] = None
     ) -> Any:
         """Waits for request matching matcher to be made.
 
-
         | =Arguments= | =Description= |
-        | ``matcher`` | Request URL string, JavaScript regex or JavaScript function to match request by. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-request|waitForRequest documentation]. |
+        | ``matcher`` | Request URL matcher. Can be a string (Glob-Pattern), JavaScript RegExp (encapsulated in / with following flags) or JavaScript arrow-function that receives the [https://playwright.dev/docs/api/class-request|Request] object and returns a boolean. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-request|waitForRequest] documentation. |
         | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
 
+        See `Wait For Response` for more details.
 
-        Example:
-        | `Click`               \\#delayed_request
-        | `Wait For Request`    timeout=1s
-
-        Async Example:
-        | ${promise} =    `Promise To`         `Wait For Request`    matcher=\\\\/\\\\/local\\\\w+\\\\:\\\\d+\\\\/api    timeout=3s
-        | `Click`         \\#delayed_request
-        | `Wait For`      ${promise}
-
-        JavaScript Function Example:
-        | `Click`               \\#delayed_request    # Creates response which should be waited before pressing save.
-        | `Wait For Request`    [https://playwright.dev/docs/api/class-request|request] => request.url().endsWith('api/get/json') && request.method() === 'GET'
+        *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
+        But the regex did not needed to be in slashes.
+        The most simple way to migrate to the new syntax is to add slashes around the matcher.
+        So ``/api/get/json`` becomes ``//api/get/json/``.
 
         [https://forum.robotframework.org/t//4348|Comment >>]
         """
-        return self._wait_for_http("Request", matcher, timeout)
+        request = self._wait_for_http("Request", matcher, timeout)
+        try:
+            return DotDict(request)
+        except Exception:
+            logger.debug(f"Returned request is of type {type(request)}")
+            return request
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_response(
-        self, matcher: str = "", timeout: Optional[timedelta] = None
-    ) -> Any:
-        """Waits for response matching matcher and returns python dict with contents.
+        self, matcher: Union[str, RegExp] = "", timeout: Optional[timedelta] = None
+    ) -> Union[DotDict, Any]:
+        """Waits for response matching matcher and returns the response as robot dict.
 
-
-        | =Arguments= | =Description= |
-        | ``matcher`` | Request URL string, JavaScript regex or JavaScript function to match request by. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-response|waitForResponse documentation]. |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
-
-        The response is a Python dictionary with following attributes:
+        The response, which is returned by this keyword, is a robot dictionary with following attributes:
           - ``status`` <int> The status code of the response.
           - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR.
-          - ``body`` <dict | str> The response body. If the body can be parsed as a JSON obejct,
+          - ``body`` <dict | str> The response body. If the body can be parsed as a JSON object,
           it will be returned as Python dictionary, otherwise it is returned as a string.
           - ``headers`` <dict> A dictionary containing all response headers.
-          - ``ok`` <bool> Whether the request was successfull, i.e. the ``status`` is range 200-299.
+          - ``ok`` <bool> Whether the request was successful, i.e. the ``status`` is range 200-299.
           - ``request`` <dict> containing ``method`` <str>, ``headers`` <dict> and ``postData`` <dict> | <str>
           - ``url`` <str> url of the request.
 
+        | =Arguments= | =Description= |
+        | ``matcher`` | Request URL matcher. Can be a string (Glob-Pattern), JavaScript RegExp (encapsulated in / with following flags) or JavaScript arrow-function that receives the Response object and returns a boolean. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-response|page.waitForResponse] documentation. |
+        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
+
+        *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
+        But the regex did not needed to be in slashes.
+        The most simple way to migrate to the new syntax is to add slashes around the matcher.
+        So ``/api/get/json`` becomes ``//api/get/json/``.
+
+        == Matcher Examples: ==
+
+        === Glob-Pattern: ===
+
+        Glob-Patterns are strings that can contain wildcards. The following wildcards are supported:
+
+        Possible wildcards/patterns are:
+        - ``*`` matches any number of characters, except ``/``
+        - ``**`` matches any number of characters, including ``/``
+        - ``?`` matches one character, except ``/``
+        - ``[abc]`` matches one character in the brackets (in this example ``a``, ``b`` or ``c``)
+        - ``[a-z]`` matches one character in the range (in this example ``a`` to ``z``)
+        - ``{foo,bar,baz}`` matches one of the strings in the braces (in this example ``foo``, ``bar`` or ``baz``)
+
+        Example:
+        | `Wait For Response`    **/api/get/text    # matches any request with url ending with /api/get/text. example: https://browser.fi/api/get/text
+
+        === RegExp: ===
+
+        Regular Expressions are JavaScript regular expressions encapsulated in ``/`` with optional following flags:
+        Be aware that backslashes need to be escaped in Robot Framework, e.g. ``\\\\w`` instead of ``\\w``.
+        See [https://regex101.com|regex101] for more information on Regular Expressions.
+
+        Example:
+        | `Wait For Response`    /http://\\\\w+:\\\\d+/api/get/text/i    # matches any request with url ending with /api/get/text and containing http:// followed by any word and port. example: http://localhost:8080/api/get/text
+
+        === JavaScript Arrow-Function: ===
+
+        JavaScript Arrow-Functions are anonymous JavaScript functions that receive the
+        [https://playwright.dev/docs/api/class-response|Response] object and return a boolean.
+
+        Example:
+        | `Wait For Response`    response => response.url() === 'http://localhost/api/post' && response.status() === 200    # matches any response with url http://localhost/api/post and status code 200
+
+        == Robot Examples: ==
+
         Synchronous Example:
         | `Click`                \\#delayed_request    # Creates response which should be waited before next actions
-        | `Wait For Response`    matcher=\\\\/\\\\/local\\\\w+\\\\:\\\\d+\\\\/api
+        | `Wait For Response`    matcher=/http://\\\\w+:\\\\d+/api/get/text/i
         | `Click`                \\#save
 
         Asynchronous Example:
@@ -188,7 +225,12 @@ class Network(LibraryComponent):
 
         [https://forum.robotframework.org/t//4349|Comment >>]
         """
-        return self._wait_for_http("Response", matcher, timeout)
+        response = self._wait_for_http("Response", matcher, timeout)
+        try:
+            return DotDict(response)
+        except Exception:
+            logger.debug(f"Returned response is of type {type(response)}")
+            return response
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_until_network_is_idle(self, timeout: Optional[timedelta] = None):
@@ -214,7 +256,7 @@ class Network(LibraryComponent):
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_navigation(
         self,
-        url: str,
+        url: Union[str, RegExp],
         timeout: Optional[timedelta] = None,
         wait_until: PageLoadStates = PageLoadStates.load,
     ):

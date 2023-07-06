@@ -123,3 +123,17 @@ export function keywordsResponse(
     response.setLog(logMessage);
     return response;
 }
+
+export function parseRegExpOrKeepString(str: string): RegExp | string {
+    const regex = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
+    try {
+        const match = str.match(regex);
+        if (match) {
+            const { matcher, flags } = match.groups!;
+            return new RegExp(matcher, flags);
+        }
+        return str;
+    } catch (e) {
+        return str;
+    }
+}
