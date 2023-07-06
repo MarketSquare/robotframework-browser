@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import json
 import re
 from typing import Any, List, Optional, Union
@@ -36,8 +35,11 @@ from ..utils import keyword, logger
 from ..utils.data_types import (
     AreaFields,
     BoundingBoxFields,
+    ElementRole,
     ElementState,
+    RegExp,
     SelectAttribute,
+    SelectionStrategy,
     SizeFields,
 )
 
@@ -896,6 +898,131 @@ class Getters(LibraryComponent):
             ):
                 return []
             raise error
+
+    @keyword(tags=("Getter", "PageContent"))
+    def get_element_by_role(
+        self,
+        role: ElementRole,
+        *,
+        all_elements: bool = False,
+        checked: Optional[bool] = None,
+        disabled: Optional[bool] = None,
+        exact: Optional[bool] = None,
+        expanded: Optional[bool] = None,
+        include_hidden: Optional[bool] = None,
+        level: Optional[int] = None,
+        name: Union[str, RegExp, None] = None,
+        pressed: Optional[bool] = None,
+        selected: Optional[bool] = None,
+    ) -> str:
+        """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
+        for the matched element by ``role`` or a list of references if ``all_elements`` is set to ``True``.
+
+        Allows locating elements by their [https://www.w3.org/TR/wai-aria-1.2/#roles|ARIA role],
+        [https://www.w3.org/TR/wai-aria-1.2/#aria-attributes|ARIA attributes] and
+        [https://w3c.github.io/accname/#dfn-accessible-name|accessible name].
+
+
+        Consider the following DOM structure.
+
+        | <h3>Sign up</h3>
+        | <label>
+        |   <input type="checkbox" /> Subscribe
+        | </label>
+        | <br/>
+        | <button>Submit</button>
+
+        You can locate each element by it's implicit role:
+        | ${heading}    Get Element By Role    heading    name=Sign up
+        | ${checkbox}   Get Element By Role    checkbox    name=Subscribe
+        | ${button}     Get Element By Role    button    name=/submit/i
+
+        | =Arguments= | =Description= |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
+        | ``role`` | Role from which shall be retrieved. |
+        | ``checked`` | An attribute that is usually set by aria-checked or native <input type=checkbox> controls. |
+        | ``disabled`` | An attribute that is usually set by aria-disabled or disabled. |
+        | ``exact`` | Whether name is matched exactly: case-sensitive and whole-string. Defaults to false. Ignored when name is a regular expression. Note that exact match still trims whitespace. |
+        | ``expanded`` | An attribute that is usually set by aria-expanded. |
+        | ``include_hidden`` | Option that controls whether hidden elements are matched. By default, only non-hidden elements, as defined by ARIA, are matched by role selector. |
+        | ``level`` | A number attribute that is usually present for roles heading, list item, row, treeitem, with default values for <h1>-<h6> elements. |
+        | ``name`` | Option to match the accessible name. By default, matching is case-insensitive and searches for a substring, use exact to control this behavior. |
+        | ``pressed`` | An attribute that is usually set by aria-pressed. |
+        | ``selected`` | An attribute that is usually set by aria-selected. |
+
+        """
+        options = {
+            key: value
+            for key, value in locals().items()
+            if value is not None
+            and key
+            in [
+                "checked",
+                "disabled",
+                "exact",
+                "expanded",
+                "include_hidden",
+                "level",
+                "name",
+                "pressed",
+                "selected",
+            ]
+        }
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetByX(
+                Request().GetByOptions(
+                    strategy="Role",
+                    text=role.name.lower(),
+                    options=json.dumps(options),
+                    strict=self.strict_mode,
+                    all=all_elements,
+                )
+            )
+            logger.info(response.log)
+            return json.loads(response.json)
+
+    @keyword(tags=("Getter", "PageContent"))
+    def get_element_by(
+        self,
+        selection_strategy: SelectionStrategy,
+        text: Union[str, RegExp],
+        exact: bool = False,
+        all_elements: bool = False,
+    ) -> str:
+        """Allows locating elements by their features.
+
+        Selection strategies can be several Playwright strategies like AltText or Label.
+        See [https://playwright.dev/docs/locators|Playwright Locators] for more information.
+
+        | =Arguments= | =Description= |
+        | ``locator_type`` | SelectionStrategy to be used. Refers to Playwrights ``page.getBy***`` functions. See https://playwright.dev/docs/locators |
+        | ``text`` | Text to locate the element for. |
+        | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Default to false. Ignored when locating by a regular expression. Note that exact match still trims whitespace. This has no effect if RegExp is used or if TestID is used as strategy. |
+        | ``all_elements`` | If True, returns all matched elements as a list. |
+
+        This keywords implements the following Playwright functions:
+        - [https://playwright.dev/docs/api/class-page#page-get-by-alt-text|page.getByAltText]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-label|page.getByLabel]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-placeholder|page.getByPlaceholder]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-test-id|page.getByTestId]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-text|page.getByText]
+        - [https://playwright.dev/docs/api/class-page#page-get-by-title|page.getByTitle]
+
+        ``page.getByRole`` is supported by `Get Element By Role` keyword.
+        """
+        options = {"exact": exact} if exact is not None else {}
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetByX(
+                Request().GetByOptions(
+                    strategy=selection_strategy.value,
+                    text=text,
+                    options=json.dumps(options),
+                    strict=self.strict_mode,
+                    all=all_elements,
+                )
+            )
+            logger.info(response.log)
+            return json.loads(response.json)
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling

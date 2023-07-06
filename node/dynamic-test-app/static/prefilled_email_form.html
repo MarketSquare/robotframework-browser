@@ -3,20 +3,21 @@
 	<title>prefilled_email_form.html</title>
     </head>
     <body>
+    <img alt="logo" width="50px" height="50px" src="robot-framework.svg" />
 	<form name="email_form" action="submit.html" method="POST">
 	    <input type="hidden" name="hidden_field" value="hidden_field_value" />
 	    <table border="0">
 		<tr>
-		    <td>Name:</td>
-		    <td><input type="text" name="name" value="Prefilled Name"/></td>
+		    <td><label for="input_name">Name:</label></td>
+		    <td><input title="Name" placeholder="fill name here" type="text" id="input_name" name="name" value="Prefilled Name"/></td>
 		</tr>
 		<tr>
 		    <td>Email:</td>
-		    <td><input type="email" name="email" value="Prefilled Email"/></td>
+		    <td><input title="E-Mail" placeholder="fill email here" aria-label="Aria Label Email" type="email" name="email" value="Prefilled Email"/></td>
 		</tr>
 		<tr>
-		    <td>Website:</td>
-		    <td><input type="url" name="website" value="https://example.com"/></td>
+		    <td id="ws_label">Website:</td>
+		    <td><input aria-labelledby="ws_label" type="url" name="website" value="https://example.com"/></td>
 		</tr>
 		<tr>
 		    <td>Comment:</td>
@@ -25,8 +26,8 @@
 		<tr>
 		    <td>Opt-in settings:</td>
 		    <td>
-			<input type="checkbox" name="can_send_email" checked /> Can send email?<br/>
-			<input type="checkbox" name="can_send_sms" /> Can send SMS?
+			<input data-testid="testid-mail" type="checkbox" name="can_send_email" checked /> Can send email?<br/>
+			<input data-testid="testid-sms" type="checkbox" name="can_send_sms" /> Can send SMS?
 		    </td>
 		</tr>
 		<tr>

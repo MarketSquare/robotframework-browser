@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
 from typing import Dict, Union
@@ -57,6 +58,184 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noq
                 typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])  # type: ignore
             params[arg_name] = typed_dict
     return params
+
+
+class SelectionStrategy(Enum):
+    """SelectionStrategy to be used. Refers to Playwrights ``page.getBy***`` functions. See [https://playwright.dev/docs/locators|Playwright Locators]
+
+    == AltText ==
+    All images should have an alt attribute that describes the image. You can locate an image based on the text alternative using page.getByAltText().
+
+    For example, consider the following DOM structure.
+    | <img alt="playwright logo" src="/img/playwright-logo.svg" width="100" />
+
+    == Label ==
+    Allows locating input elements by the text of the associated ``<label>`` or ``aria-labelledby`` element, or by the ``aria-label`` attribute.
+
+    For example, this method will find inputs by label "Username" and "Password" in the following DOM:
+
+    | <input aria-label="Username">
+    | <label for="password-input">Password:</label>
+    | <input id="password-input">
+
+    == Placeholder ==
+    Allows locating input elements by the placeholder text.
+
+    Example:
+    | <input type="email" placeholder="name@example.com" />
+
+    == TestId ==
+    Locate element by the test id.
+
+    Currently only the exact attribute ``data-testid`` is supported.
+
+    Example:
+    | <button data-testid="directions">Itinéraire</button>
+
+    == Text ==
+    Allows locating elements that contain given text.
+
+    Matching by text always normalizes whitespace, even with exact match.
+    For example, it turns multiple spaces into one, turns line breaks into spaces and ignores leading and trailing whitespace.
+    Input elements of the type button and submit are matched by their value instead of the text content.
+    For example, locating by text "Log in" matches <input type=button value="Log in">.
+
+    == Title ==
+    Allows locating elements by their title attribute.
+
+    Example:
+    | <img alt="playwright logo" src="/img/playwright-logo.svg" title="Playwright" width="100" />
+    """
+
+    AltText = "AltText"
+    Label = "Label"
+    Placeholder = "Placeholder"
+    TestID = "TestId"
+    Text = "Text"
+    Title = "Title"
+
+
+class RegExp(str):
+    @classmethod
+    def from_string(cls, string: str) -> "RegExp":
+        """Create a (JavaScript) RegExp object from a string.
+
+        The matcher must start with a slash and end with a slash and can be followed by flags.
+
+        Example: ``/hello world/gi``
+        Which is equivalent to ``new RegExp("hello world", "gi")`` in JavaScript.
+
+        Following flags are supported:
+        | =Flag= | =Description= |
+        | g | Global search. |
+        | i | Case-insensitive search. |
+        | m | Allows ``^`` and ``$`` to match newline characters. |
+        | s | Allows ``.`` to match newline characters. |
+        | u | "unicode"; treat a pattern as a sequence of unicode code points. |
+        | y | Perform a "sticky" search that matches starting at the current position in the target string. |
+
+        See [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp|RegExp Object]
+        and [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions|RegExp Guide] for more information.
+        """
+        match = re.fullmatch(r"\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?", string)
+        if not match:
+            raise ValueError("Invalid JavaScript RegExp string")
+        return cls(string)
+
+
+class ElementRole(Enum):
+    """Role selector does not replace accessibility audits and conformance tests,
+    but rather gives early feedback about the ARIA guidelines.
+
+    Many html elements have an implicitly
+    [https://w3c.github.io/html-aam/#html-element-role-mappings|defined role]
+    that is recognized by the role selector.
+    You can find all the [https://www.w3.org/TR/wai-aria-1.2/#role_definitions|supported roles] here.
+    ARIA guidelines do not recommend duplicating implicit roles and attributes
+    by setting role and/or aria-* attributes to default values."""
+
+    ALERT = auto()
+    ALERTDIALOG = auto()
+    APPLICATION = auto()
+    ARTICLE = auto()
+    BANNER = auto()
+    BLOCKQUOTE = auto()
+    BUTTON = auto()
+    CAPTION = auto()
+    CELL = auto()
+    CHECKBOX = auto()
+    CODE = auto()
+    COLUMNHEADER = auto()
+    COMBOBOX = auto()
+    COMPLEMENTARY = auto()
+    CONTENTINFO = auto()
+    DEFINITION = auto()
+    DELETION = auto()
+    DIALOG = auto()
+    DIRECTORY = auto()
+    DOCUMENT = auto()
+    EMPHASIS = auto()
+    FEED = auto()
+    FIGURE = auto()
+    FORM = auto()
+    GENERIC = auto()
+    GRID = auto()
+    GRIDCELL = auto()
+    GROUP = auto()
+    HEADING = auto()
+    IMG = auto()
+    INSERTION = auto()
+    LINK = auto()
+    LIST = auto()
+    LISTBOX = auto()
+    LISTITEM = auto()
+    LOG = auto()
+    MAIN = auto()
+    MARQUEE = auto()
+    MATH = auto()
+    METER = auto()
+    MENU = auto()
+    MENUBAR = auto()
+    MENUITEM = auto()
+    MENUITEMCHECKBOX = auto()
+    MENUITEMRADIO = auto()
+    NAVIGATION = auto()
+    NONE = auto()
+    NOTE = auto()
+    OPTION = auto()
+    PARAGRAPH = auto()
+    PRESENTATION = auto()
+    PROGRESSBAR = auto()
+    RADIO = auto()
+    RADIOGROUP = auto()
+    REGION = auto()
+    ROW = auto()
+    ROWGROUP = auto()
+    ROWHEADER = auto()
+    SCROLLBAR = auto()
+    SEARCH = auto()
+    SEARCHBOX = auto()
+    SEPARATOR = auto()
+    SLIDER = auto()
+    SPINBUTTON = auto()
+    STATUS = auto()
+    STRONG = auto()
+    SUBSCRIPT = auto()
+    SUPERSCRIPT = auto()
+    SWITCH = auto()
+    TAB = auto()
+    TABLE = auto()
+    TABLIST = auto()
+    TABPANEL = auto()
+    TERM = auto()
+    TEXTBOX = auto()
+    TIME = auto()
+    TIMER = auto()
+    TOOLBAR = auto()
+    TOOLTIP = auto()
+    TREE = auto()
+    TREEGRID = auto()
+    TREEITEM = auto()
 
 
 class DelayedKeyword:

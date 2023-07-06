@@ -364,6 +364,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     uncheckCheckbox = this.wrapping(interaction.uncheckCheckbox);
     getElement = this.wrapping(evaluation.getElement);
     getElements = this.wrapping(evaluation.getElements);
+    getByX = this.wrapping(evaluation.getByX);
     addStyleTag = this.wrappingPage(evaluation.addStyleTag);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     waitForRequest = this.wrappingPage(network.waitForRequest);
