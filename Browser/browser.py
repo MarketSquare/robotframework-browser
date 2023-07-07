@@ -1282,7 +1282,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     self.run_on_failure_keyword.name, *varargs, **kwargs
                 )
         except Exception as err:
-            logger.warn(
+            if "Tried to take screenshot, but no page was open." in str(
+                err
+            ) or re.match(r".*\.screenshot: Timeout.*exceeded.*", str(err)):
+                level = logger.info
+            else:
+                level = logger.warn
+            level(
                 f"Keyword '{self.run_on_failure_keyword}' could not be run on failure:\n{err}"
             )
         finally:
