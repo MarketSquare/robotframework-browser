@@ -64,10 +64,8 @@ Click With Element ID
 Frames With Element ID
     [Setup]    Go To    ${FRAMES_URL}
     ${element} =    Get Element    iframe[name="left"]
-    ${Timeout} =    Set Browser Timeout    200ms
     Click    ${element} >>> "foo"
     Get Text    iframe[name="right"] >>> body    ==    You're looking at foo.
-    [Teardown]    Set Browser Timeout    ${Timeout}
 
 Get Element Count In IFrame
     [Setup]    Go To    ${FRAMES_URL}
