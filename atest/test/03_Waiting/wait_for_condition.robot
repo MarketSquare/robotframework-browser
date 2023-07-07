@@ -7,26 +7,26 @@ Test Setup      Wait For Condition Test Setup
 *** Test Cases ***
 Condition Should Succeed
     Select Options By    \#dropdown    value    True    attached
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Wait For Condition    Text    \#victim    ==    victim
 
 Condition Should Fail
     Select Options By    \#dropdown    value    True    attached
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Run Keyword And Expect Error
     ...    Text 'victim' (str) should be 'not correct' (str)
     ...    Wait For Condition    Text    \#victim    ==    not correct
 
 Condition Should Fail With Custom Message
     Select Options By    \#dropdown    value    True    attached
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Run Keyword And Expect Error
     ...    FooBar
     ...    Wait For Condition    Text    \#victim    ==    not correct    message=FooBar
 
 Condition Should Fail With Timeout
     Select Options By    \#dropdown    value    True    attached
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Run Keyword And Expect Error
     ...    Text 'victim' (str) should be 'not correct' (str)
     ...    Wait For Condition    Text    \#victim    ==    not correct    timeout=500ms

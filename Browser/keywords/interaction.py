@@ -19,6 +19,8 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, List, Optional, Union
 
+from robot.running.arguments.typeconverters import TypeConverter
+
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -30,6 +32,7 @@ from ..utils import (
 from ..utils.data_types import (
     BoundingBox,
     Coordinates,
+    Deprecated,
     DialogAction,
     KeyAction,
     KeyboardInputAction,
@@ -39,6 +42,7 @@ from ..utils.data_types import (
     MouseOptionsDict,
     ScrollBehavior,
     SelectAttribute,
+    deprecated,
 )
 
 
@@ -294,12 +298,12 @@ class Interaction(LibraryComponent):
         self,
         selector: str,
         button: MouseButton = MouseButton.left,
-        clickCount: int = 1,
-        delay: Optional[timedelta] = None,
-        position_x: Optional[float] = None,
-        position_y: Optional[float] = None,
-        force: bool = False,
-        noWaitAfter: bool = False,
+        clickCount: Deprecated = deprecated,
+        delay: Deprecated = deprecated,
+        position_x: Deprecated = deprecated,
+        position_y: Deprecated = deprecated,
+        force: Deprecated = deprecated,
+        noWaitAfter: Deprecated = deprecated,
         *modifiers: KeyboardModifier,
     ):
         """Simulates mouse click on the element found by ``selector``.
@@ -328,35 +332,42 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t/comments-for-click/4238|Comment >>]
         """
-        deprecated = {
-            "clickCount": 1,
-            "delay": None,
-            "position_x": None,
-            "position_y": None,
-            "force": False,
-            "noWaitAfter": False,
-            "modifiers": (),
+        params = locals()
+        deprecated_arguments = {
+            "clickCount": (1, int),
+            "delay": (None, Optional[timedelta]),
+            "position_x": (None, Optional[float]),
+            "position_y": (None, Optional[float]),
+            "force": (False, bool),
+            "noWaitAfter": (False, bool),
         }
-        deprecated_locals = []
-        for arg, value in deprecated.items():
-            if locals().get(arg) != value:
-                deprecated_locals.append(arg)
-        if deprecated_locals:
+        used_deprecated = []
+        for argument_name, default_and_type in deprecated_arguments.items():
+            default, argument_type = default_and_type
+            if params.get(argument_name) is deprecated:
+                params[argument_name] = default
+            else:
+                converter = TypeConverter.converter_for(argument_type)
+                if converter is not None:
+                    params[argument_name] = converter.convert(
+                        argument_name, params.get(argument_name)
+                    )
+                used_deprecated.append(argument_name)
+        if used_deprecated:
             logger.warn(
-                "The arguments of `Click` keyword are deprecated. "
-                "Use `Click With Options` instead. "
-                f"[ {', '.join(deprecated_locals)} ]"
+                "Some `Click` keyword arguments are deprecated. Use `Click With Options` instead.\n"
+                f"Used deprecated args: {', '.join(used_deprecated)}"
             )
         self.click_with_options(
             selector,
             button,
             *modifiers,
-            clickCount=clickCount,
-            delay=delay,
-            position_x=position_x,
-            position_y=position_y,
-            force=force,
-            noWaitAfter=noWaitAfter,
+            clickCount=params["clickCount"],
+            delay=params["delay"],
+            position_x=params["position_x"],
+            position_y=params["position_y"],
+            force=params["force"],
+            noWaitAfter=params["noWaitAfter"],
         )
 
     @keyword(tags=("Setter", "PageContent"))
@@ -400,13 +411,12 @@ class Interaction(LibraryComponent):
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
-        | `Click`    id=button_location
-        | `Click`    id=button_location    trial=True
-        | `Click`    \\#clickWithOptions    delay=100ms    clickCount=2
-        | `Click`    id=clickWithModifiers    left     Alt    Meta    Shift    clickCount=1    force=True
-        | `Click`    id=clickWithOptions    right    clickCount=2    force=True    noWaitAfter=True
+        | `Click With Options`    id=button_location
+        | `Click With Options`    id=button_location    trial=True
+        | `Click With Options`    \\#clickWithOptions    delay=100ms    clickCount=2
+        | `Click With Options`    id=clickWithModifiers    left     Alt    Meta    Shift    clickCount=1    force=True
+        | `Click With Options`    id=clickWithOptions    right    clickCount=2    force=True    noWaitAfter=True
 
-        [https://forum.robotframework.org/t//4238|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
