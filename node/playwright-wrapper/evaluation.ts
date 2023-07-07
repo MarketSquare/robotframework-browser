@@ -17,7 +17,14 @@ import { Frame, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, intResponse, jsResponse, jsonResponse, stringResponse } from './response-util';
+import {
+    emptyWithLog,
+    intResponse,
+    jsResponse,
+    jsonResponse,
+    parseRegExpOrKeepString,
+    stringResponse,
+} from './response-util';
 import { exists, findLocator } from './playwright-invoke';
 
 import { pino } from 'pino';
@@ -63,20 +70,6 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     // @ts-ignore
     const allSelectors = allLocators.map((locator) => locator._selector);
     return jsonResponse(JSON.stringify(allSelectors), `Found ${allLocators} Locators successfully.`);
-}
-
-function parseRegExpOrKeepString(str: string): RegExp | string {
-    const regex = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
-    const match = str.match(regex);
-    if (match) {
-        try {
-            const { matcher, flags } = match.groups!;
-            return new RegExp(matcher, flags);
-        } catch (e) {
-            return str;
-        }
-    }
-    return str;
 }
 
 type AriaRole =

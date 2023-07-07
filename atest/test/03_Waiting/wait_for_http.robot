@@ -28,7 +28,7 @@ Wait For Request Url
 
 Wait For Request Regex
     Click    \#delayed_request
-    Wait For Request    matcher=\\/\\/local\\w+\\:\\d+\\/api    timeout=1s
+    Wait For Request    matcher=/\\/\\/local\\w+\\:\\d+\\/api/    timeout=1s
 
 Wait For Request Predicate
     Click    \#delayed_request
@@ -45,7 +45,7 @@ Wait For Response Synchronous With Default Timeout
 
 Wait For Response Synchronous With Regex Matcher
     Click    \#delayed_request
-    Wait For Response    matcher=\\/\\/local\\w+\\:\\d+\\/api
+    Wait For Response    matcher=/\\/\\/local\\w+\\:\\d+\\/api/
 
 Wait For Response Synchronous With Predicate
     Click    \#delayed_request

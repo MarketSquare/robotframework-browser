@@ -86,7 +86,7 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4302|Comment >>]
         """
-        response = self.eval_js(f'window.localStorage.setItem("{key}", "{value}")')
+        response = self.eval_js(f"window.localStorage.setItem({key!r}, {value!r})")
         logger.info(response.log)
 
     @keyword(name="localStorage remove Item", tags=("Setter", "PageContent"))
@@ -146,7 +146,7 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4324|Comment >>]
         """
-        response = self.eval_js(f'window.sessionStorage.getItem("{key}")')
+        response = self.eval_js(f"window.sessionStorage.getItem({key!r})")
         logger.info(response.log)
         formatter = self.keyword_formatters.get(self.session_storage_get_item)
         return verify_assertion(
@@ -170,7 +170,7 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4326|Comment >>]
         """
-        response = self.eval_js(f'window.sessionStorage.setItem("{key}", "{value}")')
+        response = self.eval_js(f"window.sessionStorage.setItem({key!r}, {value!r})")
         logger.info(response.log)
 
     @keyword(name="sessionStorage remove Item", tags=("Setter", "PageContent"))
@@ -188,7 +188,7 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4325|Comment >>]
         """
-        response = self.eval_js(f'window.sessionStorage.removeItem("{key}")')
+        response = self.eval_js(f"window.sessionStorage.removeItem({key!r})")
         logger.info(response.log)
 
     @keyword(name="sessionStorage clear", tags=("Setter", "PageContent"))

@@ -15,7 +15,7 @@
 import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
 
-import { emptyWithLog, jsonResponse, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, parseRegExpOrKeepString, stringResponse } from './response-util';
 
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -50,26 +50,25 @@ export async function httpRequest(request: pb.Request.HttpRequest, page: Page): 
     return jsonResponse(JSON.stringify(response), 'Request performed successfully.');
 }
 
-export function deserializeUrlOrPredicate(request: pb.Request.HttpCapture): RegExp | any {
-    let urlOrPredicate = request.getUrlorpredicate();
-
+export function deserializeUrlOrPredicate(
+    urlOrPredicate: string,
+): RegExp | string | ((request: unknown) => boolean | Promise<boolean>) {
     // if the matcher is a function or arrow function, wrap it in parens and evaluate.
     if (
         /^function.*{.*}$/.test(urlOrPredicate) ||
         /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/.test(urlOrPredicate)
     ) {
-        urlOrPredicate = `(${urlOrPredicate})`;
-        const fn = new Function('return ' + urlOrPredicate)();
+        const fn = new Function(`return (${urlOrPredicate})`)();
         if (typeof fn === 'function' || Object.prototype.toString.call(fn) === '[object Function]') {
             return fn;
         }
     }
 
-    return new RegExp(`${urlOrPredicate}`);
+    return parseRegExpOrKeepString(urlOrPredicate);
 }
 
 export async function waitForResponse(request: pb.Request.HttpCapture, page: Page): Promise<pb.Response.Json> {
-    const urlOrPredicate = deserializeUrlOrPredicate(request);
+    const urlOrPredicate = deserializeUrlOrPredicate(request.getUrlorpredicate());
     const timeout = request.getTimeout();
     const data = await page.waitForResponse(urlOrPredicate, { timeout });
     return jsonResponse(
@@ -90,7 +89,7 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page: Pag
     );
 }
 export async function waitForRequest(request: pb.Request.HttpCapture, page: Page): Promise<pb.Response.String> {
-    const urlOrPredicate = deserializeUrlOrPredicate(request);
+    const urlOrPredicate = deserializeUrlOrPredicate(request.getUrlorpredicate());
     const timeout = request.getTimeout();
     const result = await page.waitForRequest(urlOrPredicate, { timeout });
     return stringResponse(result.url(), 'Request completed within timeout.');
@@ -103,13 +102,10 @@ export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: 
 }
 
 export async function waitForNavigation(request: pb.Request.UrlOptions, page: Page): Promise<pb.Response.Empty> {
-    const url = <string>request.getUrl()?.getUrl();
+    const url = parseRegExpOrKeepString(<string>request.getUrl()?.getUrl());
     const timeout = request.getUrl()?.getDefaulttimeout();
     const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getWaituntil();
-    const lastSlash = url.lastIndexOf('/');
-    const urlOrRegex =
-        url[0] === '/' && lastSlash > 0 ? new RegExp(url.substring(1, lastSlash), url.substring(lastSlash + 1)) : url;
-    await page.waitForNavigation({ timeout, url: urlOrRegex, waitUntil: waitUntil });
+    await page.waitForNavigation({ timeout, url: url, waitUntil: waitUntil });
     return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 
