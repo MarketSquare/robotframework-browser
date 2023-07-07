@@ -31,7 +31,6 @@ from ..utils.data_types import (
     ScreenshotFileTypes,
     ScreenshotReturnType,
 )
-from ..utils.deprecated import convert_pos_args_to_named
 
 
 class Control(LibraryComponent):
@@ -107,7 +106,7 @@ class Control(LibraryComponent):
         self,
         filename: Optional[str] = "robotframework-browser-screenshot-{index}",
         selector: Optional[str] = None,
-        *deprecated_pos_args,
+        *,
         crop: Optional[BoundingBox] = None,
         disableAnimations: bool = False,
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
@@ -120,7 +119,7 @@ class Control(LibraryComponent):
         scale: Optional[Scale] = None,
         return_as: ScreenshotReturnType = ScreenshotReturnType.path_string,
         timeout: Optional[timedelta] = None,
-    ) -> Union[str, bytes, Path]:
+    ) -> Union[str, bytes, Path, None]:
         """Takes a screenshot of the current window or element and saves it to disk.
 
         | =Arguments= | =Description= |
@@ -142,9 +141,6 @@ class Control(LibraryComponent):
         Keyword uses strict mode if selector is defined. See `Finding elements` for more details
         about strict mode.
 
-        Old deprecated argument order:
-        ``fullPage``, ``fileType``, ``quality``, ``timeout``, ``crop``, ``disableAnimations``, ``mask``, ``omitBackground``
-
         Example
         | `Take Screenshot`                                 # Takes screenshot from page with default filename
         | `Take Screenshot`   selector=id=username_field    # Captures element in image
@@ -154,22 +150,6 @@ class Control(LibraryComponent):
 
         [https://forum.robotframework.org/t//4337|Comment >>]
         """
-        pos_params = convert_pos_args_to_named(
-            deprecated_pos_args,
-            self.old_take_screenshot_args,
-            "Take Screenshot",
-            " Will be removed end of 2023.",
-        )
-        fullPage = pos_params.get("fullPage", fullPage)
-        fileType = pos_params.get("fileType", fileType)
-        quality = pos_params.get("quality", quality)
-        timeout = pos_params.get("timeout", timeout)
-        crop = pos_params.get("crop", crop)
-        disableAnimations = pos_params.get("disableAnimations", disableAnimations)
-        mask = pos_params.get("mask", mask)
-        maskColor = pos_params.get("maskColor", maskColor)
-        scale = pos_params.get("scale", scale)
-        omitBackground = pos_params.get("omitBackground", omitBackground)
         file_name = (
             uuid.uuid4().hex
             if filename is None or self._is_embed(filename)
