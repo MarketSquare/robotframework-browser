@@ -285,7 +285,7 @@ class RecordVideo(TypedDict, total=False):
 
     Examples:
     |  New Context  recordVideo={'dir':'videos', 'size':{'width':400, 'height':200}}
-    |  New Context  recordVideo={'dir': '${OUTPUT_DIR}/video'}
+    |  New Context  recordVideo={'dir': 'd:/automation/video'}
     """
 
     dir: str
@@ -485,6 +485,18 @@ class CookieType(Enum):
 CookieSameSite = Enum(
     "CookieSameSite", {"Strict": "Strict", "Lax": "Lax", "None": "None"}
 )
+CookieSameSite.__doc__ = """Enum that defines the Cookie SameSite type.
+
+It controls whether or not a cookie is sent with cross-site requests, providing some protection against cross-site request forgery attacks (CSRF).
+
+The possible attribute values are:
+| = Value = | = Description = |
+| ``Strict`` | Means that the browser sends the cookie only for same-site requests, that is, requests originating from the same site that set the cookie. If a request originates from a different domain or scheme (even with the same domain), no cookies with the SameSite=Strict attribute are sent. |
+| ``Lax`` | Means that the cookie is not sent on cross-site requests, such as on requests to load images or frames, but is sent when a user is navigating to the origin site from an external site (for example, when following a link). This is the default behavior if the SameSite attribute is not specified. |
+| ``None`` | means that the browser sends the cookie with both cross-site and same-site requests. The Secure attribute must also be set when setting this value. |
+
+See [https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie|MDN Set-Cookie] for more information.
+"""
 
 
 class RequestMethod(Enum):
