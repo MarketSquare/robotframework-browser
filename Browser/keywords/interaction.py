@@ -304,7 +304,7 @@ class Interaction(LibraryComponent):
         position_y: Deprecated = deprecated,
         force: Deprecated = deprecated,
         noWaitAfter: Deprecated = deprecated,
-        *modifiers: KeyboardModifier,
+        *modifiers: Deprecated,
     ):
         """Simulates mouse click on the element found by ``selector``.
 
@@ -353,6 +353,11 @@ class Interaction(LibraryComponent):
                         argument_name, params.get(argument_name)
                     )
                 used_deprecated.append(argument_name)
+        real_modifiers: List[KeyboardModifier] = [
+            TypeConverter.converter_for(KeyboardModifier).convert("modifier", modifier)
+            for modifier in modifiers
+            if modifier is not deprecated
+        ]
         if used_deprecated:
             logger.warn(
                 "Some `Click` keyword arguments are deprecated. Use `Click With Options` instead.\n"
@@ -361,7 +366,7 @@ class Interaction(LibraryComponent):
         self.click_with_options(
             selector,
             button,
-            *modifiers,
+            *real_modifiers,
             clickCount=params["clickCount"],
             delay=params["delay"],
             position_x=params["position_x"],
