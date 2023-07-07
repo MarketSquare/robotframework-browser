@@ -72,20 +72,6 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     return jsonResponse(JSON.stringify(allSelectors), `Found ${allLocators} Locators successfully.`);
 }
 
-function parseRegExpOrKeepString(str: string): RegExp | string {
-    const regex = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
-    const match = str.match(regex);
-    if (match) {
-        try {
-            const { matcher, flags } = match.groups!;
-            return new RegExp(matcher, flags);
-        } catch (e) {
-            return str;
-        }
-    }
-    return str;
-}
-
 type AriaRole =
     | 'alert'
     | 'alertdialog'
