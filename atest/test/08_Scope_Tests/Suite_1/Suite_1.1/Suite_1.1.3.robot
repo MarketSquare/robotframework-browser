@@ -8,18 +8,18 @@ Test Setup          New Page    ${WAIT_URL_FRAMED}
 *** Test Cases ***
 Test Normal Timeout
     Select Options By    \#dropdown    value    enabled
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Click    "victim"
 
 Set Timeout To Test Scope
     Select Options By    \#dropdown    value    enabled
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Set Browser Timeout    100ms    scope=Test
     Run Keyword And Expect Error    *Timeout 100ms exceeded.*    Click    "victim"
 
 Verify Removed Scope
     Select Options By    \#dropdown    value    enabled
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Click    "victim"
 
 Set Run On Failure To Test Scope

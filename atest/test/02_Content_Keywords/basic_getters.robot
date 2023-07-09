@@ -320,7 +320,7 @@ Get Element States Return Flags
 Get Console Log Test
     [Setup]    Setup
     ${first} =    Get Console Log    then    len(value)
-    Click    "Click with Options"    left    1    100ms    ${None}    ${None}    False    False    ALT    SHIFT
+    Click With Options    "Click with Options"    left    ALT    SHIFT
     ${logs} =    Get Console Log    validate    len(value) == 3
     Should Be Equal    ${logs}[0][type]    log
     Should Start With    ${logs}[0][text]    Mouse button: left
@@ -338,7 +338,7 @@ Get Console Log Test
     Get Console Log    validate    len(value) == 0
     Get Page Errors    validate    len(value) == 0
     Sleep    500ms
-    Click    "Click with Options"    left    1    100ms    ${None}    ${None}    False    False    ALT    SHIFT
+    Click With Options    "Click with Options"    left    ALT    SHIFT
     ${last} =    Get Console Log    validate    len(value) == 3
     Get Console Log    validate    len(value) == $first + len($logs) + len($last)    full=True
     Get Page Errors    validate    len(value) == 2

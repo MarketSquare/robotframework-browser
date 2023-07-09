@@ -21,7 +21,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Pattern, Set, Union
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Pattern, Set, Union
 
 from assertionengine import AssertionOperator, Formatter
 from overrides import overrides
@@ -727,7 +727,7 @@ class Browser(DynamicCore):
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    ERROR_AUGMENTATION: ClassVar[Pattern[str]] = {
+    ERROR_AUGMENTATION: ClassVar[Dict[Pattern[str], Callable[[Any], str]]] = {
         re.compile(r"Timeout .+ exceeded."): lambda msg: (
             f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout or '
             "double check your locator as the targeted element(s) couldn't be found."

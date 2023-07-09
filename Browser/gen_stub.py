@@ -20,6 +20,7 @@ from typing import Any
 from robotlibcore import KeywordBuilder  # type: ignore
 
 import Browser
+from Browser.utils.data_types import Deprecated
 
 PY310 = sys.version_info.major == 3 and sys.version_info.minor >= 10  # noqa: PLR2004
 
@@ -83,6 +84,8 @@ def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
                 default_value = f"timedelta(seconds={default_value.total_seconds()})"
             elif isinstance(default_value, Enum):
                 default_value = f"{type(default_value).__name__}.{default_value.name}"
+            elif isinstance(default_value, Deprecated):
+                default_value = "Deprecated()"
             arg_str = f"{arg_str} = {default_value!s}"
         else:
             arg_str = argument

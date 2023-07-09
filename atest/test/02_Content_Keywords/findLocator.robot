@@ -74,7 +74,7 @@ Get Element Count In IFrame
 Get Element Should Wait For Attached State
     [Setup]    Go To    ${WAIT_URL}
     Select Options By    \#dropdown    value    True    attached
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     ${locator} =    Get Element    id=victim
     Should Not Be Empty    ${locator}
 

@@ -60,6 +60,14 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noq
     return params
 
 
+class Deprecated:
+    def __str__(self) -> str:
+        return ""
+
+
+deprecated = Deprecated()
+
+
 class SelectionStrategy(Enum):
     """SelectionStrategy to be used. Refers to Playwrights ``page.getBy***`` functions. See [https://playwright.dev/docs/locators|Playwright Locators]
 

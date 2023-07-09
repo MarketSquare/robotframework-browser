@@ -88,7 +88,7 @@ Check Checkbox With Waiting
     [Tags]    slow
     New Page    ${WAIT_URL}
     Select Options By    \#dropdown    value    True    attached-unchecked
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Check Checkbox    \#victim
     Get Checkbox State    \#victim    ==    ${True}
 
@@ -96,6 +96,6 @@ Uncheck Checkbox With Waiting
     [Tags]    slow
     New Page    ${WAIT_URL}
     Select Options By    \#dropdown    value    True    attached-checked
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Uncheck Checkbox    \#victim
     Get Checkbox State    \#victim    ==    ${False}

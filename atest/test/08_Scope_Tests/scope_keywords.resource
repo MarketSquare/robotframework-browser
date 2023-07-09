@@ -14,13 +14,13 @@ Timeout Should Be Between
     [Arguments]    ${low}    ${high}
     Waiter Page Set Delay    ${high}
     Select Options By    \#dropdown    text    hidden
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Run Keyword And Expect Error    *    Wait For Condition    Element States    id=victim    contains    hidden
     Wait For Condition    Element States    id=victim    contains    hidden    timeout=${high} ms
 
     Waiter Page Set Delay    ${low}
     Select Options By    \#dropdown    text    readonly
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Wait For Condition    Element States    id=victim    contains    readonly
     Wait For Condition    Element States    id=victim    contains    readonly    timeout=${high} ms
 
@@ -28,13 +28,13 @@ Assertion Retry Should Be Between
     [Arguments]    ${low}    ${high}
     Waiter Page Set Delay    ${high}
     Select Options By    \#dropdown    text    readonly
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Run Keyword And Expect Error    *    Get Element States    id=victim    contains    readonly
     Wait For Condition    Element States    id=victim    contains    readonly    timeout=${high} ms
 
     Waiter Page Set Delay    ${low}
     Select Options By    \#dropdown    text    hidden
-    Click    \#submit    noWaitAfter=True
+    Click With Options    \#submit    noWaitAfter=True
     Get Element States    id=victim    contains    hidden
     Wait For Condition    Element States    id=victim    contains    hidden    timeout=${high} ms
 
