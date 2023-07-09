@@ -8,8 +8,7 @@ ${VALID_USER} =                     demo
 ${VALID_PASSWORD} =                 mode
 ${SUFFIX} =                         ${EMPTY}
 ${SELECTOR_PREFIX} =                ${None}
-${SELECTOR_PREFIX_WAITING} =
-...                                 ${{'${SELECTOR_PREFIX}'[0:-1] + " control=enter-frame >> " if $SELECTOR_PREFIX else ""}}
+${SELECTOR_PREFIX_WAITING} =        ${{'${SELECTOR_PREFIX}'[0:-1] + " control=enter-frame >> " if $SELECTOR_PREFIX else ""}}
 ${SELECTOR_PREFIX_SPACED} =         ${{$SELECTOR_PREFIX + ' ' if $SELECTOR_PREFIX else ''}}
 ${ROOT_URL} =                       http://${SERVER}/${SUFFIX}
 ${LOGIN_URL} =                      ${ROOT_URL}dist/#/

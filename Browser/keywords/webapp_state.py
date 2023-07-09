@@ -24,15 +24,15 @@ from ..utils import keyword, logger
 
 
 class WebAppState(LibraryComponent):
-    def eval_js(self, script: str) -> Any:
+    def eval_js(self, script: str, frame_selector: Optional[str] = None) -> Any:
         with self.playwright.grpc_channel() as stub:
             return stub.EvaluateJavascript(
                 Request().EvaluateAll(
-                    selector="",
+                    selector=frame_selector if frame_selector is not None else "",
                     script=script,
                     arg="null",
                     allElements=False,
-                    strict=False,
+                    strict=self.strict_mode,
                 )
             )
 
@@ -44,6 +44,7 @@ class WebAppState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
+        frame_selector: Optional[str] = None,
     ) -> Any:
         """Get saved data from the local storage.
 
@@ -52,6 +53,8 @@ class WebAppState(LibraryComponent):
         | ``assertion_operator`` | Assertion operator to use. See `Assertions` for more information. |
         | ``assertion_expected`` | Expected value to compare with. |
         | ``message`` | Custom error message to use. |
+        | ``frame_selector`` | If this selector points to an element inside an iframe, the LocalStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
+
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
 
@@ -61,7 +64,7 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4300|Comment >>]
         """
-        response = self.eval_js(f'window.localStorage.getItem("{key}")')
+        response = self.eval_js(f'window.localStorage.getItem("{key}")', frame_selector)
         logger.info(response.log)
         formatter = self.keyword_formatters.get(self.local_storage_get_item)
         return verify_assertion(
@@ -74,27 +77,34 @@ class WebAppState(LibraryComponent):
         )
 
     @keyword(name="localStorage set Item", tags=("Setter", "PageContent"))
-    def local_storage_set_item(self, key: str, value: str):
+    def local_storage_set_item(
+        self, key: str, value: str, frame_selector: Optional[str] = None
+    ):
         """Save data to the local storage.
 
         | =Arguments= | =Description= |
         | ``key`` | The name of the key under which it should be saved. |
         | ``value`` | The value which shall be saved as a string. |
+        | ``frame_selector`` | If this selector points to an element inside an iframe, the LocalStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
+
 
         Example:
         | `Local Storage Set Item`    Key    Value
 
         [https://forum.robotframework.org/t//4302|Comment >>]
         """
-        response = self.eval_js(f"window.localStorage.setItem({key!r}, {value!r})")
+        response = self.eval_js(
+            f"window.localStorage.setItem({key!r}, {value!r})", frame_selector
+        )
         logger.info(response.log)
 
     @keyword(name="localStorage remove Item", tags=("Setter", "PageContent"))
-    def local_storage_remove_item(self, key: str):
+    def local_storage_remove_item(self, key: str, frame_selector: Optional[str] = None):
         """Remove saved data with key from the local storage.
 
         | =Arguments= | =Description= |
         | ``key`` | The name of the item which shall be deleted. |
+        | ``frame_selector`` | If this selector points to an element inside an iframe, the LocalStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
 
         Example:
         | `Local Storage Set Item`      Foo    bar
@@ -104,12 +114,17 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4301|Comment >>]
         """
-        response = self.eval_js(f'window.localStorage.removeItem("{key}")')
+        response = self.eval_js(
+            f'window.localStorage.removeItem("{key}")', frame_selector
+        )
         logger.info(response.log)
 
     @keyword(name="localStorage clear", tags=("Setter", "PageContent"))
-    def local_storage_clear(self):
+    def local_storage_clear(self, frame_selector: Optional[str] = None):
         """Remove all saved data from the local storage.
+
+        | =Arguments= | =Description= |
+        | ``frame_selector`` | If this selector points to an element inside an iframe, the LocalStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
 
         Example:
         | `Local Storage Set Item`      Foo    bar
@@ -119,7 +134,7 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4299|Comment >>]
         """
-        response = self.eval_js("window.localStorage.clear()")
+        response = self.eval_js("window.localStorage.clear()", frame_selector)
         logger.info(response.log)
 
     @keyword(
@@ -131,6 +146,8 @@ class WebAppState(LibraryComponent):
         key: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+        frame_selector: Optional[str] = None,
     ) -> Any:
         """Get saved data from from session storage.
 
@@ -138,6 +155,8 @@ class WebAppState(LibraryComponent):
         | ``key`` | Named key of the item in the storage. |
         | ``assertion_operator`` | Assertion operator to use. See `Assertions` for more information. |
         | ``assertion_expected`` | Expected value to compare with. |
+        | ``message`` | Custom error message to use. |
+        | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
 
         Example:
         | `SessionStorage Set Item`    key2    value2
@@ -146,7 +165,9 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4324|Comment >>]
         """
-        response = self.eval_js(f"window.sessionStorage.getItem({key!r})")
+        response = self.eval_js(
+            f"window.sessionStorage.getItem({key!r})", frame_selector
+        )
         logger.info(response.log)
         formatter = self.keyword_formatters.get(self.session_storage_get_item)
         return verify_assertion(
@@ -154,32 +175,41 @@ class WebAppState(LibraryComponent):
             assertion_operator,
             assertion_expected,
             "sessionStorage ",
+            message,
             formatter,
         )
 
     @keyword(name="sessionStorage set Item", tags=("Setter", "PageContent"))
-    def session_storage_set_item(self, key: str, value: str):
+    def session_storage_set_item(
+        self, key: str, value: str, frame_selector: Optional[str] = None
+    ):
         """Save data to session storage.
 
         | =Arguments= | =Description= |
         | ``key`` | The name of the key under which it should be saved. |
         | ``value`` | The value which shall be saved as a string. |
+        | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
 
         Example:
         | `SessionStorage Set Item`    key2    value2
 
         [https://forum.robotframework.org/t//4326|Comment >>]
         """
-        response = self.eval_js(f"window.sessionStorage.setItem({key!r}, {value!r})")
+        response = self.eval_js(
+            f"window.sessionStorage.setItem({key!r}, {value!r})", frame_selector
+        )
         logger.info(response.log)
 
     @keyword(name="sessionStorage remove Item", tags=("Setter", "PageContent"))
-    def session_storage_remove_item(self, key: str):
+    def session_storage_remove_item(
+        self, key: str, frame_selector: Optional[str] = None
+    ):
         """
         Remove saved data with key from the session storage.
 
         | =Arguments= | =Description= |
         | ``key`` | The name of the item which shall be deleted. |
+        | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
 
         Example:
         | `SessionStorage Set Item`       mykey2    myvalue2
@@ -188,12 +218,17 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4325|Comment >>]
         """
-        response = self.eval_js(f"window.sessionStorage.removeItem({key!r})")
+        response = self.eval_js(
+            f"window.sessionStorage.removeItem({key!r})", frame_selector
+        )
         logger.info(response.log)
 
     @keyword(name="sessionStorage clear", tags=("Setter", "PageContent"))
-    def session_storage_clear(self):
+    def session_storage_clear(self, frame_selector: Optional[str] = None):
         """Remove all saved data from the session storage.
+
+        | =Arguments= | =Description= |
+        | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
 
         Example:
         | `SessionStorage Set Item`    mykey3    myvalue3
@@ -202,5 +237,5 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4323|Comment >>]
         """
-        response = self.eval_js("window.sessionStorage.clear()")
+        response = self.eval_js("window.sessionStorage.clear()", frame_selector)
         logger.info(response.log)
