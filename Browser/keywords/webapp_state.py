@@ -146,6 +146,7 @@ class WebAppState(LibraryComponent):
         key: str,
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
         frame_selector: Optional[str] = None,
     ) -> Any:
         """Get saved data from from session storage.
@@ -173,6 +174,7 @@ class WebAppState(LibraryComponent):
             assertion_operator,
             assertion_expected,
             "sessionStorage ",
+            message,
             formatter,
         )
 
