@@ -155,6 +155,7 @@ class WebAppState(LibraryComponent):
         | ``key`` | Named key of the item in the storage. |
         | ``assertion_operator`` | Assertion operator to use. See `Assertions` for more information. |
         | ``assertion_expected`` | Expected value to compare with. |
+        | ``message`` | Custom error message to use. |
         | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: `iframe[name="test"] >>> body` |
 
         Example:
