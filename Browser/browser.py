@@ -813,8 +813,6 @@ class Browser(DynamicCore):
             for js_ext in jsextensions:
                 libraries.append(self._create_lib_component_from_jsextension(js_ext))
         if plugins:
-            if isinstance(plugins, list):
-                plugins = ",".join(plugins)
             parser = PluginParser(LibraryComponent, [self])
             parsed_plugins = parser.parse_plugins(plugins)
             libraries.extend(parsed_plugins)

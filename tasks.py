@@ -42,7 +42,6 @@ wrapper_dir = PYTHON_SRC_DIR / "wrapper"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
 npm_deps_timestamp_file = ROOT_DIR / "node_modules" / ".installed"
-python_deps_timestamp_file = ROOT_DIR / "Browser" / ".installed"
 node_lint_timestamp_file = node_dir / ".linted"
 ATEST_TIMEOUT = 900
 cpu_count = os.cpu_count() or 1
@@ -85,14 +84,8 @@ Library was tested with Playwright REPLACE_PW_VERSION
 
 @task
 def deps(c):
-    if _sources_changed(
-        [ROOT_DIR / "Browser/dev-requirements.txt"], python_deps_timestamp_file
-    ):
-        c.run("pip install -U pip")
-        c.run("pip install -r Browser/dev-requirements.txt")
-        python_deps_timestamp_file.touch()
-    else:
-        print("no changes in Browser/dev-requirements.txt, skipping pip install")
+    c.run("pip install -U pip")
+    c.run("pip install -r Browser/dev-requirements.txt")
     if os.environ.get("CI"):
         shutil.rmtree("node_modules", ignore_errors=True)
 
@@ -128,7 +121,6 @@ def clean(c):
     for file in [
         npm_deps_timestamp_file,
         node_lint_timestamp_file,
-        python_deps_timestamp_file,
         Path("./playwright-log.txt"),
         Path("./.coverage"),
         pyi_file,
