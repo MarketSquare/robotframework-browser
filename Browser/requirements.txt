@@ -3,7 +3,7 @@ grpcio == 1.56.0
 grpcio-tools == 1.56.0
 protobuf == 4.23.4
 robotframework >= 5.0.1
-robotframework-pythonlibcore >= 4.1.2
+robotframework-pythonlibcore >= 4.2.0
 robotframework-assertion-engine >= 1.0.0
 typing-extensions >= 4.5.0
 wrapt >= 1.15.0
