@@ -94,6 +94,7 @@ export function boolResponse(value: boolean, logMessage: string) {
 export function jsResponse(result: string, logMessage: string) {
     const response = new Response.JavascriptExecutionResult();
     response.setResult(JSON.stringify(result));
+    response.setLog(logMessage);
     return response;
 }
 

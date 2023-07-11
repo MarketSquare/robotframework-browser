@@ -33,6 +33,7 @@ const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 declare global {
     interface Window {
         __SET_RFBROWSER_STATE__: <T>(a: T) => T;
+        // eslint-disable-next-line
         __RFBROWSER__: any;
     }
 }
@@ -456,6 +457,7 @@ async function highlightAll(
     }
     logger.info(`Locator count is ${count}`);
     await locator.evaluateAll(
+        // eslint-disable-next-line
         (elements: Array<Element>, options: any) => {
             elements.forEach((e: Element) => {
                 const d = document.createElement('div');
