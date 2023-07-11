@@ -70,7 +70,7 @@ Checkout previously released tag, generate the keyword documentation from the
 previous release and add the keyword documentation to the repository main branch.
 
 ```
-VERSION=<version>
+export VERSION=<version>
 git describe --tags --abbrev=0 | xargs git checkout
 git describe --tags --abbrev=0 | xargs inv docs -v
 git checkout main
@@ -85,15 +85,15 @@ and Node components.
 
 ```
 inv version $VERSION
-git add Browser/version.py package.json setup.py docker/Dockerfile.latest_release
+git add Browser/version.py package.json package-lock.json setup.py docker/Dockerfile.latest_release
 git commit -m "Updateversion to: $VERSION"
 ```
 
 ### Generate release notes
 Set GitHub user information into shell variables to ease copy-pasting the following command:
 ```
-GITHUB_USERNAME=<username>
-GITHUB_PASSWORD=<password>
+export GITHUB_USERNAME=<username>
+export GITHUB_PASSWORD=<password>
 ```
 
 Generate a template for the release notes:
