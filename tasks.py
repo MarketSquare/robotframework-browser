@@ -135,10 +135,11 @@ def clean(c):
 
 
 @task
-def protobuf(c):
+def protobuf(c, force=False):
     """Compile grpc protobuf files.
 
-    Compiles for Python and node.
+    Args:
+        force: Force to build protobuf.
     """
     if not python_protobuf_dir.exists():
         python_protobuf_dir.mkdir()
@@ -146,7 +147,7 @@ def protobuf(c):
     if not node_protobuf_dir.exists():
         node_protobuf_dir.mkdir()
     gen_timestamp_file = python_protobuf_dir / ".generated"
-    if _sources_changed(proto_sources, gen_timestamp_file):
+    if _sources_changed(proto_sources, gen_timestamp_file) or force:
         _python_protobuf_gen(c)
         _node_protobuf_gen(c)
         gen_timestamp_file.touch()
