@@ -587,8 +587,16 @@ def lint_python(c, fix=False):
 
 
 @task
-def lint_node(c):
+def lint_node(c, force=False):
+    """Lint node files
+
+    Args:
+        force: When set, lints node files even there is not changes.
+    """
     if _sources_changed(node_dir.glob("**/*.ts"), node_lint_timestamp_file):
+        c.run("npm run lint")
+        node_lint_timestamp_file.touch()
+    elif force:
         c.run("npm run lint")
         node_lint_timestamp_file.touch()
     else:
