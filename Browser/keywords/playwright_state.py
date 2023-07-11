@@ -454,7 +454,7 @@ class PlaywrightState(LibraryComponent):
         | ``forcedColors``         | Emulates `forced-colors` media feature, supported values are `active` and `none`. |
         | ``geolocation``          | A dictionary containing ``latitude`` and ``longitude`` or ``accuracy`` to emulate. If ``latitude`` or ``longitude`` is not specified, the device geolocation won't be overriden. |
         | ``hasTouch``             | Specifies if viewport supports touch events. Defaults to False. |
-        | ``hideRfBrowser``        | **DEPRECATED** --has no function-- |
+        | ``hideRfBrowser``        | *DEPRECATED* --has no function-- |
         | ``httpCredentials``      | Credentials for [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication]. |
         | ``ignoreHTTPSErrors``    | Whether to ignore HTTPS errors during navigation. Defaults to False. |
         | ``isMobile``             | Whether the meta viewport tag is taken into account and touch events are enabled. Defaults to False. |
