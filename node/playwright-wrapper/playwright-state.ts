@@ -186,6 +186,7 @@ async function _newBrowserContext(
 
     if (!hideRfBrowser) {
         await context.addInitScript(function () {
+            // eslint-disable-next-line
             window.__SET_RFBROWSER_STATE__ = function (state: any) {
                 window.__RFBROWSER__ = state;
                 return state;
@@ -652,6 +653,7 @@ export async function newPersistentContext(
 
     if (!options.hideRfBrowser) {
         await persistentContext.addInitScript(function () {
+            // eslint-disable-next-line
             window.__SET_RFBROWSER_STATE__ = function (state: any) {
                 window.__RFBROWSER__ = state;
                 return state;

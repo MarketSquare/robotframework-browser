@@ -1,6 +1,6 @@
 import { DraggableData, DraggableEvent } from 'react-draggable';
 import Draggable from 'react-draggable';
-import React, { ChangeEvent, FocusEvent, useRef, useState } from 'react';
+import React, { ChangeEvent, useRef, useState } from 'react';
 
 function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     event.persist();
@@ -12,6 +12,7 @@ function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     }, 500);
 }
 
+// eslint-disable-next-line
 function popup(event: React.MouseEvent<HTMLButtonElement>) {
     window.open('../static/popup.html', 'width=400,height=200,scrollbars=yes');
 }
@@ -122,6 +123,7 @@ export default function Site() {
     let click_Count = 0;
     let countKeyPress = 0;
 
+    // eslint-disable-next-line
     function eventMouseDown(e: any) {
         mouseDownTime = new Date().getTime();
         mouseButton.current!.innerHTML = '';

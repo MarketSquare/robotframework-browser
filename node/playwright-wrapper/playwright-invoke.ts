@@ -69,24 +69,30 @@ async function findLocatorNotStrict(activePage: Page, selector: string, firstOnl
     }
 }
 
+// eslint-disable-next-line
 export async function invokeOnMouse<T>(
     page: Page | undefined,
     methodName: 'move' | 'down' | 'up' | 'click' | 'dblclick',
+    // eslint-disable-next-line
     args: Record<any, any>,
 ) {
     exists(page, `Tried to execute mouse action '${methodName}' but no open page`);
     logger.info(`Invoking mouse action ${methodName} with params ${JSON.stringify(args)}`);
+    // eslint-disable-next-line
     const fn: any = page?.mouse[methodName].bind(page.mouse);
     exists(fn, `Bind failure with '${fn}'`);
     return await fn(...Object.values(args));
 }
 
+// eslint-disable-next-line
 export async function invokeOnKeyboard<T>(
     page: Page,
     methodName: 'down' | 'up' | 'press' | 'insertText' | 'type',
+    // eslint-disable-next-line
     ...args: any[]
 ) {
     logger.info(`Invoking keyboard action ${methodName} with params ${JSON.stringify(args)}`);
+    // eslint-disable-next-line
     const fn: any = page.keyboard[methodName].bind(page.keyboard);
     exists(fn, `Bind failure with '${fn}'`);
     return await fn(...Object.values(args));
@@ -96,6 +102,7 @@ export async function invokeOnKeyboard<T>(
 /*
  * If obj is not trueish call callback with new Error containing message
  */
+// eslint-disable-next-line
 export function exists<T1, T2>(obj: T1, message: string): asserts obj is NonNullable<T1> {
     if (!obj) {
         throw new Error(message);
