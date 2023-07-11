@@ -392,18 +392,6 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     recordSelector = this.wrapping(evaluation.recordSelector);
 
-    async getPageState(
-        call: ServerUnaryCall<Request.Empty, Response.JavascriptExecutionResult>,
-        callback: sendUnaryData<Response.JavascriptExecutionResult>,
-    ): Promise<void> {
-        try {
-            const result = await evaluation.getPageState(this.getActivePage(call));
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
     async health(
         call: ServerUnaryCall<Request.Empty, Response.String>,
         callback: sendUnaryData<Response.String>,

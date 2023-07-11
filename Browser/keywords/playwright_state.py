@@ -22,6 +22,8 @@ from uuid import uuid4
 from assertionengine import AssertionOperator, verify_assertion
 from robot.utils import get_link_path
 
+from Browser.utils.data_types import Deprecated, deprecated
+
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -414,7 +416,7 @@ class PlaywrightState(LibraryComponent):
         forcedColors: ForcedColors = ForcedColors.none,
         geolocation: Optional[GeoLocation] = None,
         hasTouch: Optional[bool] = None,
-        hideRfBrowser: bool = False,
+        hideRfBrowser: Deprecated = deprecated,
         httpCredentials: Optional[HttpCredentials] = None,
         ignoreHTTPSErrors: bool = False,
         isMobile: Optional[bool] = None,
@@ -452,7 +454,7 @@ class PlaywrightState(LibraryComponent):
         | ``forcedColors``         | Emulates `forced-colors` media feature, supported values are `active` and `none`. |
         | ``geolocation``          | A dictionary containing ``latitude`` and ``longitude`` or ``accuracy`` to emulate. If ``latitude`` or ``longitude`` is not specified, the device geolocation won't be overriden. |
         | ``hasTouch``             | Specifies if viewport supports touch events. Defaults to False. |
-        | ``hideRFBrowser``        | If set to True, the browser window will be hidden. |
+        | ``hideRfBrowser``        | **DEPRECATED** --has no function-- |
         | ``httpCredentials``      | Credentials for [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication]. |
         | ``ignoreHTTPSErrors``    | Whether to ignore HTTPS errors during navigation. Defaults to False. |
         | ``isMobile``             | Whether the meta viewport tag is taken into account and touch events are enabled. Defaults to False. |
@@ -491,7 +493,7 @@ class PlaywrightState(LibraryComponent):
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
-        response = self._new_context(options, hideRfBrowser, trace_file)
+        response = self._new_context(options, trace_file)
         context_options = self._mask_credentials(json.loads(response.contextOptions))
         logger.info(response.log)
         logger.info(context_options)
@@ -528,7 +530,7 @@ class PlaywrightState(LibraryComponent):
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
         hasTouch: Optional[bool] = None,
-        hideRfBrowser: bool = False,
+        hideRfBrowser: Deprecated = deprecated,
         httpCredentials: Optional[HttpCredentials] = None,
         ignoreDefaultArgs: Optional[List[str]] = None,
         ignoreHTTPSErrors: bool = False,
@@ -561,7 +563,7 @@ class PlaywrightState(LibraryComponent):
         This keyword returns a tuple of browser id, context id and page details. (New in Browser 15.0.0)
 
         | =Argument=               | =Description= |
-        | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. Old positional order was ``executablePath``, ``args``, ``ignoreDefaultArgs``, ``proxy``, ``downloadsPath``, ``handleSIGINT``, ``handleSIGTERM``, ``handleSIGHUP``, ``timeout``, ``env``, ``devtools``, ``slowMo``, ``channel``, ``acceptDownloads``, ``ignoreHTTPSErrors``, ``bypassCSP``, ``viewport``, ``userAgent``, ``deviceScaleFactor``, ``isMobile``, ``hasTouch``, ``javaScriptEnabled``, ``timezoneId``, ``geolocation``, ``locale``, ``permissions``, ``extraHTTPHeaders``, ``offline``, ``httpCredentials``, ``colorScheme``, ``videosPath``, ``videoSize``, ``defaultBrowserType``, ``hideRfBrowser``, ``recordVideo``, ``recordHar``, ``tracing``, ``screen``, ``storageState``, ``reducedMotion``, ``forcedColors``, ``url``. |
+        | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. |
         | ``browser``              | Browser type to use. Default is Chromium. |
         | ``headless``             | Whether to run browser in headless mode. Defaults to ``True``. |
         | other arguments          | Please see `New Browser`, `New Context` and `New Page` for more information about the other arguments. |
@@ -587,7 +589,6 @@ class PlaywrightState(LibraryComponent):
                 Request().PersistentContext(
                     browser=browser.name,
                     rawOptions=options,
-                    hideRfBrowser=hideRfBrowser,
                     defaultTimeout=int(self.timeout),
                     traceFile=str(trace_file),
                 )
@@ -643,14 +644,11 @@ class PlaywrightState(LibraryComponent):
         return params
 
     # Only to ease unit test mocking.
-    def _new_context(
-        self, options: str, hide_rf_browser: bool, trace_file: Union[Path, str]
-    ):
+    def _new_context(self, options: str, trace_file: Union[Path, str]):
         with self.playwright.grpc_channel() as stub:
             return stub.NewContext(
                 Request().Context(
                     rawOptions=options,
-                    hideRfBrowser=hide_rf_browser,
                     defaultTimeout=int(self.timeout),
                     traceFile=str(trace_file),
                 )
