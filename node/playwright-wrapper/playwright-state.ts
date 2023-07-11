@@ -180,19 +180,9 @@ async function _newBrowserContext(
     defaultTimeout: number,
     traceFile: string,
     options?: Record<string, unknown>,
-    hideRfBrowser?: boolean,
 ): Promise<IndexedContext> {
     const context = await browser.newContext(options);
 
-    if (!hideRfBrowser) {
-        await context.addInitScript(function () {
-            // eslint-disable-next-line
-            window.__SET_RFBROWSER_STATE__ = function (state: any) {
-                window.__RFBROWSER__ = state;
-                return state;
-            };
-        });
-    }
     context.setDefaultTimeout(defaultTimeout);
     const c = {
         id: `context=${uuidv4()}`,
@@ -559,7 +549,6 @@ export async function newContext(
     request: Request.Context,
     openBrowsers: PlaywrightState,
 ): Promise<Response.NewContextResponse> {
-    const hideRfBrowser = request.getHiderfbrowser();
     const options = JSON.parse(request.getRawoptions());
     const defaultTimeout = request.getDefaulttimeout();
     const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType, defaultTimeout);
@@ -569,13 +558,7 @@ export async function newContext(
     if (browserState.browser.browser === null) {
         throw new Error('Trying to create a new context when a persistentContext is active');
     }
-    const context = await _newBrowserContext(
-        browserState.browser.browser,
-        defaultTimeout,
-        traceFile,
-        options,
-        hideRfBrowser,
-    );
+    const context = await _newBrowserContext(browserState.browser.browser, defaultTimeout, traceFile, options);
 
     return await _finishContextResponse(context, browserState, traceFile, options);
 }
@@ -651,15 +634,6 @@ export async function newPersistentContext(
         throw new Error('A new browser was created in error while trying to create a persistent context');
     }
 
-    if (!options.hideRfBrowser) {
-        await persistentContext.addInitScript(function () {
-            // eslint-disable-next-line
-            window.__SET_RFBROWSER_STATE__ = function (state: any) {
-                window.__RFBROWSER__ = state;
-                return state;
-            };
-        });
-    }
     persistentContext.setDefaultTimeout(timeout);
     const indexedContext = {
         id: `context=${uuidv4()}`,

@@ -130,8 +130,7 @@ export async function getBoolProperty(
     return boolResponse(content || false, 'Retrieved dom property for element ' + selector + ' containing ' + content);
 }
 
-// eslint-disable-next-line
-async function getProperty<T>(request: Request.ElementProperty, state: PlaywrightState) {
+async function getProperty(request: Request.ElementProperty, state: PlaywrightState) {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = findLocator(state, selector, strictMode, undefined, true);

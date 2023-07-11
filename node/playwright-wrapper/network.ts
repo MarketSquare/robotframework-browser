@@ -21,7 +21,6 @@ import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function httpRequest(request: pb.Request.HttpRequest, page: Page): Promise<pb.Response.Json> {
-    // eslint-disable-next-line
     const opts: { [k: string]: any } = {
         method: request.getMethod(),
         url: request.getUrl(),
@@ -33,7 +32,6 @@ export async function httpRequest(request: pb.Request.HttpRequest, page: Page): 
     const response = await page.evaluate(({ url, method, body, headers }) => {
         return fetch(url, { method, body, headers }).then((data: Response) => {
             return data.text().then((body) => {
-                // eslint-disable-next-line
                 const headers: { [k: string]: any } = {};
                 data.headers.forEach((value, name) => (headers[name] = value));
                 return {

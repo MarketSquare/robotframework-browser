@@ -16,7 +16,6 @@ export function class_async_logger(target: Function) {
 
 export function async_logger(propertyKey: string, propertyDescriptor: PropertyDescriptor): PropertyDescriptor {
     const originalMethod = propertyDescriptor.value;
-    // eslint-disable-next-line
     propertyDescriptor.value = async function (...args: any[]) {
         try {
             logger.info(`Start of node method ${propertyKey}`);
