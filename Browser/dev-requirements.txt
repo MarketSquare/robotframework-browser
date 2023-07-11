@@ -17,7 +17,7 @@ Pillow==10.0.0
 beautifulsoup4 >= 4.12.2
 psutil >= 5.9.4
 coverage >= 7.2.3
-robotframework-tidy >= 4.2.1
+robotframework-tidy >= 4.4.0
 python-dateutil >= 2.8.2
 robotframework-crypto >= 0.3.0
 # Include normal dependencies from requirements.txt. Makes it possible to use

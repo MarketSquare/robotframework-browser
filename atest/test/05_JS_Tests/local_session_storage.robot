@@ -43,7 +43,7 @@ Sessionstorage Clear 2
     SessionStorage Get Item    key1    ==    ${None}
     SessionStorage Get Item    key2    ==    ${None}
 
-LocalStorage in Frame
+LocalStorage In Frame
     [Setup]    New Page    http://localhost:${SERVER_PORT}/framing.html?url=http://127.0.0.1:${SERVER_PORT}/prefilled_email_form.html
     LocalStorage Set Item    key    value_of_main_page
     LocalStorage Set Item    key_two    value_of_main_page_two
@@ -60,7 +60,7 @@ LocalStorage in Frame
     LocalStorage Get Item    key    ==    ${None}    frame_selector=iframe >>> body
     LocalStorage Get Item    key    ==    value_of_main_page
 
-SessionStorage in Frame
+SessionStorage In Frame
     [Setup]    New Page    http://localhost:${SERVER_PORT}/framing.html?url=http://127.0.0.1:${SERVER_PORT}/prefilled_email_form.html
     SessionStorage Set Item    key    value_of_main_page_session
     SessionStorage Set Item    key_two    value_of_main_page_session_two
