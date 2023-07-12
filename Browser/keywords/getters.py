@@ -950,6 +950,7 @@ class Getters(LibraryComponent):
         | ``pressed`` | An attribute that is usually set by aria-pressed. |
         | ``selected`` | An attribute that is usually set by aria-selected. |
 
+        [https://forum.robotframework.org/t//5938|Comment >>]
         """
         options = {
             key: value
@@ -1009,6 +1010,8 @@ class Getters(LibraryComponent):
         - [https://playwright.dev/docs/api/class-page#page-get-by-title|page.getByTitle]
 
         ``page.getByRole`` is supported by `Get Element By Role` keyword.
+
+        [https://forum.robotframework.org/t//5937|Comment >>]
         """
         options = {"exact": exact} if exact is not None else {}
         with self.playwright.grpc_channel() as stub:

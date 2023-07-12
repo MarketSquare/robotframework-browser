@@ -1299,5 +1299,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         elif name == "set_assertion_formatters":
             doc = doc.replace('"Keyword Name"', '"Get Text"')
             doc = f"{doc}\n    | ${{value}} =    `Get Text`    //div    ==    ${{SPACE}}Expected${{SPACE * 2}}Text"
-            doc = f"{doc}\n    | Should Be Equal    ${{value}}    Expected Text\n"
+            doc = f"{doc}\n    | Should Be Equal    ${{value}}    Expected Text\n\n"
+            doc = f"{doc}\n[https://forum.robotframework.org/t//4327|Comment >>]"
         return doc

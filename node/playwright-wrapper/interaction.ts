@@ -110,7 +110,7 @@ export async function click(
     );
 }
 
-export async function tab(
+export async function tap(
     request: Request.ElementSelectorWithOptions,
     state: PlaywrightState,
 ): Promise<Response.Empty> {

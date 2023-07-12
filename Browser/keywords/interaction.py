@@ -330,7 +330,7 @@ class Interaction(LibraryComponent):
         | `Click`    id=button_location    left
         | `Click`    id=button_location    right
 
-        [https://forum.robotframework.org/t/comments-for-click/4238|Comment >>]
+        [https://forum.robotframework.org/t//4238|Comment >>]
         """
         params = locals()
         deprecated_arguments = {
@@ -422,6 +422,7 @@ class Interaction(LibraryComponent):
         | `Click With Options`    id=clickWithModifiers    left     Alt    Meta    Shift    clickCount=1    force=True
         | `Click With Options`    id=clickWithOptions    right    clickCount=2    force=True    noWaitAfter=True
 
+        [https://forum.robotframework.org/t//5936|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
@@ -460,7 +461,29 @@ class Interaction(LibraryComponent):
         trial: bool = False,
         *modifiers: KeyboardModifier,
     ):
-        """Simulates tab on the element found by ``selector``.
+        """*DEPRECATED* Use `Tap` instead."""
+        self.tap(
+            selector,
+            *modifiers,
+            force=force,
+            noWaitAfter=noWaitAfter,
+            position_x=position_x,
+            position_y=position_y,
+            trial=trial,
+        )
+
+    @keyword(tags=("Setter", "PageContent"))
+    def tap(
+        self,
+        selector: str,
+        *modifiers: KeyboardModifier,
+        force: bool = False,
+        noWaitAfter: bool = False,
+        position_x: Optional[int] = None,
+        position_y: Optional[int] = None,
+        trial: bool = False,
+    ):
+        """Simulates tap on the element found by ``selector``.
 
         Requires that the ``hasTouch`` option of the `New Context` be set to true.
         This method taps the element by performing the following steps:
@@ -471,6 +494,7 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
+        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified in any order, and multiple modifiers can be specified. Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``. |
         | ``force`` | Whether to bypass the actionability checks. Defaults to false. |
         | ``noWaitAfter`` | Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
         | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
@@ -479,20 +503,9 @@ class Interaction(LibraryComponent):
         Example:
         | New Context    hasTouch=${False}
         | New Page    ${URL}
-        | Tab    css=input#login_button
+        | Tap    css=input#login_button
 
-        ``*modifiers``
-
-        Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores
-        current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified
-        in any order, and multiple modifiers can be specified.
-        Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``.
-        Due to the fact that the argument `*modifiers` is a positional only argument,
-        all preceding keyword arguments have to be specified as positional arguments before `*modifiers`.
-
-        Example:
-        | `Tab`    id=clickWithOptions    False    False    None    None    False    Shift
-        | `Tab`    id=clickWithOptions    False    False    None    None    False    Shift    Alt
+        [https://forum.robotframework.org/t//5939|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         options: Dict[str, object] = {
@@ -507,8 +520,8 @@ class Interaction(LibraryComponent):
             options["modifiers"] = [modifier.name for modifier in modifiers]
         options_json = json.dumps(options)
         with self.playwright.grpc_channel() as stub:
-            logger.debug(f"Tab options are: {options_json}")
-            response = stub.Tab(
+            logger.debug(f"Tap options are: {options_json}")
+            response = stub.Tap(
                 Request().ElementSelectorWithOptions(
                     selector=selector, options=options_json, strict=self.strict_mode
                 )
