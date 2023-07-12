@@ -116,7 +116,8 @@ Add, commit and push:
 ```
 git add docs/releasenotes/Browser-$VERSION.rst
 git commit -m "Release notes for $VERSION"
-git push
+git tag -fa v$VERSION
+git push --tags --force
 ```
 Update later if necessary.
 
