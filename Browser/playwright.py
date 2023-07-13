@@ -152,9 +152,7 @@ class Playwright(LibraryComponent):
             returncode = playwright_process.poll()
             if returncode is not None:
                 raise ConnectionError(
-                    "Playwright process has been terminated with code {}".format(
-                        returncode
-                    )
+                    f"Playwright process has been terminated with code {returncode}"
                 )
         try:
             yield playwright_pb2_grpc.PlaywrightStub(self._channel)
