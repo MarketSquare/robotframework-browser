@@ -71,10 +71,14 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page: Pag
     const urlOrPredicate = deserializeUrlOrPredicate(request.getUrlorpredicate());
     const timeout = request.getTimeout();
     const data = await page.waitForResponse(urlOrPredicate, { timeout });
+    let body = null;
+    try {
+        body = await data.text();
+    } catch (e) {}
     return jsonResponse(
         JSON.stringify({
             status: data.status(),
-            body: await data.text(),
+            body: body,
             headers: JSON.stringify(data.headers()),
             statusText: data.statusText(),
             url: data.url(),
