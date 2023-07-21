@@ -741,9 +741,9 @@ class Browser(DynamicCore):
         self,
         *_,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
+        disable_playwright_log: bool = False,
         enable_playwright_debug: bool = False,
         enable_presenter_mode: Union[HighLightElement, bool] = False,
-        disable_playwright_log: bool = False,
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Union[List[str], str, None] = None,
         playwright_process_port: Optional[int] = None,
@@ -759,6 +759,7 @@ class Browser(DynamicCore):
 
         | =Argument=                        | =Description= |
         | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
+        | ``disable_playwright_log``        | Disable the creation of the playwright-log.txt file. |
         | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. Mainly Useful for the library developers and for debugging purposes. Will og everything as plain text, also including secrects. |
         | ``enable_presenter_mode``         | Automatic highlights to interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. |
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
