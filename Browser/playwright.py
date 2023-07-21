@@ -44,7 +44,7 @@ class Playwright(LibraryComponent):
         library: "Browser",
         enable_playwright_debug: bool,
         port: Optional[int] = None,
-        playwright_log: Path = Path(Path.cwd()),
+        playwright_log: Optional[Path] = Path.cwd() / "playwright.log",
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
@@ -94,7 +94,10 @@ class Playwright(LibraryComponent):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        logfile = self.playwright_log.open("w")
+        try:
+            logfile = self.playwright_log.open("w") if self.playwright_log is not None else DEVNULL
+        except Exception as err:
+            logfile = DEVNULL
         port = str(find_free_port())
         if self.enable_playwright_debug:
             os.environ["DEBUG"] = "pw:api"

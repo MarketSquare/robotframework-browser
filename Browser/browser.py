@@ -743,6 +743,7 @@ class Browser(DynamicCore):
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
         enable_playwright_debug: bool = False,
         enable_presenter_mode: Union[HighLightElement, bool] = False,
+        disable_playwright_log: bool = False,
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Union[List[str], str, None] = None,
         playwright_process_port: Optional[int] = None,
@@ -794,7 +795,7 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self._playwright_log = Path(self.outputdir, "playwright-log.txt")
+        self._playwright_log = None if disable_playwright_log else Path(self.outputdir, "playwright-log.txt")
         self.playwright = Playwright(
             self,
             enable_playwright_debug,
