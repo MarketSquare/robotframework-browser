@@ -56,6 +56,17 @@ Wait For Response Async
     Click    \#delayed_request
     ${body} =    Wait For    ${promise}
 
+Wait For Response With OPTIONS Request
+    Go To    ${ROOT_URL}
+    ${prom} =    Promise To    Wait For Response    /.*options/    # ΔT: 0.028s
+    ${res} =    Evaluate JavaScript
+    ...    ${None}
+    ...    () => fetch('api/options', {method: 'OPTIONS'}).then(resp => resp.status)
+    ${res2} =    Wait For    ${prom}
+    Should Be Equal As Numbers    ${res}    204
+    Should Be Equal As Numbers    ${res2.status}    204
+    Should Be Equal    ${res2.body}    ${None}
+
 Wait Until Network Is Idle Works
     [Tags]    slow
     Go To    ${ROOT_URL}delayed-load.html
