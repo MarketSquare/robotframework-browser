@@ -21,6 +21,13 @@ app.get('/api/get/json', (req, res) => {
     res.send(JSON.stringify({ greeting: 'HELLO' }));
 });
 
+app.options('/api/options', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.status(204);
+    res.send();
+});
+
 app.get('/api/get/text', (req, res) => {
     res.send('HELLO');
 });

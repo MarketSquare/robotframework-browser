@@ -27,7 +27,7 @@ Tab Button With Options
 
 Tab Button With Modifiers
     [Setup]    Open Page With Touch Enabled
-    Tap    \#clickWithOptions   Shift    Alt
+    Tap    \#clickWithOptions    Shift    Alt
     Get Text    text=Please input your user name and password and click the login button.
 
 *** Keywords ***
