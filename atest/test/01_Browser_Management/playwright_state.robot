@@ -235,6 +235,15 @@ New Context With DefaultBrowserType Ff
     Verify Browser Type    firefox
     Set Browser Timeout    ${old_timeout}
 
+New Context With baseURL
+    New Context    baseURL=${ROOT_URL}
+    New Page    dist/#/
+    Get Url    ==    ${LOGIN_URL}
+    Go To    prefilled_email_form.html
+    Get Url    ==    ${FORM_URL}
+    Go To    http://127.0.0.1:${SERVER_PORT}/frames/iframes.html
+    Get Url    ==    http://127.0.0.1:${SERVER_PORT}/frames/iframes.html
+
 New Context With DefaultBrowserType Chromium
     [Tags]    slow
     New Context    defaultBrowserType=chromium
