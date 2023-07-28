@@ -22,7 +22,7 @@ from uuid import uuid4
 from assertionengine import AssertionOperator, verify_assertion
 from robot.utils import get_link_path
 
-from Browser.utils.data_types import Deprecated, deprecated
+from Browser.utils.data_types import Deprecated, deprecated, ServiceWorkersPermissions
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
@@ -324,14 +324,16 @@ class PlaywrightState(LibraryComponent):
         *,
         args: Optional[List[str]] = None,
         channel: Optional[str] = None,
+        chromiumSandbox: bool = False,
         devtools: bool = False,
         downloadsPath: Optional[str] = None,
         env: Optional[Dict] = None,
         executablePath: Optional[str] = None,
+        firefoxUserPrefs: Optional[Dict[str, Union[str, int, float, bool]]] = None,
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        ignoreDefaultArgs: Optional[List[str]] = None,
+        ignoreDefaultArgs: Union[List[str], bool, None] = False,
         proxy: Optional[Proxy] = None,
         reuse_existing: bool = True,
         slowMo: timedelta = timedelta(seconds=0),
@@ -348,14 +350,16 @@ class PlaywrightState(LibraryComponent):
         | ``headless`` | Set to False if you want a GUI. Defaults to True. |
         | ``args`` | Additional arguments to pass to the browser instance. The list of Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/|here]. Defaults to None. |
         | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
+        | ``chromiumSandbox`` | Enable Chromium sandboxing. Defaults to False. |
         | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
         | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. |
         | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
         | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
+        | ``firefoxUserPrefs`` |Firefox user preferences. Learn more about the Firefox user preferences at [https://support.mozilla.org/en-US/kb/about-config-editor-firefox|about:config]. |
         | ``handleSIGHUP`` | Close the browser process on SIGHUP. Defaults to True. |
         | ``handleSIGINT`` | Close the browser process on Ctrl-C. Defaults to True. |
         | ``handleSIGTERM`` | Close the browser process on SIGTERM. Defaults to True. |
-        | ``ignoreDefaultArgs`` | If an array is given, then filters out the given default arguments. Defaults to None. |
+        | ``ignoreDefaultArgs`` | If True, Playwright does not pass its own configurations args and only uses the ones from args. If a list is given, then filters out the given default arguments. Dangerous option; use with care. Defaults to False. |
         | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}`` |
         | ``reuse_existing`` | If set to True, an existing browser instance, that matches the same arguments, will be reused. If no same configured Browser exist, a new one is started. Defaults to True. |
         | ``slowMo`` | Slows down Playwright operations by the specified amount of milliseconds. Useful so that you can see what is going on. Defaults to no delay. |
@@ -408,6 +412,7 @@ class PlaywrightState(LibraryComponent):
         self,
         *,
         acceptDownloads: bool = True,
+        baseURL: Optional[str] = None,
         bypassCSP: bool = False,
         colorScheme: Optional[ColorScheme] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
@@ -424,10 +429,12 @@ class PlaywrightState(LibraryComponent):
         locale: Optional[str] = None,
         offline: bool = False,
         permissions: Optional[List[Permission]] = None,
+        proxy: Optional[Proxy] = None,
         recordHar: Optional[RecordHar] = None,
         recordVideo: Optional[RecordVideo] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
         screen: Optional[Dict[str, int]] = None,
+        serviceWorkers: Optional[ServiceWorkersPermissions] = ServiceWorkersPermissions.allow,
         storageState: Optional[str] = None,
         timezoneId: Optional[str] = None,
         tracing: Optional[str] = None,
@@ -446,6 +453,7 @@ class PlaywrightState(LibraryComponent):
 
         | =Arguments=              | =Description= |
         | ``acceptDownloads``      | Whether to automatically download all the attachments. Defaults to True where all the downloads are accepted. |
+        | ``baseURL``              | When using `Go To`, `Wait For Request` or `Wait For Response` it takes the base URL in consideration by using the URL() constructor for building the corresponding URL. Unset by default. Examples: ``baseURL=http://localhost:3000`` and navigating to ``/bar.html`` results in ``http://localhost:3000/bar.html``. ``baseURL=http://localhost:3000/foo/`` and navigating to ``./bar.html`` results in ``http://localhost:3000/foo/bar.html``. ``baseURL=http://localhost:3000/foo`` (without trailing slash) and navigating to ``./bar.html`` results in ``http://localhost:3000/bar.html``. |
         | ``bypassCSP``            | Toggles bypassing page's Content-Security-Policy. Defaults to False. |
         | ``colorScheme``          | Emulates `'prefers-colors-scheme'` media feature, supported values are `'light'`, `'dark'`, `'no-preference'`. |
         | ``defaultBrowserType``   | If no browser is open and `New Context` opens a new browser with defaults, it now uses this setting. Very useful together with `Get Device` keyword. |
@@ -462,10 +470,12 @@ class PlaywrightState(LibraryComponent):
         | ``locale``               | Specify user locale, for example ``en-GB``, ``de-DE``, etc. |
         | ``offline``              | Toggles browser's offline mode. Defaults to False. |
         | ``permissions``          | A dictionary containing permissions to grant to all pages in this context. All permissions that are not listed here will be automatically denied. |
+        | ``proxy``                | Network proxy settings to use with this context. Defaults to None. *NOTE:* For Chromium on Windows the browser needs to be launched with the global proxy for this option to work. If all contexts override the proxy, global proxy will be never used and can be any string, for example ``proxy={ server: 'http://per-context' }``. |
         | ``recordHar``            | Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file. If not specified, the HAR is not recorded. Make sure to await context to close for the to be saved. |
         | ``recordVideo``          | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
         | ``reduceMotion``         | Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`. |
         | ``screen``               | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
+        | ``serviceWorkers``       | Whether to allow sites to register Service workers. Defaults to 'allow'. |
         | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must mbe full path to the file. |
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
         | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace -F /path/to/trace.zip``. |
@@ -514,8 +524,10 @@ class PlaywrightState(LibraryComponent):
         *,
         acceptDownloads: bool = True,
         args: Optional[List[str]] = None,
+        baseURL: Optional[str] = None,
         bypassCSP: bool = False,
         channel: Optional[str] = None,
+        chromiumSandbox: bool = False,
         colorScheme: Optional[ColorScheme] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         deviceScaleFactor: Optional[float] = None,
@@ -544,6 +556,7 @@ class PlaywrightState(LibraryComponent):
         recordVideo: Optional[RecordVideo] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
         screen: Optional[Dict[str, int]] = None,
+        serviceWorkers: Optional[ServiceWorkersPermissions] = ServiceWorkersPermissions.allow,
         slowMo: timedelta = timedelta(seconds=0),
         storageState: Optional[str] = None,
         timeout: timedelta = timedelta(seconds=30),
