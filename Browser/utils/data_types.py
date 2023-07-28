@@ -355,6 +355,7 @@ class HttpCredentials(_HttpCredentials, total=False):
     |    `New Context`    httpCredentials=${credentials}
 
     """
+
     origin: str
 
 
@@ -893,6 +894,7 @@ class Scope(Enum):
     Suite = auto()
     Test = auto()
     Task = Test
+
 
 class ServiceWorkersPermissions(Enum):
     """Whether to allow sites to register Service workers.
