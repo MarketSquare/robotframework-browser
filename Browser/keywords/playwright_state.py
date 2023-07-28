@@ -22,7 +22,7 @@ from uuid import uuid4
 from assertionengine import AssertionOperator, verify_assertion
 from robot.utils import get_link_path
 
-from Browser.utils.data_types import Deprecated, deprecated, ServiceWorkersPermissions
+from Browser.utils.data_types import Deprecated, ServiceWorkersPermissions, deprecated
 
 from ..assertion_engine import with_assertion_polling
 from ..base import LibraryComponent
@@ -434,7 +434,9 @@ class PlaywrightState(LibraryComponent):
         recordVideo: Optional[RecordVideo] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
         screen: Optional[Dict[str, int]] = None,
-        serviceWorkers: Optional[ServiceWorkersPermissions] = ServiceWorkersPermissions.allow,
+        serviceWorkers: Optional[
+            ServiceWorkersPermissions
+        ] = ServiceWorkersPermissions.allow,
         storageState: Optional[str] = None,
         timezoneId: Optional[str] = None,
         tracing: Optional[str] = None,
@@ -556,7 +558,9 @@ class PlaywrightState(LibraryComponent):
         recordVideo: Optional[RecordVideo] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
         screen: Optional[Dict[str, int]] = None,
-        serviceWorkers: Optional[ServiceWorkersPermissions] = ServiceWorkersPermissions.allow,
+        serviceWorkers: Optional[
+            ServiceWorkersPermissions
+        ] = ServiceWorkersPermissions.allow,
         slowMo: timedelta = timedelta(seconds=0),
         storageState: Optional[str] = None,
         timeout: timedelta = timedelta(seconds=30),
