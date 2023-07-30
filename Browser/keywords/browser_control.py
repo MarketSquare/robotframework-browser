@@ -127,14 +127,14 @@ class Control(LibraryComponent):
         | ``selector`` | Take a screenshot of the element matched by selector. See the `Finding elements` section for details about the selectors. If not provided take a screenshot of current viewport. |
         | ``crop`` | Crops the taken screenshot to the given box. It takes same dictionary as returned from `Get BoundingBox`. Cropping only works on page screenshot, so if no selector is given. |
         | ``disableAnimations`` | When set to ``True``, stops CSS animations, CSS transitions and Web Animations. Animations get different treatment depending on their duration:  - finite animations are fast-forwarded to completion, so they'll fire transitionend event.  - infinite animations are canceled to initial state, and then played over after the screenshot. |
-        | ``fileType`` | <"png"|"jpeg"> Specify screenshot type, defaults to png. |
+        | ``fileType`` | ``png`` or ``jpeg`` Specify screenshot type, defaults to ``png`` . |
         | ``fullPage`` | When True, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to False. |
         | ``log_screenshot`` | When set to ``False`` the screenshot is taken but not logged into log.html. |
         | ``mask`` | Specify selectors that should be masked when the screenshot is taken. Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box. Argument can take a single selector string or a list of selector strings if multiple different elements should be masked. |
         | ``maskColor`` | Specify the color of the overlay box for masked elements, in CSS color format. Default color is pink #FF00FF. |
         | ``omitBackground`` | Hides default white background and allows capturing screenshots with transparency. Not applicable to jpeg images. |
         | ``quality`` | The quality of the image, between 0-100. Not applicable to png images. |
-        | ``scale`` | <css|device>. css will reduce the image size and device keeps image in original size. Defaults to "device".|
+        | ``scale`` | ``css`` or ``device``. ``css`` will reduce the image size and ``device`` keeps image in original size. Defaults to ``device``. |
         | ``return_as`` | Defines what this keyword returns. Possible values are documented in `ScreenshotReturnType`. It can be either a path to the screenshot file as string or Path object, or the image data as bytes or base64 encoded string. |
         | ``timeout`` | Maximum time how long taking screenshot can last, defaults to library timeout. Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable timeout. The default value can be changed by using the `Set Browser Timeout` keyword. |
 
