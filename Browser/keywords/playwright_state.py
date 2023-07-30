@@ -333,7 +333,7 @@ class PlaywrightState(LibraryComponent):
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        ignoreDefaultArgs: Union[List[str], bool, None] = False,
+        ignoreDefaultArgs: Union[List[str], bool, None] = None,
         proxy: Optional[Proxy] = None,
         reuse_existing: bool = True,
         slowMo: timedelta = timedelta(seconds=0),
@@ -546,7 +546,7 @@ class PlaywrightState(LibraryComponent):
         hasTouch: Optional[bool] = None,
         hideRfBrowser: Deprecated = deprecated,
         httpCredentials: Optional[HttpCredentials] = None,
-        ignoreDefaultArgs: Optional[List[str]] = None,
+        ignoreDefaultArgs: Union[List[str], bool, None] = None,
         ignoreHTTPSErrors: bool = False,
         isMobile: Optional[bool] = None,
         javaScriptEnabled: bool = True,
@@ -562,7 +562,7 @@ class PlaywrightState(LibraryComponent):
             ServiceWorkersPermissions
         ] = ServiceWorkersPermissions.allow,
         slowMo: timedelta = timedelta(seconds=0),
-        storageState: Optional[str] = None,
+        storageState: Deprecated = deprecated,
         timeout: timedelta = timedelta(seconds=30),
         timezoneId: Optional[str] = None,
         tracing: Optional[str] = None,
@@ -583,6 +583,7 @@ class PlaywrightState(LibraryComponent):
         | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. |
         | ``browser``              | Browser type to use. Default is Chromium. |
         | ``headless``             | Whether to run browser in headless mode. Defaults to ``True``. |
+        | ``storageState`` & ``hideRfBrowser`` | These arguments have no function and will be removed soon. |
         | other arguments          | Please see `New Browser`, `New Context` and `New Page` for more information about the other arguments. |
 
         If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
@@ -595,10 +596,12 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
         params = locals_to_params(locals())
+        params.pop("storageState")  # TODO: remove when arguments are removed.
+        params.pop("hideRfBrowser")
         params["viewport"] = copy(viewport)
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
-        params = self._set_context_options(params, httpCredentials, storageState)
+        params = self._set_context_options(params, httpCredentials, None)
         options = json.dumps(params, default=str)
 
         with self.playwright.grpc_channel() as stub:

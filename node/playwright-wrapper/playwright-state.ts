@@ -606,7 +606,7 @@ export async function newPersistentContext(
 
     const userDataDir = options?.userDataDir as string;
     let browser: BrowserType;
-    switch (options.browser) {
+    switch (options.defaultBrowserType || options.browser) {
         case 'chromium':
             browser = chromium;
             break;
