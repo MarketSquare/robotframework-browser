@@ -726,6 +726,7 @@ export async function switchPage(
     const id = request.getId();
     if (id === 'CURRENT') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
+        browserState.page?.p.bringToFront();
         return stringResponse(previous, 'Returned active page id');
     } else if (id === 'NEW') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
@@ -769,27 +770,31 @@ export async function switchContext(request: Request.Index, browserState: Browse
     if (id === 'CURRENT') {
         if (!previous) {
             return stringResponse('NO CONTEXT OPEN', 'Returned info that no contexts are open');
-        } else {
-            return stringResponse(previous, 'Returned active context id');
         }
+    } else {
+        await _switchContext(id, browserState);
     }
-
-    await _switchContext(id, browserState);
     const page = browserState.page;
     if (page !== undefined) {
         await _switchPage(page.id, browserState);
     }
-    return stringResponse(previous, 'Successfully changed active context');
+    return stringResponse(
+        previous,
+        id === 'CURRENT' ? 'Returned active context id' : 'Successfully changed active context',
+    );
 }
 
 export async function switchBrowser(request: Request.Index, openBrowsers: PlaywrightState): Promise<Response.String> {
     const id = request.getIndex();
     const previous = openBrowsers.activeBrowser;
-    if (id === 'CURRENT') {
-        return stringResponse(previous?.id || 'NO BROWSER OPEN', 'Active context id');
+    if (id !== 'CURRENT') {
+        openBrowsers.switchTo(id);
     }
-    openBrowsers.switchTo(id);
-    return stringResponse(previous?.id || '', 'Successfully changed active browser');
+    openBrowsers.getActivePage()?.bringToFront();
+    return stringResponse(
+        previous?.id || 'NO BROWSER OPEN',
+        id === 'CURRENT' ? 'Returned active browser id' : 'Successfully changed active browser',
+    );
 }
 
 export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<Response.Json> {
