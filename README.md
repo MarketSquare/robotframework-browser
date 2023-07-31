@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-120-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-121-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -319,6 +319,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/madworx"><img src="https://avatars.githubusercontent.com/u/6368715?v=4?s=100" width="100px;" alt="Martin Kjellstrand"/><br /><sub><b>Martin Kjellstrand</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amadworx" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://medv.io"><img src="https://avatars.githubusercontent.com/u/141232?v=4?s=100" width="100px;" alt="Anton Medvedev"/><br /><sub><b>Anton Medvedev</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=antonmedv" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
