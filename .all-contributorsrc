@@ -1122,6 +1122,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "martamedovova-ext91522",
+      "name": "martamedovova-ext91522",
+      "avatar_url": "https://avatars.githubusercontent.com/u/130643867?v=4",
+      "profile": "https://github.com/martamedovova-ext91522",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
