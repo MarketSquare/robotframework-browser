@@ -117,6 +117,14 @@ Get Element By Role
     ${e} =    Get Element By Role    role=textbox
     Get Text    ${e}    ==    Prefilled Name
 
+Get Element By Role In Frame
+    Go To    ${FRAMES_URL}
+    TRY
+        Get Element By Role    textbox    name=right >>> name=searchbutton
+    EXCEPT    TimeoutError*    type=GLOB
+        Log    Correct error.
+    END
+
 Get Element By - AltText
     ${e} =    Get Element By    AltText    Logo
     Get BoundingBox    ${e}    ALL    ==    {'x': 8, 'y': 8, 'width': 50, 'height': 50}
