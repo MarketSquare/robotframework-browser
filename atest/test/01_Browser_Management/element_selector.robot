@@ -1,7 +1,6 @@
 *** Settings ***
 Documentation       Tests for Get Element and `element=<ref>` selector syntax
 
-Library             RobotDebug
 Resource            imports.resource
 
 Suite Setup         Ensure Open Page
