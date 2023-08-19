@@ -94,7 +94,7 @@ def _log_install_dir():
 
 
 def _node_info():
-    process = subprocess.run(
+    process = subprocess.run(  # noqa: PLW1510
         ["npm", "-v"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=SHELL
     )
     logging.info("npm version is:n")
@@ -110,7 +110,7 @@ def _python_info():
     logging.info(f"Used Python is: {sys.executable}\nVersion: {python_version}")
     _write_marker()
     logging.info("pip freeze output:\n\n")
-    process = subprocess.run(
+    process = subprocess.run(  # noqa: PLW1510
         [sys.executable, "-m", "pip", "freeze"],
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
@@ -222,7 +222,9 @@ def show_trace(file: str):
         "show-trace",
         str(absolute_file),
     ]
-    subprocess.run(trace_arguments, env=env, shell=SHELL, cwd=INSTALLATION_DIR)
+    subprocess.run(  # noqa: PLW1510
+        trace_arguments, env=env, shell=SHELL, cwd=INSTALLATION_DIR
+    )
 
 
 def show_versions():
