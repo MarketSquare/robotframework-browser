@@ -14,9 +14,7 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
-from typing import Dict, Union
-
-from typing_extensions import TypedDict
+from typing import Dict, Union, TypedDict
 
 
 class TypedDictDummy(TypedDict):

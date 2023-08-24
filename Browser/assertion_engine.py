@@ -13,11 +13,10 @@
 # limitations under the License.
 
 import time
-from typing import Optional, Union
+from typing import Optional, Union, get_origin, get_args
 
 import wrapt  # type: ignore
 from assertionengine import AssertionOperator
-from typing_extensions import get_args, get_origin
 
 from .utils import logger
 
