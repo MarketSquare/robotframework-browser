@@ -16,12 +16,12 @@ import atexit
 import contextlib
 import os
 import time
+from functools import cached_property  # type: ignore
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 from typing import TYPE_CHECKING, Optional
 
 import grpc  # type: ignore
-from backports.cached_property import cached_property
 
 from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
