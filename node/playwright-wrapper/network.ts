@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from 'path';
 import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
 
@@ -117,14 +118,17 @@ export async function waitForDownload(request: pb.Request.FilePath, page: Page):
     const saveAs = request.getPath();
     const downloadObject = await page.waitForEvent('download');
 
+    let filePath;
     if (saveAs) {
         await downloadObject.saveAs(saveAs);
+        filePath = path.resolve(saveAs);
+    } else {
+        filePath = await downloadObject.path();
     }
-    const path = await downloadObject.path();
     const fileName = downloadObject.suggestedFilename();
-    logger.info('suggestedFilename: ' + fileName + ' saveAs path: ' + path);
+    logger.info('suggestedFilename: ' + fileName + ' saveAs path: ' + filePath);
     return jsonResponse(
-        JSON.stringify({ saveAs: path, suggestedFilename: fileName }),
-        'Download done successfully to: ' + path,
+        JSON.stringify({ saveAs: filePath, suggestedFilename: fileName }),
+        'Download done successfully to: ' + filePath,
     );
 }
