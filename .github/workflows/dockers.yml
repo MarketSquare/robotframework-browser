@@ -10,7 +10,7 @@ jobs:
   docker-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up QEMU for cross-platforms builds
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -75,7 +75,7 @@ jobs:
     needs: docker-image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
