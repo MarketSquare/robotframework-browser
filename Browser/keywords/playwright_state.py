@@ -308,6 +308,8 @@ class PlaywrightState(LibraryComponent):
         [https://marketsquare.github.io/robotframework-browser/Browser.html#Automatic%20page%20and%20context%20closing|automatic page closing]
         is done. The default value is false and this keyword can be used to change value.
         Returns the old runBeforeUnload value.
+
+        [https://forum.robotframework.org/t/6203|Comment >>]
         """
         old_value = self.library.auto_closing_default_run_before_unload
         self.library.auto_closing_default_run_before_unload = runBeforeUnload
