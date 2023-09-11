@@ -238,11 +238,16 @@ class PlaywrightState(LibraryComponent):
         page: Union[SelectionType, str] = SelectionType.CURRENT,
         context: Union[SelectionType, str] = SelectionType.CURRENT,
         browser: Union[SelectionType, str] = SelectionType.CURRENT,
+        runBeforeUnload: bool = False,
     ):
         """Closes the ``page`` in ``context`` in ``browser``.
 
         Defaults to current for all three. Active page is set to the page that was active before this one.
         See `Browser, Context and Page` for more information about Page and related concepts.
+
+        ``runBeforeUnload`` defines where to run the
+        [https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event|before unload]
+        page handlers. Defaults to false.
 
 
         | =Argument=  | =Description= |
@@ -281,7 +286,9 @@ class PlaywrightState(LibraryComponent):
                             return None
                         if page != SelectionType.CURRENT:
                             self.switch_page(page_id)
-                        response = stub.ClosePage(Request().Empty())
+                        response = stub.ClosePage(
+                            Request().ClosePage(runBeforeUnload=runBeforeUnload)
+                        )
                         if response.log:
                             logger.info(response.log)
                         result.append(
@@ -292,6 +299,19 @@ class PlaywrightState(LibraryComponent):
                             }
                         )
         return result
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def set_default_run_before_unload(self, runBeforeUnload: bool) -> bool:
+        """Set default runBeforeUnload value when `Close Page` is called indirectly.
+
+        Close Page is called indirectly when
+        [https://marketsquare.github.io/robotframework-browser/Browser.html#Automatic%20page%20and%20context%20closing|automatic page closing]
+        is done. The default value is false and this keyword can be used to change value.
+        Returns the old runBeforeUnload value.
+        """
+        old_value = self.library.auto_closing_default_run_before_unload
+        self.library.auto_closing_default_run_before_unload = runBeforeUnload
+        return old_value
 
     @keyword(tags=("Setter", "BrowserControl"))
     def connect_to_browser(

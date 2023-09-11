@@ -510,12 +510,17 @@ export async function closeContext(openBrowsers: PlaywrightState): Promise<Respo
     return emptyWithLog('Successfully closed Context');
 }
 
-export async function closePage(openBrowsers: PlaywrightState): Promise<Response.PageReportResponse> {
+export async function closePage(
+    request: Request.ClosePage,
+    openBrowsers: PlaywrightState,
+): Promise<Response.PageReportResponse> {
     const activeBrowser = openBrowsers.getActiveBrowser();
     const closedPage = activeBrowser.popPage();
+    const unload = request.getRunbeforeunload();
     if (!closedPage) throw new Error('No open page');
-    await closedPage.p.close();
-    return pageReportResponse('Successfully closed Page', closedPage);
+    logger.info(`Closing page with runBeforeUnload ${unload}`);
+    await closedPage.p.close({ runBeforeUnload: unload });
+    return pageReportResponse(`Successfully closed Page with runBeforeUnload ${unload}`, closedPage);
 }
 
 export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {

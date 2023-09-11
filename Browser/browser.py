@@ -827,6 +827,7 @@ class Browser(DynamicCore):
         self._keyword_formatters: dict = {}
         self._current_loglevel: Optional[str] = None
         self.is_test_case_running = False
+        self.auto_closing_default_run_before_unload: bool = False
 
         DynamicCore.__init__(self, libraries)
 
@@ -1170,7 +1171,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         ]
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
-            self._playwright_state.close_page(page_id, ctx_id)
+            self._playwright_state.close_page(
+                page_id,
+                ctx_id,
+                runBeforeUnload=self.auto_closing_default_run_before_unload,
+            )
 
     @classmethod
     def _alter_keyword_error(cls, args: tuple) -> tuple:
