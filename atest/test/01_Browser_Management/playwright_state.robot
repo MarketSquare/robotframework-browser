@@ -79,6 +79,18 @@ Close Page Switches Active Page
     Close Page
     Get Title    matches    (?i)login
 
+Close Page With runBeforeUnload
+    New Page Login
+    New Page Form
+    Close Page    runBeforeUnload=True
+    Get Title    matches    (?i)login
+
+Set Default Run Before Unload
+    ${old_value} =    Set Default Run Before Unload    True
+    Should Not Be True    ${old_value}
+    ${old_value} =    Set Default Run Before Unload    False
+    Should Be True    ${old_value}
+
 Browser, Context And Page UUIDs
     [Tags]    slow
     ${browser} =    New Browser    headless=${HEADLESS}    reuse_existing=False

@@ -17,6 +17,9 @@ syntax = "proto3";
 message Request {
   message Empty {}
 
+  message ClosePage {
+    bool runBeforeUnload = 1;
+  }
   message Label {
     string label = 1;
   }
@@ -467,7 +470,7 @@ service  Playwright {
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Empty) returns (Response.Empty);
-  rpc ClosePage(Request.Empty) returns (Response.PageReportResponse);
+  rpc ClosePage(Request.ClosePage) returns (Response.PageReportResponse);
   rpc GetConsoleLog(Request.Bool) returns (Response.Json);
   rpc GetErrorMessages(Request.Bool) returns (Response.Json);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
