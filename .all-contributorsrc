@@ -1159,6 +1159,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "naibra",
+      "name": "naibra",
+      "avatar_url": "https://avatars.githubusercontent.com/u/76438934?v=4",
+      "profile": "https://github.com/naibra",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
