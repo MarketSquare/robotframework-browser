@@ -39,7 +39,7 @@ INSTALL_LOG = CURRENT_FOLDER / log_file
 try:
     INSTALL_LOG.touch(exist_ok=True)
 except Exception as error:
-    print(f"Cound not wwrite to {INSTALL_LOG}, got error: {error}")  # noqa: T201
+    print(f"Could not write to {INSTALL_LOG}, got error: {error}")  # noqa: T201
     INSTALL_LOG = Path.cwd() / log_file
     print(f"Writing install log to: {INSTALL_LOG}")  # noqa: T201
 
@@ -66,13 +66,13 @@ def rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
     try:
         _rfbrowser_init(skip_browser_install, silent_mode)
         _write_marker(silent_mode)
-    except Exception as error:
+    except Exception as err:
         _write_marker(silent_mode)
         logging.info(traceback.format_exc())
         _python_info()
         _node_info()
         _log_install_dir()
-        raise error
+        raise err
 
 
 def _log_install_dir():
@@ -117,11 +117,11 @@ def _walk_install_dir():
     lines = []
     for root, _dirs, files in os.walk(INSTALLATION_DIR):
         level = root.replace(INSTALLATION_DIR.__str__(), "").count(os.sep)
-        indent = " " * 4 * (level)
+        indent = " " * 4 * level
         lines.append(f"{indent}{Path(root).name}/\n")
-        subindent = " " * 4 * (level + 1)
+        sub_indent = " " * 4 * (level + 1)
         for file in files:
-            lines.append(f"{subindent}{file}\n")
+            lines.append(f"{sub_indent}{file}\n")
     return lines
 
 
@@ -181,8 +181,8 @@ def _rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
             output = process.stdout.readline().decode("UTF-8")
             try:
                 _log(output, silent_mode)
-            except Exception as error:
-                logging.info(f"While writing log file, got error: {error}")
+            except Exception as err:
+                logging.info(f"While writing log file, got error: {err}")
 
     if process.returncode != 0:
         raise RuntimeError(
@@ -273,13 +273,13 @@ def main():
     parser.add_argument(
         "command",
         help=(
-            "Possible commands are:\ninit\nclean-node\nshow-trace\nversion\n\ninit command will install the required node "
-            "dependencies. init command is needed when library is installed or updated.\n\nclean-node is used to delete"
-            "node side dependencies and installed browser binaries from the library default installation location. "
-            "When upgrading browser library, it is recommended to clean old node side binaries after upgrading the "
-            "Python side. Example:\n1) pip install -U robotframework-browser\n2) rfbrowser clean-node\n3)rfbrowser "
-            "init.\nRun rfbrowser clean-node command also before uninstalling the library with pip. This makes sure "
-            "that playwright browser binaries are not left in the disk after the pip uninstall command."
+            "Possible commands are:\ninit\nclean-node\nshow-trace\nversion\n\ninit command will install the required "
+            "node dependencies. init command is needed when library is installed or updated.\n\nclean-node is used to "
+            "delete node side dependencies and installed browser binaries from the library default installation "
+            "location. When upgrading browser library, it is recommended to clean old node side binaries after "
+            "upgrading the Python side. Example:\n1) pip install -U robotframework-browser\n2) rfbrowser clean-node\n"
+            "3)rfbrowser init.\nRun rfbrowser clean-node command also before uninstalling the library with pip. This "
+            "makes sure that playwright browser binaries are not left in the disk after the pip uninstall command."
             "\n\nshow-trace command will start the Playwright trace viewer tool.\n\nversion command displays the "
             "installed Browser library, Robot Framework and Playwright versions.\n\nSee the each command argument "
             "group for more details what (optional) arguments that command supports."
