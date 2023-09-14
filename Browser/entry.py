@@ -53,13 +53,6 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout),
     ],
 )
-IS_PYTHON_37 = (sys.version_info.major, sys.version_info.minor) == (3, 7)
-PYTHON_37_EOL = (
-    "The end of life for Python 3.7 was 2023-06-27.\n"
-    "Support for Python 3.7 has been deprecated and\n"
-    "will be removed in version 16.4 of Robot Framework Browser.\n"
-    "Users are strongly recommended to upgrade to a version supported by the Python community."
-)
 
 
 def _write_marker(silent_mode: bool = False):
@@ -197,8 +190,6 @@ def _rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
             f"Node process returned with exit status {process.returncode}"
         )
     _log("rfbrowser init completed", silent_mode)
-    if IS_PYTHON_37:
-        logging.warning(PYTHON_37_EOL)
 
 
 def rfbrowser_clean_node():
