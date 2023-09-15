@@ -96,7 +96,7 @@ def deps(c):
             env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
         )
         c.run(
-            f"npx --quiet playwright install",
+            f"npx --quiet playwright install  --with-deps",
             env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
         )
         npm_deps_timestamp_file.touch()

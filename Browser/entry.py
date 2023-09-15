@@ -196,7 +196,7 @@ def _rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
     if not skip_browser_install:
         _log(f"Installing browser binaries to {INSTALLATION_DIR}", silent_mode)
         process = Popen(
-            "npx playwright install --quiet",
+            "npx --quiet playwright install --with-deps",
             shell=True,
             cwd=INSTALLATION_DIR,
             stdout=PIPE,
