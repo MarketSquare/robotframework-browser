@@ -95,6 +95,10 @@ def deps(c):
             f"npm install{arch} --parseable true --progress false",
             env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
         )
+        c.run(
+            f"npx --quiet playwright install",
+            env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
+        )
         npm_deps_timestamp_file.touch()
     else:
         print("no changes in package-lock.json, skipping npm install")

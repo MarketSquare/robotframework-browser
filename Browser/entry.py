@@ -77,7 +77,7 @@ def rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
 
 def _log_install_dir():
     logging.info(
-        f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for."
+        f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for. "
         "unknown reason. Investigate the npm output and fix possible problems."
         "\nPrinting contents:\n"
     )
@@ -158,6 +158,22 @@ def _log(message: str, silent_mode: bool = False):
     logging.info(message)
 
 
+def _process_poller(process: Popen, silent_mode: bool):
+    while process.poll() is None:
+        if process.stdout:
+            output = process.stdout.readline().decode("UTF-8")
+            try:
+                _log(output, silent_mode)
+            except Exception as err:
+                logging.info(f"While writing log file, got error: {err}")
+
+    if process.returncode != 0:
+        raise RuntimeError(
+            "Problem installing node dependencies."
+            f"Node process returned with exit status {process.returncode}"
+        )
+
+
 def _rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
     _log("Installing node dependencies...", silent_mode)
     _check_files_and_access()
@@ -175,20 +191,18 @@ def _rfbrowser_init(skip_browser_install: bool, silent_mode: bool):
         stdout=PIPE,
         stderr=STDOUT,
     )
+    _process_poller(process, silent_mode)
 
-    while process.poll() is None:
-        if process.stdout:
-            output = process.stdout.readline().decode("UTF-8")
-            try:
-                _log(output, silent_mode)
-            except Exception as err:
-                logging.info(f"While writing log file, got error: {err}")
-
-    if process.returncode != 0:
-        raise RuntimeError(
-            "Problem installing node dependencies."
-            f"Node process returned with exit status {process.returncode}"
+    if not skip_browser_install:
+        _log(f"Installing browser binaries to {INSTALLATION_DIR}", silent_mode)
+        process = Popen(
+            "npx playwright install --quiet",
+            shell=True,
+            cwd=INSTALLATION_DIR,
+            stdout=PIPE,
+            stderr=STDOUT,
         )
+        _process_poller(process, silent_mode)
     _log("rfbrowser init completed", silent_mode)
 
 
