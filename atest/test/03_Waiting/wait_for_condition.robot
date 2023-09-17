@@ -4,7 +4,6 @@ Resource        imports.resource
 Suite Setup     Wait For Condition Suite Setup
 Test Setup      Wait For Condition Test Setup
 
-
 *** Test Cases ***
 Condition Should Succeed
     Select Options By    \#dropdown    value    attached
@@ -50,7 +49,6 @@ Wait For Condition Honors Timeout If It Exceeds Browser Timeout
     Set Browser Timeout    500 ms    Test
     Click With Options    id=submit    noWaitAfter=True
     Wait For Condition    element_states    id=victim    contains    visible    timeout=4 sec
-
 
 *** Keywords ***
 Wait For Condition Test Setup
