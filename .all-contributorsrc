@@ -1177,6 +1177,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "infoTrainingym",
+      "name": "Serafín Martín",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2445330?v=4",
+      "profile": "https://github.com/infoTrainingym",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
