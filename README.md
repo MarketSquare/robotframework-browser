@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-127-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-128-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -328,6 +328,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="http://aapee.kapsi.fi"><img src="https://avatars.githubusercontent.com/u/7158433?v=4?s=100" width="100px;" alt="Antti Pekka Vilkko"/><br /><sub><b>Antti Pekka Vilkko</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aapvilkko" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/infoTrainingym"><img src="https://avatars.githubusercontent.com/u/2445330?v=4?s=100" width="100px;" alt="Serafín Martín"/><br /><sub><b>Serafín Martín</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AinfoTrainingym" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
