@@ -771,6 +771,7 @@ def create_package(c):
 
 @task(clean, build, docs, create_package)
 def package(c):
+    """Build python wheel for release."""
     pass
 
 
