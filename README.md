@@ -28,7 +28,9 @@ Only Python 3.8 or newer is supported.
 Please note that by default Chromium, Firefox and WebKit browser are installed, even those would be already
 installed in the system. The installation size depends on the operating system, but usually is +700Mb.
 It is possible to skip browser binaries installation with `rfbrowser init --skip-browsers` command, but then user
-is responsible for browser binary installation.
+is responsible for browser binary installation. It is possible to install only selected browser binaries by adding
+`chromium`, `firefox` or `webkit` as arguments to init command. Example `rfbrowser init firefox` would install
+only Firefox binaries and `rfbrowser init firefox chromium` would install both Firefox and Chromium binaries.
 
 Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/pkgs/container/robotframework-browser%2Frfbrowser-stable). Documented at [docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
 
