@@ -363,3 +363,7 @@ def show_trace(file: Path):
     subprocess.run(  # noqa: PLW1510
         trace_arguments, env=env, shell=SHELL, cwd=INSTALLATION_DIR
     )
+
+
+if __name__ == '__main__':
+    cli()
