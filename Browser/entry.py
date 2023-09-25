@@ -120,7 +120,9 @@ def _check_npm():
         raise exception
 
 
-def _rfbrowser_init(skip_browser_install: bool, silent_mode: bool, browser: list):
+def _rfbrowser_init(
+    skip_browser_install: bool, silent_mode: bool, with_deps: bool, browser: list
+):
     _log("Installing node dependencies...", silent_mode)
     _check_files_and_access()
     _check_npm()
@@ -140,15 +142,20 @@ def _rfbrowser_init(skip_browser_install: bool, silent_mode: bool, browser: list
     _process_poller(process, silent_mode)
 
     if not skip_browser_install:
+        cmd = "npx --quiet playwright install"
         browser_as_str = " ".join(browser)
         if browser_as_str:
             browser_as_str = f"{browser_as_str} "
+            cmd = f"{cmd} {browser_as_str}"
+        if with_deps:
+            cmd = f"{cmd.strip(' ')} --with-deps"
         _log(
             f"Installing browser {browser_as_str}binaries to {INSTALLATION_DIR}",
             silent_mode,
         )
+        _log(cmd)
         process = subprocess.Popen(
-            f"npx --quiet playwright install {browser_as_str} --with-deps",
+            cmd,
             shell=True,
             cwd=INSTALLATION_DIR,
             stdout=subprocess.PIPE,
@@ -269,12 +276,18 @@ def cli(ctx, silent):
     help="If defined skips the Playwright browser installation. Argument is optional",
     default=False,
 )
+@click.option(
+    "--with-deps",
+    is_flag=True,
+    help="If set system dependencies are installed automatically. This is useful for CI environments.",
+    default=False,
+)
 @click.argument(
     "browser",
     type=click.Choice(["chromium", "firefox", "webkit"], case_sensitive=False),
     nargs=-1,
 )
-def init(ctx, skip_browsers, browser):
+def init(ctx, skip_browsers, with_deps, browser):
     """Install node dependencies.
 
     init command is needed when library is installed or updated. When installing first time, run
@@ -305,7 +318,7 @@ def init(ctx, skip_browsers, browser):
         )
     _write_marker(silent_mode)
     try:
-        _rfbrowser_init(skip_browsers, silent_mode, browser)
+        _rfbrowser_init(skip_browsers, silent_mode, with_deps, browser)
         _write_marker(silent_mode)
     except Exception as err:
         _write_marker(silent_mode)
@@ -365,5 +378,5 @@ def show_trace(file: Path):
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
