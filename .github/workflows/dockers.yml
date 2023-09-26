@@ -28,8 +28,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Docker meta latest
-        id: meta-latest
+      - name: Docker latest meta
+        id: meta_latest
         uses: docker/metadata-action@v4
         if: ${{ matrix.ubuntu_os }} == focal
         with:
