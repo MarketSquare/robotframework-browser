@@ -9,6 +9,12 @@ on:
 jobs:
   docker-image:
     runs-on: ubuntu-latest
+    strategy:      
+      matrix:
+        ubuntu_os:
+          - focal
+          - jammy
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up QEMU for cross-platforms builds
@@ -22,30 +28,48 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Docker meta
-        id: meta
+      - name: Docker meta latest
+        id: meta-latest
         uses: docker/metadata-action@v4
+        if: ${{ matrix.ubuntu_os }} == focal
         with:
           images: marketsquare/robotframework-browser
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}            
+            type=semver,pattern={{version}}-${{ matrix.ubuntu_os }}
+            type=semver,pattern={{major}}.{{minor}}-${{ matrix.ubuntu_os }}
+            type=semver,pattern={{major}}-${{ matrix.ubuntu_os }}
           flavor: |
             latest=true
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        if: ${{ matrix.ubuntu_os }} != focal
+        with:
+          images: marketsquare/robotframework-browser-${{ matrix.ubuntu_os }}
+          tags: |         
+            type=ref,event=branch  
+            type=semver,pattern={{version}}-${{ matrix.ubuntu_os }}
+            type=semver,pattern={{major}}.{{minor}}-${{ matrix.ubuntu_os }}
+            type=semver,pattern={{major}}-${{ matrix.ubuntu_os }}
 
       - name: Push tag :version_number to Docker Hub
         uses: docker/build-push-action@v4
         with:
+          build-args: ${{ matrix.ubuntu_os }}
           tags: ${{ steps.meta.outputs.tags }}
           file: docker/Dockerfile.latest_release
           platforms: linux/arm64/v8,linux/amd64
           push: true
 
-      - name: Docker meta
-        id: meta_github
+      - name: Docker latest meta
+        id: meta_latest_github
         uses: docker/metadata-action@v4
+        if: ${{ matrix.ubuntu_os }} == focal
         with:
           images: ghcr.io/marketsquare/robotframework-browser/rfbrowser-stable
           tags: |
@@ -53,8 +77,23 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+            type=semver,pattern={{version}}-${{ matrix.ubuntu_os }}
+            type=semver,pattern={{major}}.{{minor}}-${{ matrix.ubuntu_os }}
+            type=semver,pattern={{major}}-${{ matrix.ubuntu_os }}
           flavor: |
             latest=true
+      
+      - name: Docker meta
+        id: meta_github
+        uses: docker/metadata-action@v4
+        if: ${{ matrix.ubuntu_os }} != focal
+        with:
+          images: ghcr.io/marketsquare/robotframework-browser/rfbrowser-stable-${{ matrix.ubuntu_os }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}-${{ matrix.ubuntu_os }}
+            type=semver,pattern={{major}}.{{minor}}-${{ matrix.ubuntu_os }}
+            type=semver,pattern={{major}}-${{ matrix.ubuntu_os }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -66,6 +105,7 @@ jobs:
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v4
         with:
+          build-args: ${{ matrix.ubuntu_os }}
           platforms: linux/arm64/v8,linux/amd64
           file: docker/Dockerfile.latest_release
           tags: ${{ steps.meta_github.outputs.tags }}
