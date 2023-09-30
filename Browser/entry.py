@@ -50,7 +50,10 @@ def _write_marker(silent_mode: bool = False):
 def _log(message: str, silent_mode: bool = False):
     if silent_mode:
         return
-    logging.info(message.strip("\n"))
+    try:
+        logging.info(message.strip("\n"))
+    except UnicodeEncodeError as error:
+        logging.info(f"Could not log line, suppress error {error}")
 
 
 def _process_poller(process: subprocess.Popen, silent_mode: bool):
