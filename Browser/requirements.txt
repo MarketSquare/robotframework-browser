@@ -1,4 +1,4 @@
-grpcio == 1.58.0
+grpcio == 1.59.0
 grpcio-tools == 1.58.0
 protobuf == 4.24.3
 robotframework >= 5.0.1
