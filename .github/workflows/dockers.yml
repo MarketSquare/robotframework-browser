@@ -24,7 +24,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: marketsquare/robotframework-browser
           tags: |
@@ -45,7 +45,7 @@ jobs:
 
       - name: Docker meta
         id: meta_github
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ghcr.io/marketsquare/robotframework-browser/rfbrowser-stable
           tags: |
