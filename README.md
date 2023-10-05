@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-126-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-129-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -28,7 +28,9 @@ Only Python 3.8 or newer is supported.
 Please note that by default Chromium, Firefox and WebKit browser are installed, even those would be already
 installed in the system. The installation size depends on the operating system, but usually is +700Mb.
 It is possible to skip browser binaries installation with `rfbrowser init --skip-browsers` command, but then user
-is responsible for browser binary installation.
+is responsible for browser binary installation. It is possible to install only selected browser binaries by adding
+`chromium`, `firefox` or `webkit` as arguments to init command. Example `rfbrowser init firefox` would install
+only Firefox binaries and `rfbrowser init firefox chromium` would install both Firefox and Chromium binaries.
 
 Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/pkgs/container/robotframework-browser%2Frfbrowser-stable). Documented at [docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
 
@@ -325,6 +327,11 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/RatexMak"><img src="https://avatars.githubusercontent.com/u/33491425?v=4?s=100" width="100px;" alt="RatexMak"/><br /><sub><b>RatexMak</b></sub></a><br /><a href="#ideas-RatexMak" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/horzuff"><img src="https://avatars.githubusercontent.com/u/63282033?v=4?s=100" width="100px;" alt="horzuff"/><br /><sub><b>horzuff</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=horzuff" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/naibra"><img src="https://avatars.githubusercontent.com/u/76438934?v=4?s=100" width="100px;" alt="naibra"/><br /><sub><b>naibra</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Anaibra" title="Bug reports">🐛</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="http://aapee.kapsi.fi"><img src="https://avatars.githubusercontent.com/u/7158433?v=4?s=100" width="100px;" alt="Antti Pekka Vilkko"/><br /><sub><b>Antti Pekka Vilkko</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aapvilkko" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/infoTrainingym"><img src="https://avatars.githubusercontent.com/u/2445330?v=4?s=100" width="100px;" alt="Serafín Martín"/><br /><sub><b>Serafín Martín</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AinfoTrainingym" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/JoostW21111"><img src="https://avatars.githubusercontent.com/u/130643234?v=4?s=100" width="100px;" alt="JoostW21111"/><br /><sub><b>JoostW21111</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AJoostW21111" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>

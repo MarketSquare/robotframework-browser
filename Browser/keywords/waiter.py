@@ -268,12 +268,15 @@ class Waiter(LibraryComponent):
             assertion_timeout = self.timeout
         else:
             raise TypeError(f"Invalid timeout type: {type(timeout)}")
+        original_timeout = self.timeout
         scope = Scope.Test if self.library.is_test_case_running else Scope.Suite
         if message is not None:
             args = (*args, f"message={message}")
         original_assert_retry = self.retry_assertions_for_stack.set(
             assertion_timeout, scope=scope
         )
+        if original_timeout < assertion_timeout:
+            self.timeout_stack.set(assertion_timeout, scope=scope)
         for lib, instance in BuiltIn().get_library_instance(all=True).items():
             if isinstance(instance, browser_file.Browser):
                 rf_keyword = f"{lib}.{condition.value}"
@@ -284,3 +287,4 @@ class Waiter(LibraryComponent):
             return BuiltIn().run_keyword(rf_keyword, *args)
         finally:
             self.retry_assertions_for_stack.set(original_assert_retry, scope=scope)
+            self.timeout_stack.set(original_timeout, scope=scope)

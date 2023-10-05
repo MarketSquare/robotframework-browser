@@ -321,7 +321,11 @@ class Interaction(LibraryComponent):
         | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
         | ``button`` | Defaults to ``left`` if invalid. |
 
-        All other arguments are **DEPRECATED** and will be removed in the future. Use `Click With Options` instead.
+        ! The arguments marked as ``Deprecated`` will be removed in the future,
+        but the `Click` keyword will still be available! The reason for removing these arguments is the bad design of
+        modifiers, which forces the user to set all other arguments as positional arguments when modifiers are used,
+        and the missing extensibility of the keyword.
+        Please use `Click With Options` when using arguments that are marked as deprecated.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 

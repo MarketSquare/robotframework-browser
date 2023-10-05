@@ -1168,6 +1168,33 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "apvilkko",
+      "name": "Antti Pekka Vilkko",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7158433?v=4",
+      "profile": "http://aapee.kapsi.fi",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "infoTrainingym",
+      "name": "Serafín Martín",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2445330?v=4",
+      "profile": "https://github.com/infoTrainingym",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "JoostW21111",
+      "name": "JoostW21111",
+      "avatar_url": "https://avatars.githubusercontent.com/u/130643234?v=4",
+      "profile": "https://github.com/JoostW21111",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
