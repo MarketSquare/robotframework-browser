@@ -694,7 +694,7 @@ async function _switchPage(id: Uuid, browserState: BrowserState) {
     const context = browserState.context?.c;
     if (!context) throw new Error('Tried to switch page, no open context');
     const pages = browserState.context?.pageStack;
-    logger.info('Changing current active page');
+    logger.info('Changing current active page: ' + id);
     const page = pages?.find((elem) => elem.id == id);
     if (page) {
         await browserState.activatePage(page);
@@ -744,7 +744,7 @@ export async function switchPage(
 
     const previous = browserState.page?.id || '';
     await _switchPage(id, browserState);
-    return stringResponse(previous, 'Successfully changed active page');
+    return stringResponse(previous, 'Successfully changed active page: ' + id);
 }
 
 async function findLatestPageAfter(
@@ -785,7 +785,7 @@ export async function switchContext(request: Request.Index, browserState: Browse
     }
     return stringResponse(
         previous,
-        id === 'CURRENT' ? 'Returned active context id' : 'Successfully changed active context',
+        id === 'CURRENT' ? 'Returned active context id: ' + id : 'Successfully changed active context: ' + id,
     );
 }
 
@@ -798,7 +798,7 @@ export async function switchBrowser(request: Request.Index, openBrowsers: Playwr
     openBrowsers.getActivePage()?.bringToFront();
     return stringResponse(
         previous?.id || 'NO BROWSER OPEN',
-        id === 'CURRENT' ? 'Returned active browser id' : 'Successfully changed active browser',
+        id === 'CURRENT' ? 'Returned active browser id. ' + id : 'Successfully changed active browser: ' + id,
     );
 }
 
