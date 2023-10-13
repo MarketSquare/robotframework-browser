@@ -4,7 +4,7 @@ Library         CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR
 Resource        imports.resource
 
 Suite Setup     New Page
-Test Setup      Go To    ${LOGIN_URL}
+Test Setup      Ensure Open Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Type Text With Clearing
