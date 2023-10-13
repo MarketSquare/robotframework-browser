@@ -104,6 +104,7 @@ Ensure Open Page
     ELSE
         Switch To Page    ${IDs}[0]
         IF    $url    Go To    ${url}
+        Reload
     END
 
 Ensure Location
