@@ -21,6 +21,7 @@ SHELL = bool(platform.platform().startswith("Windows"))
 CURRENT_FOLDER = Path(__file__).resolve().parent
 log_file = "rfbrowser.log"
 INSTALL_LOG = CURRENT_FOLDER / log_file
+PLAYWRIGHT_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
 try:
     INSTALL_LOG.touch(exist_ok=True)
 except Exception as error:
@@ -132,8 +133,8 @@ def _rfbrowser_init(
     _log(f"Installing rfbrowser node dependencies at {INSTALLATION_DIR}", silent_mode)
     if skip_browser_install:
         os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1"
-    elif not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+    elif not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+        os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
 
     process = subprocess.Popen(
         "npm ci --production --parseable true --progress false",
@@ -152,8 +153,11 @@ def _rfbrowser_init(
             cmd = f"{cmd} {browser_as_str}"
         if with_deps:
             cmd = f"{cmd.strip(' ')} --with-deps"
+
+        pw_browser_path = os.environ.get(PLAYWRIGHT_BROWSERS_PATH)
+        install_dir = pw_browser_path if pw_browser_path else INSTALLATION_DIR
         _log(
-            f"Installing browser {browser_as_str}binaries to {INSTALLATION_DIR}",
+            f"Installing browser {browser_as_str}binaries to {install_dir}",
             silent_mode,
         )
         _log(cmd)
