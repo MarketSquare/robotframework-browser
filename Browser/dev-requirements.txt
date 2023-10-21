@@ -1,10 +1,10 @@
-invoke >= 2.1.1
-pytest >= 7.3.1
+invoke >= 2.2.0
+pytest >= 7.4.2
 pytest-watch >= 4.2.0
-black >= 23.7.0
+black >= 23.10.0
 mypy >= 1.4.1
 mypy-protobuf >= 3.4.0
-ruff>=0.0.285
+ruff>=0.1.1
 wheel>=0.40.0
 robotframework-pabot >= 2.16.0
 twine >= 4.0.2
@@ -17,7 +17,7 @@ Pillow==10.1.0
 beautifulsoup4 >= 4.12.2
 psutil >= 5.9.4
 coverage >= 7.2.3
-robotframework-tidy >= 4.4.0
+robotframework-tidy >= 4.6.0
 python-dateutil >= 2.8.2
 robotframework-crypto >= 0.3.0
 # Include normal dependencies from requirements.txt. Makes it possible to use
