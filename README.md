@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-130-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-131-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -333,6 +333,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/infoTrainingym"><img src="https://avatars.githubusercontent.com/u/2445330?v=4?s=100" width="100px;" alt="Serafín Martín"/><br /><sub><b>Serafín Martín</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AinfoTrainingym" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/JoostW21111"><img src="https://avatars.githubusercontent.com/u/130643234?v=4?s=100" width="100px;" alt="JoostW21111"/><br /><sub><b>JoostW21111</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AJoostW21111" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Camatius"><img src="https://avatars.githubusercontent.com/u/20600086?v=4?s=100" width="100px;" alt="Camatius"/><br /><sub><b>Camatius</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ACamatius" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/terckert"><img src="https://avatars.githubusercontent.com/u/57592522?v=4?s=100" width="100px;" alt="terckert"/><br /><sub><b>terckert</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aterckert" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
