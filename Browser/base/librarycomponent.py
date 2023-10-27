@@ -19,7 +19,7 @@ from copy import copy, deepcopy
 from datetime import timedelta
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set, Union
 
 from robot.libraries.BuiltIn import BuiltIn
 from robot.utils import timestr_to_secs
@@ -83,6 +83,20 @@ class LibraryComponent:
     @run_on_failure_keyword_stack.setter
     def run_on_failure_keyword_stack(self, stack: SettingsStack):
         self.library.scope_stack["run_on_failure"] = stack
+
+    @property
+    def assertion_formatter_stack(self) -> SettingsStack:
+        return self.library.scope_stack["assertion_formatter"]
+
+    @assertion_formatter_stack.setter
+    def assertion_formatter_stack(self, stack: SettingsStack):
+        self.library.scope_stack["assertion_formatter"] = stack
+
+    def get_assertion_formatter(self, keyword: Callable) -> list:
+        return self.library._get_assertion_formatter(keyword)
+
+    def method_to_kw_str(self, keyword: Callable) -> str:
+        return self.library._assertion_formatter.method_to_kw_str(keyword)
 
     @property
     def timeout(self) -> float:

@@ -24,7 +24,7 @@ from robot.utils import get_link_path
 
 from Browser.utils.data_types import Deprecated, ServiceWorkersPermissions, deprecated
 
-from ..assertion_engine import with_assertion_polling
+from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -795,6 +795,7 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     @with_assertion_polling
+    @assertion_formatter_used
     def get_browser_catalog(
         self,
         assertion_operator: Optional[AssertionOperator] = None,
@@ -880,7 +881,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.GetBrowserCatalog(Request().Empty())
             parsed = json.loads(response.json)
             logger.info(json.dumps(parsed, indent=2))
-            formatter = self.keyword_formatters.get(self.get_browser_catalog)
+            formatter = self.get_assertion_formatter(self.get_browser_catalog)
             return verify_assertion(
                 parsed,
                 assertion_operator,

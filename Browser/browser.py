@@ -23,7 +23,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Pattern, Set, Union
 
-from assertionengine import AssertionOperator, Formatter
+from assertionengine import AssertionOperator
 from overrides import overrides
 from robot.api.deco import library
 from robot.errors import DataError
@@ -39,6 +39,7 @@ from .keywords import (
     Cookie,
     Devices,
     Evaluation,
+    Formatter,
     Getters,
     Interaction,
     Network,
@@ -777,6 +778,7 @@ class Browser(DynamicCore):
         self.scope_stack: Dict = {}
         self._playwright_state = PlaywrightState(self)
         self._browser_control = Control(self)
+        self._assertion_formatter = Formatter(self)
         libraries = [
             self._playwright_state,
             self._browser_control,
@@ -784,7 +786,7 @@ class Browser(DynamicCore):
             Crawling(self),
             Devices(self),
             Evaluation(self),
-            Formatter(self),
+            self._assertion_formatter,
             Interaction(self),
             Getters(self),
             Network(self),
@@ -848,6 +850,7 @@ class Browser(DynamicCore):
             show_keyword_call_banner, self
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
+        self.scope_stack["assertion_formatter"] = SettingsStack("", self)
 
     @property
     def keyword_call_banner_add_style(self):
@@ -1307,3 +1310,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             doc = f"{doc}\n    | Should Be Equal    ${{value}}    Expected Text\n\n"
             doc = f"{doc}\n[https://forum.robotframework.org/t//4327|Comment >>]"
         return doc
+
+    def _get_assertion_formatter(self, keyword: Callable) -> list:
+        return self._assertion_formatter.get_formatter(keyword)

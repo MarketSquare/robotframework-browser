@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import time
 from typing import Optional, Union
 
@@ -74,3 +73,8 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
                 f"Total tries: {tries}\n"
                 f"Elapsed time in retries {now - (retries_start or now)} seconds"
             )
+
+
+def assertion_formatter_used(func):
+    func.assertion_formatter_used = True
+    return func

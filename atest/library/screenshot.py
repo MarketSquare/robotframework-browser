@@ -4,6 +4,7 @@ from PIL import Image, ImageChops
 from typing import Tuple
 from robot.api import logger
 
+
 def get_image_size(img_path: str) -> Tuple[int]:
     im: Image.Image = Image.open(img_path)
     return im.size
@@ -14,6 +15,7 @@ def get_pixel_color(img_path: str, x: int, y: int) -> Tuple[int, int]:
     im: Image.Image = Image.open(img_path)
     pix = im.load()
     return pix[x,y]
+
 
 def compare_images(img1_path: str, img2_bytes: bytes):
     """Returns True if the images are the same, False otherwise"""
