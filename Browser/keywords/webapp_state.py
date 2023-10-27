@@ -17,7 +17,7 @@ from typing import Any, Optional
 
 from assertionengine import AssertionOperator, verify_assertion
 
-from ..assertion_engine import with_assertion_polling
+from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
@@ -38,6 +38,7 @@ class WebAppState(LibraryComponent):
 
     @keyword(name="localStorage get Item", tags=("PageContent", "Assertion", "Getter"))
     @with_assertion_polling
+    @assertion_formatter_used
     def local_storage_get_item(
         self,
         key: str,
@@ -66,7 +67,7 @@ class WebAppState(LibraryComponent):
         """
         response = self.eval_js(f'window.localStorage.getItem("{key}")', frame_selector)
         logger.info(response.log)
-        formatter = self.keyword_formatters.get(self.local_storage_get_item)
+        formatter = self.get_assertion_formatter(self.local_storage_get_item)
         return verify_assertion(
             json.loads(response.result),
             assertion_operator,
@@ -141,6 +142,7 @@ class WebAppState(LibraryComponent):
         name="sessionStorage get Item", tags=("PageContent", "Assertion", "Getter")
     )
     @with_assertion_polling
+    @assertion_formatter_used
     def session_storage_get_item(
         self,
         key: str,
@@ -169,7 +171,7 @@ class WebAppState(LibraryComponent):
             f"window.sessionStorage.getItem({key!r})", frame_selector
         )
         logger.info(response.log)
-        formatter = self.keyword_formatters.get(self.session_storage_get_item)
+        formatter = self.get_assertion_formatter(self.session_storage_get_item)
         return verify_assertion(
             json.loads(response.result),
             assertion_operator,

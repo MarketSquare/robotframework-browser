@@ -38,7 +38,7 @@ class SettingsStack:
         parent_setting = self._last_setting.setting
         self._stack[identifier] = ScopedSetting(typ, parent_setting)
 
-    def end(self, identifier):
+    def end(self, identifier: str):
         previous = self._stack.pop(identifier, None)
         if self.setter_function and previous != self._last_setting:
             self.setter_function(self._last_setting.setting)

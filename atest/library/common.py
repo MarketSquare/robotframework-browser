@@ -4,6 +4,8 @@ from subprocess import PIPE, STDOUT, Popen
 from typing import Dict, NamedTuple
 from urllib.parse import urlparse
 
+from robot.libraries.BuiltIn import BuiltIn
+
 from Browser.utils import find_free_port
 
 SERVERS: Dict = {}
@@ -37,3 +39,10 @@ def stop_test_server(port: str):
     if port in SERVERS:
         SERVERS[port].kill()
         del SERVERS[port]
+
+
+def get_current_scope_from_lib(keyword: str) -> list:
+    keyword = keyword.lower().replace(" ", "_")
+    browser = BuiltIn().get_library_instance("Browser")
+    stack = browser.scope_stack["assertion_formatter"].get()
+    return [formatter.__name__ for formatter in stack.get(keyword, list())]

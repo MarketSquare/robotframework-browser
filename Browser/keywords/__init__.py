@@ -16,6 +16,7 @@ from .browser_control import Control
 from .cookie import Cookie
 from .device_descriptors import Devices
 from .evaluation import Evaluation
+from .formatter import Formatter
 from .getters import Getters
 from .interaction import Interaction
 from .network import Network
@@ -32,6 +33,7 @@ __all__ = [
     "Devices",
     "Getters",
     "Evaluation",
+    "Formatter",
     "Interaction",
     "Network",
     "PlaywrightState",

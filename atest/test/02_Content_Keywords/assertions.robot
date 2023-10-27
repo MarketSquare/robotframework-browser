@@ -9,7 +9,59 @@ Equal
     Get Title    equal    Login Page
     Get Title    should be    Login Page
 
-Equal With Formatter:
+Formatter Scopes
+    ${old_scope} =    Set Assertion Formatter    Get Text    Global    normalize spaces
+    Should Be Empty    ${old_scope}
+    ${current_scope} =    Get Current Scope From Lib    Get Text
+    ${expected_scope} =    Create List    _normalize_spaces
+    Should Be Equal    ${current_scope}    ${expected_scope}
+
+    ${old_scope} =    Set Assertion Formatter    Get Text    Global    strip
+    ${scope} =    Create List    normalize spaces
+    Should Be Equal    ${old_scope}    ${scope}
+    ${current_scope} =    Get Current Scope From Lib    Get Text
+    ${expected_scope} =    Create List    _strip
+    Should Be Equal    ${current_scope}    ${expected_scope}
+
+    ${old_scope} =    Set Assertion Formatter    Get Text    Test    normalize spaces
+    ${scope} =    Create List    strip
+    Should Be Equal    ${old_scope}    ${scope}
+    ${current_scope} =    Get Current Scope From Lib    Get Text
+    ${expected_scope} =    Create List    _normalize_spaces
+    Should Be Equal    ${current_scope}    ${expected_scope}
+
+    ${old_scope} =    Set Assertion Formatter    Get Text    Suite    apply to expected    case insensitive
+    ${scope} =    Create List    normalize spaces
+    Should Be Equal    ${old_scope}    ${scope}
+    ${current_scope} =    Get Current Scope From Lib    Get Text
+    ${expected_scope} =    Create List    _apply_to_expected    _case_insensitive
+    Should Be Equal    ${current_scope}    ${expected_scope}
+
+    Set Assertion Formatter    Get Text    Suite
+    ${current_scope} =    Get Current Scope From Lib    Get Text
+    Should Be Empty    ${current_scope}
+    [Teardown]    Formatter TearDown
+
+Equal With Formatter Global:
+    [Setup]    Go To    ${SPACES_URL}
+    Set Assertion Formatter    Get Text    Global    normalize spaces
+    Set Assertion Formatter    Get Text    Global    strip
+    Get Text    id=two    ==    two spaces
+    [Teardown]    Formatter TearDown
+
+Cat Not Set Formatter For Not Library Keyword
+    TRY
+        Set Assertion Formatter    Not Browser Library Keyword    Suite    strip
+    EXCEPT    ValueError: Not Browser Library Keyword is not library keyword    AS    ${error}
+        Log    ${error}
+    END
+    TRY
+        Set Assertion Formatter    Log    Suite    strip
+    EXCEPT    ValueError: Log is not library keyword    AS    ${error}
+        Log    ${error}
+    END
+
+Equal With Deprecated Formatter:
     [Setup]    Go To    ${SPACES_URL}
     Set Assertion Formatters    {"Get Text": ["strip"]}
     Get Text    id=two    ==    two spaces
@@ -19,7 +71,7 @@ Get Attribute Names Does Not Support Formatter:
     [Documentation]
     ...    LOG 2:*    WARN    Formatter is not supported by Get Attribute Names keyword.
     [Setup]    Go To    ${SPACES_URL}
-    Set Assertion Formatters    {"Get Attribute Names": ["strip"]}
+    Set Assertion Formatter    Get Attribute Names    Test    strip
     Get Attribute Names    id=two    ==    id
     [Teardown]    Formatter TearDown
 
@@ -34,7 +86,7 @@ Get Element Count Does Not Support Formatter:
     [Documentation]
     ...    LOG 2:*    WARN    Formatter is not supported by Get Element Count keyword.
     [Setup]    Go To    ${SPACES_URL}
-    Set Assertion Formatters    {"Get Element Count": ["strip"]}
+    Set Assertion Formatter    Get Element Count    Test    strip
     Get Element Count    id=two    ==    1
     [Teardown]    Formatter TearDown
 
@@ -117,5 +169,5 @@ Evaluate
 
 *** Keywords ***
 Formatter TearDown
-    Set Assertion Formatters    {}
+    Set Assertion Formatter
     Go To    ${LOGIN_URL}

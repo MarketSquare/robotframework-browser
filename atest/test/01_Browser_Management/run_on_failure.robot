@@ -93,7 +93,7 @@ Register Get Page Source
     ${prev} =    Register Keyword To Run On Failure    Get Page Source
     Type Text    css=input#username_field    username
     Run Keyword And Expect Error
-    ...    *'username' (str) should be 'not_username' (str)
+    ...    *'username' (str) should be 'not_username' (str)*
     ...    Get Text    css=input#username_field    ==    not_username
     [Teardown]    Register Keyword To Run On Failure    ${prev}
 
