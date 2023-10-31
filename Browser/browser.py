@@ -815,7 +815,7 @@ class Browser(DynamicCore):
                 jsextension.split(",") if isinstance(jsextension, str) else jsextension
             )
             libraries.extend(
-                libraries.append(self._create_lib_component_from_jsextension(js_ext))
+                self._create_lib_component_from_jsextension(js_ext)
                 for js_ext in jsextensions
             )
         if plugins:
