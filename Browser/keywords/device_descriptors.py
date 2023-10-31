@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import json
-from typing import Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -22,7 +22,7 @@ from ..utils import keyword, logger
 
 class Devices(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl"))
-    def get_devices(self) -> Dict:
+    def get_devices(self) -> dict:
         """Returns a dict of all playwright device descriptors.
 
         See Playwright's
@@ -37,7 +37,7 @@ class Devices(LibraryComponent):
             return json.loads(response.json)
 
     @keyword(tags=("Getter", "BrowserControl"))
-    def get_device(self, name: str) -> Dict:
+    def get_device(self, name: str) -> dict:
         """Get a single device descriptor with name exactly matching name.
 
         | =Arguments= | =Description= |

@@ -11,12 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import json
 from concurrent.futures import Future, ThreadPoolExecutor
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, List
+from typing import Any
 
 from robot.api.deco import keyword
 from robot.running.arguments.typeconverters import TypeConverter
@@ -84,8 +86,8 @@ class Promises(LibraryComponent):
         return kw.lower().replace(" ", "").replace("_", "")
 
     def resolve_arguments(self, kw: str, *args):
-        positional: List[Any] = []
-        named: Dict[str, Any] = {}
+        positional: list[Any] = []
+        named: dict[str, Any] = {}
         logger.debug(f"*args {args}")
 
         arg_names = [

@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import os
 import re
 import traceback
@@ -19,7 +21,7 @@ from copy import copy, deepcopy
 from datetime import timedelta
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from robot.libraries.BuiltIn import BuiltIn
 from robot.utils import timestr_to_secs
@@ -35,14 +37,14 @@ NOT_FOUND = object()
 
 
 class LibraryComponent:
-    def __init__(self, library: "Browser") -> None:
+    def __init__(self, library: Browser) -> None:
         """Base class exposing attributes from the common context.
 
         :param library: The library itself as a context object.
         """
         self.library = library
         self._crypto: Optional[Any] = None
-        self.browser_arg_mapping: Dict[int, str] = {}
+        self.browser_arg_mapping: dict[int, str] = {}
 
     @property
     def playwright(self):
@@ -154,7 +156,7 @@ class LibraryComponent:
         return self.library._unresolved_promises
 
     @unresolved_promises.setter
-    def unresolved_promises(self, value: Set[Future]):
+    def unresolved_promises(self, value: set[Future]):
         self.library._unresolved_promises = value
 
     @property
@@ -297,7 +299,7 @@ class LibraryComponent:
 
     @property
     def get_presenter_mode(self) -> HighLightElement:
-        mode: Union[HighLightElement, Dict] = {}
+        mode: Union[HighLightElement, dict] = {}
         if isinstance(self.library.presenter_mode, dict):
             mode = copy(self.library.presenter_mode)
         duration = mode.get("duration", "2 seconds")
@@ -331,7 +333,7 @@ class LibraryComponent:
         return selector
 
     def exec_scroll_function(self, function: str, selector: Optional[str] = None):
-        if selector:
+        if selector:  # noqa: SIM108
             element_selector = "(element) => element"
         else:
             element_selector = "document.scrollingElement"

@@ -11,8 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import inspect
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable
 
 from robot.running import TypeConverter
 
@@ -46,8 +48,8 @@ def _is_deprecated_attribute(method: Callable, deprecated_arg, args, kwargs):
 
 
 def convert_pos_args_to_named(
-    deprecated_pos_args: Tuple[Any, ...],
-    old_args: Dict[str, Any],
+    deprecated_pos_args: tuple[Any, ...],
+    old_args: dict[str, Any],
     keyword_name: str,
     additional_msg: str = "",
 ):

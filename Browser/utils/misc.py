@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import contextlib
 import inspect
@@ -18,7 +19,7 @@ import os
 import socket
 import subprocess
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any
 
 from robot.libraries.BuiltIn import BuiltIn
 
@@ -32,7 +33,7 @@ def find_free_port() -> int:
         return s.getsockname()[1]
 
 
-def spawn_node_process(output_dir: Path) -> Tuple[subprocess.Popen, str]:
+def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
     """
     Spawn an rfbrowser node process, that can be shared between library instances.
 
@@ -74,7 +75,7 @@ def get_normalized_keyword(keyword: str) -> str:
     return keyword.lower().replace(" ", "_")
 
 
-def keyword(name: Any = None, tags: Tuple = (), types: Tuple = ()):
+def keyword(name: Any = None, tags: tuple = (), types: tuple = ()):
     if inspect.isroutine(name):
         return keyword()(name)
 

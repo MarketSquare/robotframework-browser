@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from .data_types import Scope
 
@@ -17,12 +19,12 @@ class SettingsStack:
     def __init__(
         self,
         global_setting: Any,
-        ctx: "Browser",
+        ctx: Browser,
         setter_function: Optional[Callable] = None,
     ):
         self.library = ctx
         self.setter_function = setter_function
-        self._stack: Dict[str, ScopedSetting] = {
+        self._stack: dict[str, ScopedSetting] = {
             "g": ScopedSetting(Scope.Global, global_setting)
         }
 

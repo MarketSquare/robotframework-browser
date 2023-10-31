@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import json
 import re
 import time
 from datetime import timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from robot.libraries.BuiltIn import BuiltIn
 
@@ -133,7 +134,7 @@ class Waiter(LibraryComponent):
     ):
         selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
-            options: Dict[str, object] = {"state": state.name}
+            options: dict[str, object] = {"state": state.name}
             if timeout:
                 options["timeout"] = self.get_timeout(timeout)
             options_json = json.dumps(options)
@@ -203,7 +204,7 @@ class Waiter(LibraryComponent):
     ):
         selector = self.resolve_selector(selector)
         with self.playwright.grpc_channel() as stub:
-            options: Dict[str, int] = {}
+            options: dict[str, int] = {}
             if polling != "raf":
                 options["polling"] = self.convert_timeout(polling)  # type: ignore
             if timeout:

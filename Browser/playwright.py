@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import atexit
 import contextlib
@@ -42,7 +43,7 @@ class Playwright(LibraryComponent):
 
     def __init__(
         self,
-        library: "Browser",
+        library: Browser,
         enable_playwright_debug: bool,
         port: Optional[int] = None,
         playwright_log: Path = Path(Path.cwd()),
