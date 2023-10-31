@@ -52,13 +52,13 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
         while True:
             try:
                 return wrapped(*args, **kwargs)
-            except AssertionError as e:
+            except AssertionError as error:  # noqa: PERF203
                 if retries_start is None:
                     retries_start = time.time()
                 elapsed = time.time() - start
                 elapsed_retries = time.time() - retries_start
                 if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
-                    raise e
+                    raise error
                 tries += 1
                 if timeout - elapsed > 0.01:  # noqa: PLR2004
                     time.sleep(0.01)

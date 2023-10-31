@@ -57,19 +57,14 @@ class Cookie(LibraryComponent):
             return response, json.loads(response.json)
 
     def _format_cookies_as_string(self, cookies: List[dict]):
-        pairs = []
-        for cookie in cookies:
-            pairs.append(self._cookie_as_string(cookie))
+        pairs = [self._cookie_as_string(cookie) for cookie in cookies]
         return "; ".join(pairs)
 
     def _cookie_as_string(self, cookie: dict) -> str:
         return f'{cookie["name"]}={cookie["value"]}'
 
     def _format_cookies_as_dot_dict(self, cookies: List[dict]):
-        as_list = []
-        for cookie in cookies:
-            as_list.append(self._cookie_as_dot_dict(cookie))
-        return as_list
+        return [self._cookie_as_dot_dict(cookie) for cookie in cookies]
 
     def _cookie_as_dot_dict(self, cookie):
         dot_dict = DotDict()

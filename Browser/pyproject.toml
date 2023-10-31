@@ -61,5 +61,6 @@ select = [
   "RSE",
   "RET",
   "SIM",
-  "RUF"
+  "RUF",
+  "PERF",
 ]

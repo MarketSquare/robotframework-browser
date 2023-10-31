@@ -64,11 +64,9 @@ class Formatter(ASFormatter, LibraryComponent):
         return name.replace("_", " ").title()
 
     def _convert_scope_to_strings(self, scopes: list) -> list:
-        scopes_str = []
+        scopes_str: List[str] = []
         for rule_name, rule_method in FormatRules.items():
-            for scope in scopes:
-                if scope == rule_method:
-                    scopes_str.append(rule_name)
+            scopes_str.extend(rule_name for scope in scopes if scope == rule_method)
         return scopes_str
 
     def get_formatter(self, keyword: Callable) -> list:

@@ -102,7 +102,7 @@ class Waiter(LibraryComponent):
                     return self._wait_for_elements_state(
                         selector, state, timeout, self.strict_mode
                     )
-                except Exception as error:
+                except Exception as error:  # noqa: PERF203
                     if end > time.monotonic():
                         logger.debug(f"Suppress error: {error}")
                     else:
@@ -181,7 +181,7 @@ class Waiter(LibraryComponent):
                 return self._wait_for_function(
                     function, selector, polling, timeout, self.strict_mode
                 )
-            except Exception as error:
+            except Exception as error:  # noqa PERF203
                 if end > time.monotonic():
                     logger.debug(f"Suppress {error}")
                 else:

@@ -1262,7 +1262,7 @@ class PlaywrightState(LibraryComponent):
             context_ids = []
             for browser_item in self.get_browser_catalog():
                 if "activeContext" in browser_item:
-                    context_ids.append(browser_item["activeContext"])
+                    context_ids.append(browser_item["activeContext"])  # noqa: PERF401
             return context_ids
         else:
             context_ids = []
