@@ -1214,6 +1214,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mbondarew",
+      "name": "Maksim Bondarew",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6174054?v=4",
+      "profile": "http://mbondarew.dev",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
