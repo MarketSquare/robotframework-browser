@@ -737,7 +737,7 @@ class Browser(DynamicCore):
 
     _context_cache = ContextCache()
     _suite_cleanup_done = False
-    _output_dir: Optional[str] = None
+    _output_dir = "."
 
     def __init__(
         self,
@@ -1013,7 +1013,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def outputdir(self) -> str:
         if EXECUTION_CONTEXTS.current:
             return BuiltIn().get_variable_value("${OUTPUTDIR}")
-        return self._output_dir if self._output_dir else "."
+        return self._output_dir
 
     @outputdir.setter
     def outputdir(self, value: str):
