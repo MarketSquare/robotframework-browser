@@ -761,7 +761,7 @@ class Browser(DynamicCore):
         | =Argument=                        | =Description= |
         | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
         | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. Mainly Useful for the library developers and for debugging purposes. Will og everything as plain text, also including secrects. |
-        | ``enable_presenter_mode``         | Automatic highlights to interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. |
+        | ``enable_presenter_mode``         | Automatic highlights the interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. By default, the call banner keyword is also enabled unless explicitly disabled.|
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
         | ``jsextension``                   | Path to Javascript modules exposed as extra keywords. The modules must be in CommonJS. It can either be a single path, a comma-separated lists of path or a real list of strings |
         | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
@@ -777,6 +777,8 @@ class Browser(DynamicCore):
             raise ValueError("Browser library does not accept positional arguments.")
         self.ROBOT_LIBRARY_LISTENER = self
         self.scope_stack: Dict = {}
+        self.suite_ids: Dict[str, None] = {}
+        self.current_test_id: Optional[str] = None
         self._playwright_state = PlaywrightState(self)
         self._browser_control = Control(self)
         self._assertion_formatter = Formatter(self)
@@ -1040,7 +1042,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return self.browser_output / "state"
 
     def _start_suite(self, _name, attrs):
-        self._add_to_scope_stack(attrs, Scope.Suite)
+        self.suite_ids[attrs["id"]] = None
+        self._add_to_scope_stack(attrs["id"], Scope.Suite)
         if not Browser._suite_cleanup_done:
             Browser._suite_cleanup_done = True
             for path in [
@@ -1059,7 +1062,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
     def _start_test(self, _name, attrs):
-        self._add_to_scope_stack(attrs, Scope.Test)
+        self.current_test_id = attrs["id"]
+        self._add_to_scope_stack(attrs["id"], Scope.Test)
         self.is_test_case_running = True
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
@@ -1114,7 +1118,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._set_logging(True)
 
     def _end_test(self, name, attrs):
-        self._remove_from_scope_stack(attrs)
+        self._remove_from_scope_stack(attrs["id"])
+        self.current_test_id = None
         self.is_test_case_running = False
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
@@ -1135,7 +1140,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug(f"Browser._end_test connection problem: {e}")
 
     def _end_suite(self, name, attrs):
-        self._remove_from_scope_stack(attrs)
+        self._remove_from_scope_stack(attrs["id"])
+        self.suite_ids.pop(attrs["id"])
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")
@@ -1148,13 +1154,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._end_suite connection problem: {e}")
 
-    def _add_to_scope_stack(self, attrs: Dict[str, Any], scope: Scope):
+    def _add_to_scope_stack(self, scope_id: str, scope: Scope):
         for stack in self.scope_stack.values():
-            stack.start(attrs["id"], scope)
+            stack.start(scope_id, scope)
 
-    def _remove_from_scope_stack(self, attrs: Dict[str, Any]):
+    def _remove_from_scope_stack(self, scope_id):
         for stack in self.scope_stack.values():
-            stack.end(attrs["id"])
+            stack.end(scope_id)
 
     def _prune_execution_stack(self, catalog_before: dict) -> None:
         catalog_after = self.get_browser_catalog()

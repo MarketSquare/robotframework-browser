@@ -40,24 +40,34 @@ class SettingsStack:
 
     def end(self, identifier: str):
         previous = self._stack.pop(identifier, None)
-        if self.setter_function and previous != self._last_setting:
+        if (
+            previous is not None
+            and self.setter_function is not None
+            and previous != self._last_setting
+        ):
             self.setter_function(self._last_setting.setting)
 
     def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):  # noqa: A003
+        if not self.library.suite_ids:
+            scope = Scope.Global
         original = self.get()
         if scope == Scope.Global:
             for value in self._stack.values():
                 value.setting = setting
-        elif scope == Scope.Suite:
+        elif scope == Scope.Suite or scope is None:
             if self._last_setting.typ == Scope.Test:
                 self._stack.popitem()
-            self._stack[self._last_id] = ScopedSetting(Scope.Suite, setting)
+            self._stack[list(self.library.suite_ids)[-1]] = ScopedSetting(
+                Scope.Suite, setting
+            )
         elif scope == Scope.Test:
             if not self.library.is_test_case_running:
                 raise ValueError("Setting for test/task can not be set on suite level}")
-            self._stack[self._last_id] = ScopedSetting(Scope.Test, setting)
+            self._stack[self.library.current_test_id] = ScopedSetting(
+                Scope.Test, setting
+            )
         else:
-            self._stack[self._last_id] = ScopedSetting(self._last_setting.typ, setting)
+            raise ValueError(f"Unknown scope {scope}")
         if self.setter_function and original != setting:
             self.setter_function(setting)
         return original
