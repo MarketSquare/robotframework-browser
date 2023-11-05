@@ -48,6 +48,8 @@ class SettingsStack:
             self.setter_function(self._last_setting.setting)
 
     def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):  # noqa: A003
+        if not self.library.suite_ids:
+            scope = Scope.Global
         original = self.get()
         if scope == Scope.Global:
             for value in self._stack.values():
