@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
+import re
 from concurrent.futures import Future, ThreadPoolExecutor
 from os import PathLike
 from pathlib import Path
+from sys import maxsize
 from time import sleep
 from typing import Any, Dict, List
 
@@ -88,17 +90,27 @@ class Promises(LibraryComponent):
         named: Dict[str, Any] = {}
         logger.debug(f"*args {args}")
 
-        arg_names = [
-            argument[0] if isinstance(argument, tuple) else argument
-            for argument in self.library.get_keyword_arguments(kw)
-        ]
+        arg_names = []
+        index_of_varargs = maxsize
+        for index, argument in enumerate(self.library.get_keyword_arguments(kw)):
+            arg_name = argument[0] if isinstance(argument, tuple) else argument
+            match = re.fullmatch(r"^\*(\w.*)", arg_name)
+            if match:
+                index_of_varargs = index
+                arg_name = match.group(1)
+            arg_names.append(arg_name)
+
         for index, arg in enumerate(args):
             arg_name, has_equal, arg_value = arg.partition("=")
             arg_name = arg_name.strip()
             arg_value = arg_value.strip()
 
             if not named and (not has_equal or arg_name not in arg_names):
-                positional.append(self.convert_keyword_arg(kw, arg_names[index], arg))
+                positional.append(
+                    self.convert_keyword_arg(
+                        kw, arg_names[min(index, index_of_varargs)], arg
+                    )
+                )
             elif arg_name in arg_names:
                 named[arg_name] = self.convert_keyword_arg(kw, arg_name, arg_value)
             else:

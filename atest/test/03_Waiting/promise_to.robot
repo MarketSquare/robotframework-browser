@@ -27,3 +27,21 @@ Could Not Find Keyword W Promise To
     ELSE
         FAIL    Should have failed
     END
+
+Promise To With *args
+    [Timeout]    600s
+    ${promise} =    Promise To
+    ...    Click With Options
+    ...    id=clickWithOptions
+    ...    left
+    ...    SHIFT
+    ...    ALT
+    ...    clickCount=4
+    ...    delay=200 ms
+    Go To    ${LOGIN_URL}
+    Wait For    ${promise}
+    Get Text    id=click_count    ==    4
+    Get Text    id=mouse_delay_time    validate    int(value) > 100 and int(value) < 300
+    Get Text    id=mouse_button    ==    left
+    Get Text    id=shift_key    ==    true
+    Get Text    id=alt_key    ==    true
