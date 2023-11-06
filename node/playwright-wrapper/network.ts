@@ -15,6 +15,7 @@
 import * as path from 'path';
 import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
+import { PlaywrightState } from './playwright-state';
 
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString, stringResponse } from './response-util';
 
@@ -114,14 +115,26 @@ export async function waitForNavigation(request: pb.Request.UrlOptions, page: Pa
     return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 
-export async function waitForDownload(request: pb.Request.FilePath, page: Page): Promise<pb.Response.Json> {
+export async function waitForDownload(
+    request: pb.Request.FilePath,
+    state: PlaywrightState,
+    page: Page,
+): Promise<pb.Response.Json> {
     const saveAs = request.getPath();
-    return await _waitForDownload(page, saveAs);
+    return await _waitForDownload(page, state, saveAs);
 }
 
-export async function _waitForDownload(page: Page, saveAs: string): Promise<pb.Response.Json> {
+export async function _waitForDownload(page: Page, state: PlaywrightState, saveAs: string): Promise<pb.Response.Json> {
     const downloadObject = await page.waitForEvent('download');
-
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const downloadsPath = state.activeBrowser.browser?._options.downloadsPath;
+    if (downloadsPath && saveAs) {
+        logger.info('saveAs: ' + path.resolve(downloadsPath, saveAs));
+        if (!path.isAbsolute(saveAs)) {
+            saveAs = path.resolve(downloadsPath, saveAs);
+        }
+    }
     let filePath;
     if (saveAs) {
         await downloadObject.saveAs(saveAs);
@@ -133,6 +146,6 @@ export async function _waitForDownload(page: Page, saveAs: string): Promise<pb.R
     logger.info('suggestedFilename: ' + fileName + ' saveAs path: ' + filePath);
     return jsonResponse(
         JSON.stringify({ saveAs: filePath, suggestedFilename: fileName }),
-        'Download done successfully to: ' + filePath
+        'Download done successfully to: ' + filePath,
     );
 }

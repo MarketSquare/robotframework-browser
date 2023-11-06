@@ -83,6 +83,25 @@ Wait For Download With Custom Path
     Remove File    ${CUSTOM_DL_PATH}
     Remove File    ${file_object.saveAs}
 
+Wait For Download Relative To downloadsPath
+    New Browser    ${BROWSER}    headless=${HEADLESS}    downloadsPath=${OUTPUT DIR}/downloads
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    ${dl_promise} =    Promise To Wait For Download    saveAs=test_waitfordownload_file_saveAs.js
+    Sleep    0.5
+    Click    id=file_download
+    ${download_url} =    Get Property    id=file_download    href
+    ${file_object} =    Wait For    ${dl_promise}
+    ${download_file_object} =    Download    ${download_url}    saveAs=test_download_file_saveAs.js
+    Close Browser
+    File Should Exist    ${file_object}[saveAs]
+    Should Be Equal    ${file_object}[saveAs]    ${OUTPUT DIR}/downloads/test_waitfordownload_file_saveAs.js
+    Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
+    Remove File    ${file_object}[saveAs]
+    File Should Exist    ${download_file_object}[saveAs]
+    Should Be Equal    ${download_file_object}[saveAs]    ${OUTPUT DIR}/downloads/test_download_file_saveAs.js
+    Remove File    ${download_file_object}[saveAs]
+
 *** Keywords ***
 Set Library Timeout
     ${open_browsers} =    Get Browser Ids

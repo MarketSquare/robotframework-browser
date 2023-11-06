@@ -17,6 +17,7 @@ import { Frame, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
+import { _waitForDownload } from './network';
 import {
     emptyWithLog,
     intResponse,
@@ -26,7 +27,6 @@ import {
     stringResponse,
 } from './response-util';
 import { exists, findLocator } from './playwright-invoke';
-import { _waitForDownload } from './network';
 
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -518,7 +518,7 @@ export async function download(request: Request.UrlAndPath, state: PlaywrightSta
                 return a.download;
             });
     };
-    const downloadStarted = _waitForDownload(page, saveAs)
+    const downloadStarted = _waitForDownload(page, state, saveAs);
     await page.evaluate(script, urlString);
     return await downloadStarted;
 }

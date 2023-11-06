@@ -14,7 +14,6 @@
 
 import json
 from datetime import timedelta
-from pathlib import Path
 from typing import Any, Optional
 
 from robot.utils import DotDict
@@ -150,19 +149,25 @@ class Evaluation(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``url`` | URL to the file that shall be downloaded. |
-        | ``saveAs`` | Path where the file shall be saved. If empty, a default path with a random filename is used. |
+        | ``saveAs`` | Path where the file shall be saved persistently. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
 
         Keyword returns dictionary which contains downloaded file path
-        and suggested filename as keys (saveAs and suggestedFilename).
-        If the file URL is unknown (i.e. the download is triggered by event handlers)
-        use `Promise To Wait For Download` keyword.
+        and suggested filename as keys (``saveAs`` and ``suggestedFilename``).
+
+        Example:
+        | {
+        |   "saveAs": "/tmp/robotframework-browser/downloads/2f1b3b7c-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
+        |   "suggestedFilename": "downloaded_file.txt"
+        | }
+
+        If the download should be started by an interaction with an element on the page,
+        `Promise To Wait For Download` keyword may be a better choice.
+
+        The keyword `New Browser` has a ``downloadsPath`` setting which can be used to set the default download directory.
+        If `saveAs` is set to a relative path, the file will be saved relative to the browser's ``downloadsPath`` setting or if that is not set, relative to the
+        Playwright's working directory. If ``saveAs`` is set to an absolute path, the file will be saved to that absolute path independent of ``downloadsPath``.
 
         To enable downloads context's ``acceptDownloads`` needs to be true.
-
-        To configure download directory use `New Browser` 's ``downloadsPath`` settings or set the `saveAs` argument.
-
-        Without setting a specific filepath with `saveAs`, downloaded files are deleted when the Context is closed.
-
         This keyword requires that there is currently an open page. The keyword uses
         the current pages local state (cookies, sessionstorage, localstorage) for the
         download to avoid authentication problems.
@@ -172,10 +177,9 @@ class Evaluation(LibraryComponent):
         | ${actual_size}=    Get File Size    ${file_object.saveAs}
 
         Example 2:
-        | ${elem}=          Get Element   text="Download File"
-        | ${href}=          Get Property  ${elem}  href
-        | ${file_object}=   Download  ${href}
-        | ${file_path}=     Set Variable  ${file_object.saveAs}
+        | ${href}=          `Get Property`    text="Download File"    href
+        | `Download`    ${href}    saveAs=${OUTPUT DIR}/downloads/downloaded_file.txt
+        | File Should Exist    ${OUTPUT DIR}/downloads/downloaded_file.txt
 
         [https://forum.robotframework.org/t//4246|Comment >>]
         """
