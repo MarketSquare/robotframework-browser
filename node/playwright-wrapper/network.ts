@@ -116,6 +116,10 @@ export async function waitForNavigation(request: pb.Request.UrlOptions, page: Pa
 
 export async function waitForDownload(request: pb.Request.FilePath, page: Page): Promise<pb.Response.Json> {
     const saveAs = request.getPath();
+    return await _waitForDownload(page, saveAs);
+}
+
+export async function _waitForDownload(page: Page, saveAs: string): Promise<pb.Response.Json> {
     const downloadObject = await page.waitForEvent('download');
 
     let filePath;
@@ -129,6 +133,6 @@ export async function waitForDownload(request: pb.Request.FilePath, page: Page):
     logger.info('suggestedFilename: ' + fileName + ' saveAs path: ' + filePath);
     return jsonResponse(
         JSON.stringify({ saveAs: filePath, suggestedFilename: fileName }),
-        'Download done successfully to: ' + filePath,
+        'Download done successfully to: ' + filePath
     );
 }

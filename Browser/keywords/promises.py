@@ -153,13 +153,13 @@ class Promises(LibraryComponent):
         Different browsers can use different logic for computing it.
 
         Example usage:
-        | `New Context`          acceptDownloads=True
-        | `New Page`             ${LOGIN_URL}
+        | `New Context`            acceptDownloads=True
+        | `New Page`               ${LOGIN_URL}
         | ${dl_promise}          `Promise To Wait For Download`    /path/to/download/file.name
-        | `Click`                \\#file_download
-        | ${file_obj}=           `Wait For`  ${dl_promise}
-        | File Should Exist    ${file_obj}[saveAs]
-        | Should Be True       ${file_obj.suggestedFilename}
+        | `Click`                  id=file_download
+        | ${file_obj}=           `Wait For`    ${dl_promise}
+        | File Should Exist      ${file_obj}[saveAs]
+        | Should Be True         ${file_obj.suggestedFilename}
 
         [https://forum.robotframework.org/t//4314|Comment >>]
         """

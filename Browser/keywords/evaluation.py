@@ -14,6 +14,7 @@
 
 import json
 from datetime import timedelta
+from pathlib import Path
 from typing import Any, Optional
 
 from robot.utils import DotDict
@@ -144,19 +145,23 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Page Content",))
-    def download(self, url: str) -> DownloadedFile:
+    def download(self, url: str, saveAs: str = "") -> DownloadedFile:
         """Download given url content.
+
+        | =Arguments= | =Description= |
+        | ``url`` | URL to the file that shall be downloaded. |
+        | ``saveAs`` | Path where the file shall be saved. If empty, a default path with a random filename is used. |
 
         Keyword returns dictionary which contains downloaded file path
         and suggested filename as keys (saveAs and suggestedFilename).
-        If the file URL cannot be found (the download is triggered by event handlers)
-        use `Wait For Download`keyword.
+        If the file URL is unknown (i.e. the download is triggered by event handlers)
+        use `Promise To Wait For Download` keyword.
 
         To enable downloads context's ``acceptDownloads`` needs to be true.
 
-        To configure download directory use New Browser's ``downloadsPath`` settings
+        To configure download directory use `New Browser` 's ``downloadsPath`` settings or set the `saveAs` argument.
 
-        With default filepath downloaded files are deleted when Context the download happened in is closed.
+        Without setting a specific filepath with `saveAs`, downloaded files are deleted when the Context is closed.
 
         This keyword requires that there is currently an open page. The keyword uses
         the current pages local state (cookies, sessionstorage, localstorage) for the
@@ -175,7 +180,7 @@ class Evaluation(LibraryComponent):
         [https://forum.robotframework.org/t//4246|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.Download(Request().Url(url=url))
+            response = stub.Download(Request().UrlAndPath(url=url, path=saveAs))
         logger.info(response.log)
         dot_dict = DotDict()
         for key, value in json.loads(response.json).items():
