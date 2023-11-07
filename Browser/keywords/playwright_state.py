@@ -493,7 +493,7 @@ class PlaywrightState(LibraryComponent):
         | ``javaScriptEnabled``    | Whether or not to enable JavaScript in the context. Defaults to True. |
         | ``locale``               | Specify user locale, for example ``en-GB``, ``de-DE``, etc. |
         | ``offline``              | Toggles browser's offline mode. Defaults to False. |
-        | ``permissions``          | A dictionary containing permissions to grant to all pages in this context. All permissions that are not listed here will be automatically denied. |
+        | ``permissions``          | A list containing permissions to grant to all pages in this context. All permissions that are not listed here will be automatically denied. |
         | ``proxy``                | Network proxy settings to use with this context. Defaults to None. *NOTE:* For Chromium on Windows the browser needs to be launched with the global proxy for this option to work. If all contexts override the proxy, global proxy will be never used and can be any string, for example ``proxy={ server: 'http://per-context' }``. |
         | ``recordHar``            | Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file. If not specified, the HAR is not recorded. Make sure to await context to close for the to be saved. |
         | ``recordVideo``          | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
@@ -523,6 +523,8 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4307|Comment >>]
         """
         params = locals_to_params(locals())
+        if permissions:
+            params["permissions"] = [permission.value for permission in permissions]
         params["viewport"] = copy(viewport)
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(params, httpCredentials, storageState)
@@ -618,6 +620,8 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
         params = locals_to_params(locals())
+        if permissions:
+            params["permissions"] = [permission.value for permission in permissions]
         params.pop("storageState")  # TODO: remove when arguments are removed.
         params.pop("hideRfBrowser")
         params["viewport"] = copy(viewport)

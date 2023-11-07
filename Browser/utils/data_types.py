@@ -625,29 +625,38 @@ ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
 """
 
 
-class Permission(Enum):
-    """Enum that defines the permission to grant to a context.
+Permission = Enum(
+    "Permission",
+    {
+        "geolocation": "geolocation",
+        "midi": "midi",
+        "midi_sysex": "midi-sysex",
+        "midi-sysex": "midi-sysex",
+        "notifications": "notifications",
+        "camera": "camera",
+        "microphone": "microphone",
+        "background_sync": "background-sync",
+        "background-sync": "background-sync",
+        "ambient_light_sensor": "ambient-light-sensor",
+        "ambient-light-sensor": "ambient-light-sensor",
+        "accelerometer": "accelerometer",
+        "gyroscope": "gyroscope",
+        "magnetometer": "magnetometer",
+        "accessibility_events": "accessibility-events",
+        "accessibility-events": "accessibility-events",
+        "clipboard_read": "clipboard-read",
+        "clipboard-read": "clipboard-read",
+        "clipboard_write": "clipboard-write",
+        "clipboard-write": "clipboard-write",
+        "payment_handler": "payment-handler",
+        "payment-handler": "payment-handler",
+    },
+)
+Permission.__doc__ = """Enum that defines the permission to grant to a context.
 
-    See [https://playwright.dev/docs/api/class-browsercontext#browser-context-grant-permissions |grantPermissions(permissions)]
-    for more details.
-    """
-
-    geolocation = auto()
-    midi = auto()
-    midi_sysex = auto()
-    notifications = auto()
-    push = auto()
-    camera = auto()
-    microphone = auto()
-    background_sync = auto()
-    ambient_light_sensor = auto()
-    accelerometer = auto()
-    gyroscope = auto()
-    magnetometer = auto()
-    accessibility_events = auto()
-    clipboard_read = auto()
-    clipboard_write = auto()
-    payment_handler = auto()
+See [https://playwright.dev/docs/api/class-browsercontext#browser-context-grant-permissions |grantPermissions(permissions)]
+for more details.
+"""
 
 
 ScrollBehavior = Enum("ScrollBehavior", ["auto", "smooth"])
