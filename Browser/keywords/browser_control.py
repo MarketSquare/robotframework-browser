@@ -509,7 +509,7 @@ class Control(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GrantPermissions(
                 Request().Permissions(
-                    permissions=[p.name for p in permissions], origin=origin or ""
+                    permissions=[p.value for p in permissions], origin=origin or ""
                 )
             )
             logger.info(response.log)
