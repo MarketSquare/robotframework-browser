@@ -386,7 +386,7 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
 
-    waitForDownload = this.wrappingPage(network.waitForDownload);
+    waitForDownload = this.wrappingStatePage(network.waitForDownload);
 
     evaluateJavascript = this.wrappingStatePage(evaluation.evaluateJavascript);
 

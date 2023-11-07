@@ -144,20 +144,30 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Page Content",))
-    def download(self, url: str) -> DownloadedFile:
+    def download(self, url: str, saveAs: str = "") -> DownloadedFile:
         """Download given url content.
 
+        | =Arguments= | =Description= |
+        | ``url`` | URL to the file that shall be downloaded. |
+        | ``saveAs`` | Path where the file shall be saved persistently. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
+
         Keyword returns dictionary which contains downloaded file path
-        and suggested filename as keys (saveAs and suggestedFilename).
-        If the file URL cannot be found (the download is triggered by event handlers)
-        use `Wait For Download`keyword.
+        and suggested filename as keys (``saveAs`` and ``suggestedFilename``).
+
+        Example:
+        | {
+        |   "saveAs": "/tmp/robotframework-browser/downloads/2f1b3b7c-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
+        |   "suggestedFilename": "downloaded_file.txt"
+        | }
+
+        If the download should be started by an interaction with an element on the page,
+        `Promise To Wait For Download` keyword may be a better choice.
+
+        The keyword `New Browser` has a ``downloadsPath`` setting which can be used to set the default download directory.
+        If `saveAs` is set to a relative path, the file will be saved relative to the browser's ``downloadsPath`` setting or if that is not set, relative to the
+        Playwright's working directory. If ``saveAs`` is set to an absolute path, the file will be saved to that absolute path independent of ``downloadsPath``.
 
         To enable downloads context's ``acceptDownloads`` needs to be true.
-
-        To configure download directory use New Browser's ``downloadsPath`` settings
-
-        With default filepath downloaded files are deleted when Context the download happened in is closed.
-
         This keyword requires that there is currently an open page. The keyword uses
         the current pages local state (cookies, sessionstorage, localstorage) for the
         download to avoid authentication problems.
@@ -167,15 +177,14 @@ class Evaluation(LibraryComponent):
         | ${actual_size}=    Get File Size    ${file_object.saveAs}
 
         Example 2:
-        | ${elem}=          Get Element   text="Download File"
-        | ${href}=          Get Property  ${elem}  href
-        | ${file_object}=   Download  ${href}
-        | ${file_path}=     Set Variable  ${file_object.saveAs}
+        | ${href}=          `Get Property`    text="Download File"    href
+        | `Download`    ${href}    saveAs=${OUTPUT DIR}/downloads/downloaded_file.txt
+        | File Should Exist    ${OUTPUT DIR}/downloads/downloaded_file.txt
 
         [https://forum.robotframework.org/t//4246|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.Download(Request().Url(url=url))
+            response = stub.Download(Request().UrlAndPath(url=url, path=saveAs))
         logger.info(response.log)
         dot_dict = DotDict()
         for key, value in json.loads(response.json).items():

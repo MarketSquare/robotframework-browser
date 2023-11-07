@@ -17,6 +17,7 @@ import { Frame, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
+import { _waitForDownload } from './network';
 import {
     emptyWithLog,
     intResponse,
@@ -478,7 +479,7 @@ async function highlightAll(
     return count;
 }
 
-export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.Json> {
+export async function download(request: Request.UrlAndPath, state: PlaywrightState): Promise<Response.Json> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');
@@ -495,6 +496,7 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
         throw new Error('Download requires an active page');
     }
     const urlString = request.getUrl();
+    const saveAs = request.getPath();
     const fromUrl = page.url();
     if (fromUrl === 'about:blank') {
         throw new Error('Download requires that the page has been navigated to an url');
@@ -516,13 +518,7 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
                 return a.download;
             });
     };
-    const downloadStarted = page.waitForEvent('download');
+    const downloadStarted = _waitForDownload(page, state, saveAs);
     await page.evaluate(script, urlString);
-    const path = await (await downloadStarted).path();
-    const fileName = (await downloadStarted).suggestedFilename();
-    logger.info('Suggested file name: ' + fileName + ' and save as path: ' + path);
-    return jsonResponse(
-        JSON.stringify({ saveAs: path, suggestedFilename: fileName }),
-        'Url content downloaded to a file: ' + path,
-    );
+    return await downloadStarted;
 }
