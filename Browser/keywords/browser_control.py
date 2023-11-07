@@ -362,7 +362,7 @@ class Control(LibraryComponent):
         """Sets the prefix for all selectors in the given scope.
 
         | =Arguments= | =Description= |
-        | ``prefix``   | Prefix for all selectors. Prefix and selector will be separated by a single space. |
+        | ``prefix``   | Prefix for all selectors. Prefix and selector will be separated by a single space. Use ``${None}`` or ``${EMPTY}`` to disable the prefix. |
         | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
         Returns the previous value of the prefix.
@@ -374,6 +374,13 @@ class Control(LibraryComponent):
 
         Example will click on button with id ``login_btn`` inside iframe with id ``embedded_page``.
         The resulting selector will be ``iframe#embedded_page >>> button#login_btn``.
+
+        The effect of this prefix can be disable by prefixing any selector with ``!prefix ``, with a trailing space,
+        for single keyword calls. i.e. ``!prefix id=btn_outside_a_frame``
+
+        `Get Element`, `Get Elements`, `Get Element By` and `Get Element By Role`
+        do automatically prefix the returned selector with ``!prefix `` so that it is possible to use
+        them directly without setting the prefix to ``${None}`` before usage.
 
         [https://forum.robotframework.org/t//4741|Comment >>]
         """

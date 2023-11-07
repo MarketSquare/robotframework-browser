@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { Frame, Locator, Page } from 'playwright';
+import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
@@ -156,39 +156,47 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
     const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
     const allElements = request.getAll();
+    const frameSelector = request.getFrameselector();
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
+    let document: Page | FrameLocator = activePage;
+    if (frameSelector) {
+        document = activePage.frameLocator(frameSelector);
+        if (!strictMode) {
+            document = document.first();
+        }
+    }
     let locator: Locator | null = null;
     switch (strategy) {
         case 'AltText': {
-            locator = activePage.getByAltText(text, options);
+            locator = document.getByAltText(text, options);
             break;
         }
         case 'Label': {
-            locator = activePage.getByLabel(text, options);
+            locator = document.getByLabel(text, options);
             break;
         }
         case 'Placeholder': {
-            locator = activePage.getByPlaceholder(text, options);
+            locator = document.getByPlaceholder(text, options);
             break;
         }
         case 'Role': {
             if (options?.name) {
                 options.name = parseRegExpOrKeepString(options.name);
             }
-            locator = activePage.getByRole(text as AriaRole, options);
+            locator = document.getByRole(text as AriaRole, options);
             break;
         }
         case 'TestId': {
-            locator = activePage.getByTestId(text);
+            locator = document.getByTestId(text);
             break;
         }
         case 'Text': {
-            locator = activePage.getByText(text, options);
+            locator = document.getByText(text, options);
             break;
         }
         case 'Title': {
-            locator = activePage.getByTitle(text, options);
+            locator = document.getByTitle(text, options);
             break;
         }
         default: {

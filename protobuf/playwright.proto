@@ -30,6 +30,7 @@ message Request {
     string options = 3;
     bool strict = 4;
     bool all = 5;
+    string frameSelector = 6;
   }
 
   message ScreenshotOptions {

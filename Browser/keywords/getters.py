@@ -890,7 +890,7 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
             logger.info(response.log)
-            return response.body
+            return self._disable_selector_prefix(response.body)
 
     @keyword(tags=("Getter", "PageContent"))
     def get_elements(self, selector: str) -> List[str]:
@@ -916,7 +916,7 @@ class Getters(LibraryComponent):
                 )
                 logger.info(response.log)
                 logger.debug(response.json)
-                return json.loads(response.json)
+                return self._disable_selector_prefix(json.loads(response.json))
         except grpc.RpcError as error:
             logger.info(error)
             if (
@@ -977,6 +977,8 @@ class Getters(LibraryComponent):
         | ``pressed`` | An attribute that is usually set by aria-pressed. |
         | ``selected`` | An attribute that is usually set by aria-selected. |
 
+        If an element shall be fetched from an iframe, a selector prefix must be set using `Set Selector Prefix` keyword including ``>>>`` as ending.
+
         [https://forum.robotframework.org/t//5938|Comment >>]
         """
         options = {
@@ -996,6 +998,7 @@ class Getters(LibraryComponent):
                 "selected",
             ]
         }
+        logger.console(self.get_frame_selector())
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
                 Request().GetByOptions(
@@ -1004,10 +1007,20 @@ class Getters(LibraryComponent):
                     options=json.dumps(options),
                     strict=self.strict_mode,
                     all=all_elements,
+                    frameSelector=self.get_frame_selector(),
                 )
             )
             logger.info(response.log)
-            return json.loads(response.json)
+            return self._disable_selector_prefix(json.loads(response.json))
+
+    def _disable_selector_prefix(self, selector: Union[str, List[str]]):
+        if isinstance(selector, list):
+            return (
+                selector
+                if not self.selector_prefix
+                else [f"!prefix {element}" for element in selector]
+            )
+        return selector if not self.selector_prefix else f"!prefix {selector}"
 
     @keyword(tags=("Getter", "PageContent"))
     def get_element_by(
@@ -1038,6 +1051,8 @@ class Getters(LibraryComponent):
 
         ``page.getByRole`` is supported by `Get Element By Role` keyword.
 
+        If an element shall be fetched from an iframe, a selector prefix must be set using `Set Selector Prefix` keyword including ``>>>`` as ending.
+
         [https://forum.robotframework.org/t//5937|Comment >>]
         """
         options = {"exact": exact} if exact is not None else {}
@@ -1049,10 +1064,23 @@ class Getters(LibraryComponent):
                     options=json.dumps(options),
                     strict=self.strict_mode,
                     all=all_elements,
+                    frameSelector=self.get_frame_selector(),
                 )
             )
             logger.info(response.log)
-            return json.loads(response.json)
+            return self._disable_selector_prefix(json.loads(response.json))
+
+    def get_frame_selector(self) -> str:
+        if (
+            self.selector_prefix
+            and self.selector_prefix.strip().endswith(">>>")
+            and self.library.get_property(
+                f"!prefix {self.selector_prefix.rstrip('>').strip()}", "nodeName"
+            )
+            in ["IFRAME", "FRAME"]
+        ):
+            return self.selector_prefix.rstrip(">").strip()
+        return ""
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling

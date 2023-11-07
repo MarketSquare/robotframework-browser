@@ -159,3 +159,15 @@ Get Element By - Text
 Get Element By - Title
     ${e} =    Get Element By    Title    /^name$/i
     Get Text    ${e}    ==    Prefilled Name
+
+Get Element By In Iframe
+    [Setup]    Go To    ${FRAMES_URL}
+    Set Selector Prefix    id=left >>>
+    ${e} =    Get Element By    Text    Search
+    Get Attribute    ${e}    name    ==    searchbutton
+
+Get Element By Role In Iframe
+    [Setup]    Go To    ${FRAMES_URL}
+    Set Selector Prefix    id=left >>>
+    ${e} =    Get Element By Role    button    name=Search
+    Get Attribute    ${e}    name    ==    searchbutton
