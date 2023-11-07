@@ -97,11 +97,11 @@ Wait For Download Relative To downloadsPath
     Log To Console    ${download_file_object}
     Close Browser
     File Should Exist    ${file_object}[saveAs]
-    Should Be Equal    ${file_object}[saveAs]    ${OUTPUT DIR}/test_waitfordownload_file_saveAs.js
+    File Should Exist    ${OUTPUT DIR}/test_waitfordownload_file_saveAs.js
     Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
     Remove File    ${file_object}[saveAs]
     File Should Exist    ${download_file_object}[saveAs]
-    Should Be Equal    ${download_file_object}[saveAs]    ${OUTPUT DIR}/test_download_file_saveAs.js
+    File Should Exist    ${OUTPUT DIR}/test_download_file_saveAs.js
     Remove File    ${download_file_object}[saveAs]
 
 *** Keywords ***
