@@ -31,6 +31,7 @@ Set Geolocation
 
 Enable Geolocation
     [Setup]    Start Context Without Geolocation
+    Set Browser Timeout    timeout=500ms    scope=Test
     Set Geolocation    11.11    22.22    33.33
     Run Keyword And Expect Error    *    Check Geolocation    11.11    22.22
     Grant Permissions    geolocation    midi    origin=${GEOLOCATION_URL}
@@ -61,18 +62,21 @@ New Context With All Underscore Permissions
 
 Clear Geolocation Permission
     [Setup]    Start Context With Geolocation
+    Set Browser Timeout    timeout=500ms    scope=Test
     Clear Permissions
     Set Geolocation    72.56    145.89    0.23
     Run Keyword And Expect Error    *    Check Geolocation    72.56    145.89
 
 Enable Geolocation On Wrong Origin
     [Setup]    Start Context Without Geolocation
+    Set Browser Timeout    timeout=500ms    scope=Test
     Grant Permissions    geolocation    origin=http://www.example.com
     Set Geolocation    72.56    145.89    0.23
     Run Keyword And Expect Error    *    Check Geolocation    72.56    145.89
 
 Set Geolocation Out Of Bounds
     [Setup]    Start Context With Geolocation
+    Set Browser Timeout    timeout=500ms    scope=Test
     Run Keyword And Expect Error
     ...    Error: browserContext.setGeolocation: geolocation.latitude: precondition *
     ...    Set Geolocation    1072    3
@@ -94,7 +98,6 @@ New Persistent Context With All Underscore Permissions
 *** Keywords ***
 Prepare Suite
     Close Browser    ALL
-    Set Browser Timeout    timeout=500ms    scope=Suite
 
 Check Geolocation
     [Arguments]    ${latitude}    ${longitude}
