@@ -64,6 +64,8 @@ class Control(LibraryComponent):
         | ``url`` | <str> URL to be navigated to. |
         | ``timeout`` | <str> time to wait page to load. If not defined will use the library default timeout. |
 
+        Returns the HTTP status code for the navigation request as integer or 0 if non received.
+
         [https://forum.robotframework.org/t//4291|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
@@ -71,6 +73,9 @@ class Control(LibraryComponent):
                 Request().Url(url=url, defaultTimeout=int(self.get_timeout(timeout)))
             )
             logger.info(response.log)
+            if response.body:
+                return int(response.body)
+            return 0
 
     def _get_screenshot_path(self, filename: str, fileType: str) -> Path:
         if Path(filename).is_absolute():
