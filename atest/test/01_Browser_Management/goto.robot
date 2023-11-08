@@ -12,7 +12,8 @@ No Open Browser Throws
 Open GoTo GoBack GoForward
     [Tags]    slow
     [Setup]    New Page    ${LOGIN_URL}
-    Go To    ${WELCOME_URL}
+    ${status} =    Go To    ${WELCOME_URL}
+    Should Be Equal    ${status}    ${200}
     Get Url    ==    ${WELCOME_URL}
     Go To    ${ERROR_URL}
     Go Back
@@ -23,6 +24,13 @@ Open GoTo GoBack GoForward
     Get Url    ==    ${WELCOME_URL}
     Go Forward
     Get Url    ==    ${ERROR_URL}
+    [Teardown]    Close Context
+
+Go To 404 URL
+    [Tags]    slow
+    New Page    ${LOGIN_URL}
+    ${status} =    Go To    ${WELCOME_URL}_404
+    Should Be Equal    ${status}    ${404}
     [Teardown]    Close Context
 
 Timeouting Go To
