@@ -13,10 +13,11 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { Frame, Locator, Page } from 'playwright';
+import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
+import { _waitForDownload } from './network';
 import {
     emptyWithLog,
     intResponse,
@@ -155,39 +156,47 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
     const options = JSON.parse(request.getOptions());
     const strictMode = request.getStrict();
     const allElements = request.getAll();
+    const frameSelector = request.getFrameselector();
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
+    let document: Page | FrameLocator = activePage;
+    if (frameSelector) {
+        document = activePage.frameLocator(frameSelector);
+        if (!strictMode) {
+            document = document.first();
+        }
+    }
     let locator: Locator | null = null;
     switch (strategy) {
         case 'AltText': {
-            locator = activePage.getByAltText(text, options);
+            locator = document.getByAltText(text, options);
             break;
         }
         case 'Label': {
-            locator = activePage.getByLabel(text, options);
+            locator = document.getByLabel(text, options);
             break;
         }
         case 'Placeholder': {
-            locator = activePage.getByPlaceholder(text, options);
+            locator = document.getByPlaceholder(text, options);
             break;
         }
         case 'Role': {
             if (options?.name) {
                 options.name = parseRegExpOrKeepString(options.name);
             }
-            locator = activePage.getByRole(text as AriaRole, options);
+            locator = document.getByRole(text as AriaRole, options);
             break;
         }
         case 'TestId': {
-            locator = activePage.getByTestId(text);
+            locator = document.getByTestId(text);
             break;
         }
         case 'Text': {
-            locator = activePage.getByText(text, options);
+            locator = document.getByText(text, options);
             break;
         }
         case 'Title': {
-            locator = activePage.getByTitle(text, options);
+            locator = document.getByTitle(text, options);
             break;
         }
         default: {
@@ -478,7 +487,7 @@ async function highlightAll(
     return count;
 }
 
-export async function download(request: Request.Url, state: PlaywrightState): Promise<Response.Json> {
+export async function download(request: Request.UrlAndPath, state: PlaywrightState): Promise<Response.Json> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');
@@ -495,6 +504,7 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
         throw new Error('Download requires an active page');
     }
     const urlString = request.getUrl();
+    const saveAs = request.getPath();
     const fromUrl = page.url();
     if (fromUrl === 'about:blank') {
         throw new Error('Download requires that the page has been navigated to an url');
@@ -516,13 +526,7 @@ export async function download(request: Request.Url, state: PlaywrightState): Pr
                 return a.download;
             });
     };
-    const downloadStarted = page.waitForEvent('download');
+    const downloadStarted = _waitForDownload(page, state, saveAs);
     await page.evaluate(script, urlString);
-    const path = await (await downloadStarted).path();
-    const fileName = (await downloadStarted).suggestedFilename();
-    logger.info('Suggested file name: ' + fileName + ' and save as path: ' + path);
-    return jsonResponse(
-        JSON.stringify({ saveAs: path, suggestedFilename: fileName }),
-        'Url content downloaded to a file: ' + path,
-    );
+    return await downloadStarted;
 }

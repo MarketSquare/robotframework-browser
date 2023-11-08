@@ -135,16 +135,27 @@ class Promises(LibraryComponent):
     def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
         """Returns a promise that waits for next download event on page.
 
-        If you can get the URL for the file to download, ``Download`` keyword should be a consistent way to download the file.
-
         To enable downloads context's ``acceptDownloads`` needs to be true.
-
-        To configure download directory use New Browser's ``downloadsPath`` settings
 
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 
         | =Arguments= | =Description= |
-        | ``saveAs`` | Defines path where the file is saved. File will also temporarily be saved in playwright context's default download location. |
+        | ``saveAs`` | Defines path where the file is saved persistently. File will also temporarily be saved in playwright context's default download location. |
+
+        Keyword returns dictionary which contains downloaded file path
+        and suggested filename as keys (``saveAs`` and ``suggestedFilename``).
+
+        Example:
+        | {
+        |   "saveAs": "/tmp/robotframework-browser/downloads/2f1b3b7c-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
+        |   "suggestedFilename": "downloaded_file.txt"
+        | }
+
+        The keyword `New Browser` has a ``downloadsPath`` setting which can be used to set the default download directory.
+        If `saveAs` is set to a relative path, the file will be saved relative to the browser's ``downloadsPath`` setting or if that is not set, relative to the
+        Playwright's working directory. If ``saveAs`` is set to an absolute path, the file will be saved to that absolute path independent of ``downloadsPath``.
+
+        If the URL for the file to download shall be used, `Download` keyword may be a simpler alternative way to download the file.
 
         Waited promise returns a dictionary which contains saveAs and suggestedFilename as keys. The saveAs contains
         where the file is downloaded and suggestedFilename contains the name suggested name for the download.
@@ -153,13 +164,13 @@ class Promises(LibraryComponent):
         Different browsers can use different logic for computing it.
 
         Example usage:
-        | `New Context`          acceptDownloads=True
-        | `New Page`             ${LOGIN_URL}
+        | `New Context`            acceptDownloads=True
+        | `New Page`               ${LOGIN_URL}
         | ${dl_promise}          `Promise To Wait For Download`    /path/to/download/file.name
-        | `Click`                \\#file_download
-        | ${file_obj}=           `Wait For`  ${dl_promise}
-        | File Should Exist    ${file_obj}[saveAs]
-        | Should Be True       ${file_obj.suggestedFilename}
+        | `Click`                  id=file_download
+        | ${file_obj}=           `Wait For`    ${dl_promise}
+        | File Should Exist      ${file_obj}[saveAs]
+        | Should Be True         ${file_obj.suggestedFilename}
 
         [https://forum.robotframework.org/t//4314|Comment >>]
         """
