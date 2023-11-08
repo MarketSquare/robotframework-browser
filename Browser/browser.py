@@ -401,7 +401,7 @@ class Browser(DynamicCore):
     Be aware that using ``#`` as a starting character in Robot Framework would be interpreted as comment.
     Due to that fact a ``#id`` must be escaped as ``\\#id``.
 
-    == Frames ==
+    == iFrames ==
 
     By default, selector chains do not cross frame boundaries. It means that a
     simple CSS selector is not able to select an element located inside an iframe
@@ -426,10 +426,14 @@ class Browser(DynamicCore):
     | Click   id=iframe >>> id=btn
 
     The selectors on the left and right side of ``>>>`` can be any valid selectors.
-    The selector clause directly before the frame opener ``>>>`` must select the frame element.
+    The selector clause directly before the frame opener ``>>>`` must select the frame element itself.
     Frame selection is the only place where Browser Library modifies the selector, as explained in above.
     In all cases, the library does not alter the selector in any way, instead it is passed as is to the
     Playwright side.
+
+    If multiple keyword shall be performed inside a frame,
+    it is possible to define a selector prefix with `Set Selector Prefix`.
+    If this prefix is set to a frame/iframe it has similar behavior as SeleniumLibrary keyword `Select Frame`.
 
     == WebComponents and Shadow DOM ==
 
@@ -1141,7 +1145,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def _end_suite(self, name, attrs):
         self._remove_from_scope_stack(attrs["id"])
-        self.suite_ids.pop(attrs["id"])
+        self.suite_ids.pop(attrs["id"], None)
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")

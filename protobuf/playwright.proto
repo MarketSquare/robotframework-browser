@@ -30,6 +30,7 @@ message Request {
     string options = 3;
     bool strict = 4;
     bool all = 5;
+    string frameSelector = 6;
   }
 
   message ScreenshotOptions {
@@ -104,6 +105,11 @@ message Request {
   message Url {
     string url= 1;
     int32 defaultTimeout = 2;
+  }
+
+  message UrlAndPath {
+    string url= 1;
+    string path = 2;
   }
 
   message UrlOptions {
@@ -345,7 +351,7 @@ service  Playwright {
   /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
-  rpc GoTo(Request.Url) returns (Response.Empty);
+  rpc GoTo(Request.Url) returns (Response.String);
   /* Navigate to the next page in history */
   rpc GoBack(Request.Empty) returns (Response.Empty);
   /* Navigate to the previous page in history. */
@@ -402,7 +408,7 @@ service  Playwright {
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Int);
   /* Download url content */
-  rpc Download(Request.Url) returns (Response.Json);
+  rpc Download(Request.UrlAndPath) returns (Response.Json);
   /* Clicks element specified by selector and options */
   rpc Click(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Taps element specified by selector and options */

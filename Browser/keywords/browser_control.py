@@ -64,6 +64,8 @@ class Control(LibraryComponent):
         | ``url`` | <str> URL to be navigated to. |
         | ``timeout`` | <str> time to wait page to load. If not defined will use the library default timeout. |
 
+        Returns the HTTP status code for the navigation request as integer or 0 if non received.
+
         [https://forum.robotframework.org/t//4291|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
@@ -71,6 +73,9 @@ class Control(LibraryComponent):
                 Request().Url(url=url, defaultTimeout=int(self.get_timeout(timeout)))
             )
             logger.info(response.log)
+            if response.body:
+                return int(response.body)
+            return 0
 
     def _get_screenshot_path(self, filename: str, fileType: str) -> Path:
         if Path(filename).is_absolute():
@@ -362,7 +367,7 @@ class Control(LibraryComponent):
         """Sets the prefix for all selectors in the given scope.
 
         | =Arguments= | =Description= |
-        | ``prefix``   | Prefix for all selectors. Prefix and selector will be separated by a single space. |
+        | ``prefix``   | Prefix for all selectors. Prefix and selector will be separated by a single space. Use ``${None}`` or ``${EMPTY}`` to disable the prefix. |
         | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
         Returns the previous value of the prefix.
@@ -374,6 +379,13 @@ class Control(LibraryComponent):
 
         Example will click on button with id ``login_btn`` inside iframe with id ``embedded_page``.
         The resulting selector will be ``iframe#embedded_page >>> button#login_btn``.
+
+        The effect of this prefix can be disable by prefixing any selector with ``!prefix ``, with a trailing space,
+        for single keyword calls. i.e. ``!prefix id=btn_outside_a_frame``
+
+        `Get Element`, `Get Elements`, `Get Element By` and `Get Element By Role`
+        do automatically prefix the returned selector with ``!prefix `` so that it is possible to use
+        them directly without setting the prefix to ``${None}`` before usage.
 
         [https://forum.robotframework.org/t//4741|Comment >>]
         """
@@ -509,7 +521,7 @@ class Control(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.GrantPermissions(
                 Request().Permissions(
-                    permissions=[p.name for p in permissions], origin=origin or ""
+                    permissions=[p.value for p in permissions], origin=origin or ""
                 )
             )
             logger.info(response.log)

@@ -374,7 +374,7 @@ class PlaywrightState(LibraryComponent):
         | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
         | ``chromiumSandbox`` | Enable Chromium sandboxing. Defaults to False. |
         | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
-        | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. |
+        | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. Regarding file deletion, see the docs of ``Download`` and ``Promise To Wait For Download``. |
         | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
         | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
         | ``firefoxUserPrefs`` |Firefox user preferences. Learn more about the Firefox user preferences at [https://support.mozilla.org/en-US/kb/about-config-editor-firefox|about:config]. |
@@ -493,7 +493,7 @@ class PlaywrightState(LibraryComponent):
         | ``javaScriptEnabled``    | Whether or not to enable JavaScript in the context. Defaults to True. |
         | ``locale``               | Specify user locale, for example ``en-GB``, ``de-DE``, etc. |
         | ``offline``              | Toggles browser's offline mode. Defaults to False. |
-        | ``permissions``          | A dictionary containing permissions to grant to all pages in this context. All permissions that are not listed here will be automatically denied. |
+        | ``permissions``          | A list containing permissions to grant to all pages in this context. All permissions that are not listed here will be automatically denied. |
         | ``proxy``                | Network proxy settings to use with this context. Defaults to None. *NOTE:* For Chromium on Windows the browser needs to be launched with the global proxy for this option to work. If all contexts override the proxy, global proxy will be never used and can be any string, for example ``proxy={ server: 'http://per-context' }``. |
         | ``recordHar``            | Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording for all pages into to a file. Must be path to file, example ${OUTPUT_DIR}/har.file. If not specified, the HAR is not recorded. Make sure to await context to close for the to be saved. |
         | ``recordVideo``          | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close context for videos to be saved. |
@@ -523,6 +523,8 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4307|Comment >>]
         """
         params = locals_to_params(locals())
+        if permissions:
+            params["permissions"] = [permission.value for permission in permissions]
         params["viewport"] = copy(viewport)
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(params, httpCredentials, storageState)
@@ -618,6 +620,8 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
         params = locals_to_params(locals())
+        if permissions:
+            params["permissions"] = [permission.value for permission in permissions]
         params.pop("storageState")  # TODO: remove when arguments are removed.
         params.pop("hideRfBrowser")
         params["viewport"] = copy(viewport)
