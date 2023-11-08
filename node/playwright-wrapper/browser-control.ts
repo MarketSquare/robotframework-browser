@@ -48,8 +48,8 @@ export async function clearPermissions(request: Request.Empty, state: Playwright
 export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
     const url = request.getUrl();
     const timeout = request.getDefaulttimeout();
-    await page.goto(url, { timeout });
-    return emptyWithLog(`Successfully opened URL ${url}`);
+    const response = await page.goto(url, { timeout });
+    return stringResponse(response?.status().toString() || '', `Successfully opened URL ${url}`);
 }
 
 export async function takeScreenshot(
