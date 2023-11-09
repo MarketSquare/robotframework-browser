@@ -487,7 +487,7 @@ async function highlightAll(
     return count;
 }
 
-export async function download(request: Request.UrlAndPath, state: PlaywrightState): Promise<Response.Json> {
+export async function download(request: Request.DownloadOptions, state: PlaywrightState): Promise<Response.Json> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');
@@ -505,6 +505,8 @@ export async function download(request: Request.UrlAndPath, state: PlaywrightSta
     }
     const urlString = request.getUrl();
     const saveAs = request.getPath();
+    const downloadTimeout = request.getDownloadtimeout();
+    const waitForFinish = request.getWaitforfinish();
     const fromUrl = page.url();
     if (fromUrl === 'about:blank') {
         throw new Error('Download requires that the page has been navigated to an url');
@@ -526,7 +528,7 @@ export async function download(request: Request.UrlAndPath, state: PlaywrightSta
                 return a.download;
             });
     };
-    const downloadStarted = _waitForDownload(page, state, saveAs);
+    const downloadStarted = _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish);
     await page.evaluate(script, urlString);
     return await downloadStarted;
 }

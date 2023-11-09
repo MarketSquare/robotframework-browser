@@ -18,9 +18,11 @@ import os
 import socket
 import subprocess
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any, Tuple, Union
 
 from robot.libraries.BuiltIn import BuiltIn
+
+from Browser.utils.data_types import DownloadInfo
 
 get_variable_value = BuiltIn().get_variable_value
 
@@ -89,3 +91,18 @@ def keyword(name: Any = None, tags: Tuple = (), types: Tuple = ()):
 
 def type_converter(argument: Any) -> str:
     return type(argument).__name__.lower()
+
+
+def get_download_id(download: Union[DownloadInfo, str]) -> str:
+    if isinstance(download, str):
+        return download
+    if isinstance(download, dict):
+        download_id = download.get("downloadID", None)
+        if download_id:
+            return download_id
+        raise ValueError(
+            "Dictionary must contain a key 'downloadID' with a valid download id."
+        )
+    raise ValueError(
+        "Argument must be either a dictionary with a key 'downloadID' or a string with a valid download id."
+    )

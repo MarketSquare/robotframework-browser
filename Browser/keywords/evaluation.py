@@ -20,7 +20,7 @@ from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import DownloadedFile, keyword, logger
+from ..utils import DownloadInfo, keyword, logger
 
 
 class Evaluation(LibraryComponent):
@@ -144,15 +144,14 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Page Content",))
-    def download(self, url: str, saveAs: str = "") -> DownloadedFile:
+    def download(self, url: str, saveAs: str = "") -> DownloadInfo:
         """Download given url content.
 
         | =Arguments= | =Description= |
         | ``url`` | URL to the file that shall be downloaded. |
         | ``saveAs`` | Path where the file shall be saved persistently. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
 
-        Keyword returns dictionary which contains downloaded file path
-        and suggested filename as keys (``saveAs`` and ``suggestedFilename``).
+        Keyword returns dictionary of type `DownloadInfo`.
 
         Example:
         | {
@@ -184,7 +183,11 @@ class Evaluation(LibraryComponent):
         [https://forum.robotframework.org/t//4246|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.Download(Request().UrlAndPath(url=url, path=saveAs))
+            response = stub.Download(
+                Request().DownloadOptions(
+                    url=url, path=saveAs, waitForFinish=True, downloadTimeout=0
+                )
+            )
         logger.info(response.log)
         dot_dict = DotDict()
         for key, value in json.loads(response.json).items():

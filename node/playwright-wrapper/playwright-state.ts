@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, BrowserType, Locator, Page, chromium, firefox, webkit } from 'playwright';
+import { Browser, BrowserContext, BrowserType, Download, Locator, Page, chromium, firefox, webkit } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -231,6 +231,7 @@ function indexedPage(newPage: Page): IndexedPage {
         errorIndex: 0,
         consoleMessages,
         consoleIndex: 0,
+        activeDownloads: new Map(),
     };
 }
 
@@ -372,6 +373,12 @@ type IndexedContext = {
     options?: Record<string, unknown>;
 };
 
+export type DownloadInfo = {
+    downloadObject: Download;
+    saveAs: string;
+    suggestedFilename: string;
+};
+
 export type IndexedPage = {
     p: Page;
     id: Uuid;
@@ -380,6 +387,7 @@ export type IndexedPage = {
     errorIndex: number;
     consoleMessages: TimedConsoleMessage[];
     consoleIndex: number;
+    activeDownloads: Map<Uuid, DownloadInfo>;
 };
 
 type Uuid = string;

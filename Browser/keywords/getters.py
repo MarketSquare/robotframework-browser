@@ -28,6 +28,8 @@ from assertionengine import (
 )
 from robot.utils import DotDict
 
+from Browser.utils.misc import get_download_id
+
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -35,6 +37,7 @@ from ..utils import keyword, logger
 from ..utils.data_types import (
     AreaFields,
     BoundingBoxFields,
+    DownloadInfo,
     ElementRole,
     ElementState,
     RegExp,
@@ -1418,3 +1421,40 @@ class Getters(LibraryComponent):
             logger.info(f"States are: {state_list}")
             return state_list
         return result
+
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
+    def get_download_state(
+        self,
+        download: Union[DownloadInfo, str],
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+    ) -> DownloadInfo:
+        """Gets the state of a download.
+
+        Returns a dictionary of type `DownloadInfo` with the following keys:
+        | {
+        |   saveAs: str
+        |   suggestedFilename: str
+        |   state: str
+        |   downloadID: Optional[str]
+        | }
+
+        | =Arguments= | =Description= |
+        | ``download`` | `DownloadInfo` dictionary returned from `Promise To Wait For Download` or download id as string. |
+        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
+        | ``assertion_expected`` | Expected state of the download. Be aware that the returned value is a dictionary |
+        | ``message`` | overrides the default error message for assertion. |
+        """
+        download_id = get_download_id(download)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.GetDownloadState(Request().DownloadID(id=download_id))
+            logger.info(response.log)
+            return verify_assertion(
+                json.loads(response.json),
+                assertion_operator,
+                assertion_expected,
+                f"Download state is {download_id}",
+                message,
+            )

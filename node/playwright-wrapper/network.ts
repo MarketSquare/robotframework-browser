@@ -16,6 +16,7 @@ import * as path from 'path';
 import * as pb from './generated/playwright_pb';
 import { Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
+import { v4 as uuidv4 } from 'uuid';
 
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString, stringResponse } from './response-util';
 
@@ -116,15 +117,23 @@ export async function waitForNavigation(request: pb.Request.UrlOptions, page: Pa
 }
 
 export async function waitForDownload(
-    request: pb.Request.FilePath,
+    request: pb.Request.DownloadOptions,
     state: PlaywrightState,
     page: Page,
 ): Promise<pb.Response.Json> {
     const saveAs = request.getPath();
-    return await _waitForDownload(page, state, saveAs);
+    const waitForFinish = request.getWaitforfinish();
+    const downloadTimeout = request.getDownloadtimeout();
+    return await _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish);
 }
 
-export async function _waitForDownload(page: Page, state: PlaywrightState, saveAs: string): Promise<pb.Response.Json> {
+export async function _waitForDownload(
+    page: Page,
+    state: PlaywrightState,
+    saveAs: string,
+    downloadTimeout: number,
+    waitForFinished: boolean,
+): Promise<pb.Response.Json> {
     const downloadObject = await page.waitForEvent('download');
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -135,17 +144,135 @@ export async function _waitForDownload(page: Page, state: PlaywrightState, saveA
             saveAs = path.resolve(downloadsPath, saveAs);
         }
     }
+    const fileName = downloadObject.suggestedFilename();
+    const pathPromise = downloadObject.path();
+    if (!waitForFinished) {
+        const downloadID = uuidv4();
+        const activeIndexedPage = state.activeBrowser?.page;
+        if (activeIndexedPage) {
+            activeIndexedPage.activeDownloads.set(downloadID, {
+                downloadObject: downloadObject,
+                suggestedFilename: fileName,
+                saveAs: saveAs,
+            });
+            return jsonResponse(
+                JSON.stringify({
+                    saveAs: '',
+                    suggestedFilename: fileName,
+                    state: 'in_progress',
+                    downloadID: downloadID,
+                }),
+                'Download started successfully.',
+            );
+        } else {
+            throw new Error('No active page found');
+        }
+    }
+    let downloadPath;
+    if (downloadTimeout > 0) {
+        downloadPath = await Promise.race([
+            pathPromise,
+            new Promise((resolve) => setTimeout(resolve, downloadTimeout)),
+        ]);
+        if (!downloadPath) {
+            downloadObject.cancel();
+            throw new Error('Download failed, Timeout exceeded.');
+        }
+    } else {
+        downloadPath = await pathPromise;
+    }
     let filePath;
     if (saveAs) {
         await downloadObject.saveAs(saveAs);
         filePath = path.resolve(saveAs);
     } else {
-        filePath = await downloadObject.path();
+        filePath = downloadPath;
     }
-    const fileName = downloadObject.suggestedFilename();
     logger.info('suggestedFilename: ' + fileName + ' saveAs path: ' + filePath);
     return jsonResponse(
-        JSON.stringify({ saveAs: filePath, suggestedFilename: fileName }),
+        JSON.stringify({ saveAs: filePath, suggestedFilename: fileName, state: 'finished', downloadID: null }),
         'Download done successfully to: ' + filePath,
     );
+}
+
+export async function getDownloadState(
+    request: pb.Request.DownloadID,
+    state: PlaywrightState,
+): Promise<pb.Response.Json> {
+    const downloadID = request.getId();
+    const activeIndexedPage = state.activeBrowser?.page;
+    if (!activeIndexedPage) {
+        throw new Error('No active page found');
+    }
+    const downloadInfo = activeIndexedPage.activeDownloads.get(downloadID);
+    if (!downloadInfo) {
+        throw new Error('No download object found for id: ' + downloadID);
+    }
+    const downloadObject = downloadInfo.downloadObject;
+    const suggestedFilename = downloadInfo.suggestedFilename;
+    const failure = await Promise.race([downloadObject.failure(), new Promise((resolve) => setTimeout(resolve, 50))]);
+    if (failure === null) {
+        const saveAs = downloadInfo.saveAs;
+        let filePath;
+        if (saveAs) {
+            await downloadObject.saveAs(saveAs);
+            filePath = path.resolve(saveAs);
+        } else {
+            filePath = await downloadObject.path();
+        }
+        return jsonResponse(
+            JSON.stringify({
+                saveAs: filePath,
+                suggestedFilename: suggestedFilename,
+                state: 'finished',
+                downloadID: downloadID,
+            }),
+            'Download state received',
+        );
+    } else if (failure) {
+        return jsonResponse(
+            JSON.stringify({
+                saveAs: '',
+                suggestedFilename: suggestedFilename,
+                state: failure,
+                downloadID: downloadID,
+            }),
+            'Download state received',
+        );
+    } else {
+        return jsonResponse(
+            JSON.stringify({
+                saveAs: '',
+                suggestedFilename: suggestedFilename,
+                state: 'in_progress',
+                downloadID: downloadID,
+            }),
+            'Download state received',
+        );
+    }
+}
+
+export async function cancelDownload(
+    request: pb.Request.DownloadID,
+    state: PlaywrightState,
+): Promise<pb.Response.Empty> {
+    const downloadID = request.getId();
+    const activeIndexedPage = state.activeBrowser?.page;
+    if (!activeIndexedPage) {
+        throw new Error('No active page found');
+    }
+    const downloadInfo = activeIndexedPage.activeDownloads.get(downloadID);
+    if (!downloadInfo) {
+        throw new Error('No download object found for id: ' + downloadID);
+    }
+    const downloadObject = downloadInfo.downloadObject;
+    downloadObject.cancel();
+    const failure = await downloadObject.failure();
+    if (failure == 'canceled') {
+        return emptyWithLog('Download canceled successfully.');
+    } else if (failure === null) {
+        return emptyWithLog('Canceling download not possible anymore, download finished.');
+    } else {
+        return emptyWithLog(`Canceling download not possible anymore, download ${failure}.`);
+    }
 }

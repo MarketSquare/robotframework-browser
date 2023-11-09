@@ -22,7 +22,13 @@ from uuid import uuid4
 from assertionengine import AssertionOperator, verify_assertion
 from robot.utils import get_link_path
 
-from Browser.utils.data_types import Deprecated, ServiceWorkersPermissions, deprecated
+from Browser.utils.data_types import (
+    Deprecated,
+    DownloadInfo,
+    ServiceWorkersPermissions,
+    deprecated,
+)
+from Browser.utils.misc import get_download_id
 
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
@@ -1419,3 +1425,17 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SetPeerId(Request().Index(index=new_id))
             return response.body
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def cancel_download(self, download: Union[DownloadInfo, str]):
+        """Cancels an active download.
+
+        | =Arguments= | =Description= |
+        | download    | A `DownloadInfo` object or id of the download to be canceled. |
+
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CancelDownload(
+                Request().DownloadID(id=get_download_id(download))
+            )
+            logger.info(response.log)
