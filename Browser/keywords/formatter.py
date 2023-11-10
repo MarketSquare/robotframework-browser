@@ -1,23 +1,28 @@
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from assertionengine.formatter import FormatRules
 from assertionengine.formatter import Formatter as ASFormatter
+from robot.utils import DotDict
 
 from ..base import LibraryComponent
-from ..utils import Scope, logger
+from ..utils import (
+    FormatingRules,
+    FormatterKeywords,
+    FormatterTypes,
+    LambdaFunction,
+    Scope,
+    logger,
+)
 from ..utils import keyword as keyword_deco
-
-FormatterTypes = Dict[str, List[str]]
 
 
 class Formatter(ASFormatter, LibraryComponent):
-    @keyword_deco(tags=("Config",))
     def set_assertion_formatter(
         self,
-        keyword: Optional[str] = None,
+        keyword: Optional[FormatterKeywords] = None,
+        *formatters: Union[FormatingRules, LambdaFunction],
         scope: Scope = Scope.Global,
-        *formatters: str,
-    ) -> list:
+    ) -> Dict[str, List[str]]:
         """Set keyword assertion formatter with defined scope.
 
         Returns the old formatter from the scope.
@@ -39,24 +44,33 @@ class Formatter(ASFormatter, LibraryComponent):
         """
         if keyword is None:
             return self._clear_all_formatters()
-        kw = self.normalize_keyword(keyword)
-        if kw not in self.library.keywords:
-            raise ValueError(f"{keyword} is not library keyword")
-        formatter_methods = self.formatters_to_method(list(formatters))
+        kw = keyword.name
+        if kw not in [k.name for k in FormatterKeywords]:
+            raise ValueError(f"{keyword} is not keyword that supports formatters.")
         stack = self.assertion_formatter_stack.get()
-        stack = stack if stack else {}
-        old_scope = stack.get(kw, [])
-        old_scope = self._convert_scope_to_strings(old_scope)
-        stack[kw] = formatter_methods
+        old_scope_functions = stack.get(kw, [])
+        old_scope = self._convert_scope_to_strings(old_scope_functions)
+        stack[kw] = list(self.get_formatter_functions(formatters))
         self.assertion_formatter_stack.set(stack, scope)
-        return old_scope
+        return {keyword.name: old_scope}
+
+    def get_formatter_functions(self, formatters):
+        for formatter in formatters:
+            if callable(formatter):
+                yield formatter
+            elif isinstance(formatter, FormatingRules):
+                yield FormatRules[formatter.name]
+            elif isinstance(formatter, str) and formatter.lower() in FormatRules:
+                yield FormatRules[formatter.lower()]
+            else:
+                raise ValueError(
+                    f"{formatter} is not valid formatter. Choose from {FormatRules.keys()} or define a lambda function."
+                )
 
     def _clear_all_formatters(self):
-        for kw in self.library.keywords:
-            if hasattr(kw, "assertion_formatter_used") and kw.assertion_formatter_used:
-                name = self.method_to_kw_str(kw)
-                logger.debug(f"Clear keyword: {name}")
-                self.set_assertion_formatter(name)
+        for formatter_kw in FormatterKeywords:
+            logger.debug(f"Clear keyword formatter: {formatter_kw.name}")
+            self.set_assertion_formatter(formatter_kw)
         return []
 
     def method_to_kw_str(self, keyword: Callable) -> str:
@@ -71,34 +85,36 @@ class Formatter(ASFormatter, LibraryComponent):
                     scopes_str.append(rule_name)
         return scopes_str
 
-    def get_formatter(self, keyword: Callable) -> list:
+    def get_formatter(self, keyword: str) -> list:
         stack = self.assertion_formatter_stack.get()
-        stack = stack if stack else {}
-        kw = self.normalize_keyword(keyword.__name__)
-        return stack.get(kw, [])
+        return stack.get(keyword, [])
 
     def set_formatter(self, keyword, formatter):
         pass
 
     @keyword_deco(tags=("Config",))
-    def set_assertion_formatters(self, formatters: FormatterTypes):
-        """DEPRECATED!!* `Use Set Assertion Formatter` instead
+    def set_assertion_formatters(
+        self, formatters: FormatterTypes, scope: Scope = Scope.Suite
+    ) -> Dict[str, List[str]]:
+        """Set keywords formatters for assertions.
 
-        Set keywords formatters for assertions.
+        | =Arguments= | =Description= |
+        | ``formatters`` | Dictionary of keywords and formatters, where key is the keyword name where formatters are applied. Dictionary value is a list of formatter which are applied. Formatters for a defined keyword are always overwritten. An empty list will clear all formatters for the keyword. If ``formatters`` is empty dictionary, then all formatters are cleared from all keywords. |
+        | ``scope`` | Defines the lifetime of the formatter, possible values are Global, Suite and Test. |
 
-        ``formatters`` is dictionary, where key is the keyword name
-        where formatters are applied. Dictionary value is a list of
-        formatter which are applied. Using keywords always replaces
-        existing formatters for keywords.
+        See type documentation of `FormatterTypes` for more information.
 
-        Supported formatter are: `normalize space`, `strip` and
-        `apply to expected`.
+        It is possible to define own formatters as lambda functions.
 
         Example:
-        | `Set Assertion Formatters`    {"Keyword Name": ["strip", "normalize spaces"]}
+        | `Set Assertion Formatters`    {"Get Text": ["strip", "normalize spaces"]}  # This will convert all kind of spaces to single space and removes spaces from start and end of the string.
+        | `Set Assertion Formatters`    {"Get Title": ["apply to expected","lambda x: x.replace(' ', '')"]}  # This will remove all spaces from the string.
         """
         if not formatters:
-            self.set_assertion_formatter()
-        else:
-            for kw, kw_format in formatters.items():
-                self.set_assertion_formatter(kw, Scope.Global, *kw_format)
+            return DotDict(self.set_assertion_formatter())
+        old_formatters = DotDict()
+        for kw, kw_format in formatters.items():
+            old_formatters.update(
+                self.set_assertion_formatter(kw, *kw_format, scope=scope)
+            )
+        return old_formatters

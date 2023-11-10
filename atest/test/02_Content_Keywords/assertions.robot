@@ -10,69 +10,81 @@ Equal
     Get Title    should be    Login Page
 
 Formatter Scopes
-    ${old_scope} =    Set Assertion Formatter    Get Text    Global    normalize spaces
-    Should Be Empty    ${old_scope}
+    [Timeout]    600s
+    ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['normalize spaces']}    Global
+    Should Be Equal    ${old_scope}    ${{{'Get Text': []}}}
     ${current_scope} =    Get Current Scope From Lib    Get Text
     ${expected_scope} =    Create List    _normalize_spaces
     Should Be Equal    ${current_scope}    ${expected_scope}
 
-    ${old_scope} =    Set Assertion Formatter    Get Text    Global    strip
+    ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['strip']}    Global
     ${scope} =    Create List    normalize spaces
-    Should Be Equal    ${old_scope}    ${scope}
+    Should Be Equal    ${old_scope}[Get Text]    ${scope}
     ${current_scope} =    Get Current Scope From Lib    Get Text
     ${expected_scope} =    Create List    _strip
     Should Be Equal    ${current_scope}    ${expected_scope}
 
-    ${old_scope} =    Set Assertion Formatter    Get Text    Test    normalize spaces
+    ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['normalize spaces']}    Test
     ${scope} =    Create List    strip
-    Should Be Equal    ${old_scope}    ${scope}
+    Should Be Equal    ${old_scope}[Get Text]    ${scope}
     ${current_scope} =    Get Current Scope From Lib    Get Text
     ${expected_scope} =    Create List    _normalize_spaces
     Should Be Equal    ${current_scope}    ${expected_scope}
 
-    ${old_scope} =    Set Assertion Formatter    Get Text    Suite    apply to expected    case insensitive
+    ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['apply to expected', 'case insensitive']}    Suite
     ${scope} =    Create List    normalize spaces
-    Should Be Equal    ${old_scope}    ${scope}
+    Should Be Equal    ${old_scope}[Get Text]    ${scope}
     ${current_scope} =    Get Current Scope From Lib    Get Text
     ${expected_scope} =    Create List    _apply_to_expected    _case_insensitive
     Should Be Equal    ${current_scope}    ${expected_scope}
 
-    Set Assertion Formatter    Get Text    Suite
+    Set Assertion Formatters    {'Get Text' : []}    Suite
     ${current_scope} =    Get Current Scope From Lib    Get Text
     Should Be Empty    ${current_scope}
     [Teardown]    Formatter TearDown
 
 Equal With Formatter Global:
+    [Timeout]    600s
     [Setup]    Go To    ${SPACES_URL}
-    Set Assertion Formatter    Get Text    Global    normalize spaces
-    Set Assertion Formatter    Get Text    Global    strip
+    ${old} =    Set Assertion Formatters    {'Get Text': ['normalize spaces']}    Global
+    Should Be Equal    ${old}    ${{{'Get Text': []}}}
+    ${old} =    Set Assertion Formatters    {'Get Text': ['strip']}    Global
+    Should Be Equal    ${old}    ${{{'Get Text': ['normalize spaces']}}}
+    ${current_scope} =    Get Current Scope From Lib    Get Text
     Get Text    id=two    ==    two spaces
     [Teardown]    Formatter TearDown
 
 Cat Not Set Formatter For Not Library Keyword
     TRY
-        Set Assertion Formatter    Not Browser Library Keyword    Suite    strip
-    EXCEPT    ValueError: Not Browser Library Keyword is not library keyword    AS    ${error}
+        Set Assertion Formatters    {'Not Browser Library Keyword': ['strip']}    Suite
+    EXCEPT    ValueError: Argument 'formatters' got value '{'Not Browser Library Keyword': ['strip']}' that cannot be converted to Dict[FormatterKeywords, List[FormatingRules | LambdaFunction]]: Key 'Not Browser Library Keyword' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Not Browser Library Keyword'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
         Log    ${error}
     END
     TRY
-        Set Assertion Formatter    Log    Suite    strip
-    EXCEPT    ValueError: Log is not library keyword    AS    ${error}
+        Set Assertion Formatters    {'Log': ['strip']}    Suite
+    EXCEPT    ValueError: Argument 'formatters' got value '{'Log': ['strip']}' that cannot be converted to Dict[FormatterKeywords, List[FormatingRules | LambdaFunction]]: Key 'Log' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Log'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
+        Log    ${error}
+    END
+
+Get Attribute Names Does Not Support Formatter:
+    TRY
+        Set Assertion Formatters    {'Get Attribute Names':['strip']}    Test
+    EXCEPT    ValueError: Argument 'formatters' got value '{'Get Attribute Names':['strip']}' that cannot be converted to Dict[FormatterKeywords, List[FormatingRules | LambdaFunction]]: Key 'Get Attribute Names' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Get Attribute Names'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
         Log    ${error}
     END
 
 Equal With Deprecated Formatter:
     [Setup]    Go To    ${SPACES_URL}
-    Set Assertion Formatters    {"Get Text": ["strip"]}
+    Set Assertion Formatters    {"Get Text": ["strip"], "Get Title": ["lambda x: x.replace(' ', '')"]}
     Get Text    id=two    ==    two spaces
+    Get Title    ==    Pagewithspaces
     [Teardown]    Formatter TearDown
 
-Get Attribute Names Does Not Support Formatter:
-    [Documentation]
-    ...    LOG 2:*    WARN    Formatter is not supported by Get Attribute Names keyword.
+Equal With Lambda Formatter:
     [Setup]    Go To    ${SPACES_URL}
-    Set Assertion Formatter    Get Attribute Names    Test    strip
-    Get Attribute Names    id=two    ==    id
+    Set Assertion Formatters
+    ...    {"Get Text": ["apply to expected", "strip", "lambda x: x.replace('two', 'three')", "lambda x: x.upper()", "lambda x: x.replace(' ', '')"]}
+    Get Text    id=two    ==    Thr E e Sp A CES
     [Teardown]    Formatter TearDown
 
 Get Attribute Names Does Not Support Formatter2:
@@ -80,14 +92,6 @@ Get Attribute Names Does Not Support Formatter2:
     ...    LOG 1:*    DEBUG    GLOB:    Assertion polling statistics:*
     [Setup]    Go To    ${SPACES_URL}
     Get Attribute Names    id=two    ==    id
-    [Teardown]    Formatter TearDown
-
-Get Element Count Does Not Support Formatter:
-    [Documentation]
-    ...    LOG 2:*    WARN    Formatter is not supported by Get Element Count keyword.
-    [Setup]    Go To    ${SPACES_URL}
-    Set Assertion Formatter    Get Element Count    Test    strip
-    Get Element Count    id=two    ==    1
     [Teardown]    Formatter TearDown
 
 InEqual
@@ -169,5 +173,5 @@ Evaluate
 
 *** Keywords ***
 Formatter TearDown
-    Set Assertion Formatter
+    Set Assertion Formatters    {}
     Go To    ${LOGIN_URL}

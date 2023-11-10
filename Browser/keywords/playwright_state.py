@@ -885,7 +885,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.GetBrowserCatalog(Request().Empty())
             parsed = json.loads(response.json)
             logger.info(json.dumps(parsed, indent=2))
-            formatter = self.get_assertion_formatter(self.get_browser_catalog)
+            formatter = self.get_assertion_formatter("Get Browser Catalog")
             return verify_assertion(
                 parsed,
                 assertion_operator,
