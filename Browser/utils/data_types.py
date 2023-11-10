@@ -14,7 +14,7 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from typing_extensions import TypedDict
 
@@ -438,6 +438,72 @@ class HighLightElement(TypedDict):
     width: str
     style: str
     color: str
+
+
+class LambdaFunction:
+    @classmethod
+    def from_string(cls, string: str) -> "LambdaFunction":
+        """Python lambda function.
+
+        The string must start with ``lambda`` and the function must accept one argument.
+
+        Example: ``lambda value: value.lower().replace(' ', '')``
+        """
+        return eval(string)
+
+
+FormatterKeywords = Enum(
+    "FormatterKeywords",
+    {
+        "Get Url": auto(),
+        "Get Page Source": auto(),
+        "Get Title": auto(),
+        "Get Text": auto(),
+        "Get Property": auto(),
+        "Get Attribute": auto(),
+        "Get Select Options": auto(),
+        "Get Style": auto(),
+        "Get Browser Catalog": auto(),
+        "LocalStorage Get Item": auto(),
+        "SessionStorage Get Item": auto(),
+    },
+)
+FormatterKeywords.__doc__ = """Enum that defines the available keywords for formatters.
+
+Keywords that are not listed here, do not support formatters.
+"""
+
+FormatingRules = Enum(
+    "FormatingRules",
+    {
+        "normalize spaces": auto(),
+        "strip": auto(),
+        "apply to expected": auto(),
+        "case insensitive": auto(),
+    },
+)
+FormatingRules.__doc__ = """Enum that defines the available formatters.
+
+    | =Formatter= | =Description= |
+    | ``normalize spaces`` | Replaces all kind of spaces with a single space. |
+    | ``strip`` | Removes spaces from start and end of the string. |
+    | ``apply to expected`` | Applies the formatter also to the expected value. |
+    | ``case insensitive`` | Converts the string to lower case. |
+"""
+
+
+FormatterTypes = Dict[FormatterKeywords, List[Union[FormatingRules, LambdaFunction]]]
+FormatterTypes.__doc__ = """Dictionary that defines the formatters for keywords.
+
+Example Robot Variable:
+| *** Variables ***
+| @{normalizing_formatters}    strip    normalize spaces    lambda value: value.replace(' ', '')
+| &{formatters}    Get Text    @{normalizing_formatters}
+
+Example as literal:
+| `Set Assertion Formatters`    {"Get Text": ["strip", "normalize spaces","lambda x: x.replace(' ', '')"]}
+
+"""
 
 
 class Scale(Enum):

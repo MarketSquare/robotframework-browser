@@ -36,7 +36,7 @@ class WebAppState(LibraryComponent):
                 )
             )
 
-    @keyword(name="localStorage get Item", tags=("PageContent", "Assertion", "Getter"))
+    @keyword(name="LocalStorage Get Item", tags=("PageContent", "Assertion", "Getter"))
     @with_assertion_polling
     @assertion_formatter_used
     def local_storage_get_item(
@@ -67,7 +67,7 @@ class WebAppState(LibraryComponent):
         """
         response = self.eval_js(f'window.localStorage.getItem("{key}")', frame_selector)
         logger.info(response.log)
-        formatter = self.get_assertion_formatter(self.local_storage_get_item)
+        formatter = self.get_assertion_formatter("Local Storage Get Item")
         return verify_assertion(
             json.loads(response.result),
             assertion_operator,
@@ -77,7 +77,7 @@ class WebAppState(LibraryComponent):
             formatter,
         )
 
-    @keyword(name="localStorage set Item", tags=("Setter", "PageContent"))
+    @keyword(name="LocalStorage Set Item", tags=("Setter", "PageContent"))
     def local_storage_set_item(
         self, key: str, value: str, frame_selector: Optional[str] = None
     ):
@@ -99,7 +99,7 @@ class WebAppState(LibraryComponent):
         )
         logger.info(response.log)
 
-    @keyword(name="localStorage remove Item", tags=("Setter", "PageContent"))
+    @keyword(name="LocalStorage Remove Item", tags=("Setter", "PageContent"))
     def local_storage_remove_item(self, key: str, frame_selector: Optional[str] = None):
         """Remove saved data with key from the local storage.
 
@@ -120,7 +120,7 @@ class WebAppState(LibraryComponent):
         )
         logger.info(response.log)
 
-    @keyword(name="localStorage clear", tags=("Setter", "PageContent"))
+    @keyword(name="LocalStorage Clear", tags=("Setter", "PageContent"))
     def local_storage_clear(self, frame_selector: Optional[str] = None):
         """Remove all saved data from the local storage.
 
@@ -139,7 +139,7 @@ class WebAppState(LibraryComponent):
         logger.info(response.log)
 
     @keyword(
-        name="sessionStorage get Item", tags=("PageContent", "Assertion", "Getter")
+        name="SessionStorage Get Item", tags=("PageContent", "Assertion", "Getter")
     )
     @with_assertion_polling
     @assertion_formatter_used
@@ -171,7 +171,7 @@ class WebAppState(LibraryComponent):
             f"window.sessionStorage.getItem({key!r})", frame_selector
         )
         logger.info(response.log)
-        formatter = self.get_assertion_formatter(self.session_storage_get_item)
+        formatter = self.get_assertion_formatter("Session Storage Get Item")
         return verify_assertion(
             json.loads(response.result),
             assertion_operator,
@@ -181,7 +181,7 @@ class WebAppState(LibraryComponent):
             formatter,
         )
 
-    @keyword(name="sessionStorage set Item", tags=("Setter", "PageContent"))
+    @keyword(name="SessionStorage Set Item", tags=("Setter", "PageContent"))
     def session_storage_set_item(
         self, key: str, value: str, frame_selector: Optional[str] = None
     ):
@@ -202,7 +202,7 @@ class WebAppState(LibraryComponent):
         )
         logger.info(response.log)
 
-    @keyword(name="sessionStorage remove Item", tags=("Setter", "PageContent"))
+    @keyword(name="SessionStorage Remove Item", tags=("Setter", "PageContent"))
     def session_storage_remove_item(
         self, key: str, frame_selector: Optional[str] = None
     ):
@@ -225,7 +225,7 @@ class WebAppState(LibraryComponent):
         )
         logger.info(response.log)
 
-    @keyword(name="sessionStorage clear", tags=("Setter", "PageContent"))
+    @keyword(name="SessionStorage Clear", tags=("Setter", "PageContent"))
     def session_storage_clear(self, frame_selector: Optional[str] = None):
         """Remove all saved data from the session storage.
 

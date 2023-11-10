@@ -66,6 +66,7 @@ from .utils import (
 from .utils.data_types import (
     DelayedKeyword,
     HighLightElement,
+    LambdaFunction,
     RegExp,
     SupportedBrowsers,
 )
@@ -103,7 +104,9 @@ KW_CALL_BANNER_FUNCTION = """(content) => {
 }"""
 
 
-@library(converters={RegExp: RegExp.from_string})
+@library(
+    converters={RegExp: RegExp.from_string, LambdaFunction: LambdaFunction.from_string}
+)
 class Browser(DynamicCore):
     """Browser library is a browser automation library for Robot Framework.
 
@@ -857,7 +860,7 @@ class Browser(DynamicCore):
             show_keyword_call_banner, self
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
-        self.scope_stack["assertion_formatter"] = SettingsStack("", self)
+        self.scope_stack["assertion_formatter"] = SettingsStack({}, self)
 
     @property
     def keyword_call_banner_add_style(self):
@@ -1326,5 +1329,5 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             doc = f"{doc}\n[https://forum.robotframework.org/t//4327|Comment >>]"
         return doc
 
-    def _get_assertion_formatter(self, keyword: Callable) -> list:
+    def _get_assertion_formatter(self, keyword: str) -> list:
         return self._assertion_formatter.get_formatter(keyword)

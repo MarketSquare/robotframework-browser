@@ -92,7 +92,7 @@ class LibraryComponent:
     def assertion_formatter_stack(self, stack: SettingsStack):
         self.library.scope_stack["assertion_formatter"] = stack
 
-    def get_assertion_formatter(self, keyword: Callable) -> list:
+    def get_assertion_formatter(self, keyword: str) -> list:
         return self.library._get_assertion_formatter(keyword)
 
     def method_to_kw_str(self, keyword: Callable) -> str:
