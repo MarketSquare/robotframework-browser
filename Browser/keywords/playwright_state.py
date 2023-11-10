@@ -380,7 +380,7 @@ class PlaywrightState(LibraryComponent):
         | ``channel`` | Allows to operate against the stock Google Chrome and Microsoft Edge browsers. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
         | ``chromiumSandbox`` | Enable Chromium sandboxing. Defaults to False. |
         | ``devtools`` | Chromium-only Whether to auto-open a Developer Tools panel for each tab. |
-        | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. Regarding file deletion, see the docs of ``Download`` and ``Promise To Wait For Download``. |
+        | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. Regarding file deletion, see the docs of `Download` and `Promise To Wait For Download`. |
         | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
         | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
         | ``firefoxUserPrefs`` |Firefox user preferences. Learn more about the Firefox user preferences at [https://support.mozilla.org/en-US/kb/about-config-editor-firefox|about:config]. |

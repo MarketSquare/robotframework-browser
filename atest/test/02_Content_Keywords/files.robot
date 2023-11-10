@@ -70,6 +70,25 @@ Wait For Download
     Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
     Remove File    ${file_object}[saveAs]
 
+Wait For Download Not Finished
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    ${dl_promise} =    Promise To Wait For Download    wait_for_finished=False
+    Sleep    0.5
+    Click    \#file_download
+    ${file_object} =    Wait For    ${dl_promise}
+    ${state} =    Get Download State    download=${file_object}
+    Should Be True    $state['downloadID']
+    Should Be Equal    ${state}[downloadID]    ${file_object}[downloadID]
+    ${finished_download} =    Wait For Condition
+    ...    download_state
+    ...    ${file_object}
+    ...    validate
+    ...    value['state'] == 'finished'
+    File Should Exist    ${finished_download}[saveAs]
+    Should Be Equal    ${finished_download}[suggestedFilename]    test_download_file.js
+    Remove File    ${finished_download}[saveAs]
+
 Wait For Download With Custom Path
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
