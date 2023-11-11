@@ -135,7 +135,7 @@ interface BrowserAndConfs {
 async function _newBrowser(
     browserType: 'chromium' | 'firefox' | 'webkit',
     headless: boolean,
-    timeout: number,
+    timeout: number | undefined,
     options?: Record<string, unknown>,
 ): Promise<BrowserAndConfs> {
     let browser;
@@ -177,13 +177,14 @@ async function _connectBrowser(browserType: string, url: string): Promise<Browse
 
 async function _newBrowserContext(
     browser: Browser,
-    defaultTimeout: number,
+    defaultTimeout: number | undefined,
     traceFile: string,
     options?: Record<string, unknown>,
 ): Promise<IndexedContext> {
     const context = await browser.newContext(options);
-
-    context.setDefaultTimeout(defaultTimeout);
+    if (defaultTimeout) {
+        context.setDefaultTimeout(defaultTimeout);
+    }
     const c = {
         id: `context=${uuidv4()}`,
         c: context,
@@ -278,7 +279,7 @@ export class PlaywrightState {
 
     public async getOrCreateActiveBrowser(
         browserType: 'chromium' | 'firefox' | 'webkit' | null,
-        timeout: number,
+        timeout: number | undefined,
     ): Promise<IBrowserState> {
         const currentBrowser = this.activeBrowser;
         logger.info('currentBrowser: ' + currentBrowser);
@@ -425,7 +426,7 @@ export class BrowserState {
         await this.browser.close();
     }
 
-    public async getOrCreateActiveContext(defaultTimeout: number): Promise<IIndexedContext> {
+    public async getOrCreateActiveContext(defaultTimeout: number | undefined): Promise<IIndexedContext> {
         if (this.context) {
             return { context: this.context, newContext: false };
         } else if (this.browser === null) {
@@ -531,8 +532,12 @@ export async function closePage(
     return pageReportResponse(`Successfully closed Page with runBeforeUnload ${unload}`, closedPage);
 }
 
-export async function newPage(request: Request.Url, openBrowsers: PlaywrightState): Promise<Response.NewPageResponse> {
-    const defaultTimeout = request.getDefaulttimeout();
+export async function newPage(
+    request: Request.UrlOptions,
+    openBrowsers: PlaywrightState,
+): Promise<Response.NewPageResponse> {
+    const defaultTimeout = request.getUrl()?.getDefaulttimeout();
+    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit'>request.getWaituntil();
     const browserState = await openBrowsers.getOrCreateActiveBrowser(null, defaultTimeout);
     const newBrowser = browserState.newBrowser;
     const context = await browserState.browser.getOrCreateActiveContext(defaultTimeout);
@@ -541,9 +546,16 @@ export async function newPage(request: Request.Url, openBrowsers: PlaywrightStat
     const videoPath = await page.p.video()?.path();
     logger.info('Video path: ' + videoPath);
     browserState.browser.pushPage(page);
-    const url = request.getUrl() || 'about:blank';
+    const url = request.getUrl()?.getUrl() || 'about:blank';
     try {
-        await page.p.goto(url);
+        const goToOptions: {
+            timeout?: number;
+            waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit';
+        } = { timeout: defaultTimeout };
+        if (waitUntil) {
+            goToOptions.waitUntil = waitUntil;
+        }
+        await page.p.goto(url, goToOptions);
         const response = new Response.NewPageResponse();
         response.setBody(page.id);
         response.setLog(`Successfully initialized new page object and opened url: ${url}`);
