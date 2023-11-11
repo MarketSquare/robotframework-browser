@@ -68,7 +68,11 @@ Download Without Wait For Finish
     New Context    acceptDownloads=${TRUE}
     New Page    ${WELCOME_URL}
     ${download} =    Download    ${WELCOME_URL}    wait_for_finished=False
-    ${finished_download}    Wait For Condition    download_state    ${download}    validate    value['state'] == 'finished'
+    ${finished_download} =    Wait For Condition
+    ...    download_state
+    ...    ${download}
+    ...    validate
+    ...    value['state'] == 'finished'
     ${actual_size} =    Get File Size    ${finished_download}[saveAs]
     Should Be True    ${actual_size} < ${500}
     Remove File    ${finished_download}[saveAs]

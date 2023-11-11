@@ -192,10 +192,16 @@ class Evaluation(LibraryComponent):
 
         [https://forum.robotframework.org/t//4246|Comment >>]
         """
+        timeout_ms = (
+            int(download_timeout.total_seconds() * 1000) if download_timeout else 0
+        )
         with self.playwright.grpc_channel() as stub:
             response = stub.Download(
                 Request().DownloadOptions(
-                    url=url, path=saveAs, waitForFinish=wait_for_finished, downloadTimeout=download_timeout
+                    url=url,
+                    path=saveAs,
+                    waitForFinish=wait_for_finished,
+                    downloadTimeout=timeout_ms,
                 )
             )
         logger.info(response.log)
