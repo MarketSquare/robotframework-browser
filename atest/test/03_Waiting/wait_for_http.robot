@@ -113,6 +113,26 @@ Wait For Navigation Works With Wait_until
     END
     [Teardown]    Set Browser Timeout    ${old timeout}
 
+Go To Works With Wait_until
+    [Tags]    slow
+    ${old timeout} =    Set Browser Timeout    4s
+    FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit
+        Go To    ${ROOT_URL}redirector.html    wait_until=${wait_until}
+        Get Url    contains    posted
+    END
+    [Teardown]    Set Browser Timeout    ${old timeout}
+
+New Page Works With Wait_until
+    [Tags]    slow
+    [Setup]    NONE
+    ${old timeout} =    Set Browser Timeout    4s
+    FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit
+        New Page    ${ROOT_URL}redirector.html    wait_until=${wait_until}
+        Get Url    contains    posted
+        Close Page
+    END
+    [Teardown]    Set Browser Timeout    ${old timeout}
+
 Promise To Wait For Navigation With Wait_until
     ${old timeout} =    Set Browser Timeout    4s
     Go To    ${ROOT_URL}redirector.html

@@ -25,6 +25,7 @@ from robot.utils import get_link_path
 from Browser.utils.data_types import (
     Deprecated,
     DownloadInfo,
+    PageLoadStates,
     ServiceWorkersPermissions,
     deprecated,
 )
@@ -653,7 +654,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(context_options)
 
             if url:
-                stub.GoTo(Request().Url(url=url))
+                stub.GoTo(Request().UrlOptions(url=Request().Url(url=url)))
             self.context_cache.add(response.id, self._get_video_size(params))
             video_path = self._embed_video(json.loads(response.video))
             return (
@@ -745,14 +746,20 @@ class PlaywrightState(LibraryComponent):
         return {"width": 1280, "height": 720}
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def new_page(self, url: Optional[str] = None) -> NewPageDetails:
+    def new_page(
+        self,
+        url: Optional[str] = None,
+        wait_until: PageLoadStates = PageLoadStates.load,
+    ) -> NewPageDetails:
         """Open a new Page.
 
         A Page is the Playwright equivalent to a tab. See `Browser, Context and Page`
         for more information about Page concept.
 
-        | =Arguments= | =Description= |
-        | url         | Optional URL to navigate the page to. The url should include protocol, e.g. `https://` |
+        | =Arguments=    | =Description= |
+        | ``url``        | Optional URL to navigate the page to. The url should include protocol, e.g. `https://` |
+        | ``wait_until`` | When to consider operation succeeded, defaults to load. Events can be either: ``domcontentloaded`` - consider operation to be finished when the DOMContentLoaded event is fired. ``load`` - consider operation to be finished when the load event is fired. ``networkidle`` - consider operation to be finished when there are no network connections for at least 500 ms. ``commit`` - consider operation to be finished when network response is received and the document started loading. |
+
 
         Returns `NewPageDetails` as dictionary for created page.
         `NewPageDetails` (dict) contains the keys ``page_id`` and ``video_path``. ``page_id`` is a stable identifier for
@@ -769,7 +776,12 @@ class PlaywrightState(LibraryComponent):
                 # '' will be treated as falsy on .ts side.
                 # TODO: Use optional url field instead once it stabilizes at upstream
                 # https://stackoverflow.com/a/62566052
-                Request().Url(url=(url or ""), defaultTimeout=int(self.timeout))
+                Request().UrlOptions(
+                    url=Request().Url(
+                        url=(url or ""), defaultTimeout=int(self.timeout)
+                    ),
+                    waitUntil=wait_until.name,
+                )
             )
         logger.info(response.log)
         if response.newBrowser:

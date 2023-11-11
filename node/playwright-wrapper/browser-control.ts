@@ -45,10 +45,18 @@ export async function clearPermissions(request: Request.Empty, state: Playwright
     return emptyWithLog('Cleared all permissions');
 }
 
-export async function goTo(request: Request.Url, page: Page): Promise<Response.Empty> {
-    const url = request.getUrl();
-    const timeout = request.getDefaulttimeout();
-    const response = await page.goto(url, { timeout });
+export async function goTo(request: Request.UrlOptions, page: Page): Promise<Response.Empty> {
+    const url = request.getUrl()?.getUrl() || 'about:blank';
+    const timeout = request.getUrl()?.getDefaulttimeout();
+    const goToOptions: {
+        timeout?: number;
+        waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit';
+    } = { timeout: timeout };
+    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit'>request.getWaituntil();
+    if (waitUntil) {
+        goToOptions.waitUntil = waitUntil;
+    }
+    const response = await page.goto(url, goToOptions);
     return stringResponse(response?.status().toString() || '', `Successfully opened URL ${url}`);
 }
 

@@ -111,8 +111,8 @@ export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: 
 export async function waitForNavigation(request: pb.Request.UrlOptions, page: Page): Promise<pb.Response.Empty> {
     const url = parseRegExpOrKeepString(<string>request.getUrl()?.getUrl());
     const timeout = request.getUrl()?.getDefaulttimeout();
-    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getWaituntil();
-    await page.waitForNavigation({ timeout, url: url, waitUntil: waitUntil });
+    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit' | undefined>request.getWaituntil();
+    await page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil });
     return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 

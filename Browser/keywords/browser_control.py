@@ -26,6 +26,7 @@ from ..generated.playwright_pb2 import Request
 from ..utils import Scope, keyword, logger
 from ..utils.data_types import (
     BoundingBox,
+    PageLoadStates,
     Permission,
     Scale,
     ScreenshotFileTypes,
@@ -57,12 +58,19 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def go_to(self, url: str, timeout: Optional[timedelta] = None):
+    def go_to(
+        self,
+        url: str,
+        timeout: Optional[timedelta] = None,
+        wait_until: PageLoadStates = PageLoadStates.load,
+    ):
         """Navigates to the given ``url``.
 
         | =Arguments= | =Description= |
-        | ``url`` | <str> URL to be navigated to. |
-        | ``timeout`` | <str> time to wait page to load. If not defined will use the library default timeout. |
+        | ``url`` | URL to be navigated to. |
+        | ``timeout`` | time to wait page to load. If not defined will use the library default timeout. |
+        | ``wait_until`` | When to consider operation succeeded, defaults to load. Events can be either: ``domcontentloaded`` - consider operation to be finished when the DOMContentLoaded event is fired. ``load`` - consider operation to be finished when the load event is fired. ``networkidle`` - consider operation to be finished when there are no network connections for at least 500 ms. ``commit`` - consider operation to be finished when network response is received and the document started loading. |
+
 
         Returns the HTTP status code for the navigation request as integer or 0 if non received.
 
@@ -70,7 +78,12 @@ class Control(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GoTo(
-                Request().Url(url=url, defaultTimeout=int(self.get_timeout(timeout)))
+                Request().UrlOptions(
+                    url=Request().Url(
+                        url=url, defaultTimeout=int(self.get_timeout(timeout))
+                    ),
+                    waitUntil=wait_until.name,
+                )
             )
             logger.info(response.log)
             if response.body:

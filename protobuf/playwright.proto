@@ -357,7 +357,7 @@ service  Playwright {
   /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
-  rpc GoTo(Request.Url) returns (Response.String);
+  rpc GoTo(Request.UrlOptions) returns (Response.String);
   /* Navigate to the next page in history */
   rpc GoBack(Request.Empty) returns (Response.Empty);
   /* Navigate to the previous page in history. */
@@ -474,7 +474,7 @@ service  Playwright {
   rpc SwitchPage(Request.IdWithTimeout) returns (Response.String);
   rpc SwitchContext(Request.Index) returns (Response.String);
   rpc SwitchBrowser(Request.Index) returns (Response.String);
-  rpc NewPage(Request.Url) returns (Response.NewPageResponse);
+  rpc NewPage(Request.UrlOptions) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
   rpc NewPersistentContext(Request.PersistentContext) returns (Response.NewPersistentContextResponse);
