@@ -62,3 +62,18 @@ Download Works Also Headless
     Should Be True    ${actual_size} < ${500}
     Remove File    ${path}[saveAs]
     Should Contain    ${path}[suggestedFilename]    .html
+
+Download Without Wait For Finish
+    [Tags]    no-iframe
+    New Context    acceptDownloads=${TRUE}
+    New Page    ${WELCOME_URL}
+    ${download} =    Download    ${WELCOME_URL}    wait_for_finished=False
+    ${finished_download} =    Wait For Condition
+    ...    download_state
+    ...    ${download}
+    ...    validate
+    ...    value['state'] == 'finished'
+    ${actual_size} =    Get File Size    ${finished_download}[saveAs]
+    Should Be True    ${actual_size} < ${500}
+    Remove File    ${finished_download}[saveAs]
+    Should Contain    ${finished_download}[suggestedFilename]    .html

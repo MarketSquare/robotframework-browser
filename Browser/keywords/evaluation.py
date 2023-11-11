@@ -20,7 +20,7 @@ from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import DownloadedFile, keyword, logger
+from ..utils import DownloadInfo, keyword, logger
 
 
 class Evaluation(LibraryComponent):
@@ -144,20 +144,29 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Page Content",))
-    def download(self, url: str, saveAs: str = "") -> DownloadedFile:
+    def download(
+        self,
+        url: str,
+        saveAs: str = "",
+        wait_for_finished: bool = True,
+        download_timeout: Optional[timedelta] = None,
+    ) -> DownloadInfo:
         """Download given url content.
 
         | =Arguments= | =Description= |
         | ``url`` | URL to the file that shall be downloaded. |
         | ``saveAs`` | Path where the file shall be saved persistently. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
+        | ``wait_for_finished`` | If set to ``False`` keyword returns immediately after the download is started. Defaults to ``True``. |
+        | ``download_timeout`` | Timeout for the download itself if ``wait_for_finished`` is set to ``True``. By default no timeout is set. |
 
-        Keyword returns dictionary which contains downloaded file path
-        and suggested filename as keys (``saveAs`` and ``suggestedFilename``).
+        Keyword returns dictionary of type `DownloadInfo`.
 
         Example:
         | {
         |   "saveAs": "/tmp/robotframework-browser/downloads/2f1b3b7c-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
         |   "suggestedFilename": "downloaded_file.txt"
+        |   "state": "finished",
+        |   "downloadID": None,
         | }
 
         If the download should be started by an interaction with an element on the page,
@@ -183,8 +192,18 @@ class Evaluation(LibraryComponent):
 
         [https://forum.robotframework.org/t//4246|Comment >>]
         """
+        timeout_ms = (
+            int(download_timeout.total_seconds() * 1000) if download_timeout else 0
+        )
         with self.playwright.grpc_channel() as stub:
-            response = stub.Download(Request().UrlAndPath(url=url, path=saveAs))
+            response = stub.Download(
+                Request().DownloadOptions(
+                    url=url,
+                    path=saveAs,
+                    waitForFinish=wait_for_finished,
+                    downloadTimeout=timeout_ms,
+                )
+            )
         logger.info(response.log)
         dot_dict = DotDict()
         for key, value in json.loads(response.json).items():

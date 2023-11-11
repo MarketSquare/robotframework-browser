@@ -107,9 +107,15 @@ message Request {
     int32 defaultTimeout = 2;
   }
 
-  message UrlAndPath {
+  message DownloadOptions {
     string url= 1;
     string path = 2;
+    bool waitForFinish = 3;
+    int32 downloadTimeout = 4;
+  }
+
+  message DownloadID {
+    string id = 1;
   }
 
   message UrlOptions {
@@ -408,7 +414,7 @@ service  Playwright {
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Int);
   /* Download url content */
-  rpc Download(Request.UrlAndPath) returns (Response.Json);
+  rpc Download(Request.DownloadOptions) returns (Response.Json);
   /* Clicks element specified by selector and options */
   rpc Click(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Taps element specified by selector and options */
@@ -435,7 +441,7 @@ service  Playwright {
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
   rpc WaitForResponse(Request.HttpCapture) returns (Response.Json);
-  rpc WaitForDownload(Request.FilePath) returns (Response.Json);
+  rpc WaitForDownload(Request.DownloadOptions) returns (Response.Json);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
   rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);
   /* Geolocation */
@@ -480,6 +486,8 @@ service  Playwright {
   rpc GetConsoleLog(Request.Bool) returns (Response.Json);
   rpc GetErrorMessages(Request.Bool) returns (Response.Json);
   rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
+  rpc GetDownloadState(Request.DownloadID) returns (Response.Json);
+  rpc CancelDownload(Request.DownloadID) returns (Response.Empty);
   rpc SaveStorageState(Request.FilePath) returns (Response.Empty);
 
   rpc GrantPermissions(Request.Permissions) returns (Response.Empty);

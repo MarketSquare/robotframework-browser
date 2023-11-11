@@ -14,11 +14,12 @@
 import json
 import re
 from concurrent.futures import Future, ThreadPoolExecutor
+from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from sys import maxsize
 from time import sleep
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from robot.api.deco import keyword
 from robot.running.arguments.typeconverters import TypeConverter
@@ -26,7 +27,7 @@ from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import DownloadedFile, logger
+from ..utils import DownloadInfo, logger
 
 
 class Promises(LibraryComponent):
@@ -132,7 +133,12 @@ class Promises(LibraryComponent):
         return arg_value
 
     @keyword(tags=("Wait", "BrowserControl"))
-    def promise_to_wait_for_download(self, saveAs: str = "") -> Future:
+    def promise_to_wait_for_download(
+        self,
+        saveAs: str = "",
+        wait_for_finished: bool = True,
+        download_timeout: Optional[timedelta] = None,
+    ) -> Future:
         """Returns a promise that waits for next download event on page.
 
         To enable downloads context's ``acceptDownloads`` needs to be true.
@@ -140,11 +146,12 @@ class Promises(LibraryComponent):
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 
         | =Arguments= | =Description= |
-        | ``saveAs`` | Defines path where the file is saved persistently. File will also temporarily be saved in playwright context's default download location. |
+        | ``saveAs`` | Defines path where the file is saved persistently. File will also temporarily be saved in playwright context's default download location. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
+        | ``wait_for_finished`` | If true, promise will wait for download to finish. If false, promise will resolve immediately after download has started. |
+        | ``download_timeout`` | Maximum time to wait for download to finish, if ``wait_for_finished`` is set to ``True``. If download is not finished during this time, keyword will be fail. |
 
-        Keyword returns dictionary which contains downloaded file path
-        and suggested filename as keys (``saveAs`` and ``suggestedFilename``).
-
+        Keyword returns dictionary of type `DownloadInfo` which contains downloaded file path
+        and suggested filename as well as state and downloadID.
         Example:
         | {
         |   "saveAs": "/tmp/robotframework-browser/downloads/2f1b3b7c-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
@@ -174,24 +181,41 @@ class Promises(LibraryComponent):
 
         [https://forum.robotframework.org/t//4314|Comment >>]
         """
-        promise = self._executor.submit(self._wait_for_download, saveAs=saveAs)
+        timeout_ms = (
+            int(download_timeout.total_seconds() * 1000) if download_timeout else 0
+        )
+        promise = self._executor.submit(
+            self._wait_for_download,
+            saveAs=saveAs,
+            wait_for_finish=wait_for_finished,
+            download_timeout=timeout_ms,
+        )
         self.unresolved_promises.add(promise)
         return promise
 
-    def _wait_for_download(self, saveAs: str = "") -> DownloadedFile:
+    def _wait_for_download(
+        self, saveAs: str = "", wait_for_finish: bool = True, download_timeout: int = 0
+    ) -> DownloadInfo:
         with self.playwright.grpc_channel() as stub:
             if not saveAs:
-                response = stub.WaitForDownload(Request().FilePath())
+                response = stub.WaitForDownload(
+                    Request().DownloadOptions(
+                        downloadTimeout=download_timeout, waitForFinish=wait_for_finish
+                    )
+                )
                 logger.debug(response.log)
             else:
                 file_path = Path(saveAs)
                 file_path.resolve()
-                response = stub.WaitForDownload(Request().FilePath(path=str(file_path)))
+                response = stub.WaitForDownload(
+                    Request().DownloadOptions(
+                        path=str(file_path),
+                        downloadTimeout=download_timeout,
+                        waitForFinish=wait_for_finish,
+                    )
+                )
         logger.info(response.log)
-        dot_dict = DotDict()
-        for key, value in json.loads(response.json).items():
-            dot_dict[key] = value
-        return dot_dict
+        return DotDict(json.loads(response.json))
 
     @keyword(tags=("Wait",))
     def wait_for(self, *promises: Future):

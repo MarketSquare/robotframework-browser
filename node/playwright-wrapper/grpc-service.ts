@@ -371,6 +371,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     waitForResponse = this.wrappingPage(network.waitForResponse);
     waitUntilNetworkIsIdle = this.wrappingPage(network.waitUntilNetworkIsIdle);
     waitForNavigation = this.wrappingPage(network.waitForNavigation);
+    getDownloadState = this.wrapping(network.getDownloadState);
+    cancelDownload = this.wrapping(network.cancelDownload);
 
     async waitForFunction(
         call: ServerUnaryCall<Request.WaitForFunctionOptions, Response.Json>,

@@ -20,7 +20,7 @@ from .data_types import (
     ConditionInputs,
     CookieSameSite,
     CookieType,
-    DownloadedFile,
+    DownloadInfo,
     ElementState,
     ForcedColors,
     FormatterKeywords,

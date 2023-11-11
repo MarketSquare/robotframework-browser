@@ -14,7 +14,7 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from typing_extensions import TypedDict
 
@@ -399,15 +399,20 @@ class Proxy(_Server, total=False):
     password: str
 
 
-class DownloadedFile(TypedDict):
+class DownloadInfo(TypedDict):
     """Downloaded file information.
 
-    ``saveAs`` is the path where downloaded file is saved.
-    ``suggestedFilename`` is the  contains the name suggested name for the download.
+    | =Key= | =Description= |
+    | ``saveAs`` | is the path where downloaded file is saved. empty string if the file is not yet fully downloaded. |
+    | ``suggestedFilename`` | is the suggested filename that was computed from the ``Content-Disposition`` response header. |
+    | ``state`` | is the state of the download. i.e. ``in_progress``, ``finished`` or ``canceled``. |
+    | ``downloadID`` | is the unique id of the download. |
     """
 
     saveAs: str
     suggestedFilename: str
+    state: str
+    downloadID: Optional[str]
 
 
 class NewPageDetails(TypedDict):
@@ -902,6 +907,7 @@ class ConditionInputs(Enum):
     | ``Checkbox State`` | `Get Checkbox State` |
     | ``Classes`` | `Get Classes` |
     | ``Client Size`` | `Get Client Size` |
+    | ``Download State`` | `Get Download State` |
     | ``Element Count`` | `Get Element Count` |
     | ``Element States`` | `Get Element States` |
     | ``Page Source`` | `Get Page Source` |
@@ -926,6 +932,7 @@ class ConditionInputs(Enum):
     checkbox_state = "get_checkbox_state"
     classes = "get_classes"
     client_size = "get_client_size"
+    download_state = "get_download_state"
     element_count = "get_element_count"
     element_states = "get_element_states"
     page_source = "get_page_source"
