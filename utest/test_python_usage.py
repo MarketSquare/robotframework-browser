@@ -8,6 +8,7 @@ import logging
 
 import Browser
 from Browser import SupportedBrowsers
+from Browser.utils import PlaywrightLogTypes
 
 
 @pytest.fixture()
@@ -22,6 +23,13 @@ def application_server():
 @pytest.fixture()
 def browser():
     browser = Browser.Browser()
+    yield browser
+    browser.close_browser("ALL")
+
+
+@pytest.fixture()
+def browser_no_log():
+    browser = Browser.Browser(enable_playwright_debug=PlaywrightLogTypes.disabled)
     yield browser
     browser.close_browser("ALL")
 
@@ -44,6 +52,22 @@ def test_open_page_get_text(application_server, browser):
 def test_readme_example(browser):
     browser.new_page("https://playwright.dev")
     assert "Playwright" in browser.get_text("h1")
+
+
+def test_playwright_log(browser: Browser.Browser, application_server):
+    root_folder = Path(".").parent
+    log_file = root_folder / "playwright-log.txt"
+    log_file.unlink()
+    browser.new_page("localhost:7272/dist/")
+    assert log_file.is_file()
+
+
+def test_playwright_log_disabled(browser_no_log: Browser.Browser, application_server):
+    root_folder = Path(".").parent
+    log_file = root_folder / "playwright-log.txt"
+    log_file.unlink()
+    browser_no_log.new_page("localhost:7272/dist/")
+    assert not log_file.is_file()
 
 
 def test_new_browser_and_close(browser):

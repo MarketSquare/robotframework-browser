@@ -54,6 +54,7 @@ from .keywords.crawling import Crawling
 from .playwright import Playwright
 from .utils import (
     AutoClosingLevel,
+    PlaywrightLogTypes,
     Scope,
     SettingsStack,
     get_normalized_keyword,
@@ -750,7 +751,9 @@ class Browser(DynamicCore):
         self,
         *_,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
-        enable_playwright_debug: bool = False,
+        enable_playwright_debug: Union[
+            PlaywrightLogTypes, bool
+        ] = PlaywrightLogTypes.library,
         enable_presenter_mode: Union[HighLightElement, bool] = False,
         external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
         jsextension: Union[List[str], str, None] = None,
@@ -767,7 +770,7 @@ class Browser(DynamicCore):
 
         | =Argument=                        | =Description= |
         | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
-        | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. Mainly Useful for the library developers and for debugging purposes. Will og everything as plain text, also including secrects. |
+        | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. For more details, see `PlaywrightLogTypes`. |
         | ``enable_presenter_mode``         | Automatic highlights the interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. By default, the call banner keyword is also enabled unless explicitly disabled.|
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
         | ``jsextension``                   | Path to Javascript modules exposed as extra keywords. The modules must be in CommonJS. It can either be a single path, a comma-separated lists of path or a real list of strings |
@@ -806,7 +809,14 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        self._playwright_log = Path(self.outputdir, "playwright-log.txt")
+        if enable_playwright_debug is True:
+            enable_playwright_debug = PlaywrightLogTypes.playwright
+        elif enable_playwright_debug is False:
+            enable_playwright_debug = PlaywrightLogTypes.library
+        if enable_playwright_debug == PlaywrightLogTypes.disabled:
+            self._playwright_log = None
+        else:
+            self._playwright_log = Path(self.outputdir, "playwright-log.txt")
         self.playwright = Playwright(
             self,
             enable_playwright_debug,
@@ -1284,9 +1294,14 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 f"Keyword '{self.run_on_failure_keyword}' could not be run on failure:\n{err}"
             )
         finally:
-            logger.info(
-                f"See also {self._playwright_log.as_uri()} for additional details."
-            )
+            if self._playwright_log:
+                logger.info(
+                    f"See also {self._playwright_log.as_uri()} for additional details."
+                )
+            else:
+                logger.info(
+                    "playwright-log.txt is not created, consider enabling it for debug reasons."
+                )
             self._running_on_failure_keyword = False
 
     def _failure_screenshot_path(self):

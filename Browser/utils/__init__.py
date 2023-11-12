@@ -32,6 +32,7 @@ from .data_types import (
     LambdaFunction,
     NewPageDetails,
     Permission,
+    PlaywrightLogTypes,
     Proxy,
     RecordHar,
     RecordVideo,
