@@ -49,6 +49,20 @@ def browser_log_exist(tmpdir):
 
 
 @pytest.fixture()
+def browser_log_exist_unlink_false(tmpdir):
+    log_file = Path(tmpdir, PW_LOG)
+    log_file.touch()
+    Browser.Browser._output_dir = tmpdir
+
+    def _unlink(self, arg):
+        return False
+    Browser.Browser._unlink = _unlink
+    browser = Browser.Browser()
+    yield browser
+    browser.close_browser("ALL")
+
+
+@pytest.fixture()
 def atexit_register(monkeypatch):
     import atexit
 
@@ -76,11 +90,19 @@ def test_playwright_log(browser: Browser.Browser, application_server):
     assert log_file.is_file()
 
 
-def test_playwright_log_new_file(browser_log_exist: Browser.Browser, application_server):
-    root_folder = Path(browser_log_exist.outputdir)
-    browser_log_exist.new_page("localhost:7272/dist/")
+def test_playwright_log_new_file(browser_log_exist_unlink_false: Browser.Browser, application_server):
+    root_folder = Path(browser_log_exist_unlink_false.outputdir)
+    browser_log_exist_unlink_false.new_page("localhost:7272/dist/")
     log_files = [file for file in root_folder.iterdir() if file.name.startswith("playwright-log")]
     assert len(log_files) == 2
+
+
+def test_playwright_log_with_unlink(browser_log_exist: Browser.Browser, application_server):
+    root_folder = Path(browser_log_exist.outputdir)
+    log_file = root_folder / PW_LOG
+    log_file.touch()
+    browser_log_exist.new_page("localhost:7272/dist/")
+    assert log_file.is_file()
 
 
 def test_playwright_log_disabled(browser_no_log: Browser.Browser, application_server):
