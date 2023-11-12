@@ -20,7 +20,7 @@ import time
 from functools import cached_property  # type: ignore
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import grpc  # type: ignore
 
@@ -32,7 +32,7 @@ from .base import LibraryComponent
 if TYPE_CHECKING:
     from .browser import Browser
 
-from .utils import find_free_port, logger
+from .utils import PlaywrightLogTypes, find_free_port, logger
 
 
 class Playwright(LibraryComponent):
@@ -43,9 +43,9 @@ class Playwright(LibraryComponent):
     def __init__(
         self,
         library: "Browser",
-        enable_playwright_debug: bool,
+        enable_playwright_debug: PlaywrightLogTypes,
         port: Optional[int] = None,
-        playwright_log: Path = Path(Path.cwd()),
+        playwright_log: Union[Path, None] = Path(Path.cwd()),
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
@@ -99,9 +99,12 @@ class Playwright(LibraryComponent):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        logfile = self.playwright_log.open("w")
+        if self.playwright_log:
+            logfile = self.playwright_log.open("w")
+        else:
+            logfile = Path(os.devnull).open("w")  # noqa: SIM115
         port = str(find_free_port())
-        if self.enable_playwright_debug:
+        if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
             os.environ["DEBUG"] = "pw:api"
         logger.info(f"Starting Browser process {playwright_script} using port {port}")
         self.port = port

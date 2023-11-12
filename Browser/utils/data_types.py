@@ -988,3 +988,23 @@ class ServiceWorkersPermissions(Enum):
 
     allow = auto()
     block = auto()
+
+
+class PlaywrightLogTypes(Enum):
+    """Enable low level debug information from the playwright to playwright-log.txt file.
+
+    It is possible to disable the creation of playwright-log.txt totally. Mainly useful for the library developers
+    and for debugging purposes. Will log everything as plain text, also including secrets.
+
+    ``disabled``: playwright-log.txt is not created at all. All node side logging is lost.
+    ``library``: Default, only logging from Browser library node side is written to the playwright-log.txt file.
+    ``playwright``: Also includes Playwright log messages to the playwright-log.txt file.
+    ``false``: Same as `library` and for backwards compatability.
+    ``true``: Same as `playwright` and for backwards compatability.
+    """
+
+    disabled = auto()
+    library = auto()
+    playwright = auto()
+    false = library
+    true = playwright
