@@ -816,7 +816,7 @@ class Browser(DynamicCore):
         if enable_playwright_debug == PlaywrightLogTypes.disabled:
             self._playwright_log = None
         else:
-            self._playwright_log = Path(self.outputdir, "playwright-log.txt")
+            self._playwright_log = self._get_log_file_name()
         self.playwright = Playwright(
             self,
             enable_playwright_debug,
@@ -1346,3 +1346,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def _get_assertion_formatter(self, keyword: str) -> list:
         return self._assertion_formatter.get_formatter(keyword)
+
+    def _get_log_file_name(self) -> Path:
+        log_file = Path(self.outputdir, "playwright-log.txt")
+        if not log_file.is_file():
+            return log_file
+        name = log_file.name
+        file_name, ext = name.split(".")
+        name = f"{file_name}-{time.time_ns()}.{ext}"
+        return Path(self.outputdir, name)

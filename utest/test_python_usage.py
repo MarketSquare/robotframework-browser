@@ -11,6 +11,8 @@ from Browser import SupportedBrowsers
 from Browser.utils import PlaywrightLogTypes
 
 
+PW_LOG = "playwright-log.txt"
+
 @pytest.fixture()
 def application_server():
     process = subprocess.Popen(
@@ -21,15 +23,27 @@ def application_server():
 
 
 @pytest.fixture()
-def browser():
+def browser(tmpdir):
+    Browser.Browser._output_dir = tmpdir
     browser = Browser.Browser()
     yield browser
     browser.close_browser("ALL")
 
 
 @pytest.fixture()
-def browser_no_log():
+def browser_no_log(tmpdir):
+    Browser.Browser._output_dir = tmpdir
     browser = Browser.Browser(enable_playwright_debug=PlaywrightLogTypes.disabled)
+    yield browser
+    browser.close_browser("ALL")
+
+
+@pytest.fixture()
+def browser_log_exist(tmpdir):
+    log_file = Path(tmpdir, PW_LOG)
+    log_file.touch()
+    Browser.Browser._output_dir = tmpdir
+    browser = Browser.Browser()
     yield browser
     browser.close_browser("ALL")
 
@@ -55,20 +69,26 @@ def test_readme_example(browser):
 
 
 def test_playwright_log(browser: Browser.Browser, application_server):
-    root_folder = Path(".").parent
-    log_file = root_folder / "playwright-log.txt"
-    log_file.unlink()
+    root_folder = Path(browser.outputdir)
+    log_file = root_folder / PW_LOG
+    assert not log_file.is_file()
     browser.new_page("localhost:7272/dist/")
     assert log_file.is_file()
 
 
+def test_playwright_log_new_file(browser_log_exist: Browser.Browser, application_server):
+    root_folder = Path(browser_log_exist.outputdir)
+    browser_log_exist.new_page("localhost:7272/dist/")
+    log_files = [file for file in root_folder.iterdir() if file.name.startswith("playwright-log")]
+    assert len(log_files) == 2
+
+
 def test_playwright_log_disabled(browser_no_log: Browser.Browser, application_server):
-    root_folder = Path(".").parent
-    log_file = root_folder / "playwright-log.txt"
-    log_file.unlink()
+    root_folder = Path(browser_no_log.outputdir)
+    log_file = root_folder / PW_LOG
+    assert not log_file.is_file()
     browser_no_log.new_page("localhost:7272/dist/")
     assert not log_file.is_file()
-
 
 def test_new_browser_and_close(browser):
     browser.new_browser()
