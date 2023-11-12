@@ -59,9 +59,7 @@ class Playwright(LibraryComponent):
         atexit.register(self.close)
         self.wait_until_server_up()
         if platform.system() == "Darwin":
-            time.sleep(
-                1
-            )  # To overcome problem with macOS Sonoma problem and hanging process
+            time.sleep(1)  # To overcome problem with macOS Sonoma and hanging process
         return process
 
     def ensure_node_dependencies(self):
