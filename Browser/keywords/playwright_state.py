@@ -23,11 +23,9 @@ from assertionengine import AssertionOperator, verify_assertion
 from robot.utils import get_link_path
 
 from Browser.utils.data_types import (
-    Deprecated,
     DownloadInfo,
     PageLoadStates,
     ServiceWorkersPermissions,
-    deprecated,
 )
 from Browser.utils.misc import get_download_id
 
@@ -450,7 +448,6 @@ class PlaywrightState(LibraryComponent):
         forcedColors: ForcedColors = ForcedColors.none,
         geolocation: Optional[GeoLocation] = None,
         hasTouch: Optional[bool] = None,
-        hideRfBrowser: Deprecated = deprecated,
         httpCredentials: Optional[HttpCredentials] = None,
         ignoreHTTPSErrors: bool = False,
         isMobile: Optional[bool] = None,
@@ -493,7 +490,6 @@ class PlaywrightState(LibraryComponent):
         | ``forcedColors``         | Emulates `forced-colors` media feature, supported values are `active` and `none`. |
         | ``geolocation``          | A dictionary containing ``latitude`` and ``longitude`` or ``accuracy`` to emulate. If ``latitude`` or ``longitude`` is not specified, the device geolocation won't be overriden. |
         | ``hasTouch``             | Specifies if viewport supports touch events. Defaults to False. |
-        | ``hideRfBrowser``        | *DEPRECATED* --has no function-- |
         | ``httpCredentials``      | Credentials for [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication]. |
         | ``ignoreHTTPSErrors``    | Whether to ignore HTTPS errors during navigation. Defaults to False. |
         | ``isMobile``             | Whether the meta viewport tag is taken into account and touch events are enabled. Defaults to False. |
@@ -575,7 +571,6 @@ class PlaywrightState(LibraryComponent):
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
         hasTouch: Optional[bool] = None,
-        hideRfBrowser: Deprecated = deprecated,
         httpCredentials: Optional[HttpCredentials] = None,
         ignoreDefaultArgs: Union[List[str], bool, None] = None,
         ignoreHTTPSErrors: bool = False,
@@ -593,7 +588,6 @@ class PlaywrightState(LibraryComponent):
             ServiceWorkersPermissions
         ] = ServiceWorkersPermissions.allow,
         slowMo: timedelta = timedelta(seconds=0),
-        storageState: Deprecated = deprecated,
         timeout: timedelta = timedelta(seconds=30),
         timezoneId: Optional[str] = None,
         tracing: Optional[str] = None,
@@ -614,7 +608,6 @@ class PlaywrightState(LibraryComponent):
         | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for Chromium and Firefox. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. |
         | ``browser``              | Browser type to use. Default is Chromium. |
         | ``headless``             | Whether to run browser in headless mode. Defaults to ``True``. |
-        | ``storageState`` & ``hideRfBrowser`` | These arguments have no function and will be removed soon. |
         | other arguments          | Please see `New Browser`, `New Context` and `New Page` for more information about the other arguments. |
 
         If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
@@ -629,8 +622,6 @@ class PlaywrightState(LibraryComponent):
         params = locals_to_params(locals())
         if permissions:
             params["permissions"] = [permission.value for permission in permissions]
-        params.pop("storageState")  # TODO: remove when arguments are removed.
-        params.pop("hideRfBrowser")
         params["viewport"] = copy(viewport)
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
