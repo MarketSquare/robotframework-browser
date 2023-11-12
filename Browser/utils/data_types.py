@@ -994,7 +994,8 @@ class PlaywrightLogTypes(Enum):
     """Enable low level debug information from the playwright to playwright-log.txt file.
 
     It is possible to disable the creation of playwright-log.txt totally. Mainly useful for the library developers
-    and for debugging purposes. Will log everything as plain text, also including secrets.
+    and for debugging purposes. Will log everything as plain text, also including secrets. If playwright-log.txt file
+    can not be deleted, time.time_ns() is added at the end of file name. Example playwright-log-12345.txt
 
     ``disabled``: playwright-log.txt is not created at all. All node side logging is lost.
     ``library``: Default, only logging from Browser library node side is written to the playwright-log.txt file.
