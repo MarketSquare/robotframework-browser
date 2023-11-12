@@ -14,7 +14,7 @@
 import inspect
 from typing import Any, Callable, Dict, Tuple
 
-from robot.running import TypeConverter
+from ..utils.data_types import RobotTypeConverter as TypeConverter
 
 from Browser.utils import logger
 
@@ -57,7 +57,7 @@ def convert_pos_args_to_named(
         argument_name = old_args_list[index][0]
         argument_type = old_args_list[index][1]
         converted_pos = TypeConverter.converter_for(argument_type).convert(
-            argument_name, pos_arg
+            name=argument_name, value=pos_arg
         )
         pos_params[argument_name] = converted_pos
     if pos_params:
