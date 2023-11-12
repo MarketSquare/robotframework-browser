@@ -16,25 +16,24 @@ from datetime import timedelta
 from enum import Enum, IntFlag, auto
 from typing import Dict, List, Optional, Union
 
-from typing_extensions import TypedDict
-
 from robot.running.arguments.typeconverters import TypeConverter
+from typing_extensions import TypedDict
 
 
 class RobotTypeConverter(TypeConverter):
-
     @classmethod
-    def converter_for(cls, arg_type: type):
+    def converter_for(cls, arg_type):
         if arg_type is None:
             return None
         try:
             from robot.running.arguments.typeinfo import TypeInfo
+
             if not isinstance(arg_type, TypeInfo):
                 type_hint = TypeInfo.from_type_hint(arg_type)
         except ImportError:
             type_hint = arg_type
         return TypeConverter.converter_for(type_hint)
-     
+
 
 class TypedDictDummy(TypedDict):
     pass

@@ -19,8 +19,6 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, List, Optional, Union
 
-from ..utils.data_types import RobotTypeConverter as TypeConverter
-
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -42,6 +40,7 @@ from ..utils.data_types import (
     ScrollBehavior,
     SelectAttribute,
 )
+from ..utils.data_types import RobotTypeConverter as TypeConverter
 
 
 class Interaction(LibraryComponent):

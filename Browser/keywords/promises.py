@@ -129,7 +129,11 @@ class Promises(LibraryComponent):
         argument_type = self.library.get_keyword_types(kw).get(arg_name)
         if argument_type is not None:
             converter = TypeConverter.converter_for(argument_type)
-            return converter.convert(name=arg_name, value=arg_value) if converter else arg_value
+            return (
+                converter.convert(name=arg_name, value=arg_value)
+                if converter
+                else arg_value
+            )
         return arg_value
 
     @keyword(tags=("Wait", "BrowserControl"))

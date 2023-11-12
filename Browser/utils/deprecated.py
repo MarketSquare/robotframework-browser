@@ -14,9 +14,9 @@
 import inspect
 from typing import Any, Callable, Dict, Tuple
 
-from ..utils.data_types import RobotTypeConverter as TypeConverter
-
 from Browser.utils import logger
+
+from ..utils.data_types import RobotTypeConverter as TypeConverter
 
 
 def _method_to_keyword(method: str) -> str:
