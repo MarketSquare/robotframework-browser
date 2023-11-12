@@ -1001,7 +1001,7 @@ class PlaywrightLogTypes(Enum):
     ``library``: Default, only logging from Browser library node side is written to the playwright-log.txt file.
     ``playwright``: Also includes Playwright log messages to the playwright-log.txt file.
     ``false``: Same as `library` and for backwards compatability.
-    ``true``: Same as `playwright` and for backwards compatability.
+    ``true``: Same as `playwright` and for backwards compatibility.
     """
 
     disabled = auto()
