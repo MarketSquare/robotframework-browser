@@ -1351,7 +1351,16 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         log_file = Path(self.outputdir, "playwright-log.txt")
         if not log_file.is_file():
             return log_file
+        if self._unlink(log_file):
+            return log_file
         name = log_file.name
         file_name, ext = name.split(".")
         name = f"{file_name}-{time.time_ns()}.{ext}"
         return Path(self.outputdir, name)
+
+    def _unlink(self, file: Path):  # to ease unit testing
+        try:
+            file.unlink(missing_ok=True)
+        except Exception:
+            return False
+        return True
