@@ -11,9 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from __future__ import annotations
+
 import json
 import re
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import grpc  # type: ignore
 from assertionengine import (
@@ -332,7 +335,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-    ) -> List:
+    ) -> list:
         """Returns all HTML attribute names of an element as a list.
 
 
@@ -532,7 +535,7 @@ class Getters(LibraryComponent):
             )
         logger.info(response)
         expected = list(assertion_expected)
-        selected: Union[List[int], List[str]]
+        selected: Union[list[int], list[str]]
 
         if option_attribute is SelectAttribute.index:
             expected = [int(exp) for exp in expected]
@@ -856,7 +859,7 @@ class Getters(LibraryComponent):
             return self._disable_selector_prefix(response.body)
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_elements(self, selector: str) -> List[str]:
+    def get_elements(self, selector: str) -> list[str]:
         """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
         for all matched elements by ``selector``.
 
@@ -976,7 +979,7 @@ class Getters(LibraryComponent):
             logger.info(response.log)
             return self._disable_selector_prefix(json.loads(response.json))
 
-    def _disable_selector_prefix(self, selector: Union[str, List[str]]):
+    def _disable_selector_prefix(self, selector: Union[str, list[str]]):
         if isinstance(selector, list):
             return (
                 selector

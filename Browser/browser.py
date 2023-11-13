@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from __future__ import annotations
+
 import json
 import re
 import shutil
@@ -21,7 +24,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Pattern, Set, Union
+from typing import Any, Callable, ClassVar, Optional, Pattern, Union
 
 from assertionengine import AssertionOperator
 from overrides import overrides
@@ -734,9 +737,9 @@ class Browser(DynamicCore):
 
     ROBOT_LIBRARY_VERSION = VERSION
     ROBOT_LISTENER_API_VERSION = 2
-    ROBOT_LIBRARY_LISTENER: "Browser"
+    ROBOT_LIBRARY_LISTENER: "Browser"  # noqa: UP037
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    ERROR_AUGMENTATION: ClassVar[Dict[Pattern[str], Callable[[Any], str]]] = {
+    ERROR_AUGMENTATION: ClassVar[dict[Pattern[str], Callable[[Any], str]]] = {
         re.compile(r"Timeout .+ exceeded."): lambda msg: (
             f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout or '
             "double check your locator as the targeted element(s) couldn't be found."
@@ -755,10 +758,10 @@ class Browser(DynamicCore):
             PlaywrightLogTypes, bool
         ] = PlaywrightLogTypes.library,
         enable_presenter_mode: Union[HighLightElement, bool] = False,
-        external_browser_executable: Optional[Dict[SupportedBrowsers, str]] = None,
-        jsextension: Union[List[str], str, None] = None,
+        external_browser_executable: Optional[dict[SupportedBrowsers, str]] = None,
+        jsextension: Union[list[str], str, None] = None,
         playwright_process_port: Optional[int] = None,
-        plugins: Union[List[str], str, None] = None,
+        plugins: Union[list[str], str, None] = None,
         retry_assertions_for: timedelta = timedelta(seconds=1),
         run_on_failure: str = "Take Screenshot  fail-screenshot-{index}",
         selector_prefix: Optional[str] = None,
@@ -786,8 +789,8 @@ class Browser(DynamicCore):
         if _:
             raise ValueError("Browser library does not accept positional arguments.")
         self.ROBOT_LIBRARY_LISTENER = self
-        self.scope_stack: Dict = {}
-        self.suite_ids: Dict[str, None] = {}
+        self.scope_stack: dict = {}
+        self.suite_ids: dict[str, None] = {}
         self.current_test_id: Optional[str] = None
         self._playwright_state = PlaywrightState(self)
         self._browser_control = Control(self)
@@ -825,7 +828,7 @@ class Browser(DynamicCore):
         )
         self._auto_closing_level: AutoClosingLevel = auto_closing_level
         # Parsing needs keywords to be discovered.
-        self.external_browser_executable: Dict[SupportedBrowsers, str] = (
+        self.external_browser_executable: dict[SupportedBrowsers, str] = (
             external_browser_executable or {}
         )
         if jsextension:
@@ -842,10 +845,10 @@ class Browser(DynamicCore):
         else:
             self._plugin_keywords = []
         self.presenter_mode: Union[HighLightElement, bool] = enable_presenter_mode
-        self._execution_stack: List[dict] = []
+        self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
-        self.pause_on_failure: Set[str] = set()
-        self._unresolved_promises: Set[Future] = set()
+        self.pause_on_failure: set[str] = set()
+        self._unresolved_promises: set[Future] = set()
         self._keyword_formatters: dict = {}
         self._current_loglevel: Optional[str] = None
         self.is_test_case_running = False

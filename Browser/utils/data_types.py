@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from __future__ import annotations
+
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
@@ -23,7 +26,7 @@ class TypedDictDummy(TypedDict):
     pass
 
 
-def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noqa: C901
+def convert_typed_dict(function_annotations: dict, params: dict) -> dict:  # noqa: C901
     for arg_name, arg_type in function_annotations.items():
         if arg_name not in params or params[arg_name] is None:
             continue
@@ -125,7 +128,7 @@ class SelectionStrategy(Enum):
 
 class RegExp(str):
     @classmethod
-    def from_string(cls, string: str) -> "RegExp":
+    def from_string(cls, string: str) -> RegExp:
         """Create a (JavaScript) RegExp object from a string.
 
         The matcher must start with a slash and end with a slash and can be followed by flags.
@@ -447,7 +450,7 @@ class HighLightElement(TypedDict):
 
 class LambdaFunction:
     @classmethod
-    def from_string(cls, string: str) -> "LambdaFunction":
+    def from_string(cls, string: str) -> LambdaFunction:
         """Python lambda function.
 
         The string must start with ``lambda`` and the function must accept one argument.
@@ -538,7 +541,7 @@ class SelectionType(Enum):
     ANY = ALL
 
     @classmethod
-    def create(cls, value: Union[str, "SelectionType"]):
+    def create(cls, value: Union[str, SelectionType]):
         """Returns the enum value from the given string or not."""
         if isinstance(value, cls):
             return value

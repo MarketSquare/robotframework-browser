@@ -34,6 +34,7 @@ ignore = [
   "N812",  # lowercase imported as non lowercase
   "N999",  # Invalid module name: 'Browser'
   "PLR0913",  # too many arguments
+  "UP007",    # `X | Y` not yet supported for type annotations
 ]
 target-version = "py38"
 select = [
@@ -61,5 +62,8 @@ select = [
   "RSE",
   "RET",
   "SIM",
-  "RUF"
+  "RUF",
+  "ASYNC",
+  "DTZ",
+  "FA",
 ]

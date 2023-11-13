@@ -11,12 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from __future__ import annotations
+
 import threading
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 from robot.api import logger
 
-_THREAD_STASHES: Dict[int, List[List[Callable]]] = {}
+_THREAD_STASHES: dict[int, list[list[Callable]]] = {}
 
 
 def _stashing_logger(funk: Callable):

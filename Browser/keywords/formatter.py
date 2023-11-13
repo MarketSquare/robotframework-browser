@@ -1,4 +1,20 @@
-from typing import Callable, Dict, List, Optional, Union
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from __future__ import annotations
+
+from typing import Callable, Optional, Union
 
 from assertionengine.formatter import FormatRules
 from assertionengine.formatter import Formatter as ASFormatter
@@ -22,7 +38,7 @@ class Formatter(ASFormatter, LibraryComponent):
         keyword: Optional[FormatterKeywords] = None,
         *formatters: Union[FormatingRules, LambdaFunction],
         scope: Scope = Scope.Global,
-    ) -> Dict[str, List[str]]:
+    ) -> dict[str, list[str]]:
         """Set keyword assertion formatter with defined scope.
 
         Returns the old formatter from the scope.
@@ -95,7 +111,7 @@ class Formatter(ASFormatter, LibraryComponent):
     @keyword_deco(tags=("Config",))
     def set_assertion_formatters(
         self, formatters: FormatterTypes, scope: Scope = Scope.Suite
-    ) -> Dict[str, List[str]]:
+    ) -> dict[str, list[str]]:
         """Set keywords formatters for assertions.
 
         | =Arguments= | =Description= |

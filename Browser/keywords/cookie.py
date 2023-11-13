@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import json
 from datetime import datetime, timezone
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from robot.libraries.DateTime import convert_date
 from robot.utils import DotDict
@@ -28,7 +30,7 @@ class Cookie(LibraryComponent):
     @keyword(tags=("Getter", "PageContent"))
     def get_cookies(
         self, return_type: CookieType = CookieType.dictionary
-    ) -> Union[List[DotDict], str]:
+    ) -> Union[list[DotDict], str]:
         """Returns cookies from the current active browser context.
 
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns list of Robot Framework
@@ -56,7 +58,7 @@ class Cookie(LibraryComponent):
             response = stub.GetCookies(Request().Empty())
             return response, json.loads(response.json)
 
-    def _format_cookies_as_string(self, cookies: List[dict]):
+    def _format_cookies_as_string(self, cookies: list[dict]):
         pairs = []
         for cookie in cookies:
             pairs.append(self._cookie_as_string(cookie))
@@ -65,7 +67,7 @@ class Cookie(LibraryComponent):
     def _cookie_as_string(self, cookie: dict) -> str:
         return f'{cookie["name"]}={cookie["value"]}'
 
-    def _format_cookies_as_dot_dict(self, cookies: List[dict]):
+    def _format_cookies_as_dot_dict(self, cookies: list[dict]):
         as_list = []
         for cookie in cookies:
             as_list.append(self._cookie_as_dot_dict(cookie))

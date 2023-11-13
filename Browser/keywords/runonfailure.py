@@ -18,6 +18,7 @@
 # modified my René Rohner under
 # Copyright 2020-     Robot Framework Foundation
 
+from __future__ import annotations
 
 from typing import Optional
 

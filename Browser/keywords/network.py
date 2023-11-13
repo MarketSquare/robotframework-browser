@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
 import contextlib
 import json
 from datetime import timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from typing_extensions import Literal
 
@@ -25,7 +27,7 @@ from ..utils import DotDict, keyword, logger
 from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
 
 
-def _get_headers(body: str, headers: Dict):
+def _get_headers(body: str, headers: dict):
     try:
         json.loads(body)
         return {"Content-Type": "application/json", **headers}
@@ -33,7 +35,7 @@ def _get_headers(body: str, headers: Dict):
         return headers
 
 
-def _format_response(response: Dict) -> Dict:
+def _format_response(response: dict) -> dict:
     _jsonize_content(response, "body")
     if "request" in response:
         request = response["request"]
