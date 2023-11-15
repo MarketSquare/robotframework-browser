@@ -219,7 +219,8 @@ export async function handleAlert(request: Request.AlertAction, page: Page): Pro
 export async function waitForAlert(request: Request.AlertAction, page: Page): Promise<Response.String> {
     const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
     const promptInput = request.getPromptinput();
-    const dialogObject = await page.waitForEvent('dialog');
+    const timeout = request.getTimeout();
+    const dialogObject = await page.waitForEvent('dialog', { timeout: timeout });
     const message = dialogObject.message();
     if (alertAction === 'accept' && promptInput) {
         dialogObject.accept(promptInput);

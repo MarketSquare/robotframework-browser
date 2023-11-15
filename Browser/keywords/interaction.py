@@ -853,7 +853,11 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Wait", "PageContent"))
     def wait_for_alert(
-        self, action: DialogAction, prompt_input: str = "", text: Optional[str] = None
+        self,
+        action: DialogAction,
+        prompt_input: str = "",
+        text: Optional[str] = None,
+        timeout: Optional[timedelta] = None,
     ):
         """Returns a promise to wait for next dialog on page, handles it with ``action`` and optionally verifies the dialogs text.
 
@@ -863,6 +867,7 @@ class Interaction(LibraryComponent):
         | ``action`` | How to handle the alert. Can be ``accept`` or ``dismiss``. |
         | ``prompt_input`` | The value to enter into prompt. Only valid if ``action`` argument equals ``accept``. Defaults to empty string. |
         | ``text`` | Optional text to verify the dialogs text. |
+        | ``timeout`` | Optional timeout in Robot Framework time format. |
 
 
         The main difference between this keyword and `Handle Future Dialogs`
@@ -888,7 +893,11 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitForAlert(
-                Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
+                Request().AlertAction(
+                    alertAction=action.name,
+                    promptInput=prompt_input,
+                    timeout=self.get_timeout(timeout),
+                )
             )
         logger.debug(response.log)
         if text is not None:

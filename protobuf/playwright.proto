@@ -244,6 +244,7 @@ message Request {
   message AlertAction {
     string alertAction = 1;
     string promptInput = 2;
+    float timeout = 3;
   }
 
   message Bool {

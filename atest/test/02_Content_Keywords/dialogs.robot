@@ -70,3 +70,17 @@ Verify Upper Case Action Dialogue Dismiss
     ${promise} =    Promise To    Wait For Alert    action=DISMISS    text=Am an alert
     Click    id=alerts
     Wait For    ${promise}
+
+Wait For Alert Times Out
+    Evaluate JavaScript    ${None}
+    ...    async () => window.setTimeout(() => {alert('Am an alert')}, 100)
+    Wait For Alert    accept    timeout=1s
+    Evaluate JavaScript    ${None}
+    ...    async () => window.setTimeout(() => {alert('Am an alert')}, 800)
+    TRY
+        Wait For Alert    accept    timeout=0.2s
+    EXCEPT    TimeoutError*    type=GLOB
+        Log    Got expected timeout error
+    ELSE
+        Fail    Expected timeout error
+    END
