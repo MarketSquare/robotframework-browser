@@ -19,8 +19,6 @@ from pathlib import Path
 from time import sleep
 from typing import Any, Dict, List, Optional, Union
 
-from robot.running.arguments.typeconverters import TypeConverter
-
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -32,7 +30,6 @@ from ..utils import (
 from ..utils.data_types import (
     BoundingBox,
     Coordinates,
-    Deprecated,
     DialogAction,
     KeyAction,
     KeyboardInputAction,
@@ -42,7 +39,6 @@ from ..utils.data_types import (
     MouseOptionsDict,
     ScrollBehavior,
     SelectAttribute,
-    deprecated,
 )
 
 
@@ -294,18 +290,7 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def click(
-        self,
-        selector: str,
-        button: MouseButton = MouseButton.left,
-        clickCount: Deprecated = deprecated,
-        delay: Deprecated = deprecated,
-        position_x: Deprecated = deprecated,
-        position_y: Deprecated = deprecated,
-        force: Deprecated = deprecated,
-        noWaitAfter: Deprecated = deprecated,
-        *modifiers: Deprecated,
-    ):
+    def click(self, selector: str, button: MouseButton = MouseButton.left):
         """Simulates mouse click on the element found by ``selector``.
 
         This keyword clicks an element matching ``selector`` by performing the following steps:
@@ -321,12 +306,6 @@ class Interaction(LibraryComponent):
         | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
         | ``button`` | Defaults to ``left`` if invalid. |
 
-        ! The arguments marked as ``Deprecated`` will be removed in the future,
-        but the `Click` keyword will still be available! The reason for removing these arguments is the bad design of
-        modifiers, which forces the user to set all other arguments as positional arguments when modifiers are used,
-        and the missing extensibility of the keyword.
-        Please use `Click With Options` when using arguments that are marked as deprecated.
-
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
@@ -336,48 +315,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4238|Comment >>]
         """
-        params = locals()
-        deprecated_arguments = {
-            "clickCount": (1, int),
-            "delay": (None, Optional[timedelta]),
-            "position_x": (None, Optional[float]),
-            "position_y": (None, Optional[float]),
-            "force": (False, bool),
-            "noWaitAfter": (False, bool),
-        }
-        used_deprecated = []
-        for argument_name, default_and_type in deprecated_arguments.items():
-            default, argument_type = default_and_type
-            if params.get(argument_name) is deprecated:
-                params[argument_name] = default
-            else:
-                converter = TypeConverter.converter_for(argument_type)
-                if converter is not None:
-                    params[argument_name] = converter.convert(
-                        argument_name, params.get(argument_name)
-                    )
-                used_deprecated.append(argument_name)
-        real_modifiers: List[KeyboardModifier] = [
-            TypeConverter.converter_for(KeyboardModifier).convert("modifier", modifier)
-            for modifier in modifiers
-            if modifier is not deprecated
-        ]
-        if used_deprecated:
-            logger.warn(
-                "Some `Click` keyword arguments are deprecated. Use `Click With Options` instead.\n"
-                f"Used deprecated args: {', '.join(used_deprecated)}"
-            )
-        self.click_with_options(
-            selector,
-            button,
-            *real_modifiers,
-            clickCount=params["clickCount"],
-            delay=params["delay"],
-            position_x=params["position_x"],
-            position_y=params["position_y"],
-            force=params["force"],
-            noWaitAfter=params["noWaitAfter"],
-        )
+        self.click_with_options(selector, button)
 
     @keyword(tags=("Setter", "PageContent"))
     def click_with_options(
@@ -453,28 +391,6 @@ class Interaction(LibraryComponent):
                 )
             )
             logger.debug(response.log)
-
-    @keyword(tags=("Setter", "PageContent"))
-    def tab(
-        self,
-        selector: str,
-        force: bool = False,
-        noWaitAfter: bool = False,
-        position_x: Optional[int] = None,
-        position_y: Optional[int] = None,
-        trial: bool = False,
-        *modifiers: KeyboardModifier,
-    ):
-        """*DEPRECATED* Use `Tap` instead."""
-        self.tap(
-            selector,
-            *modifiers,
-            force=force,
-            noWaitAfter=noWaitAfter,
-            position_x=position_x,
-            position_y=position_y,
-            trial=trial,
-        )
 
     @keyword(tags=("Setter", "PageContent"))
     def tap(
