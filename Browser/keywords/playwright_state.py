@@ -1436,6 +1436,7 @@ class PlaywrightState(LibraryComponent):
         | =Arguments= | =Description= |
         | download    | A `DownloadInfo` object or id of the download to be canceled. |
 
+        [https://forum.robotframework.org/t//6478|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CancelDownload(

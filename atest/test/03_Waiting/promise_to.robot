@@ -7,11 +7,11 @@ Test Setup      New Page    ${WAIT_URL}
 Promise To With Type Conversion
     ${promise} =    Promise To    Click    id=victim    button=left
     Select Options By    id=dropdown    value    True    enabled
-    Click    id=submit    noWaitAfter=True
+    Click With Options    id=submit    noWaitAfter=True
     Wait For    ${promise}
 
 Promise To Convert Type
-    ${promise} =    Promise To    Click    id=clickWithOptions    left    clickCount=4    delay=200 ms
+    ${promise} =    Promise To    Click With Options    id=clickWithOptions    left    clickCount=4    delay=200 ms
     Go To    ${LOGIN_URL}
     Wait For    ${promise}
     Get Text    id=click_count    ==    4

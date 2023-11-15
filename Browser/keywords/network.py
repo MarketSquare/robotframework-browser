@@ -73,7 +73,7 @@ class Network(LibraryComponent):
 
         The response is a Python dictionary with following attributes:
           - ``status`` <int> The status code of the response.
-          - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR.
+          - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR. This may not be available for all browser.
           - ``body`` <dict> | <str> The response body. If the body can be parsed as a JSON obejct,
           it will be returned as Python dictionary, otherwise it is returned as a string.
           - ``headers`` <dict> A dictionary containing all response headers.
@@ -101,7 +101,12 @@ class Network(LibraryComponent):
                 )
             )
             logger.debug(response.log)
-            return _format_response(json.loads(response.json))
+            response_dict = _format_response(json.loads(response.json))
+            try:
+                return DotDict(response_dict)
+            except Exception:
+                logger.debug(f"Returned response is of type {type(response_dict)}")
+                return response_dict
 
     def _wait_for_http(self, method: Literal["Request", "Response"], matcher, timeout):
         with self.playwright.grpc_channel() as stub:
@@ -154,7 +159,7 @@ class Network(LibraryComponent):
 
         The response, which is returned by this keyword, is a robot dictionary with following attributes:
           - ``status`` <int> The status code of the response.
-          - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR.
+          - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR. This may not be available for all browser.
           - ``body`` <dict | str> The response body. If the body can be parsed as a JSON object,
           it will be returned as Python dictionary, otherwise it is returned as a string.
           - ``headers`` <dict> A dictionary containing all response headers.

@@ -846,11 +846,6 @@ class ElementState(IntFlag):
     stable = 16384
 
 
-ElementStateKey = (
-    ElementState  # Deprecated. Remove after `Get Element State` is removed.
-)
-
-
 class ScreenshotFileTypes(Enum):
     """Enum that defines available file types for screenshots."""
 

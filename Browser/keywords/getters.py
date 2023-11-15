@@ -1446,6 +1446,8 @@ class Getters(LibraryComponent):
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``assertion_expected`` | Expected state of the download. Be aware that the returned value is a dictionary |
         | ``message`` | overrides the default error message for assertion. |
+
+        [https://forum.robotframework.org/t//6479|Comment >>]
         """
         download_id = get_download_id(download)
         with self.playwright.grpc_channel() as stub:
