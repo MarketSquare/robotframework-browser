@@ -792,10 +792,13 @@ class AutoClosingLevel(Enum):
     are closed when the suite teardown ends.
 
     If automatic closing level is `MANUAL`, nothing is closed automatically while the test execution
-    is ongoing.
+    is ongoing. All browsers, context and pages are automatically closed when test execution ends.
 
-    All browsers are automatically closed, always and regardless of the automatic closing level at
-    the end of the test execution. This will also close all remaining pages and contexts.
+    If automatic closing level is `KEEP`, nothing is closed automatically while the test execution
+    is ongoing. Also, nothing is closed when test execution ends, including the node process. Therefore,
+    it is users responsibility to close all browsers, context and pages and ensure that all process
+    that are left running after the test execution end are closed. This level is only intended for
+    test case development and must not be used when running tests in CI or similar environments.
 
     Automatic closing can be configured or switched off with the auto_closing_level library import
     parameter.
@@ -805,6 +808,7 @@ class AutoClosingLevel(Enum):
     SUITE = auto()
     TEST = auto()
     MANUAL = auto()
+    KEEP = auto()
 
 
 class ElementState(IntFlag):

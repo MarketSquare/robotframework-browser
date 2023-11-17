@@ -26,7 +26,7 @@ from robot.utils import timestr_to_secs
 
 from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger
-from ..utils.data_types import DelayedKeyword, HighLightElement
+from ..utils.data_types import AutoClosingLevel, DelayedKeyword, HighLightElement
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -47,6 +47,10 @@ class LibraryComponent:
     @property
     def playwright(self):
         return self.library.playwright
+
+    @property
+    def _auto_closing_level(self) -> AutoClosingLevel:
+        return self.library._auto_closing_level
 
     @property
     def keyword_call_banner_add_style(self) -> str:

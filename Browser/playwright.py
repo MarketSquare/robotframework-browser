@@ -28,6 +28,7 @@ from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
 from .base import LibraryComponent
+from .utils import AutoClosingLevel
 
 if TYPE_CHECKING:
     from .browser import Browser
@@ -171,8 +172,13 @@ class Playwright(LibraryComponent):
             raise AssertionError(str(error))
 
     def close(self):
+        if self._auto_closing_level == AutoClosingLevel.KEEP:
+            logger.debug(
+                "Not closing browsers, contexts and pages. Also leaving node process running. "
+                "Remember to remove manually all process left running."
+            )
+            return
         logger.debug("Closing all open browsers, contexts and pages in Playwright")
-
         try:
             with self.grpc_channel() as stub:
                 response = stub.CloseAllBrowsers(Request().Empty())
@@ -180,7 +186,6 @@ class Playwright(LibraryComponent):
             self._channel.close()
         except Exception as exc:
             logger.debug(f"Failed to close browsers: {exc}")
-
         # Access (possibly) cached property without actually invoking it
         playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:
