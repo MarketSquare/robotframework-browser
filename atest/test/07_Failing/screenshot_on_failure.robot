@@ -9,15 +9,15 @@ Force Tags      slow
 *** Test Cases ***
 Failing With Screenshot 1
     New Page    ${ERROR_URL}
-    Run Keyword And Expect Error    STARTS: TimeoutError    Click    .nonexisting
+    Run Keyword And Expect Error    STARTS: Error    Click    .nonexisting
 
 Failing With Screenshot 2
     New Page    ${ERROR_URL}
-    Run Keyword And Expect Error    STARTS: TimeoutError    Click    .nonexisting2
+    Run Keyword And Expect Error    STARTS: Error    Click    .nonexisting2
 
 Failing With Screenshot 3
     New Page    ${ERROR_URL}
-    Run Keyword And Expect Error    STARTS: TimeoutError    Click    .nonexisting3
+    Run Keyword And Expect Error    STARTS: Error    Click    .nonexisting3
 
 Check Screenshots
     File Should Exist    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-1.png

@@ -5,20 +5,20 @@ Suite Setup     Open Browser To No Page
 Test Setup      New Page    ${LOGIN_URL}
 
 *** Variables ***
-${timeout_message} =    TimeoutError: page.waitForFunction: Timeout 100ms exceeded.
+${timeout_message} =    Error: page.waitForFunction: Timeout 100ms exceeded.
 
 *** Test Cases ***
 Wait For Function No Element And Fail On Timeout
     ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
-    ...    TimeoutError*
+    ...    Error*
     ...    Wait For Function    () => {return false;}
     Set Browser Timeout    ${timeout}
 
 Wait For Function Element And Fail On Timeout
     ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
-    ...    TimeoutError*
+    ...    Error*
     ...    Wait For Function    () => {return false;}    body
     Set Browser Timeout    ${timeout}
 

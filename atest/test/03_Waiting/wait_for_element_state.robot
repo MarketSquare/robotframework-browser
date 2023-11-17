@@ -122,7 +122,7 @@ Wait For Elements State Fails On Too Short Timeout
     Select Options By    \#dropdown    value    True    unchecked
     Click With Options    \#submit    noWaitAfter=True
     Run Keyword And Expect Error
-    ...    STARTS:TimeoutError: page.waitForFunction: Timeout 300ms exceeded.
+    ...    STARTS:Error: page.waitForFunction: Timeout 300ms exceeded.
     ...    Wait For Elements State    \#victim    unchecked    300ms
 
 Wait For Elements State Fails On Too Short Global Timeout
@@ -168,7 +168,7 @@ Wait For Elements State To Hide Fails With Promise
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
     ${promise} =    Promise To    Wait For Elements State    \#victim    hidden    200ms
     Run Keyword And Expect Error
-    ...    *TimeoutError: locator.waitFor: Timeout 200ms exceeded.*
+    ...    *Error: locator.waitFor: Timeout 200ms exceeded.*
     ...    Wait For    ${promise}
 
 Wait For Elements State To Hide With Promise And Wait For All Promises
