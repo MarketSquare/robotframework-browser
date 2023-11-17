@@ -1072,7 +1072,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 if path.is_dir():
                     logger.debug(f"Removing: {path}")
                     shutil.rmtree(str(path), ignore_errors=True)
-        if self._auto_closing_level != AutoClosingLevel.MANUAL:
+        if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             try:
                 self._execution_stack.append(self.get_browser_catalog())
             except ConnectionError as e:
@@ -1159,7 +1159,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _end_suite(self, name, attrs):
         self._remove_from_scope_stack(attrs["id"])
         self.suite_ids.pop(attrs["id"], None)
-        if self._auto_closing_level != AutoClosingLevel.MANUAL:
+        if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             if len(self._execution_stack) == 0:
                 logger.debug("Browser._end_suite empty execution stack")
                 return
