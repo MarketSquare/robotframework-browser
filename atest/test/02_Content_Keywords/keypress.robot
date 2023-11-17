@@ -32,6 +32,6 @@ Press Keys With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
-    ...    *TimeoutError: locator.press: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    *Error: locator.press: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Press Keys    css=notamatch    F
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}

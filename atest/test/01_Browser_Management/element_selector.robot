@@ -27,7 +27,7 @@ Get Element With Nonmatching Child Selector
     ${ref} =    Get Element    select[name="preferred_channel"]
     ${timeout} =    Set Browser Timeout    100ms
     Run Keyword And Expect Error
-    ...    *TimeoutError: locator.elementHandle: Timeout 100ms exceeded.*    Get Property
+    ...    *Error: locator.elementHandle: Timeout 100ms exceeded.*    Get Property
     ...    ${ref}>> .notamatch    value
     [Teardown]    Set Browser Timeout    ${timeout}
 
@@ -120,7 +120,7 @@ Get Element By Role In Frame
     Go To    ${FRAMES_URL}
     TRY
         Get Element By Role    textbox    name=right >>> name=searchbutton
-    EXCEPT    TimeoutError*    type=GLOB
+    EXCEPT    Error*    type=GLOB
         Log    Correct error.
     END
 

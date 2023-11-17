@@ -884,7 +884,7 @@ class Getters(LibraryComponent):
             logger.info(error)
             if (
                 error.code() == grpc.StatusCode.DEADLINE_EXCEEDED
-                and error.details().startswith("TimeoutError: page.waitForSelector:")
+                and error.details().startswith("Error: page.waitForSelector:")
             ):
                 return []
             raise error

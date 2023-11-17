@@ -33,7 +33,7 @@ Quality Argument Incompatible With Png
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.png
 
 Screenshot Fails Due To Timeout
-    Run Keyword And Expect Error    *TimeoutError*    Take Screenshot    timeout=1ms
+    Run Keyword And Expect Error    *Error*    Take Screenshot    timeout=1ms
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.png
 
 Screenshot Pass With Right Timeout
@@ -65,7 +65,7 @@ Screenshotting With Jpeg Extension And Quality Borders
 If Element Not Found Screenshot Should Fail
     ${timeout} =    Set Browser Timeout    200ms
     Run Keyword And Expect Error
-    ...    *TimeoutError: locator.screenshot: Timeout 200ms exceeded.*waiting for locator('#not_there')*
+    ...    *Error: locator.screenshot: Timeout 200ms exceeded.*waiting for locator('#not_there')*
     ...    Take Screenshot    selector=\#not_there
     Set Browser Timeout    ${timeout}
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png

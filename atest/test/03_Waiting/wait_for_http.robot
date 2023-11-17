@@ -90,7 +90,7 @@ Wait For Navigation Fails With Wrong Regex
     [Tags]    slow
     Go To    ${ROOT_URL}redirector.html
     ${timeout} =    Set Browser Timeout    200ms
-    Run Keyword And Expect Error    *TimeoutError*    Wait For Navigation    foobar
+    Run Keyword And Expect Error    *Error*    Wait For Navigation    foobar
     Set Browser Timeout    ${timeout}
     Get Url    not contains    foobar
 

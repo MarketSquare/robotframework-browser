@@ -45,7 +45,7 @@ Closing a browser should await for contexts of that browser to be closed (`#1133
 Now we close context explicitly context associated to the browser. Also we create
 possible trace file when contex is closed.
 
-Select Options By Keyword throws TimeoutError: locator.elementHandle (`#1622`_)
+Select Options By Keyword throws Error: locator.elementHandle (`#1622`_)
 -------------------------------------------------------------------------------
 This error happened when option element did not contain value attribute. If
 option element does not contain value attribute, we try locate the option element
@@ -77,7 +77,7 @@ Full list of fixes and enhancements
     * - `#1622`_
       - bug
       - high
-      - Select Options By Keyword throws TimeoutError: locator.elementHandle
+      - Select Options By Keyword throws Error: locator.elementHandle
     * - `#1769`_
       - enhancement
       - high

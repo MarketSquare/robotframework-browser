@@ -13,7 +13,7 @@ Click Nonmatching Selector
     [Tags]    no-iframe
     ${originaltimeout} =    Set Browser Timeout    50ms
     Run Keyword And Expect Error
-    ...    *TimeoutError: locator.click: Timeout 50ms exceeded.*waiting for locator('notamatch')*
+    ...    *Error: locator.click: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Click    css=notamatch
     [Teardown]    Set Browser Timeout    ${originaltimeout}
 

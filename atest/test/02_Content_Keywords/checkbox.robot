@@ -80,7 +80,7 @@ Get Checkbox State With Nonmatching Selector
     [Tags]    no-iframe
     Set Browser Timeout    50ms
     Run Keyword And Expect Error
-    ...    *TimeoutError: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('xpath=//notamatch')*
+    ...    *Error: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('//notamatch')*
     ...    Get Checkbox State    xpath=//notamatch
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
