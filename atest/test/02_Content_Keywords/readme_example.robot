@@ -3,7 +3,7 @@ Resource            imports.resource
 
 Suite Teardown      Close Page
 
-Force Tags          no-iframe
+Force Tags          no-iframe    need-inet
 
 *** Test Cases ***
 Example

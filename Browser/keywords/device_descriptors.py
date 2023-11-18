@@ -22,7 +22,7 @@ from ..utils import keyword, logger
 
 class Devices(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl"))
-    def get_devices(self) -> Dict:
+    def get_devices(self) -> dict:
         """Returns a dict of all playwright device descriptors.
 
         See Playwright's

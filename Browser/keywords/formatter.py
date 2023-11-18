@@ -4,6 +4,8 @@ from assertionengine.formatter import FormatRules
 from assertionengine.formatter import Formatter as ASFormatter
 from robot.utils import DotDict
 
+from Browser.utils.data_types import ensure_formatter_type
+
 from ..base import LibraryComponent
 from ..utils import (
     FormatingRules,
@@ -112,6 +114,7 @@ class Formatter(ASFormatter, LibraryComponent):
         """
         if not formatters:
             return DotDict(self.set_assertion_formatter())
+        formatters = ensure_formatter_type(formatters)
         old_formatters = DotDict()
         for kw, kw_format in formatters.items():
             old_formatters.update(

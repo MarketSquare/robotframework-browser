@@ -16,7 +16,23 @@ from datetime import timedelta
 from enum import Enum, IntFlag, auto
 from typing import Dict, List, Optional, Union
 
+from robot.running.arguments.typeconverters import TypeConverter
 from typing_extensions import TypedDict
+
+
+class RobotTypeConverter(TypeConverter):
+    @classmethod
+    def converter_for(cls, arg_type):
+        if arg_type is None:
+            return None
+        try:
+            from robot.api import TypeInfo
+
+            if not isinstance(arg_type, TypeInfo):
+                type_hint = TypeInfo.from_type_hint(arg_type)
+        except ImportError:
+            type_hint = arg_type
+        return TypeConverter.converter_for(type_hint)
 
 
 class TypedDictDummy(TypedDict):
@@ -66,6 +82,23 @@ class Deprecated:
 
 
 deprecated = Deprecated()
+
+
+class SelectOptions(TypedDict):
+    """Dictionary with the following keys and their values
+    "index", "value", "label" and "selected".
+
+    | =Keys= | =Description= |
+    | ``index`` | 0 based index of the option. |
+    | ``value`` | Value attribute of the option. |
+    | ``label`` | Label/Text of the option. |
+    | ``selected`` | Boolean if the option is selected. |
+    """
+
+    index: int
+    value: str
+    label: str
+    selected: bool
 
 
 class SelectionStrategy(Enum):
@@ -266,6 +299,15 @@ class DelayedKeyword:
 
 
 class BoundingBox(TypedDict, total=False):
+    """Bounding box of an element.
+
+    | =Key= | =Description= |
+    | ``x`` | The amount of pixel between the left border of the page and the left border of the element. |
+    | ``y`` | The amount of pixel between the top border of the page and the top border of the element. |
+    | ``width`` | The width of the element, excluding margins. |
+    | ``height`` | The height of the element, excluding margins. |
+    """
+
     x: float
     y: float
     width: float
@@ -273,6 +315,13 @@ class BoundingBox(TypedDict, total=False):
 
 
 class Coordinates(TypedDict, total=False):
+    """Coordinates of an element.
+
+    | =Key= | =Description= |
+    | ``x`` | The amount of pixel between the left border of the page and the left border of the element. |
+    | ``y`` | The amount of pixel between the top border of the page and the top border of the element. |
+    """
+
     x: float
     y: float
 
@@ -284,8 +333,21 @@ class MouseOptionsDict(TypedDict, total=False):
 
 
 class ViewportDimensions(TypedDict):
+    """Viewport dimensions.
+
+    Viewport is the browsers inner window size that is used to display the page.
+
+    | =Key= | =Description= |
+    | ``width`` | page width in pixels. |
+    | ``height`` | page height in pixels. |
+    """
+
     width: int
     height: int
+
+
+class Dimensions(ViewportDimensions):
+    """Dimensions of an object in pixels."""
 
 
 class RecordVideo(TypedDict, total=False):
@@ -509,6 +571,30 @@ Example as literal:
 | `Set Assertion Formatters`    {"Get Text": ["strip", "normalize spaces","lambda x: x.replace(' ', '')"]}
 
 """
+
+
+def ensure_formatter_type(input_dict: Dict):
+    formatter_type = {}
+    for formatter_keyword, rules in input_dict.items():
+        formatter_rules: List[Union[FormatingRules, LambdaFunction]] = []
+        for rule in rules:
+            if isinstance(rule, FormatingRules) or callable(rule):
+                formatter_rules.append(rule)
+                continue
+            try:
+                formatter_rules.append(FormatingRules[rule])
+            except KeyError as original_error:
+                if not (isinstance(rule, str) and rule.startswith("lambda")):
+                    raise TypeError(
+                        f"'{rule}' is not a valid FormattingRule."
+                    ) from original_error
+                formatter_rules.append(LambdaFunction.from_string(rule))
+        formatter_type[
+            FormatterKeywords[formatter_keyword]
+            if not isinstance(formatter_keyword, FormatterKeywords)
+            else formatter_keyword
+        ] = formatter_rules
+    return formatter_type
 
 
 class Scale(Enum):
@@ -763,6 +849,22 @@ class AreaFields(Enum):
     ALL = auto()
 
 
+class ScrollPosition(TypedDict):
+    """Scroll position of an element.
+
+    | =Key= | =Description= |
+    | ``top`` | The amount of pixel between the top border of the page and the top border of visible area. |
+    | ``left`` | The amount of pixel between the left border of the page and the left border of visible area. |
+    | ``bottom`` | The amount of pixel between the top border of the page and the bottom border of visible area. |
+    | ``right`` | The amount of pixel between the left border of the page and the right border of visible area. |
+    """
+
+    top: float
+    left: float
+    bottom: float
+    right: float
+
+
 class BoundingBoxFields(Enum):
     """Enumeration that defines which location information of an element should be selected.
 
@@ -1008,3 +1110,62 @@ class PlaywrightLogTypes(Enum):
     playwright = auto()
     false = library
     true = playwright
+
+
+class PageInfo(TypedDict):
+    type: str
+    title: str
+    url: str
+    id: str
+    timestamp: float
+
+
+class ContextInfo(TypedDict):
+    type: str
+    id: str
+    activePage: str
+    pages: List[PageInfo]
+
+
+class BrowserInfo(TypedDict):
+    """Dictionary that contains information about a browser instance.
+
+    | =Key= | =Description= |
+    | ``type`` | The browser type. e.g. chromium, firefox or webkit. |
+    | ``id`` | The unique id of the browser instance. |
+    | ``contexts`` | List of context information opened by the browser. |
+    | ``activeContext`` | The id of the active context. |
+    | ``activeBrowser`` | Boolean if the browser is the currently active browser. |
+
+    Structure:
+    | {
+    |   'type': `str`,
+    |   'id': `str`,
+    |   'contexts': [
+    |       {
+    |           'type': `str`,
+    |           'id': `str`,
+    |           'activePage': `str`,
+    |           'pages': [
+    |               {
+    |                   'type': `str`,
+    |                   'title': `str`,
+    |                   'url': `str`,
+    |                   'id': `str`,
+    |                   'timestamp': `float`
+    |               },
+    |               ...
+    |           ]
+    |       },
+    |       ...
+    |   ],
+    |   'activeContext': `str`,
+    |   'activeBrowser': `bool`
+    | }
+    """
+
+    type: str
+    id: str
+    contexts: List[ContextInfo]
+    activeContext: str
+    activeBrowser: bool

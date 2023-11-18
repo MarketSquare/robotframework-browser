@@ -22,12 +22,12 @@ from time import sleep
 from typing import Any, Dict, List, Optional
 
 from robot.api.deco import keyword
-from robot.running.arguments.typeconverters import TypeConverter
 from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import DownloadInfo, logger
+from ..utils.data_types import RobotTypeConverter as TypeConverter
 
 
 class Promises(LibraryComponent):
@@ -129,7 +129,11 @@ class Promises(LibraryComponent):
         argument_type = self.library.get_keyword_types(kw).get(arg_name)
         if argument_type is not None:
             converter = TypeConverter.converter_for(argument_type)
-            return converter.convert(arg_name, arg_value) if converter else arg_value
+            return (
+                converter.convert(name=arg_name, value=arg_value)
+                if converter
+                else arg_value
+            )
         return arg_value
 
     @keyword(tags=("Wait", "BrowserControl"))

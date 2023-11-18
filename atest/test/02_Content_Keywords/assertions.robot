@@ -10,7 +10,6 @@ Equal
     Get Title    should be    Login Page
 
 Formatter Scopes
-    [Timeout]    600s
     ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['normalize spaces']}    Global
     Should Be Equal    ${old_scope}    ${{{'Get Text': []}}}
     ${current_scope} =    Get Current Scope From Lib    Get Text
@@ -44,7 +43,6 @@ Formatter Scopes
     [Teardown]    Formatter TearDown
 
 Equal With Formatter Global:
-    [Timeout]    600s
     [Setup]    Go To    ${SPACES_URL}
     ${old} =    Set Assertion Formatters    {'Get Text': ['normalize spaces']}    Global
     Should Be Equal    ${old}    ${{{'Get Text': []}}}
@@ -73,7 +71,7 @@ Get Attribute Names Does Not Support Formatter:
         Log    ${error}
     END
 
-Equal With Deprecated Formatter:
+Equal With Formatter:
     [Setup]    Go To    ${SPACES_URL}
     Set Assertion Formatters    {"Get Text": ["strip"], "Get Title": ["lambda x: x.replace(' ', '')"]}
     Get Text    id=two    ==    two spaces

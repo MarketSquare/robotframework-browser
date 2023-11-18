@@ -15,11 +15,11 @@ Get Multiple Browsers
     New Browser    headless=${HEADLESS}    reuse_existing=False
     New Context
     ${oldtimeout} =    Set Browser Timeout    15s
-    New Page    http://example.com
+    New Page    http://${SERVER}/dist/#
     ${browsers} =    Get Browser Catalog    then
     ...    [(b['type'], b['activeBrowser'], [[p['url'] for p in c['pages']] for c in b['contexts']]) for b in value]
     ${expected} =    Evaluate
-    ...    [('chromium', False, [['http://${SERVER}/prefilled_email_form.html'], ['${LOGIN_URL}']]), ('chromium', True, [['http://example.com/']])]
+    ...    [('chromium', False, [['http://${SERVER}/prefilled_email_form.html'], ['${LOGIN_URL}']]), ('chromium', True, [['http://${SERVER}/dist/#']])]
     Should Be Equal    ${browsers}    ${expected}
 
 Get Closed Browsers

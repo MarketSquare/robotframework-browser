@@ -16,6 +16,7 @@
 
 from .data_types import (
     AutoClosingLevel,
+    BrowserInfo,
     ColorScheme,
     ConditionInputs,
     CookieSameSite,
@@ -31,6 +32,7 @@ from .data_types import (
     HttpCredentials,
     LambdaFunction,
     NewPageDetails,
+    PageLoadStates,
     Permission,
     PlaywrightLogTypes,
     Proxy,
@@ -39,8 +41,11 @@ from .data_types import (
     ReduceMotion,
     RequestMethod,
     Scope,
+    ScrollPosition,
     SelectAttribute,
+    SelectOptions,
     SelectionType,
+    ServiceWorkersPermissions,
     SupportedBrowsers,
     ViewportDimensions,
     convert_typed_dict,

@@ -13,7 +13,7 @@
 # limitations under the License.
 import json
 import re
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import grpc  # type: ignore
 from assertionengine import (
@@ -36,14 +36,19 @@ from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
 from ..utils.data_types import (
     AreaFields,
+    BoundingBox,
     BoundingBoxFields,
+    Dimensions,
     DownloadInfo,
     ElementRole,
     ElementState,
     RegExp,
+    ScrollPosition,
     SelectAttribute,
     SelectionStrategy,
+    SelectOptions,
     SizeFields,
+    ViewportDimensions,
 )
 
 
@@ -56,7 +61,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> str:
         """Returns the current URL.
 
         | =Arguments= | =Description= |
@@ -86,7 +91,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> str:
         """Gets pages HTML source as a string.
 
         | =Arguments= | =Description= |
@@ -121,7 +126,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> str:
         """Returns the title of the current page.
 
         | =Arguments= | =Description= |
@@ -158,7 +163,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> str:
         """Returns text attribute of the element found by ``selector``.
 
                Keyword can also return `input` or `textarea` value property text.
@@ -270,7 +275,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> Optional[str]:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
         | =Arguments= | =Description= |
@@ -332,7 +337,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-    ) -> List:
+    ) -> List[str]:
         """Returns all HTML attribute names of an element as a list.
 
 
@@ -385,7 +390,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> List[str]:
         """Returns all classes of an element as a list.
 
 
@@ -432,7 +437,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> List[SelectOptions]:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
 
         Returned dictionaries have the following keys and their values
@@ -492,7 +497,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> List[Union[str, int]]:
         """Returns the specified attribute of selected options of the ``select`` element.
 
         | =Arguments= | =Description= |
@@ -603,7 +608,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Union[int, str] = 0,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> int:
         """Returns the count of elements found with ``selector``.
 
         | =Arguments= | =Description= |
@@ -643,7 +648,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> Optional[ViewportDimensions]:
         """Returns the current viewport dimensions.
 
         | =Arguments= | =Description= |
@@ -749,7 +754,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Union[int, str] = 0,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> int:
         """Returns the index (0 based) of a table cell within its row.
 
         | =Arguments= | =Description= |
@@ -792,7 +797,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Union[int, str] = 0,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> int:
         """Returns the index (0 based) of a table row.
 
 
@@ -1056,7 +1061,7 @@ class Getters(LibraryComponent):
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
         pseudo_element: Optional[str] = None,
-    ) -> Any:
+    ) -> Union[Dict[str, str], str]:
         """Gets the computed style properties of the element selected by ``selector``.
 
         Optionally matches with any sequence assertion operator.
@@ -1126,7 +1131,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> Union[BoundingBox, float, int]:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
 
@@ -1183,7 +1188,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> Union[Dimensions, float, int]:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
 
 
@@ -1239,7 +1244,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> Union[ScrollPosition, float]:
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
 
         It describes the rectangle which is visible of the scrollable content of that element.
@@ -1295,7 +1300,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Any:
+    ) -> Dimensions:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
 
@@ -1345,7 +1350,7 @@ class Getters(LibraryComponent):
         *assertion_expected: Union[ElementState, str],
         message: Optional[str] = None,
         return_names=True,
-    ) -> Any:
+    ) -> Union[List[str], ElementState]:
         """Get the active states from the element found by ``selector``.
 
         This Keyword returns a list of states that are valid for the selected element.
@@ -1356,7 +1361,7 @@ class Getters(LibraryComponent):
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``*assertion_expected`` | Expected states |
         | ``message`` | overrides the default error message for assertion. |
-        | ``return_names`` | If set to ``False`` the keyword does return an IntFlag object instead of a list. Defaults to ``True``. |
+        | ``return_names`` | If set to ``False`` the keyword does return an IntFlag object (`ElementState`) instead of a list. `ElementState` may contain multiple states at the same time. Defaults to ``True``. |
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default, assertion
@@ -1419,7 +1424,7 @@ class Getters(LibraryComponent):
         if return_names and isinstance(result, ElementState):
             state_list = [flag.name for flag in ElementState if flag in result]
             logger.info(f"States are: {state_list}")
-            return state_list
+            return state_list  # type: ignore
         return result
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))

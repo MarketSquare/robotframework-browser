@@ -29,7 +29,6 @@ Could Not Find Keyword W Promise To
     END
 
 Promise To With *args
-    [Timeout]    600s
     ${promise} =    Promise To
     ...    Click With Options
     ...    id=clickWithOptions

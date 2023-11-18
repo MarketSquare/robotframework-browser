@@ -17,6 +17,7 @@ New Browser With Reuse_existing Does Not Open New Browser If Matching One Exists
     Should Be Equal    ${catalog}    ${new_catalog}
 
 New Browser With Reuse_existing Opens New Browser If No Matching One Is Found
+    [Tags]    firefox
     ${browser_id} =    New Browser    browser=firefox    reuse_existing=True
     ${catalog} =    Get Browser Catalog
     Should Be True    len($catalog) == 1
