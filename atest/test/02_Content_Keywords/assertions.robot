@@ -81,6 +81,7 @@ Equal With Deprecated Formatter:
     [Teardown]    Formatter TearDown
 
 Equal With Lambda Formatter:
+    [Timeout]    5000
     [Setup]    Go To    ${SPACES_URL}
     Set Assertion Formatters
     ...    {"Get Text": ["apply to expected", "strip", "lambda x: x.replace('two', 'three')", "lambda x: x.upper()", "lambda x: x.replace(' ', '')"]}

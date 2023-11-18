@@ -40,7 +40,6 @@ from ..utils.data_types import (
     ScrollBehavior,
     SelectAttribute,
 )
-from ..utils.data_types import RobotTypeConverter as TypeConverter
 
 
 class Interaction(LibraryComponent):

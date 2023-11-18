@@ -286,6 +286,7 @@ def atest(
     smoke=False,
     processes=None,
     framed=False,
+    exclude=None,
 ):
     """Runs Robot Framework acceptance tests with pabot.
 
@@ -324,6 +325,8 @@ def atest(
         args.extend(["--listener", "Debugger"])
     if smoke:
         args.extend(["--exclude", "slow"])
+    if exclude:
+        args.extend(["--exclude", exclude])
     if framed:
         args.extend(["--variable", "SUFFIX:framing.html?url="])
         args.extend(["--variable", "SELECTOR_PREFIX:id=iframe_id >>>"])

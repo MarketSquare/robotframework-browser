@@ -21,6 +21,7 @@ Force Tags      no-iframe
 
 *** Test Cases ***
 Set Geolocation On Browser Startup
+    [Timeout]    5000
     Start Context With Geolocation
     Check Geolocation    42    -42.42
 

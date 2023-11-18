@@ -22,11 +22,7 @@ from uuid import uuid4
 from assertionengine import AssertionOperator, verify_assertion
 from robot.utils import get_link_path
 
-from Browser.utils.data_types import (
-    DownloadInfo,
-    PageLoadStates,
-    ServiceWorkersPermissions,
-)
+from Browser.utils.data_types import BrowserInfo
 from Browser.utils.misc import get_download_id
 
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
@@ -34,16 +30,19 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     ColorScheme,
+    DownloadInfo,
     ForcedColors,
     GeoLocation,
     HttpCredentials,
     NewPageDetails,
+    PageLoadStates,
     Permission,
     Proxy,
     RecordHar,
     RecordVideo,
     ReduceMotion,
     SelectionType,
+    ServiceWorkersPermissions,
     SupportedBrowsers,
     ViewportDimensions,
     convert_typed_dict,
@@ -527,7 +526,12 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         if permissions:
-            params["permissions"] = [permission.value for permission in permissions]
+            params["permissions"] = [
+                permission.value
+                if not isinstance(permission, str)
+                else Permission[permission].value
+                for permission in permissions
+            ]
         params["viewport"] = copy(viewport)
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(params, httpCredentials, storageState)
@@ -621,7 +625,12 @@ class PlaywrightState(LibraryComponent):
         """
         params = locals_to_params(locals())
         if permissions:
-            params["permissions"] = [permission.value for permission in permissions]
+            params["permissions"] = [
+                permission.value
+                if not isinstance(permission, str)
+                else Permission[permission].value
+                for permission in permissions
+            ]
         params["viewport"] = copy(viewport)
         trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
@@ -814,7 +823,7 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> List:
+    ) -> List[BrowserInfo]:
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
         See `Browser, Context and Page` for more information about these concepts.
@@ -1220,7 +1229,7 @@ class PlaywrightState(LibraryComponent):
         raise ValueError(f"No context with requested id '{context_id}' found.")
 
     @keyword(tags=("Getter", "BrowserControl"))
-    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> List:
+    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> List[str]:
         """Returns a list of ids from open browsers.
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
