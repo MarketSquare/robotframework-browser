@@ -578,7 +578,7 @@ def ensure_formatter_type(input_dict: Dict):
     for formatter_keyword, rules in input_dict.items():
         formatter_rules: List[Union[FormatingRules, LambdaFunction]] = []
         for rule in rules:
-            if isinstance(rule, FormatingRules):
+            if isinstance(rule, FormatingRules) or callable(rule):
                 formatter_rules.append(rule)
                 continue
             try:

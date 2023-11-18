@@ -21,7 +21,6 @@ New Page In Same Context Is Closed After Test
 
 Unhandled Alert Does Not Block Execution
     [Tags]    debug
-    [Timeout]    1000s
     New Page    ${ERROR_URL}
     Click    text="Do not click!"
 
