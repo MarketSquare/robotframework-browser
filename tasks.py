@@ -584,10 +584,11 @@ def _add_skips(default_args, include_mac=False):
 
 @task
 def lint_python(c, fix=False):
-    c.run(
-        "mypy --exclude .venv --show-error-codes --config-file Browser/mypy.ini Browser/"
-    )
+    print("Run mypy:")
+    c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/")
+    print("Run black:")
     c.run("black --config Browser/pyproject.toml tasks.py Browser/")
+    print("Run ruff:")
     ruff_cmd = "ruff check --config Browser/pyproject.toml Browser/"
     if fix:
         ruff_cmd = f"{ruff_cmd} --fix"
