@@ -17,7 +17,7 @@ import contextlib
 import os
 import platform
 import time
-from functools import cached_property  # type: ignore
+from functools import cached_property
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 from typing import TYPE_CHECKING, Optional, Union
