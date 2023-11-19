@@ -1,3 +1,4 @@
+import contextlib
 import json
 import logging
 import os
@@ -155,6 +156,8 @@ def _rfbrowser_init(
             cmd = f"{cmd.strip(' ')} --with-deps"
 
         pw_browser_path = os.environ.get(PLAYWRIGHT_BROWSERS_PATH)
+        with contextlib.suppress(ValueError):
+            pw_browser_path = int(pw_browser_path)  # type: ignore
         install_dir = pw_browser_path if pw_browser_path else INSTALLATION_DIR
         _log(
             f"Installing browser {browser_as_str}binaries to {install_dir}",
