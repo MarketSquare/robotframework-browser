@@ -789,7 +789,7 @@ class Browser(DynamicCore):
         self.scope_stack: Dict = {}
         self.suite_ids: Dict[str, None] = {}
         self.current_test_id: Optional[str] = None
-        self._playwright_state = PlaywrightState(self)
+        self._playwright_state: PlaywrightState = PlaywrightState(self)
         self._browser_control = Control(self)
         self._assertion_formatter = Formatter(self)
         libraries = [

@@ -146,6 +146,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     closeBrowser = this.wrappingState(playwrightState.closeBrowser);
+    closeBrowserServer = this.wrapping(playwrightState.closeBrowserServer);
     closeAllBrowsers = this.wrappingState(playwrightState.closeAllBrowsers);
     closeContext = this.wrappingState(playwrightState.closeContext);
     closePage = this.wrapping(playwrightState.closePage);
@@ -243,6 +244,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     newPage = this.wrapping(playwrightState.newPage);
     newContext = this.wrapping(playwrightState.newContext);
     newBrowser = this.wrapping(playwrightState.newBrowser);
+    launchBrowserServer = this.wrapping(playwrightState.launchBrowserServer);
     newPersistentContext = this.wrapping(playwrightState.newPersistentContext);
     connectToBrowser = this.wrapping(playwrightState.connectToBrowser);
     goTo = this.wrappingPage(browserControl.goTo);

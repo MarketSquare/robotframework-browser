@@ -478,6 +478,8 @@ service  Playwright {
   rpc NewPage(Request.UrlOptions) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
+  rpc LaunchBrowserServer(Request.Browser) returns (Response.String);
+  rpc CloseBrowserServer(Request.ConnectBrowser) returns (Response.Empty);
   rpc NewPersistentContext(Request.PersistentContext) returns (Response.NewPersistentContextResponse);
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);

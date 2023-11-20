@@ -186,6 +186,12 @@ class Playwright(LibraryComponent):
             self._channel.close()
         except Exception as exc:
             logger.debug(f"Failed to close browsers: {exc}")
+        try:
+            with self.grpc_channel() as stub:
+                response = stub.CloseBrowserServer(Request().ConnectBrowser(url="ALL"))
+                logger.info(response.log)
+        except Exception as exc:
+            logger.debug(f"Failed to close browser servers: {exc}")
         # Access (possibly) cached property without actually invoking it
         playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:

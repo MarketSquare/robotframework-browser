@@ -13,7 +13,18 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { Browser, BrowserContext, BrowserType, Download, Locator, Page, chromium, firefox, webkit } from 'playwright';
+import {
+    Browser,
+    BrowserContext,
+    BrowserServer,
+    BrowserType,
+    Download,
+    Locator,
+    Page,
+    chromium,
+    firefox,
+    webkit,
+} from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Request, Response } from './generated/playwright_pb';
@@ -156,6 +167,26 @@ async function _newBrowser(
     };
 }
 
+async function _launchBrowserServer(
+    browserType: 'chromium' | 'firefox' | 'webkit',
+    headless: boolean,
+    timeout: number | undefined,
+    options?: Record<string, unknown>,
+): Promise<BrowserServer> {
+    let browser: BrowserServer;
+    const launchOptions: playwright.LaunchOptions = { ...options, headless, timeout };
+    if (browserType === 'firefox') {
+        browser = await firefox.launchServer(launchOptions);
+    } else if (browserType === 'chromium') {
+        browser = await chromium.launchServer(launchOptions);
+    } else if (browserType === 'webkit') {
+        browser = await webkit.launchServer(launchOptions);
+    } else {
+        throw new Error('unsupported browser');
+    }
+    return browser;
+}
+
 async function _connectBrowser(browserType: string, url: string): Promise<BrowserAndConfs> {
     browserType = browserType || 'chromium';
     let browser;
@@ -255,9 +286,11 @@ export class PlaywrightState {
     constructor() {
         this.browserStack = [];
         this.extensions = [];
+        this.browserServer = [];
     }
     extensions: Record<string, (...args: unknown[]) => unknown>[];
     private browserStack: BrowserState[];
+    private browserServer: BrowserServer[];
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
@@ -299,6 +332,26 @@ export class PlaywrightState {
             await browser.close();
         }
         this.browserStack = [];
+    }
+
+    public async closeAllServers(): Promise<void> {
+        const servers = this.browserServer;
+        for (const server of servers) {
+            await server.close();
+        }
+        this.browserServer = [];
+    }
+
+    public getBrowserServer(wsEndpoint: string): BrowserServer | undefined {
+        return this.browserServer.find((server) => server.wsEndpoint() === wsEndpoint);
+    }
+
+    public async closeServer(selectedServer: BrowserServer): Promise<void> {
+        if (!this.browserServer.includes(selectedServer)) {
+            throw new Error(`BrowserServer not found.`);
+        }
+        this.browserServer.splice(this.browserServer.indexOf(selectedServer), 1);
+        await selectedServer.close();
     }
 
     public async getCatalog() {
@@ -345,6 +398,10 @@ export class PlaywrightState {
         const browserState = new BrowserState(browserAndConfs);
         this.browserStack.push(browserState);
         return browserState;
+    }
+
+    public addBrowserServer(browserServer: BrowserServer): void {
+        this.browserServer.push(browserServer);
     }
 
     public popBrowser(): BrowserState | undefined {
@@ -493,6 +550,21 @@ export class BrowserState {
     }
 }
 
+export async function closeBrowserServer(
+    request: Request.ConnectBrowser,
+    openBrowsers: PlaywrightState,
+): Promise<Response.Empty> {
+    const wsEndpoint = request.getUrl();
+    if (wsEndpoint === 'ALL') {
+        await openBrowsers.closeAllServers();
+        return emptyWithLog('Closed all browser servers');
+    }
+    const browserServer = openBrowsers.getBrowserServer(wsEndpoint);
+    if (!browserServer) throw new Error(`BrowserServer with endpoint ${wsEndpoint} not found.`);
+    openBrowsers.closeServer(browserServer);
+    return emptyWithLog(`Closed browser server with endpoint: ${wsEndpoint}`);
+}
+
 export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Response.String> {
     const currentBrowser = openBrowsers.activeBrowser;
     if (currentBrowser === undefined) {
@@ -619,6 +691,28 @@ export async function newBrowser(request: Request.Browser, openBrowsers: Playwri
     );
     const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
+}
+
+export async function launchBrowserServer(
+    request: Request.Browser,
+    openBrowsers: PlaywrightState,
+): Promise<Response.String> {
+    const browserType = request.getBrowser() as 'chromium' | 'firefox' | 'webkit';
+    const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
+    logger.info(`Launching browser server: ${browserType}`);
+    logger.info('Launching browser server with options: ' + JSON.stringify(options));
+    const browserServer = await _launchBrowserServer(
+        browserType,
+        options['headless'] as boolean,
+        options['timeout'] as number,
+        options,
+    );
+    logger.info(`Browser server launched. Endpoint: ${browserServer.wsEndpoint()}`);
+    openBrowsers.addBrowserServer(browserServer);
+    return stringResponse(
+        browserServer.wsEndpoint(),
+        'Successfully created browser server with options: ' + JSON.stringify(options),
+    );
 }
 
 export async function newPersistentContext(

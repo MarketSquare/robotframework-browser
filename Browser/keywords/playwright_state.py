@@ -321,9 +321,13 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def connect_to_browser(
-        self, wsEndpoint: str, browser: SupportedBrowsers = SupportedBrowsers.chromium
+        self,
+        wsEndpoint: str,
+        browser: SupportedBrowsers = SupportedBrowsers.chromium,
     ):
-        """Connect to a playwright Browser.
+        """Connect to a Playwright browser server via websocket.
+
+        See `Launch Browser Server` for more information about how to launch a browser server.
 
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
@@ -412,6 +416,72 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             self.browser_arg_mapping[parameter_hash] = response.body
             return response.body
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def launch_browser_server(
+        self,
+        browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        headless: bool = True,
+        *,
+        args: Optional[List[str]] = None,
+        channel: Optional[str] = None,
+        chromiumSandbox: bool = False,
+        devtools: bool = False,
+        downloadsPath: Optional[str] = None,
+        env: Optional[Dict] = None,
+        executablePath: Optional[str] = None,
+        firefoxUserPrefs: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        handleSIGHUP: bool = True,
+        handleSIGINT: bool = True,
+        handleSIGTERM: bool = True,
+        ignoreDefaultArgs: Union[List[str], bool, None] = None,
+        port: Optional[int] = None,
+        proxy: Optional[Proxy] = None,
+        reuse_existing: bool = True,
+        slowMo: timedelta = timedelta(seconds=0),
+        timeout: timedelta = timedelta(seconds=30),
+        wsPath: Optional[str] = None,
+    ) -> str:
+        """Launches a new playwright Browser server with specified options.
+
+        Returns a websocket endpoint (wsEndpoint) string that can be used to connect to the server.
+
+        | =Arguments= | =Description= |
+        | ``port`` | Port to use for the browser server. Defaults to 0, which results in a random free port being assigned. |
+        | ``wsPath`` | If set, Playwright will listen on the given path in addition to the main port. For security, this defaults to an unguessable string. |
+
+        Check `New Browser` for the other argument docs.
+
+        The launched browser server can be used to connect to it with `Connect To Browser` keyword.
+        This keyword can also be used from command line with ``rfbrowser launch-browser-server`` command.
+
+        see [https://playwright.dev/docs/api/class-browserserver#browser-server|Playwright documentation] for more information.
+
+        [https://forum.robotframework.org/t//4306|Comment >>]
+        """
+        params = locals_to_params(locals())
+        params = self._set_browser_options(params, browser, channel, slowMo, timeout)
+        options = json.dumps(params, default=str)
+        logger.info(options)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.LaunchBrowserServer(
+                Request().Browser(browser=browser.name, rawOptions=options)
+            )
+            logger.info(response.log)
+            return response.body
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def close_browser_server(self, wsEndpoint: str) -> None:
+        """Close a playwright Browser Server identified by its websocket endpoint (wsEndpoint).
+
+        The wsEndpoint string is returned by `Launch Browser Server` and is also used by `Connect To Browser`.
+
+        | =Arguments=     | =Description= |
+        | ``wsEndpoint`` | Address of the browser server. Example: ``ws://127.0.0.1:63784/ca69bf0e9471391e8183d9ac1e90e1ba``|
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseBrowserServer(Request().ConnectBrowser(url=wsEndpoint))
+            logger.info(response.log)
 
     def _switch_to_existing_browser(
         self, reuse_existing: bool, parameter_hash: int
