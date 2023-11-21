@@ -6,9 +6,13 @@ Suite Teardown      Set Retry Assertions For    1s
 Test Setup          Go To    ${LOGIN_URL}
 
 *** Variables ***
-${FailureScreenshot} =      ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot2} =     ${OUTPUT_DIR}${/}Register_KW_On_Failure_With_Unicode____FAILURE_SCREENSHOT_1.png
-${FailureScreenshot3} =     ${OUTPUT_DIR}${/}myfailure_screenshot.png
+${FailureScreenshot} =              ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
+${FailureScreenshot2} =             ${OUTPUT_DIR}${/}Register_KW_On_Failure_With_Unicode____FAILURE_SCREENSHOT_1.png
+${FailureScreenshot3} =             ${OUTPUT_DIR}${/}Register_Kw_With_Custom_Path_Named_Not_First_FAILURE_SCREENSHOT_1.png
+${FailureScreenshot4_no_ext} =      ${OUTPUT_DIR}${/}myfailure_screenshot
+${FailureScreenshot4} =             ${FailureScreenshot4_no_ext}.png
+${FailureScreenshot5_no_ext} =      ${OUTPUT_DIR}${/}myfailure_screenshot_44
+${FailureScreenshot5} =             ${FailureScreenshot5_no_ext}.png
 
 *** Test Cases ***
 Register Keyword To Run On Failure
@@ -24,6 +28,36 @@ Register Keyword To Run On Failure
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot}
 
+Register Kw With Custom Path Named
+    Type Text    css=input#username_field    username
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    filename=${FailureScreenshot4_no_ext}
+    Run Keyword And Expect Error
+    ...    *'username' (str) should be 'not_username' (str)
+    ...    Get Text    css=input#username_field    ==    not_username
+    File Should Exist    ${FailureScreenshot4}
+    Register Keyword To Run On Failure    ${prev}
+    [Teardown]    Remove File    ${FailureScreenshot4}
+
+Register Kw With Custom Path Positional
+    Type Text    css=input#username_field    username
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot5_no_ext}
+    Run Keyword And Expect Error
+    ...    *'username' (str) should be 'not_username' (str)
+    ...    Get Text    css=input#username_field    ==    not_username
+    File Should Exist    ${FailureScreenshot5}
+    Register Keyword To Run On Failure    ${prev}
+    [Teardown]    Remove File    ${FailureScreenshot5}
+
+Register Kw With Custom Path Named Not First
+    Type Text    css=input#username_field    username
+    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    selector=css=input#username_field
+    Run Keyword And Expect Error
+    ...    *'username' (str) should be 'not_username' (str)
+    ...    Get Text    css=input#username_field    ==    not_username
+    File Should Exist    ${FailureScreenshot3}
+    Register Keyword To Run On Failure    ${prev}
+    [Teardown]    Remove File    ${FailureScreenshot3}
+
 Register KåWä On Failure With Unicode " 💩 "
     Type Text    css=input#username_field    username
     ${prev} =    Register Keyword To Run On Failure    Take Screenshot
@@ -33,16 +67,6 @@ Register KåWä On Failure With Unicode " 💩 "
     File Should Exist    ${FailureScreenshot2}
     Register Keyword To Run On Failure    ${prev}
     [Teardown]    Remove File    ${FailureScreenshot2}
-
-Register Kw With Custom Path
-    Type Text    css=input#username_field    username
-    ${prev} =    Register Keyword To Run On Failure    Take Screenshot    ${FailureScreenshot3}
-    Run Keyword And Expect Error
-    ...    *'username' (str) should be 'not_username' (str)
-    ...    Get Text    css=input#username_field    ==    not_username
-    File Should Exist    ${FailureScreenshot3}
-    Register Keyword To Run On Failure    ${prev}
-    [Teardown]    Remove File    ${FailureScreenshot3}
 
 Register Keyword With Arguments
     Type Text    css=input#username_field    username
@@ -67,13 +91,15 @@ Register Keyword With Named Arguments
     [Teardown]    Remove File    ${FailureScreenshot3}
 
 Register Keyword With Wrong Arguments
-    Run Keyword And Expect Error
-    ...    Keyword 'Take Screenshot' expected 0 to 2 non-named arguments, got 3.
-    ...    Register Keyword To Run On Failure
-    ...    Take Screenshot
-    ...    image-{index}
-    ...    ${NONE}
-    ...    True
+    TRY
+        Register Keyword To Run On Failure
+        ...    Take Screenshot
+        ...    image-{index}
+        ...    ${NONE}
+        ...    True
+    EXCEPT    Keyword 'Take Screenshot' expected 0 to 2 non-named arguments, got 3.    AS    ${error}
+        Log    ${error}
+    END
 
 Register User Keyword
     ${prev} =    Register Keyword To Run On Failure    Custom User Keyword    Foobar

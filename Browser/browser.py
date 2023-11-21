@@ -1276,6 +1276,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 if (
                     self.run_on_failure_keyword.name == "take_screenshot"
                     and not varargs
+                    and "filename" not in kwargs
                 ):
                     varargs = (self._failure_screenshot_path(),)
                 self.keywords[self.run_on_failure_keyword.name](*varargs, **kwargs)
