@@ -419,24 +419,29 @@ Launch Browser Server Generated wsEndpoint
 
 Launch Browser Server Via CLI
     ${process1} =    Start Process
-    ...    rfbrowser
+    ...    python
+    ...    -m
+    ...    Browser.entry
     ...    launch-browser-server
     ...    chromium
     ...    headless\=${HEADLESS}
-    ...    port\=8272
+    ...    port\=8277
     ...    wsPath\=server2
     ${process2} =    Start Process
-    ...    rfbrowser
+    ...    python
+    ...    -m
+    ...    Browser.entry
     ...    launch-browser-server
     ...    chromium
     ...    headless\=${HEADLESS}
     ...    port\=8273
     ...    wsPath\=server3
-    Connect To Browser    wsEndpoint=ws://localhost:8272/server2    browser=chromium
+    Sleep    10s
+    Connect To Browser    wsEndpoint=ws://localhost:8277/server2    browser=chromium
     New Page    ${LOGIN_URL}
     Get Title    ==    Login Page
     Close Browser    ALL
-    Connect To Browser    wsEndpoint=ws://localhost:8272/server2    browser=chromium
+    Connect To Browser    wsEndpoint=ws://localhost:8277/server2    browser=chromium
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     Connect To Browser    wsEndpoint=ws://localhost:8273/server3    browser=chromium
