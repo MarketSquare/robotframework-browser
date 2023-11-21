@@ -25,13 +25,15 @@ Switching Between Two Persistent Contexts Works
     ${url_2} =    Get Url
     ${title_2} =    Get Title
 
-    Switch Browser    ${browser_1}
+    Should Be Equal    ${browser_1}    ${browser_2}
+
+    Switch Context    ${context_1}
     Get URL    ==    ${url_1}
     Get Title    ==    ${title_1}
     ${switch_id} =    Switch Context    CURRENT
     Should Be Equal    ${context_1}    ${switch_id}
 
-    Switch Browser    ${browser_2}
+    Switch Context    ${context_2}
     Get URL    ==    ${url_2}
     Get Title    ==    ${title_2}
     ${switch_id} =    Switch Context    CURRENT
@@ -68,3 +70,28 @@ New Persistent Context Open New Pages
     Switch Page    NEW
     Get Url    ==    ${ERROR_URL}
     [Teardown]    Set Retry Assertions For    ${old}
+
+New Persistent Context Cleaned Up After Timeout
+    [Tags]    slow
+    [Setup]    Close Browser    ALL
+    Set Browser Timeout    1s    Test
+    ${catalog_1} =    Get Browser Catalog
+    TRY
+        New Persistent Context    url=${SLOW_PAGE}    timeout=1s
+    EXCEPT    *timeout*    type=GLOB
+        ${catalog_2} =    Get Browser Catalog
+        Should Be Equal    ${catalog_1}    ${catalog_2}
+    END
+    New Browser
+    New Page    url=${ERROR_URL}
+    Get Title    ==    Error Page
+    New Persistent Context    url=${WELCOME_URL}
+    Get Title    ==    Welcome Page
+    ${catalog_3} =    Get Browser Catalog
+    TRY
+        New Persistent Context    url=${SLOW_PAGE}    timeout=1s
+    EXCEPT    *timeout*    type=GLOB
+        ${catalog_4} =    Get Browser Catalog
+        Should Be Equal    ${catalog_3}    ${catalog_4}
+    END
+    Get Title    ==    Welcome Page

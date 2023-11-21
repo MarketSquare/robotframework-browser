@@ -1,5 +1,6 @@
 *** Settings ***
 Resource            imports.resource
+Library             Process
 
 Test Teardown       Close Browser    ALL
 
@@ -400,6 +401,55 @@ Switch Page With ALL Browsers Failing
     Run Keyword And Expect Error    EQUALS:ValueError: Malformed page `id`: 1
     ...    Run Keyword And Continue On Failure
     ...    Switch Page    1    ALL    ALL
+
+Launch Browser Server CLI
+    ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}    port=8271    wsPath=server1
+    Should Be Equal    ${wsEndpoint}    ws://127.0.0.1:8271/server1
+    ${browser} =    Connect To Browser    ws://localhost:8271/server1
+    New Page    ${LOGIN_URL}
+    Get Title    ==    Login Page
+    [Teardown]    Close Browser Server    ${wsEndpoint}
+
+Launch Browser Server Generated wsEndpoint
+    ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}
+    ${browser} =    Connect To Browser    ${wsEndpoint}
+    New Page    ${LOGIN_URL}
+    Get Title    ==    Login Page
+    [Teardown]    Close Browser Server    ${wsEndpoint}
+
+Launch Browser Server Via CLI
+    ${process1} =    Start Process
+    ...    python
+    ...    -m
+    ...    Browser.entry
+    ...    launch-browser-server
+    ...    chromium
+    ...    headless\=${HEADLESS}
+    ...    port\=8277
+    ...    wsPath\=server2
+    ${process2} =    Start Process
+    ...    python
+    ...    -m
+    ...    Browser.entry
+    ...    launch-browser-server
+    ...    chromium
+    ...    headless\=${HEADLESS}
+    ...    port\=8273
+    ...    wsPath\=server3
+    Sleep    10s
+    Connect To Browser    wsEndpoint=ws://localhost:8277/server2    browser=chromium
+    New Page    ${LOGIN_URL}
+    Get Title    ==    Login Page
+    Close Browser    ALL
+    Connect To Browser    wsEndpoint=ws://localhost:8277/server2    browser=chromium
+    New Page    ${FORM_URL}
+    Get Title    ==    prefilled_email_form.html
+    Connect To Browser    wsEndpoint=ws://localhost:8273/server3    browser=chromium
+    New Context    viewport={"width": 100, "height": 100}
+    New Page    ${LOGIN_URL}
+    Get Viewport Size    width    ==    100
+    Get Viewport Size    height    ==    100
+    [Teardown]    Terminate All Processes
 
 *** Keywords ***
 Open Browser And Assert Login Page

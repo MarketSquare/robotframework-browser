@@ -10,9 +10,13 @@ import sys
 import traceback
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import TYPE_CHECKING, List
 
 import click
 from robot import version as rf_version
+
+if TYPE_CHECKING:
+    from .browser import Browser
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"
@@ -386,6 +390,109 @@ def show_trace(file: Path):
     subprocess.run(  # noqa: PLW1510
         trace_arguments, env=env, shell=SHELL, cwd=INSTALLATION_DIR
     )
+
+
+@cli.command()
+@click.argument(
+    "browser",
+    type=click.Choice(("chromium", "firefox", "webkit"), case_sensitive=False),
+    default="chromium",
+)
+@click.argument("options", nargs=-1)
+def launch_browser_server(browser, options):
+    """Launches a playwright browser server.
+
+    \b
+    Example:
+      rfbrowser launch-browser-server chromium headless=True "timeout=10 sec"
+
+    The browser server is started in the background and will be closed when the
+    process is terminated. i.e. when users hits Ctrl-C.
+
+    == Arguments ==
+
+    The browser type is the first positional argument and can be one of `chromium`, `firefox` or `webkit`.
+
+    Specific browser server arguments are `port` and `wsPath`, which be used to define
+    the tcp port and the path to the websocket endpoint, so that the connection string is static.
+    By default port and wsPath are randomly generated.
+
+    \b
+    Example:
+      rfbrowser launch-browser-server chromium headless=No port=8282 wsPath=chromium/1
+
+    \b
+    Which results in:
+      ws://127.0.0.1:8282/chromium/1
+
+    \b
+    Which can be connected with Robot Framework like:
+      Connect To Browser    ws://127.0.0.1:8282/chromium/1
+
+    The browser server can be started with additional options, which are passed as named arguments
+    to the keyword `Launch Browser Server`. Arguments must be in the form of `argument_name=value`.
+    See the keyword documentation for more details on the available options.
+
+    == Connecting to a randomly generated websocket ==
+
+    When the browser server is started, the generated wsEndpoint is printed to the console.
+    This can be used to connect to the browser server with the keyword `Connect To Browser`.
+    The wsEndpoint will be in the for of `ws://<ip-addr>:<port>/<token>`.
+
+    \b
+    Example: ws://127.0.0.1:55420/df86c0cf4ec85cc8f21fe12d264bb6c1
+
+    It can be parsed from the console output with the following regular expression: `ws://.*`
+    This example will return the wsEndpoint as a string form a multiline string `console_output`.
+
+    \b
+    Example: re.search(r"ws://.*", console_output).group()
+    """
+    from .browser import Browser, SupportedBrowsers
+
+    logging.getLogger().setLevel(logging.INFO)
+
+    browser_lib = Browser()
+    params = convert_options_types(options, browser_lib)
+    wsEndpoint = browser_lib.launch_browser_server(
+        browser=SupportedBrowsers[browser], **params
+    )
+    logging.info(f"Browser server started at:\n\n\n{wsEndpoint}\n\n")
+    logging.info("Press Ctrl-C to stop the server")
+    try:
+        while True:
+            pass
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Stopping browser server by user request")
+    except Exception as err:
+        logging.info(f"Stopping browser server due to error: {err}")
+        traceback.print_exc()
+    finally:
+        with contextlib.suppress(Exception):
+            browser_lib._playwright_state.close_browser_server("ALL")
+        logging.info("Browser server stopped")
+
+
+def convert_options_types(options: List[str], browser_lib: "Browser"):
+    from Browser.utils.data_types import RobotTypeConverter
+
+    keyword_types = browser_lib.get_keyword_types("launch_browser_server")
+
+    params = {}
+    for option in options:
+        if "=" not in option:
+            raise RuntimeError(
+                f"Invalid option {option}. Options must be in the form of argument_name=value"
+            )
+        key, value = option.split("=")
+        if key not in keyword_types:
+            raise RuntimeError(
+                f"Invalid argument name {key}. Argument names must be one of {', '.join(keyword_types.keys())}"
+            )
+        params[key] = RobotTypeConverter.converter_for(keyword_types[key]).convert(
+            name=key, value=value
+        )
+    return params
 
 
 if __name__ == "__main__":

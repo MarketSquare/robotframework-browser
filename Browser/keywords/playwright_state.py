@@ -321,23 +321,37 @@ class PlaywrightState(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
     def connect_to_browser(
-        self, wsEndpoint: str, browser: SupportedBrowsers = SupportedBrowsers.chromium
+        self,
+        wsEndpoint: str,
+        browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        use_cdp: bool = False,
     ):
-        """Connect to a playwright Browser.
+        """Connect to a Playwright browser server via playwright websocket or Chrome DevTools Protocol.
+
+        See `Launch Browser Server` for more information about how to launch a playwright browser server.
 
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
         Returns a stable identifier for the connected browser.
 
         | =Argument=     | =Description= |
-        | ``wsEndpoint`` | Address to connect to. |
+        | ``wsEndpoint`` | Address to connect to. Either ``ws://`` or ``http://`` if cdp is used. |
         | ``browser``    | Opens the specified browser. Defaults to ``chromium``. |
+        | ``use_cdp``    | Connect to browser via Chrome DevTools Protocol. Defaults to False. Works only with Chromium based browsers. |
+
+        To Connect to a Browser viw Chrome DevTools Protocol, the browser must be started with this protocol enabled.
+        This typically done by starting a Chrome browser with the argument ``--remote-debugging-port=9222`` or similar.
+        When the browser is running with activated CDP, it is possible to connect to it either with websockets (``ws://``)
+        or via HTTP (``http://``). The HTTP connection can be used when ``use_cdp`` is set to True.
+        A typical address for a CDP connection is ``http://127.0.0.1:9222``.
 
         [https://forum.robotframework.org/t//4242|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ConnectToBrowser(
-                Request().ConnectBrowser(url=wsEndpoint, browser=browser.name)
+                Request().ConnectBrowser(
+                    url=wsEndpoint, browser=browser.name, connectCDP=use_cdp
+                )
             )
             logger.info(response.log)
             return response.body
@@ -412,6 +426,72 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             self.browser_arg_mapping[parameter_hash] = response.body
             return response.body
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def launch_browser_server(
+        self,
+        browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        headless: bool = True,
+        *,
+        args: Optional[List[str]] = None,
+        channel: Optional[str] = None,
+        chromiumSandbox: bool = False,
+        devtools: bool = False,
+        downloadsPath: Optional[str] = None,
+        env: Optional[Dict] = None,
+        executablePath: Optional[str] = None,
+        firefoxUserPrefs: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        handleSIGHUP: bool = True,
+        handleSIGINT: bool = True,
+        handleSIGTERM: bool = True,
+        ignoreDefaultArgs: Union[List[str], bool, None] = None,
+        port: Optional[int] = None,
+        proxy: Optional[Proxy] = None,
+        reuse_existing: bool = True,
+        slowMo: timedelta = timedelta(seconds=0),
+        timeout: timedelta = timedelta(seconds=30),
+        wsPath: Optional[str] = None,
+    ) -> str:
+        """Launches a new playwright Browser server with specified options.
+
+        Returns a websocket endpoint (wsEndpoint) string that can be used to connect to the server.
+
+        | =Arguments= | =Description= |
+        | ``port`` | Port to use for the browser server. Defaults to 0, which results in a random free port being assigned. |
+        | ``wsPath`` | If set, Playwright will listen on the given path in addition to the main port. For security, this defaults to an unguessable string. |
+
+        Check `New Browser` for the other argument docs.
+
+        The launched browser server can be used to connect to it with `Connect To Browser` keyword.
+        This keyword can also be used from command line with ``rfbrowser launch-browser-server`` command.
+
+        see [https://playwright.dev/docs/api/class-browserserver#browser-server|Playwright documentation] for more information.
+
+        [https://forum.robotframework.org/t//4306|Comment >>]
+        """
+        params = locals_to_params(locals())
+        params = self._set_browser_options(params, browser, channel, slowMo, timeout)
+        options = json.dumps(params, default=str)
+        logger.info(options)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.LaunchBrowserServer(
+                Request().Browser(browser=browser.name, rawOptions=options)
+            )
+            logger.info(response.log)
+            return response.body
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def close_browser_server(self, wsEndpoint: str) -> None:
+        """Close a playwright Browser Server identified by its websocket endpoint (wsEndpoint).
+
+        The wsEndpoint string is returned by `Launch Browser Server` and is also used by `Connect To Browser`.
+
+        | =Arguments=     | =Description= |
+        | ``wsEndpoint`` | Address of the browser server. Example: ``ws://127.0.0.1:63784/ca69bf0e9471391e8183d9ac1e90e1ba``|
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseBrowserServer(Request().ConnectBrowser(url=wsEndpoint))
+            logger.info(response.log)
 
     def _switch_to_existing_browser(
         self, reuse_existing: bool, parameter_hash: int
@@ -638,6 +718,14 @@ class PlaywrightState(LibraryComponent):
         options = json.dumps(params, default=str)
 
         with self.playwright.grpc_channel() as stub:
+            catalog_json = stub.GetBrowserCatalog(Request().Empty())
+            catalog = json.loads(catalog_json.json)
+            previously_active_browser_id = None
+            existing_browser_ids = []
+            for browser_info in catalog:
+                if browser_info["activeBrowser"]:
+                    previously_active_browser_id = browser_info["id"]
+                existing_browser_ids.append(browser_info["id"])
             response = stub.NewPersistentContext(
                 Request().PersistentContext(
                     browser=browser.name,
@@ -652,13 +740,33 @@ class PlaywrightState(LibraryComponent):
             )
             logger.info(response.log)
             logger.info(context_options)
+            browser_id = response.browserId
 
             if url:
-                stub.GoTo(Request().UrlOptions(url=Request().Url(url=url)))
+                try:
+                    stub.GoTo(
+                        Request().UrlOptions(
+                            url=Request().Url(
+                                url=url, defaultTimeout=int(self.get_timeout(timeout))
+                            )
+                        )
+                    )
+                except Exception as e:
+                    if browser_id in existing_browser_ids:
+                        self.close_context()
+                        self.switch_browser(previously_active_browser_id)
+                        logger.debug(
+                            "Teardown: Closed new Context and switched back "
+                            f"to previously active browser: {previously_active_browser_id}"
+                        )
+                    else:
+                        self.close_browser()
+                        logger.debug("Teardown: Closed new persistent context.")
+                    raise e
             self.context_cache.add(response.id, self._get_video_size(params))
             video_path = self._embed_video(json.loads(response.video))
             return (
-                response.browserId,
+                browser_id,
                 response.id,
                 NewPageDetails(page_id=response.pageId, video_path=video_path),
             )
