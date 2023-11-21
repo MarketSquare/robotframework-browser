@@ -59,11 +59,8 @@ Most important enhancements
 ===========================
 
 
-Browser Context and Page handling
----------------------------------
-
 macOS Sonoma (14.0) fixes
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 For unknown reasons the new macOS 14 did not work properly with Browser library.
 A timing issue during the library startup caused problems.
@@ -71,7 +68,7 @@ This should be fixed now, by an internal workaround.
 
 
 Browser Server and Connection to running Browsers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 It was already possible to connect to a running instance of a Playwright Browser server
 via websockets with `Connect To Browser` keyword. However it was not trivial to launch
@@ -88,6 +85,9 @@ options, but this can be added in the future.
 Launching a Browser Server as a separate may be useful for distribute executions.
 The command `rfbrowser launch-browser-server` accepts all the same arguments as `Launch Browser Server`/`New Browser`
 keyword. See `rfbrowser launch-browser-server --help` for more information.
+
+More Browser, Context, Page stuff
+---------------------------------
 
 Some of our users had the wish that the browser stays open after finishing the execution.
 This is now possible with the new `Closing Level` `KEEP` that will never close the browser.
@@ -114,7 +114,7 @@ but slightly different behavior than before:
   These arguments where already without any function, but now finally removed.
 
 File Downloads
-~~~~~~~~~~~~~~
+--------------
 
 We already had the possibility to download files with the `Download` keyword and `Promise To Download File`.
 These keyword did finish (promise resolved) once the actual download has been fully completed.
@@ -127,7 +127,7 @@ return once the download has been started with a download id.
 That id then can be used to poll the download `Get Download State` or even cancel it with `Cancel Download`.
 
 Assertion Formatters
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 Assertion Formatters are a pretty unknown feature of Browser library.
 With this feature it is possible to configure a Getter keyword so that it always applies that "formatter"
@@ -143,7 +143,7 @@ Documentation of Assertion Formatters has also been improved and now includes pr
 This on the other hand make them backwards incompatible if they have been used from Python with string arguments.
 
 Robot Framework 7 Support
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 Due to some changes in internal Robot Framework API, the previous version of Browser library
 was not compatible with Robot Framework 7. Browser Library 18.0.0 is now compatible with Robot Framework 7.
