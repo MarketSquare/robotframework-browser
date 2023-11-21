@@ -187,21 +187,25 @@ async function _launchBrowserServer(
     return browser;
 }
 
-async function _connectBrowser(browserType: string, url: string): Promise<BrowserAndConfs> {
-    browserType = browserType || 'chromium';
-    let browser;
-    if (browserType === 'firefox') {
-        browser = await firefox.connect({ wsEndpoint: url });
-    } else if (browserType === 'chromium') {
-        browser = await chromium.connect({ wsEndpoint: url });
-    } else if (browserType === 'webkit') {
-        browser = await webkit.connect({ wsEndpoint: url });
-    } else {
-        throw new Error('unsupported browser');
+async function _connectBrowser(browserName: string, url: string, connectCDP: boolean): Promise<BrowserAndConfs> {
+    logger.info(`Connecting to browser: ${browserName} at ${url} via ${connectCDP ? 'CDP' : 'WebSocket'}`);
+    let browserType: BrowserType;
+    switch (browserName) {
+        case 'firefox':
+            browserType = firefox;
+            break;
+        case 'webkit':
+            browserType = webkit;
+            break;
+        default:
+            browserType = chromium;
+            browserName = 'chromium';
+            break;
     }
+    const browser = connectCDP ? await browserType.connectOverCDP(url) : await browserType.connect(url);
     return {
         browser,
-        browserType,
+        browserType: browserName as 'chromium' | 'firefox' | 'webkit',
         headless: false,
     };
 }
@@ -304,8 +308,8 @@ export class PlaywrightState {
 
     public switchTo = (id: Uuid): BrowserState => {
         const browser = this.browserStack.find((b) => b.id === id);
-        exists(browser, `No browser for id '${id}'`);
         this.browserStack = this.browserStack.filter((b) => b.id !== id);
+        exists(browser, `No browser for id '${id}'`);
         this.browserStack.push(browser);
         return this.getActiveBrowser();
     };
@@ -329,7 +333,9 @@ export class PlaywrightState {
     public async closeAll(): Promise<void> {
         const browsers = this.browserStack;
         for (const browser of browsers) {
-            await browser.close();
+            try {
+                await browser.close();
+            } catch (e) {}
         }
         this.browserStack = [];
     }
@@ -337,7 +343,9 @@ export class PlaywrightState {
     public async closeAllServers(): Promise<void> {
         const servers = this.browserServer;
         for (const server of servers) {
-            await server.close();
+            try {
+                await server.close();
+            } catch (e) {}
         }
         this.browserServer = [];
     }
@@ -395,7 +403,33 @@ export class PlaywrightState {
     }
 
     public addBrowser(browserAndConfs: BrowserAndConfs): BrowserState {
-        const browserState = new BrowserState(browserAndConfs);
+        const adding_browser = browserAndConfs.browser;
+        logger.info(`Adding browser to stack: ${browserAndConfs.browserType}, version: ${adding_browser?.version()}`);
+        let browserState = this.browserStack.find((b) => b.browser === adding_browser);
+        if (browserState !== undefined) {
+            this.browserStack = this.browserStack.filter((b) => b.browser !== adding_browser);
+        } else {
+            browserState = new BrowserState(browserAndConfs);
+        }
+        const browserContexts = browserState.browser?.contexts();
+        if (browserContexts !== undefined) {
+            logger.info(`Adding ${browserContexts.length} contexts to browser`);
+            for (const context of browserContexts) {
+                const indexedPages = context.pages().map((page) => indexedPage(page));
+                logger.info(`Adding ${indexedPages.length} pages to context`);
+                const indexedContext = {
+                    id: `context=${uuidv4()}`,
+                    c: context,
+                    pageStack: indexedPages,
+                    options: {},
+                    traceFile: '',
+                };
+                indexedContext.c.on('page', async (page) => {
+                    indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
+                });
+                browserState?.pushContext(indexedContext);
+            }
+        }
         this.browserStack.push(browserState);
         return browserState;
     }
@@ -506,6 +540,9 @@ export class BrowserState {
             }
             // prevent duplicates
             this._contextStack = this._contextStack.filter((c) => c.c !== newContext.c);
+            if (!newContext.c) {
+                throw new Error('Tried to switch to context, which did not exist anymore.');
+            }
             this._contextStack.push(newContext);
             logger.info('Changed active context');
         } else logger.info('Set active context to undefined');
@@ -531,6 +568,9 @@ export class BrowserState {
         if (newPage !== undefined && currentContext !== undefined) {
             // prevent duplicates
             currentContext.pageStack = currentContext.pageStack.filter((p) => p.p !== newPage.p);
+            if (!newPage.p) {
+                throw new Error('Tried to switch to page, which did not exist anymore.');
+            }
             currentContext.pageStack.push(newPage);
             logger.info('Changed active page');
         } else {
@@ -571,8 +611,12 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
         return stringResponse('no-browser', 'No browser open, doing nothing');
     }
     openBrowsers.popBrowser();
-    await currentBrowser.close();
-    return stringResponse(currentBrowser.id, 'Closed browser');
+    try {
+        await currentBrowser.close();
+        return stringResponse(currentBrowser.id, 'Closed browser');
+    } catch (e) {
+        return stringResponse('', `Browser ${currentBrowser.id} was already closed`);
+    }
 }
 
 export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<Response.Empty> {
@@ -637,7 +681,7 @@ export async function newPage(
         response.setNewcontext(context.newContext);
         return response;
     } catch (e) {
-        browserState.browser.popPage();
+        browserState.browser.popPage()?.p.close();
         throw e;
     }
 }
@@ -799,7 +843,8 @@ export async function connectToBrowser(
 ): Promise<Response.String> {
     const browserType = request.getBrowser();
     const url = request.getUrl();
-    const browserAndConfs = await _connectBrowser(browserType, url);
+    const connectCDP = request.getConnectcdp();
+    const browserAndConfs = await _connectBrowser(browserType, url, connectCDP);
     const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully connected to browser');
 }

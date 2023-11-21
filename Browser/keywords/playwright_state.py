@@ -324,24 +324,34 @@ class PlaywrightState(LibraryComponent):
         self,
         wsEndpoint: str,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
+        use_cdp: bool = False,
     ):
-        """Connect to a Playwright browser server via websocket.
+        """Connect to a Playwright browser server via playwright websocket or Chrome DevTools Protocol.
 
-        See `Launch Browser Server` for more information about how to launch a browser server.
+        See `Launch Browser Server` for more information about how to launch a playwright browser server.
 
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
         Returns a stable identifier for the connected browser.
 
         | =Argument=     | =Description= |
-        | ``wsEndpoint`` | Address to connect to. |
+        | ``wsEndpoint`` | Address to connect to. Either ``ws://`` or ``http://`` if cdp is used. |
         | ``browser``    | Opens the specified browser. Defaults to ``chromium``. |
+        | ``use_cdp``    | Connect to browser via Chrome DevTools Protocol. Defaults to False. Works only with Chromium based browsers. |
+
+        To Connect to a Browser viw Chrome DevTools Protocol, the browser must be started with this protocol enabled.
+        This typically done by starting a Chrome browser with the argument ``--remote-debugging-port=9222`` or similar.
+        When the browser is running with activated CDP, it is possible to connect to it either with websockets (``ws://``)
+        or via HTTP (``http://``). The HTTP connection can be used when ``use_cdp`` is set to True.
+        A typical address for a CDP connection is ``http://127.0.0.1:9222``.
 
         [https://forum.robotframework.org/t//4242|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.ConnectToBrowser(
-                Request().ConnectBrowser(url=wsEndpoint, browser=browser.name)
+                Request().ConnectBrowser(
+                    url=wsEndpoint, browser=browser.name, connectCDP=use_cdp
+                )
             )
             logger.info(response.log)
             return response.body

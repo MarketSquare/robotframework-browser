@@ -125,7 +125,8 @@ message Request {
 
   message ConnectBrowser {
     string browser = 1;
-    string url= 2;
+    string url = 2;
+    bool connectCDP = 3;
   }
 
   message TextInput {

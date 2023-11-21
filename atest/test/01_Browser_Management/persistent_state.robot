@@ -25,13 +25,15 @@ Switching Between Two Persistent Contexts Works
     ${url_2} =    Get Url
     ${title_2} =    Get Title
 
-    Switch Browser    ${browser_1}
+    Should Be Equal    ${browser_1}    ${browser_2}
+
+    Switch Context    ${context_1}
     Get URL    ==    ${url_1}
     Get Title    ==    ${title_1}
     ${switch_id} =    Switch Context    CURRENT
     Should Be Equal    ${context_1}    ${switch_id}
 
-    Switch Browser    ${browser_2}
+    Switch Context    ${context_2}
     Get URL    ==    ${url_2}
     Get Title    ==    ${title_2}
     ${switch_id} =    Switch Context    CURRENT
