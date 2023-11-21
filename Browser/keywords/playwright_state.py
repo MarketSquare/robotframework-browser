@@ -718,6 +718,14 @@ class PlaywrightState(LibraryComponent):
         options = json.dumps(params, default=str)
 
         with self.playwright.grpc_channel() as stub:
+            catalog_json = stub.GetBrowserCatalog(Request().Empty())
+            catalog = json.loads(catalog_json.json)
+            previously_active_browser_id = None
+            existing_browser_ids = []
+            for browser_info in catalog:
+                if browser_info["activeBrowser"]:
+                    previously_active_browser_id = browser_info["id"]
+                existing_browser_ids.append(browser_info["id"])
             response = stub.NewPersistentContext(
                 Request().PersistentContext(
                     browser=browser.name,
@@ -732,13 +740,33 @@ class PlaywrightState(LibraryComponent):
             )
             logger.info(response.log)
             logger.info(context_options)
+            browser_id = response.browserId
 
             if url:
-                stub.GoTo(Request().UrlOptions(url=Request().Url(url=url)))
+                try:
+                    stub.GoTo(
+                        Request().UrlOptions(
+                            url=Request().Url(
+                                url=url, defaultTimeout=int(self.get_timeout(timeout))
+                            )
+                        )
+                    )
+                except Exception as e:
+                    if browser_id in existing_browser_ids:
+                        self.close_context()
+                        self.switch_browser(previously_active_browser_id)
+                        logger.debug(
+                            "Teardown: Closed new Context and switched back "
+                            f"to previously active browser: {previously_active_browser_id}"
+                        )
+                    else:
+                        self.close_browser()
+                        logger.debug("Teardown: Closed new persistent context.")
+                    raise e
             self.context_cache.add(response.id, self._get_video_size(params))
             video_path = self._embed_video(json.loads(response.video))
             return (
-                response.browserId,
+                browser_id,
                 response.id,
                 NewPageDetails(page_id=response.pageId, video_path=video_path),
             )

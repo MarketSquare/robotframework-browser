@@ -70,3 +70,28 @@ New Persistent Context Open New Pages
     Switch Page    NEW
     Get Url    ==    ${ERROR_URL}
     [Teardown]    Set Retry Assertions For    ${old}
+
+New Persistent Context Cleaned Up After Timeout
+    [Tags]    slow
+    [Setup]    Close Browser    ALL
+    Set Browser Timeout    1s    Test
+    ${catalog_1} =    Get Browser Catalog
+    TRY
+        New Persistent Context    url=${SLOW_PAGE}    timeout=1s
+    EXCEPT    *timeout*    type=GLOB
+        ${catalog_2} =    Get Browser Catalog
+        Should Be Equal    ${catalog_1}    ${catalog_2}
+    END
+    New Browser
+    New Page    url=${ERROR_URL}
+    Get Title    ==    Error Page
+    New Persistent Context    url=${WELCOME_URL}
+    Get Title    ==    Welcome Page
+    ${catalog_3} =    Get Browser Catalog
+    TRY
+        New Persistent Context    url=${SLOW_PAGE}    timeout=1s
+    EXCEPT    *timeout*    type=GLOB
+        ${catalog_4} =    Get Browser Catalog
+        Should Be Equal    ${catalog_3}    ${catalog_4}
+    END
+    Get Title    ==    Welcome Page

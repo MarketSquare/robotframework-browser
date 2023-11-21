@@ -10,6 +10,20 @@ New Page Will Not Timeout
     New Page    ${SLOW_PAGE}
     Get Title    ==    Slow page
 
+New Page Will Timeout And Page Will Be Removed From Catalog
+    [Tags]    slow
+    Set Browser Timeout    1s
+    New Context
+    ${Catalog} =    Get Browser Catalog
+    TRY
+        New Page    ${SLOW_PAGE}
+    EXCEPT    *timeout*    type=glob
+        ${new_catalog} =    Get Browser Catalog
+        Should Be Equal    ${Catalog}    ${new_catalog}
+    ELSE
+        Fail    Expected timeout
+    END
+
 *** Keywords ***
 Setup
     Set Browser Timeout    15s    scope=Suite
