@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-133-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-134-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -336,6 +336,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/terckert"><img src="https://avatars.githubusercontent.com/u/57592522?v=4?s=100" width="100px;" alt="terckert"/><br /><sub><b>terckert</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aterckert" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://mbondarew.dev"><img src="https://avatars.githubusercontent.com/u/6174054?v=4?s=100" width="100px;" alt="Maksim Bondarew"/><br /><sub><b>Maksim Bondarew</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ambondarew" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/HenrikSchuette"><img src="https://avatars.githubusercontent.com/u/98702737?v=4?s=100" width="100px;" alt="HenrikSchuette"/><br /><sub><b>HenrikSchuette</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AHenrikSchuette" title="Bug reports">🐛</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/gbhandarkavathe"><img src="https://avatars.githubusercontent.com/u/130966766?v=4?s=100" width="100px;" alt="Gurunatharudh Bhandarkavathe(Infosys)"/><br /><sub><b>Gurunatharudh Bhandarkavathe(Infosys)</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Agbhandarkavathe" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
