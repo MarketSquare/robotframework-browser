@@ -659,7 +659,12 @@ export async function newPage(
     const context = await browserState.browser.getOrCreateActiveContext(defaultTimeout);
 
     const page = await _newPage(context.context);
-    const videoPath = await page.p.video()?.path();
+    let videoPath: string | undefined = '';
+    try {
+        videoPath = await page.p.video()?.path();
+    } catch (e) {
+        logger.info('Suppress video().path() error');
+    }
     logger.info('Video path: ' + videoPath);
     browserState.browser.pushPage(page);
     const url = request.getUrl()?.getUrl() || 'about:blank';
