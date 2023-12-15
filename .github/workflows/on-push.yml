@@ -211,13 +211,6 @@ jobs:
       if: ${{ failure() }}
       run: |
         failures-analysis ./flip_rate/xunit/
-    - name: Package demoapp
-      run: |
-        inv demo-app
-    - uses: actions/upload-artifact@v3
-      with:
-        name: demoapp
-        path: zip_results/demoapp
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
