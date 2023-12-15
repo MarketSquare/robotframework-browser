@@ -299,7 +299,7 @@ class Interaction(LibraryComponent):
           If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
         - Use `Mouse Button` to click in the center of the element, or the specified position.
-        - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
+        - Wait for initiated navigation to either succeed or fail.
 
 
         | =Arguments= | =Description= |
