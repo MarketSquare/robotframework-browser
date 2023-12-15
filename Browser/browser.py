@@ -21,7 +21,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Pattern, Set, Union
+from typing import Any, ClassVar, Dict, List, Optional, Set, Union
 
 from assertionengine import AssertionOperator
 from overrides import overrides
@@ -736,12 +736,23 @@ class Browser(DynamicCore):
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    ERROR_AUGMENTATION: ClassVar[Dict[Pattern[str], Callable[[Any], str]]] = {
-        re.compile(r"Timeout .+ exceeded."): lambda msg: (
-            f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout or '
-            "double check your locator as the targeted element(s) couldn't be found."
-        )
-    }
+    ERROR_AUGMENTATION: ClassVar[List[Dict]] = [
+        {
+            "re": re.compile(r"Timeout .+ exceeded."),
+            "callable": lambda msg: (
+                f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout or '
+                "double check your locator as the targeted element(s) couldn't be found."
+            ),
+            "selector": True,
+        },
+        {
+            "re": re.compile(r"Timeout .+ exceeded."),
+            "callable": lambda msg: (
+                f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout.'
+            ),
+            "selector": False,
+        },
+    ]
 
     _context_cache = ContextCache()
     _suite_cleanup_done = False
@@ -1114,7 +1125,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except AssertionError as e:
             self.keyword_error()
-            e.args = self._alter_keyword_error(e.args)
+            e.args = self._alter_keyword_error(name, e.args)
             if self.pause_on_failure:
                 sys.__stdout__.write(f"\n[ FAIL ] {e}")
                 sys.__stdout__.write(
@@ -1208,14 +1219,20 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 runBeforeUnload=self.auto_closing_default_run_before_unload,
             )
 
-    @classmethod
-    def _alter_keyword_error(cls, args: tuple) -> tuple:
+    def _alter_keyword_error(self, name: str, args: tuple) -> tuple:
         if not (args and isinstance(args, tuple)):
             return args
 
         message = args[0]
-        for regex, augment in cls.ERROR_AUGMENTATION.items():
-            if regex.search(message):
+        argument_specification = self.keywords_spec[name].argument_specification
+        selector_in_args = "selector" in argument_specification
+        for augmentation in self.ERROR_AUGMENTATION:
+            regex, augment, selector = (
+                augmentation["re"],
+                augmentation["callable"],
+                augmentation["selector"],
+            )
+            if regex.search(message) and selector == selector_in_args:
                 message = augment(message)
         return (message,) + args[1:]
 
