@@ -189,7 +189,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
-        name: Test results-${{ matrix.os }}-${{ matrix.shard }}
+        name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: zip_results/output
     - name: Create Distributable Package
       run: |
