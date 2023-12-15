@@ -53,7 +53,7 @@ jobs:
       run: |
         inv docs
         inv create-package
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: matrix.os == 'ubuntu-latest'
       with:
         name: rfbrowser-wheel
@@ -61,9 +61,9 @@ jobs:
     - name: Package demoapp
       run: |
         inv demo-app
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: demoapp
+        name: demoapp-${{ matrix.os }}
         path: zip_results/demoapp
   testing:
     runs-on: ${{ matrix.os }}
@@ -85,7 +85,7 @@ jobs:
             node-version: 18.x
             shard: 3
           - os: ubuntu-latest
-            python-version: "3.9"
+            python-version: "3.11"
             node-version: 20.x
             shard: 4
           - os: windows-latest
@@ -186,10 +186,10 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         inv atest --shard ${{ matrix.shard }}/4 -z true
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
-        name: Test results
+        name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: zip_results/output
     - name: Create Distributable Package
       run: |
@@ -211,13 +211,6 @@ jobs:
       if: ${{ failure() }}
       run: |
         failures-analysis ./flip_rate/xunit/
-    - name: Package demoapp
-      run: |
-        inv demo-app
-    - uses: actions/upload-artifact@v3
-      with:
-        name: demoapp
-        path: zip_results/demoapp
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
@@ -237,13 +230,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download package for install testing
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: rfbrowser-wheel
       - name: Download package for install testing
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: demoapp
+          name: demoapp-${{ matrix.os }}
           path: zip_results/demoapp
       - name: Unzip demoapp in linux or MacOS
         if: matrix.os != 'windows-latest'
@@ -313,7 +306,7 @@ jobs:
         run: |
           rfbrowser clean-node
           pip uninstall --yes robotframework-browser
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
