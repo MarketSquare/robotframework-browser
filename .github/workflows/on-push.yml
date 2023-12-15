@@ -61,9 +61,8 @@ jobs:
     - name: Package demoapp
       run: |
         inv demo-app
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: demoapp
         path: zip_results/demoapp
   testing:
     runs-on: ${{ matrix.os }}
