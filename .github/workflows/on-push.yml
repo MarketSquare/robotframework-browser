@@ -313,7 +313,7 @@ jobs:
         run: |
           rfbrowser clean-node
           pip uninstall --yes robotframework-browser
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
