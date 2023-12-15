@@ -56,7 +56,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: matrix.os == 'ubuntu-latest'
       with:
-        name: rfbrowser-wheel-${{ matrix.os }}
+        name: rfbrowser-wheel
         path: dist/robotframework_browser-*-py3-none-any.whl
     - name: Package demoapp
       run: |
@@ -239,7 +239,7 @@ jobs:
       - name: Download package for install testing
         uses: actions/download-artifact@v4
         with:
-          name: rfbrowser-wheel-${{ matrix.os }}
+          name: rfbrowser-wheel
       - name: Download package for install testing
         uses: actions/download-artifact@v4
         with:
