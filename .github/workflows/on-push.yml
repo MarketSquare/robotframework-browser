@@ -53,10 +53,10 @@ jobs:
       run: |
         inv docs
         inv create-package
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: matrix.os == 'ubuntu-latest'
       with:
-        name: rfbrowser-wheel
+        name: rfbrowser-wheel-${{ matrix.os }}
         path: dist/robotframework_browser-*-py3-none-any.whl
     - name: Package demoapp
       run: |
@@ -237,9 +237,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download package for install testing
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: rfbrowser-wheel
+          name: rfbrowser-wheel-${{ matrix.os }}
       - name: Download package for install testing
         uses: actions/download-artifact@v4
         with:
