@@ -39,7 +39,7 @@
     "@grpc/grpc-js": "^1.9.13",
     "@medv/finder": "^3.1.0",
     "google-protobuf": "3.21.2",
-    "pino": "^8.17.1",
+    "pino": "^8.17.2",
     "playwright": "^1.40.1",
     "strip-comments": "^2.0.1",
     "uuid": "^9.0.1"
