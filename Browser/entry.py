@@ -484,7 +484,7 @@ def convert_options_types(options: List[str], browser_lib: "Browser"):
             raise RuntimeError(
                 f"Invalid option {option}. Options must be in the form of argument_name=value"
             )
-        key, value = option.split("=")
+        key, value = option.split("=", maxsplit=1)
         if key not in keyword_types:
             raise RuntimeError(
                 f"Invalid argument name {key}. Argument names must be one of {', '.join(keyword_types.keys())}"
