@@ -47,7 +47,7 @@ class SettingsStack:
         ):
             self.setter_function(self._last_setting.setting)
 
-    def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):  # noqa: A003
+    def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):
         if not self.library.suite_ids:
             scope = Scope.Global
         original = self.get()
