@@ -650,9 +650,9 @@ class CookieType(Enum):
     """Enum that defines the Cookie type."""
 
     dictionary = auto()
-    dict = dictionary  # noqa: A003
+    dict = dictionary
     string = auto()
-    str = string  # noqa: A003
+    str = string
 
 
 CookieSameSite = Enum(
@@ -715,7 +715,7 @@ class KeyboardInputAction(Enum):
     ``type`` is similar to typing by pressing keys on the keyboard."""
 
     insertText = auto()
-    type = auto()  # noqa: A003
+    type = auto()
 
 
 class KeyboardModifier(Enum):
@@ -970,7 +970,7 @@ class ScreenshotReturnType(Enum):
 
     path = auto()
     path_string = auto()
-    bytes = auto()  # noqa: A003
+    bytes = auto()
     base64 = auto()
 
 
@@ -1037,7 +1037,7 @@ class ConditionInputs(Enum):
     element_count = "get_element_count"
     element_states = "get_element_states"
     page_source = "get_page_source"
-    property = "get_property"  # noqa: A003
+    property = "get_property"
     scroll_position = "get_scroll_position"
     scroll_size = "get_scroll_size"
     select_options = "get_select_options"
