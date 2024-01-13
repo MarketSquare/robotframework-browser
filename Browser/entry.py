@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List
 
 import click
-from robot import version as rf_version
+from robot import version as rf_version  # type: ignore
 
 if TYPE_CHECKING:
     from .browser import Browser
