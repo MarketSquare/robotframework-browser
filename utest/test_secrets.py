@@ -121,7 +121,7 @@ def test_type_secret_reformat_error():
 @pytest.mark.skipif(sys.version_info.minor == 7, reason="Does not work with Python 3.7")
 def test_http_credentials_in_new_context():
     class Response:
-        contextOptions = json.dumps({'username': 'USERNAME', 'password': 'PWD'})
+        contextOptions = json.dumps({"username": "USERNAME", "password": "PWD"})
         log = "Something here"
         newBrowser = True
         id = 123
@@ -142,12 +142,18 @@ def test_http_credentials_in_new_context():
 
 def test_creds_from_python(application_server, browser):
     with pytest.raises(RobotNotRunningError):
-        browser.new_context(httpCredentials={'username': "$name}", 'password': "$password"})
+        browser.new_context(
+            httpCredentials={"username": "$name}", "password": "$password"}
+        )
 
-    ctx_id = browser.new_context(httpCredentials={'username': "name}", 'password': "password"})
+    ctx_id = browser.new_context(
+        httpCredentials={"username": "name}", "password": "password"}
+    )
     assert ctx_id
 
-    ctx_id = browser.new_context(httpCredentials={'username': "%name", 'password': "%password"})
+    ctx_id = browser.new_context(
+        httpCredentials={"username": "%name", "password": "%password"}
+    )
     assert ctx_id
 
 

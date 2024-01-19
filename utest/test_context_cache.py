@@ -21,7 +21,7 @@ def cache_items(cache: ContextCache):
 
 
 def _verify(athing):
-    verify(json.dumps(athing, indent=4) + '\n')
+    verify(json.dumps(athing, indent=4) + "\n")
 
 
 def _verify_cache(cache: ContextCache):
