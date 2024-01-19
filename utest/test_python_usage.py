@@ -13,6 +13,7 @@ from Browser.utils import PlaywrightLogTypes
 
 PW_LOG = "playwright-log.txt"
 
+
 @pytest.fixture()
 def application_server():
     process = subprocess.Popen(
@@ -56,6 +57,7 @@ def browser_log_exist_unlink_false(tmpdir):
 
     def _unlink(self, arg):
         return False
+
     Browser.Browser._unlink = _unlink
     browser = Browser.Browser()
     yield browser
@@ -90,14 +92,20 @@ def test_playwright_log(browser: Browser.Browser, application_server):
     assert log_file.is_file()
 
 
-def test_playwright_log_new_file(browser_log_exist_unlink_false: Browser.Browser, application_server):
+def test_playwright_log_new_file(
+    browser_log_exist_unlink_false: Browser.Browser, application_server
+):
     root_folder = Path(browser_log_exist_unlink_false.outputdir)
     browser_log_exist_unlink_false.new_page("localhost:7272/dist/")
-    log_files = [file for file in root_folder.iterdir() if file.name.startswith("playwright-log")]
+    log_files = [
+        file for file in root_folder.iterdir() if file.name.startswith("playwright-log")
+    ]
     assert len(log_files) == 2
 
 
-def test_playwright_log_with_unlink(browser_log_exist: Browser.Browser, application_server):
+def test_playwright_log_with_unlink(
+    browser_log_exist: Browser.Browser, application_server
+):
     root_folder = Path(browser_log_exist.outputdir)
     log_file = root_folder / PW_LOG
     log_file.touch()
@@ -111,6 +119,7 @@ def test_playwright_log_disabled(browser_no_log: Browser.Browser, application_se
     assert not log_file.is_file()
     browser_no_log.new_page("localhost:7272/dist/")
     assert not log_file.is_file()
+
 
 def test_new_browser_and_close(browser):
     browser.new_browser()

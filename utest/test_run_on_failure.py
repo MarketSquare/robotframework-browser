@@ -36,16 +36,20 @@ def test_library_keyword(browser: Browser.Browser):
     assert keyword.original_name == "Take Screenshot"
     assert keyword.args is tuple()
     assert keyword.kwargs == {}
-    keyword = browser._parse_run_on_failure_keyword("tAke sCreenshot  filename.png  //button  fullPage=True")
+    keyword = browser._parse_run_on_failure_keyword(
+        "tAke sCreenshot  filename.png  //button  fullPage=True"
+    )
     assert keyword.name == "take_screenshot"
     assert keyword.original_name == "tAke sCreenshot"
     assert keyword.args == ("filename.png", "//button")
-    assert keyword.kwargs == {'fullPage': True}
-    keyword = browser._parse_run_on_failure_keyword("tAke sCreenshot  filename.png  //button  fullPage=True")
+    assert keyword.kwargs == {"fullPage": True}
+    keyword = browser._parse_run_on_failure_keyword(
+        "tAke sCreenshot  filename.png  //button  fullPage=True"
+    )
     assert keyword.name == "take_screenshot"
     assert keyword.original_name == "tAke sCreenshot"
     assert keyword.args == ("filename.png", "//button")
-    assert keyword.kwargs == {'fullPage': True}
+    assert keyword.kwargs == {"fullPage": True}
 
 
 def test_library_keyword_with_named_args(browser: Browser.Browser):
@@ -54,13 +58,17 @@ def test_library_keyword_with_named_args(browser: Browser.Browser):
     assert keyword.original_name == "Take Screenshot"
     assert keyword.args == tuple()
     assert keyword.kwargs == {"fullPage": True}
-    keyword = browser._parse_run_on_failure_keyword("Take Screenshot  filename=image  fullPage=True")
+    keyword = browser._parse_run_on_failure_keyword(
+        "Take Screenshot  filename=image  fullPage=True"
+    )
     assert keyword.name == "take_screenshot"
     assert keyword.original_name == "Take Screenshot"
     assert keyword.args == tuple()
     assert keyword.kwargs == {"filename": "image", "fullPage": True}
-    keyword = browser._parse_run_on_failure_keyword("Take Screenshot  image-{index}  fullPage=True")
+    keyword = browser._parse_run_on_failure_keyword(
+        "Take Screenshot  image-{index}  fullPage=True"
+    )
     assert keyword.name == "take_screenshot"
     assert keyword.original_name == "Take Screenshot"
-    assert keyword.args == ("image-{index}", )
+    assert keyword.args == ("image-{index}",)
     assert keyword.kwargs == {"fullPage": True}
