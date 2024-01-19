@@ -17,11 +17,12 @@ import traceback
 from concurrent.futures._base import Future
 from copy import copy, deepcopy
 from datetime import timedelta
+from functools import cached_property
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set, Union
 
-from robot.libraries.BuiltIn import BuiltIn
+from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.utils import timestr_to_secs
 
 from ..generated.playwright_pb2 import Response
@@ -208,10 +209,18 @@ class LibraryComponent:
     def millisecs_to_timestr(self, timeout: float) -> str:
         return self.library.millisecs_to_timestr(timeout)
 
+    @cached_property
+    def robot_running(self):
+        try:
+            get_variable_value("${EXECDIR}")
+        except RobotNotRunningError:
+            return False
+        return True
+
     def resolve_secret(self, secret_variable: Any, arg_name: str) -> str:
         secret = self._replace_placeholder_variables(deepcopy(secret_variable))
         secret = self.decrypt_with_crypto_library(secret)
-        if secret == secret_variable:
+        if secret == secret_variable and self.robot_running:
             raise ValueError(
                 f"Direct assignment of values or variables as '{arg_name}' is not allowed. "
                 "Use special variable syntax ($var instead of ${var}) "
