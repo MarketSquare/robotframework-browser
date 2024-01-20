@@ -474,12 +474,9 @@ async function highlightAll(
                 d.style.height = `${rect.height}px`;
                 d.style.border = `${options?.wdt ?? '1px'} ${options?.stl ?? `dotted`} ${options?.clr ?? `blue`}`;
                 document.body.appendChild(d);
-                setTimeout(
-                    () => {
-                        d.remove();
-                    },
-                    options?.dur ?? 5000,
-                );
+                setTimeout(() => {
+                    d.remove();
+                }, options?.dur ?? 5000);
             });
         },
         { dur: duration, wdt: width, stl: style, clr: color },

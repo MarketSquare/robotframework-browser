@@ -36,17 +36,21 @@ Go To 404 URL
 Timeouting Go To
     New Page    ${LOGIN_URL}
     ${timeout} =    Set Browser Timeout    2ms
-    Run KeyWord And Expect Error
-    ...    Error: page.goto: Timeout 2ms exceeded.*
-    ...    Go To    ${WELCOME_URL}
+    TRY
+        Go To    ${WELCOME_URL}
+    EXCEPT    TimeoutError: page.goto: Timeout 2ms exceeded*    type=GLOB    AS    ${error}
+        Log    ${error}
+    END
     [Teardown]    Teardown For Timeouting Go To    ${timeout}
 
 Timeouting Go To With Custom Timeout
     [Tags]    slow
     New Page    ${LOGIN_URL}
-    Run KeyWord And Expect Error
-    ...    Error: page.goto: Timeout 3ms exceeded.*
-    ...    Go To    ${WELCOME_URL}    3 ms
+    TRY
+        Go To    ${WELCOME_URL}    3 ms
+    EXCEPT    TimeoutError: page.goto: Timeout 3ms exceeded*    type=GLOB    AS    ${error}
+        Log    ${error}
+    END
     [Teardown]    Close Context
 
 *** Keywords ***

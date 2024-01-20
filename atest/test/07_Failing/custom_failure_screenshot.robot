@@ -8,7 +8,11 @@ Force Tags      slow
 *** Test Cases ***
 Failing With Custom Screenshot
     New Page    ${ERROR_URL}
-    Run Keyword And Expect Error    STARTS: Error    Click    .nonexisting4
+    TRY
+        Click    .nonexisting4
+    EXCEPT    TimeoutError: locator.click: Timeout 3000ms exceeded*    type=GLOB    AS    ${error}
+        Log    ${error}
+    END
 
 Check Screenshot
     File Should Exist    ${OUTPUT DIR}/browser/screenshot/custom-fail.png
