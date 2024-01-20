@@ -79,7 +79,7 @@ Wait For Alert Times Out
     ...    async () => window.setTimeout(() => {alert('Am an alert')}, 800)
     TRY
         Wait For Alert    accept    timeout=0.2s
-    EXCEPT    Error*    type=GLOB
+    EXCEPT    TimeoutError*    type=GLOB
         Log    Got expected timeout error
     ELSE
         Fail    Expected timeout error

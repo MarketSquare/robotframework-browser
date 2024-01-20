@@ -120,7 +120,7 @@ Get Element By Role In Frame
     Go To    ${FRAMES_URL}
     TRY
         Get Element By Role    textbox    name=right >>> name=searchbutton
-    EXCEPT    Error*    type=GLOB
+    EXCEPT    TimeoutError:*    type=GLOB
         Log    Correct error.
     END
 

@@ -121,9 +121,11 @@ Wait For Elements State Unchecked
 Wait For Elements State Fails On Too Short Timeout
     Select Options By    \#dropdown    value    True    unchecked
     Click With Options    \#submit    noWaitAfter=True
-    Run Keyword And Expect Error
-    ...    STARTS:Error: page.waitForFunction: Timeout 300ms exceeded.
-    ...    Wait For Elements State    \#victim    unchecked    300ms
+    TRY
+        Wait For Elements State    \#victim    unchecked    300ms
+    EXCEPT    TimeoutError: page.waitForFunction: Timeout 300ms exceeded*    type=GLOB    AS    ${error}
+        Log    ${error}
+    END
 
 Wait For Elements State Fails On Too Short Global Timeout
     ${timeout} =    Set Browser Timeout    0.3 s

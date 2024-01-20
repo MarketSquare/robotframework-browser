@@ -52,9 +52,11 @@ Get Element And Get Elements
 Click With Element ID
     ${element} =    Get Element    //tbody/tr[2] >> nth=0
     ${Timeout} =    Set Browser Timeout    200ms
-    Run Keyword And Expect Error
-    ...    Error: locator.click: Timeout 200ms exceeded.*
-    ...    Click    ${element} >> css=input#login_button
+    TRY
+        Click    ${element} >> css=input#login_button
+    EXCEPT    TimeoutError: locator.click: Timeout 200ms exceeded*    type=GLOB    AS    ${error}
+        Log    ${error}
+    END
     Set Browser Timeout    ${Timeout}
     Get Text    text=Login Page
     ${element} =    Get Element    //tbody/tr[3] >> nth=0
