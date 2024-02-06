@@ -194,26 +194,31 @@ Screenshot With Omit Background
     [Teardown]    Remove File    ${path}
 
 Screenshot Returns Base64 And Path
+    New Page    ${ELEMENT_STATE_URL}
     ${path} =    Take Screenshot    return_as=path
     ${base64} =    Take Screenshot    return_as=base64
-    Type Text    id=username_field    Hello
+    ${path2} =    Take Screenshot    return_as=path
+    Log    </td></tr><tr><td colspan="3"><img alt="screenshot" src="data:image/png;base64,${base64}" width="900px"/>    html=True
+    Type Text    [name="enabled_input"]    Hello
     ${base64_diff} =    Take Screenshot    return_as=base64
     Should Be True    isinstance($path, pathlib.Path)
     ${bytes} =    Evaluate    base64.b64decode($base64)
+    Compare Images 2   ${path.absolute().resolve()}    ${path2.absolute().resolve()}
     Compare Images    ${path.absolute().resolve()}    ${bytes}
     Should Not Be Equal    ${base64}    ${base64_diff}
     ${bytes_diff} =    Evaluate    base64.b64decode($base64_diff)
     TRY
         Compare Images    ${path}    ${bytes_diff}
         Fail    Should have failed
-    EXCEPT    AssertionError
+    EXCEPT    ValueError*    type=glob
         Log    correct error
     END
 
 Screenshot Returns Bytes And Path String
+    New Page    ${ELEMENT_STATE_URL}
     ${path} =    Take Screenshot    return_as=path_string
     ${bytes} =    Take Screenshot    return_as=bytes
-    Type Text    id=username_field    Hello
+    Type Text    [name="enabled_input"]    Hello
     ${bytes_diff} =    Take Screenshot    return_as=bytes
     Should Be True    isinstance($path, str)
     Should Be True    isinstance($bytes, bytes)
@@ -222,6 +227,6 @@ Screenshot Returns Bytes And Path String
     TRY
         Compare Images    ${path}    ${bytes_diff}
         Fail    Should have failed
-    EXCEPT    AssertionError
+    EXCEPT    ValueError*    type=glob
         Log    correct error
     END
