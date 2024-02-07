@@ -197,20 +197,17 @@ Screenshot Returns Base64 And Path
     New Page    ${ELEMENT_STATE_URL}
     ${path} =    Take Screenshot    return_as=path
     ${base64} =    Take Screenshot    return_as=base64
-    ${path2} =    Take Screenshot    return_as=path
-    Log    </td></tr><tr><td colspan="3"><img alt="screenshot" src="data:image/png;base64,${base64}" width="900px"/>    html=True
     Type Text    [name="enabled_input"]    Hello
     ${base64_diff} =    Take Screenshot    return_as=base64
     Should Be True    isinstance($path, pathlib.Path)
     ${bytes} =    Evaluate    base64.b64decode($base64)
-    Compare Images 2   ${path.absolute().resolve()}    ${path2.absolute().resolve()}
     Compare Images    ${path.absolute().resolve()}    ${bytes}
     Should Not Be Equal    ${base64}    ${base64_diff}
     ${bytes_diff} =    Evaluate    base64.b64decode($base64_diff)
     TRY
         Compare Images    ${path}    ${bytes_diff}
         Fail    Should have failed
-    EXCEPT    ValueError*    type=glob
+    EXCEPT    AssertionError
         Log    correct error
     END
 
@@ -227,6 +224,6 @@ Screenshot Returns Bytes And Path String
     TRY
         Compare Images    ${path}    ${bytes_diff}
         Fail    Should have failed
-    EXCEPT    ValueError*    type=glob
+    EXCEPT    AssertionError
         Log    correct error
     END
