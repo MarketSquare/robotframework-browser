@@ -403,9 +403,9 @@ Switch Page With ALL Browsers Failing
     ...    Switch Page    1    ALL    ALL
 
 Launch Browser Server CLI
-    ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}    port=8271    wsPath=server1
-    Should Be Equal    ${wsEndpoint}    ws://localhost:8271/server1
-    ${browser} =    Connect To Browser    ws://localhost:8271/server1
+    ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}    port=8270    wsPath=server1
+    Should Be Equal    ${wsEndpoint}    ws://localhost:8270/server1
+    ${browser} =    Connect To Browser    ws://localhost:8270/server1
     New Page    ${LOGIN_URL}
     Get Title    ==    Login Page
     [Teardown]    Close Browser Server    ${wsEndpoint}
