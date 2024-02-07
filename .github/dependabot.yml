@@ -2,6 +2,11 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    groups:
+      eslint_build:
+      patters:
+        - "esbuild"
+        - "esbuild-node-externals"
     schedule:
       interval: "daily"
 
