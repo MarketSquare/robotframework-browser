@@ -607,9 +607,11 @@ class PlaywrightState(LibraryComponent):
         params = locals_to_params(locals())
         if permissions:
             params["permissions"] = [
-                permission.value
-                if not isinstance(permission, str)
-                else Permission[permission].value
+                (
+                    permission.value
+                    if not isinstance(permission, str)
+                    else Permission[permission].value
+                )
                 for permission in permissions
             ]
         params["viewport"] = copy(viewport)
@@ -706,9 +708,11 @@ class PlaywrightState(LibraryComponent):
         params = locals_to_params(locals())
         if permissions:
             params["permissions"] = [
-                permission.value
-                if not isinstance(permission, str)
-                else Permission[permission].value
+                (
+                    permission.value
+                    if not isinstance(permission, str)
+                    else Permission[permission].value
+                )
                 for permission in permissions
             ]
         params["viewport"] = copy(viewport)

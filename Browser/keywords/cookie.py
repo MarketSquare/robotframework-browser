@@ -135,7 +135,9 @@ class Cookie(LibraryComponent):
         try:
             expiry_cleaned = str(expiry).replace(" ", "")
             if "," in expiry_cleaned and "." in expiry_cleaned:
-                expiry_cleaned = expiry_cleaned[:max(expiry_cleaned.find("."), expiry_cleaned.find(","))]
+                expiry_cleaned = expiry_cleaned[
+                    : max(expiry_cleaned.find("."), expiry_cleaned.find(","))
+                ]
             elif "," in expiry_cleaned:
                 expiry_cleaned = expiry_cleaned.rsplit(",", maxsplit=1)[0]
             elif "." in expiry_cleaned:

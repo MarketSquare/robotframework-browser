@@ -17,14 +17,14 @@ exclude = '''
 '''
 
 [tool.ruff]
-unfixable = []
+lint.unfixable = []
 exclude = [
   "__pycache__",
   "generated",
   "wrapper",
   "browser.pyi",
 ]
-ignore = [
+lint.ignore = [
   "B008",  # do not perform function calls in argument defaults
   "B904",  # TODO only temporary. should be fixed.
   "E501",  # line too long
@@ -36,7 +36,7 @@ ignore = [
   "PLR0913",  # too many arguments
 ]
 target-version = "py38"
-select = [
+lint.select = [
   "E",
   "F",
   "W",
