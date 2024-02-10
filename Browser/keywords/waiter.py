@@ -298,11 +298,18 @@ class Waiter(LibraryComponent):
 
     @keyword
     def wait_for_load_state(
-        self, state: WaitForLoadState, timeout: Optional[timedelta] = None
+        self,
+        state: WaitForLoadState = WaitForLoadState.load,
+        timeout: Optional[timedelta] = None,
     ):
-        logger.info(state)
-        logger.info(type(state))
+        """Waits that the page reaches the required load state.
+
+        This resolves when the page reaches a required load state, load by default.
+        The navigation must have been committed when this method is called. If current document has already
+        reached the required state, resolves immediately.
+        """
         timeout_ = self.get_timeout(timeout)
+        logger.info(f"Waiting page load to state to receive {state.name} in {timeout_}")
         with self.playwright.grpc_channel() as stub:
             response = stub.WaitForPageLoadState(
                 Request().PageLoadState(state=state.name, timeout=int(timeout_))
