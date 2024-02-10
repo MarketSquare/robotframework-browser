@@ -116,6 +116,14 @@ export async function waitForNavigation(request: pb.Request.UrlOptions, page: Pa
     return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 
+export async function WaitForPageLoadState(request: pb.Request.PageLoadState, page: Page): Promise<pb.Response.Empty> {
+    const state = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getState();
+    const timeout = request.getTimeout();
+    logger.info(`timeout: ${timeout} state: ${state}`);
+    await page.waitForLoadState(state, {timeout});
+    return emptyWithLog(`Load state ${state} got in ${timeout}`);
+}
+
 export async function waitForDownload(
     request: pb.Request.DownloadOptions,
     state: PlaywrightState,

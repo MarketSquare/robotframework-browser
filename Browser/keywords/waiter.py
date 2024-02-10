@@ -24,7 +24,14 @@ import Browser.browser as browser_file
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import ConditionInputs, ElementState, Scope, keyword, logger
+from ..utils import (
+    ConditionInputs,
+    ElementState,
+    Scope,
+    WaitForLoadState,
+    keyword,
+    logger,
+)
 
 
 class Waiter(LibraryComponent):
@@ -288,3 +295,16 @@ class Waiter(LibraryComponent):
         finally:
             self.retry_assertions_for_stack.set(original_assert_retry, scope=scope)
             self.timeout_stack.set(original_timeout, scope=scope)
+
+    @keyword
+    def wait_for_load_state(
+        self, state: WaitForLoadState, timeout: Optional[timedelta] = None
+    ):
+        logger.info(state)
+        logger.info(type(state))
+        timeout_ = self.get_timeout(timeout)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.WaitForPageLoadState(
+                Request().PageLoadState(state=state.name, timeout=int(timeout_))
+            )
+        logger.info(response.log)
