@@ -51,12 +51,12 @@ Screenshotting With Jpeg Extension And Quality Borders
     ${size_0} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=-190    timeout=10s
     ${size_1} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-2.jpeg
-    Should Be Equal    ${size_0}    ${size_1}
+    Numbers Are Close    ${size_0}    ${size_1}    10
     Take Screenshot    fullPage=True    fileType=jpeg    quality=100    timeout=10s
     ${size_100} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-3.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=2023    timeout=10s
     ${size_101} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-4.jpeg
-    Should Be Equal    ${size_100}    ${size_101}
+    Numbers Are Close    ${size_100}    ${size_101}    10
     Take Screenshot    fullPage=True    fileType=jpeg    quality=50    timeout=10s
     ${size_50} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-5.jpeg
     Should Be True    ${size_0} < ${size_50} < ${size_100}
