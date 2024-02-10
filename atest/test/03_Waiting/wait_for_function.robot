@@ -18,7 +18,7 @@ Wait For Function Element And Fail On Timeout
     ${timeout} =    Set Browser Timeout    500ms
     TRY
         Wait For Function    () => {return false;}    body
-    EXCEPT    TimeoutError: page.waitForFunction: Timeout 200ms exceeded*    type=GLOB    AS    ${error}
+    EXCEPT    TimeoutError: page.waitForFunction: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
         Log    ${error}
     END
     [Teardown]    Set Browser Timeout    ${timeout}
