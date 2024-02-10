@@ -4,9 +4,13 @@ updates:
     directory: "/"
     groups:
       eslint_build:
-      patters:
+        patterns:
         - "esbuild"
         - "esbuild-node-externals"
+      grpc:
+        patterns:
+        - "grpcio"
+        - "grpcio-tools"
     schedule:
       interval: "daily"
 
