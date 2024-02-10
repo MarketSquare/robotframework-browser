@@ -123,6 +123,11 @@ message Request {
     string waitUntil = 2;
   }
 
+  message PageLoadState {
+    string state = 1;
+    int32 timeout = 2;
+  }
+
   message ConnectBrowser {
     string browser = 1;
     string url = 2;
@@ -446,6 +451,7 @@ service  Playwright {
   rpc WaitForDownload(Request.DownloadOptions) returns (Response.Json);
   rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
   rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);
+  rpc WaitForPageLoadState(Request.PageLoadState) returns (Response.Empty);
   /* Geolocation */
   rpc SetGeolocation(Request.Json) returns (Response.Empty);
 
