@@ -197,20 +197,16 @@ jobs:
         inv create-package
     - name: Artifacts download for flaky test analysis
       if: ${{ failure() }}
-      # flaky-tests-detection and failures-analysis install is here because dependencies takes long
+      # flaky-tests-detection install is here because dependencies takes long
       # time to install and not needed for the test-install
       run : |
-        pip install flaky-tests-detection failures-analysis requests python-dateutil
+        pip install flaky-tests-detection requests python-dateutil
         python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
         inv copy-xunit
     - name: Flaky tests detection
       if: ${{ failure() }}
       run: |
         flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
-    - name: Failures analysis
-      if: ${{ failure() }}
-      run: |
-        failures-analysis ./flip_rate/xunit/
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
@@ -287,20 +283,16 @@ jobs:
           invoke atest-robot --smoke
       - name: Artifacts download for flaky test analysis
         if: ${{ failure() }}
-        # flaky-tests-detection and failures-analysis install is here because dependencies takes long
+        # flaky-tests-detection install is here because dependencies takes long
         # time to install and not needed for the test-install
         run: |
-          pip install flaky-tests-detection failures-analysis
+          pip install flaky-tests-detection
           python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
           inv copy-xunit
       - name: Flaky tests detection
         if: ${{ failure() }}
         run: |
           flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
-      - name: Failures analysis
-        if: ${{ failure() }}
-        run: |
-          failures-analysis ./flip_rate/xunit/
       - name: Uninstall on Linux or MacOS
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
