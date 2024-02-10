@@ -120,7 +120,7 @@ export async function WaitForPageLoadState(request: pb.Request.PageLoadState, pa
     const state = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getState();
     const timeout = request.getTimeout();
     logger.info(`timeout: ${timeout} state: ${state}`);
-    await page.waitForLoadState(state, {timeout});
+    await page.waitForLoadState(state, { timeout });
     return emptyWithLog(`Load state ${state} got in ${timeout}`);
 }
 
