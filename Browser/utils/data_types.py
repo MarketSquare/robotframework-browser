@@ -590,9 +590,11 @@ def ensure_formatter_type(input_dict: Dict):
                     ) from original_error
                 formatter_rules.append(LambdaFunction.from_string(rule))
         formatter_type[
-            FormatterKeywords[formatter_keyword]
-            if not isinstance(formatter_keyword, FormatterKeywords)
-            else formatter_keyword
+            (
+                FormatterKeywords[formatter_keyword]
+                if not isinstance(formatter_keyword, FormatterKeywords)
+                else formatter_keyword
+            )
         ] = formatter_rules
     return formatter_type
 
