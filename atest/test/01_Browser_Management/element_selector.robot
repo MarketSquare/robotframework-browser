@@ -4,7 +4,7 @@ Documentation       Tests for Get Element and `element=<ref>` selector syntax
 Resource            imports.resource
 
 Suite Setup         Ensure Open Page
-Test Setup          Go To    ${FORM_URL}
+Test Setup          Element Selector Setup
 
 *** Test Cases ***
 Get Element
@@ -171,3 +171,8 @@ Get Element By Role In Iframe
     Set Selector Prefix    id=left >>>
     ${e} =    Get Element By Role    button    name=Search
     Get Attribute    ${e}    name    ==    searchbutton
+
+*** Keywords ***
+Element Selector Setup
+    Go To    ${FORM_URL}
+    Set Browser Timeout    500ms
