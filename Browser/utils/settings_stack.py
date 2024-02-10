@@ -63,9 +63,8 @@ class SettingsStack:
         elif scope == Scope.Test:
             if not self.library.is_test_case_running:
                 raise ValueError("Setting for test/task can not be set on suite level}")
-            self._stack[self.library.current_test_id] = ScopedSetting(
-                Scope.Test, setting
-            )
+            current_test_id: str = str(self.library.current_test_id)
+            self._stack[current_test_id] = ScopedSetting(Scope.Test, setting)
         else:
             raise ValueError(f"Unknown scope {scope}")
         if self.setter_function and original != setting:
