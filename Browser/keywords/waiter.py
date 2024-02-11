@@ -27,8 +27,8 @@ from ..generated.playwright_pb2 import Request
 from ..utils import (
     ConditionInputs,
     ElementState,
+    PageLoadStates,
     Scope,
-    WaitForLoadState,
     keyword,
     logger,
 )
@@ -296,10 +296,10 @@ class Waiter(LibraryComponent):
             self.retry_assertions_for_stack.set(original_assert_retry, scope=scope)
             self.timeout_stack.set(original_timeout, scope=scope)
 
-    @keyword
+    @keyword(tags=("Wait", "PageContent"))
     def wait_for_load_state(
         self,
-        state: WaitForLoadState = WaitForLoadState.load,
+        state: PageLoadStates = PageLoadStates.load,
         timeout: Optional[timedelta] = None,
     ):
         """Waits that the page reaches the required load state.
@@ -307,7 +307,27 @@ class Waiter(LibraryComponent):
         This resolves when the page reaches a required load state, load by default.
         The navigation must have been committed when this method is called. If current document has already
         reached the required state, resolves immediately.
+
+        | =Arguments= | =Description= |
+        | ``state``   | State to wait for, defaults to `load`. Possible values are `load|domcontentloaded|networkidle` |
+        | ``timeout`` | Timeout supports Robot Framework time format. Uses browser timeout if not set.                 |
+
+        If the state has been already reached while loading current document, the underlying Playwright will
+        resolve immediately. Can be one of:
+
+        | 'load' - wait for the load event to be fired.
+        | 'domcontentloaded' - wait for the DOMContentLoaded event to be fired.
+        | 'networkidle' - DISCOURAGED wait until there are no network connections for at least 500 ms.
+
+        Example:
+        | `Go To`                         ${URL}
+        | `Wait For Load State`    domcontentloaded    timeout=3s
         """
+        if state == PageLoadStates.commit:
+            logger.info(
+                "commit state is not supported by keyword, will just return immediatley."
+            )
+            return
         timeout_ = self.get_timeout(timeout)
         logger.info(f"Waiting page load to state to receive {state.name} in {timeout_}")
         with self.playwright.grpc_channel() as stub:
