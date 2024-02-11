@@ -1,8 +1,14 @@
 import base64
+from enum import Enum, auto
 from io import BytesIO
 from PIL import Image, ImageChops
 from typing import Tuple
 from robot.api import logger
+
+
+class ExpectFailure(Enum):
+    yes = auto()
+    no = auto()
 
 
 def get_image_size(img_path: str) -> Tuple[int]:
@@ -17,7 +23,7 @@ def get_pixel_color(img_path: str, x: int, y: int) -> Tuple[int, int]:
     return pix[x,y]
 
 
-def compare_images(img1_path: str, img2_bytes: bytes):
+def compare_images(img1_path: str, img2_bytes: bytes, expect_dailure: ExpectFailure = ExpectFailure.no):
     """Returns True if the images are the same, False otherwise"""
     im1: Image.Image = Image.open(img1_path).convert('RGB')
     im2: Image.Image = Image.open(BytesIO(img2_bytes)).convert('RGB')
@@ -32,6 +38,8 @@ def compare_images(img1_path: str, img2_bytes: bytes):
             html=True,
         )
     box = diff.getbbox()
-    if box:
+    if box and expect_dailure == ExpectFailure.no:
         logger.warn(f"box: {box}, type({type(box)}), but no idea why this fails.")
+    elif box and expect_dailure == ExpectFailure.yes:
+        logger.info(f"box: {box}, type({type(box)}), but no idea why this fails.")
     assert box is None

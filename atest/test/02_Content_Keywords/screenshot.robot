@@ -205,7 +205,7 @@ Screenshot Returns Base64 And Path
     Should Not Be Equal    ${base64}    ${base64_diff}
     ${bytes_diff} =    Evaluate    base64.b64decode($base64_diff)
     TRY
-        Compare Images    ${path}    ${bytes_diff}
+        Compare Images    ${path}    ${bytes_diff}    yes
         Fail    Should have failed
     EXCEPT    AssertionError
         Log    correct error
@@ -222,7 +222,7 @@ Screenshot Returns Bytes And Path String
     Compare Images    ${path}    ${bytes}
     Should Not Be Equal    ${bytes}    ${bytes_diff}
     TRY
-        Compare Images    ${path}    ${bytes_diff}
+        Compare Images    ${path}    ${bytes_diff}    yes
         Fail    Should have failed
     EXCEPT    AssertionError
         Log    correct error
