@@ -449,7 +449,6 @@ service  Playwright {
   rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
   rpc WaitForResponse(Request.HttpCapture) returns (Response.Json);
   rpc WaitForDownload(Request.DownloadOptions) returns (Response.Json);
-  rpc WaitUntilNetworkIsIdle(Request.Timeout) returns (Response.Empty);
   rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);
   rpc WaitForPageLoadState(Request.PageLoadState) returns (Response.Empty);
   /* Geolocation */
