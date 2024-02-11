@@ -371,7 +371,6 @@ export class PlaywrightServer implements IPlaywrightServer {
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     waitForRequest = this.wrappingPage(network.waitForRequest);
     waitForResponse = this.wrappingPage(network.waitForResponse);
-    waitUntilNetworkIsIdle = this.wrappingPage(network.waitUntilNetworkIsIdle);
     waitForNavigation = this.wrappingPage(network.waitForNavigation);
     waitForPageLoadState = this.wrappingPage(network.WaitForPageLoadState);
     getDownloadState = this.wrapping(network.getDownloadState);

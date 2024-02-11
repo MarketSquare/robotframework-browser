@@ -102,12 +102,6 @@ export async function waitForRequest(request: pb.Request.HttpCapture, page: Page
     return stringResponse(result.url(), 'Request completed within timeout.');
 }
 
-export async function waitUntilNetworkIsIdle(request: pb.Request.Timeout, page: Page): Promise<pb.Response.Empty> {
-    const timeout = request.getTimeout();
-    await page.waitForLoadState('networkidle', { timeout });
-    return emptyWithLog('Network is idle');
-}
-
 export async function waitForNavigation(request: pb.Request.UrlOptions, page: Page): Promise<pb.Response.Empty> {
     const url = parseRegExpOrKeepString(<string>request.getUrl()?.getUrl());
     const timeout = request.getUrl()?.getDefaulttimeout();

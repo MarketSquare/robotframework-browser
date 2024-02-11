@@ -259,11 +259,7 @@ class Network(LibraryComponent):
 
         [https://forum.robotframework.org/t//4350|Comment >>]
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.WaitUntilNetworkIsIdle(
-                Request().Timeout(timeout=self.get_timeout(timeout))
-            )
-            logger.debug(response.log)
+        self.library.wait_for_load_state(PageLoadStates.networkidle, timeout)
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_navigation(
