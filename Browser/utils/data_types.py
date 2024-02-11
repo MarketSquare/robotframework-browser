@@ -985,14 +985,6 @@ class PageLoadStates(Enum):
     commit = auto()
 
 
-class WaitForLoadState(Enum):
-    """Enum that defines available page load states for Wait For Load State keyword"""
-
-    load = auto()
-    domcontentloaded = auto()
-    networkidle = auto()
-
-
 class ReduceMotion(Enum):
     """Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`."""
 

@@ -8,6 +8,9 @@ Wait For Page Load States Load
     Go To    ${ROOT_URL}delayed-load.html
     Wait For Load State    state=load
 
+Wait For Page Load States Commit
+    Wait For Load State    state=commit
+
 Wait For Page Load States Networkidle
     Go To    ${ROOT_URL}delayed-load.html
     Wait For Load State    state=networkidle

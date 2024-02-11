@@ -48,7 +48,6 @@ from .data_types import (
     ServiceWorkersPermissions,
     SupportedBrowsers,
     ViewportDimensions,
-    WaitForLoadState,
     convert_typed_dict,
 )
 from .js_utilities import get_abs_scroll_coordinates, get_rel_scroll_coordinates
