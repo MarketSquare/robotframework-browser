@@ -8,6 +8,7 @@ Force Tags          slow
 
 *** Variables ***
 ${CUSTOM_DL_PATH} =     ${CURDIR}/download_file
+${ORIGINAL_TIMEOUT}    1s
 
 *** Test Cases ***
 Upload Upload_test_file
@@ -123,7 +124,35 @@ Wait For Download Relative To downloadsPath
     File Should Exist    ${OUTPUT DIR}/test_download_file_saveAs.js
     Remove File    ${download_file_object}[saveAs]
 
+Wait For Download with Remote Browser
+    [Setup]    Launch and Connect To Remote Browser
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    ${dl_promise} =    Promise To Wait For Download    saveAs=persistent_downloads
+    Click    \#file_download
+    ${file_object} =    Wait For    ${dl_promise}
+    File Should Exist    ${file_object}[saveAs]
+    Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
+    Remove File    ${file_object}[saveAs]
+
+Wait For Download with Remote Browser Without SaveAs
+    [Setup]    Launch and Connect To Remote Browser
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    ${dl_promise} =    Promise To Wait For Download
+    Click    \#file_download
+    TRY
+        ${file_object} =    Wait For    ${dl_promise}
+    EXCEPT    *Path is not available when connecting remotely. Use saveAs() to save a local copy.    type=GLOB
+        Log    Correct Error
+    END
+
 *** Keywords ***
+Launch and Connect To Remote Browser
+    ${ws}     Launch Browser Server    headless=${HEADLESS}
+    Connect To Browser    wsEndpoint=${ws}
+    Set Browser Timeout    90 seconds
+
 Set Library Timeout
     ${open_browsers} =    Get Browser Ids
     IF    $open_browsers == []
@@ -132,7 +161,6 @@ Set Library Timeout
     ${current_contexts} =    Get Context Ids    Active    Active
     IF    $current_contexts == []    New Context
     ${timeout} =    Set Browser Timeout    90 seconds
-    Set Suite Variable    ${ORIGINAL_TIMEOUT}    1s
 
 Restore Library Timeout
     Set Browser Timeout    ${ORIGINAL_TIMEOUT}
