@@ -7,8 +7,8 @@ Test Teardown       Run Keywords    Restore Library Timeout    AND    Wait For A
 Force Tags          slow
 
 *** Variables ***
-${CUSTOM_DL_PATH} =     ${CURDIR}/download_file
-${ORIGINAL_TIMEOUT}    1s
+${CUSTOM_DL_PATH} =         ${CURDIR}/download_file
+${ORIGINAL_TIMEOUT} =       1s
 
 *** Test Cases ***
 Upload Upload_test_file
@@ -124,8 +124,8 @@ Wait For Download Relative To downloadsPath
     File Should Exist    ${OUTPUT DIR}/test_download_file_saveAs.js
     Remove File    ${download_file_object}[saveAs]
 
-Wait For Download with Remote Browser
-    [Setup]    Launch and Connect To Remote Browser
+Wait For Download With Remote Browser
+    [Setup]    Launch And Connect To Remote Browser
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
     ${dl_promise} =    Promise To Wait For Download    saveAs=persistent_downloads
@@ -135,8 +135,8 @@ Wait For Download with Remote Browser
     Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
     Remove File    ${file_object}[saveAs]
 
-Wait For Download with Remote Browser Without SaveAs
-    [Setup]    Launch and Connect To Remote Browser
+Wait For Download With Remote Browser Without SaveAs
+    [Setup]    Launch And Connect To Remote Browser
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
     ${dl_promise} =    Promise To Wait For Download
@@ -148,8 +148,8 @@ Wait For Download with Remote Browser Without SaveAs
     END
 
 *** Keywords ***
-Launch and Connect To Remote Browser
-    ${ws}     Launch Browser Server    headless=${HEADLESS}
+Launch And Connect To Remote Browser
+    ${ws} =    Launch Browser Server    headless=${HEADLESS}
     Connect To Browser    wsEndpoint=${ws}
     Set Browser Timeout    90 seconds
 
