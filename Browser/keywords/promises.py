@@ -149,6 +149,8 @@ class Promises(LibraryComponent):
 
         With default filepath downloaded files are deleted when Context the download happened in is closed.
 
+        If browser is connected remotely with `Connect To Browser` then ``saveAs`` must be set to store it locally where the browser runs!
+
         | =Arguments= | =Description= |
         | ``saveAs`` | Defines path where the file is saved persistently. File will also temporarily be saved in playwright context's default download location. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
         | ``wait_for_finished`` | If true, promise will wait for download to finish. If false, promise will resolve immediately after download has started. |

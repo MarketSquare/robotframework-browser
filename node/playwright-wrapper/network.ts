@@ -147,7 +147,6 @@ export async function _waitForDownload(
         }
     }
     const fileName = downloadObject.suggestedFilename();
-    const pathPromise = downloadObject.path();
     if (!waitForFinished) {
         const downloadID = uuidv4();
         const activeIndexedPage = state.activeBrowser?.page;
@@ -170,25 +169,22 @@ export async function _waitForDownload(
             throw new Error('No active page found');
         }
     }
-    let downloadPath;
     if (downloadTimeout > 0) {
-        downloadPath = await Promise.race([
-            pathPromise,
+        const readStream = await Promise.race([
+            downloadObject.createReadStream(),
             new Promise((resolve) => setTimeout(resolve, downloadTimeout)),
         ]);
-        if (!downloadPath) {
+        if (!readStream) {
             downloadObject.cancel();
             throw new Error('Download failed, Timeout exceeded.');
         }
-    } else {
-        downloadPath = await pathPromise;
     }
     let filePath;
     if (saveAs) {
         await downloadObject.saveAs(saveAs);
         filePath = path.resolve(saveAs);
     } else {
-        filePath = downloadPath;
+        filePath = await downloadObject.path();
     }
     logger.info('suggestedFilename: ' + fileName + ' saveAs path: ' + filePath);
     return jsonResponse(
