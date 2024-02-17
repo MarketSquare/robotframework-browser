@@ -16,6 +16,7 @@ import contextlib
 import inspect
 import os
 import socket
+import string
 import subprocess
 from pathlib import Path
 from typing import Any, Tuple, Union
@@ -73,7 +74,17 @@ def is_same_keyword(first: str, second: str) -> bool:
 
 
 def get_normalized_keyword(keyword: str) -> str:
-    return keyword.lower().replace(" ", "_")
+    if " " not in keyword:
+        for index, char in enumerate(keyword):
+            if index == 0:
+                new_keyword = char.lower()
+            elif char in string.ascii_uppercase and keyword[index - 1] != " ":
+                new_keyword = f"{new_keyword} {char.lower()}"
+            else:
+                new_keyword = f"{new_keyword}{char}"
+    else:
+        new_keyword = keyword
+    return new_keyword.lower().replace(" ", "_")
 
 
 def keyword(name: Any = None, tags: Tuple = (), types: Tuple = ()):
