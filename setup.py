@@ -36,6 +36,9 @@ setup_kwargs = {
     "packages": packages,
     "package_data": package_data,
     "install_requires": install_requires,
+    "extras_require": {
+        "tidy": ["robotframework-tidy>=4.9.0"]
+    },
     "entry_points": {"console_scripts": ["rfbrowser=Browser.entry:cli"]},
     "python_requires": ">=3.8,<4.0",
     "classifiers": [
