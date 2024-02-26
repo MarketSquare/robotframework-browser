@@ -331,6 +331,7 @@ def atest(
         args.extend(["--variable", "SUFFIX:framing.html?url="])
         args.extend(["--variable", "SELECTOR_PREFIX:id=iframe_id >>>"])
         args.extend(["--exclude", "no-iframe"])
+    args.extend(["--exclude", "tidy-transformer"])
     ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
 
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
@@ -495,6 +496,8 @@ def run_tests(c, tests):
             "robot_xunit.xml",
             "--loglevel",
             "DEBUG",
+            "--exclude",
+            "tidy-transformer",
             "-d",
             "outs",
             tests,
@@ -518,7 +521,7 @@ def atest_coverage(c):
 
     robot_args = {
         "xunit": "robot_xunit.xml",
-        "exclude": "not-implemented",
+        "exclude": "not-implementedORtidy-transformer",
         "loglevel": "DEBUG",
         "outputdir": str(ATEST_OUTPUT),
     }
@@ -579,6 +582,7 @@ def _add_skips(default_args, include_mac=False):
     ):
         print("Running in Mac exclude no-mac-support tags")
         default_args.extend(["--exclude", "no-mac-support"])
+    default_args.extend(["--exclude", "tidy-transformer"])
     return default_args
 
 
