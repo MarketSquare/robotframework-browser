@@ -3,6 +3,7 @@ Resource    variables.resource
 Library     Collections
 Library     DateTime
 Library     OperatingSystem
+Library     Process
 Library     Browser
 ...             timeout=${PLAYWRIGHT_TIMEOUT}
 ...             enable_playwright_debug=${True}
