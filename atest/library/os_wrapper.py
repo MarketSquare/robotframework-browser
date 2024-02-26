@@ -1,3 +1,4 @@
+import sys
 import time
 from datetime import timedelta
 from pathlib import Path
@@ -42,3 +43,7 @@ def glob_files(path: str) -> list:
 def glob_files_count(path: str) -> int:
     """Returns files count path.glob(**/*)."""
     return len(glob_files(path))
+
+
+def get_sys_executable():
+    return sys.executable
