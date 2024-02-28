@@ -120,9 +120,6 @@ class Interaction(LibraryComponent):
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        See `Type Text` for emulating typing text character by character.
-        See `Fill Text` for direct filling of the full text at once.
-
         [https://forum.robotframework.org/t//4237|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
