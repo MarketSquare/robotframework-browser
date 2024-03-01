@@ -254,6 +254,7 @@ def cli(ctx, silent):
     init
     clean-node
     show-trace
+    launch-browser-server
 
     init command will install the required node dependencies. The command is needed to run after when library is
     installed or updated. Example after first installation:
@@ -275,6 +276,8 @@ def cli(ctx, silent):
     browser binaries are not left in the disk after the pip uninstall command.
 
     show-trace command will start the Playwright trace viewer tool.
+
+    launch-browser-server will aunche a playwright browser server.
 
     See each command argument help for more details what (optional) arguments that command supports.
     """
