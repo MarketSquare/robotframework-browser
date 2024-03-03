@@ -3,10 +3,22 @@ Resource        imports.resource
 
 *** Test Cases ***
 Tranform Wait Until Network Is Idle Keyword
-    ${entry} =    Set Variable    ${CURDIR}/../../../Browser/entry.py
+    ${root} =   Normalize Path    ${CURDIR}/../../..
+    ${entry} =    Set Variable    ${root}/Browser/entry.py
     ${python} =    Get Sys Executable
-    ${command} =    Split Command Line    ${python} ${entry} deprecated --wait_until_network_is_idle --path ${CURDIR}/network_idle_file.robot
-    Log   ${python} ${entry} deprecated --wait_until_network_is_idle --path ${CURDIR}/network_idle_file.robot
-    ${process} =    Run Process     ${command}    shell=True
+    ${process} =    Run Process     
+    ...    ${python} ${entry} transform --wait-until-network-is-idle ${CURDIR}/network_idle_file.robot
+    ...    shell=True
+    Log    ${process.stdout}
+    Log    ${process.stderr}
     Should Be Equal As Integers    ${process.rc}     0
-    Should Contain    ${process.stdout}     "Wait Until Network Is Idle transformed 4 times."
+    ${file} =    Get File    ${CURDIR}/network_idle_file.robot
+    ${lines} =    Split To Lines   ${file}
+    Log    ${lines}
+    Should Be Equal    ${lines}[5]        ${SPACE*4}\${not used} =${SPACE*2}New Context${SPACE*4}\# This is not changed
+    Should Be Equal    ${lines}[6]        ${SPACE*4}Wait For Load State${SPACE*4}networkidle${SPACE*4}timeout=0.1s
+    Should Be Equal    ${lines}[7]        ${SPACE*4}Wait For Load State${SPACE*4}networkidle
+    Should Be Equal    ${lines}[8]        ${SPACE*4}Wait For Load State${SPACE*4}networkidle${SPACE*4}timeout=0.1s${SPACE*4}# Comment should be preserved
+    Should Be Equal    ${lines}[9]        ${SPACE*4}Browser.Wait For Load State${SPACE*4}networkidle${SPACE*4}timeout=1.2s${SPACE*4}# Comment should be preserved
+    Should Be Equal    ${lines}[10]        ${SPACE*4}\${not used} =${SPACE*7}New Context${SPACE*4}# This is not changed
+    Length Should Be    ${lines}    11
