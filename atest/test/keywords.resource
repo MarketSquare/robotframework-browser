@@ -4,6 +4,7 @@ Library     Collections
 Library     DateTime
 Library     OperatingSystem
 Library     Process
+Library     String
 Library     Browser
 ...             timeout=${PLAYWRIGHT_TIMEOUT}
 ...             enable_playwright_debug=${True}

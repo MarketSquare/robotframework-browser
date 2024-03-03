@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"
+TIDY_TRANSFORMER_DIR = Path(__file__).parent / "tidy_transformer"
 # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
 # But shell=True breaks our linux CI
 SHELL = bool(platform.platform().startswith("Windows"))
@@ -255,6 +256,7 @@ def cli(ctx, silent):
     clean-node
     show-trace
     launch-browser-server
+    transform
 
     init command will install the required node dependencies. The command is needed to run after when library is
     installed or updated. Example after first installation:
@@ -277,7 +279,9 @@ def cli(ctx, silent):
 
     show-trace command will start the Playwright trace viewer tool.
 
-    launch-browser-server will aunche a playwright browser server.
+    launch-browser-server will launch a playwright browser server.
+
+    transform will run Robotidy with Browser library transformer and handle keyword deprecations.
 
     See each command argument help for more details what (optional) arguments that command supports.
     """
@@ -496,6 +500,47 @@ def convert_options_types(options: List[str], browser_lib: "Browser"):
             name=key, value=value
         )
     return params
+
+
+@cli.command()
+@click.argument(
+    "path",
+    type=click.Path(exists=True, dir_okay=True, path_type=Path),
+    required=True,
+    nargs=-1,
+)
+@click.option(
+    "--wait-until-network-is-idle",
+    is_flag=True,
+    help="If set will convert Wait Until Network Is Idle keyword to Wait For Load State keyword.",
+    default=False,
+)
+def transform(path: Path, wait_until_network_is_idle: bool):
+    """Runs Robotidy with Browser library transofrormer.
+
+    This will help users to convert automatically deprecated to new ones. Conversion
+    is not allways possible and to perform automatically and always reguires human
+    inspection to verify that correct result is acheived.
+
+    The path argument is always required and should point to folder which contains
+    Robot Framework test data where conversion is done.
+
+    Example: rfbrowser transform --wait-until-network-is-idle /path/to/test
+    will convert Wait Until Network Is Idle keyword to Wait For Load State keyword
+    from all test data files in /path/to/test folder
+    """
+    if not wait_until_network_is_idle:
+        logging.info("No transformer defined, exiting.")
+        return
+    cmd = ["robotidy"]
+    if wait_until_network_is_idle:
+        wait_until_network_is_idle_file = TIDY_TRANSFORMER_DIR / "network_idle.py"
+        cmd.extend(["--transform", wait_until_network_is_idle_file])
+    cmd.extend(path)
+    print(cmd)
+    subprocess.run(cmd)
+    print(path, type(path))
+    print(wait_until_network_is_idle, type(wait_until_network_is_idle))
 
 
 if __name__ == "__main__":
