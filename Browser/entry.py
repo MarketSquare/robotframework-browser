@@ -535,12 +535,10 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     cmd = ["robotidy"]
     if wait_until_network_is_idle:
         wait_until_network_is_idle_file = TIDY_TRANSFORMER_DIR / "network_idle.py"
-        cmd.extend(["--transform", wait_until_network_is_idle_file])
-    cmd.extend(path)
-    print(cmd)
-    subprocess.run(cmd)
-    print(path, type(path))
-    print(wait_until_network_is_idle, type(wait_until_network_is_idle))
+        cmd.append("--transform")
+        cmd.append(str(wait_until_network_is_idle_file))
+    cmd.extend([str(item) for item in path])  # type: ignore
+    subprocess.run(cmd, check=False)
 
 
 if __name__ == "__main__":

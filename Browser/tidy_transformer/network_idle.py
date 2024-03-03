@@ -11,12 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from functools import cached_property
 import string
+
 from robot.api.parsing import Token
-from robot.libraries.BuiltIn import BuiltIn
 from robot.parsing.model.statements import KeywordCall
-from robotidy.transformers import Transformer
+from robotidy.transformers import Transformer  # type: ignore
 
 
 def is_same_keyword(first: str, second: str) -> bool:
@@ -44,13 +43,12 @@ OLD_KW_NAME_WITH_LIB = "browser.wait until network is idle"
 
 
 class NetworkIdle(Transformer):
-    
 
     def visit_KeywordCall(self, node: KeywordCall):  # noqa: N802
         keyword_token = node.get_token(Token.KEYWORD)
         if is_same_keyword(keyword_token.value, OLD_KW_NAME):
             return self._keyword_formatter(node, False)
-        elif is_same_keyword(keyword_token.value, OLD_KW_NAME_WITH_LIB):
+        if is_same_keyword(keyword_token.value, OLD_KW_NAME_WITH_LIB):
             return self._keyword_formatter(node, True)
         return node
 
@@ -70,11 +68,13 @@ class NetworkIdle(Transformer):
 
     def _find_keyword_index(self, node: KeywordCall) -> int:
         for index, token in enumerate(node.tokens):
-            if is_same_keyword(token.value, OLD_KW_NAME):
+            if is_same_keyword(token.value, OLD_KW_NAME) or is_same_keyword(
+                token.value, OLD_KW_NAME_WITH_LIB
+            ):
                 return index
-            elif is_same_keyword(token.value, OLD_KW_NAME_WITH_LIB):
-                return index
-        raise ValueError(f"Could not find {OLD_KW_NAME} or ${OLD_KW_NAME_WITH_LIB} keyword.")
+        raise ValueError(
+            f"Could not find {OLD_KW_NAME} or ${OLD_KW_NAME_WITH_LIB} keyword."
+        )
 
     def _timeout_present(self, node: KeywordCall):
         second_last_token = node.tokens[-2]
