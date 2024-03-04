@@ -1298,6 +1298,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "thulasiraju",
+      "name": "Thulasi Raju",
+      "avatar_url": "https://avatars.githubusercontent.com/u/21201594?v=4",
+      "profile": "https://github.com/thulasiraju",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
