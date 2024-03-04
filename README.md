@@ -44,7 +44,7 @@ To upgrade your already installed robotframework-browser library
 
 ## Uninstall instructions
 
-To completely install library, including the browser binaries installed by Playwright,
+To completely uninstall library, including the browser binaries installed by Playwright,
 run following commands:
 1. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
 2. Uninstall with pip: `pip uninstall robotframework-browser`
