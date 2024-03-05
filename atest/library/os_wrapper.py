@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from datetime import timedelta
@@ -45,5 +46,9 @@ def glob_files_count(path: str) -> int:
     return len(glob_files(path))
 
 
-def get_sys_executable():
-    return sys.executable
+def get_enty_command() -> str:
+    """Return correct entry point command."""
+    if os.environ.get("SYS_VAR_CI", 0):
+        return "rfbrowser"
+    entry_py = Path(__file__).parent.parent.parent / "Browser" / "entry.py"
+    return f"{sys.executable} {entry_py.resolve()}"

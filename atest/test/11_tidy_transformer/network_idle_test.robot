@@ -3,11 +3,9 @@ Resource        imports.resource
 
 *** Test Cases ***
 Tranform Wait Until Network Is Idle Keyword
-    ${root} =   Normalize Path    ${CURDIR}/../../..
-    ${entry} =    Set Variable    ${root}/Browser/entry.py
-    ${python} =    Get Sys Executable
+    ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process     
-    ...    ${python} ${entry} transform --wait-until-network-is-idle ${CURDIR}/network_idle_file.robot
+    ...    ${entry_cmd} transform --wait-until-network-is-idle ${CURDIR}/network_idle_file.robot
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
