@@ -12,7 +12,7 @@ on:
     - cron: '15 10 * * *'
 
 env:
-  SYS_VAR_CI: 1
+  SYS_VAR_CI: 0
 
 jobs:
   build:
@@ -272,6 +272,8 @@ jobs:
           pip install -r Browser/dev-requirements.txt
       - name: Test on unix-like os - serial mode
         if: matrix.os == 'ubuntu-latest'
+        env:
+          SYS_VAR_CI: 1
         run: |
           echo ${{ matrix.os }}
           rm -rf Browser
@@ -280,6 +282,8 @@ jobs:
           xvfb-run --auto-servernum invoke atest-robot --smoke
       - name: Run Robot Framework tests on windows or macOS
         if: ${{ matrix.os != 'ubuntu-latest' }}
+        env:
+          SYS_VAR_CI: 1
         run: |
           echo ${{ matrix.os }}
           Remove-Item -Path .\Browser -Force -Recurse
