@@ -434,6 +434,7 @@ def atest_robot(c, zip=None, smoke=False):
         smoke: If true, runs only tests that take less than 500ms.
     """
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
+    sys_var_ci = bool(int(os.environ.get("SYS_VAR_CI", 0)))
     command_args = (
         [sys.executable, "-m", "robot", "--exclude", "not-implemented"]
         + (["--exclude", "slow"] if smoke else [])
@@ -447,6 +448,8 @@ def atest_robot(c, zip=None, smoke=False):
             "--xunit",
             "robot_xunit.xml",
             "--outputdir",
+            "--variable",
+            f"SYS_VAR_CI:{'True' if sys_var_ci else 'False'}",
             str(ATEST_OUTPUT),
         ]
     )
