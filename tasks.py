@@ -455,6 +455,7 @@ def atest_robot(c, zip=None, smoke=False):
     )
     command_args = _add_skips(command_args)
     command_args.append("atest/test")
+    print(f"command_args: {command_args}")
     env = os.environ.copy()
     process = subprocess.Popen(command_args, env=env)
     process.wait(ATEST_TIMEOUT)
