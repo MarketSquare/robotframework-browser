@@ -48,7 +48,7 @@ def glob_files_count(path: str) -> int:
 
 def get_enty_command() -> str:
     """Return correct entry point command."""
-    if bool(int(os.environ.get("SYS_VAR_CI", 0))):
+    if bool(int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))):
         return "rfbrowser"
     entry_py = Path(__file__).parent.parent.parent / "Browser" / "entry.py"
     return f"{sys.executable} {entry_py.resolve()}"
