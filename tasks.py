@@ -434,8 +434,12 @@ def atest_robot(c, zip=None, smoke=False):
         smoke: If true, runs only tests that take less than 500ms.
     """
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    sys_var_ci = int(os.environ.get("SYS_VAR_CI", 0))
-    sys_var_cmd = "SYS_VAR_CI:True" if sys_var_ci else "SYS_VAR_CI:False"
+    sys_var_ci = int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))
+    sys_var_cmd = (
+        "SYS_VAR_CI_INSTALL_TEST:True"
+        if sys_var_ci
+        else "SYS_VAR_CI_INSTALL_TEST:False"
+    )
     command_args = (
         [sys.executable, "-m", "robot", "--exclude", "not-implemented"]
         + (["--exclude", "slow"] if smoke else [])
