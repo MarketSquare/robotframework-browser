@@ -36,7 +36,7 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.10.1",
+    "@grpc/grpc-js": "^1.10.2",
     "@medv/finder": "^3.2.0",
     "google-protobuf": "3.21.2",
     "pino": "^8.19.0",
