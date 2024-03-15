@@ -1307,6 +1307,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "iliketomatoes",
+      "name": "Giancarlo Soverini",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2039028?v=4",
+      "profile": "https://iliketomatoes.com/",
+      "contributions": [
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
