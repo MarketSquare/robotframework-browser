@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import time
@@ -50,5 +51,15 @@ def get_enty_command() -> str:
     """Return correct entry point command."""
     if bool(int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))):
         return "rfbrowser"
-    entry_py = Path(__file__).parent.parent.parent / "Browser" / "entry.py"
-    return f"{sys.executable} {entry_py.resolve()}"
+    return f"{sys.executable} -m Browser.entry"
+
+def verify_translation(filename: Path) -> dict:
+    """Verifies translation file."""
+    with filename.open("r") as file:
+        data = json.load(file)
+    assert data, data
+    for kw in data:
+        logger.info(kw)
+        assert kw == data[kw]["name"], f"{kw} != {data[kw]['name']}"
+        assert data[kw]["doc"], data[kw]["doc"]
+    return data
