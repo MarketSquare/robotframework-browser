@@ -9,6 +9,6 @@ Create Default Translation File
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
-    Should Be Equal As Integers    ${process.rc}     0
+    Should Be Equal As Integers    ${process.rc}    0
     ${data} =    Verify Translation    ${OUTPUT_DIR}/translation.json
     Should Be True    ${data}[new_page]
