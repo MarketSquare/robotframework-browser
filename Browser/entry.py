@@ -1,4 +1,5 @@
 import contextlib
+import inspect
 import json
 import logging
 import os
@@ -591,6 +592,14 @@ def translation(
             "name": function.__name__,
             "doc": function.__doc__,
         }
+    translation["__init__"] = {
+        "name": "__init__",
+        "doc": inspect.getdoc(browser),
+    }
+    translation["__intro__"] = {
+        "name": "__intro__",
+        "doc": browser.__doc__,
+    }
     with filenane.open("w") as file:
         json.dump(translation, file, indent=4)
     logging.info(f"Translation file created in {filenane.absolute()}")
