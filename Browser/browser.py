@@ -749,7 +749,9 @@ class Browser(DynamicCore):
     two keys: `name` and `doc`. The `name` key contains the keyword translated name and `doc` contains keyword
     translated documentation. Providing doc and name are optional, example translation json file can only provide
     translations to keyword names or only to documentatin. But it is always recomended to provide translation
-    to both name and doc.
+    to both name and doc. Special key `__intro__` is for class level documentation `__init__` is for init
+    level documentation. These special values `name` can not be translated, instead `name` should be ketp
+    as it is.
 
     Default translation file, with English language can be created by running
     `rfbrowser translation /path/to/translation.json` command. Command does not provide transltations to other
