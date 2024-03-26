@@ -730,6 +730,31 @@ class Browser(DynamicCore):
     functionality without creating a new library or hacking the source code. See plugin API
     [https://github.com/MarketSquare/robotframework-browser/blob/main/docs/plugins/README.md | documentation] for
     further details.
+
+    = Language =
+
+    Browser library offers possibility to translte keyword names and documentation to new language. If language
+    is defined, Browser library will search from
+    [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#module-search-path | module search path]
+    Python packages starting with `robotframework_browser_translation` by using
+    [https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/ | Python pluging API]. Library
+    is using naming convention to find Python plugins. The packages must implement single API call, `get_language`
+    without any arguments. Method must return a dictionary containing two keys: `language` and `path`. The
+    language key value defines which language the package contains. Also value should match (case insentive)
+    the library init ``language`` parameter. The path parameter value should be full path to the translation file.
+    The file name or extension is not important, but data must be in json format. The keys of json are the
+    methods names, not the keyword names, which implements keywords. Value of key is json object which contains
+    two keys: `name` and `doc`. The `name` key contains the keyword translated name and `doc` contains keyword
+    translated documentation. Providing doc and name are optional, example translation json file can only provide
+    translations to keyword names or only to documentatin. But it is always recomended to provide translation
+    to both name and doc.
+
+    Default translation file, with English language can be created by running
+    `rfbrowser translation /path/to/translation.json` command. Command does not provide transltations to other
+    languages, it only provides easy way to create full list of translted kewyords and their documentation
+    with correct format. It is also possible to add keywords from library plugins and js extenstions by
+    providing `--plugings` and `--jsextension` arguments to command. Example:
+    `rfbrowser translation --plugings myplugin.SomePlugin --jsextension /path/ot/jsplugin.js /path/to/translation.json`
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
@@ -776,6 +801,7 @@ class Browser(DynamicCore):
         show_keyword_call_banner: Optional[bool] = None,
         strict: bool = True,
         timeout: timedelta = timedelta(seconds=10),
+        language: Optional[str] = None,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -793,6 +819,7 @@ class Browser(DynamicCore):
         | ``show_keyword_call_banner``      | If set to ``True``, will show a banner with the keyword name and arguments before the keyword is executed at the bottom of the page. If set to ``False``, will not show the banner. If set to None, which is the default, will show the banner only if the presenter mode is enabled. `Get Page Source` and `Take Screenshot` will not show the banner, because that could negatively affect your test cases/tasks. This feature may be super helpful when you are debugging your tests and using tracing from `New Context` or `Video recording` features. |
         | ``strict``                        | If keyword selector points multiple elements and keywords should interact with one element, keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords or by ```et Strict Mode`` keyword. |
         | ``timeout``                       | Timeout for keywords that operate on elements. The keywords will wait for this time for the element to appear into the page. Defaults to "10s" => 10 seconds. |
+        | ``language``                      | Defines language which is used to translate keyword names and documentation. |
         """
         if _:
             raise ValueError("Browser library does not accept positional arguments.")
