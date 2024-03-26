@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib
 import json
+import pkgutil
 import re
 import shutil
 import string
@@ -783,7 +785,7 @@ class Browser(DynamicCore):
     _suite_cleanup_done = False
     _output_dir = "."
 
-    def __init__(
+    def __init__(  # noqa: PLR0915
         self,
         *_,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
@@ -889,7 +891,8 @@ class Browser(DynamicCore):
         self.is_test_case_running = False
         self.auto_closing_default_run_before_unload: bool = False
 
-        DynamicCore.__init__(self, libraries)
+        translation_file = self._get_translation(language)
+        DynamicCore.__init__(self, libraries, translation_file)
 
         self.scope_stack["timeout"] = SettingsStack(
             self.convert_timeout(timeout),
@@ -1409,3 +1412,23 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         except Exception:
             return False
         return True
+
+    @staticmethod
+    def _get_translation(language: Union[str, None]) -> Union[Path, None]:
+        if not language:
+            return None
+        discovered_plugins = {
+            name: importlib.import_module(name)
+            for _, name, _ in pkgutil.iter_modules()
+            if name.startswith("robotframework_browser_translation")
+        }
+        for plugin in discovered_plugins.values():
+            try:
+                data = plugin.get_language()
+            except AttributeError:
+                continue
+            if data.get("language", "").lower() == language.lower() and data.get(
+                "path"
+            ):
+                return Path(data.get("path")).absolute()
+        return None
