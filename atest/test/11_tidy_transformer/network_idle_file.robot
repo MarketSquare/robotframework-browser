@@ -1,5 +1,5 @@
 *** Settings ***
-Test Tags    tidy-transformer
+Test Tags       tidy-transformer
 
 *** Test Cases ***
 Parsing Wait Until Network Is Idle To Wait For Load State

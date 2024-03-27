@@ -1,4 +1,5 @@
 import contextlib
+import inspect
 import json
 import logging
 import os
@@ -10,7 +11,7 @@ import sys
 import traceback
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import click
 from robot import version as rf_version  # type: ignore
@@ -257,6 +258,7 @@ def cli(ctx, silent):
     show-trace
     launch-browser-server
     transform
+    translation
 
     init command will install the required node dependencies. The command is needed to run after when library is
     installed or updated. Example after first installation:
@@ -282,6 +284,8 @@ def cli(ctx, silent):
     launch-browser-server will launch a playwright browser server.
 
     transform will run Robotidy with Browser library transformer and handle keyword deprecations.
+
+    translation will generate detaul tranlsation json file from library keywords.
 
     See each command argument help for more details what (optional) arguments that command supports.
     """
@@ -539,6 +543,66 @@ def transform(path: Path, wait_until_network_is_idle: bool):
         cmd.append(str(wait_until_network_is_idle_file))
     cmd.extend([str(item) for item in path])  # type: ignore
     subprocess.run(cmd, check=False)
+
+
+@cli.command()
+@click.argument(
+    "filenane",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    required=True,
+)
+@click.option(
+    "--plugings",
+    help="Same as plugins argument in the library import.",
+    default=None,
+    type=str,
+)
+@click.option(
+    "--jsextension",
+    help="Same as jsextension argument in the library import.",
+    default=None,
+    type=str,
+)
+def translation(
+    filenane: Path, plugings: Optional[str] = None, jsextension: Optional[str] = None
+):
+    """Default translation file from library keywords.
+
+    This will help users to create their own translation as Python plugins. Command
+    will populate json file with english language. To create proper translation
+    file, users needs to translate the keyword name and doc arguments values in
+    json file.
+
+    The filename argument will tell where the default json file is saved.
+
+    The --pluging argument is same as plugins argument in the library import.
+    If you use plugins, it is also get default translation json file also witht
+    the plugin keyword included in the library.
+
+    The --jsextension argument is same as jsextension argument in the library
+    import. If you use jsextension, it is also get default translation json
+    file also witht the jsextension keywords included in the library.
+    """
+    from Browser import Browser
+
+    browser = Browser(plugins=plugings, jsextension=jsextension)
+    translation = {}
+    for function in browser.attributes.values():
+        translation[function.__name__] = {
+            "name": function.__name__,
+            "doc": function.__doc__,
+        }
+    translation["__init__"] = {
+        "name": "__init__",
+        "doc": inspect.getdoc(browser),
+    }
+    translation["__intro__"] = {
+        "name": "__intro__",
+        "doc": browser.__doc__,
+    }
+    with filenane.open("w") as file:
+        json.dump(translation, file, indent=4)
+    logging.info(f"Translation file created in {filenane.absolute()}")
 
 
 if __name__ == "__main__":
