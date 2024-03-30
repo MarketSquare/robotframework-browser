@@ -740,25 +740,36 @@ class Browser(DynamicCore):
     [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#module-search-path | module search path]
     Python packages starting with `robotframework_browser_translation` by using
     [https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/ | Python pluging API]. Library
-    is using naming convention to find Python plugins. The packages must implement single API call, `get_language`
-    without any arguments. Method must return a dictionary containing two keys: `language` and `path`. The
-    language key value defines which language the package contains. Also value should match (case insentive)
-    the library init ``language`` parameter. The path parameter value should be full path to the translation file.
-    The file name or extension is not important, but data must be in json format. The keys of json are the
-    methods names, not the keyword names, which implements keywords. Value of key is json object which contains
-    two keys: `name` and `doc`. The `name` key contains the keyword translated name and `doc` contains keyword
-    translated documentation. Providing doc and name are optional, example translation json file can only provide
-    translations to keyword names or only to documentatin. But it is always recomended to provide translation
-    to both name and doc. Special key `__intro__` is for class level documentation `__init__` is for init
-    level documentation. These special values `name` can not be translated, instead `name` should be ketp
-    as it is.
+    is using naming convention to find Python plugins.
 
-    Default translation file, with English language can be created by running
+    The package must implement single API call, ``get_language`` without any arguments. Method must return a
+    dictionary containing two keys: ``language`` and ``path``. The language key value defines which language
+    the package contains. Also value should match (case insentive) the library ``language`` import parameter.
+    The path parameter value should be full path to the translation file.
+
+    == Translation file ==
+
+    The file name or extension is not important, but data must be in [https://www.json.org/json-en.html | json]
+    format. The keys of json are the methods names, not the keyword names, which implements keywords. Value of
+    key is json object which contains two keys: ``name`` and ``doc``. The ``name`` key contains the keyword
+    translated name and `doc` contains translated documentation. Providing doc and name are optional, example
+    translation json file can only provide translations to keyword names or only to documentatin. But it is
+    always recomended to provide translation to both name and doc. Special key ``__intro__`` is for class level
+    documentation and ``__init__`` is for init level documentation. These special values ``name`` can not be
+    translated, instead ``name`` should be ketp same.
+
+    == Generating template translation file ==
+
+    Template translation file, with English language can be created by running:
     `rfbrowser translation /path/to/translation.json` command. Command does not provide transltations to other
-    languages, it only provides easy way to create full list of translted kewyords and their documentation
-    with correct format. It is also possible to add keywords from library plugins and js extenstions by
-    providing `--plugings` and `--jsextension` arguments to command. Example:
+    languages, it only provides easy way to create full list kewyords and their documentation in correct
+    format. It is also possible to add keywords from library plugins and js extenstions by providing
+    `--plugings` and `--jsextension` arguments to command. Example:
     `rfbrowser translation --plugings myplugin.SomePlugin --jsextension /path/ot/jsplugin.js /path/to/translation.json`
+
+    Example project for translation can be found from
+    [https://github.com/MarketSquare/robotframework-browser-translation-fi | robotframework-browser-translation-fi]
+    repository.
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
