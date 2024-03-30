@@ -312,7 +312,6 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4238|Comment >>]
         """
-        logger.info(f"Clicks the element '{selector}'.")
         self.click_with_options(selector, button)
 
     @keyword(tags=("Setter", "PageContent"))
@@ -364,6 +363,7 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//5936|Comment >>]
         """
+        logger.info(f"Clicks the element '{selector}'.")
         selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             options = {
@@ -736,7 +736,7 @@ class Interaction(LibraryComponent):
             self.deselect_options(selector)
             return []
 
-        logger.info(f"Selects the option(s) {', '.join(values)} by attribute {attribute} from element {selector}.")
+        logger.info(f"Selects the option(s) {', '.join([str(value) for value in values])} by attribute {attribute} from element {selector}.")
         if attribute is SelectAttribute.value:
             matchers = json.dumps([{"value": s} for s in values])
         elif attribute is SelectAttribute.label:
