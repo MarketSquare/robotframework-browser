@@ -1316,6 +1316,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "lennartq",
+      "name": "lennartq",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22813828?v=4",
+      "profile": "https://github.com/lennartq",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
