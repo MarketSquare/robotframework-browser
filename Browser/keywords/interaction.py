@@ -736,7 +736,9 @@ class Interaction(LibraryComponent):
             self.deselect_options(selector)
             return []
 
-        logger.info(f"Selects the option(s) {', '.join([str(value) for value in values])} by attribute {attribute} from element {selector}.")
+        logger.info(
+            f"Selects the option(s) {', '.join([str(value) for value in values])} by attribute {attribute} from element {selector}."
+        )
         if attribute is SelectAttribute.value:
             matchers = json.dumps([{"value": s} for s in values])
         elif attribute is SelectAttribute.label:

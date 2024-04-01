@@ -1,7 +1,7 @@
 *** Settings ***
 Resource        imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Test Setup      Screenshot Timeout
 
 *** Variables ***
 ${TestScreenshot} =     ${OUTPUT_DIR}${/}test_screenshot
@@ -227,3 +227,8 @@ Screenshot Returns Bytes And Path String
     EXCEPT    AssertionError
         Log    correct error
     END
+
+*** Keywords ***
+Screenshot Timeout
+    Set Browser Timeout    1s
+    New Page    ${LOGIN_URL}
