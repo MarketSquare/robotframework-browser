@@ -299,9 +299,11 @@ class Control(LibraryComponent):
     def _embed_to_log(base64_screenshot: bytes) -> str:
         # log statement is copied from:
         # https://github.com/robotframework/SeleniumLibrary/blob/master/src/SeleniumLibrary/keywords/screenshot.py
+        # class seleniumlibrary-screenshot enables Jira Xray support
+        # See https://github.com/MarketSquare/robotframework-browser/issues/3487 for details
         logger.info(
             '</td></tr><tr><td colspan="3">'
-            '<img alt="screenshot" '
+            '<img alt="screenshot" class="robot-seleniumlibrary-screenshot" '
             f'src="data:image/png;base64,{base64_screenshot.decode()}" width="900px"/>',
             html=True,
         )
