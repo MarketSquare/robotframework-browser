@@ -34,7 +34,9 @@ setup_kwargs = {
     "maintainer_email": None,
     "url": "https://github.com/MarketSquare/robotframework-browser",
     "packages": packages,
+    "package_dir": {"": "."},
     "package_data": package_data,
+    "include_package_data": True,
     "install_requires": install_requires,
     "extras_require": {
         "tidy": ["robotframework-tidy>=4.9.0"]
