@@ -41,8 +41,8 @@ Library was tested with Playwright 1.41.2
 Most important enhancements
 ===========================
 
-- Support starting and stopping trace by a keyword (`#3427`_)
 - New Keyword: Wait for Load State (`#3327`_)
+- Promise To Wait For Download does not work with connected "Remote Browser" (`#3436`_)
 
 Full list of fixes and enhancements
 ===================================
@@ -54,10 +54,6 @@ Full list of fixes and enhancements
       - Type
       - Priority
       - Summary
-    * - `#3427`_
-      - enhancement
-      - critical
-      - Support starting and stopping trace by a keyword
     * - `#3327`_
       - enhancement
       - high
@@ -69,6 +65,5 @@ Full list of fixes and enhancements
 
 Altogether 3 issues. View on the `issue tracker <https://github.com/MarketSquare/robotframework-browser/issues?q=milestone%3Av18.2.0>`__.
 
-.. _#3427: https://github.com/MarketSquare/robotframework-browser/issues/3427
 .. _#3327: https://github.com/MarketSquare/robotframework-browser/issues/3327
 .. _#3436: https://github.com/MarketSquare/robotframework-browser/issues/3436
