@@ -1325,6 +1325,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "falcon030",
+      "name": "Lukas Boekenoogen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30448651?v=4",
+      "profile": "https://github.com/falcon030",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
