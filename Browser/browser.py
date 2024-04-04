@@ -756,14 +756,14 @@ class Browser(DynamicCore):
     translation json file can only provide translations to keyword names or only to documentatin. But it is
     always recomended to provide translation to both name and doc. Special key ``__intro__`` is for class level
     documentation and ``__init__`` is for init level documentation. These special values ``name`` can not be
-    translated, instead ``name`` should be ketp same.
+    translated, instead ``name`` should be kept the same.
 
     == Generating template translation file ==
 
     Template translation file, with English language can be created by running:
-    `rfbrowser translation /path/to/translation.json` command. Command does not provide transltations to other
-    languages, it only provides easy way to create full list kewyords and their documentation in correct
-    format. It is also possible to add keywords from library plugins and js extenstions by providing
+    `rfbrowser translation /path/to/translation.json` command. Command does not provide translations to other
+    languages, it only provides easy way to create full list keywords and their documentation in correct
+    format. It is also possible to add keywords from library plugins and js extensions by providing
     `--plugings` and `--jsextension` arguments to command. Example:
     `rfbrowser translation --plugings myplugin.SomePlugin --jsextension /path/ot/jsplugin.js /path/to/translation.json`
 
