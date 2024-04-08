@@ -1,3 +1,4 @@
+# robotidy: off
 *** Settings ***
 Test Tags       tidy-transformer
 

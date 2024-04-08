@@ -15,6 +15,7 @@ Library     ../library/os_wrapper.py
 Library     ../library/show_trace_tool.py
 Library     ../library/screenshot.py
 
+
 *** Keywords ***
 Open Browser To No Page
     New Browser    ${BROWSER}    headless=${HEADLESS}

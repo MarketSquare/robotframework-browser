@@ -63,3 +63,14 @@ lint.select = [
   "SIM",
   "RUF"
 ]
+
+[tool.robotidy]
+src = ["atest"]
+lineseparator = "unix"
+configure = [
+  "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
+  "NormalizeAssignments:equal_sign_type_variables=space_and_equal_sign",
+  "NormalizeNewLines:section_lines=1",
+  "RenameKeywords:enabled=True",
+  "RenameTestCases:capitalize_each_word=True:enabled=True"
+]
