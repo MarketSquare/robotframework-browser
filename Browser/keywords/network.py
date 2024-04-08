@@ -239,7 +239,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_until_network_is_idle(self, timeout: Optional[timedelta] = None):
-        """*DEPRECATED!!* Use `Wait For Load State` instead.
+        """*DEPRECATED!!* Use `Wait For Load State` instead. rfbrowser transform --wait-until-network-is-idle path/to/test command automatically transforms keyword to new format.
 
         If you have:
         | `Wait Until Network Is Idle`    timeout=3s
