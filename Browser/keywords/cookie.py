@@ -117,8 +117,8 @@ class Cookie(LibraryComponent):
         Example:
         | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
         | `Add Cookie`   foo   bar   domain=example.com                path=/foo/bar                     # Using domain and url arguments.
-        | `Add Cookie`   foo   bar   http://address.com/path/to/site   expiry=2027-09-28 16:21:35        # Expiry as timestamp.
-        | `Add Cookie`   foo   bar   http://address.com/path/to/site   expiry=1822137695                 # Expiry as epoch seconds.
+        | `Add Cookie`   foo   bar   http://address.com/path/to/site   expires=2027-09-28 16:21:35       # Expires as timestamp.
+        | `Add Cookie`   foo   bar   http://address.com/path/to/site   expires=1822137695                # Expires as epoch seconds.
 
         [https://forum.robotframework.org/t//4233|Comment >>]
         """
