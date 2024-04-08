@@ -635,7 +635,7 @@ def lint_robot(c):
         base_commnd.insert(1, "--check")
         base_commnd.insert(1, "--diff")
     cmd = base_commnd.copy()
-    cmd.extend(["--exclude", str(Path("atest", "test", "keywords.resource")), str(atest_folder)])
+    cmd.extend(["--exclude", "atest/test/keywords.resource", "--exclude", "atest/test/11_tidy_transformer/network_idle_file.robot", str(atest_folder)])
     print(cmd)
     c.run(" ".join(cmd))
     # keywords.resource needs resource to be imported before library, but generally
