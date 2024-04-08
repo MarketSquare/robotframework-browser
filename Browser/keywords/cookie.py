@@ -200,7 +200,7 @@ class Cookie(LibraryComponent):
         | url      | Define the scope of the cookie, what URLs the cookies should be sent to.                   |
         | domain   | Specifies which hosts are allowed to receive the cookie.                                   |
         | path     | Indicates a URL path that must exist in the requested URL, for example `/`.                |
-        | expiry   | Lifetime of a cookie. Returned as datatime object or None if not valid time received.      |
+        | expires  | Lifetime of a cookie. Returned as datatime object or None if not valid time received.      |
         | httpOnly | When true, the cookie is not accessible via JavaScript.                                    |
         | secure   | When true, the cookie is only used with HTTPS connections.                                 |
         | sameSite | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
@@ -212,7 +212,7 @@ class Cookie(LibraryComponent):
         Example:
         | ${cookie}=        `Get Cookie`              Foobar
         | Should Be Equal   ${cookie.value}           Tidii
-        | Should Be Equal   ${cookie.expiry.year}     ${2020}
+        | Should Be Equal   ${cookie.expires.year}     ${2020}
 
         [https://forum.robotframework.org/t//4265|Comment >>]
         """
