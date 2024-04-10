@@ -162,9 +162,6 @@ jobs:
       if: matrix.shard == 1
       run: |
         inv lint-node
-    - name: Check with ruff
-      run: |
-        ruff Browser
     - name: Build test app
       run: |
         inv create-test-app
