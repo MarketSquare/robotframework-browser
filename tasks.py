@@ -628,7 +628,7 @@ def lint_node(c, force=False):
 def lint_robot(c):
     in_ci = os.getenv("GITHUB_WORKFLOW")
     print(f"Lint Robot files {'in ci' if in_ci else ''}")
-    atest_folder = Path("atest/test/").resolve()
+    atest_folder = Path("atest/").resolve()
     config_file = Path("Browser/pyproject.toml").resolve()
     base_commnd = ["robotidy", "--config", str(config_file)]
     if in_ci:
@@ -638,7 +638,7 @@ def lint_robot(c):
     cmd.extend(
         [
             "--extend-exclude",
-            '"atest/test/keywords.resource|atest/test/11_tidy_transformer/network_idle_file.robot"',
+            '"(11_tidy_transformer\Snetwork_idle_file\.robot)|(test\Skeywords\.resource)"',
             str(atest_folder),
         ]
     )
@@ -650,7 +650,7 @@ def lint_robot(c):
     base_commnd.insert(
         2, "OrderSettingsSection:imports_order=resource,library,variables"
     )
-    base_commnd.append(str(atest_folder.joinpath("keywords.resource")))
+    base_commnd.append(str(atest_folder.joinpath("test", "keywords.resource")))
     print(base_commnd)
     c.run(" ".join(base_commnd))
 
