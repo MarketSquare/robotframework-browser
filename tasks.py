@@ -97,7 +97,7 @@ def deps(c):
             env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
         )
         c.run(
-            f"npx --quiet playwright install  --with-deps",
+            "npx --quiet playwright install  --with-deps",
             env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
         )
         npm_deps_timestamp_file.touch()
@@ -133,7 +133,6 @@ def clean(c):
         Path("./.pytest_cache"),
     ]:
         try:
-            # python 3.7 doesn't support missing_ok so we need a try catch
             file.unlink()
         except OSError:
             pass
@@ -371,7 +370,9 @@ def _create_zip(rc: int, shard: str):
     zip_dir.mkdir(parents=True)
     _clean_pabot_results(rc)
     py_version = platform.python_version()
-    node_process = subprocess.run(["node", "--version"], capture_output=True)
+    node_process = subprocess.run(
+        ["node", "--version"], capture_output=True, check=False
+    )
     node_version = node_process.stdout.strip().decode("utf-8")
     zip_name = f"{sys.platform}-rf-{rf_version}-py-{py_version}-node-{node_version}-shard-{shard}.zip"
     zip_path = zip_dir / zip_name
@@ -410,7 +411,6 @@ def copy_xunit(c):
         shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", pytest_xunit)
     except Exception as error:
         print(f"\nWhen copying pytest xunit got error: {error}")
-        pass
     else:
         print(f"Copied {pytest_xunit}")
     if robot_copy:
@@ -617,10 +617,7 @@ def lint_node(c, force=False):
     Args:
         force: When set, lints node files even there is not changes.
     """
-    if _sources_changed(node_dir.glob("**/*.ts"), node_lint_timestamp_file):
-        c.run("npm run lint")
-        node_lint_timestamp_file.touch()
-    elif force:
+    if _sources_changed(node_dir.glob("**/*.ts"), node_lint_timestamp_file) or force:
         c.run("npm run lint")
         node_lint_timestamp_file.touch()
     else:
@@ -685,14 +682,14 @@ def docker_test(c):
     c.run("chmod -R 777 atest/output")
     c.run(
         """docker run\
-	    --rm \
-	    --ipc=host\
-	    --security-opt seccomp=docker/seccomp_profile.json \
-	    -v $(pwd)/atest/:/app/atest \
-	    -v $(pwd)/node/:/app/node/ \
-	    --workdir /app \
-	    rfbrowser-tests \
-	    sh -c "xvfb-run python3 -m invoke atest-robot"
+        --rm \
+        --ipc=host\
+        --security-opt seccomp=docker/seccomp_profile.json \
+        -v $(pwd)/atest/:/app/atest \
+        -v $(pwd)/node/:/app/node/ \
+        --workdir /app \
+        rfbrowser-tests \
+        sh -c "xvfb-run python3 -m invoke atest-robot"
         """
     )
 
@@ -775,7 +772,6 @@ def create_package(c):
 @task(clean, build, docs, create_package)
 def package(c):
     """Build python wheel for release."""
-    pass
 
 
 @task
