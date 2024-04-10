@@ -46,6 +46,7 @@ node_lint_timestamp_file = node_dir / ".linted"
 ATEST_TIMEOUT = 900
 cpu_count = os.cpu_count() or 1
 EXECUTOR_COUNT = str(cpu_count - 1 or 1)
+IN_CI = os.getenv("GITHUB_WORKFLOW")
 
 ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
@@ -604,6 +605,8 @@ def lint_python(c, fix=False):
     ruff_cmd = "ruff check --config Browser/pyproject.toml Browser/"
     if fix:
         ruff_cmd = f"{ruff_cmd} --fix"
+    if IN_CI:
+        ruff_cmd = f"{ruff_cmd} --output-format=github"
     c.run(ruff_cmd)
 
 
@@ -631,7 +634,7 @@ def lint_robot(c):
     atest_folder = Path("atest/").resolve()
     config_file = Path("Browser/pyproject.toml").resolve()
     base_commnd = ["robotidy", "--config", str(config_file)]
-    if in_ci:
+    if IN_CI:
         base_commnd.insert(1, "--check")
         base_commnd.insert(1, "--diff")
     cmd = base_commnd.copy()
