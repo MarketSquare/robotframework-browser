@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 import inspect
 import json
 import logging
@@ -29,6 +30,10 @@ CURRENT_FOLDER = Path(__file__).resolve().parent
 log_file = "rfbrowser.log"
 INSTALL_LOG = CURRENT_FOLDER / log_file
 PLAYWRIGHT_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
+KEYWORD_NAME = "Keyword name"
+DOC_CHANGED = "Documentation update needed"
+NO_LIB_KEYWORD = "Keyword not found from library"
+MISSING_TRANSLATION = "Keyword is missing translation"
 try:
     INSTALL_LOG.touch(exist_ok=True)
 except Exception as error:
@@ -546,9 +551,92 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     subprocess.run(cmd, check=False)
 
 
+def _get_library_translaton(plugings: Optional[str] = None, jsextension: Optional[str] = None) -> dict:
+    from Browser import Browser
+
+    browser = Browser(plugins=plugings, jsextension=jsextension)
+    translation = {}
+    for function in browser.attributes.values():
+        translation[function.__name__] = {
+            "name": function.__name__,
+            "doc": function.__doc__,
+            "sha256": hashlib.sha256(function.__doc__.encode("utf-16")).hexdigest(),
+        }
+    translation["__init__"] = {
+        "name": "__init__",
+        "doc": inspect.getdoc(browser),
+        "sha256": hashlib.sha256(inspect.getdoc(browser).encode("utf-16")).hexdigest(),  # type: ignore
+    }
+    translation["__intro__"] = {
+        "name": "__intro__",
+        "doc": browser.__doc__,
+        "sha256": hashlib.sha256(browser.__doc__.encode("utf-16")).hexdigest(),  # type: ignore
+    }
+    return translation
+
+def _max_kw_name_lenght(project_tanslation: dict) -> int:
+    max_lenght = 0
+    for keyword_data in project_tanslation.values():
+        if (current_kw_length := len(keyword_data["name"])) > max_lenght:
+            max_lenght = current_kw_length
+    return max_lenght
+
+def _get_heading(max_kw_lenght: int) -> list[str]:
+    heading = f"| {KEYWORD_NAME} "
+    next_line = f"| {'-' * len(KEYWORD_NAME)}"
+    if (padding := max_kw_lenght - len(heading) - 1) > 0:
+        heading = f"{heading}{' ' * padding}"
+        next_line = f"{next_line}{'-' * padding}"
+    reason = "Reason"
+    reason_padding = len(MISSING_TRANSLATION) - len(reason)
+    heading = f"{heading}| {reason}{' ' * reason_padding}|"
+    next_line = f"{next_line} | {'-' * (len(MISSING_TRANSLATION) -1)} |"
+    return [heading, next_line]
+
+
+def _table_doc_updated(lib_kw: str, max_name_lenght: int, reason: str) -> str:
+    line = f"| {lib_kw} "
+    if (padding := max_name_lenght - len(lib_kw)) > 0:
+        line = f"{line}{' ' * padding}| {reason} "
+    else:
+        line = f"{line}| {reason} "
+    if reason == DOC_CHANGED:
+        line = f"{line}   "
+    return f"{line}|"
+
+
+def _log_translation_table(table_body: list[str], heading: list[str]):
+    logging.info("Found differences between translation and library, see below for details.")
+    for line_line in heading:
+        logging.info(line_line)
+    for line in table_body:
+        logging.info(line)
+
+
+def _compare(filename: Path, library_translation: dict):
+    with filename.open("r") as file:
+        project_translation = json.load(file)
+    max_kw_lenght = _max_kw_name_lenght(project_translation)
+    table_body = []
+    for lib_kw, lib_kw_data in library_translation.items():
+        project_kw_data = project_translation.get(lib_kw)
+        if not project_kw_data:
+            table_body.append(_table_doc_updated(lib_kw, max_kw_lenght, MISSING_TRANSLATION))
+            continue
+        if project_kw_data["sha256"] != lib_kw_data["sha256"]:
+            table_body.append(_table_doc_updated(lib_kw, max_kw_lenght, DOC_CHANGED))
+    for project_kw in project_translation:
+        if project_kw not in library_translation:
+            table_body.append(_table_doc_updated(project_kw, max_kw_lenght, NO_LIB_KEYWORD))
+    if not table_body:
+        logging.info("Translation is valid, no updated needed.")
+    else:
+        heading = _get_heading(_max_kw_name_lenght(project_translation))
+        _log_translation_table(table_body, heading)
+
 @cli.command()
 @click.argument(
-    "filenane",
+    "filename",
     type=click.Path(exists=False, dir_okay=False, path_type=Path),
     required=True,
 )
@@ -564,8 +652,15 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     default=None,
     type=str,
 )
+@click.option(
+    "--compare",
+    help="Compares the translation file sha256 sum to library documentation.",
+    default=False,
+    is_flag=True,
+    show_default=True,
+)
 def translation(
-    filenane: Path, plugings: Optional[str] = None, jsextension: Optional[str] = None
+    filename: Path, plugings: Optional[str] = None, jsextension: Optional[str] = None, compare: bool = False
 ):
     """Default translation file from library keywords.
 
@@ -583,27 +678,21 @@ def translation(
     The --jsextension argument is same as jsextension argument in the library
     import. If you use jsextension, it is also get default translation json
     file also witht the jsextension keywords included in the library.
-    """
-    from Browser import Browser
 
-    browser = Browser(plugins=plugings, jsextension=jsextension)
-    translation = {}
-    for function in browser.attributes.values():
-        translation[function.__name__] = {
-            "name": function.__name__,
-            "doc": function.__doc__,
-        }
-    translation["__init__"] = {
-        "name": "__init__",
-        "doc": inspect.getdoc(browser),
-    }
-    translation["__intro__"] = {
-        "name": "__intro__",
-        "doc": browser.__doc__,
-    }
-    with filenane.open("w") as file:
+    If the --compare flag is set, then command does not generate template
+    translation file. Then it compares sha256 sums from the filenane
+    to ones read from the library documenentation. It will print out a list
+    of keywords which documentation sha256 does not match. This will ease
+    translation projects to identify keywords which documentation needs updating.
+    """
+    translation = _get_library_translaton(plugings, jsextension)
+    if compare:
+        return _compare(filename, translation)
+
+    with filename.open("w") as file:
         json.dump(translation, file, indent=4)
-    logging.info(f"Translation file created in {filenane.absolute()}")
+    logging.info(f"Translation file created in {filename.absolute()}")
+
 
 
 if __name__ == "__main__":
