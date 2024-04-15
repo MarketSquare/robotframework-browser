@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import sys
 import time
 from datetime import timedelta
@@ -62,4 +63,40 @@ def verify_translation(filename: Path) -> dict:
         logger.info(kw)
         assert kw == data[kw]["name"], f"{kw} != {data[kw]['name']}"
         assert data[kw]["doc"], data[kw]["doc"]
+        assert data[kw]["sha256"]
     return data
+
+
+def modify_sha256(filename: Path, *kw_names):
+    with filename.open("r") as file:
+        data = json.load(file)
+    for kw in data:
+        if kw in kw_names:
+            logger.info(f"Modify keyword {kw} sha256 value")
+            data[kw]["sha256"] = str(random.randint(1, 1000))
+    with filename.open("w") as file:
+        json.dump(data, file, indent=4)
+
+def remoe_kw(filename: Path, *kw_names):
+    with filename.open("r") as file:
+        data = json.load(file)
+    for kw in kw_names:
+        logger.info(f"Remove {kw}")
+        data.pop(kw, None)
+    with filename.open("w") as file:
+        json.dump(data, file, indent=4)
+
+
+def add_kw(filename: Path, *kw_names):
+    with filename.open("r") as file:
+        data = json.load(file)
+    for kw in kw_names:
+        kw_data = {
+            "name": kw,
+            "doc": str(random.randint(1, 1000)),
+            "sha256": str(random.randint(1, 1000)),
+        }
+        logger.info(f"Add keyword {kw_data}")
+        data[kw] = kw_data
+    with filename.open("w") as file:
+        json.dump(data, file, indent=4)
