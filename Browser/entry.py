@@ -34,6 +34,7 @@ KEYWORD_NAME = "Keyword name"
 DOC_CHANGED = "Documentation update needed"
 NO_LIB_KEYWORD = "Keyword not found from library"
 MISSING_TRANSLATION = "Keyword is missing translation"
+MISSING_CHECKSUM = "Keyword tranlsaton is missing checksum"
 try:
     INSTALL_LOG.touch(exist_ok=True)
 except Exception as error:
@@ -585,6 +586,15 @@ def _max_kw_name_lenght(project_tanslation: dict) -> int:
     return max_lenght
 
 
+def _max_reason_lenght() -> int:
+    return max(
+        len(DOC_CHANGED),
+        len(NO_LIB_KEYWORD),
+        len(MISSING_TRANSLATION),
+        len(MISSING_CHECKSUM),
+    )
+
+
 def _get_heading(max_kw_lenght: int) -> List[str]:
     heading = f"| {KEYWORD_NAME} "
     next_line = f"| {'-' * len(KEYWORD_NAME)}"
@@ -592,15 +602,15 @@ def _get_heading(max_kw_lenght: int) -> List[str]:
         heading = f"{heading}{' ' * padding}"
         next_line = f"{next_line}{'-' * padding}"
     reason = "Reason"
-    reason_padding = len(MISSING_TRANSLATION) - len(reason)
+    reason_padding = _max_reason_lenght() - len(reason)
     heading = f"{heading}| {reason}{' ' * reason_padding}|"
-    next_line = f"{next_line} | {'-' * (len(MISSING_TRANSLATION) -1)} |"
+    next_line = f"{next_line} | {'-' * (_max_reason_lenght() -1)} |"
     return [heading, next_line]
 
 
 def _table_doc_updated(lib_kw: str, max_name_lenght: int, reason: str) -> str:
     line = f"| {lib_kw} "
-    if (padding := max_name_lenght - len(lib_kw)) > 0:
+    if (padding := max_name_lenght - len(lib_kw) - 4) > 0:
         line = f"{line}{' ' * padding}| {reason} "
     else:
         line = f"{line}| {reason} "
@@ -629,6 +639,12 @@ def _compare(filename: Path, library_translation: dict):
         if not project_kw_data:
             table_body.append(
                 _table_doc_updated(lib_kw, max_kw_lenght, MISSING_TRANSLATION)
+            )
+            continue
+        sha256_value = project_kw_data.get("sha256")
+        if not sha256_value:
+            table_body.append(
+                _table_doc_updated(lib_kw, max_kw_lenght, MISSING_CHECKSUM)
             )
             continue
         if project_kw_data["sha256"] != lib_kw_data["sha256"]:

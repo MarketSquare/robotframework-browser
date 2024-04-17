@@ -54,6 +54,7 @@ Compare Translation Files
     Modify Sha256    ${OUTPUT_DIR}/translation_new.json    cancel_download    focus    __intro__
     Remoe Kw    ${OUTPUT_DIR}/translation_new.json    close_page    grant_permissions
     Add Kw    ${OUTPUT_DIR}/translation_new.json    not_there
+    Remove Sha256    ${OUTPUT_DIR}/translation_new.json    get_style
     ${process} =    Run Process
     ...    ${entry_cmd} translation --compare ${OUTPUT_DIR}/translation_new.json
     ...    shell=True
@@ -62,7 +63,7 @@ Compare Translation Files
     Should Be Equal As Integers    ${process.rc}    0
     ${lines} =    Split To Lines    ${process.stdout}
     Log    ${lines}
-    Length Should Be    ${lines}    9
+    Length Should Be    ${lines}    10
     ${re_prefix} =    Set Variable    \\d{4}-\\d\\d-\\d\\d\\s.{13}\\[INFO\\s{4}\\]\\s
     Should Match Regexp
     ...    ${lines}[0]
@@ -93,4 +94,4 @@ Compare Translation Files
     Log    ${process.stdout}
     Should Be Equal As Integers    ${process.rc}    0
     Should Match Regexp    ${process.stdout}    ${re_prefix}Translation is valid, no updated needed.
-    [Teardown]    Remove Files    ${OUTPUT_DIR}/translation_new.json
+    # [Teardown]    Remove Files    ${OUTPUT_DIR}/translation_new.json

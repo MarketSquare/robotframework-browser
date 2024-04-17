@@ -1,7 +1,7 @@
 body
 
-0) | new_page                                   | Keyword is missing translation |
-1) | new_page                                   | Documentation update needed    |
+0) | new_page                               | Keyword is missing translation |
+1) | new_page                               | Documentation update needed    |
 2) | new_page | Keyword is missing translation |
-3) | click    | Keyword not found from library |
-4) | click    | Documentation update needed    |
+3) | click | Keyword not found from library |
+4) | click | Documentation update needed    |
