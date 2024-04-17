@@ -632,7 +632,7 @@ def _log_translation_table(table_body: List[str], heading: List[str]):
 def _compare(filename: Path, library_translation: dict):
     with filename.open("r") as file:
         project_translation = json.load(file)
-    max_kw_lenght = _max_kw_name_lenght(project_translation)
+    max_kw_lenght = _max_kw_name_lenght(library_translation)
     table_body = []
     for lib_kw, lib_kw_data in library_translation.items():
         project_kw_data = project_translation.get(lib_kw)

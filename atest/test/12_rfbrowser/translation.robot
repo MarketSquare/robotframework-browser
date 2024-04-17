@@ -82,8 +82,15 @@ Compare Translation Files
     Should Match Regexp    ${lines}[6]    ${re_prefix}| focus${SPACE * 30}| Documentation update needed${SPACE * 4}|
     Should Match Regexp
     ...    ${lines}[7]
-    ...    ${re_prefix}| __intro__${SPACE * 26}| Documentation update needed${SPACE * 4}|
-    Should Match Regexp    ${lines}[8]    ${re_prefix}| not_there${SPACE * 26}| Keyword not found from library |
+    ...    ${re_prefix}\\| get_style${SPACE * 22}\\| Keyword tranlsaton is missing checksum \\|
+    Should Match Regexp
+    ...    ${lines}[8]
+    ...    ${re_prefix}\\| __inro__${SPACE * 23}\\| Documentation update needed${SPACE * 4}\\|
+    Should Match Regexp    ${lines}[9]    ${re_prefix}\\| not_there${SPACE * 22}\\| Keyword not found from library \\|
+    [Teardown]    Remove Files    ${OUTPUT_DIR}/translation_new.json
+
+Translation Files Does Not Require Updates
+    ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
     ...    ${entry_cmd} translation ${OUTPUT_DIR}/translation_new.json
     ...    shell=True
@@ -93,5 +100,6 @@ Compare Translation Files
     Log    ${process.stderr}
     Log    ${process.stdout}
     Should Be Equal As Integers    ${process.rc}    0
+    ${re_prefix} =    Set Variable    \\d{4}-\\d\\d-\\d\\d\\s.{13}\\[INFO\\s{4}\\]\\s
     Should Match Regexp    ${process.stdout}    ${re_prefix}Translation is valid, no updated needed.
-    # [Teardown]    Remove Files    ${OUTPUT_DIR}/translation_new.json
+    [Teardown]    Remove Files    ${OUTPUT_DIR}/translation_new.json
