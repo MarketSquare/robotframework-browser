@@ -551,7 +551,9 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     subprocess.run(cmd, check=False)
 
 
-def _get_library_translaton(plugings: Optional[str] = None, jsextension: Optional[str] = None) -> dict:
+def _get_library_translaton(
+    plugings: Optional[str] = None, jsextension: Optional[str] = None
+) -> dict:
     from Browser import Browser
 
     browser = Browser(plugins=plugings, jsextension=jsextension)
@@ -574,6 +576,7 @@ def _get_library_translaton(plugings: Optional[str] = None, jsextension: Optiona
     }
     return translation
 
+
 def _max_kw_name_lenght(project_tanslation: dict) -> int:
     max_lenght = 0
     for keyword_data in project_tanslation.values():
@@ -581,7 +584,8 @@ def _max_kw_name_lenght(project_tanslation: dict) -> int:
             max_lenght = current_kw_length
     return max_lenght
 
-def _get_heading(max_kw_lenght: int) -> list[str]:
+
+def _get_heading(max_kw_lenght: int) -> List[str]:
     heading = f"| {KEYWORD_NAME} "
     next_line = f"| {'-' * len(KEYWORD_NAME)}"
     if (padding := max_kw_lenght - len(heading) - 1) > 0:
@@ -605,8 +609,10 @@ def _table_doc_updated(lib_kw: str, max_name_lenght: int, reason: str) -> str:
     return f"{line}|"
 
 
-def _log_translation_table(table_body: list[str], heading: list[str]):
-    logging.info("Found differences between translation and library, see below for details.")
+def _log_translation_table(table_body: List[str], heading: List[str]):
+    logging.info(
+        "Found differences between translation and library, see below for details."
+    )
     for line_line in heading:
         logging.info(line_line)
     for line in table_body:
@@ -621,18 +627,23 @@ def _compare(filename: Path, library_translation: dict):
     for lib_kw, lib_kw_data in library_translation.items():
         project_kw_data = project_translation.get(lib_kw)
         if not project_kw_data:
-            table_body.append(_table_doc_updated(lib_kw, max_kw_lenght, MISSING_TRANSLATION))
+            table_body.append(
+                _table_doc_updated(lib_kw, max_kw_lenght, MISSING_TRANSLATION)
+            )
             continue
         if project_kw_data["sha256"] != lib_kw_data["sha256"]:
             table_body.append(_table_doc_updated(lib_kw, max_kw_lenght, DOC_CHANGED))
     for project_kw in project_translation:
         if project_kw not in library_translation:
-            table_body.append(_table_doc_updated(project_kw, max_kw_lenght, NO_LIB_KEYWORD))
+            table_body.append(
+                _table_doc_updated(project_kw, max_kw_lenght, NO_LIB_KEYWORD)
+            )
     if not table_body:
         logging.info("Translation is valid, no updated needed.")
     else:
         heading = _get_heading(_max_kw_name_lenght(project_translation))
         _log_translation_table(table_body, heading)
+
 
 @cli.command()
 @click.argument(
@@ -660,7 +671,10 @@ def _compare(filename: Path, library_translation: dict):
     show_default=True,
 )
 def translation(
-    filename: Path, plugings: Optional[str] = None, jsextension: Optional[str] = None, compare: bool = False
+    filename: Path,
+    plugings: Optional[str] = None,
+    jsextension: Optional[str] = None,
+    compare: bool = False,
 ):
     """Default translation file from library keywords.
 
@@ -687,12 +701,11 @@ def translation(
     """
     translation = _get_library_translaton(plugings, jsextension)
     if compare:
-        return _compare(filename, translation)
-
-    with filename.open("w") as file:
-        json.dump(translation, file, indent=4)
-    logging.info(f"Translation file created in {filename.absolute()}")
-
+        _compare(filename, translation)
+    else:
+        with filename.open("w") as file:
+            json.dump(translation, file, indent=4)
+        logging.info(f"Translation file created in {filename.absolute()}")
 
 
 if __name__ == "__main__":
