@@ -77,6 +77,18 @@ def modify_sha256(filename: Path, *kw_names):
     with filename.open("w") as file:
         json.dump(data, file, indent=4)
 
+def remove_sha256(filename: Path, *kw_names):
+    with filename.open("r") as file:
+        data = json.load(file)
+    for kw in data:
+        if kw in kw_names:
+            logger.info(f"Remove keyword {kw} sha256 value")
+            kw_data = data[kw]
+            kw_data.pop("sha256", None)
+    with filename.open("w") as file:
+        json.dump(data, file, indent=4)
+
+
 def remoe_kw(filename: Path, *kw_names):
     with filename.open("r") as file:
         data = json.load(file)
