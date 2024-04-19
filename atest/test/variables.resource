@@ -37,3 +37,4 @@ ${SPACES_URL} =                     ${ROOT_URL}spaces.html
 ${TABLES_URL} =                     ${ROOT_URL}tables.html
 ${SYS_VAR_CI} =                     False
 ${SYS_VAR_CLEAN} =                  ${True}
+${NETWORK_IDLE_FILE_DATA} =         ${EMPTY}
