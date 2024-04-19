@@ -9,6 +9,12 @@ DOC_CHANGED = "Documentation update needed"
 NO_LIB_KEYWORD = "Keyword not found from library"
 MISSING_TRANSLATION = "Keyword is missing translation"
 MISSING_CHECKSUM = "Keyword tranlsaton is missing checksum"
+MAX_REASON_LEN = max(
+    len(DOC_CHANGED),
+    len(NO_LIB_KEYWORD),
+    len(MISSING_TRANSLATION),
+    len(MISSING_CHECKSUM),
+)
 
 
 def get_library_translaton(
@@ -45,36 +51,27 @@ def _max_kw_name_lenght(project_tanslation: dict) -> int:
     return max_lenght
 
 
-def _max_reason_lenght() -> int:
-    return max(
-        len(DOC_CHANGED),
-        len(NO_LIB_KEYWORD),
-        len(MISSING_TRANSLATION),
-        len(MISSING_CHECKSUM),
-    )
-
-
 def _get_heading(max_kw_lenght: int) -> List[str]:
     heading = f"| {KEYWORD_NAME} "
     next_line = f"| {'-' * len(KEYWORD_NAME)}"
-    if (padding := max_kw_lenght - len(heading) - 1) > 0:
+    if (padding := max_kw_lenght - len(KEYWORD_NAME)) > 0:
         heading = f"{heading}{' ' * padding}"
         next_line = f"{next_line}{'-' * padding}"
     reason = "Reason"
-    reason_padding = _max_reason_lenght() - len(reason)
-    heading = f"{heading}| {reason}{' ' * reason_padding}|"
-    next_line = f"{next_line} | {'-' * (_max_reason_lenght() -1)} |"
+    reason_padding = MAX_REASON_LEN - len(reason)
+    heading = f"{heading}| {reason}{' ' * reason_padding} |"
+    next_line = f"{next_line} | {'-' * MAX_REASON_LEN} |"
     return [heading, next_line]
 
 
 def _table_doc_updated(lib_kw: str, max_name_lenght: int, reason: str) -> str:
     line = f"| {lib_kw} "
-    if (padding := max_name_lenght - len(lib_kw) - 4) > 0:
+    if (padding := max_name_lenght - len(lib_kw) - 0) > 0:
         line = f"{line}{' ' * padding}| {reason} "
     else:
         line = f"{line}| {reason} "
-    if reason == DOC_CHANGED:
-        line = f"{line}{' ' * 11}"
+    if reason_padding := MAX_REASON_LEN - len(reason):
+        line = f"{line}{' ' * reason_padding}"
     return f"{line}|"
 
 
@@ -106,6 +103,6 @@ def compare_translatoin(filename: Path, library_translation: dict):
     if not table_body:
         return []
 
-    table = _get_heading(_max_kw_name_lenght(project_translation))
+    table = _get_heading(max_kw_lenght)
     table.extend(table_body)
     return table
