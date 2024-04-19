@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import click
-from robot import version as rf_version
+from robot import version as rf_version  # noqa: RUF100
 
 from .translation import compare_translatoin, get_library_translaton
 
