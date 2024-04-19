@@ -41,7 +41,7 @@ setup_kwargs = {
     "extras_require": {
         "tidy": ["robotframework-tidy>=4.9.0"]
     },
-    "entry_points": {"console_scripts": ["rfbrowser=Browser.entry:cli"]},
+    "entry_points": {"console_scripts": ["rfbrowser=Browser.entry.__main__:cli"]},
     "python_requires": ">=3.8,<4.0",
     "classifiers": [
         "Development Status :: 5 - Production/Stable",
