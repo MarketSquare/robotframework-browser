@@ -75,18 +75,24 @@ Compare Translation Files
     Should Match Regexp
     ...    ${lines}[3]
     ...    ${re_prefix}\\| cancel_download${SPACE * 20}\\| Documentation update needed${SPACE * 12}\\|
-    Should Match Regexp    ${lines}[4]    ${re_prefix}\\| close_page${SPACE * 25}\\| Keyword is missing translation${SPACE * 9}\\|
+    Should Match Regexp
+    ...    ${lines}[4]
+    ...    ${re_prefix}\\| close_page${SPACE * 25}\\| Keyword is missing translation${SPACE * 9}\\|
     Should Match Regexp
     ...    ${lines}[5]
     ...    ${re_prefix}\\| grant_permissions${SPACE * 18}\\| Keyword is missing translation${SPACE * 9}\\|
-    Should Match Regexp    ${lines}[6]    ${re_prefix}\\| focus${SPACE * 30}\\| Documentation update needed${SPACE * 12}\\|
+    Should Match Regexp
+    ...    ${lines}[6]
+    ...    ${re_prefix}\\| focus${SPACE * 30}\\| Documentation update needed${SPACE * 12}\\|
     Should Match Regexp
     ...    ${lines}[7]
     ...    ${re_prefix}\\| get_style${SPACE * 26}\\| Keyword tranlsaton is missing checksum \\|
     Should Match Regexp
     ...    ${lines}[8]
     ...    ${re_prefix}\\| __intro__${SPACE * 26}\\| Documentation update needed${SPACE * 12}\\|
-    Should Match Regexp    ${lines}[9]    ${re_prefix}\\| not_there${SPACE * 26}\\| Keyword not found from library${SPACE * 9}\\|
+    Should Match Regexp
+    ...    ${lines}[9]
+    ...    ${re_prefix}\\| not_there${SPACE * 26}\\| Keyword not found from library${SPACE * 9}\\|
     [Teardown]    Remove Files    ${OUTPUT_DIR}/translation_new.json
 
 Translation Files Does Not Require Updates
