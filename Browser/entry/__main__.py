@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 INSTALLATION_DIR = Path(__file__).parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"
-TIDY_TRANSFORMER_DIR = Path(__file__).parent / "tidy_transformer"
+TIDY_TRANSFORMER_DIR = Path(__file__).parent.parent / "tidy_transformer"
 # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
 # But shell=True breaks our linux CI
 SHELL = bool(platform.platform().startswith("Windows"))
