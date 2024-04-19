@@ -615,7 +615,7 @@ def _table_doc_updated(lib_kw: str, max_name_lenght: int, reason: str) -> str:
     else:
         line = f"{line}| {reason} "
     if reason == DOC_CHANGED:
-        line = f"{line}   "
+        line = f"{line}{' ' * 11}"
     return f"{line}|"
 
 
