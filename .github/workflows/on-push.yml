@@ -112,11 +112,11 @@ jobs:
             node-version: 20.x
             shard: 1
           - os: macos-latest
-            python-version: "3.8"
+            python-version: "3.11"
             node-version: 20.x
             shard: 1
           - os: macos-latest
-            python-version: "3.9"
+            python-version: "3.12"
             node-version: 20.x
             shard: 2
           - os: macos-latest
