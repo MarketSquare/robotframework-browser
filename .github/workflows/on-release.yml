@@ -23,7 +23,9 @@ jobs:
         run: |
           npm ci
           python -m pip install --upgrade pip
-          pip install -r Browser/dev-requirements.txt
+          pip install -U uv
+          uv venv
+          uv pip install -r Browser/dev-requirements.txt  --python python3.8
           inv build
       - name: Build docs
         run: |

@@ -63,6 +63,13 @@ lint.select = [
   "SIM",
   "RUF"
 ]
+[tool.ruff.lint.per-file-ignores]
+"tasks.py" = [
+  "T201",
+  "PTH123",
+  "PTH120"
+]
+"bootstrap.py" = ["T201"]
 
 [tool.robotidy]
 src = ["atest"]
@@ -73,11 +80,4 @@ configure = [
   "NormalizeNewLines:section_lines=1",
   "RenameKeywords:enabled=True",
   "RenameTestCases:capitalize_each_word=True:enabled=True"
-]
-
-[tool.ruff.lint.per-file-ignores]
-"tasks.py" = [
-  "T201",
-  "PTH123",
-  "PTH120"
 ]

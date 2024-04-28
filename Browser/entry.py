@@ -202,12 +202,13 @@ def _node_info():
     _write_marker()
 
 
-def _log_install_dir():
-    logging.info(
-        f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for. "
-        "unknown reason. Investigate the npm output and fix possible problems."
-        "\nPrinting contents:\n"
-    )
+def _log_install_dir(error_msg=True):
+    if error_msg:
+        logging.info(
+            f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for. "
+            "unknown reason. Investigate the npm output and fix possible problems."
+            "\nPrinting contents:\n"
+        )
     for line in _walk_install_dir():
         logging.info(line)
     _write_marker()
@@ -364,7 +365,7 @@ def clean_node():
     _write_marker()
     _python_info()
     _node_info()
-    _log_install_dir()
+    _log_install_dir(False)
     _write_marker()
 
     if not NODE_MODULES.is_dir():

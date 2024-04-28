@@ -86,7 +86,12 @@ Library was tested with Playwright REPLACE_PW_VERSION
 @task
 def deps(c):
     c.run("pip install -U pip")
-    c.run("pip install -r Browser/dev-requirements.txt")
+    c.run("pip install -U uv")
+    uv_cmd = "uv pip install -r Browser/dev-requirements.txt"
+    if IN_CI:
+        print(f"Install packages to Python found from {sys.executable}.")
+        uv_cmd = f"{uv_cmd} --python {sys.executable}"
+    c.run(uv_cmd)
     if os.environ.get("CI"):
         shutil.rmtree("node_modules", ignore_errors=True)
 
@@ -598,11 +603,11 @@ def _add_skips(default_args, include_mac=False):
 @task
 def lint_python(c, fix=False):
     print("Run mypy:")
-    c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/")
+    c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/ bootstrap.py")
     print("Run black:")
-    c.run("black --config Browser/pyproject.toml tasks.py Browser/")
+    c.run("black --config Browser/pyproject.toml tasks.py Browser/ bootstrap.py")
     print("Run ruff:")
-    ruff_cmd = "ruff check --config Browser/pyproject.toml Browser/"
+    ruff_cmd = "ruff check --config Browser/pyproject.toml Browser/ bootstrap.py"
     if fix:
         ruff_cmd = f"{ruff_cmd} --fix"
     if IN_CI:
