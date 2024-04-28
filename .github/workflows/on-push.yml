@@ -38,11 +38,22 @@ jobs:
       with:
         python-version: 3.9
         cache: 'pip'
-    - name: Install python dependencies
+    - name: Install python dependencies in Linux
+      if: matrix.os == 'ubuntu-latest'
       run: |
         python -m pip install --upgrade pip
-        pip install wheel
-        pip install -r Browser/dev-requirements.txt
+        pip install uv
+        uv venv
+        uv pip install wheel --python python3.9
+        uv pip install -r Browser/dev-requirements.txt  --python python3.9
+    - name: Install python dependencies in Windows
+      if: matrix.os != 'ubuntu-latest'
+      run: |
+        python -m pip install --upgrade pip
+        pip install uv
+        uv venv
+        uv pip install wheel --python python3.9
+        uv pip install -r Browser/dev-requirements.txt  --python 3.9
     - name: Build Protos and check with tsc
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -144,8 +155,10 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install wheel
-        pip install -r Browser/dev-requirements.txt
+        pip install uv
+        uv venv
+        uv pip install wheel --python ${{ matrix.python-version }}
+        uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }}
     - name: Build Protos and check with tsc
       run: |
         inv node-build
@@ -173,7 +186,7 @@ jobs:
     - name: Run pytests
       if: matrix.shard == 1
       run: |
-       invoke utest
+        invoke utest
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -200,7 +213,7 @@ jobs:
       # flaky-tests-detection install is here because dependencies takes long
       # time to install and not needed for the test-install
       run : |
-        pip install flaky-tests-detection requests python-dateutil
+        uv pip install flaky-tests-detection requests python-dateutil --python ${{ matrix.python-version }}
         python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
         inv copy-xunit
     - name: Flaky tests detection
@@ -256,17 +269,19 @@ jobs:
           cache: 'pip'
       - name: Install Robot Framework Browser on unix-like
         run: |
-          pip install ./robotframework_browser-*-py3-none-any.whl
+          pip install -U uv
+          uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }}
         if: matrix.os != 'windows-latest'
       - name: Install Robot Framework Browser on windows
         run: |
-          pip install (gci *.whl)
+          pip install -U uv
+          uv pip install (gci *.whl)--python ${{ matrix.python-version }}
         if: matrix.os == 'windows-latest'
       - name: Install node deps and python deps for test running
         run: |
           rfbrowser init
-          pip install wheel
-          pip install -r Browser/dev-requirements.txt
+          uv pip install wheel --python ${{ matrix.python-version }}
+          uv pip install -r Browser/dev-requirements.txt  --python ${{ matrix.python-version }}
       - name: Test on unix-like os - serial mode
         if: matrix.os == 'ubuntu-latest'
         env:
@@ -290,7 +305,7 @@ jobs:
         # flaky-tests-detection install is here because dependencies takes long
         # time to install and not needed for the test-install
         run: |
-          pip install flaky-tests-detection
+          uv pip install flaky-tests-detection --python ${{ matrix.python-version }}
           python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
           inv copy-xunit
       - name: Flaky tests detection
@@ -301,7 +316,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           rfbrowser clean-node
-          pip uninstall --yes robotframework-browser
+          uv pip uninstall robotframework-browser  --python ${{ matrix.python-version }}
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:

@@ -84,12 +84,16 @@ jobs:
       - name: Install python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install wheel
-          pip install -r Browser/dev-requirements.txt
+          pip install -U uv
+          uv venv
+          uv pip install wheel --python python3.9
+          uv pip install -r Browser/dev-requirements.txt  --python python3.9
       - name: Install invoke deps
-        run: invoke deps
+        run: |
+          invoke deps
       - name: build testing docker image
-        run: invoke docker-tester
+        run: |
+          invoke docker-tester
       - name: set permissions
         run: chmod -R 777 atest/
       - name: Run tests with latest stable docker image
