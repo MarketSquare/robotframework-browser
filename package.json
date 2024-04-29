@@ -27,7 +27,7 @@
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0",
+    "react-dom": "^18.3.1",
     "react-draggable": "^4.4.6",
     "react-router-dom": "^6.23.0",
     "ts-loader": "^9.5.1",
