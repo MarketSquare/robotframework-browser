@@ -43,7 +43,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install uv
-        uv venv
         uv pip install wheel --python python3.9
         uv pip install -r Browser/dev-requirements.txt  --python python3.9
     - name: Install python dependencies in Windows
@@ -51,7 +50,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install uv
-        uv venv
         uv pip install wheel --python python3.9
         uv pip install -r Browser/dev-requirements.txt  --python 3.9
     - name: Build Protos and check with tsc
@@ -156,7 +154,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install uv
-        uv venv
         uv pip install wheel --python ${{ matrix.python-version }}
         uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }}
     - name: Build Protos and check with tsc
