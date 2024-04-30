@@ -87,3 +87,5 @@ Tracing And Closing Current Browsers
 Tracing Timeout
     ${OLD_BROWSER_TIMEOUT} =    Set Browser Timeout    15s
     Set Suite Variable    ${OLD_BROWSER_TIMEOUT}
+    Remove Directory    ${OUTPUT_DIR}/browser/traces/    recursive=True
+    Create Directory    ${OUTPUT_DIR}/browser/traces/
