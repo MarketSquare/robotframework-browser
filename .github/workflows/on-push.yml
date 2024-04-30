@@ -201,10 +201,6 @@ jobs:
       with:
         name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: zip_results/output
-    - name: Create Distributable Package
-      run: |
-        inv docs
-        inv create-package
     - name: Artifacts download for flaky test analysis
       if: ${{ failure() }}
       # flaky-tests-detection install is here because dependencies takes long
