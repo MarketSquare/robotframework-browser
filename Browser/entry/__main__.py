@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import click
-from robot import version as rf_version  # noqa: RUF100
 
 from .translation import compare_translatoin, get_library_translaton
 
@@ -215,6 +214,13 @@ def _log_install_dir(error_msg=True):
     _write_marker()
 
 
+def get_rf_version():
+    process = subprocess.run(
+        [sys.executable, "-m", "robot", "--version"], capture_output=True, check=True
+    )
+    return process.stdout.decode("utf-8").split(" ")[2]
+
+
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
@@ -228,7 +234,7 @@ def print_version(ctx, param, value):
     match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
     pw_version = match.group(0) if match else "unknown"
     logging.info(f"Installed Browser library version is: {browser_lib_version}")
-    logging.info(f'Robot Framework version: "{rf_version.VERSION}"')
+    logging.info(f'Robot Framework version: "{get_rf_version()}"')
     logging.info(f'Installed Playwright is: "{pw_version}"')
     _write_marker()
 
