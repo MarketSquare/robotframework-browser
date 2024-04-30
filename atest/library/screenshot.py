@@ -42,9 +42,9 @@ def compare_images(img1_path: str, img2_bytes: bytes, expect_failure: ExpectFail
         logger.info(f"box: {box}, type({type(box)}), but no idea why this fails.")
         error_sum = 0
         for pixel1, pixel2 in zip(im1.getdata(), im2.getdata()):
-            error_sum = error_sum + (pixel1[0] - pixel2[0])
-            error_sum = error_sum + (pixel1[1] - pixel2[1])
-            error_sum = error_sum + (pixel1[2] - pixel2[2])
+            error_sum = error_sum + abs(pixel1[0] - pixel2[0])
+            error_sum = error_sum + abs(pixel1[1] - pixel2[1])
+            error_sum = error_sum + abs(pixel1[2] - pixel2[2])
         logger.info(f"Difference between pixes is {error_sum}")
         if error_sum > 10:
             raise ValueError(f"Box {box} has difference of {error_sum}")
