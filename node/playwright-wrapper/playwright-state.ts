@@ -93,7 +93,7 @@ export async function initializeExtension(
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
     logger.info(`Initializing extension: ${request.getPath()}`);
-    const extension: Record<string, (...args: unknown[]) => unknown> = (0, eval)('require')(request.getPath());
+    const extension: Record<string, (...args: unknown[]) => unknown> = eval('require')(request.getPath());
     state.extensions.push(extension);
     const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
     logger.info(`Adding ${kws.length} keywords from JS Extension`);
