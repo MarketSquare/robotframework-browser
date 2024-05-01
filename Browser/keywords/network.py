@@ -49,7 +49,7 @@ def _jsonize_content(data, bodykey):
     if (
         "content-type" in lower_headers
         and "application/json" in lower_headers["content-type"]
-    ):
+    ) and data[bodykey]:
         with contextlib.suppress(json.decoder.JSONDecodeError):
             data[bodykey] = json.loads(data[bodykey])
 
