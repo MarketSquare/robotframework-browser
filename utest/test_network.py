@@ -23,3 +23,10 @@ def test_response_parsing_text():
         }
     )
     assert response["body"] == "{key:'value3'}"
+
+
+def test_empty_response():
+    response = _format_response(
+        {"headers": '{"Content-Type": "application/json"}', "body": None}
+    )
+    assert response["body"] == None
