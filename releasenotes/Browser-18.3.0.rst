@@ -62,10 +62,13 @@ to the <img> tag. This adds supports for XRay.
 Acknowledgements
 ================
 
-**EXPLAIN** or remove these.
+Typo in README uninstall  (`#3465`_)
+------------------------------------
+Many thanks to thulasiraju for fixing typo in README file.
 
-- Typo in README uninstall  (`#3465`_)
-- Improve logging done by Click and Select Options By keyword  (`#3510`_)
+Improve logging done by Click and Select Options By keyword  (`#3510`_)
+-----------------------------------------------------------------------
+Many thanks to lennartq for improving logging in Click and Select Options By keyword keywords.
 
 Full list of fixes and enhancements
 ===================================
