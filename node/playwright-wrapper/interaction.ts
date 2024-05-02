@@ -133,8 +133,8 @@ export async function internalClick(
         await locator.click(JSON.parse(options));
         return true;
     } catch (error: unknown) {
-        if (error instanceof Error && error.message.startsWith('locator.click: Target closed')) {
-            logger.warn('Supress locator.click: Target closed error');
+        if (error instanceof Error && error.message.startsWith('locator.click: Target page, context or browser has been closed')) {
+            logger.warn('Supress locator.click: Target page, context or browser has been closed error');
             return false;
         }
         throw error;
