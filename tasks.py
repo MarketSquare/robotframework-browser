@@ -136,6 +136,7 @@ def clean(c):
         pyi_file,
         Path("./.ruff_cache"),
         Path("./.pytest_cache"),
+        PYTHON_SRC_DIR / "rfbrowser.log",
     ]:
         try:
             file.unlink()
