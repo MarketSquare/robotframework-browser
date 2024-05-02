@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-147-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-148-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -365,6 +365,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/anacomparada"><img src="https://avatars.githubusercontent.com/u/166409747?v=4?s=100" width="100px;" alt="anacomparada"/><br /><sub><b>anacomparada</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aanacomparada" title="Bug reports">🐛</a> <a href="https://github.com/MarketSquare/robotframework-browser/commits?author=anacomparada" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/siongwai"><img src="https://avatars.githubusercontent.com/u/112995767?v=4?s=100" width="100px;" alt="siongwai"/><br /><sub><b>siongwai</b></sub></a><br /><a href="#ideas-siongwai" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/nfaustin"><img src="https://avatars.githubusercontent.com/u/3782948?v=4?s=100" width="100px;" alt="nfaustin"/><br /><sub><b>nfaustin</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Anfaustin" title="Bug reports">🐛</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Shutgun"><img src="https://avatars.githubusercontent.com/u/20171515?v=4?s=100" width="100px;" alt="Guido Schmitz"/><br /><sub><b>Guido Schmitz</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=Shutgun" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
