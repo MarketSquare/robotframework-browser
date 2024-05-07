@@ -180,7 +180,7 @@ Screenshot With Fixed Cropping
     Should Be Equal As Integers    ${height}    123
     Should Be Equal As Integers    ${width}    654
     ${color} =    Get Pixel Color    ${path}    ${width//2}    ${height//2}
-    Should Be Equal    ${color}    ${{(255,255,255,255)}}
+    Should Be Equal    ${color}    ${{(255,255,255)}}
     [Teardown]    Remove File    ${path}
 
 Screenshot With Omit Background
