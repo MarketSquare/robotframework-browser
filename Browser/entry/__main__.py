@@ -230,7 +230,7 @@ def _log_install_dir(error_msg=True):
 
 def get_rf_version():
     process = subprocess.run(
-        [sys.executable, "-m", "robot", "--version"], capture_output=True, check=True
+        [sys.executable, "-m", "robot", "--version"], capture_output=True, check=False
     )
     return process.stdout.decode("utf-8").split(" ")[2]
 
