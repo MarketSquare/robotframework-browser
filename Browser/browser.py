@@ -735,7 +735,7 @@ class Browser(DynamicCore):
 
     = Language =
 
-    Browser library offers possibility to translte keyword names and documentation to new language. If language
+    Browser library offers possibility to translate keyword names and documentation to new language. If language
     is defined, Browser library will search from
     [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#module-search-path | module search path]
     Python packages starting with `robotframework_browser_translation` by using
