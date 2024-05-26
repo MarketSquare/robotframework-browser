@@ -49,9 +49,9 @@ jobs:
       if: matrix.os != 'ubuntu-latest'
       run: |
         python -m pip install --upgrade pip
-        pip install uv==0.1.45
-        uv pip install wheel --python python3.9
-        uv pip install -r Browser/dev-requirements.txt  --python 3.9
+        pip install uv
+        uv pip install wheel --python 3.9  --system --verbose
+        uv pip install -r Browser/dev-requirements.txt  --python 3.9  --system
     - name: Build Protos and check with tsc
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -153,9 +153,9 @@ jobs:
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install uv==0.1.45
-        uv pip install wheel --python ${{ matrix.python-version }}
-        uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }}
+        pip install uv
+        uv pip install wheel --python ${{ matrix.python-version }} --system
+        uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }} --system
     - name: Build Protos and check with tsc
       run: |
         inv node-build
@@ -262,13 +262,13 @@ jobs:
           cache: 'pip'
       - name: Install Robot Framework Browser on unix-like
         run: |
-          pip install uv==0.1.45
-          uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }}
+          pip install uv
+          uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }} --system
         if: matrix.os != 'windows-latest'
       - name: Install Robot Framework Browser on windows
         run: |
-          pip install uv==0.1.45
-          uv pip install (gci *.whl)--python ${{ matrix.python-version }}
+          pip install uv
+          uv pip install (gci *.whl)--python ${{ matrix.python-version }} --system
         if: matrix.os == 'windows-latest'
       - name: Install node deps and python deps for test running
         run: |
