@@ -43,8 +43,8 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install uv
-        uv pip install wheel --python 3.9  —system --verbose
-        uv pip install -r Browser/dev-requirements.txt  --python python3.9
+        uv pip install wheel --python 3.9  --system --verbose
+        uv pip install -r Browser/dev-requirements.txt  --python 3.9 --system
     - name: Install python dependencies in Windows
       if: matrix.os != 'ubuntu-latest'
       run: |
