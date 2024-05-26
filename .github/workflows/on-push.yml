@@ -42,8 +42,8 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         python -m pip install --upgrade pip
-        pip install uv==0.1.45
-        uv pip install wheel --python 3.9 --verbose
+        pip install uv
+        uv pip install wheel --python 3.9  —system --verbose
         uv pip install -r Browser/dev-requirements.txt  --python python3.9
     - name: Install python dependencies in Windows
       if: matrix.os != 'ubuntu-latest'
