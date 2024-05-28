@@ -273,8 +273,8 @@ jobs:
       - name: Install node deps and python deps for test running
         run: |
           rfbrowser init
-          uv pip install wheel --python ${{ matrix.python-version }}
-          uv pip install -r Browser/dev-requirements.txt  --python ${{ matrix.python-version }}
+          uv pip install wheel --python ${{ matrix.python-version }} --system
+          uv pip install -r Browser/dev-requirements.txt  --python ${{ matrix.python-version }} --system
       - name: Test on unix-like os - serial mode
         if: matrix.os == 'ubuntu-latest'
         env:
