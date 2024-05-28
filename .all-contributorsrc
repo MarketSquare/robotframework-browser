@@ -1381,6 +1381,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "vmmattila",
+      "name": "vmmattila",
+      "avatar_url": "https://avatars.githubusercontent.com/u/135705333?v=4",
+      "profile": "https://github.com/vmmattila",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
