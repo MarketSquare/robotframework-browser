@@ -298,7 +298,7 @@ jobs:
         # flaky-tests-detection install is here because dependencies takes long
         # time to install and not needed for the test-install
         run: |
-          uv pip install flaky-tests-detection --python ${{ matrix.python-version }}
+          uv pip install flaky-tests-detection --python ${{ matrix.python-version }} --system
           python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
           inv copy-xunit
       - name: Flaky tests detection
@@ -309,7 +309,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           rfbrowser clean-node
-          uv pip uninstall robotframework-browser  --python ${{ matrix.python-version }}
+          uv pip uninstall robotframework-browser  --python ${{ matrix.python-version }} --system
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
