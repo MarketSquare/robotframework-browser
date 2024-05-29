@@ -2,9 +2,11 @@ FROM mcr.microsoft.com/playwright:v1.44.1-focal
 
 # Add pip
 USER root
-RUN apt-get update && \
-  apt-get install -y python3 python3-pip && \
-  rm -rf /var/lib/apt/lists/*
+RUN apt-get update
+USER root
+RUN apt-get install -y python3 python3-pip
+USER root
+RUN rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/home/pwuser/.local/bin:${PATH}"
 ENV NODE_PATH=/usr/lib/node_modules
