@@ -72,6 +72,8 @@ def _write_marker(silent_mode: bool = False):
 def _log(message: str, silent_mode: bool = False):
     if silent_mode:
         return
+    if os.name == "nt":
+        message = re.sub(r"[^\x00-\x7f]",r" ", message)
     try:
         logging.info(message.strip("\n"))
     except UnicodeEncodeError as error:
