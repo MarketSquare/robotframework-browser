@@ -33,6 +33,24 @@ message Request {
     string frameSelector = 6;
   }
 
+  message Pdf {
+    bool displayHeaderFooter = 1;
+    string footerTemplate = 2;
+    string format = 3;
+    string headerTemplate = 4;
+    string height = 5;
+    bool landscape = 6;
+    string margin = 7;
+    bool outline = 8;
+    string pageRanges = 9;
+    string path = 10;
+    bool preferCSSPageSize = 11;
+    bool printBackground = 12;
+    float scale = 13;
+    bool tagged = 14;
+    string width = 15;
+  }
+
   message ScreenshotOptions {
     string selector = 1;
     string mask = 2;
@@ -237,12 +255,12 @@ message Request {
      string body = 3;
      string headers = 4;
   }
-  
+
   message HttpCapture {
     string urlOrPredicate = 1;
     float timeout = 2;
   }
-  
+
   message Device {
     string name = 1;
   }
@@ -442,7 +460,7 @@ service  Playwright {
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
   rpc GetStyle(Request.ElementStyle) returns (Response.Json);
-  /* Gets elements x, y coordinates and width, height as json object */ 
+  /* Gets elements x, y coordinates and width, height as json object */
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
@@ -507,4 +525,7 @@ service  Playwright {
   rpc CallExtensionKeyword(Request.KeywordCall) returns (stream Response.Json);
 
   rpc SetPeerId(Request.Index) returns (Response.String);
+
+  /* pdf */
+  rpc Pdf(Request.Pdf) returns (Response.Empty);
 }

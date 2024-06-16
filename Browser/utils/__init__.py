@@ -34,6 +34,8 @@ from .data_types import (
     NewPageDetails,
     PageLoadStates,
     Permission,
+    PdfFormat,
+    PdfMarging,
     PlaywrightLogTypes,
     Proxy,
     RecordHar,

@@ -20,6 +20,7 @@ from .formatter import Formatter
 from .getters import Getters
 from .interaction import Interaction
 from .network import Network
+from .pdf import Pdf
 from .playwright_state import PlaywrightState
 from .promises import Promises
 from .runonfailure import RunOnFailureKeywords
@@ -36,6 +37,7 @@ __all__ = [
     "Formatter",
     "Interaction",
     "Network",
+    "Pdf",
     "PlaywrightState",
     "Promises",
     "RunOnFailureKeywords",
