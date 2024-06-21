@@ -19,7 +19,7 @@ ENV NODE_PATH=/usr/lib/node_modules
 USER pwuser
 RUN pip3 install --no-cache-dir --upgrade pip wheel
 USER pwuser
-RUN  pip3 --version &&
+RUN  pip3 --version
 USER pwuser
 RUN  pip3 install --no-cache-dir --user --upgrade robotframework robotframework-browser==18.6.1
 USER pwuser
