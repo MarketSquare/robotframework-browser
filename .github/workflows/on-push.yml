@@ -201,18 +201,6 @@ jobs:
       with:
         name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: zip_results/output
-    - name: Artifacts download for flaky test analysis
-      if: ${{ failure() }}
-      # flaky-tests-detection install is here because dependencies takes long
-      # time to install and not needed for the test-install
-      run : |
-        uv pip install flaky-tests-detection requests python-dateutil --python ${{ matrix.python-version }}
-        python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
-        inv copy-xunit
-    - name: Flaky tests detection
-      if: ${{ failure() }}
-      run: |
-        flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
@@ -293,18 +281,6 @@ jobs:
           echo ${{ matrix.os }}
           Remove-Item -Path .\Browser -Force -Recurse
           invoke atest-robot --smoke
-      - name: Artifacts download for flaky test analysis
-        if: ${{ failure() }}
-        # flaky-tests-detection install is here because dependencies takes long
-        # time to install and not needed for the test-install
-        run: |
-          uv pip install flaky-tests-detection --python ${{ matrix.python-version }} --system
-          python download_file.py --project  MarketSquare --repo robotframework-browser --token ${{ secrets.GITHUB_TOKEN }}
-          inv copy-xunit
-      - name: Flaky tests detection
-        if: ${{ failure() }}
-        run: |
-          flaky --junit-files=flip_rate/xunit/ --grouping-option=days --window-size=2 --window-count=5 --top-n=10
       - name: Uninstall on Linux or MacOS
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
