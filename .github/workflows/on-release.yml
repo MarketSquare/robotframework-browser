@@ -19,12 +19,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Dependencies for building docs # TODO: thin a bit
+      - name: Dependencies for building docs
         run: |
           npm ci
           python -m pip install --upgrade pip
           pip install uv
-          uv pip install -r Browser/dev-requirements.txt  --python 3.8 --system
+          uv pip install -r Browser/dev-requirements.txt  --python 3.12 --system
           inv build
       - name: Build docs
         run: |
