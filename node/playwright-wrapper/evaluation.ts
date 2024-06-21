@@ -373,6 +373,7 @@ async function attachSubframeListeners(subframe: Frame, index: number): Promise<
         function waitUntilRecorderAvailable() {
             // @ts-ignore
             if (!window.subframeSelectorRecorderFindSelector) {
+                // @ts-ignore
                 return rafAsync().then(() => waitUntilRecorderAvailable());
             } else {
                 // @ts-ignore
@@ -409,6 +410,7 @@ async function recordSelectorIterator(label: string, frame: Frame): Promise<stri
         function waitUntilRecorderAvailable() {
             // @ts-ignore
             if (!window.selectorRecorderFindSelector) {
+                // @ts-ignore
                 return rafAsync().then(() => waitUntilRecorderAvailable());
             } else {
                 // @ts-ignore
