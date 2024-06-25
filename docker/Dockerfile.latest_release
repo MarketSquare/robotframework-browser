@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.44.1-focal
+FROM mcr.microsoft.com/playwright:v1.45.0-focal
 
 # Add pip
 USER root
