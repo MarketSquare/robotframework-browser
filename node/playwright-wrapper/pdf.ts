@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { PlaywrightState } from './playwright-state';
+import { Request, Response } from './generated/playwright_pb';
 import { exists } from './playwright-invoke';
-import { Request, Response, Types } from './generated/playwright_pb';
 import { stringResponse } from './response-util';
 
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function savePageAsPdf(request:Request.Pdf, state: PlaywrightState): Promise<Response.Empty> {
+export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState): Promise<Response.Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const pdfPath = request.getPath();
-    await activePage.pdf(
-        {path: pdfPath}
-    );
+    logger.info(`Saving pdf to ${pdfPath}`);
+    await activePage.pdf({ path: pdfPath });
     return stringResponse(pdfPath, `Pdf is saved to ${pdfPath}`);
 }
