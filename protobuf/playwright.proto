@@ -527,5 +527,5 @@ service  Playwright {
   rpc SetPeerId(Request.Index) returns (Response.String);
 
   /* pdf */
-  rpc Pdf(Request.Pdf) returns (Response.Empty);
+  rpc Pdf(Request.Pdf) returns (Response.String);
 }
