@@ -13,6 +13,7 @@
 # limitations under the License.
 import json
 import sys
+from os import PathLike
 from pathlib import Path
 
 from ..base import LibraryComponent
@@ -33,7 +34,7 @@ class Pdf(LibraryComponent):
     @keyword(tags=("Getter", "PageContent"))
     def save_page_as_pdf(
         self,
-        path: Path,
+        path: PathLike,
         *,
         displayHeaderFooter: bool = False,
         footerTemplate: str = "",
@@ -87,7 +88,7 @@ class Pdf(LibraryComponent):
 
         """
         if not self._is_relative_to(path):
-            path = self.outputdir / path
+            path = Path(self.outputdir) / str(path)
         format_ = format.value
         margin_ = json.dumps(margin)
         with self.playwright.grpc_channel() as stub:
@@ -111,6 +112,7 @@ class Pdf(LibraryComponent):
                 )
             )
         logger.info(response.log)
+        return response.body
 
     def _is_relative_to(self, path) -> bool:
         if sys.version_info[1] == 8:  # noqa: PLR2004
