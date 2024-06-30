@@ -116,5 +116,8 @@ class Pdf(LibraryComponent):
 
     def _is_relative_to(self, path) -> bool:
         if sys.version_info[1] == 8:  # noqa: PLR2004
-            return path.relative_to(self.outputdir)
+            try:
+                return path.relative_to(self.outputdir)
+            except ValueError:
+                return False
         return path.is_relative_to(self.outputdir)
