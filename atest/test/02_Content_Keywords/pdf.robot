@@ -15,7 +15,6 @@ Save As PDF With Default Options
 Save As PDF With All Options
     ${pdf4} =    Save Page As Pdf    welcome4.pdf    displayHeaderFooter=True
 
-
 *** Keywords ***
 Open Headless Chrome
     [Documentation]    Generating a pdf is currently only supported in Chromium headless.
