@@ -23,7 +23,9 @@ export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const pdfPath = request.getPath();
+    const displayheaderfooter = request.getDisplayheaderfooter();
     logger.info(`Saving pdf to ${pdfPath}`);
-    await activePage.pdf({ path: pdfPath });
+    logger.info(`Using options: displayHeaderFooter: ${displayheaderfooter}`);
+    await activePage.pdf({ path: pdfPath, displayHeaderFooter: displayheaderfooter });
     return stringResponse(pdfPath, `Pdf is saved to ${pdfPath}`);
 }
