@@ -10,7 +10,8 @@ Save As PDF With Default Options
     ${pdf3} =    Save Page As Pdf    foor/bar/welcome3.pdf
     Should Be Equal    ${pdf1}    ${OUTPUT_DIR}${/}welcome1.pdf
     Should Be Equal    ${pdf2}    ${OUTPUT_DIR}${/}welcome2.pdf
-    Should Be Equal    ${pdf3}    ${OUTPUT_DIR}${/}foor/bar/welcome3.pdf
+    ${expected_pdf3} =    Normalize Path    ${OUTPUT_DIR}${/}foor/bar/welcome3.pdf
+    Should Be Equal    ${pdf3}    ${expected_pdf3}
 
 Save As PDF With All Options
     ${pdf4} =    Save Page As Pdf    welcome4.pdf    displayHeaderFooter=True
