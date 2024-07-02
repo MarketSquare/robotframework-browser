@@ -25,8 +25,52 @@ export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState
     const pdfPath = request.getPath();
     const displayheaderfooter = request.getDisplayheaderfooter();
     const footertemplate = request.getFootertemplate();
+    const format = request.getFormat();
+    const headerTemplate = request.getHeadertemplate();
+    const height = request.getHeight();
+    const landscape = request.getLandscape();
+    const marginString = request.getMargin();
+    const marging = JSON.parse(marginString);
+    const outline = request.getOutline();
+    const pageRanges = request.getPageranges();
+    const preferCSSPageSize = request.getPrefercsspagesize();
+    const printBackground = request.getPrintbackground();
+    const scale = request.getScale();
+    const tagged = request.getTagged();
+    const width = request.getWidth();
     logger.info(`Saving pdf to ${pdfPath}`);
-    logger.info(`Using options: displayHeaderFooter: ${displayheaderfooter}`, `footerTemplate: ${footertemplate}`);
-    await activePage.pdf({ path: pdfPath, displayHeaderFooter: displayheaderfooter, footerTemplate: footertemplate });
+    const message =
+        `Using options: displayHeaderFooter: ${displayheaderfooter}, ` +
+        `footerTemplate: ${footertemplate}, ` +
+        `format: ${format}, ` +
+        `headerTemplate: ${headerTemplate}, ` +
+        `height: ${height}, ` +
+        `landscape: ${landscape}, ` +
+        `margin (as string): ${marginString}, ` +
+        `outline: ${outline}, ` +
+        `pageRanges: ${pageRanges}, ` +
+        `preferCSSPageSize: ${preferCSSPageSize}, ` +
+        `printBackground: ${printBackground}, ` +
+        `scale: ${scale}, ` +
+        `tagged: ${tagged}  and ` +
+        `width: ${width}`;
+    logger.info(message);
+    await activePage.pdf({
+        path: pdfPath,
+        displayHeaderFooter: displayheaderfooter,
+        footerTemplate: footertemplate,
+        format: format,
+        headerTemplate: headerTemplate,
+        height: height,
+        landscape: landscape,
+        margin: marging,
+        outline: outline,
+        pageRanges: pageRanges,
+        preferCSSPageSize: preferCSSPageSize,
+        printBackground: printBackground,
+        scale: scale,
+        tagged: tagged,
+        width: width,
+    });
     return stringResponse(pdfPath, `Pdf is saved to ${pdfPath}`);
 }
