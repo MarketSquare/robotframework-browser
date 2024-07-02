@@ -14,12 +14,40 @@ Save As PDF With Default Options
     Should Be Equal    ${pdf3}    ${expected_pdf3}
 
 Save As PDF With All Options
-    # footerTemplate is from https://github.com/microsoft/playwright/issues/14441
+    ${marging} =    Create Dictionary    top=10px    right=20px    bottom=30px    left=40px
+    # footerTemplate and headerTemplate are from https://github.com/microsoft/playwright/issues/14441
     ${pdf4} =    Save Page As Pdf
     ...    welcome4.pdf
     ...    displayHeaderFooter=True
     ...    footerTemplate=<span style="font-size: 20px;color:#000000;">FOOTER</span>
+    ...    format=A4
+    ...    headerTemplate=<span style="font-size: 20px;color:#000000;">HEADER</span>
+    ...    height=10pix
+    ...    landscape=True
+    ...    margin=${marging}
+    ...    outline=True
+    ...    pageRanges=1-2
+    ...    preferCSSPageSize=True
+    ...    printBackground=True
+    ...    scale=0.5
+    ...    tagged=True
+    ...    width=20px
     Should Be Equal    ${pdf4}    ${OUTPUT_DIR}${/}welcome4.pdf
+    ${marging} =    Create Dictionary    top=10px    bottom=30px
+    # footerTemplate and headerTemplate are from https://github.com/microsoft/playwright/issues/14441
+    ${pdf5} =    Save Page As Pdf
+    ...    welcome5.pdf
+    ...    margin={"top": "10px", "bottom": "30px"}
+    Should Be Equal    ${pdf5}    ${OUTPUT_DIR}${/}welcome5.pdf
+
+Save PDF With Invalid Margin
+    TRY
+        Save Page As Pdf
+        ...    welcome5.pdf
+        ...    margin={"foo": "10px", "bottom": "other"}
+    EXCEPT    *    type=glob    AS    ${err}
+        Should Contain    ${err}    page.pdf: Failed to parse parameter value: other
+    END
 
 *** Keywords ***
 Open Headless Chrome

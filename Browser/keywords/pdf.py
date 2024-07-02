@@ -85,12 +85,20 @@ class Pdf(LibraryComponent):
         - mm - millimeter
 
         Example:
-
+        | ${pdf_path} = | Save Page As Pdf | page.pdf |
+        | Should Be Equal | ${pdf_path} | ${OUTPUT_DIR}${/}page.pdf |
         """
         if not self._is_relative_to(path):
             path = Path(self.outputdir) / str(path)
         format_ = format.value
         margin_ = json.dumps(margin)
+        logger.debug(
+            f"Saving page as PDF with options: displayHeaderFooter: {displayHeaderFooter} "
+            f"footerTemplate: {footerTemplate} format: {format_} headerTemplate: {headerTemplate} "
+            f"height: {height} landscape: {landscape} margin: {margin_} outline: {outline} "
+            f"pageRanges: {pageRanges} path: {path} preferCSSPageSize: {preferCSSPageSize} "
+            f"printBackground: {printBackground} scale: {scale} tagged: {tagged} width: {width}"
+        )
         with self.playwright.grpc_channel() as stub:
             response = stub.Pdf(
                 Request().Pdf(
