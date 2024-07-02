@@ -27,6 +27,6 @@ export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState
     const footertemplate = request.getFootertemplate();
     logger.info(`Saving pdf to ${pdfPath}`);
     logger.info(`Using options: displayHeaderFooter: ${displayheaderfooter}`, `footerTemplate: ${footertemplate}`);
-    await activePage.pdf({ path: pdfPath, displayHeaderFooter: displayheaderfooter, footerTemplate: footertemplate});
-return stringResponse(pdfPath, `Pdf is saved to ${pdfPath}`);
+    await activePage.pdf({ path: pdfPath, displayHeaderFooter: displayheaderfooter, footerTemplate: footertemplate });
+    return stringResponse(pdfPath, `Pdf is saved to ${pdfPath}`);
 }

@@ -15,7 +15,10 @@ Save As PDF With Default Options
 
 Save As PDF With All Options
     # footerTemplate is from https://github.com/microsoft/playwright/issues/14441
-    ${pdf4} =    Save Page As Pdf    welcome4.pdf    displayHeaderFooter=True    footerTemplate=<span style="font-size: 20px;color:#000000;">FOOTER</span>
+    ${pdf4} =    Save Page As Pdf
+    ...    welcome4.pdf
+    ...    displayHeaderFooter=True
+    ...    footerTemplate=<span style="font-size: 20px;color:#000000;">FOOTER</span>
     Should Be Equal    ${pdf4}    ${OUTPUT_DIR}${/}welcome4.pdf
 
 *** Keywords ***
