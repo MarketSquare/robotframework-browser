@@ -14,7 +14,9 @@ Save As PDF With Default Options
     Should Be Equal    ${pdf3}    ${expected_pdf3}
 
 Save As PDF With All Options
-    ${pdf4} =    Save Page As Pdf    welcome4.pdf    displayHeaderFooter=True
+    # footerTemplate is from https://github.com/microsoft/playwright/issues/14441
+    ${pdf4} =    Save Page As Pdf    welcome4.pdf    displayHeaderFooter=True    footerTemplate=<span style="font-size: 20px;color:#000000;">FOOTER</span>
+    Should Be Equal    ${pdf4}    ${OUTPUT_DIR}${/}welcome4.pdf
 
 *** Keywords ***
 Open Headless Chrome
