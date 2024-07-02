@@ -19,6 +19,7 @@ import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
 import * as network from './network';
+import * as pdf from './pdf';
 import * as playwrightState from './playwright-state';
 import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { Page } from 'playwright';
@@ -248,6 +249,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     newPersistentContext = this.wrapping(playwrightState.newPersistentContext);
     connectToBrowser = this.wrapping(playwrightState.connectToBrowser);
     goTo = this.wrappingPage(browserControl.goTo);
+    pdf = this.wrapping(pdf.savePageAsPdf);
 
     async goBack(
         call: ServerUnaryCall<Request.Empty, Response.Empty>,
