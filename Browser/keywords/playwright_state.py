@@ -582,7 +582,7 @@ class PlaywrightState(LibraryComponent):
         | ``reduceMotion``         | Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`. |
         | ``screen``               | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
         | ``serviceWorkers``       | Whether to allow sites to register Service workers. Defaults to 'allow'. |
-        | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must mbe full path to the file. |
+        | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must be full path to the file. |
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
         | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. |
         | ``userAgent``            | Specific user agent to use in this context. |
