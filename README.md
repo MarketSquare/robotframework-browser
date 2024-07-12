@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-151-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-152-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -371,6 +371,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="http://cns.me"><img src="https://avatars.githubusercontent.com/u/715120?v=4?s=100" width="100px;" alt="Chris Nesbitt-Smith"/><br /><sub><b>Chris Nesbitt-Smith</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=chrisns" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/vmmattila"><img src="https://avatars.githubusercontent.com/u/135705333?v=4?s=100" width="100px;" alt="vmmattila"/><br /><sub><b>vmmattila</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Avmmattila" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Andre-A-AtGithub"><img src="https://avatars.githubusercontent.com/u/172484553?v=4?s=100" width="100px;" alt="Andre-A-AtGithub"/><br /><sub><b>Andre-A-AtGithub</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AAndre-A-AtGithub" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Pawci3oo"><img src="https://avatars.githubusercontent.com/u/26310305?v=4?s=100" width="100px;" alt="Paweł"/><br /><sub><b>Paweł</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3APawci3oo" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
