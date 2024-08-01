@@ -49,6 +49,11 @@ Save PDF With Invalid Margin
         Should Contain    ${err}    page.pdf: Failed to parse parameter value: other
     END
 
+Save PDF With Emulate Media
+    Emulate Media    print
+    ${pdf6} =    Save Page As Pdf
+    ...    welcome6.pdf
+
 *** Keywords ***
 Open Headless Chrome
     [Documentation]    Generating a pdf is currently only supported in Chromium headless.
