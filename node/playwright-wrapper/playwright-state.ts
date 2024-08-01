@@ -335,7 +335,7 @@ export class PlaywrightState {
         for (const browser of browsers) {
             try {
                 await browser.close();
-            } catch (e) {}
+            } catch (e) {} // eslint-disable-line
         }
         this.browserStack = [];
     }
@@ -345,7 +345,7 @@ export class PlaywrightState {
         for (const server of servers) {
             try {
                 await server.close();
-            } catch (e) {}
+            } catch (e) {} // eslint-disable-line
         }
         this.browserServer = [];
     }
@@ -369,7 +369,7 @@ export class PlaywrightState {
             const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 350));
             try {
                 title = await Promise.race([titlePromise, titleTimeout]);
-            } catch (e) {}
+            } catch (e) {} // eslint-disable-line
             return {
                 type: 'page',
                 title,
@@ -614,7 +614,7 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     try {
         await currentBrowser.close();
         return stringResponse(currentBrowser.id, 'Closed browser');
-    } catch (e) {
+    } catch (e) { // eslint-disable-line
         return stringResponse('', `Browser ${currentBrowser.id} was already closed`);
     }
 }
@@ -662,7 +662,7 @@ export async function newPage(
     let videoPath: string | undefined = '';
     try {
         videoPath = await page.p.video()?.path();
-    } catch (e) {
+    } catch (e) { // eslint-disable-line
         logger.info('Suppress video().path() error');
     }
     logger.info('Video path: ' + videoPath);

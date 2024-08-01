@@ -77,7 +77,7 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page: Pag
     let body = null;
     try {
         body = await data.text();
-    } catch (e) {}
+    } catch (e) {} // eslint-disable-line
     return jsonResponse(
         JSON.stringify({
             status: data.status(),
