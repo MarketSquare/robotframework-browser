@@ -51,6 +51,13 @@ message Request {
     string width = 15;
   }
 
+  message EmulateMedia {
+    string colorScheme = 1;
+    string forcedColors = 2;
+    string media = 3;
+    string reducedMotion = 4;
+  }
+
   message ScreenshotOptions {
     string selector = 1;
     string mask = 2;
@@ -528,4 +535,5 @@ service  Playwright {
 
   /* pdf */
   rpc Pdf(Request.Pdf) returns (Response.String);
+  rpc EmulateMedia(Request.EmulateMedia) returns (Response.Empty);
 }

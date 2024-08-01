@@ -15,11 +15,17 @@ import json
 import sys
 from os import PathLike
 from pathlib import Path
+from typing import Optional
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
 from ..utils.data_types import PdfFormat, PdfMarging
+from ..utils.data_types import colorScheme as ColorScheme
+from ..utils.data_types import forcedColors as ForcedColors
+from ..utils.data_types import media as Media
+from ..utils.data_types import reducedMotion as ReducedMotion
+
 
 PdfMargingDefault: PdfMarging = {
     "top": "0px",
@@ -84,6 +90,9 @@ class Pdf(LibraryComponent):
         - cm - centimeter
         - mm - millimeter
 
+        headerTemplate and footerTemplate markup have the following limitations: > 1.
+        Script tags inside templates are not evaluated. > 2. Page styles are not visible inside templates.
+
         Example:
         | ${pdf_path} = | Save Page As Pdf | page.pdf |
         | Should Be Equal | ${pdf_path} | ${OUTPUT_DIR}${/}page.pdf |
@@ -129,3 +138,13 @@ class Pdf(LibraryComponent):
             except ValueError:
                 return False
         return path.is_relative_to(self.outputdir)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def emulate_media(self, colorScheme: Optional[ColorScheme] = None, forcedColors[], media, reducedMotion):
+        """Changes the CSS media type.
+
+        ``CSS media type`` is changed through the media argument,
+        and/or the 'prefers-colors-scheme' media feature, using
+        the colorScheme argument.
+        """
+        pass

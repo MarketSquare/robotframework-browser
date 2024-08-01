@@ -485,6 +485,55 @@ class PdfMarging(TypedDict):
     left: str
 
 
+class colorScheme(Enum):
+    """Emulates 'prefers-colors-scheme' media feature.
+
+    Supported values are 'light', 'dark', 'no-preference' and `null`.
+    Passing `null` disables color scheme emulation.
+    Using False will not define colorScheme argument.
+    """
+    light = "light"
+    dark = "dark"
+    no_preference = "no-preference"
+    null = "null"
+
+
+class forcedColors(Enum):
+    """Emulates 'forced-colors' media feature.
+
+    Supported values are 'active', 'none' and `null`.
+    Passing `null` disables forced colors emulation.
+    Using False will not define forcedColors argument.
+    """
+    active = "active"
+    none = "none"
+    null = "null"
+
+
+class media(Enum):
+    """Changes the CSS media type of the page.
+
+    The only allowed values are 'screen', 'print' and `null`.
+    Passing null disables CSS media emulation.
+    Using False will not define media argument.
+    """
+    screen = "screen"
+    print = "print"
+    null = "null"
+
+
+class reducedMotion(Enum):
+    """Emulates 'prefers-reduced-motion' media feature.
+
+    Supported values are 'reduce', 'no-preference' and `null`.
+    Passing `null` disables reduced motion emulation.
+    Using False will not define reducedMotion argument.
+    """
+    reduce = "reduce"
+    no_preference = "no-preference"
+    null = "null"
+
+
 class Proxy(_Server, total=False):
     """Network proxy settings.
 
