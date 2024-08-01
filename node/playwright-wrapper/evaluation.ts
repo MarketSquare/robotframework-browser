@@ -228,6 +228,7 @@ const tryToTransformStringToFunction = (str: string): string | (() => unknown) =
     try {
         return new Function('return ' + str)();
     } catch (ignored) {
+        logger.debug(`Failed to transform string to function: ${ignored}`);
         return str;
     }
 };

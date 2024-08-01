@@ -2,7 +2,7 @@ import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 // Idea and async logger method from https://github.com/norbornen/execution-time-decorator/
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line
 export function class_async_logger(target: Function) {
     for (const propertyName of Object.keys(target.prototype)) {
         const descriptor = Object.getOwnPropertyDescriptor(target.prototype, propertyName);
