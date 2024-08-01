@@ -2,25 +2,21 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
-    groups:
-      eslint_build:
-        patterns:
-        - "esbuild"
-        - "esbuild-node-externals"
-      grpc:
-        patterns:
-        - "grpcio"
-        - "grpcio-tools"
     schedule:
       interval: "daily"
+    groups:
+      grpc:
+        patterns:
+        - "@typescript-eslint*"
 
   - package-ecosystem: "pip"
     directory: "/Browser"
     schedule:
       interval: "daily"
-    ignore:
-      - dependency-name: "grpcio-*"
-        versions: ["1.34.x"]
+    groups:
+      grpc:
+        patterns:
+        - "grpcio*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
