@@ -15,17 +15,20 @@ import json
 import sys
 from os import PathLike
 from pathlib import Path
-from typing import Optional
+from typing import Union
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
-from ..utils.data_types import PdfFormat, PdfMarging
-from ..utils.data_types import colorScheme as ColorScheme
-from ..utils.data_types import forcedColors as ForcedColors
-from ..utils.data_types import media as Media
-from ..utils.data_types import reducedMotion as ReducedMotion
-
+from ..utils.data_types import (
+    ColorScheme,
+    ForcedColors,
+    Media,
+    NotSet,
+    PdfFormat,
+    PdfMarging,
+    ReducedMotion,
+)
 
 PdfMargingDefault: PdfMarging = {
     "top": "0px",
@@ -140,11 +143,16 @@ class Pdf(LibraryComponent):
         return path.is_relative_to(self.outputdir)
 
     @keyword(tags=("Setter", "PageContent"))
-    def emulate_media(self, colorScheme: Optional[ColorScheme] = None, forcedColors[], media, reducedMotion):
+    def emulate_media(
+        self,
+        colorScheme: Union[ColorScheme, NotSet] = NotSet.not_set,
+        forcedColors: Union[ForcedColors, NotSet] = NotSet.not_set,
+        media: Union[Media, NotSet] = NotSet.not_set,
+        reducedMotion: Union[ReducedMotion, NotSet] = NotSet.not_set,
+    ):
         """Changes the CSS media type.
 
         ``CSS media type`` is changed through the media argument,
         and/or the 'prefers-colors-scheme' media feature, using
         the colorScheme argument.
         """
-        pass
