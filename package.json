@@ -16,7 +16,7 @@
     "@typescript-eslint/parser": "^8.0.0",
     "esbuild": "^0.23.0",
     "esbuild-node-externals": "^1.14.0",
-    "eslint": "^8.57.0",
+    "eslint": "^9.8.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
@@ -47,7 +47,7 @@
   "scripts": {
     "build-test-app": "node ./node/build.testapp.js",
     "build": "node ./node/build.wrapper.js",
-    "lint": "tsc --project node/tsconfig.json --noEmit && eslint \"node/**/*.{ts,tsx}\" --quiet --fix",
+    "lint": "tsc --project node/tsconfig.json --noEmit && eslint \"node/**/*.{ts,tsx}\" --quiet --fix --config ./node/eslint.config.mjs",
     "grpc_tools_node_protoc": "grpc_tools_node_protoc"
   }
 }
