@@ -50,9 +50,10 @@ Save PDF With Invalid Margin
     END
 
 Save PDF With Emulate Media
-    Emulate Media    print
+    Emulate Media    dark    active    print
     ${pdf6} =    Save Page As Pdf
     ...    welcome6.pdf
+    Should Be Equal    ${pdf6}    ${OUTPUT_DIR}${/}welcome6.pdf
 
 *** Keywords ***
 Open Headless Chrome

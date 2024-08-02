@@ -84,6 +84,15 @@ class Deprecated:
 deprecated = Deprecated()
 
 
+class NotSet(Enum):
+    """Defines a value that is not set.
+
+    This is used to differentiate between a value that is set to None and a value that is not set at all.
+    """
+
+    not_set = auto()
+
+
 class SelectOptions(TypedDict):
     """Dictionary with the following keys and their values
     "index", "value", "label" and "selected".
@@ -485,50 +494,26 @@ class PdfMarging(TypedDict):
     left: str
 
 
-class colorScheme(Enum):
-    """Emulates 'prefers-colors-scheme' media feature.
-
-    Supported values are 'light', 'dark', 'no-preference' and `null`.
-    Passing `null` disables color scheme emulation.
-    Using False will not define colorScheme argument.
-    """
-    light = "light"
-    dark = "dark"
-    no_preference = "no-preference"
-    null = "null"
-
-
-class forcedColors(Enum):
-    """Emulates 'forced-colors' media feature.
-
-    Supported values are 'active', 'none' and `null`.
-    Passing `null` disables forced colors emulation.
-    Using False will not define forcedColors argument.
-    """
-    active = "active"
-    none = "none"
-    null = "null"
-
-
-class media(Enum):
+class Media(Enum):
     """Changes the CSS media type of the page.
 
     The only allowed values are 'screen', 'print' and `null`.
     Passing null disables CSS media emulation.
     Using False will not define media argument.
     """
+
     screen = "screen"
     print = "print"
     null = "null"
 
 
-class reducedMotion(Enum):
+class ReducedMotion(Enum):
     """Emulates 'prefers-reduced-motion' media feature.
 
     Supported values are 'reduce', 'no-preference' and `null`.
     Passing `null` disables reduced motion emulation.
-    Using False will not define reducedMotion argument.
     """
+
     reduce = "reduce"
     no_preference = "no-preference"
     null = "null"
@@ -869,8 +854,10 @@ class SupportedBrowsers(Enum):
     webkit = auto()
 
 
-ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference"])
+ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference", "null"])
 ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
+        Supported values are 'light', 'dark', 'no-preference' and `null`.
+        Passing `null` disables color scheme emulation.
 
         See [https://playwright.dev/docs/api/class-page?_highlight=emulatemedia#pageemulatemediaparams |emulateMedia(options)]
         for more details.
@@ -1086,10 +1073,15 @@ class ReduceMotion(Enum):
 
 
 class ForcedColors(Enum):
-    """Emulates `forced-colors` media feature, supported values are `active`, `none`."""
+    """Emulates 'forced-colors' media feature.
+
+    Supported values are 'active', 'none' and `null`.
+    Passing `null` disables forced colors emulation.
+    """
 
     active = auto()
     none = auto()
+    null = auto()
 
 
 class ConditionInputs(Enum):
