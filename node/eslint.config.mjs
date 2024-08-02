@@ -31,7 +31,7 @@ export default [{
 
         parserOptions: {
             project: "./tsconfig.json",
-            tsconfigRootDir: "/Users/tatuaalto/workspace/robotframework-playwright/node",
+            tsconfigRootDir: "./node",
         },
     },
 
