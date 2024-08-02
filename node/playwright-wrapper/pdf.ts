@@ -14,7 +14,7 @@
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { exists } from './playwright-invoke';
-import { stringResponse } from './response-util';
+import { stringResponse, emptyWithLog } from './response-util';
 
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -73,4 +73,14 @@ export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState
         width: width,
     });
     return stringResponse(pdfPath, `Pdf is saved to ${pdfPath}`);
+}
+
+
+export async function emulateMedia(request: Request.EmulateMedia, state: PlaywrightState): Promise<Response.Empty> {
+    const activePage = state.getActivePage();
+    exists(activePage, 'Could not find active page');
+    const media = request.getMedia();
+    logger.info(`Emulating media ${media}`);
+    await activePage.emulateMedia({ media: media });
+    return emptyWithLog(`Emulating media ${media}`);
 }

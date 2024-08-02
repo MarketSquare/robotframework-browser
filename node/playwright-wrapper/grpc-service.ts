@@ -250,6 +250,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     connectToBrowser = this.wrapping(playwrightState.connectToBrowser);
     goTo = this.wrappingPage(browserControl.goTo);
     pdf = this.wrapping(pdf.savePageAsPdf);
+    emulateMedia = this.wrapping(pdf.emulateMedia);
 
     async goBack(
         call: ServerUnaryCall<Request.Empty, Response.Empty>,
