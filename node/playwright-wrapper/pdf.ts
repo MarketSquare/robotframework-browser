@@ -14,7 +14,7 @@
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { exists } from './playwright-invoke';
-import { stringResponse, emptyWithLog } from './response-util';
+import { stringResponse } from './response-util';
 
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
@@ -75,12 +75,50 @@ export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState
     return stringResponse(pdfPath, `Pdf is saved to ${pdfPath}`);
 }
 
-
 export async function emulateMedia(request: Request.EmulateMedia, state: PlaywrightState): Promise<Response.Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
+    const options: { [key: string]: string | null } = {};
+    const colorScheme = request.getColorscheme();
+    if (colorScheme === 'not_set') {
+        logger.info(`Emulating colorScheme not set`);
+    } else if (colorScheme === 'null') {
+        logger.info(`Emulating colorScheme null`);
+        options.colorScheme = null;
+    } else {
+        logger.info(`Emulating colorScheme ${colorScheme}`);
+        options.colorScheme = colorScheme;
+    }
+    const forcedColors = request.getForcedcolors();
+    if (forcedColors === 'not_set') {
+        logger.info(`Emulating forcedColors not set`);
+    } else if (forcedColors === 'null') {
+        logger.info(`Emulating forcedColors null`);
+        options.forcedColors = null;
+    } else {
+        logger.info(`Emulating forcedColors ${forcedColors}`);
+        options.forcedColors = forcedColors;
+    }
     const media = request.getMedia();
-    logger.info(`Emulating media ${media}`);
-    await activePage.emulateMedia({ media: media });
-    return emptyWithLog(`Emulating media ${media}`);
+    if (media === 'not_set') {
+        logger.info(`Emulating media not set`);
+    } else if (media === 'null') {
+        logger.info(`Emulating media null`);
+        options.media = null;
+    } else {
+        logger.info(`Emulating media ${media}`);
+        options.media = media;
+    }
+    const reducedMotion = request.getReducedmotion();
+    if (reducedMotion === 'not_set') {
+        logger.info(`Emulating reducedMotion not set`);
+    } else if (reducedMotion === 'null') {
+        logger.info(`Emulating reducedMotion null`);
+        options.reducedMotion = null;
+    } else {
+        logger.info(`Emulating reducedMotion ${reducedMotion}`);
+        options.reducedMotion = reducedMotion;
+    }
+    await activePage.emulateMedia(options);
+    return stringResponse(JSON.stringify(options), `Emulating media ${JSON.stringify(options)}`);
 }

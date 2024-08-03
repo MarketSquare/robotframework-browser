@@ -156,3 +156,14 @@ class Pdf(LibraryComponent):
         and/or the 'prefers-colors-scheme' media feature, using
         the colorScheme argument.
         """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.EmulateMedia(
+                Request().EmulateMedia(
+                    colorScheme=str(colorScheme.name),
+                    forcedColors=str(forcedColors.name),
+                    media=str(media.name),
+                    reducedMotion=reducedMotion.value,
+                )
+            )
+        logger.info(response.log)
+        return json.loads(response.body)

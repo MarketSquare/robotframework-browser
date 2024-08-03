@@ -90,7 +90,7 @@ class NotSet(Enum):
     This is used to differentiate between a value that is set to None and a value that is not set at all.
     """
 
-    not_set = auto()
+    not_set = "not_set"
 
 
 class SelectOptions(TypedDict):
