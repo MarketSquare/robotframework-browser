@@ -535,5 +535,5 @@ service  Playwright {
 
   /* pdf */
   rpc Pdf(Request.Pdf) returns (Response.String);
-  rpc EmulateMedia(Request.EmulateMedia) returns (Response.Empty);
+  rpc EmulateMedia(Request.EmulateMedia) returns (Response.String);
 }
