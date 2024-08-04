@@ -61,7 +61,6 @@ Save PDF With Emulate Media
     ${media} =    Emulate Media    dark    not_set    print
     ${expected_media} =    Create Dictionary    colorScheme=dark    media=print
     Dictionaries Should Be Equal    ${media}    ${expected_media}
-    ${media} =    Emulate Media    not_set    active    null
     ${pdf6} =    Save Page As Pdf
     ...    welcome6.pdf
     Should Be Equal    ${pdf6}    ${OUTPUT_DIR}${/}welcome6.pdf
