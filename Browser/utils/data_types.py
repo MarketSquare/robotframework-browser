@@ -87,7 +87,12 @@ deprecated = Deprecated()
 class NotSet(Enum):
     """Defines a value that is not set.
 
-    This is used to differentiate between a value that is set to None and a value that is not set at all.
+    This is used to differentiate between a value that is set to None and
+    a value that is not set at all. Example `ForcedColors` has an options
+    active, none and null. If user does not not want to give any of
+    the `ForcedColors` options, user can use `not_set` value. Then keyword
+    will not define `ForcedColors` option at all when underlying Playwright
+    method(s) is called.
     """
 
     not_set = "not_set"
