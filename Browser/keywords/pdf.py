@@ -69,11 +69,10 @@ class Pdf(LibraryComponent):
         | ``format`` | Paper format. If set, takes priority over width or height options. Defaults to 'Letter'. |
         | ``headerTemplate`` | HTML template for the print header.  See detailled explanation in below |
         | ``height`` | Paper height, accepts values labeled with units. |
-        | ``landscape`` | aper orientation. Defaults to false. |
-        | ``margin`` | Is pdf margins see `PdfMarging` for more details |
+        | ``landscape`` | Paper orientation. Defaults to false. |
+        | ``margin`` | Defines pdf margins, see `PdfMarging` for more details |
         | ``outline`` | Whether or not to embed the document outline into the PDF. Defaults to false. |
         | ``pageRanges`` | Paper ranges to print, e.g., '1-5, 8, 11-13'. Defaults to the empty string, which means print all pages. |
-        | ``path`` | The file path to save the PDF to. file.pdf will save it ${OUTPUT_DIR}/file.pdf |
         | ``preferCSSPageSize`` | Give any CSS @page size declared in the page priority over what is declared in width and height or format options. Defaults to false, which will scale the content to fit the paper size. |
         | ``printBackground`` | Print background graphics. Defaults to false. |
         | ``scale`` | Scale of the webpage rendering. Defaults to 1. Scale amount must be between 0.1 and 2. |
@@ -81,23 +80,26 @@ class Pdf(LibraryComponent):
         | ``width`` | Paper width, accepts values labeled with units. |
 
         ``headerTemplate`` and ``footerTemplate`` Should be valid HTML markup with following classes used to inject printing values into them:
-        - 'date' formatted print date
-        - 'title' document title
-        - 'url' document location
-        - 'pageNumber' current page number
-        - 'totalPages' total pages in the document
+        - `date` formatted print date
+        - `title` document title
+        - `url` document location
+        - `pageNumber` current page number
+        - `totalPages` total pages in the document
 
         All possible units are:
-        - px - pixel
-        - in - inch
-        - cm - centimeter
-        - mm - millimeter
+        - `px` - pixel
+        - `in` - inch
+        - `cm` - centimeter
+        - `mm` - millimeter
 
         headerTemplate and footerTemplate markup have the following limitations: > 1.
         Script tags inside templates are not evaluated. > 2. Page styles are not visible inside templates.
 
+        More details can be found from [https://playwright.dev/docs/api/class-page#page-pdf|Playwright pdf documentation]
+
         Example:
-        | ${pdf_path} = | Save Page As Pdf | page.pdf |
+        | `Emulate Media` | media=screen |
+        | ${pdf_path} = | `Save Page As Pdf` | page.pdf |
         | Should Be Equal | ${pdf_path} | ${OUTPUT_DIR}${/}page.pdf |
         """
         if not self._is_relative_to(path):
@@ -155,6 +157,9 @@ class Pdf(LibraryComponent):
         ``CSS media type`` is changed through the media argument,
         and/or the 'prefers-colors-scheme' media feature, using
         the colorScheme argument.
+
+        Usefull to reder the page in corret format before using
+        `Save Page As Pdf` keyword.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.EmulateMedia(
