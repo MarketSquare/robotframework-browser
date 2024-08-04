@@ -65,6 +65,18 @@ Save PDF With Emulate Media
     ...    welcome6.pdf
     Should Be Equal    ${pdf6}    ${OUTPUT_DIR}${/}welcome6.pdf
 
+Save PDF With Firefox Should Not Work
+    [Documentation]    Generating a pdf is currently only supported in Chromium headless.
+    New Browser    Firefox    headless=True
+    New Page    ${WEBCOMPONENT_PAGE}
+    TRY
+        Save Page As Pdf    welcome7.pdf
+    EXCEPT    Error: page.pdf*    type=GLOB
+        No Operation
+    FINALLY
+        Close Browser    CURRENT
+    END
+
 *** Keywords ***
 Open Headless Chrome
     [Documentation]    Generating a pdf is currently only supported in Chromium headless.
