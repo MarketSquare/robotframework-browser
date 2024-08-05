@@ -24,7 +24,7 @@
     "grpc_tools_node_protoc_ts": "^5.3.3",
     "grpc-tools": "^1.12.4",
     "husky": "^9.1.4",
-    "lint-staged": "^15.2.7",
+    "lint-staged": "^15.2.8",
     "prettier": "^3.3.3",
     "react": "^18.3.0",
     "react-dom": "^18.3.1",
