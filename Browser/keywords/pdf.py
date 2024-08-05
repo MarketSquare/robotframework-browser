@@ -15,7 +15,7 @@ import json
 import sys
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -151,10 +151,10 @@ class Pdf(LibraryComponent):
     @keyword(tags=("Setter", "PageContent"))
     def emulate_media(
         self,
-        colorScheme: Union[ColorScheme, NotSet] = NotSet.not_set,
+        colorScheme: Optional[ColorScheme] = None,
         forcedColors: Union[ForcedColors, NotSet] = NotSet.not_set,
-        media: Union[Media, NotSet] = NotSet.not_set,
-        reducedMotion: Union[ReducedMotion, NotSet] = NotSet.not_set,
+        media: Optional[Media] = None,
+        reducedMotion: Optional[ReducedMotion] = None,
     ):
         """Changes the CSS media type.
 
@@ -168,10 +168,20 @@ class Pdf(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.EmulateMedia(
                 Request().EmulateMedia(
-                    colorScheme=str(colorScheme.name),
+                    colorScheme=(
+                        str(NotSet.not_set.name)
+                        if colorScheme is None
+                        else str(colorScheme.name)
+                    ),
                     forcedColors=str(forcedColors.name),
-                    media=str(media.name),
-                    reducedMotion=reducedMotion.value,
+                    media=(
+                        str(NotSet.not_set.name) if media is None else str(media.name)
+                    ),
+                    reducedMotion=(
+                        str(NotSet.not_set.name)
+                        if reducedMotion is None
+                        else reducedMotion.value
+                    ),
                 )
             )
         logger.info(response.log)

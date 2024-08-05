@@ -58,12 +58,19 @@ Save PDF With Emulate Media
     ...    media=print
     ...    reducedMotion=no-preference
     Dictionaries Should Be Equal    ${media}    ${expected_media}
-    ${media} =    Emulate Media    dark    not_set    print
-    ${expected_media} =    Create Dictionary    colorScheme=dark    media=print
+    ${media} =    Emulate Media    None    not_set    print
+    ${expected_media} =    Create Dictionary    media=print
     Dictionaries Should Be Equal    ${media}    ${expected_media}
     ${pdf6} =    Save Page As Pdf
     ...    welcome6.pdf
     Should Be Equal    ${pdf6}    ${OUTPUT_DIR}${/}welcome6.pdf
+    ${media} =    Emulate Media    null    None    null    null
+    ${expected_media} =    Create Dictionary
+    ...    colorScheme=${None}
+    ...    forcedColors=none
+    ...    media=${None}
+    ...    reducedMotion=${None}
+    Dictionaries Should Be Equal    ${media}    ${expected_media}
 
 Save PDF With Firefox Should Not Work
     [Documentation]    Generating a pdf is currently only supported in Chromium headless.
