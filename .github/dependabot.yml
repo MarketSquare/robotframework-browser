@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: "daily"
     groups:
-      grpc:
+      eslint:
         patterns:
         - "@typescript-eslint*"
 
