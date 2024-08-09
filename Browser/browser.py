@@ -1437,13 +1437,20 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             for _, name, _ in pkgutil.iter_modules()
             if name.startswith("robotframework_browser_translation")
         }
+        lang = language.lower()
         for plugin in discovered_plugins.values():
             try:
                 data = plugin.get_language()
             except AttributeError:
                 continue
-            if data.get("language", "").lower() == language.lower() and data.get(
-                "path"
+            if (
+                isinstance(data, dict)
+                and data.get("language", "").lower() == lang
+                and data.get("path")
             ):
                 return Path(data.get("path")).absolute()
+            if isinstance(data, list):
+                for item in data:
+                    if item.get("language", "").lower() == lang and item.get("path"):
+                        return Path(item.get("path")).absolute()
         return None
