@@ -86,6 +86,7 @@ inv version $VERSION
 inv build
 git add Browser/version.py package.json package-lock.json setup.py docker/Dockerfile.latest_release
 git commit -m "Updateversion to: $VERSION"
+git push
 ```
 
 ### Generate release notes
@@ -115,8 +116,7 @@ Add, commit and push:
 ```
 git add docs/releasenotes/Browser-$VERSION.rst
 git commit -m "Release notes for $VERSION"
-git tag -fa v$VERSION
-git push --tags --force
+git push
 ```
 Update later if necessary.
 
