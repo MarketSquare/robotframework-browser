@@ -347,7 +347,7 @@ class Interaction(LibraryComponent):
         | ``delay`` | Time to wait between mouse-down and mouse-up. Defaults to 0. |
         | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
         | ``force`` | Set to True to skip Playwright's Actionability checks (https://playwright.dev/docs/actionability). |
-        | ``noWaitAfter`` | Actions that initiate navigation, are waiting for these navigation to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
+        | ``noWaitAfter`` | Deprecated. This option will default to true in the future. Actions that initiate navigation, are waiting for these navigation to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
         | ``trial`` | When set, this method only performs the actionability checks and skips the action. Defaults to false. Useful to wait until the element is ready for the action without performing it. |
 
         Arguments ``clickCount``, ``delay``, ``position_x``, ``position_y``, ``force``, ``noWaitAfter`` and ``trial`` are named-only arguments and must be specified using their names..
@@ -359,7 +359,7 @@ class Interaction(LibraryComponent):
         | `Click With Options`    id=button_location    trial=True
         | `Click With Options`    \\#clickWithOptions    delay=100ms    clickCount=2
         | `Click With Options`    id=clickWithModifiers    left     Alt    Meta    Shift    clickCount=1    force=True
-        | `Click With Options`    id=clickWithOptions    right    clickCount=2    force=True    noWaitAfter=True
+        | `Click With Options`    id=clickWithOptions    right    clickCount=2    force=True
 
         [https://forum.robotframework.org/t//5936|Comment >>]
         """
@@ -414,7 +414,7 @@ class Interaction(LibraryComponent):
         | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
         | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified in any order, and multiple modifiers can be specified. Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``. |
         | ``force`` | Whether to bypass the actionability checks. Defaults to false. |
-        | ``noWaitAfter`` | Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
+        | ``noWaitAfter`` | Deprecated. This option has no effect. Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
         | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
         | ``trial`` | When set, this method only performs the actionability checks and skips the action. Defaults to ``False``.  |
 
