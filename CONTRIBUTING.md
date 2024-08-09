@@ -127,16 +127,20 @@ Also update Browser libdoc.
 2. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
 3. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
 4. Install package from PyPi and test that it works.
+5. Wait that Docker build is ready and check that [Docker hub](https://hub.docker.com/r/marketsquare/robotframework-browser/tags) looks good.
 
 ### Announce release
-Announce new release, at least in Slack, [Forum](https://forum.robotframework.org/t/browser-library-releases/685)
-and user group mailing list.
+Announce new release, at least in Slack and [Forum](https://forum.robotframework.org/t/browser-library-releases/685).
 
 ## Code style
-Python code style is enforced with flake8 and black. These are executed in a
+Python code style is enforced with ruff, isort and black. These are executed in a
 pre-commit hook, but can also be invoked manually with `inv lint-python`.
 
 JS / TS code style is enforced with eslint. Lints are run in pre-commit hooks, but can be run manually with `inv lint-node`.
+
+Acceptance tests style is enforced with RoboTidy: `int lint-robot`.
+
+To run all linters by one command, use `inv lint`
 
 ## Architecture
 
