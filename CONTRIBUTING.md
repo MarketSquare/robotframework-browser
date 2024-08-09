@@ -62,20 +62,18 @@ Docker container builds a clean install package. This can be used to check that 
 ### Install dependencies
 Ensure generated code and types are up to date with `inv build`
 
-### Create previous version docs
-Set `VERSION=<version>`. Version number should match to the milestone to the 
+### Create current version docs for history
+Set `VERSION=<version>`. Version number should match to the milestone to the
 [issue tracker](https://github.com/MarketSquare/robotframework-browser/milestones)
 
-Checkout previously released tag, generate the keyword documentation from the
-previous release and add the keyword documentation to the repository main branch.
+Generate the keyword documentation with version number and add the keyword documentation
+to the repository main branch.
 
 ```
 export VERSION=<version>
-git describe --tags --abbrev=0 | xargs git checkout
-git describe --tags --abbrev=0 | xargs inv docs -v
-git checkout main
+inv docs -v $VERSION
 git add docs/versions/Browser-*.html
-git commit -m "Add `git describe --tags --abbrev=0` keyword documentation to repository."
+git commit -m "Add $VERSION keyword documentation to repository."
 git push
 ```
 
