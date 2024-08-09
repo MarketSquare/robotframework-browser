@@ -24,6 +24,17 @@ def test_provide_translation(browser: Browser):
     assert received_path == file_path, received_path
     assert browser._get_translation("wrong") is None
 
+def test_provide_translation_as_list(browser: Browser):
+    lang_plugin = "robotframework_browser_translation_as_list"
+    file_path = Path(__file__).parent / lang_plugin / "translate_2.json"
+    received_path = browser._get_translation("swe")
+    assert received_path == file_path, received_path
+    assert browser._get_translation("wrong") is None
+    received_path = browser._get_translation("Eng")
+    file_path = Path(__file__).parent / lang_plugin / "translate_1.json"
+    assert received_path == file_path, received_path
+
+
 def test_translated_kw_and_docs(browser: Browser):
     spec = browser.keywords_spec["__init__"]
     assert spec.argument_specification
