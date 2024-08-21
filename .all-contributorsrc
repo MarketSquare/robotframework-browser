@@ -1408,6 +1408,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "raphaelcamus",
+      "name": "Raphael CAMUS",
+      "avatar_url": "https://avatars.githubusercontent.com/u/164873162?v=4",
+      "profile": "https://github.com/raphaelcamus",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
