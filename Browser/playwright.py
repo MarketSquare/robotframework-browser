@@ -30,6 +30,8 @@ from Browser.generated.playwright_pb2 import Request
 from .base import LibraryComponent
 from .utils import AutoClosingLevel
 
+from robot.libraries.BuiltIn import BuiltIn
+
 if TYPE_CHECKING:
     from .browser import Browser
 
@@ -50,7 +52,8 @@ class Playwright(LibraryComponent):
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
-        self.ensure_node_dependencies()
+        if BuiltIn().robot_running:
+            self.ensure_node_dependencies()
         self.port = str(port) if port else None
         self.playwright_log = playwright_log
 
