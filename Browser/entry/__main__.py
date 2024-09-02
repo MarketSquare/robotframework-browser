@@ -333,7 +333,19 @@ def cli(ctx, silent):
 )
 @click.argument(
     "browser",
-    type=click.Choice(["chromium", "firefox", "webkit"], case_sensitive=False),
+    type=click.Choice(
+        [
+            "chromium",
+            "chrome",
+            "chrome-beta",
+            "msedge",
+            "msedge-beta",
+            "msedge-dev",
+            "firefox",
+            "webkit",
+        ],
+        case_sensitive=False,
+    ),
     nargs=-1,
 )
 def init(ctx, skip_browsers, with_deps, browser):
@@ -356,9 +368,9 @@ def init(ctx, skip_browsers, with_deps, browser):
     to install browser binaries and use PLAYWRIGHT_BROWSERS_PATH environment variable to define where browser
     binaries are located.
 
-    It is possible to install only selected browser binaries: chromium, firefox or webkit. Example:
-    `rfbrowser init webkit` will install only webkit binaries and `rfbrowser init chromium firefox` will
-    install both chromium firefox binaries.
+    It is possible to install only selected browser binaries: chromium, chrome, chrome-beta, msedge, msedge-beta,
+    msedge-dev, firefox or webkit. Example: `rfbrowser init webkit` will install only webkit binaries and
+    `rfbrowser init chromium firefox` will install both chromium firefox binaries.
     """
     silent_mode = ctx.obj["SILENT"]
     if browser and skip_browsers:
