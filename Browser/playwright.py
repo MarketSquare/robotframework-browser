@@ -23,14 +23,13 @@ from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 from typing import TYPE_CHECKING, Optional, Union
 
 import grpc  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn
 
 from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
 from .base import LibraryComponent
 from .utils import AutoClosingLevel
-
-from robot.libraries.BuiltIn import BuiltIn
 
 if TYPE_CHECKING:
     from .browser import Browser
