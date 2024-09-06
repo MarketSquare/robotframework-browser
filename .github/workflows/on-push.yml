@@ -203,7 +203,7 @@ jobs:
       env:
         RFLOGS_API_KEY: ${{ secrets.RFLOGS_API_KEY }}
       run: |
-        rflogs upload zip_results/output
+        rflogs upload /home/runner/work/robotframework-browser/robotframework-browser/atest/output/
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
