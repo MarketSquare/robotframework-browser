@@ -202,8 +202,9 @@ jobs:
     - name: Upload test results to RF Logs
       env:
         RFLOGS_API_KEY: ${{ secrets.RFLOGS_API_KEY }}
+      working-directory: ${{ github.workspace }}/atest/output
       run: |
-        rflogs upload /home/runner/work/robotframework-browser/robotframework-browser/atest/output/
+        rflogs upload
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
