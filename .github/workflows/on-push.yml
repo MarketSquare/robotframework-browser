@@ -197,9 +197,11 @@ jobs:
       run: |
         inv atest --shard ${{ matrix.shard }}/4 -z true
     - name: Install rflogs
+      if: always()
       run: |
         pip install rflogs
     - name: Upload test results to RF Logs
+      if: always()
       env:
         RFLOGS_API_KEY: ${{ secrets.RFLOGS_API_KEY }}
       working-directory: ${{ github.workspace }}/atest/output
