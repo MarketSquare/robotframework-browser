@@ -48,7 +48,7 @@ Screenshotting With Jpeg Extension And Quality
 
 Screenshotting With Jpeg Extension And Quality Borders
     ${is_mac} =    Is Macos
-    IF  ${is_mac}
+    IF    ${is_mac}
         ${diffrence} =    Set Variable    42    # Seems usually be 28 but use 42 to be safe side
     ELSE
         ${diffrence} =    Evaluate    10    # Works in Windows and Linux
