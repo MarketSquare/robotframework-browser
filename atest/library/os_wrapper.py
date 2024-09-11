@@ -112,3 +112,6 @@ def add_kw(filename: Path, *kw_names):
         data[kw] = kw_data
     with filename.open("w") as file:
         json.dump(data, file, indent=4)
+
+def is_macos() -> bool:
+    return sys.platform == "darwin"

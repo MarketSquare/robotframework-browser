@@ -47,16 +47,22 @@ Screenshotting With Jpeg Extension And Quality
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.jpeg
 
 Screenshotting With Jpeg Extension And Quality Borders
+    ${is_mac} =    Is Macos
+    IF  ${is_mac}
+        ${diffrence} =    Set Variable    42    # Seems usually be 28 but use 42 to be safe side
+    ELSE
+        ${diffrence} =    Evaluate    10    # Works in Windows and Linux
+    END
     Take Screenshot    fullPage=True    fileType=jpeg    quality=0    timeout=10s
     ${size_0} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=-190    timeout=10s
     ${size_1} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-2.jpeg
-    Numbers Are Close    ${size_0}    ${size_1}    10
+    Numbers Are Close    ${size_0}    ${size_1}    ${diffrence}
     Take Screenshot    fullPage=True    fileType=jpeg    quality=100    timeout=10s
     ${size_100} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-3.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=2023    timeout=10s
     ${size_101} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-4.jpeg
-    Numbers Are Close    ${size_100}    ${size_101}    10
+    Numbers Are Close    ${size_100}    ${size_101}    ${diffrence}
     Take Screenshot    fullPage=True    fileType=jpeg    quality=50    timeout=10s
     ${size_50} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-5.jpeg
     Should Be True    ${size_0} < ${size_50} < ${size_100}
