@@ -1,6 +1,6 @@
 grpcio == 1.66.1
 grpcio-tools == 1.66.1
-protobuf == 5.27.4
+protobuf == 5.28.1
 robotframework >= 5.0.1, < 8.0.0
 robotframework-pythonlibcore >= 4.4.1, < 5.0.0
 robotframework-assertion-engine >= 3.0.3, < 4.0.0
