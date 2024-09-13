@@ -21,6 +21,6 @@ RUN pip3 install --no-cache-dir --upgrade pip wheel
 USER pwuser
 RUN  pip3 --version
 USER pwuser
-RUN  pip3 install --no-cache-dir --user --upgrade robotframework robotframework-browser==18.8.0
+RUN  pip3 install --no-cache-dir --user --upgrade robotframework robotframework-browser==18.8.1
 USER pwuser
 RUN python3 -m Browser.entry init
