@@ -1426,6 +1426,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "wojtekwp",
+      "name": "wojtekwp",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30738397?v=4",
+      "profile": "https://github.com/wojtekwp",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
