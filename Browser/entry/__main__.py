@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import click
+import seedir  # type: ignore
 
 from .translation import compare_translatoin, get_library_translaton
 
@@ -120,8 +121,7 @@ def _check_files_and_access():
             f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json ",
             "\nPrinting contents:\n",
         )
-        for line in _walk_install_dir():
-            logging.info(line)
+        logging.info(f"\n{_walk_install_dir()}")
         raise RuntimeError("Could not find robotframework-browser's package.json")
     if not os.access(INSTALLATION_DIR, os.W_OK):
         sys.tracebacklimit = 0
@@ -198,15 +198,14 @@ def _rfbrowser_init(
 
 
 def _walk_install_dir():
-    for file in INSTALLATION_DIR.glob("**/*"):
-        level = len(file.parent.parts)
-        if file.is_dir():
-            indent = " " * 4 * level
-            tree = f"{indent}{file.name}/\n"
-        else:
-            indent = " " * 4 * (level + 1)
-            tree = f"{indent}{file.resolve()}"
-        yield tree
+    return seedir.seedir(
+        INSTALLATION_DIR,
+        indent=4,
+        printout=False,
+        exclude_folders=["__pycache__", ".git"],
+        depthlimit=4,
+        itemlimit=(None, 5),
+    )
 
 
 def _node_info():
@@ -225,8 +224,7 @@ def _log_install_dir(error_msg=True):
             "unknown reason. Investigate the npm output and fix possible problems."
             "\nPrinting contents:\n"
         )
-    for line in _walk_install_dir():
-        logging.info(line)
+    logging.info(f"\n{_walk_install_dir()}")
     _write_marker()
 
 
