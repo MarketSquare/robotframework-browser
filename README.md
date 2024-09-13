@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-154-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-155-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -374,6 +374,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Pawci3oo"><img src="https://avatars.githubusercontent.com/u/26310305?v=4?s=100" width="100px;" alt="Paweł"/><br /><sub><b>Paweł</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3APawci3oo" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/raphaelcamus"><img src="https://avatars.githubusercontent.com/u/164873162?v=4?s=100" width="100px;" alt="Raphael CAMUS"/><br /><sub><b>Raphael CAMUS</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Araphaelcamus" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Noordsestern"><img src="https://avatars.githubusercontent.com/u/5188411?v=4?s=100" width="100px;" alt="Markus"/><br /><sub><b>Markus</b></sub></a><br /><a href="#ideas-Noordsestern" title="Ideas, Planning, & Feedback">🤔</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/wojtekwp"><img src="https://avatars.githubusercontent.com/u/30738397?v=4?s=100" width="100px;" alt="wojtekwp"/><br /><sub><b>wojtekwp</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Awojtekwp" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
