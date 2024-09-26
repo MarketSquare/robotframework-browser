@@ -3,12 +3,14 @@ import * as path from 'path';
 
 const app = express.default();
 // eslint-disable-next-line
-app.use(express.json() as unknown as any); // TODO: This type signature just suddenly broke. Related issues: https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/57382 https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/56683
+app.use(express.json());
 const port = parseInt(process.argv[2]) || 7272;
 
 app.set('etag', false);
 
+// @ts-expect-error
 app.get('/favicon.ico', (req, res) => res.status(204).send());
+// @ts-expect-error
 app.get('/dist/favicon.ico', (req, res) => res.status(204).send());
 
 app.head('/api/get/json', (req, res) => {
