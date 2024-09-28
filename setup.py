@@ -39,10 +39,10 @@ setup_kwargs = {
     "include_package_data": True,
     "install_requires": install_requires,
     "extras_require": {
-        "tidy": ["robotframework-tidy>=4.9.0"]
+        "tidy": ["robotframework-tidy>=4.12.0"]
     },
     "entry_points": {"console_scripts": ["rfbrowser=Browser.entry.__main__:cli"]},
-    "python_requires": ">=3.8,<4.0",
+    "python_requires": ">=3.9,<4.0",
     "classifiers": [
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: Apache Software License",
