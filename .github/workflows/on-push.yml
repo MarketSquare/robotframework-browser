@@ -94,7 +94,7 @@ jobs:
             shard: 2
           - os: ubuntu-latest
             python-version: "3.10"
-            node-version: 18.x
+            node-version: 22.x
             shard: 3
           - os: ubuntu-latest
             python-version: "3.11"
