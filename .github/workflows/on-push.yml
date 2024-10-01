@@ -206,7 +206,7 @@ jobs:
         RFLOGS_API_KEY: ${{ secrets.RFLOGS_API_KEY }}
       working-directory: ${{ github.workspace }}/atest/output
       run: |
-        rflogs upload
+        rflogs upload --tag branch:${{ github.head_ref || github.ref_name }} --tag shard:${{ matrix.shard }} --tag os:${{ matrix.os }} --tag python-version:${{ matrix.python-version }} --tag node-version:${{ matrix.node-version }}
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
