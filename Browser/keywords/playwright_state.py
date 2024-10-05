@@ -16,7 +16,7 @@ import json
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
@@ -211,7 +211,7 @@ class PlaywrightState(LibraryComponent):
                 return []
         return [find_by_id(context, contexts)]
 
-    def _get_browser_ids(self, browser) -> List:
+    def _get_browser_ids(self, browser) -> list:
         catalog = self.get_browser_catalog()
         if browser == SelectionType.ALL:
             browser_ids = [browser_instance["id"] for browser_instance in catalog]
@@ -225,8 +225,8 @@ class PlaywrightState(LibraryComponent):
         return [find_by_id(browser_id, catalog) for browser_id in browser_ids]
 
     def _get_context_id(
-        self, context_selection: Union[str, SelectionType], contexts: List
-    ) -> List:
+        self, context_selection: Union[str, SelectionType], contexts: list
+    ) -> list:
         if context_selection == SelectionType.CURRENT:
             current_ctx = self.switch_context("CURRENT")
             if current_ctx == "NO CONTEXT OPEN":
@@ -362,18 +362,18 @@ class PlaywrightState(LibraryComponent):
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
         *,
-        args: Optional[List[str]] = None,
+        args: Optional[list[str]] = None,
         channel: Optional[str] = None,
         chromiumSandbox: bool = False,
         devtools: bool = False,
         downloadsPath: Optional[str] = None,
-        env: Optional[Dict] = None,
+        env: Optional[dict] = None,
         executablePath: Optional[str] = None,
-        firefoxUserPrefs: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        firefoxUserPrefs: Optional[dict[str, Union[str, int, float, bool]]] = None,
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        ignoreDefaultArgs: Union[List[str], bool, None] = None,
+        ignoreDefaultArgs: Union[list[str], bool, None] = None,
         proxy: Optional[Proxy] = None,
         reuse_existing: bool = True,
         slowMo: timedelta = timedelta(seconds=0),
@@ -433,18 +433,18 @@ class PlaywrightState(LibraryComponent):
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
         *,
-        args: Optional[List[str]] = None,
+        args: Optional[list[str]] = None,
         channel: Optional[str] = None,
         chromiumSandbox: bool = False,
         devtools: bool = False,
         downloadsPath: Optional[str] = None,
-        env: Optional[Dict] = None,
+        env: Optional[dict] = None,
         executablePath: Optional[str] = None,
-        firefoxUserPrefs: Optional[Dict[str, Union[str, int, float, bool]]] = None,
+        firefoxUserPrefs: Optional[dict[str, Union[str, int, float, bool]]] = None,
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        ignoreDefaultArgs: Union[List[str], bool, None] = None,
+        ignoreDefaultArgs: Union[list[str], bool, None] = None,
         port: Optional[int] = None,
         proxy: Optional[Proxy] = None,
         reuse_existing: bool = True,
@@ -509,7 +509,7 @@ class PlaywrightState(LibraryComponent):
             self.browser_arg_mapping.pop(parameter_hash, None)
             return None
 
-    def _get_parameter_hash(self, params: Dict[str, Any]) -> int:
+    def _get_parameter_hash(self, params: dict[str, Any]) -> int:
         params.pop("reuse_existing", None)
         return hash(repr(params))
 
@@ -523,7 +523,7 @@ class PlaywrightState(LibraryComponent):
         colorScheme: Optional[ColorScheme] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         deviceScaleFactor: Optional[float] = None,
-        extraHTTPHeaders: Optional[Dict[str, str]] = None,
+        extraHTTPHeaders: Optional[dict[str, str]] = None,
         forcedColors: ForcedColors = ForcedColors.none,
         geolocation: Optional[GeoLocation] = None,
         hasTouch: Optional[bool] = None,
@@ -533,12 +533,12 @@ class PlaywrightState(LibraryComponent):
         javaScriptEnabled: bool = True,
         locale: Optional[str] = None,
         offline: bool = False,
-        permissions: Optional[List[Permission]] = None,
+        permissions: Optional[list[Permission]] = None,
         proxy: Optional[Proxy] = None,
         recordHar: Optional[RecordHar] = None,
         recordVideo: Optional[RecordVideo] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
-        screen: Optional[Dict[str, int]] = None,
+        screen: Optional[dict[str, int]] = None,
         serviceWorkers: Optional[
             ServiceWorkersPermissions
         ] = ServiceWorkersPermissions.allow,
@@ -638,7 +638,7 @@ class PlaywrightState(LibraryComponent):
         headless: bool = True,
         *,
         acceptDownloads: bool = True,
-        args: Optional[List[str]] = None,
+        args: Optional[list[str]] = None,
         baseURL: Optional[str] = None,
         bypassCSP: bool = False,
         channel: Optional[str] = None,
@@ -648,9 +648,9 @@ class PlaywrightState(LibraryComponent):
         deviceScaleFactor: Optional[float] = None,
         devtools: bool = False,
         downloadsPath: Optional[str] = None,
-        env: Optional[Dict] = None,
+        env: Optional[dict] = None,
         executablePath: Optional[str] = None,
-        extraHTTPHeaders: Optional[Dict[str, str]] = None,
+        extraHTTPHeaders: Optional[dict[str, str]] = None,
         forcedColors: ForcedColors = ForcedColors.none,
         geolocation: Optional[GeoLocation] = None,
         handleSIGHUP: bool = True,
@@ -658,18 +658,18 @@ class PlaywrightState(LibraryComponent):
         handleSIGTERM: bool = True,
         hasTouch: Optional[bool] = None,
         httpCredentials: Optional[HttpCredentials] = None,
-        ignoreDefaultArgs: Union[List[str], bool, None] = None,
+        ignoreDefaultArgs: Union[list[str], bool, None] = None,
         ignoreHTTPSErrors: bool = False,
         isMobile: Optional[bool] = None,
         javaScriptEnabled: bool = True,
         locale: Optional[str] = None,
         offline: bool = False,
-        permissions: Optional[List[Permission]] = None,
+        permissions: Optional[list[Permission]] = None,
         proxy: Optional[Proxy] = None,
         recordHar: Optional[RecordHar] = None,
         recordVideo: Optional[RecordVideo] = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
-        screen: Optional[Dict[str, int]] = None,
+        screen: Optional[dict[str, int]] = None,
         serviceWorkers: Optional[
             ServiceWorkersPermissions
         ] = ServiceWorkersPermissions.allow,
@@ -838,7 +838,7 @@ class PlaywrightState(LibraryComponent):
         params["recordVideo"]["dir"] = Path(vid_path).resolve().absolute()
         return params
 
-    def _get_record_video_size(self, params) -> Tuple[Optional[int], Optional[int]]:
+    def _get_record_video_size(self, params) -> tuple[Optional[int], Optional[int]]:
         width = params.get("recordVideo", {}).get("size", {}).get("width")
         height = params.get("recordVideo", {}).get("size", {}).get("height")
         return int(width) if width else None, int(height) if height else None
@@ -935,7 +935,7 @@ class PlaywrightState(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> List[BrowserInfo]:
+    ) -> list[BrowserInfo]:
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
         See `Browser, Context and Page` for more information about these concepts.
@@ -1034,7 +1034,7 @@ class PlaywrightState(LibraryComponent):
         *,
         full: bool = False,
         last: Union[int, timedelta, None] = None,
-    ) -> Dict:
+    ) -> dict:
         """Returns the console log of the active page.
 
         If assertions are used and fail, this keyword will fail immediately without retrying.
@@ -1106,7 +1106,7 @@ class PlaywrightState(LibraryComponent):
         *,
         full: bool = False,
         last: Union[int, timedelta, None] = None,
-    ) -> Dict:
+    ) -> dict:
         """Returns the page errors of the active page.
 
         If assertions are used and fail, this keyword will fail immediately without retrying.
@@ -1323,7 +1323,7 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    def _get_page_parent_ids(self, page_id: str) -> Tuple[str, str]:
+    def _get_page_parent_ids(self, page_id: str) -> tuple[str, str]:
         browser_catalog = self.get_browser_catalog()
         for browser in browser_catalog:
             for context in browser["contexts"]:
@@ -1341,7 +1341,7 @@ class PlaywrightState(LibraryComponent):
         raise ValueError(f"No context with requested id '{context_id}' found.")
 
     @keyword(tags=("Getter", "BrowserControl"))
-    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> List[str]:
+    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> list[str]:
         """Returns a list of ids from open browsers.
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
@@ -1370,7 +1370,7 @@ class PlaywrightState(LibraryComponent):
         self,
         context: SelectionType = SelectionType.ALL,
         browser: SelectionType = SelectionType.ALL,
-    ) -> List:
+    ) -> list:
         """Returns a list of context ids based on the browser selection.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
@@ -1412,7 +1412,7 @@ class PlaywrightState(LibraryComponent):
         page: SelectionType = SelectionType.ALL,
         context: SelectionType = SelectionType.ALL,
         browser: SelectionType = SelectionType.ALL,
-    ) -> List:
+    ) -> list:
         """Returns a list of page ids based on the context and browser selection.
         See `Browser, Context and Page` for more information about Page and related concepts.
 

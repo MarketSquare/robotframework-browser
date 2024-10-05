@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import threading
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 from robot.api import logger
 
-_THREAD_STASHES: Dict[int, List[List[Callable]]] = {}
+_THREAD_STASHES: dict[int, list[list[Callable]]] = {}
 
 
 def _stashing_logger(funk: Callable):

@@ -17,7 +17,7 @@ import uuid
 from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
-from typing import ClassVar, Dict, List, Optional, Union
+from typing import ClassVar, Optional, Union
 
 from robot.utils import get_link_path
 
@@ -115,7 +115,7 @@ class Control(LibraryComponent):
         "timeout": Optional[timedelta],
         "crop": Optional[BoundingBox],
         "disableAnimations": bool,
-        "mask": Union[List[str], str],
+        "mask": Union[list[str], str],
         "omitBackground": bool,
     }
 
@@ -130,7 +130,7 @@ class Control(LibraryComponent):
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
         fullPage: bool = False,
         log_screenshot: bool = True,
-        mask: Union[List[str], str] = "",
+        mask: Union[list[str], str] = "",
         maskColor: Optional[str] = None,
         omitBackground: bool = False,
         quality: Optional[int] = None,
@@ -260,7 +260,7 @@ class Control(LibraryComponent):
 
     def _get_mask_selectors(self, mask):
         if mask:
-            mask_selectors: Optional[List[str]]
+            mask_selectors: Optional[list[str]]
             if isinstance(mask, str):
                 mask_selectors = [self.resolve_selector(mask)]
             elif isinstance(mask, Iterable):
@@ -411,7 +411,7 @@ class Control(LibraryComponent):
     @keyword(tags=("Setter", "Config"))
     def show_keyword_banner(
         self, show: bool = True, style: str = "", scope: Scope = Scope.Suite
-    ) -> Dict[str, Union[None, bool, str]]:
+    ) -> dict[str, Union[None, bool, str]]:
         """Controls if the keyword banner is shown on page or not.
 
         Keyword call banner is a css overlay that shows the currently executed keyword directly on page.

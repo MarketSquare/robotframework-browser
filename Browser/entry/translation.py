@@ -16,7 +16,7 @@ import hashlib
 import inspect
 import json
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 KEYWORD_NAME = "Keyword name"
 DOC_CHANGED = "Documentation update needed"
@@ -65,7 +65,7 @@ def _max_kw_name_lenght(project_tanslation: dict) -> int:
     return max_lenght
 
 
-def _get_heading(max_kw_lenght: int) -> List[str]:
+def _get_heading(max_kw_lenght: int) -> list[str]:
     heading = f"| {KEYWORD_NAME} "
     next_line = f"| {'-' * len(KEYWORD_NAME)}"
     if (padding := max_kw_lenght - len(KEYWORD_NAME)) > 0:
