@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from .data_types import Scope
 
@@ -22,7 +22,7 @@ class SettingsStack:
     ):
         self.library = ctx
         self.setter_function = setter_function
-        self._stack: Dict[str, ScopedSetting] = {
+        self._stack: dict[str, ScopedSetting] = {
             "g": ScopedSetting(Scope.Global, global_setting)
         }
 

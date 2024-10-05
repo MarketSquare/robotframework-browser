@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-from typing import Dict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -37,7 +36,7 @@ class Devices(LibraryComponent):
             return json.loads(response.json)
 
     @keyword(tags=("Getter", "BrowserControl"))
-    def get_device(self, name: str) -> Dict:
+    def get_device(self, name: str) -> dict:
         """Get a single device descriptor with name exactly matching name.
 
         | =Arguments= | =Description= |

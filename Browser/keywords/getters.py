@@ -13,7 +13,7 @@
 # limitations under the License.
 import json
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import grpc  # type: ignore
 from assertionengine import (
@@ -337,7 +337,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Returns all HTML attribute names of an element as a list.
 
 
@@ -390,7 +390,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Returns all classes of an element as a list.
 
 
@@ -437,7 +437,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> List[SelectOptions]:
+    ) -> list[SelectOptions]:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
 
         Returned dictionaries have the following keys and their values
@@ -497,7 +497,7 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         *assertion_expected,
         message: Optional[str] = None,
-    ) -> List[Union[str, int]]:
+    ) -> list[Union[str, int]]:
         """Returns the specified attribute of selected options of the ``select`` element.
 
         | =Arguments= | =Description= |
@@ -537,7 +537,7 @@ class Getters(LibraryComponent):
             )
         logger.info(response)
         expected = list(assertion_expected)
-        selected: Union[List[int], List[str]]
+        selected: Union[list[int], list[str]]
 
         if option_attribute is SelectAttribute.index:
             expected = [int(exp) for exp in expected]
@@ -861,7 +861,7 @@ class Getters(LibraryComponent):
             return self._disable_selector_prefix(response.body)
 
     @keyword(tags=("Getter", "PageContent"))
-    def get_elements(self, selector: str) -> List[str]:
+    def get_elements(self, selector: str) -> list[str]:
         """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
         for all matched elements by ``selector``.
 
@@ -981,7 +981,7 @@ class Getters(LibraryComponent):
             logger.info(response.log)
             return self._disable_selector_prefix(json.loads(response.json))
 
-    def _disable_selector_prefix(self, selector: Union[str, List[str]]):
+    def _disable_selector_prefix(self, selector: Union[str, list[str]]):
         if isinstance(selector, list):
             return (
                 selector
@@ -1061,7 +1061,7 @@ class Getters(LibraryComponent):
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
         pseudo_element: Optional[str] = None,
-    ) -> Union[Dict[str, str], str]:
+    ) -> Union[dict[str, str], str]:
         """Gets the computed style properties of the element selected by ``selector``.
 
         Optionally matches with any sequence assertion operator.
@@ -1350,7 +1350,7 @@ class Getters(LibraryComponent):
         *assertion_expected: Union[ElementState, str],
         message: Optional[str] = None,
         return_names=True,
-    ) -> Union[List[str], ElementState]:
+    ) -> Union[list[str], ElementState]:
         """Get the active states from the element found by ``selector``.
 
         This Keyword returns a list of states that are valid for the selected element.

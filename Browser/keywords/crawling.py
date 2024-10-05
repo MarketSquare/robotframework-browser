@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import List, Optional, Set, Tuple
+from typing import Optional
 
 from robot.api.deco import keyword
 from robot.libraries.BuiltIn import BuiltIn
@@ -50,10 +50,10 @@ class Crawling(LibraryComponent):
         max_number_of_page_to_crawl: int,
         max_depth_to_crawl: int,
     ):
-        hrefs_to_crawl: List[Tuple[str, int]] = [(start_url, 0)]
+        hrefs_to_crawl: list[tuple[str, int]] = [(start_url, 0)]
         url_parts = urllib.parse.urlparse(start_url)
         baseurl = url_parts.scheme + "://" + url_parts.netloc
-        crawled: Set[str] = set()
+        crawled: set[str] = set()
         while hrefs_to_crawl and len(crawled) < max_number_of_page_to_crawl:
             href, depth = hrefs_to_crawl.pop()
             if not href.startswith(baseurl):
@@ -77,9 +77,9 @@ class Crawling(LibraryComponent):
             )
         return crawled
 
-    def _gather_links(self, parent_depth: int) -> List[Tuple[str, int]]:
+    def _gather_links(self, parent_depth: int) -> list[tuple[str, int]]:
         link_elements = self.library.get_elements("//a[@href]")
-        links: Set[str] = set()
+        links: set[str] = set()
         depth = parent_depth + 1
         for link_element in link_elements:
             href, normal_link = self.library.evaluate_javascript(
@@ -91,12 +91,12 @@ class Crawling(LibraryComponent):
 
     def _build_urls_to_crawl(
         self,
-        new_hrefs_to_crawl: List[Tuple[str, int]],
-        old_hrefs_to_crawl: List[Tuple[str, int]],
-        crawled: Set[str],
+        new_hrefs_to_crawl: list[tuple[str, int]],
+        old_hrefs_to_crawl: list[tuple[str, int]],
+        crawled: set[str],
         baseurl: str,
         max_depth: int,
-    ) -> List[Tuple[str, int]]:
+    ) -> list[tuple[str, int]]:
         new_hrefs = []
         for href, depth in new_hrefs_to_crawl:
             if depth > max_depth:

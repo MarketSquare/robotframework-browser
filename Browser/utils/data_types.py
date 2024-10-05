@@ -14,7 +14,7 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
-from typing import Dict, List, Optional, Union
+from typing import Dict, Optional, Union  # noqa: UP035
 
 from robot.running.arguments.typeconverters import TypeConverter
 from typing_extensions import TypedDict
@@ -39,7 +39,7 @@ class TypedDictDummy(TypedDict):
     pass
 
 
-def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noqa: C901
+def convert_typed_dict(function_annotations: dict, params: dict) -> dict:  # noqa: C901
     for arg_name, arg_type in function_annotations.items():
         if arg_name not in params or params[arg_name] is None:
             continue
@@ -60,7 +60,7 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noq
             lower_case_dict = {k.lower(): v for k, v in arg_value.items()}
             struct = arg_type.__annotations__
             typed_dict = arg_type()
-            for req_key in arg_type.__required_keys__:  # type: ignore
+            for req_key in arg_type.__required_keys__:
                 if req_key.lower() not in lower_case_dict:
                     raise RuntimeError(
                         f"`{lower_case_dict}` cannot be converted to {arg_type.__name__} for argument '{arg_name}'."
@@ -68,7 +68,7 @@ def convert_typed_dict(function_annotations: Dict, params: Dict) -> Dict:  # noq
                         f"\nExpected types: {arg_type.__annotations__}"
                     )
                 typed_dict[req_key] = struct[req_key](lower_case_dict[req_key.lower()])  # type: ignore
-            for opt_key in arg_type.__optional_keys__:  # type: ignore
+            for opt_key in arg_type.__optional_keys__:
                 if opt_key.lower() not in lower_case_dict:
                     continue
                 typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])  # type: ignore
@@ -642,7 +642,10 @@ FormatingRules.__doc__ = """Enum that defines the available formatters.
 """
 
 
-FormatterTypes = Dict[FormatterKeywords, List[Union[FormatingRules, LambdaFunction]]]
+# Use Dict instead of dict for setting documenation
+FormatterTypes = Dict[  # noqa: UP006
+    FormatterKeywords, list[Union[FormatingRules, LambdaFunction]]
+]
 FormatterTypes.__doc__ = """Dictionary that defines the formatters for keywords.
 
 Example Robot Variable:
@@ -656,10 +659,10 @@ Example as literal:
 """
 
 
-def ensure_formatter_type(input_dict: Dict):
+def ensure_formatter_type(input_dict: dict):
     formatter_type = {}
     for formatter_keyword, rules in input_dict.items():
-        formatter_rules: List[Union[FormatingRules, LambdaFunction]] = []
+        formatter_rules: list[Union[FormatingRules, LambdaFunction]] = []
         for rule in rules:
             if isinstance(rule, FormatingRules) or callable(rule):
                 formatter_rules.append(rule)
@@ -1216,7 +1219,7 @@ class ContextInfo(TypedDict):
     type: str
     id: str
     activePage: str
-    pages: List[PageInfo]
+    pages: list[PageInfo]
 
 
 class BrowserInfo(TypedDict):
@@ -1258,6 +1261,6 @@ class BrowserInfo(TypedDict):
 
     type: str
     id: str
-    contexts: List[ContextInfo]
+    contexts: list[ContextInfo]
     activeContext: str
     activeBrowser: bool

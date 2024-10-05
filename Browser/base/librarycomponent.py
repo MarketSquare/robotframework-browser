@@ -20,7 +20,7 @@ from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.utils import timestr_to_secs
@@ -43,7 +43,7 @@ class LibraryComponent:
         """
         self.library = library
         self._crypto: Optional[Any] = None
-        self.browser_arg_mapping: Dict[int, str] = {}
+        self.browser_arg_mapping: dict[int, str] = {}
 
     @property
     def playwright(self):
@@ -159,7 +159,7 @@ class LibraryComponent:
         return self.library._unresolved_promises
 
     @unresolved_promises.setter
-    def unresolved_promises(self, value: Set[Future]):
+    def unresolved_promises(self, value: set[Future]):
         self.library._unresolved_promises = value
 
     @property
@@ -310,7 +310,7 @@ class LibraryComponent:
 
     @property
     def get_presenter_mode(self) -> HighLightElement:
-        mode: Union[HighLightElement, Dict] = {}
+        mode: Union[HighLightElement, dict] = {}
         if isinstance(self.library.presenter_mode, dict):
             mode = copy(self.library.presenter_mode)
         duration = mode.get("duration", "2 seconds")
