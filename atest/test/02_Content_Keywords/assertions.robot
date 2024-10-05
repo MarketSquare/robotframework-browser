@@ -55,19 +55,19 @@ Equal With Formatter Global:
 Cat Not Set Formatter For Not Library Keyword
     TRY
         Set Assertion Formatters    {'Not Browser Library Keyword': ['strip']}    Suite
-    EXCEPT    ValueError: Argument 'formatters' got value '{'Not Browser Library Keyword': ['strip']}' that cannot be converted to Dict[FormatterKeywords, List[FormatingRules | LambdaFunction]]: Key 'Not Browser Library Keyword' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Not Browser Library Keyword'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
+    EXCEPT    ValueError: Argument 'formatters' got value '{'Not Browser Library Keyword': ['strip']}' that cannot be converted to Dict[FormatterKeywords, list[FormatingRules | LambdaFunction]]: Key 'Not Browser Library Keyword' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Not Browser Library Keyword'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
         Log    ${error}
     END
     TRY
         Set Assertion Formatters    {'Log': ['strip']}    Suite
-    EXCEPT    ValueError: Argument 'formatters' got value '{'Log': ['strip']}' that cannot be converted to Dict[FormatterKeywords, List[FormatingRules | LambdaFunction]]: Key 'Log' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Log'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
+    EXCEPT    ValueError: Argument 'formatters' got value '{'Log': ['strip']}' that cannot be converted to Dict[FormatterKeywords, list[FormatingRules | LambdaFunction]]: Key 'Log' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Log'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
         Log    ${error}
     END
 
 Get Attribute Names Does Not Support Formatter:
     TRY
         Set Assertion Formatters    {'Get Attribute Names':['strip']}    Test
-    EXCEPT    ValueError: Argument 'formatters' got value '{'Get Attribute Names':['strip']}' that cannot be converted to Dict[FormatterKeywords, List[FormatingRules | LambdaFunction]]: Key 'Get Attribute Names' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Get Attribute Names'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
+    EXCEPT    ValueError: Argument 'formatters' got value '{'Get Attribute Names':['strip']}' that cannot be converted to Dict[FormatterKeywords, list[FormatingRules | LambdaFunction]]: Key 'Get Attribute Names' cannot be converted to FormatterKeywords: FormatterKeywords does not have member 'Get Attribute Names'. Available: 'Get Attribute', 'Get Browser Catalog', 'Get Page Source', 'Get Property', 'Get Select Options', 'Get Style', 'Get Text', 'Get Title', 'Get Url', 'LocalStorage Get Item' and 'SessionStorage Get Item'    AS    ${error}
         Log    ${error}
     END
 
