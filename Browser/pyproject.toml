@@ -1,5 +1,5 @@
 [tool.black]
-target-version = ['py38']
+target-version = ['py39']
 exclude = '''
 /(
     \.eggs
@@ -35,7 +35,7 @@ lint.ignore = [
   "N999",  # Invalid module name: 'Browser'
   "PLR0913",  # too many arguments
 ]
-target-version = "py38"
+target-version = "py39"
 lint.select = [
   "E",
   "F",

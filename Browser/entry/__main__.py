@@ -24,7 +24,7 @@ import sys
 import traceback
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import click
 import seedir  # type: ignore
@@ -518,7 +518,7 @@ def launch_browser_server(browser, options):
         logging.info("Browser server stopped")
 
 
-def convert_options_types(options: List[str], browser_lib: "Browser"):
+def convert_options_types(options: list[str], browser_lib: "Browser"):
     from Browser.utils.data_types import RobotTypeConverter
 
     keyword_types = browser_lib.get_keyword_types("launch_browser_server")

@@ -17,7 +17,7 @@ from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -377,7 +377,7 @@ class Interaction(LibraryComponent):
                 options["delay"] = self.get_timeout(delay)
             # Without the != None 0 being falsy causes issues
             if position_x is not None and position_y is not None:
-                positions: Dict[str, object] = {"x": position_x, "y": position_y}
+                positions: dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
@@ -426,13 +426,13 @@ class Interaction(LibraryComponent):
         [https://forum.robotframework.org/t//5939|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
-        options: Dict[str, object] = {
+        options: dict[str, object] = {
             "force": force,
             "noWaitAfter": noWaitAfter,
             "trial": trial,
         }
         if position_x is not None and position_y is not None:
-            positions: Dict[str, int] = {"x": position_x, "y": position_y}
+            positions: dict[str, int] = {"x": position_x, "y": position_y}
             options["position"] = positions
         if modifiers:
             options["modifiers"] = [modifier.name for modifier in modifiers]
@@ -512,9 +512,9 @@ class Interaction(LibraryComponent):
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
-            options: Dict[str, Any] = {"force": force}
+            options: dict[str, Any] = {"force": force}
             if position_x and position_y:
-                positions: Dict[str, object] = {"x": position_x, "y": position_y}
+                positions: dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
@@ -695,7 +695,7 @@ class Interaction(LibraryComponent):
         selector: str,
         attribute: SelectAttribute,
         *values,
-    ) -> List[Any]:
+    ) -> list[Any]:
         """Selects options from select element found by ``selector``.
 
         | =Arguments= | =Description= |
