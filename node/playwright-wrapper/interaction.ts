@@ -17,7 +17,7 @@ import { exists } from './playwright-invoke';
 
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, stringResponse } from './response-util';
+import { emptyWithLog } from './response-util';
 import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
 import { getSelections } from './getters';
 
