@@ -100,6 +100,7 @@ Handle Multiple Alerts
     Length Should Be    ${texts}    2
 
 Handle Multiple Dialogs With Wrong Number Of Arguments
+    [Setup]    New Page    ${DIALOGS_TWO_URL}
     TRY
         Wait For Alerts    ["accept"]    ["foobar", "Am an alert"]    ["Accept", None]    5s
     EXCEPT    ValueError: There was not equal amount of items in actions, prompt_inputs and texts lists. actions: 1, prompt_inputs: 2, texts: 2
@@ -107,7 +108,7 @@ Handle Multiple Dialogs With Wrong Number Of Arguments
     END
 
 Handle Multiple Dialogs With Wrong Texts
-    [Setup]    Go To    ${DIALOGS_TWO_URL}
+    [Setup]    New Page    ${DIALOGS_TWO_URL}
     ${promise} =    Promise To
     ...    Wait For Alerts
     ...    ["accept", "dismiss"]
@@ -122,7 +123,7 @@ Handle Multiple Dialogs With Wrong Texts
     END
 
 Handle Conform And Prompt
-    [Setup]    Go To    ${DIALOGS_TWO_URL}
+    [Setup]    New Page    ${DIALOGS_TWO_URL}
     ${promise} =    Promise To
     ...    Wait For Alerts
     ...    ["dismiss", "accept"]
@@ -138,7 +139,7 @@ Handle Conform And Prompt
     Get Text    id=prompt    ==    Second alert input: I am a prompt
 
 Handle Conform And Prompt
-    [Setup]    Go To    ${DIALOGS_TWO_URL}
+    [Setup]    New Page    ${DIALOGS_TWO_URL}
     ${promise} =    Promise To
     ...    Wait For Alerts
     ...    ["accept", "dismiss"]
