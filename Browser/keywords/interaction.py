@@ -924,14 +924,32 @@ class Interaction(LibraryComponent):
         There must be equal amount of items in ``actions``, ``prompt_inputs`` and ``texts``  lists.
         Use None if texts and/or prompt_inputs are not needed.
 
+        This keyword works in same way as `Wait For Alert` but can handle multiple alerts
+        with one promise. Lie `Wait For Alert` keyword, this keyword must be called as
+        argument to `Promise To` keyword.
+
         Example to handle two alerts, first one is accepted and second one is dismissed:
-        | ${promise} =    Promise To    Wait For Alerts    ["accept", "dismiss"]    [None, None]    [None, None]    5s
+
+        | ${promise} =    Promise To
+        | ...    Wait For Alerts
+        | ...    ["accept", "dismiss"]
+        | ...    [None, None]
+        | ...    [None, None]
         | Click    id=alerts
         | ${texts} =    Wait For    ${promise}
 
+        Example to handle confirm and prompt alert. Examople assumes that the fisrt is a
+        confirm and second one is prompt:
 
+        | ${promise} =    Promise To
+        | ...    Wait For Alerts
+        | ...    ["dismiss", "accept"]
+        | ...    [None, "I am a prompt"]
+        | ...    ["First alert accepted?", None]
+        | Click    id=confirmAndPromt
+        | ${texts} =    Wait For    ${promise}
 
-        [https://forum.robotframework.org/t//4344|Comment >>]
+        [https://forum.robotframework.org/t/7887|Comment >>]
         """
         if not len(actions) == len(prompt_inputs) == len(texts):
             raise ValueError(
