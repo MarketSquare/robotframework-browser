@@ -13,6 +13,7 @@
 # limitations under the License.
 import json
 import re
+from contextlib import suppress
 from typing import Any, Optional, Union
 
 import grpc  # type: ignore
@@ -1131,9 +1132,17 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Optional[Any] = None,
         message: Optional[str] = None,
-    ) -> Union[BoundingBox, float, int]:
+        *,
+        allow_hidden: bool = False,
+    ) -> Union[BoundingBox, float, int, None]:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
+        Alternatively you can select a single attribute of the bounding box by setting the ``key`` argument.
+
+        If an element is hidden and has no bounding box, the keyword will fail.
+        Depending on the method used to make an element invisible, an element might still have a bounding box which can be retrieved.
+        To allow also hidden elements without a bounding box, set ``allow_hidden`` to ``True``,
+        which results in a return value of `None` in case of no bounding box.
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector from which shall be retrieved. See the `Finding elements` section for details about the selectors. |
@@ -1141,6 +1150,7 @@ class Getters(LibraryComponent):
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``assertion_expected`` | Expected value for the counting |
         | ``message`` | overrides the default error message for assertion. |
+        | ``allow_hidden`` | (named only) If True, hidden elements are not causing a failure and will return `None`. Otherwise hidden element will fail. Defaults to False. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1164,11 +1174,28 @@ class Getters(LibraryComponent):
             response = stub.GetBoundingBox(
                 Request.ElementSelector(selector=selector, strict=self.strict_mode)
             )
-        parsed = DotDict(json.loads(response.json))
+        parsed = json.loads(response.json)
+        if parsed is not None:
+            with suppress(Exception):
+                parsed = DotDict(parsed)
+        elif allow_hidden and ElementState.hidden in self.get_element_states(
+            selector, return_names=False
+        ):
+            return verify_assertion(
+                None, assertion_operator, assertion_expected, "BoundingBox is", message
+            )
+        else:
+            raise ValueError(
+                f"Element is not visible and has no bounding box: {selector}"
+            )
         logger.debug(f"BoundingBox: {parsed}")
         if key == BoundingBoxFields.ALL:
             return int_dict_verify_assertion(
-                parsed, assertion_operator, assertion_expected, "BoundingBox is"
+                parsed,
+                assertion_operator,
+                assertion_expected,
+                "BoundingBox is",
+                message,
             )
         logger.info(f"Value of '{key}'': {parsed[key.name]}")
         return float_str_verify_assertion(

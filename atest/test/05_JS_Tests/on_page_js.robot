@@ -25,7 +25,7 @@ Evaluate Multiline JavaScript With Array
     ...    }
     ...    all_elements=True
     ...    arg=${{[1,2,3]}}
-    Length Should Be    ${texts}    12
+    Length Should Be    ${texts}    16
     Should Be Equal    ${texts}[-1]    ${{[1,2,3]}}
 
 Evaluate Multiline JavaScript With Singel Element
@@ -48,7 +48,7 @@ Evaluate Multiline JavaScript With Strict Mode Disabled And All Elements
     ...    return elements.length
     ...    }
     ...    all_elements=True
-    Should Be Equal    ${length}    ${11}
+    Should Be Equal    ${length}    ${15}
     [Teardown]    Set Strict Mode    ${org}
 
 Evaluate Multiline JavaScript With Strict Mode Enabled And All Elements
@@ -58,7 +58,7 @@ Evaluate Multiline JavaScript With Strict Mode Enabled And All Elements
     ...    return elements.length
     ...    }
     ...    all_elements=True
-    Should Be Equal    ${length}    ${11}
+    Should Be Equal    ${length}    ${15}
     [Teardown]    Set Strict Mode    ${org}
 
 Evaluate Multiline JavaScript With Strict Mode Disabled And Single Element

@@ -248,6 +248,16 @@ export default function Site() {
                 <button id="clickWithOptions" onMouseDown={eventMouseDown} onMouseUp={eventMouseUp}>
                     Click with Options
                 </button>
+                <button style={{ width: '0px', height: '0px', padding: '0px', border: '0px' }} id="no-size"></button>
+                <button hidden={true} id="hidden-btn">
+                    hidden=true
+                </button>
+                <button id="hidden-visibility-btn" style={{ visibility: 'hidden' }}>
+                    visibility hidden
+                </button>
+                <button id="hidden-display-btn" style={{ display: 'none' }}>
+                    display none
+                </button>
                 <table style={tableStyle}>
                     <tbody>
                         <tr>
