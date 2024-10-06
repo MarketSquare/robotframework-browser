@@ -15,9 +15,7 @@
 import contextlib
 import json
 from datetime import timedelta
-from typing import Any, Optional, Union
-
-from typing_extensions import Literal
+from typing import Any, Literal, Optional, Union
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
