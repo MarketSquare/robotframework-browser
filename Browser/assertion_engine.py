@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import time
-from typing import Optional, Union
+from typing import Optional, Union, get_args, get_origin
 
 import wrapt  # type: ignore
 from assertionengine import AssertionOperator
-from typing_extensions import get_args, get_origin
 
 from .utils import logger
 

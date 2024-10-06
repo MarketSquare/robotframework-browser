@@ -14,10 +14,9 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
-from typing import Dict, Optional, Union  # noqa: UP035
+from typing import Dict, Optional, TypedDict, Union  # noqa: UP035
 
 from robot.running.arguments.typeconverters import TypeConverter
-from typing_extensions import TypedDict
 
 
 class RobotTypeConverter(TypeConverter):
