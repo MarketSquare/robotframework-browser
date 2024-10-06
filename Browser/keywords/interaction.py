@@ -892,22 +892,15 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4343|Comment >>]
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.WaitForAlert(
-                Request().AlertAction(
-                    alertAction=action.name,
-                    promptInput=prompt_input,
-                    timeout=self.get_timeout(timeout),
-                )
-            )
-        logger.debug(response.log)
+        received_text = self.wait_for_alerts([action], [prompt_input], [None], timeout)
+        received_text = received_text[0] if received_text else ""
         if text is not None:
             assert (
-                text == response.body
-            ), f'Alert text was: "{response.body}" but it should have been: "{text}"'
+                text == received_text
+            ), f'Alert text was: "{received_text}" but it should have been: "{text}"'
         else:
             logger.debug("Not verifying alter text.")
-        return response.body
+        return received_text
 
     @keyword(tags=("Wait", "PageContent"))
     def wait_for_alerts(

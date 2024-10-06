@@ -491,7 +491,6 @@ service  Playwright {
   rpc GetDevices(Request.Empty) returns (Response.Json);
 
   rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
-  rpc WaitForAlert(Request.AlertAction) returns (Response.String);
   rpc WaitForAlerts(Request.AlertActions) returns (Response.ListString);
 
   rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);

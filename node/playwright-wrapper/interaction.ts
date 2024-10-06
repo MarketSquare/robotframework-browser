@@ -219,22 +219,6 @@ export async function handleAlert(request: Request.AlertAction, page: Page): Pro
     return emptyWithLog('Set event handler for next alert');
 }
 
-export async function waitForAlert(request: Request.AlertAction, page: Page): Promise<Response.String> {
-    const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
-    const promptInput = request.getPromptinput();
-    const timeout = request.getTimeout();
-    const dialogObject = await page.waitForEvent('dialog', { timeout: timeout });
-    const message = dialogObject.message();
-    if (alertAction === 'accept' && promptInput) {
-        dialogObject.accept(promptInput);
-    } else if (alertAction === 'accept') {
-        dialogObject.accept();
-    } else {
-        dialogObject.dismiss();
-    }
-    return stringResponse(message, 'Next alert was handeled successfully.');
-}
-
 export async function waitForAlerts(request: Request.AlertActions, page: Page): Promise<Response.ListString> {
     const response = new Response.ListString();
     const alertActions = request.getItemsList();
