@@ -121,7 +121,7 @@ Handle Multiple Dialogs With Wrong Texts
         Log    Got expected error, all is good.
     END
 
-Handle Conform and Prompt
+Handle Conform And Prompt
     [Setup]    Go To    ${DIALOGS_TWO_URL}
     ${promise} =    Promise To
     ...    Wait For Alerts
@@ -137,7 +137,7 @@ Handle Conform and Prompt
     Get Text    id=confirm    ==    First alert declined!
     Get Text    id=prompt    ==    Second alert input: I am a prompt
 
-Handle Conform and Prompt
+Handle Conform And Prompt
     [Setup]    Go To    ${DIALOGS_TWO_URL}
     ${promise} =    Promise To
     ...    Wait For Alerts
