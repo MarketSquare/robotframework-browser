@@ -139,7 +139,7 @@ export async function _waitForDownload(
     const downloadObject = await page.waitForEvent('download');
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const downloadsPath = state.activeBrowser.browser?._options.downloadsPath;
+    const downloadsPath = state.activeBrowser.browser?._options?.downloadsPath;
     if (downloadsPath && saveAs) {
         logger.info('saveAs: ' + path.resolve(downloadsPath, saveAs));
         if (!path.isAbsolute(saveAs)) {
