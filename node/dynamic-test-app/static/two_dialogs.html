@@ -1,0 +1,33 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Multiple alerts issue - example</title>
+    </head>
+    <body>
+        <button id="alerts" onclick="showAlerts()">Click to show alerts</button><br><br>
+        <button id="confirmAndPromt" onclick="showConfirmAndPromt()">Click to confirm and prompt</button>
+        <p id="confirm"></p>
+        <p id="prompt"></p>
+        <script>
+            function showConfirmAndPromt() {
+                let trueFalse = confirm("First alert accepted?");
+                let input = prompt("Input in second alert!");
+                if (trueFalse) {
+                    document.getElementById("confirm").innerText = "First alert accepted!";
+                } else {
+                    document.getElementById("confirm").innerText = "First alert declined!";
+                }
+                if (input) {
+                    document.getElementById("prompt").innerText = "Second alert input: " + input;
+                } else {
+                    document.getElementById("prompt").innerText = "Second alert input: no input";
+                }
+            }
+            function showAlerts() {
+                alert("First alert!");
+                alert("Second alert!");
+            }
+        </script>
+    </body>
+</html>

@@ -235,6 +235,30 @@ export async function waitForAlert(request: Request.AlertAction, page: Page): Pr
     return stringResponse(message, 'Next alert was handeled successfully.');
 }
 
+export async function waitForAlerts(request: Request.AlertActions, page: Page): Promise<Response.ListString> {
+    const response = new Response.ListString();
+    const alertActions = request.getItemsList();
+    const alertMessages = [];
+    for (let index = 0; index < alertActions.length; index++) {
+        const alertAction = alertActions[index];
+        const promptInput = alertAction.getPromptinput();
+        const timeout = alertAction.getTimeout();
+        const action = alertAction.getAlertaction();
+        logger.info(`Waiting for alert with action: ${action}, promptInput: "${promptInput}" and timeout: ${timeout}`);
+        const dialogObject = await page.waitForEvent('dialog', { timeout: timeout });
+        alertMessages.push(dialogObject.message());
+        if (action === 'accept' && promptInput) {
+            dialogObject.accept(promptInput);
+        } else if (alertAction.getAlertaction() === 'accept') {
+            dialogObject.accept();
+        } else {
+            dialogObject.dismiss();
+        }
+    }
+    response.setItemsList(alertMessages);
+    return response;
+}
+
 export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {
     const action = request.getAction() as 'click' | 'up' | 'down';
     const params = JSON.parse(request.getJson());
