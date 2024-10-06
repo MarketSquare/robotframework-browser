@@ -13,6 +13,21 @@ These are the directories containing source code and tests:
 
 ## Development environment
 
+### Gitpod.io Cloud Environment
+
+Gitpod.io is a cloud dev environemnt.
+It can be used with a GitHub account for free for 50h per month.
+This should be sufficiant for a PR.
+
+To open the browser project in that environment just call gitpod with your development fork url as argument.
+
+`http://gitpod.io/#<your repo>` 
+
+i.e. with the original repository: https://gitpod.io/#https://github.com/MarketSquare/robotframework-browser
+
+Wait until the init is done and you can continue reading with chapter `Testing`
+
+### Local Environment
 Install Python and nodejs.
 - https://www.python.org/downloads/
 - https://nodejs.org/

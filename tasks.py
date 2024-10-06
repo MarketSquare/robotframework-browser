@@ -47,6 +47,7 @@ ATEST_TIMEOUT = 900
 cpu_count = os.cpu_count() or 1
 EXECUTOR_COUNT = str(cpu_count - 1 or 1)
 IN_CI = os.getenv("GITHUB_WORKFLOW")
+IS_GITPOD = "gitpod.io" in os.environ.get("GITPOD_HOST", "")
 
 ZIP_DIR = ROOT_DIR / "zip_results"
 RELEASE_NOTES_PATH = Path("docs/releasenotes/Browser-{version}.rst")
@@ -87,7 +88,7 @@ Library was tested with Playwright REPLACE_PW_VERSION
 def deps(c, system=False):
     c.run("pip install -U pip")
     c.run("pip install -U uv")
-    uv_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system'*system}"
+    uv_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system'*(system or IS_GITPOD)}"
     if IN_CI:
         print(f"Install packages to Python found from {sys.executable}.")
         uv_cmd = f"{uv_cmd} --python {sys.executable}"
@@ -306,7 +307,7 @@ def atest(
         smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
     """
-    if "gitpod.io" in os.environ.get("GITPOD_HOST", "") and (
+    if IS_GITPOD and (
         not processes or int(processes) > 6
     ):
         processes = "6"
