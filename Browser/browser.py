@@ -864,20 +864,17 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
-        if enable_playwright_debug is True:
-            enable_playwright_debug = PlaywrightLogTypes.playwright
-        elif enable_playwright_debug is False:
-            enable_playwright_debug = PlaywrightLogTypes.library
-        if enable_playwright_debug == PlaywrightLogTypes.disabled:
+        self.enable_playwright_debug = enable_playwright_debug
+        self.playwright_process_port = playwright_process_port
+        if self.enable_playwright_debug is True:
+            self.enable_playwright_debug = PlaywrightLogTypes.playwright
+        elif self.enable_playwright_debug is False:
+            self.enable_playwright_debug = PlaywrightLogTypes.library
+        if self.enable_playwright_debug == PlaywrightLogTypes.disabled:
             self._playwright_log = None
         else:
             self._playwright_log = self._get_log_file_name()
-        self.playwright = Playwright(
-            self,
-            enable_playwright_debug,
-            playwright_process_port,
-            self._playwright_log,
-        )
+        self._playwright: Optional[Playwright] = None
         self._auto_closing_level: AutoClosingLevel = auto_closing_level
         # Parsing needs keywords to be discovered.
         self.external_browser_executable: dict[SupportedBrowsers, str] = (
@@ -927,6 +924,17 @@ class Browser(DynamicCore):
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
         self.scope_stack["assertion_formatter"] = SettingsStack({}, self)
+
+    @property
+    def playwright(self) -> Playwright:
+        if self._playwright is None:
+            self._playwright = Playwright(
+                self,
+                self.enable_playwright_debug,
+                self.playwright_process_port,
+                self._playwright_log,
+            )
+        return self._playwright
 
     @property
     def keyword_call_banner_add_style(self):
@@ -1130,7 +1138,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     shutil.rmtree(str(path), ignore_errors=True)
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             try:
-                self._execution_stack.append(self.get_browser_catalog())
+                self._execution_stack.append(
+                    [] if self._playwright is None else self.get_browser_catalog()
+                )
             except ConnectionError as e:
                 logger.debug(f"Browser._start_suite connection problem: {e}")
 
@@ -1140,7 +1150,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self.is_test_case_running = True
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
-                self._execution_stack.append(self.get_browser_catalog())
+                self._execution_stack.append(
+                    [] if self._playwright is None else self.get_browser_catalog()
+                )
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 

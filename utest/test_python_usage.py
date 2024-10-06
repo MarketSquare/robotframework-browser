@@ -8,6 +8,7 @@ import logging
 
 import Browser
 from Browser import SupportedBrowsers
+import Browser.playwright
 from Browser.utils import PlaywrightLogTypes
 
 
@@ -72,6 +73,10 @@ def atexit_register(monkeypatch):
     monkeypatch.setattr(atexit, "register", register)
     return register
 
+def test_playwright_lazy_initialization(browser):
+    assert browser._playwright is None
+    browser.get_browser_catalog()
+    assert isinstance(browser.playwright, Browser.playwright.Playwright)
 
 def test_open_page_get_text(application_server, browser):
     browser.new_page("localhost:7272/dist/")
