@@ -84,3 +84,71 @@ Wait For Alert Times Out
     ELSE
         Fail    Expected timeout error
     END
+
+Handle Multiple Alerts
+    [Setup]    New Page    ${DIALOGS_TWO_URL}
+    ${promise} =    Promise To
+    ...    Wait For Alerts
+    ...    ["accept", "dismiss"]
+    ...    [None, None]
+    ...    ["First alert!", None]
+    ...    5s
+    Click    id=alerts
+    ${texts} =    Wait For    ${promise}
+    Should Be Equal    ${texts}[0]    First alert!
+    Should Be Equal    ${texts}[1]    Second alert!
+    Length Should Be    ${texts}    2
+
+Handle Multiple Dialogs With Wrong Number Of Arguments
+    TRY
+        Wait For Alerts    ["accept"]    ["foobar", "Am an alert"]    ["Accept", None]    5s
+    EXCEPT    ValueError: There was not equal amount of items in actions, prompt_inputs and texts lists. actions: 1, prompt_inputs: 2, texts: 2
+        Log    Got expected error, all is good.
+    END
+
+Handle Multiple Dialogs With Wrong Texts
+    [Setup]    Go To    ${DIALOGS_TWO_URL}
+    ${promise} =    Promise To
+    ...    Wait For Alerts
+    ...    ["accept", "dismiss"]
+    ...    [None, None]
+    ...    [None, "This is WRONG"]
+    ...    5s
+    Click    id=alerts
+    TRY
+        Wait For    ${promise}
+    EXCEPT    Alert index 2 text was: "Second alert!" but it should have been: "This is WRONG"
+        Log    Got expected error, all is good.
+    END
+
+Handle Conform and Prompt
+    [Setup]    Go To    ${DIALOGS_TWO_URL}
+    ${promise} =    Promise To
+    ...    Wait For Alerts
+    ...    ["dismiss", "accept"]
+    ...    [None, "I am a prompt"]
+    ...    ["First alert accepted?", None]
+    ...    5s
+    Click    id=confirmAndPromt
+    ${texts} =    Wait For    ${promise}
+    Should Be Equal    ${texts}[0]    First alert accepted?
+    Should Be Equal    ${texts}[1]    Input in second alert!
+    Length Should Be    ${texts}    2
+    Get Text    id=confirm    ==    First alert declined!
+    Get Text    id=prompt    ==    Second alert input: I am a prompt
+
+Handle Conform and Prompt
+    [Setup]    Go To    ${DIALOGS_TWO_URL}
+    ${promise} =    Promise To
+    ...    Wait For Alerts
+    ...    ["accept", "dismiss"]
+    ...    [None, "I am a prompt"]
+    ...    ["First alert accepted?", None]
+    ...    5s
+    Click    id=confirmAndPromt
+    ${texts} =    Wait For    ${promise}
+    Should Be Equal    ${texts}[0]    First alert accepted?
+    Should Be Equal    ${texts}[1]    Input in second alert!
+    Length Should Be    ${texts}    2
+    Get Text    id=confirm    ==    First alert accepted!
+    Get Text    id=prompt    ==    Second alert input: no input

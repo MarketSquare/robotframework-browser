@@ -17,6 +17,7 @@ ${DOG_AND_CAT_URL} =                ${ROOT_URL}dogandcat.html
 ${SHELLGAME_URL} =                  ${ROOT_URL}shell_game.html
 ${FORM_URL} =                       ${ROOT_URL}prefilled_email_form.html
 ${DIALOGS_URL} =                    ${ROOT_URL}dialogs.html
+${DIALOGS_TWO_URL} =                ${ROOT_URL}two_dialogs.html
 ${ELEMENT_STATE_URL} =              ${ROOT_URL}enabled_disabled_fields_form.html
 ${FRAMES_URL} =                     ${ROOT_URL}frames/iframes.html
 ${DEEP_FRAMES_URL} =                ${ROOT_URL}frames/deep/a.html

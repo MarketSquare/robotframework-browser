@@ -278,6 +278,10 @@ message Request {
     float timeout = 3;
   }
 
+  message AlertActions {
+    repeated AlertAction items = 1;
+  }
+
   message Bool {
     bool value = 1;
   }
@@ -315,6 +319,10 @@ message Response {
   message String {
     string log = 1;
     string body = 2;
+  }
+
+  message ListString {
+    repeated string items = 1;
   }
 
   message Keywords {
@@ -484,6 +492,7 @@ service  Playwright {
 
   rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
   rpc WaitForAlert(Request.AlertAction) returns (Response.String);
+  rpc WaitForAlerts(Request.AlertActions) returns (Response.ListString);
 
   rpc MouseButton(Request.MouseButtonOptions) returns (Response.Empty);
   rpc MouseMove(Request.Json) returns (Response.Empty);
