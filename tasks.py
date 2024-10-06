@@ -84,10 +84,10 @@ Library was tested with Playwright REPLACE_PW_VERSION
 
 
 @task
-def deps(c):
+def deps(c, system=False):
     c.run("pip install -U pip")
     c.run("pip install -U uv")
-    uv_cmd = "uv pip install -r Browser/dev-requirements.txt"
+    uv_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system'*system}"
     if IN_CI:
         print(f"Install packages to Python found from {sys.executable}.")
         uv_cmd = f"{uv_cmd} --python {sys.executable}"

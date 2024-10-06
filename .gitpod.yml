@@ -4,10 +4,9 @@ tasks:
     command: |
       python -m pip install --upgrade pip
       pip install -r Browser/dev-requirements.txt
-      inv deps
+      inv deps --system
       npx --yes playwright install-deps
       inv build
-      pip install -e .
 image: gitpod/workspace-full-vnc
 ports:
   - port: 6080
@@ -18,3 +17,4 @@ vscode:
     - d-biehl.robotcode
     - eamodio.gitlens
     - dbaeumer.vscode-eslint
+    - ms-python.debugpy
