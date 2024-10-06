@@ -644,7 +644,7 @@ def lint_robot(c):
     cmd.extend(
         [
             "--extend-exclude",
-            '"(11_tidy_transformer\Snetwork_idle_file\.robot)|(test\Skeywords\.resource)"',
+            '"(11_tidy_transformer\\Snetwork_idle_file\\.robot)|(test\\Skeywords\\.resource)"',
             str(atest_folder),
         ]
     )

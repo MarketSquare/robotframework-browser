@@ -125,7 +125,7 @@ Get Classes With Strict
     [Tags]    slow
     [Setup]    Ensure Location    ${LOGIN_URL}
     Run Keyword And Expect Error
-    ...    *strict mode violation*//button*resolved to 11 elements*
+    ...    *strict mode violation*//button*resolved to 15 elements*
     ...    Get Classes    //button
     Set Strict Mode    False
     ${classes} =    Get Classes    //button
@@ -175,6 +175,24 @@ Get Element Size And Assert
     ${bounding_box} =    Get BoundingBox    \#progress_bar    ALL    ==    ${expected}
     Should Be Equal    ${bounding_box}    ${expected}
     Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 660, 'width': 40, 'height': 30}}}
+
+Get Bounding Box Of Hidden Elements
+    VAR    @{hidden_with_bbox}    id=no-size    id=hidden-visibility-btn
+    VAR    @{hidden_without_bbox}    id=hidden-btn    id=hidden-display-btn
+    FOR    ${element}    IN    @{hidden_with_bbox}
+        ${bbox} =    Get BoundingBox    ${element}
+        Should Be True    ${bbox}
+    END
+    FOR    ${element}    IN    @{hidden_without_bbox}
+        Get BoundingBox    ${element}    x    ==    ${None}    allow_hidden=True
+        ${bbox} =    Get BoundingBox    ${element}    ALL    ==    ${None}    allow_hidden=True
+        Should Be Equal    ${bbox}    ${None}
+        TRY
+            Get BoundingBox    ${element}
+        EXCEPT    ValueError: Element is not visible and has no bounding box: ${element}    AS    ${e}
+            Log    failed as expected
+        END
+    END
 
 Get Element And Assert X
     ${x} =    Get BoundingBox    \#progress_bar    x    ==    0
