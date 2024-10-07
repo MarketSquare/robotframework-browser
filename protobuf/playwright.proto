@@ -232,6 +232,7 @@ message Request {
     string style = 4;
     string color = 5;
     bool strict = 6;
+    string mode = 7;
   }
 
   message SelectElementSelector {

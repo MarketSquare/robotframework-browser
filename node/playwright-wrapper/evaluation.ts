@@ -433,7 +433,17 @@ export async function highlightElements(
     const style = request.getStyle();
     const color = request.getColor();
     const strictMode = request.getStrict();
-    const count = await highlightAll(selector, duration, width, style, color, strictMode, state);
+    const mode = request.getMode();
+    const count = await highlightAll(
+        selector,
+        duration,
+        width,
+        style,
+        color,
+        strictMode,
+        state,
+        mode as 'border' | 'playwright',
+    );
     return intResponse(count, `Highlighted ${count} elements for ${duration}.`);
 }
 
@@ -452,6 +462,7 @@ async function highlightAll(
     color: string,
     strictMode: boolean,
     state: PlaywrightState,
+    mode: 'border' | 'playwright' = 'border',
 ): Promise<number> {
     const locator = await findLocator(state, selector, strictMode, undefined, false);
     let count: number;
@@ -462,6 +473,15 @@ async function highlightAll(
         return 0;
     }
     logger.info(`Locator count is ${count}`);
+    if (mode === 'playwright') {
+        locator.highlight();
+        if (duration !== 0) {
+            setTimeout(() => {
+                state.getActivePage()?.locator('none.highlight-no-element').highlight();
+            }, duration);
+        }
+        return count;
+    }
     await locator.evaluateAll(
         (elements: Array<Element>, options: EvaluationOptions) => {
             elements.forEach((e: Element) => {
@@ -478,9 +498,11 @@ async function highlightAll(
                 d.style.border = `${options?.wdt ?? '1px'} ${options?.stl ?? `dotted`} ${options?.clr ?? `blue`}`;
                 d.style.boxSizing = 'content-box';
                 document.body.appendChild(d);
-                setTimeout(() => {
-                    d.remove();
-                }, options?.dur ?? 5000);
+                if (options?.dur !== 0) {
+                    setTimeout(() => {
+                        d.remove();
+                    }, options?.dur ?? 5000);
+                }
             });
         },
         { dur: duration, wdt: width, stl: style, clr: color },

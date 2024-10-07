@@ -589,6 +589,19 @@ class HighLightElement(TypedDict):
     color: str
 
 
+class HighlightMode(Enum):
+    """Highlight mode for the element.
+
+    ``border``: Highlights the element with a border outside of the selected element.
+    This is the classic way to highlight an element of Browser librarary.
+
+    ``playwright``: Highlights the element with Playwrights built in function.
+    """
+
+    border = auto()
+    playwright = auto()
+
+
 class LambdaFunction:
     @classmethod
     def from_string(cls, string: str) -> "LambdaFunction":
