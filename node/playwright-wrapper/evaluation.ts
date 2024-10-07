@@ -471,11 +471,12 @@ async function highlightAll(
                 d.style.position = 'fixed';
                 const rect = e.getBoundingClientRect();
                 d.style.zIndex = '2147483647';
-                d.style.top = `${rect.top}px`;
-                d.style.left = `${rect.left}px`;
+                d.style.top = `calc(${rect.top}px - ${options?.wdt ?? '1px'})`;
+                d.style.left = `calc(${rect.left}px - ${options?.wdt ?? '1px'})`;
                 d.style.width = `${rect.width}px`;
                 d.style.height = `${rect.height}px`;
                 d.style.border = `${options?.wdt ?? '1px'} ${options?.stl ?? `dotted`} ${options?.clr ?? `blue`}`;
+                d.style.boxSizing = 'content-box';
                 document.body.appendChild(d);
                 setTimeout(() => {
                     d.remove();
