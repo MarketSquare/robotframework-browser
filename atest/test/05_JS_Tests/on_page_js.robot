@@ -156,13 +156,28 @@ Highlight Element With Strict
 
 Highlight Element With Style
     [Tags]    slow
+    Set Retry Assertions For    200ms    scope=Test
+    ${bbox} =    Get Bounding Box    input#login_button
     Highlight Elements    input#login_button    duration=500ms
+    ${bbox_highlight} =    Run Keyword And Continue On Failure
+    ...    Get Bounding Box
+    ...    .robotframework-browser-highlight
+    ...    ALL
+    ...    validate
+    ...    value.x + 2 == $bbox.x and value.y + 2 == $bbox.y and value.width - 4 == $bbox.width and value.height - 4 == $bbox.height
     Get Style    .robotframework-browser-highlight    border-bottom-width    ==    2px
     Get Style    .robotframework-browser-highlight    border-bottom-style    ==    dotted
     Get Style    .robotframework-browser-highlight    border-bottom-color    ==    rgb(0, 0, 255)
     Sleep    600ms
     Highlight Elements    input#login_button    duration=500ms    width=4px    style=solid    color=\#FF00FF
+    Add Style Tag    * {box-sizing: border-box;}
     ${style} =    Get Style    .robotframework-browser-highlight
+    ${bbox_highlight} =    Run Keyword And Continue On Failure
+    ...    Get Bounding Box
+    ...    .robotframework-browser-highlight
+    ...    ALL
+    ...    validate
+    ...    value.x + 4 == $bbox.x and value.y + 4 == $bbox.y and value.width - 8 == $bbox.width and value.height - 8 == $bbox.height
     Should Be True    "${style}[border-bottom-width]" == "4px"
     Should Be True    "${style}[border-bottom-style]" == "solid"
     Should Be True    "${style}[border-bottom-color]" == "rgb(255, 0, 255)"
