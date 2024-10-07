@@ -83,8 +83,13 @@ class Playwright(LibraryComponent):
         if "node_modules" in subfolders:
             return
         raise RuntimeError(
-            f"Could not find node dependencies in installation directory `{installation_dir}.` "
-            "Run `rfbrowser init` to install the dependencies."
+            "\n#############################################################"
+            "\n#                                                           #"  # noqa: RUF001
+            "\n#  RF-Browser dependencies not found in installation path!  #"  # noqa: RUF001
+            "\n#           Run `rfbrowser init` to install.                #"  # noqa: RUF001
+            "\n#                                                           #"  # noqa: RUF001
+            "\n#############################################################"
+            f"\nInstallation path: {installation_dir}"
         )
 
     def start_playwright(self) -> Optional[Popen]:
