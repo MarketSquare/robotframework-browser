@@ -17,7 +17,7 @@ New Page Will Timeout And Page Will Be Removed From Catalog
     ${Catalog} =    Get Browser Catalog
     TRY
         New Page    ${SLOW_PAGE}
-    EXCEPT    *timeout*    type=glob
+    EXCEPT    *Timeout*    type=glob
         ${new_catalog} =    Get Browser Catalog
         Should Be Equal    ${Catalog}    ${new_catalog}
     ELSE

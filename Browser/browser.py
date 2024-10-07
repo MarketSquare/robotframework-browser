@@ -23,7 +23,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, Optional, Union
 
 from assertionengine import AssertionOperator
 from overrides import overrides
@@ -777,23 +777,6 @@ class Browser(DynamicCore):
     ROBOT_LISTENER_API_VERSION = 2
     ROBOT_LIBRARY_LISTENER: "Browser"
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    ERROR_AUGMENTATION: ClassVar[list[dict]] = [
-        {
-            "re": re.compile(r"Timeout .+ exceeded."),
-            "callable": lambda msg: (
-                f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout or '
-                "double check your locator as the targeted element(s) couldn't be found."
-            ),
-            "selector": True,
-        },
-        {
-            "re": re.compile(r"Timeout .+ exceeded."),
-            "callable": lambda msg: (
-                f'{msg}\nTip: Use "Set Browser Timeout" for increasing the timeout.'
-            ),
-            "selector": False,
-        },
-    ]
 
     _context_cache = ContextCache()
     _suite_cleanup_done = False
@@ -1279,19 +1262,22 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _alter_keyword_error(self, name: str, args: tuple) -> tuple:
         if not (args and isinstance(args, tuple)):
             return args
-
-        message = args[0]
-        argument_specification = self.keywords_spec[name].argument_specification
-        selector_in_args = "selector" in argument_specification
-        for augmentation in self.ERROR_AUGMENTATION:
-            regex, augment, selector = (
-                augmentation["re"],
-                augmentation["callable"],
-                augmentation["selector"],
+        ansi_escape = re.compile(
+            r"""
+            \x1B  # ESC
+            (?:   # 7-bit C1 Fe (except CSI)
+                [@-Z\\-_]
+            |     # or [ for CSI, followed by a control sequence
+                \[
+                [0-?]*  # Parameter bytes
+                [ -/]*  # Intermediate bytes
+                [@-~]   # Final byte
             )
-            if regex.search(message) and selector == selector_in_args:
-                message = augment(message)
-        return (message,) + args[1:]
+        """,
+            re.VERBOSE,
+        )
+        clean_message = ansi_escape.sub("", args[0])
+        return (clean_message,) + args[1:]
 
     def _set_logging(self, status: bool):
         try:

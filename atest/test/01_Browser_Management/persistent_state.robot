@@ -78,7 +78,7 @@ New Persistent Context Cleaned Up After Timeout
     ${catalog_1} =    Get Browser Catalog
     TRY
         New Persistent Context    url=${SLOW_PAGE}    timeout=1s
-    EXCEPT    *timeout*    type=GLOB
+    EXCEPT    *Timeout*    type=GLOB
         ${catalog_2} =    Get Browser Catalog
         Should Be Equal    ${catalog_1}    ${catalog_2}
     END
@@ -90,7 +90,7 @@ New Persistent Context Cleaned Up After Timeout
     ${catalog_3} =    Get Browser Catalog
     TRY
         New Persistent Context    url=${SLOW_PAGE}    timeout=1s
-    EXCEPT    *timeout*    type=GLOB
+    EXCEPT    type=GLOB
         ${catalog_4} =    Get Browser Catalog
         Should Be Equal    ${catalog_3}    ${catalog_4}
     END

@@ -74,16 +74,6 @@ Wait Until Network Is Idle Works
     Wait Until Network Is Idle    timeout=3s
     Get Text    \#server_delayed_response    ==    after some time I respond
 
-Wait Until Network Is Fails And Contains Correct Tip
-    [Tags]    slow
-    Go To    ${ROOT_URL}delayed-load.html
-    Get Text    \#server_delayed_response    ==    Server response after 400ms
-    TRY
-        Wait Until Network Is Idle    timeout=0.1s
-    EXCEPT    AS    ${error}
-        Should End With    ${error}    Tip: Use "Set Browser Timeout" for increasing the timeout.    strip_spaces=True
-    END
-
 Wait For Navigation Works
     [Tags]    slow
     Go To    ${ROOT_URL}redirector.html
