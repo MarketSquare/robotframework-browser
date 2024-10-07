@@ -20,7 +20,7 @@ from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import DownloadInfo, keyword, logger
+from ..utils import DownloadInfo, HighlightMode, keyword, logger
 
 
 class Evaluation(LibraryComponent):
@@ -86,6 +86,8 @@ class Evaluation(LibraryComponent):
         width: str = "2px",
         style: str = "dotted",
         color: str = "blue",
+        *,
+        mode: HighlightMode = HighlightMode.border,
     ):
         """Adds a highlight to elements matched by the ``selector``. Provides a style adjustment.
 
@@ -95,10 +97,11 @@ class Evaluation(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selectors which shall be highlighted. See the `Finding elements` section for details about the selectors. |
-        | ``duration`` | Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds. |
+        | ``duration`` | Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds. If set to 0 seconds, the highlighting is not deleted. |
         | ``width`` | Sets the width of the higlight border. Defaults to 2px. |
         | ``style`` | Sets the style of the border. Defaults to dotted. |
         | ``color`` | Sets the color of the border. Valid colors i.e. are: ``red``, ``blue``, ``yellow``, ``pink``, ``black`` |
+        | ``mode`` | Sets the mode of the highlight. Valid modes are: ``border`` (classic mode), ``playwright`` (Playwrights native). If ``playwright`` is used, ``width``, ``style`` and ``color`` is ignored and only one highlighting can happen at the same time. |
 
         Keyword does not fail if selector resolves to multiple elements.
 
@@ -118,6 +121,7 @@ class Evaluation(LibraryComponent):
                     style=style,
                     color=color,
                     strict=False,
+                    mode=mode.name,
                 )
             )
         count: int = response.body

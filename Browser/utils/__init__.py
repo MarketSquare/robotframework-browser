@@ -29,6 +29,7 @@ from .data_types import (
     FormatterTypes,
     GeoLocation,
     HighLightElement,
+    HighlightMode,
     HttpCredentials,
     LambdaFunction,
     NewPageDetails,
