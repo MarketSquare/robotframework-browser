@@ -431,8 +431,9 @@ Launch Browser Server Generated wsEndpoint
     [Teardown]    Close Browser Server    ${wsEndpoint}
 
 Launch Browser Server Via CLI
+    ${python} =    Get Python Binary Path
     ${process1} =    Start Process
-    ...    python
+    ...    ${python}
     ...    -m
     ...    Browser.entry
     ...    launch-browser-server
@@ -441,7 +442,7 @@ Launch Browser Server Via CLI
     ...    port\=8277
     ...    wsPath\=server2
     ${process2} =    Start Process
-    ...    python
+    ...    ${python}
     ...    -m
     ...    Browser.entry
     ...    launch-browser-server

@@ -115,3 +115,7 @@ def add_kw(filename: Path, *kw_names):
 
 def is_macos() -> bool:
     return sys.platform == "darwin"
+
+
+def get_python_binary_path() -> str:
+    return sys.executable
