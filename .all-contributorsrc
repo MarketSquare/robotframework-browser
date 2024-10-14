@@ -1454,6 +1454,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mika-b",
+      "name": "mika-b",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29384035?v=4",
+      "profile": "https://github.com/mika-b",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
