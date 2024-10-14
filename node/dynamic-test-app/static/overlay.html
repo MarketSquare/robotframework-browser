@@ -1,0 +1,63 @@
+<html>
+<!-- From: https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_overlay_text -->
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+#overlay {
+  position: fixed;
+  display: none;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 2;
+  cursor: pointer;
+}
+
+#text{
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  font-size: 50px;
+  color: white;
+  transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+}
+#OverlayOffButton{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 20px;
+  color: gray;
+  transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+}
+</style>
+</head>
+<body>
+
+<div id="overlay">
+  <div id="text">Overlay Text</div>
+  <button id="OverlayOffButton" onclick="off()">Turn off overlay effect</button>
+</div>
+
+<div style="padding:20px">
+  <h2>page with overlay text</h2>
+  <button id="CreateOverlayButton" onclick="on()">Turn on overlay effect</button>
+</div>
+
+<script>
+function on() {
+  document.getElementById("overlay").style.display = "block";
+}
+
+function off() {
+  document.getElementById("overlay").style.display = "none";
+}
+</script>
+
+</body>
+</html>
