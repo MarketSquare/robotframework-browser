@@ -19,6 +19,13 @@ If Overlay Not Set Click Should Fail
         Log    All OK with error ${error}
     END
 
+Both Position X And Position Y Must Be Given
+    TRY
+        Add Locator Handler    id=OverlayOffButton    click_locator=id=OverlayButton    position_x=3    position_y=None
+    EXCEPT    ValueError: Both position_x and position_y must be given*    type=GLOB    AS    ${error}
+        Log    All OK with error ${error}
+    END
+
 *** Keywords ***
 Overlay Setup
     New Page    ${OWERLAY_URL}
