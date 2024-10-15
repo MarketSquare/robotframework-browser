@@ -25,7 +25,7 @@ class LocatorHandler(LibraryComponent):
     def add_locator_handler(
         self,
         selector: str,
-        click_locator: str,
+        click_selector: str,
         *,
         noWaitAfter: bool = True,
         times: Optional[int] = None,
@@ -41,7 +41,7 @@ class LocatorHandler(LibraryComponent):
         | ``selector`` | Is the selector to the element which indicated that locator handler should be called. |
         | ``noWaitAfter`` | By default, after calling the handler Playwright will wait until the overlay becomes hidden, and only then library will continue with the action/assertion that triggered the handler. This option allows to opt-out of this behavior, so that overlay can stay visible after the handler has run. |
         | ``times`` | Is the number of times to how often locator handler is is called. None is unlimited. |
-        | ``click_locator`` | Is the selector to the element to be clicked. |
+        | ``click_selector`` | Is the selector to the element to be clicked. |
         | ``click_clickCount`` | Is the number of times to click the element. |
         | ``click_delay`` | Time to wait between mousedown and mouseup in milliseconds. Defaults to 0. |
         | ``click_force`` | Whether to bypass checks and dispatch the event directly. Defaults to false. |
@@ -72,13 +72,14 @@ class LocatorHandler(LibraryComponent):
                 f"Both position_x and position_y must be given, now position_x is {position_x} "
                 f"{type(position_x)} and position_y is {position_y} {type(position_y)}"
             )
+        logger.info(click_selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.AddLocatorHandler(
                 Request.LocatorHandlerAdd(
                     selector=selector,
                     noWaitAfter=noWaitAfter,
                     times=str(times) if times is not None else "",
-                    clickLocator=click_locator,
+                    clickSelector=click_selector,
                     clickClickCount=click_clickCount,
                     clickDelay=click_delay,
                     clickForce=click_force,
