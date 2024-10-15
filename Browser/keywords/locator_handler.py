@@ -32,8 +32,8 @@ class LocatorHandler(LibraryComponent):
         click_clickCount: int = 1,
         click_delay: int = 0,
         click_force: bool = False,
-        position_x: Optional[float] = None,
-        position_y: Optional[float] = None,
+        position_x: Optional[int] = None,
+        position_y: Optional[int] = None,
     ):
         """Add locator handle which will click the element indicated by locator.
 
@@ -60,15 +60,18 @@ class LocatorHandler(LibraryComponent):
         | `Click`    id:login
         | `Remove Locator Handler`    id:button    # Removes the locator handler from page
         """
-        if position_x and position_x:
+        logger.info(
+            f"{position_x=}, {position_y=} {type(position_x)} {type(position_y)}"
+        )
+        if position_x and position_y:
             click_position = Request.Position(x=str(position_x), y=str(position_y))
-        elif position_x is None or position_y is None:
+        elif position_x is None and position_y is None:
+            click_position = Request.Position(x="None", y="None")
+        else:
             raise ValueError(
                 f"Both position_x and position_y must be given, now position_x is {position_x} "
                 f"{type(position_x)} and position_y is {position_y} {type(position_y)}"
             )
-        else:
-            click_position = Request.Position(x="None", y="None")
         with self.playwright.grpc_channel() as stub:
             response = stub.AddLocatorHandler(
                 Request.LocatorHandlerAdd(
