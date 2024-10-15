@@ -1,12 +1,12 @@
 *** Settings ***
 Resource            imports.resource
 
+Suite Teardown      Overlay Suite Teardown
 Test Setup          Overlay Setup
-Test Teardown       Overlay Teardown
 
 *** Test Cases ***
 Overlay Should Be Closed Automatically
-    Add Locator Handler    id=OverlayOffButton
+    Add Locator Handler    id=OverlayOffButton    click_locator=id=OverlayButton
     Click    id=CreateOverlayButton
     Click    id=CreateOverlayButton
     Get Element Count    id=OverlayButton    ==    1
@@ -23,7 +23,7 @@ If Overlay Not Set Click Should Fail
 Overlay Setup
     New Page    ${OWERLAY_URL}
     ${TIMEOUT} =    Set Browser Timeout    0.5s
-    VAR    ${TIMEOUT}    ${TIMEOUT}    scope=TEST
+    VAR    ${TIMEOUT}    ${TIMEOUT}    scope=SUITE
 
-Overlay Teardown
+Overlay Suite Teardown
     Set Browser Timeout    ${TIMEOUT}
