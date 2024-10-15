@@ -26,7 +26,7 @@
   transform: translate(-50%,-50%);
   -ms-transform: translate(-50%,-50%);
 }
-#OverlayOffButton{
+#OverlayCloseButton{
   position: absolute;
   top: 50%;
   left: 50%;
@@ -41,11 +41,11 @@
 
 <div id="overlay">
   <div id="text">Overlay Text</div>
-  <button id="OverlayOffButton" onclick="off()">Turn off overlay effect</button>
+  <button id="OverlayCloseButton" onclick="off()">Turn off overlay effect</button>
 </div>
 
 <div style="padding:20px">
-  <h2>page with overlay text</h2>
+  <h2 id="textHeading">page with overlay text</h2>
   <button id="CreateOverlayButton" onclick="on()">Turn on overlay effect</button>
 </div>
 

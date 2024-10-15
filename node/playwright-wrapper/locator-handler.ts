@@ -38,7 +38,6 @@ export async function addLocatorHandler(
             logger.error(`Error clicking element ${clickSelector} when locator ${selector} is found: ${error}`);
             return emptyWithLog(`Got error: ${error}`);
         }
-
     });
     return emptyWithLog(`Deselected options in element ${request.getSelector()}`);
 }
