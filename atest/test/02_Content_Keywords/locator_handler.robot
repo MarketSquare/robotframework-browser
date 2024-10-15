@@ -6,7 +6,7 @@ Test Setup          Overlay Setup
 
 *** Test Cases ***
 Overlay Should Be Closed Automatically
-    Add Locator Handler    id=OverlayOffButton    click_locator=id=OverlayButton
+    Add Locator Handler    id=OverlayOffButton    click_selector=id=OverlayButton
     Click    id=CreateOverlayButton
     Click    id=CreateOverlayButton
     Get Element Count    id=OverlayButton    ==    1

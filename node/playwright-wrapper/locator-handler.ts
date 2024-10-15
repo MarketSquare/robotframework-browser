@@ -28,9 +28,17 @@ export async function addLocatorHandler(
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const selector = request.getSelector();
+    const clickSelector = request.getClickselector();
     await activePage.addLocatorHandler(activePage.locator(selector), async () => {
-        const clickLocator = await findLocator(state, selector, false, undefined, true);
-        await clickLocator.click();
+        logger.info(`Clicking element ${clickSelector} when locator ${selector} is found`);
+        try {
+            const clickLocator = await findLocator(state, clickSelector, false, undefined, true);
+            await clickLocator.click();
+        } catch (error) {
+            logger.error(`Error clicking element ${clickSelector} when locator ${selector} is found: ${error}`);
+            return emptyWithLog(`Got error: ${error}`);
+        }
+
     });
     return emptyWithLog(`Deselected options in element ${request.getSelector()}`);
 }

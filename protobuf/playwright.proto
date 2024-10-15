@@ -91,7 +91,7 @@ message Request {
     string selector = 1;
     bool noWaitAfter = 2;
     string times = 3;
-    string clickLocator = 4;
+    string clickSelector= 4;
     int32 clickClickCount = 5;
     int32 clickDelay = 6;
     bool clickForce = 7;
