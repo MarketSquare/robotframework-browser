@@ -58,6 +58,20 @@ Removing Locator Handler Should Leave Overlay Open
         Log    All OK with error ${error}
     END
 
+Adding Same Locator Handler Should Work
+    Add Locator Handler    id=overlay    id=OverlayCloseButton
+    Add Locator Handler    id=overlay    id=OverlayCloseButton
+    Add Locator Handler    id=overlay    id=OverlayCloseButton
+    Click    id=CreateOverlayButton
+    Click    id=textHeading
+    Remove Locator Handler    id=overlay
+    Click    id=CreateOverlayButton
+    TRY
+        Click    id=CreateOverlayButton
+    EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
+        Log    All OK with error ${error}
+    END
+
 *** Keywords ***
 Overlay Suite Setup
     ${TIMEOUT} =    Set Browser Timeout    0.5s
