@@ -46,7 +46,9 @@ class LocatorHandler(LibraryComponent):
 
         The arguments `click_clickCount`, `click_delay`, `click_force` `position_x` and `position_y`
         are for Playwright's `click` method. The `selector`, `noWaitAfter` and `times` are for
-        the locator handler.
+        the locator handler. The handler is tied to the active page, if there is need to add
+        handler to another page, it needs to be added again. If the `times` argument is set to positive
+        value, the locator handler is removed after the handler has been called the specified number of times.
 
         Example
         | `New Page`    ${URL}
@@ -55,6 +57,26 @@ class LocatorHandler(LibraryComponent):
         | `Type Text`    id:password    password
         | `Click`    id:login
         | `Remove Locator Handler`    id:button    # Removes the locator handler from page
+
+        The keyword only clicks the, example it is possible to accept or dismiss possible cookie
+        consent popups. If there is a need for more complex interactions, it is recommended to create a custom
+        js extension to handle the interactions.
+
+        Example:
+        | async function customLocatorHandler(locator, clickLocator, page) {
+        |     console.log("Adding custom locator handler for: " + locator);
+        |     const pageLocator = page.locator(locator).first();
+        |     await page.addLocatorHandler(
+        |         pageLocator,
+        |         async () => {
+        |             console.log("Handling custom locator: " + clickLocator);
+        |             await page.locator(clickLocator).click();
+        |             // More complex interactions can be added here
+        |         }
+        |     );
+        | }
+        | exports.__esModule = true;
+        | exports.customLocatorHandler = customLocatorHandler;
         """
         logger.info(
             f"Add locator handlee: {selector} and clicking element: {click_selector}"
