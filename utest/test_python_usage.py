@@ -204,3 +204,19 @@ def test_promise_to_wait_for_elements_state_with_name_arguments(browser):
     )
     browser.go_to(url="https://www.google.com")
     assert (promise.running() or promise.done()) is True
+
+@pytest.fixture()
+def browser_locator_handler(tmpdir):
+    Browser.Browser._output_dir = tmpdir
+    extension = Path(__file__).parent / "custom_locator_handler.js"
+    extension = extension.resolve()
+    browser = Browser.Browser(jsextension=str(extension))
+    yield browser
+    browser.close_browser("ALL")
+
+def test_custom_locator_handler(browser_locator_handler, application_server):
+    browser_locator_handler.new_page("http://localhost:7272/overlay.html")
+    browser_locator_handler.click("id=textHeading")
+    browser_locator_handler.customLocatorHandler("id=overlay", "id=OverlayCloseButton")
+    browser_locator_handler.click("id=CreateOverlayButton")
+    browser_locator_handler.click("id=textHeading")

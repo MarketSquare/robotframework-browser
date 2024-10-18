@@ -19,6 +19,7 @@ from .evaluation import Evaluation
 from .formatter import Formatter
 from .getters import Getters
 from .interaction import Interaction
+from .locator_handler import LocatorHandler
 from .network import Network
 from .pdf import Pdf
 from .playwright_state import PlaywrightState
@@ -36,6 +37,7 @@ __all__ = [
     "Evaluation",
     "Formatter",
     "Interaction",
+    "LocatorHandler",
     "Network",
     "Pdf",
     "PlaywrightState",

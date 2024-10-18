@@ -452,7 +452,40 @@ export class PlaywrightState {
     public getActivePage = (): Page | undefined => {
         return this.activeBrowser?.page?.p;
     };
+    public getActivePageId = (): string | undefined => {
+        return this.activeBrowser?.page?.id;
+    };
 }
+
+class LocatorCache {
+    private cache: Map<string, playwright.Locator>;
+
+    constructor() {
+        this.cache = new Map<string, playwright.Locator>();
+    }
+
+    public add(key: string, locator: playwright.Locator): void {
+        this.cache.set(key, locator);
+    }
+
+    public get(key: string): playwright.Locator | undefined {
+        return this.cache.get(key);
+    }
+
+    public delete(key: string): boolean {
+        return this.cache.delete(key);
+    }
+
+    public has(key: string): boolean {
+        return this.cache.has(key);
+    }
+
+    public clear(): void {
+        this.cache.clear();
+    }
+}
+
+export const locatorCache = new LocatorCache();
 
 /*
  * Pagestack's last item should be the current active page and the first item should be the lastly added page
