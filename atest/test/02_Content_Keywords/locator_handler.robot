@@ -3,7 +3,7 @@ Resource            imports.resource
 
 Suite Setup         Overlay Suite Setup
 Suite Teardown      Overlay Suite Teardown
-Test Setup          Overlay Setup
+Test Setup          New Page    ${OWERLAY_URL}
 
 *** Test Cases ***
 Overlay Should Be Closed Automatically
@@ -97,9 +97,6 @@ Adding Locator Handler With All Args Should Work
 Overlay Suite Setup
     ${TIMEOUT} =    Set Browser Timeout    0.5s
     VAR    ${TIMEOUT}    ${TIMEOUT}    scope=SUITE
-
-Overlay Setup
-    New Page    ${OWERLAY_URL}
 
 Overlay Suite Teardown
     Set Browser Timeout    ${TIMEOUT}
