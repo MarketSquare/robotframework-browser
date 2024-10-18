@@ -72,7 +72,6 @@ class LocatorHandler(LibraryComponent):
                 f"Both position_x and position_y must be given, now position_x is {position_x} "
                 f"{type(position_x)} and position_y is {position_y} {type(position_y)}"
             )
-        logger.info(click_selector)
         with self.playwright.grpc_channel() as stub:
             response = stub.AddLocatorHandler(
                 Request.LocatorHandlerAdd(
@@ -89,6 +88,11 @@ class LocatorHandler(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def remove_locator_hanler(self, locator: str):
+    def remove_locator_handler(self, locator: str):
         """Remove locator handle indicated by selector."""
         logger.info(f"Remove locator handle: {locator}")
+        with self.playwright.grpc_channel() as stub:
+            response = stub.RemoveLocatorHandler(
+                Request.LocatorHandlerRemove(selector=locator)
+            )
+            logger.info(response.log)
