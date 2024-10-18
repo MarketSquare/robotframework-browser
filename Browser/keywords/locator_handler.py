@@ -32,8 +32,6 @@ class LocatorHandler(LibraryComponent):
         click_clickCount: int = 1,
         click_delay: int = 0,
         click_force: bool = False,
-        position_x: Optional[int] = None,
-        position_y: Optional[int] = None,
     ):
         """Add locator handle which will click the element indicated by locator.
 
@@ -45,8 +43,6 @@ class LocatorHandler(LibraryComponent):
         | ``click_clickCount`` | Is the number of times to click the element. |
         | ``click_delay`` | Time to wait between mousedown and mouseup in milliseconds. Defaults to 0. |
         | ``click_force`` | Whether to bypass checks and dispatch the event directly. Defaults to false. |
-        | ``position_x`` | A point to use relative to the top-left corner of element padding box. If not specified, uses some visible point of the element. |
-        | ``position_y`` | A point to use relative to the top-left corner of element padding box. If not specified, uses some visible point of the element. |
 
         The arguments `click_clickCount`, `click_delay`, `click_force` `position_x` and `position_y`
         are for Playwright's `click` method. The `selector`, `noWaitAfter` and `times` are for
@@ -61,28 +57,18 @@ class LocatorHandler(LibraryComponent):
         | `Remove Locator Handler`    id:button    # Removes the locator handler from page
         """
         logger.info(
-            f"{position_x=}, {position_y=} {type(position_x)} {type(position_y)}"
+            f"Add locator handlee: {selector} and clicking element: {click_selector}"
         )
-        if position_x and position_y:
-            click_position = Request.Position(x=str(position_x), y=str(position_y))
-        elif position_x is None and position_y is None:
-            click_position = Request.Position(x="None", y="None")
-        else:
-            raise ValueError(
-                f"Both position_x and position_y must be given, now position_x is {position_x} "
-                f"{type(position_x)} and position_y is {position_y} {type(position_y)}"
-            )
         with self.playwright.grpc_channel() as stub:
             response = stub.AddLocatorHandler(
                 Request.LocatorHandlerAdd(
                     selector=selector,
                     noWaitAfter=noWaitAfter,
-                    times=str(times) if times is not None else "",
+                    times=str(times) if times is not None else "None",
                     clickSelector=click_selector,
                     clickClickCount=click_clickCount,
                     clickDelay=click_delay,
                     clickForce=click_force,
-                    clickPosition=click_position,
                 )
             )
             logger.info(response.log)
