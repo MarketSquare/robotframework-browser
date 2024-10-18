@@ -82,20 +82,14 @@ message Request {
     string buffer = 6;
   }
 
-  message Position {
-    string x = 1;
-    string y = 2;
-  }
-
   message LocatorHandlerAdd {
     string selector = 1;
     bool noWaitAfter = 2;
     string times = 3;
     string clickSelector= 4;
     int32 clickClickCount = 5;
-    int32 clickDelay = 6;
+    float clickDelay = 6;
     bool clickForce = 7;
-    Position clickPosition = 8;
   }
 
   message LocatorHandlerRemove {

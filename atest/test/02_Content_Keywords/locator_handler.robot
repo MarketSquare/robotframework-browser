@@ -22,13 +22,6 @@ If Overlay Not Set Click Should Fail
         Log    All OK with error ${error}
     END
 
-Both Position X And Position Y Must Be Given
-    TRY
-        Add Locator Handler    id=OverlayOffButton    click_locator=id=OverlayButton    position_x=3    position_y=None
-    EXCEPT    ValueError: Both position_x and position_y must be given*    type=GLOB    AS    ${error}
-        Log    All OK with error ${error}
-    END
-
 Overlay Should Be Closed Automatically On Page Where It Is Given
     Add Locator Handler    id=overlay    id=OverlayCloseButton
     Click    id=CreateOverlayButton
@@ -66,6 +59,34 @@ Adding Same Locator Handler Should Work
     Click    id=textHeading
     Remove Locator Handler    id=overlay
     Click    id=CreateOverlayButton
+    TRY
+        Click    id=CreateOverlayButton
+    EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
+        Log    All OK with error ${error}
+    END
+
+Adding Count To Locator Handle Should Work
+    Add Locator Handler    id=overlay    id=OverlayCloseButton    times=1
+    Click    id=CreateOverlayButton    # Overlay should be closed
+    Click    id=CreateOverlayButton    # Overlay should not be closed because times=1
+    TRY
+        Click    id=CreateOverlayButton
+    EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
+        Log    All OK with error ${error}
+    END
+
+Adding Locator Handler With All Args Should Work
+    Add Locator Handler
+    ...    id=overlay
+    ...    id=OverlayCloseButton
+    ...    times=1
+    ...    noWaitAfter=True
+    ...    click_clickCount=1
+    ...    click_delay=0.1
+    ...    click_force=True
+    Click    id=CreateOverlayButton    # Overlay should be closed
+    Click    id=CreateOverlayButton    # Overlay should not be closed because times=1
+
     TRY
         Click    id=CreateOverlayButton
     EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
