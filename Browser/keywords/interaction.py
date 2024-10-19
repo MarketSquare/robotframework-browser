@@ -1325,9 +1325,7 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def upload_file_by_selector(
-        self, selector: str, *path: PathLike
-    ):
+    def upload_file_by_selector(self, selector: str, *path: PathLike):
         """Uploads file from `path` to file input element matched by selector.
 
         Fails if upload is not done before library timeout.

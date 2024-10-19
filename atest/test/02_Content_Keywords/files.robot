@@ -37,7 +37,12 @@ Upload Many Files
     New Context
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
-    Upload File By Selector    id=multi_file_chooser    ${CURDIR}/__init__.robot    ${CURDIR}/assertions.robot    ${CURDIR}/files.robot    ${CURDIR}/__init__.robot
+    Upload File By Selector
+    ...    id=multi_file_chooser
+    ...    ${CURDIR}/__init__.robot
+    ...    ${CURDIR}/assertions.robot
+    ...    ${CURDIR}/files.robot
+    ...    ${CURDIR}/__init__.robot
     ${result_name} =    Get Text    \#upload_result
     Get Text    \#upload_result    ==    __init__.robot,assertions.robot,files.robot,__init__.robot
 
@@ -50,7 +55,11 @@ Upload Files And Directories
     OperatingSystem.Create Directory    ${CURDIR}/tmp_dir/not_from_here
     OperatingSystem.Create File    ${CURDIR}/tmp_dir/not_from_here/tmp_file3.txt
     Get Text    \#upload_result    ==    ${EMPTY}
-    Upload File By Selector    id=multi_file_chooser    ${CURDIR}/__init__.robot    ${CURDIR}/tmp_dir    ${CURDIR}/__init__.robot
+    Upload File By Selector
+    ...    id=multi_file_chooser
+    ...    ${CURDIR}/__init__.robot
+    ...    ${CURDIR}/tmp_dir
+    ...    ${CURDIR}/__init__.robot
     ${result_name} =    Get Text    \#upload_result
     Get Text    \#upload_result    ==    __init__.robot,tmp_file1.txt,tmp_file2.txt,__init__.robot
     [Teardown]    OperatingSystem.Remove Directory    ${CURDIR}/tmp_dir    recursive=True
