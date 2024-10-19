@@ -4,7 +4,7 @@ Resource            imports.resource
 Test Setup          Set Library Timeout
 Test Teardown       Run Keywords    Restore Library Timeout    AND    Wait For All Promises
 
-Force Tags          slow
+Test Tags           slow
 
 *** Variables ***
 ${CUSTOM_DL_PATH} =         ${CURDIR}/download_file

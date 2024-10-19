@@ -12,7 +12,7 @@ Add Style
 
 Focus With Strict
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Focus    //input
     Set Strict Mode    False
     Focus    //input

@@ -43,10 +43,10 @@ Drag And Drop
 Drag And Drop With Strict
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Drag And Drop    //input    id=clickWithOptions
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Drag And Drop    id=draggable    //input
     Set Strict Mode    False
     Drag And Drop    id=draggable    //input
@@ -98,7 +98,7 @@ Hover And Drop To Hover
 Hover With Strict
     Set Strict Mode    True
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Hover    //input
     Set Strict Mode    False
     Hover    //input
@@ -141,7 +141,7 @@ Left Right And Middle Click
 Get Boundingbox With Strict
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Boundingbox    //input
     Set Strict Mode    False
     ${x} =    Get Boundingbox    //input    x
@@ -151,7 +151,7 @@ Get Boundingbox With Strict
 Mouse Move Relative To With Strict
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Mouse Move Relative To    //input    4    2
     Set Strict Mode    False
     Mouse Move Relative To    //input    4    2

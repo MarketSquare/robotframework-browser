@@ -45,7 +45,7 @@ Get Property And Assert
 Get Property With Strict Mode
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Property    //input    id
     Set Strict Mode    False
     ${property} =    Get Property    //input    id

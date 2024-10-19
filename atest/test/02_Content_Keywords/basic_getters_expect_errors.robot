@@ -52,7 +52,7 @@ Get Page Source Custom Error
 Get Client Size With Strict
     [Tags]    expect_error
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Client Size    //input
     Set Strict Mode    False
     ${size} =    Get Client Size    //input
@@ -83,7 +83,7 @@ Get Scroll Position With Strict
     [Tags]    expect_error
     Get Scroll Position
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Scroll Position    //input
     Set Strict Mode    False
     Get Scroll Position    //input
@@ -116,7 +116,7 @@ Get Scroll Position Element Custom Error
 Get Scroll Size With Strict
     [Tags]    expect_error
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Scroll Size    //input
     Set Strict Mode    False
     ${size} =    Get Scroll Size    //input
@@ -196,12 +196,12 @@ Get Property With Nonmatching Selector
 Get Attribute With Strict
     TRY
         Get Attribute    //input    id
-    EXCEPT    *strict mode violation*//input*resolved to 4 elements*    type=glob    AS    ${error}
+    EXCEPT    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*    type=glob    AS    ${error}
         Log    ${error}
     END
     TRY
         Get Attribute    //input    id    equal    nothere
-    EXCEPT    *strict mode violation*//input*resolved to 4 elements*    type=glob    AS    ${error}
+    EXCEPT    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*    type=glob    AS    ${error}
         Log    ${error}
     END
     Set Strict Mode    False

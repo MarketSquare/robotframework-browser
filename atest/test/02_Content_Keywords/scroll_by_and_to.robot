@@ -7,7 +7,7 @@ Test Setup      New Page    ${LOGIN_URL}
 Scroll By With Strict
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Scroll By    //input
     Set Strict Mode    False
     Scroll By    //input
@@ -16,7 +16,7 @@ Scroll By With Strict
 Scroll To With Strict
     [Tags]    slow
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Scroll To    //input
     Set Strict Mode    False
     Scroll To    //input
