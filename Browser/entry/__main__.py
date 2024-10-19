@@ -30,13 +30,13 @@ import click
 import seedir  # type: ignore
 
 from .translation import compare_translatoin, get_library_translaton
+from .transform import trasform
 
 if TYPE_CHECKING:
     from ..browser import Browser
 
 INSTALLATION_DIR = Path(__file__).parent.parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"
-TIDY_TRANSFORMER_DIR = Path(__file__).parent.parent / "tidy_transformer"
 # This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
 # But shell=True breaks our linux CI
 SHELL = bool(platform.platform().startswith("Windows"))
@@ -553,7 +553,13 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
     help="If set will convert Wait Until Network Is Idle keyword to Wait For Load State keyword.",
     default=False,
 )
-def transform(path: Path, wait_until_network_is_idle: bool):
+@click.option(
+    "--upload-file-by-selector",
+    is_flag=True,
+    help="If set will convert Upload File By Selector keyword to use varargs.",
+    default=False,
+)
+def transform(path: Path, wait_until_network_is_idle: bool, upload_file_by_selector: bool):
     """Runs Robotidy with Browser library transofrormer.
 
     This will help users to convert automatically deprecated to new ones. Conversion
@@ -567,16 +573,10 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     will convert Wait Until Network Is Idle keyword to Wait For Load State keyword
     from all test data files in /path/to/test folder
     """
-    if not wait_until_network_is_idle:
+    if not wait_until_network_is_idle and not upload_file_by_selector:
         logging.info("No transformer defined, exiting.")
         return
-    cmd = ["robotidy"]
-    if wait_until_network_is_idle:
-        wait_until_network_is_idle_file = TIDY_TRANSFORMER_DIR / "network_idle.py"
-        cmd.append("--transform")
-        cmd.append(str(wait_until_network_is_idle_file))
-    cmd.extend([str(item) for item in path])  # type: ignore
-    subprocess.run(cmd, check=False)
+    trasform(wait_until_network_is_idle, upload_file_by_selector, path)
 
 
 @cli.command()
