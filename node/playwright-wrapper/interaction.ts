@@ -193,8 +193,9 @@ export async function uploadFileBySelector(
 ): Promise<Response.Empty> {
     const selector = request.getSelector();
     const strictMode = request.getStrict();
-    const path = request.getPath();
+    const path = request.getPathList();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
+    logger.info(`Uploading file(s) ${path} to ${selector}`);
     await locator.setInputFiles(path);
     return emptyWithLog('Successfully uploaded file');
 }
