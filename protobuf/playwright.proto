@@ -74,7 +74,7 @@ message Request {
     string path = 1;
   }
   message FileBySelector {
-    string path = 1;
+    repeated string path = 1;
     string selector = 2;
     bool strict = 3;
   }
