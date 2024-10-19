@@ -72,7 +72,7 @@ Evaluate Multiline JavaScript With Strict Mode Disabled And Single Element
 
 Evaluate Multiline JavaScript Strict Mode Error
     Run Keyword And Expect Error
-    ...    *strict mode violation*input*resolved to 4 elements*
+    ...    *strict mode violation*input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Evaluate JavaScript    input
     ...    (e, arg) => {
     ...    let text = []
@@ -104,7 +104,7 @@ JS Execute Without Element On Strict Mode
 
 JS Execute With Element On Strict Mode
     Run Keyword And Expect Error
-    ...    *strict mode violation*//input*resolved to 4 elements*
+    ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Evaluate JavaScript    //input    () => {return false;}
     Set Strict Mode    False
     ${result} =    Evaluate JavaScript    //input    () => {return false;}

@@ -44,7 +44,7 @@ Get Element And Get Elements
     ${element} =    Get Element    input#login_button
     Should Start With    ${element}    input
     ${elements} =    Get Elements    input
-    Length Should Be    ${elements}    4
+    Length Should Be    ${elements}    5
     FOR    ${element}    IN    @{elements}
         Should Start With    ${element}    input
     END

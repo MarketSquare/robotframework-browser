@@ -64,8 +64,16 @@ async function delayedRequest() {
 
 function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
+    let fileNames = '';
     if (files) {
-        uploadResultElement.current!.innerHTML = files[0].name;
+        for (let i = 0; i < files.length; i++) {
+            if (i > 0) {
+                fileNames = `${fileNames},${files[i].name}`;
+            } else {
+                fileNames = files[i].name;
+            }
+        }
+        uploadResultElement.current!.innerHTML = fileNames;
     } else {
         uploadResultElement.current!.innerHTML = 'no uploaded file';
     }
@@ -355,6 +363,13 @@ export default function Site() {
                     type="file"
                     id="file_chooser"
                     name="file_chooser"
+                    onChange={(event) => fileUploaded(uploadResult, event)}
+                />
+                <input
+                    type="file"
+                    id="multi_file_chooser"
+                    name="multi_file_chooser"
+                    multiple
                     onChange={(event) => fileUploaded(uploadResult, event)}
                 />
                 <a id="file_download" href="index.js" download="test_download_file">
