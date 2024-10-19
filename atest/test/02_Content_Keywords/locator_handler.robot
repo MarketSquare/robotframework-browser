@@ -7,7 +7,7 @@ Test Setup          New Page    ${OWERLAY_URL}
 
 *** Test Cases ***
 Overlay Should Be Closed Automatically
-    Add Locator Handler    id=overlay    id=OverlayCloseButton
+    Add Click Locator Handler    id=overlay    id=OverlayCloseButton
     Click    id=CreateOverlayButton
     Click    id=CreateOverlayButton
     Click    id=textHeading
@@ -23,7 +23,7 @@ If Overlay Not Set Click Should Fail
     END
 
 Overlay Should Be Closed Automatically On Page Where It Is Given
-    Add Locator Handler    id=overlay    id=OverlayCloseButton
+    Add Click Locator Handler    id=overlay    id=OverlayCloseButton
     Click    id=CreateOverlayButton
     Click    id=textHeading
     Get Element States    id=overlay    validate    value & hidden
@@ -40,7 +40,7 @@ Removing Locator Handler Should Not Fail If It Does Not Exist
     Remove Locator Handler    id=DoesNotExist
 
 Removing Locator Handler Should Leave Overlay Open
-    Add Locator Handler    id=overlay    id=OverlayCloseButton
+    Add Click Locator Handler    id=overlay    id=OverlayCloseButton
     Click    id=CreateOverlayButton
     Click    id=textHeading
     Remove Locator Handler    id=overlay
@@ -52,11 +52,12 @@ Removing Locator Handler Should Leave Overlay Open
     END
 
 Adding Same Locator Handler Should Work
-    Add Locator Handler    id=overlay    id=OverlayCloseButton
-    Add Locator Handler    id=overlay    id=OverlayCloseButton
-    Add Locator Handler    id=overlay    id=OverlayCloseButton
+    Add Click Locator Handler    id=overlay    id=OverlayCloseButton
+    Add Click Locator Handler    id=overlay    id=OverlayCloseButton
+    Add Click Locator Handler    id=overlay    id=OverlayCloseButton
     Click    id=CreateOverlayButton
     Click    id=textHeading
+    Remove Locator Handler    id=overlay
     Remove Locator Handler    id=overlay
     Click    id=CreateOverlayButton
     TRY
@@ -66,7 +67,7 @@ Adding Same Locator Handler Should Work
     END
 
 Adding Count To Locator Handle Should Work
-    Add Locator Handler    id=overlay    id=OverlayCloseButton    times=1
+    Add Click Locator Handler    id=overlay    id=OverlayCloseButton    times=1
     Click    id=CreateOverlayButton    # Overlay should be closed
     Click    id=CreateOverlayButton    # Overlay should not be closed because times=1
     TRY
@@ -76,7 +77,7 @@ Adding Count To Locator Handle Should Work
     END
 
 Adding Locator Handler With All Args Should Work
-    Add Locator Handler
+    Add Click Locator Handler
     ...    id=overlay
     ...    id=OverlayCloseButton
     ...    times=1
@@ -86,7 +87,6 @@ Adding Locator Handler With All Args Should Work
     ...    click_force=True
     Click    id=CreateOverlayButton    # Overlay should be closed
     Click    id=CreateOverlayButton    # Overlay should not be closed because times=1
-
     TRY
         Click    id=CreateOverlayButton
     EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}

@@ -73,6 +73,7 @@ export async function removeLocatorHandler(
     const activePageId = state.getActivePageId();
     const overlaySelector = request.getSelector();
     const locator = locatorCache.get(`${activePageId}-${overlaySelector}`);
+    locatorCache.delete(`${activePageId}-${overlaySelector}`);
     if (locator === undefined) {
         return emptyWithLog(`No locator handler found for ${overlaySelector}`);
     }

@@ -22,7 +22,7 @@ from ..utils import keyword, logger
 class LocatorHandler(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
-    def add_locator_handler(
+    def add_click_locator_handler(
         self,
         selector: str,
         click_selector: str,
@@ -33,7 +33,18 @@ class LocatorHandler(LibraryComponent):
         click_delay: int = 0,
         click_force: bool = False,
     ):
-        """Add locator handle which will click the element indicated by locator.
+        """Add a handler function which will activate when `selector` is visible and click.
+
+        The handler will click the element indicated by `click_selector`.
+
+        When testing a web page, sometimes unexpected overlkays, exaple "Accept Coocies" dialog
+        might appear and block the interaction with the page, like `Click` keyword. These
+        overlays can be problematic to handle, because they might appear randomly in the page.
+        This keyword allows to create automatic method, which will close those overlays by
+        clicking the element indicated by ``click_selector``. Handler is activaed when
+        element indicated by ``selector`` is visible. For furhter information, see Playwright's
+        [https://playwright.dev/docs/api/class-page#page-add-locator-handler|addLocatorHandler]
+        method.
 
         | =Arguments= | =Description= |
         | ``selector`` | Is the selector to the element which indicated that locator handler should be called. |
@@ -44,17 +55,17 @@ class LocatorHandler(LibraryComponent):
         | ``click_delay`` | Time to wait between mousedown and mouseup in milliseconds. Defaults to 0. |
         | ``click_force`` | Whether to bypass checks and dispatch the event directly. Defaults to false. |
 
-        The arguments `click_clickCount`, `click_delay`, `click_force` `position_x` and `position_y`
-        are for Playwright's `click` method. The `selector`, `noWaitAfter` and `times` are for
-        the locator handler. The handler is tied to the active page, if there is need to add
-        handler to another page, it needs to be added again. If the `times` argument is set to positive
-        value, the locator handler is removed after the handler has been called the specified number of times.
+        The arguments `click_selector`, `click_clickCount`, `click_delay` and `click_force` are same as
+        `Click` keyword. The `selector`, `noWaitAfter` and `times` are for the locator handler. The
+        handler is tied to the active page, if there is need to add handler to another page, this keyword
+        needs to be called separetly for each page. If the `times` argument is set to positive value,
+        the locator handler is removed after the handler has been called the specified number of times.
 
-        Example
+        Example add locator handler to click button with id="ButtonInOverlay" when id=Overlay is visible:
         | `New Page`    ${URL}
-        | `Add Locator Handler`    id:button     # Add locator handler to click button with id="button"
-        |  Type Text`    id:username    user     # If overlay is shown with element id="button" after interactios, element is clicked
-        | `Type Text`    id:password    password
+        | `Add Click Locator Handler`    id=Overlay    id=ButtonInOverlay     # Add locator handler to page
+        | `Type Text`    id:username    user    # If element with id=Overlay appears, the handler will click the button id=ButtonInOverlay
+        | `Type Text`    id:password    password    # Or if overlay is visible here, then handler is called here
         | `Click`    id:login
         | `Remove Locator Handler`    id:button    # Removes the locator handler from page
 
