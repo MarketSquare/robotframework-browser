@@ -28,4 +28,5 @@ def trasform(wait_until_network_is_idle: bool, upload_file_by_selector: bool, pa
         cmd.append("--transform")
         cmd.append(str(upload_file_by_selector_file))
     cmd.extend([str(item) for item in path])  # type: ignore
+    print(f"Running command: {cmd}")
     subprocess.run(cmd, check=False)

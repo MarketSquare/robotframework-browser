@@ -19,6 +19,7 @@ Tranform Upload File By Selector Keyword To Varargs
     Should Be Equal    ${lines}[5]    ${SPACE*4}\${not used} =${SPACE*4}New Context${SPACE*4}\# This is not changed
     Should Be Equal    ${lines}[6]    ${SPACE*4}Upload File By Selector${SPACE*4}id=file${SPACE*4}file.txt${SPACE*4}\# This is not changed
     Should Be Equal    ${lines}[7]    ${SPACE*4}Upload File By Selector${SPACE*4}selector=id=file${SPACE*4}file.txt
+    Should Be Equal    ${lines}[8]    ${SPACE*4}Browser.Upload File By Selector${SPACE*4}selector=id=file${SPACE*4}file.txt
 
 *** Keywords ***
 Upload File By Selector Setup
