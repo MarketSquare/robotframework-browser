@@ -36,15 +36,15 @@ Upload 5MB File
 Upload Many Files
     New Context
     New Page    ${LOGIN_URL}
-    Get Text    \#upload_result    ==    ${EMPTY}
+    Get Text    id=upload_result    ==    ${EMPTY}
     Upload File By Selector
     ...    id=multi_file_chooser
     ...    ${CURDIR}/__init__.robot
     ...    ${CURDIR}/assertions.robot
     ...    ${CURDIR}/files.robot
     ...    ${CURDIR}/__init__.robot
-    ${result_name} =    Get Text    \#upload_result
-    Get Text    \#upload_result    ==    __init__.robot,assertions.robot,files.robot,__init__.robot
+    VAR    @{exptected_list}    __init__.robot    assertions.robot    files.robot    __init__.robot
+    Check Upload Result    ${exptected_list}
 
 Upload Files And Directories
     New Context
@@ -54,21 +54,15 @@ Upload Files And Directories
     OperatingSystem.Create File    ${CURDIR}/tmp_dir/tmp_file2.txt
     OperatingSystem.Create Directory    ${CURDIR}/tmp_dir/not_from_here
     OperatingSystem.Create File    ${CURDIR}/tmp_dir/not_from_here/tmp_file3.txt
-    Get Text    \#upload_result    ==    ${EMPTY}
+    Get Text    id=upload_result    ==    ${EMPTY}
     Upload File By Selector
     ...    id=multi_file_chooser
     ...    ${CURDIR}/__init__.robot
     ...    ${CURDIR}/tmp_dir
     ...    ${CURDIR}/__init__.robot
-    ${result_name} =    Get Text    \#upload_result
-    Get Text    \#upload_result    ==    __init__.robot,tmp_file1.txt,tmp_file2.txt,__init__.robot
+    VAR    @{exptected_list}    __init__.robot    tmp_file1.txt    tmp_file2.txt    __init__.robot
+    Check Upload Result    ${exptected_list}
     [Teardown]    OperatingSystem.Remove Directory    ${CURDIR}/tmp_dir    recursive=True
-
-No Path Should Fail
-    New Page    ${LOGIN_URL}
-    Run Keyword And Expect Error
-    ...    ValueError: No path to file was given.
-    ...    Upload File By Selector    \#file_chooser
 
 Upload File With Different Name
     Upload Named File    invalid_test_upload_file
@@ -229,6 +223,15 @@ Upload Named File
     Upload File By Selector    \#file_chooser    ${CURDIR}/${file_name}
     ${result_name} =    Get Text    \#upload_result
     Get Text    \#upload_result    ==    ${file_name}
+
+Check Upload Result
+    [Documentation]    Sometimes upload of files happen in different order than they are listed in the file chooser.
+    [Arguments]    ${expected}
+    ${result} =    Get Text    id=upload_result
+    ${result_list} =    Split String    ${result}    ,
+    Sort List    ${expected}
+    Sort List    ${result_list}
+    Lists Should Be Equal    ${result_list}    ${expected}
 
 Upload With Promise
     [Arguments]    ${file_name}

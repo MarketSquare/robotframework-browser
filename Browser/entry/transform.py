@@ -19,7 +19,8 @@ TIDY_TRANSFORMER_DIR = Path(__file__).parent.parent / "tidy_transformer"
 
 
 def trasform(
-    path: Path, wait_until_network_is_idle: bool,
+    path: Path,
+    wait_until_network_is_idle: bool,
 ) -> None:
     cmd = ["robotidy"]
     if wait_until_network_is_idle:
