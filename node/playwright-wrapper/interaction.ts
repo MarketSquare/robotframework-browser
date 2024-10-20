@@ -195,9 +195,18 @@ export async function uploadFileBySelector(
     const strictMode = request.getStrict();
     const path = request.getPathList();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
-    logger.info(`Uploading file(s) ${path} to ${selector}`);
-    await locator.setInputFiles(path);
-    return emptyWithLog('Successfully uploaded file');
+    if (path.length === 0) {
+        const name = request.getName();
+        const mimeType = request.getMimetype();
+        const buffer = request.getBuffer();
+        logger.info(`Uploading file ${name} as buffer to ${selector}`);
+        await locator.setInputFiles({ name: name, mimeType: mimeType, buffer: Buffer.from(buffer) });
+        return emptyWithLog('Successfully uploaded buffer as file');
+    } else {
+        logger.info(`Uploading file(s) ${path} to ${selector}`);
+        await locator.setInputFiles(path);
+        return emptyWithLog('Successfully uploaded file(s)');
+    }
 }
 
 export async function uploadFile(request: Request.FilePath, page: Page): Promise<Response.Empty> {

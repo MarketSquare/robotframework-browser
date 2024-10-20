@@ -31,6 +31,7 @@ from ..utils.data_types import (
     BoundingBox,
     Coordinates,
     DialogAction,
+    FileUploadBuffer,
     KeyAction,
     KeyboardInputAction,
     KeyboardModifier,
@@ -1326,7 +1327,10 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def upload_file_by_selector(
-        self, selector: str, path: PathLike, *extra_paths: PathLike
+        self,
+        selector: str,
+        path: Union[PathLike, FileUploadBuffer],
+        *extra_paths: PathLike,
     ):
         """Uploads file from `path` to file input element matched by selector.
 
@@ -1344,6 +1348,9 @@ class Interaction(LibraryComponent):
         | ``path`` | Path to the file or folder to be uploaded. |
         | ``extra_paths`` | Additional paths to files or folders to be uploaded. |
 
+        If `path` is FileUploadBuffer, then `extra_paths` is not supported and using
+        it will raise an error.
+
         Upload single file example:
         | `Upload File By Selector`    //input[@type='file']    big_file.zip
 
@@ -1353,14 +1360,44 @@ class Interaction(LibraryComponent):
         Upload folder example:
         | `Upload File By Selector`    //input[@type='file']    /path/to/folder
 
+        Upload as buffer example:
+        | ${text} =    Get File    /path/to/file    # Read file from disk
+        | VAR    &{buffer}    name=not_here.txt    mimeType=text/plain    buffer=${text}    # Create buffer dictionary
+        | Upload File By Selector    id=file_chooser    ${buffer}    # Upload buffer
+
         [https://forum.robotframework.org/t//4341|Comment >>]
         """
         selector = self.resolve_selector(selector)
         file_by_selector = Request().FileBySelector()
         file_by_selector.selector = selector
         file_by_selector.strict = self.strict_mode
+        if isinstance(path, PathLike):
+            file_by_selector = self._get_files(path, file_by_selector, *extra_paths)
+            file_by_selector.name = ""
+            file_by_selector.mimeType = ""
+            file_by_selector.buffer = ""
+        else:
+            if extra_paths:
+                raise ValueError(
+                    "Extra paths are not supported when using FileUploadBuffer as path."
+                )
+            file_by_selector.path.extend([])
+            file_by_selector.name = path["name"]
+            file_by_selector.mimeType = path["mimeType"]
+            file_by_selector.buffer = path["buffer"]
+        with self.playwright.grpc_channel() as stub:
+            response = stub.UploadFileBySelector(
+                file_by_selector,
+            )
+            logger.debug(response.log)
+
+    def _get_files(
+        self,
+        path: PathLike,
+        file_by_selector: Request.FileBySelector,
+        *extra_paths: PathLike,
+    ) -> Request.FileBySelector:
         all_paths = [path, *list(extra_paths)]
-        logger.debug(f"Uploading files: {all_paths}")
         for item in all_paths:
             path_object = Path(item).resolve()
             if path_object.is_file():
@@ -1374,9 +1411,5 @@ class Interaction(LibraryComponent):
                 file_by_selector.path.extend(files)
             else:
                 raise ValueError(f"Nonexistent input file path '{path_object}'")
-        logger.info(f"Uploading files: {file_by_selector.path}")
-        with self.playwright.grpc_channel() as stub:
-            response = stub.UploadFileBySelector(
-                file_by_selector,
-            )
-            logger.debug(response.log)
+        logger.debug(f"Uploading files: {file_by_selector.path}")
+        return file_by_selector

@@ -64,6 +64,14 @@ Upload Files And Directories
     Check Upload Result    ${exptected_list}
     [Teardown]    OperatingSystem.Remove Directory    ${CURDIR}/tmp_dir    recursive=True
 
+Upload File As Buffer
+    New Context
+    New Page    ${LOGIN_URL}
+    ${text} =    Get File    ${CURDIR}/__init__.robot
+    VAR    &{buffer}    name=not_here.txt    mimeType=text/plain    buffer=${text}
+    Upload File By Selector    id=file_chooser    ${buffer}
+    Get Text    id=upload_result    ==    not_here.txt
+
 Upload File With Different Name
     Upload Named File    invalid_test_upload_file
 

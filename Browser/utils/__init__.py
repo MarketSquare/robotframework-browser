@@ -23,6 +23,7 @@ from .data_types import (
     CookieType,
     DownloadInfo,
     ElementState,
+    FileUploadBuffer,
     ForcedColors,
     FormatterKeywords,
     FormatingRules,
