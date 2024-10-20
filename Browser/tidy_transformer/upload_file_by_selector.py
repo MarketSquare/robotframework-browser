@@ -11,9 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import string
+
 from robot.api.parsing import Token
 from robot.parsing.model.statements import KeywordCall
 from robotidy.transformers import Transformer  # type: ignore
+
 
 def is_same_keyword(first: str, second: str) -> bool:
     if isinstance(first, str) and isinstance(second, str):
@@ -34,6 +37,7 @@ def get_normalized_keyword(keyword: str) -> str:
         new_keyword = keyword
     return new_keyword.lower().replace(" ", "_")
 
+
 KW_NAME = "Upload File By Selector"
 KW_NAME_WITH_LIB = "browser.Upload File By Selector"
 
@@ -42,14 +46,15 @@ class UploadFileBySelector(Transformer):
 
     def visit_KeywordCall(self, node: KeywordCall):  # noqa: N802
         keyword_token = node.get_token(Token.KEYWORD)
-        if is_same_keyword(keyword_token.value, KW_NAME) or is_same_keyword(keyword_token.value, KW_NAME_WITH_LIB):
+        if is_same_keyword(keyword_token.value, KW_NAME) or is_same_keyword(
+            keyword_token.value, KW_NAME_WITH_LIB
+        ):
             return self._keyword_formatter(node)
         return node
 
     def _keyword_formatter(self, node: KeywordCall):
         path = node.tokens[5]
         if path.value.startswith("path="):
-            print("here")
             new_path = Token(path.type, path.value[5:])
         else:
             new_path = path

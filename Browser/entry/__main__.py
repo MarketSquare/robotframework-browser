@@ -29,8 +29,8 @@ from typing import TYPE_CHECKING, Optional
 import click
 import seedir  # type: ignore
 
-from .translation import compare_translatoin, get_library_translaton
 from .transform import trasform
+from .translation import compare_translatoin, get_library_translaton
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -559,7 +559,9 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
     help="If set will convert Upload File By Selector keyword to use varargs.",
     default=False,
 )
-def transform(path: Path, wait_until_network_is_idle: bool, upload_file_by_selector: bool):
+def transform(
+    path: Path, wait_until_network_is_idle: bool, upload_file_by_selector: bool
+):
     """Runs Robotidy with Browser library transofrormer.
 
     This will help users to convert automatically deprecated to new ones. Conversion
