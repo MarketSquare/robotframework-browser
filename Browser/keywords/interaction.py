@@ -1325,13 +1325,15 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def upload_file_by_selector(self, selector: str, *path: PathLike):
+    def upload_file_by_selector(
+        self, selector: str, path: PathLike, *extra_paths: PathLike
+    ):
         """Uploads file from `path` to file input element matched by selector.
 
         Fails if upload is not done before library timeout.
         Therefor it may be necessary to increase the timeout with `Set Browser Timeout`.
-        It is possible to upload multiple files at once by defining many files to
-        the `path` argument.
+        It is possible to upload multiple files or folder by defining additional paths
+        or folders. in `extra_paths`.
 
         If path is a directory, it will be uploaded all files from the directory.
         Subdirections are not included. It is possible to upload files and directories
@@ -1339,7 +1341,8 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Identifies the file input element. |
-        | ``path`` | Path to the file(s) or folder(s) to be uploaded. |
+        | ``path`` | Path to the file or folder to be uploaded. |
+        | ``extra_paths`` | Additional paths to files or folders to be uploaded. |
 
         Upload single file example:
         | `Upload File By Selector`    //input[@type='file']    big_file.zip
@@ -1352,21 +1355,26 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4341|Comment >>]
         """
-        if not path:
-            raise ValueError("No path to file was given.")
         selector = self.resolve_selector(selector)
         file_by_selector = Request().FileBySelector()
         file_by_selector.selector = selector
         file_by_selector.strict = self.strict_mode
-        for item in path:
+        all_paths = [path, *list(extra_paths)]
+        logger.debug(f"Uploading files: {all_paths}")
+        for item in all_paths:
             path_object = Path(item).resolve()
-            if path_object.is_dir():
-                files = [str(file) for file in path_object.iterdir() if file.is_file()]
+            if path_object.is_file():
+                file_by_selector.path.extend([str(path_object)])
+            elif path_object.is_dir():
+                files = [
+                    str(file.resolve())
+                    for file in path_object.iterdir()
+                    if file.is_file()
+                ]
                 file_by_selector.path.extend(files)
-                continue
-            if not path_object.is_file():
+            else:
                 raise ValueError(f"Nonexistent input file path '{path_object}'")
-            file_by_selector.path.extend([str(path_object)])
+        logger.info(f"Uploading files: {file_by_selector.path}")
         with self.playwright.grpc_channel() as stub:
             response = stub.UploadFileBySelector(
                 file_by_selector,

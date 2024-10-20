@@ -553,9 +553,7 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
     help="If set will convert Wait Until Network Is Idle keyword to Wait For Load State keyword.",
     default=False,
 )
-def transform(
-    path: Path, wait_until_network_is_idle: bool
-):
+def transform(path: Path, wait_until_network_is_idle: bool):
     """Runs Robotidy with Browser library transofrormer.
 
     This will help users to convert automatically deprecated to new ones. Conversion
