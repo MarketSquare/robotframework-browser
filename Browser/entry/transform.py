@@ -19,18 +19,12 @@ TIDY_TRANSFORMER_DIR = Path(__file__).parent.parent / "tidy_transformer"
 
 
 def trasform(
-    wait_until_network_is_idle: bool, upload_file_by_selector: bool, path: Path
+    path: Path, wait_until_network_is_idle: bool,
 ) -> None:
     cmd = ["robotidy"]
     if wait_until_network_is_idle:
         wait_until_network_is_idle_file = TIDY_TRANSFORMER_DIR / "network_idle.py"
         cmd.append("--transform")
         cmd.append(str(wait_until_network_is_idle_file))
-    if upload_file_by_selector:
-        upload_file_by_selector_file = (
-            TIDY_TRANSFORMER_DIR / "upload_file_by_selector.py"
-        )
-        cmd.append("--transform")
-        cmd.append(str(upload_file_by_selector_file))
     cmd.extend([str(item) for item in path])  # type: ignore
     subprocess.run(cmd, check=False)

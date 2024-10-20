@@ -553,14 +553,8 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
     help="If set will convert Wait Until Network Is Idle keyword to Wait For Load State keyword.",
     default=False,
 )
-@click.option(
-    "--upload-file-by-selector",
-    is_flag=True,
-    help="If set will convert Upload File By Selector keyword to use varargs.",
-    default=False,
-)
 def transform(
-    path: Path, wait_until_network_is_idle: bool, upload_file_by_selector: bool
+    path: Path, wait_until_network_is_idle: bool
 ):
     """Runs Robotidy with Browser library transofrormer.
 
@@ -575,10 +569,10 @@ def transform(
     will convert Wait Until Network Is Idle keyword to Wait For Load State keyword
     from all test data files in /path/to/test folder
     """
-    if not wait_until_network_is_idle and not upload_file_by_selector:
+    if not wait_until_network_is_idle:
         logging.info("No transformer defined, exiting.")
         return
-    trasform(wait_until_network_is_idle, upload_file_by_selector, path)
+    trasform(path, wait_until_network_is_idle)
 
 
 @cli.command()
