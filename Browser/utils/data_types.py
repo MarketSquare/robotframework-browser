@@ -1276,3 +1276,24 @@ class BrowserInfo(TypedDict):
     contexts: list[ContextInfo]
     activeContext: str
     activeBrowser: bool
+
+
+class FileUploadBuffer(TypedDict):
+    """Dictionary that contains information about a file upload buffer.
+
+    | =Key= | =Description= |
+    | ``name`` | The name of the file. |
+    | ``mimeType`` | The mime type of the file. |
+    | ``buffer`` | The file content. |
+
+    Structure:
+    | {
+    |   'name': `str`,
+    |   'mimeType': `str`,
+    |   'buffer': `bytes`
+    | }
+    """
+
+    name: str
+    mimeType: str
+    buffer: str
