@@ -72,6 +72,17 @@ Upload File As Buffer
     Upload File By Selector    id=file_chooser    ${buffer}
     Get Text    id=upload_result    ==    not_here.txt
 
+Upload Large File As Buffer
+    New Context
+    New Page    ${LOGIN_URL}
+    ${file_name} =    Generate Test Text File    ${10 000 000}
+    ${text} =    Get File    ${CURDIR}/${file_name}
+    Log    ${text}[:100]    formatter=repr
+    VAR    &{buffer}    name=large_not_here.txt    mimeType=text/plain    buffer=${text}
+    Upload File By Selector    id=file_chooser    ${buffer}
+    Get Text    id=upload_result    ==    large_not_here.txt
+    [Teardown]    Remove File    ${CURDIR}/${file_name}
+
 Upload File With Different Name
     Upload Named File    invalid_test_upload_file
 
@@ -214,6 +225,14 @@ Generate Test File
         Run    dd if=/dev/zero of=${CURDIR}/${filename}.file bs=1024 count=${size_in_bytes}
     END
     RETURN    ${filename}.file
+
+Generate Test Text File
+    [Arguments]    ${leght_of_text}
+    ${filename} =    Set Variable    ${leght_of_text}.txt
+    ${leght_of_text} =    Convert To Integer    ${leght_of_text}
+    ${text} =    Generate Random String    length=${leght_of_text}
+    OperatingSystem.Create File    ${CURDIR}/${filename}    ${text}
+    RETURN    ${filename}
 
 Upload Sized File
     [Arguments]    ${size_in_mb}

@@ -1290,7 +1290,7 @@ class FileUploadBuffer(TypedDict):
     | {
     |   'name': `str`,
     |   'mimeType': `str`,
-    |   'buffer': `bytes`
+    |   'buffer': `str`
     | }
     """
 

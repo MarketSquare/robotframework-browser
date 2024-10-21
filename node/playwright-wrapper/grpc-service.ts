@@ -25,8 +25,8 @@ import { IPlaywrightServer } from './generated/playwright_grpc_pb';
 import { Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
+import { ServerReadableStream, ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
-import { ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
 import { class_async_logger } from './keyword-decorators';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
 import { pino } from 'pino';
@@ -441,15 +441,33 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async uploadFileBySelector(
-        call: ServerUnaryCall<Request.FileBySelector, Response.Empty>,
+        call: ServerReadableStream<Request.FileBySelector, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
-        try {
-            const result = await interaction.uploadFileBySelector(call.request, this.getState(call));
-            callback(null, result);
-        } catch (e) {
+        let buffer = '';
+        let lastRequest: Request.FileBySelector;
+        call.on('data', async (request: Request.FileBySelector) => {
+            try {
+                logger.info(`Reading multiplepart uploadFileBySelector`);
+                const newBuffer = request.getBuffer();
+                buffer += newBuffer;
+                lastRequest = request;
+            } catch (e) {
+                callback(errorResponse(e), null);
+            }
+        });
+        call.on('error', (e) => {
             callback(errorResponse(e), null);
-        }
+        });
+        call.on('end', async () => {
+            try {
+                lastRequest.setBuffer(buffer);
+                const result = await interaction.uploadFileBySelector(lastRequest, this.getState(call));
+                callback(null, result);
+            } catch (e) {
+                callback(errorResponse(e), null);
+            }
+        });
     }
 
     uploadFile = this.wrappingPage(interaction.uploadFile);
