@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import json
+import sys
+from collections.abc import Generator
 from datetime import timedelta
 from os import PathLike
 from pathlib import Path
@@ -1368,48 +1370,72 @@ class Interaction(LibraryComponent):
         [https://forum.robotframework.org/t//4341|Comment >>]
         """
         selector = self.resolve_selector(selector)
-        file_by_selector = Request().FileBySelector()
-        file_by_selector.selector = selector
-        file_by_selector.strict = self.strict_mode
         if isinstance(path, PathLike):
-            file_by_selector = self._get_files(path, file_by_selector, *extra_paths)
-            file_by_selector.name = ""
-            file_by_selector.mimeType = ""
-            file_by_selector.buffer = ""
+            files = self._get_files(path, *extra_paths)
+            name = ""
+            mimeType = ""
+            buffer = ""
         else:
             if extra_paths:
                 raise ValueError(
                     "Extra paths are not supported when using FileUploadBuffer as path."
                 )
-            file_by_selector.path.extend([])
-            file_by_selector.name = path["name"]
-            file_by_selector.mimeType = path["mimeType"]
-            file_by_selector.buffer = path["buffer"]
+            files = []
+            name = path["name"]
+            mimeType = path["mimeType"]
+            buffer = path["buffer"]
         with self.playwright.grpc_channel() as stub:
             response = stub.UploadFileBySelector(
-                file_by_selector,
+                _get_file_by_selectors(
+                    files, selector, self.strict_mode, name, mimeType, buffer
+                ),
             )
             logger.debug(response.log)
 
     def _get_files(
         self,
         path: PathLike,
-        file_by_selector: Request.FileBySelector,
         *extra_paths: PathLike,
-    ) -> Request.FileBySelector:
+    ) -> list:
+        result_paths = []
         all_paths = [path, *list(extra_paths)]
         for item in all_paths:
             path_object = Path(item).resolve()
             if path_object.is_file():
-                file_by_selector.path.extend([str(path_object)])
+                result_paths.extend([str(path_object)])
             elif path_object.is_dir():
                 files = [
                     str(file.resolve())
                     for file in path_object.iterdir()
                     if file.is_file()
                 ]
-                file_by_selector.path.extend(files)
+                result_paths.extend(files)
             else:
                 raise ValueError(f"Nonexistent input file path '{path_object}'")
-        logger.debug(f"Uploading files: {file_by_selector.path}")
-        return file_by_selector
+        logger.debug(f"Uploading files: {result_paths}")
+        return result_paths
+
+
+def _get_file_by_selectors(
+    path: list, selector: str, strict: bool, name: str, mimeType: str, buffer: str
+) -> Generator[Request.FileBySelector, None, None]:
+    grpc_max_zize = 4000000
+    if sys.getsizeof(buffer) > grpc_max_zize:
+        for index in range(0, len(buffer), grpc_max_zize):
+            yield Request().FileBySelector(
+                selector=selector,
+                strict=strict,
+                path=path,
+                name=name,
+                mimeType=mimeType,
+                buffer=buffer[index : index + grpc_max_zize],
+            )
+    else:
+        yield Request().FileBySelector(
+            selector=selector,
+            strict=strict,
+            path=path,
+            name=name,
+            mimeType=mimeType,
+            buffer=buffer,
+        )
