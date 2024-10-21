@@ -1334,7 +1334,7 @@ class Interaction(LibraryComponent):
         path: Union[PathLike, FileUploadBuffer],
         *extra_paths: PathLike,
     ):
-        """Uploads file from `path` to file input element matched by selector.
+        """Uploads file from ``path`` to file input element matched by selector.
 
         Fails if upload is not done before library timeout.
         Therefor it may be necessary to increase the timeout with `Set Browser Timeout`.
@@ -1347,11 +1347,18 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Identifies the file input element. |
-        | ``path`` | Path to the file or folder to be uploaded. |
+        | ``path`` | Path to the file or folder to be uploaded. Path can  FileUploadBuffer dictionary |
         | ``extra_paths`` | Additional paths to files or folders to be uploaded. |
 
-        If `path` is FileUploadBuffer, then `extra_paths` is not supported and using
-        it will raise an error.
+        if ``path`` is  `FileUploadBuffer` dictionary, then structure should be:
+        | {
+        |   'name': `str`,
+        |   'mimeType': `str`,
+        |   'buffer': `str`
+        | }
+
+        If ``path`` argument is `FileUploadBuffer`, then ``extra_paths`` argument is not supported and
+        using it will raise an error.
 
         Upload single file example:
         | `Upload File By Selector`    //input[@type='file']    big_file.zip
@@ -1365,7 +1372,7 @@ class Interaction(LibraryComponent):
         Upload as buffer example:
         | ${text} =    Get File    /path/to/file    # Read file from disk
         | VAR    &{buffer}    name=not_here.txt    mimeType=text/plain    buffer=${text}    # Create buffer dictionary
-        | Upload File By Selector    id=file_chooser    ${buffer}    # Upload buffer
+        | `Upload File By Selector`    id=file_chooser    ${buffer}    # Upload buffer
 
         [https://forum.robotframework.org/t//4341|Comment >>]
         """
