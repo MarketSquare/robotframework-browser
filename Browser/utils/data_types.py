@@ -1297,3 +1297,19 @@ class FileUploadBuffer(TypedDict):
     name: str
     mimeType: str
     buffer: str
+
+
+class ClientCertificate(TypedDict, total=False):
+    """Defines client certificate.
+
+    - ``origin`` Exact origin that the certificate is valid for. Origin includes https protocol, a hostname and optionally a port.
+    - ``certPath`` *Optional* Path to the file with the certificate in PEM format.
+    - ``keyPath`` *Optional* Path to the file with the private key in PEM format.
+    - ``pfxPath`` *Optional* Path to the PFX or PKCS12 encoded private key and certificate chain.
+    - ``passphrase`` *Optional* Passphrase for the private key (PEM or PFX).
+    Example usage: ``{'origin': 'https://playwright.dev', 'pfxPath': 'certificate.p12', 'passphrase': 'secret'}``"""
+    origin: str
+    certPath: str
+    keyPath: str
+    pfxPath: str
+    passphrase: str
