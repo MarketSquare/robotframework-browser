@@ -30,6 +30,7 @@ from .data_types import (
     FormatterKeywords,
     FormatingRules,
     FormatterTypes,
+    ClientCertificate,
     GeoLocation,
     HighLightElement,
     HighlightMode,
