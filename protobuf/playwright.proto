@@ -82,6 +82,31 @@ message Request {
     string buffer = 6;
   }
 
+  message LocatorHandlerAddClick {
+    string selector = 1;
+    bool noWaitAfter = 2;
+    string times = 3;
+    string clickSelector= 4;
+    int32 clickClickCount = 5;
+    float clickDelay = 6;
+    bool clickForce = 7;
+  }
+
+  message LocatorHandlerAddCustom {
+    string selector = 1;
+    repeated LocatorHandlerAddCustomAction handlerSpecs = 2;
+  }
+  message LocatorHandlerAddCustomAction {
+    string action = 1;
+    string selector = 2;
+    string value = 3;
+    string optionsAsJson = 4;
+  }
+
+  message LocatorHandlerRemove {
+    string selector = 1;
+  }
+
   message Json {
     string body = 1;
   }
@@ -493,6 +518,11 @@ service  Playwright {
 
   rpc GetDevice(Request.Device) returns (Response.Json);
   rpc GetDevices(Request.Empty) returns (Response.Json);
+
+  /* Locator handlers */
+  rpc AddLocatorHandlerClick(Request.LocatorHandlerAddClick) returns (Response.Empty);
+  rpc AddLocatorHandlerCustom(Request.LocatorHandlerAddCustom) returns (Response.String);
+  rpc RemoveLocatorHandler(Request.LocatorHandlerRemove) returns (Response.Empty);
 
   rpc HandleAlert(Request.AlertAction) returns (Response.Empty);
   rpc WaitForAlerts(Request.AlertActions) returns (Response.ListString);

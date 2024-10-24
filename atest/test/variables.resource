@@ -28,6 +28,7 @@ ${WELCOME_URL} =                        ${ROOT_URL}welcome.html
 ${ERROR_URL} =                          ${ROOT_URL}error.html
 ${WAIT_URL} =                           ${ROOT_URL}waitfor.html
 ${GEOLOCATION_URL} =                    ${ROOT_URL}geolocation.html
+${OWERLAY_URL} =                        ${ROOT_URL}overlay.html
 ${DEFAULT_TEST_TIMEOUT} =               30 seconds
 ${PLAYWRIGHT_TIMEOUT} =                 5 second
 ${PLAYWRIGHT_TIMEOUT_ERROR} =           5000ms
