@@ -1307,7 +1307,9 @@ class ClientCertificate(TypedDict, total=False):
     - ``keyPath`` *Optional* Path to the file with the private key in PEM format.
     - ``pfxPath`` *Optional* Path to the PFX or PKCS12 encoded private key and certificate chain.
     - ``passphrase`` *Optional* Passphrase for the private key (PEM or PFX).
-    Example usage: ``{'origin': 'https://playwright.dev', 'pfxPath': 'certificate.p12', 'passphrase': 'secret'}``"""
+    Example usage: ``{'origin': 'https://playwright.dev', 'pfxPath': 'certificate.p12', 'passphrase': 'secret'}``
+    """
+
     origin: str
     certPath: str
     keyPath: str
