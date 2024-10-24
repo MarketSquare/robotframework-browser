@@ -92,6 +92,17 @@ message Request {
     bool clickForce = 7;
   }
 
+  message LocatorHandlerAddCustom {
+    string selector = 1;
+    repeated LocatorHandlerAddCustomAction handlerSpecs = 2;
+  }
+  message LocatorHandlerAddCustomAction {
+    string action = 1;
+    string selector = 2;
+    string value = 3;
+    string optionsAsJson = 4;
+  }
+
   message LocatorHandlerRemove {
     string selector = 1;
   }
@@ -510,6 +521,7 @@ service  Playwright {
 
   /* Locator handlers */
   rpc AddLocatorHandlerClick(Request.LocatorHandlerAddClick) returns (Response.Empty);
+  rpc AddLocatorHandlerCustom(Request.LocatorHandlerAddCustom) returns (Response.String);
   rpc RemoveLocatorHandler(Request.LocatorHandlerRemove) returns (Response.Empty);
 
   rpc HandleAlert(Request.AlertAction) returns (Response.Empty);

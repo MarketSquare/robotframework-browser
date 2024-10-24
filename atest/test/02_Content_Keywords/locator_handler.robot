@@ -93,6 +93,9 @@ Adding Locator Handler With All Args Should Work
         Log    All OK with error ${error}
     END
 
+Add Custom Locator Handler
+    Add Locator Handler Custom    id=overlay    [{}]
+
 *** Keywords ***
 Overlay Suite Setup
     ${TIMEOUT} =    Set Browser Timeout    0.5s

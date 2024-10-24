@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from typing import Optional
 
 from ..base import LibraryComponent
@@ -115,3 +116,48 @@ class LocatorHandler(LibraryComponent):
                 Request.LocatorHandlerRemove(selector=locator)
             )
             logger.info(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def add_locator_handler_custom(self, selector: str, handler_spec: list[dict]):
+        """Add a handler function which will activate when `selector` is visible and performs halder specification.
+
+        When element indicated by `selector` is visible, the handler will perform the actions specified
+        in the `handler_spec`. The `handler_spec` is a list of dictionaries, where each dictionary contains
+        defines one action. The dictionary must contain the key `action` which defines the action to be
+        performed. The action can be one of the following:
+        [https://playwright.dev/docs/api/class-locator#locator-click|click],
+        [https://playwright.dev/docs/api/class-locator#locator-fill|fill],
+        [https://playwright.dev/docs/api/class-locator#locator-check|check] and
+        [https://playwright.dev/docs/api/class-locator#locator-uncheck|uncheck]. Dictionary must also contain
+        key `selector` which defines the element to be interacted with. The `fill` action must also contain
+        the key `value` which defines the value to be filled in the element. Additional keys
+        are passed to the action as keyword arguments. Example for the
+        [https://playwright.dev/docs/api/class-locator#locator-click|click] action refer to the Playwright's
+        documentation which options are posisble.
+        """
+        logger.info(f"Add locator handler: {selector}")
+        handler = Request.LocatorHandlerAddCustom()
+        handler.selector = selector
+        for spec in handler_spec:
+            if "action" not in spec:
+                raise ValueError("Action must be defined in the handler specification")
+            if "selector" not in spec:
+                raise ValueError(
+                    "Selector must be defined in the handler specification"
+                )
+            if spec["action"] == "fill" and "value" not in spec:
+                raise ValueError("Value must be defined for fill action")
+            if spec["action"] != "fill" and "value" in spec:
+                raise ValueError("Value must not be defined for action other than fill")
+            handler_action = Request.LocatorHandlerAddCustomAction()
+            handler_action.action = spec["action"]
+            if spec["action"] == "fill":
+                handler_action.value = spec["value"]
+                spec.pop("value", None)
+            else:
+                handler_action.value = ""
+            spec.pop("action", None)
+            handler_action.selector = spec["selector"]
+            spec.pop("selector", None)
+            handler_action.optionsAsJson = json.dumps(spec)
+            handler.handlerSpecs.append(handler_action)
