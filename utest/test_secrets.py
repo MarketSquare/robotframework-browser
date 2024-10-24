@@ -26,7 +26,7 @@ class Response:
 @pytest.fixture()
 def application_server():
     process = subprocess.Popen(
-        ["node", "./node/dynamic-test-app/dist/server.js", "7272"]
+        ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
     )
     yield
     process.terminate()

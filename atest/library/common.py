@@ -26,7 +26,7 @@ def start_test_server():
     print(test_app_path)
     # TODO: remove str() when Python 3.7 support is dropped.
     process = Popen(
-        ["node", str(test_app_path), port],
+        ["node", str(test_app_path), "-p", port],
         stdout=PIPE,
         stderr=STDOUT,
         cwd=str(root_dir),
