@@ -20,8 +20,8 @@ import { findLocator } from './playwright-invoke';
 import pino from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function addLocatorHandler(
-    request: Request.LocatorHandlerAdd,
+export async function addLocatorHandlerClick(
+    request: Request.LocatorHandlerAddClick,
     state: PlaywrightState,
 ): Promise<Response.Empty> {
     logger.info(`Adding locator handler for ${request.getSelector()}`);

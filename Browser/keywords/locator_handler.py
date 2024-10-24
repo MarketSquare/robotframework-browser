@@ -22,7 +22,7 @@ from ..utils import keyword, logger
 class LocatorHandler(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
-    def add_click_locator_handler(
+    def add_locator_handler_click(
         self,
         selector: str,
         click_selector: str,
@@ -63,7 +63,7 @@ class LocatorHandler(LibraryComponent):
 
         Example add locator handler to click button with id="ButtonInOverlay" when id=Overlay is visible:
         | `New Page`    ${URL}
-        | `Add Click Locator Handler`    id=Overlay    id=ButtonInOverlay     # Add locator handler to page
+        | `Add Locator Handler Click`    id=Overlay    id=ButtonInOverlay     # Add locator handler to page
         | `Type Text`    id:username    user    # If element with id=Overlay appears, the handler will click the button id=ButtonInOverlay
         | `Type Text`    id:password    password    # Or if overlay is visible here, then handler is called here
         | `Click`    id:login
@@ -93,8 +93,8 @@ class LocatorHandler(LibraryComponent):
             f"Add locator handlee: {selector} and clicking element: {click_selector}"
         )
         with self.playwright.grpc_channel() as stub:
-            response = stub.AddLocatorHandler(
-                Request.LocatorHandlerAdd(
+            response = stub.AddLocatorHandlerClick(
+                Request.LocatorHandlerAddClick(
                     selector=selector,
                     noWaitAfter=noWaitAfter,
                     times=str(times) if times is not None else "None",
@@ -108,7 +108,7 @@ class LocatorHandler(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def remove_locator_handler(self, locator: str):
-        """Remove locator handle indicated by selector."""
+        """Remove locator handler indicated by selector."""
         logger.info(f"Remove locator handle: {locator}")
         with self.playwright.grpc_channel() as stub:
             response = stub.RemoveLocatorHandler(
