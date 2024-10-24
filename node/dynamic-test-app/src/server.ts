@@ -1,10 +1,26 @@
 import * as express from 'express';
 import * as path from 'path';
+import { Command } from 'commander';
 
 const app = express.default();
 // eslint-disable-next-line
 app.use(express.json());
-const port = parseInt(process.argv[2]) || 7272;
+
+const program = new Command();
+program
+  .command('server')
+  .option('-p, --port <number>', 'port number', '7272')
+  .option('-c, --certificate <path>', 'path to server certificate in PEM format')
+  .option('-k, --private-key <path>', 'path to private key in PEM format')
+  .option('-C, --certificate-authority <path>', 'path to CA certificate in PEM format')
+  .parse(process.argv);
+
+const options = program.opts();
+
+const port = parseInt(options.port);
+const certificate = options.certificate;
+const privateKey = options.privateKey;
+const certificateAuthority = options.certificateAuthority;
 
 app.set('etag', false);
 
