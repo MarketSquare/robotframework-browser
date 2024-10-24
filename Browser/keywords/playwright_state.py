@@ -29,10 +29,10 @@ from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
+    ClientCertificate,
     ColorScheme,
     DownloadInfo,
     ForcedColors,
-    ClientCertificate,
     GeoLocation,
     HttpCredentials,
     NewPageDetails,
