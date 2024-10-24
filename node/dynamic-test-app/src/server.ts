@@ -1,6 +1,8 @@
 import * as express from 'express';
 import * as path from 'path';
 import { Command } from 'commander';
+import * as https from 'https';
+import * as fs from 'fs';
 
 const app = express.default();
 // eslint-disable-next-line
@@ -8,19 +10,22 @@ app.use(express.json());
 
 const program = new Command();
 program
-  .command('server')
   .option('-p, --port <number>', 'port number', '7272')
+  .option('-T, --tls', 'enables TLS (HTTPS)', false)
   .option('-c, --certificate <path>', 'path to server certificate in PEM format')
   .option('-k, --private-key <path>', 'path to private key in PEM format')
   .option('-C, --certificate-authority <path>', 'path to CA certificate in PEM format')
-  .parse(process.argv);
+  .option('-M, --mutual-tls', 'mutual TLS authentication with a client certificate (implies TLS)', false)
 
+program.parse(process.argv);
 const options = program.opts();
 
 const port = parseInt(options.port);
+const tls: boolean = options.tls;
 const certificate = options.certificate;
 const privateKey = options.privateKey;
 const certificateAuthority = options.certificateAuthority;
+const mutualTls: boolean = options.mutualTls;
 
 app.set('etag', false);
 
@@ -127,4 +132,16 @@ app.use(express.static(path.join(__dirname, '..', 'static')));
 });
 */
 
-app.listen(port, () => console.log(`Successfully started server on http://localhost:${port}`));
+if (tls || mutualTls) {
+    const serverOptions = {
+        cert: certificate ? fs.readFileSync(path.join(__dirname, certificate)) : undefined,
+        key: privateKey ? fs.readFileSync(path.join(__dirname, privateKey)) : undefined,
+        ca: certificateAuthority ? fs.readFileSync(path.join(__dirname, certificateAuthority)) : undefined,
+        requestCert: mutualTls,
+        rejectUnauthorized: mutualTls,
+    }
+
+    https.createServer(serverOptions, app).listen(port, () => console.log(`Successfully started server on https://localhost:${port}`))
+} else {
+    app.listen(port, () => console.log(`Successfully started server on http://localhost:${port}`));
+}
