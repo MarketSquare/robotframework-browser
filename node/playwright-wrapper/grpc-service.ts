@@ -18,6 +18,7 @@ import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
 import * as interaction from './interaction';
+import * as locatorHandler from './locator-handler';
 import * as network from './network';
 import * as pdf from './pdf';
 import * as playwrightState from './playwright-state';
@@ -362,6 +363,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     clearText = this.wrapping(interaction.clearText);
     press = this.wrapping(interaction.press);
     click = this.wrapping(interaction.click);
+    addLocatorHandlerCustom = this.wrapping(locatorHandler.addLocatorHandlerCustom);
+    removeLocatorHandler = this.wrapping(locatorHandler.removeLocatorHandler);
     tap = this.wrapping(interaction.tap);
     hover = this.wrapping(interaction.hover);
     focus = this.wrapping(interaction.focus);
