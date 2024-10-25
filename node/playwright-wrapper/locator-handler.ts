@@ -13,7 +13,7 @@
 // limitations under the License.
 import { PlaywrightState, locatorCache } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, stringResponse } from './response-util';
+import { emptyWithLog } from './response-util';
 import { exists } from './playwright-invoke';
 import { findLocator } from './playwright-invoke';
 
@@ -60,13 +60,13 @@ export async function addLocatorHandlerClick(
         },
         { times: times, noWaitAfter: noWaitAfter },
     );
-    return emptyWithLog(`Deselected options in element ${request.getSelector()}`);
+    return emptyWithLog(`Added click locator handler for element ${request.getSelector()}`);
 }
 
 export async function addLocatorHandlerCustom(
     request: Request.LocatorHandlerAddCustom,
     state: PlaywrightState,
-): Promise<Response.String> {
+): Promise<Response.Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const overlaySelector = request.getSelector();
@@ -82,22 +82,26 @@ export async function addLocatorHandlerCustom(
     const hadlerSpecs = request.getHandlerspecsList();
     const overlayLocator = await findLocator(state, overlaySelector, false, undefined, true);
     locatorCache.add(`${state.getActivePageId()}-${overlaySelector}`, overlayLocator);
+    const allActions: string[] = [];
     await activePage.addLocatorHandler(
         overlayLocator,
         async () => {
+            logger.info(`Overlay locator ${overlaySelector} is found`);
             for (const handlerSpec of hadlerSpecs) {
                 const action = handlerSpec.getAction();
                 const actionSelector = handlerSpec.getSelector();
-                logger.info(`Performing action ${action} with selector ${actionSelector}`);
                 const actionLocator = await findLocator(state, actionSelector, false, undefined, true);
+                const options = JSON.parse(handlerSpec.getOptionsasjson());
+                allActions.push(action);
                 if (action === 'click') {
-                    await actionLocator.click();
+                    logger.info(`Overlay click on element ${actionSelector} with options: ${JSON.stringify(options)}`);
+                    await actionLocator.click({ ...options });
                 }
             }
         },
         { times: times, noWaitAfter: noWaitAfter },
     );
-    return stringResponse('Not implemented', 'error');
+    return emptyWithLog(`Custom locator handler added for element ${overlaySelector}`);
 }
 
 export async function removeLocatorHandler(
