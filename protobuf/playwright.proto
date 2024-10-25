@@ -94,7 +94,9 @@ message Request {
 
   message LocatorHandlerAddCustom {
     string selector = 1;
-    repeated LocatorHandlerAddCustomAction handlerSpecs = 2;
+    bool noWaitAfter = 2;
+    string times = 3;
+    repeated LocatorHandlerAddCustomAction handlerSpecs = 4;
   }
   message LocatorHandlerAddCustomAction {
     string action = 1;

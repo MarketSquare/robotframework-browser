@@ -13,7 +13,7 @@
 // limitations under the License.
 import { PlaywrightState, locatorCache } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog } from './response-util';
+import { emptyWithLog, stringResponse } from './response-util';
 import { exists } from './playwright-invoke';
 import { findLocator } from './playwright-invoke';
 
@@ -61,6 +61,43 @@ export async function addLocatorHandlerClick(
         { times: times, noWaitAfter: noWaitAfter },
     );
     return emptyWithLog(`Deselected options in element ${request.getSelector()}`);
+}
+
+export async function addLocatorHandlerCustom(
+    request: Request.LocatorHandlerAddCustom,
+    state: PlaywrightState,
+): Promise<Response.String> {
+    const activePage = state.getActivePage();
+    exists(activePage, 'Could not find active page');
+    const overlaySelector = request.getSelector();
+    const timesString = request.getTimes();
+    let times;
+    if (timesString === 'None') {
+        times = undefined;
+    } else {
+        times = parseInt(timesString);
+    }
+    logger.info(`Adding locator handler for ${overlaySelector} as times: ${times}`);
+    const noWaitAfter = request.getNowaitafter();
+    const hadlerSpecs = request.getHandlerspecsList();
+    const overlayLocator = await findLocator(state, overlaySelector, false, undefined, true);
+    locatorCache.add(`${state.getActivePageId()}-${overlaySelector}`, overlayLocator);
+    await activePage.addLocatorHandler(
+        overlayLocator,
+        async () => {
+            for (const handlerSpec of hadlerSpecs) {
+                const action = handlerSpec.getAction();
+                const actionSelector = handlerSpec.getSelector();
+                logger.info(`Performing action ${action} with selector ${actionSelector}`);
+                const actionLocator = await findLocator(state, actionSelector, false, undefined, true);
+                if (action === 'click') {
+                    await actionLocator.click();
+                }
+            }
+        },
+        { times: times, noWaitAfter: noWaitAfter },
+    );
+    return stringResponse('Not implemented', 'error');
 }
 
 export async function removeLocatorHandler(

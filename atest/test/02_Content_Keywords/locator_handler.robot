@@ -94,7 +94,10 @@ Adding Locator Handler With All Args Should Work
     END
 
 Add Custom Locator Handler
-    Add Locator Handler Custom    id=overlay    [{}]
+    VAR    &{handler_spec}    action=click    selector=id=OverlayCloseButton
+    Add Locator Handler Custom    id=overlay    [${handler_spec}]
+    Click    id=CreateOverlayButton    # Overlay is displayed
+    Click    id=textHeading    # Overlay should be closed
 
 *** Keywords ***
 Overlay Suite Setup

@@ -118,7 +118,13 @@ class LocatorHandler(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def add_locator_handler_custom(self, selector: str, handler_spec: list[dict]):
+    def add_locator_handler_custom(
+        self,
+        selector: str,
+        handler_spec: list[dict],
+        noWaitAfter: bool = True,
+        times: Optional[int] = None,
+    ):
         """Add a handler function which will activate when `selector` is visible and performs halder specification.
 
         When element indicated by `selector` is visible, the handler will perform the actions specified
@@ -138,6 +144,8 @@ class LocatorHandler(LibraryComponent):
         logger.info(f"Add locator handler: {selector}")
         handler = Request.LocatorHandlerAddCustom()
         handler.selector = selector
+        handler.noWaitAfter = noWaitAfter
+        handler.times = str(times) if times is not None else "None"
         for spec in handler_spec:
             if "action" not in spec:
                 raise ValueError("Action must be defined in the handler specification")
@@ -161,3 +169,6 @@ class LocatorHandler(LibraryComponent):
             spec.pop("selector", None)
             handler_action.optionsAsJson = json.dumps(spec)
             handler.handlerSpecs.append(handler_action)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.AddLocatorHandlerCustom(handler)
+            logger.info(response.log)
