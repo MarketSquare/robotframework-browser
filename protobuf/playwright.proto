@@ -82,16 +82,6 @@ message Request {
     string buffer = 6;
   }
 
-  message LocatorHandlerAddClick {
-    string selector = 1;
-    bool noWaitAfter = 2;
-    string times = 3;
-    string clickSelector= 4;
-    int32 clickClickCount = 5;
-    float clickDelay = 6;
-    bool clickForce = 7;
-  }
-
   message LocatorHandlerAddCustom {
     string selector = 1;
     bool noWaitAfter = 2;
@@ -522,7 +512,6 @@ service  Playwright {
   rpc GetDevices(Request.Empty) returns (Response.Json);
 
   /* Locator handlers */
-  rpc AddLocatorHandlerClick(Request.LocatorHandlerAddClick) returns (Response.Empty);
   rpc AddLocatorHandlerCustom(Request.LocatorHandlerAddCustom) returns (Response.Empty);
   rpc RemoveLocatorHandler(Request.LocatorHandlerRemove) returns (Response.Empty);
 

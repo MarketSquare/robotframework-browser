@@ -73,19 +73,19 @@ class LocatorHandler(LibraryComponent):
         logger.info(
             f"Add locator handlee: {selector} and clicking element: {click_selector}"
         )
-        with self.playwright.grpc_channel() as stub:
-            response = stub.AddLocatorHandlerClick(
-                Request.LocatorHandlerAddClick(
-                    selector=selector,
-                    noWaitAfter=noWaitAfter,
-                    times=str(times) if times is not None else "None",
-                    clickSelector=click_selector,
-                    clickClickCount=click_clickCount,
-                    clickDelay=click_delay,
-                    clickForce=click_force,
-                )
-            )
-            logger.info(response.log)
+        handler_spec = {
+            "action": "click",
+            "selector": click_selector,
+            "clickCount": click_clickCount,
+            "delay": click_delay,
+            "force": click_force,
+        }
+        self.add_locator_handler_custom(
+            selector=selector,
+            handler_spec=[handler_spec],
+            noWaitAfter=noWaitAfter,
+            times=times,
+        )
 
     @keyword(tags=("Setter", "PageContent"))
     def remove_locator_handler(self, locator: str):

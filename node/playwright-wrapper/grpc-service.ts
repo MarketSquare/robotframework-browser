@@ -363,7 +363,6 @@ export class PlaywrightServer implements IPlaywrightServer {
     clearText = this.wrapping(interaction.clearText);
     press = this.wrapping(interaction.press);
     click = this.wrapping(interaction.click);
-    addLocatorHandlerClick = this.wrapping(locatorHandler.addLocatorHandlerClick);
     addLocatorHandlerCustom = this.wrapping(locatorHandler.addLocatorHandlerCustom);
     removeLocatorHandler = this.wrapping(locatorHandler.removeLocatorHandler);
     tap = this.wrapping(interaction.tap);

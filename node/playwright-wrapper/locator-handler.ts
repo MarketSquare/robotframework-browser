@@ -20,49 +20,6 @@ import { findLocator } from './playwright-invoke';
 import pino from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function addLocatorHandlerClick(
-    request: Request.LocatorHandlerAddClick,
-    state: PlaywrightState,
-): Promise<Response.Empty> {
-    logger.info(`Adding locator handler for ${request.getSelector()}`);
-    const activePage = state.getActivePage();
-    exists(activePage, 'Could not find active page');
-    const activePageId = state.getActivePageId();
-    const overlaySelector = request.getSelector();
-    const clickSelector = request.getClickselector();
-    const overlayLocator = await findLocator(state, overlaySelector, false, undefined, true);
-    locatorCache.add(`${activePageId}-${overlaySelector}`, overlayLocator);
-    const noWaitAfter = request.getNowaitafter();
-    const timesString = request.getTimes();
-    let times;
-    if (timesString === 'None') {
-        times = undefined;
-    } else {
-        times = parseInt(timesString);
-    }
-    const clickClickCount = request.getClickclickcount();
-    const clickDelay = request.getClickdelay();
-    const clickForce = request.getClickforce();
-    await activePage.addLocatorHandler(
-        overlayLocator,
-        async () => {
-            logger.info(`Clicking element ${clickSelector} when locator ${overlaySelector} is found`);
-            logger.info(`Click options: clickCount=${clickClickCount}, delay=${clickDelay}, force=${clickForce}`);
-            try {
-                const clickLocator = await findLocator(state, clickSelector, false, undefined, true);
-                await clickLocator.click({ clickCount: clickClickCount, delay: clickDelay, force: clickForce });
-            } catch (error) {
-                logger.error(
-                    `Error clicking element ${clickSelector} when locator ${overlaySelector} is found: ${error}`,
-                );
-                return emptyWithLog(`Got error: ${error}`);
-            }
-        },
-        { times: times, noWaitAfter: noWaitAfter },
-    );
-    return emptyWithLog(`Added click locator handler for element ${request.getSelector()}`);
-}
-
 export async function addLocatorHandlerCustom(
     request: Request.LocatorHandlerAddCustom,
     state: PlaywrightState,
