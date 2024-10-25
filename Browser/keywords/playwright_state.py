@@ -29,6 +29,7 @@ from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
+    ClientCertificate,
     ColorScheme,
     DownloadInfo,
     ForcedColors,
@@ -520,6 +521,7 @@ class PlaywrightState(LibraryComponent):
         acceptDownloads: bool = True,
         baseURL: Optional[str] = None,
         bypassCSP: bool = False,
+        clientCertificates: Optional[list[ClientCertificate]] = None,
         colorScheme: Optional[ColorScheme] = None,
         defaultBrowserType: Optional[SupportedBrowsers] = None,
         deviceScaleFactor: Optional[float] = None,
@@ -562,6 +564,7 @@ class PlaywrightState(LibraryComponent):
         | ``acceptDownloads``      | Whether to automatically download all the attachments. Defaults to True where all the downloads are accepted. |
         | ``baseURL``              | When using `Go To`, `Wait For Request`, `Wait For Response` or `Wait For Navigation` it takes the base URL in consideration by using the URL() constructor for building the corresponding URL. Unset by default. Examples: ``baseURL=http://localhost:3000`` and navigating to ``/bar.html`` results in ``http://localhost:3000/bar.html``. ``baseURL=http://localhost:3000/foo/`` and navigating to ``./bar.html`` results in ``http://localhost:3000/foo/bar.html``. ``baseURL=http://localhost:3000/foo`` (without trailing slash) and navigating to ``./bar.html`` results in ``http://localhost:3000/bar.html``. |
         | ``bypassCSP``            | Toggles bypassing page's Content-Security-Policy. Defaults to False. |
+        | ``clientCertificates``   | Specifies a client certificate for mTLS authentication, for example ``clientCertificates=[{'origin': 'https://playwright.dev', 'pfxPath': 'certificate.p12', 'passphrase': 'password'}]``. *NOTE:* The origin needs to be exact whithout any path. |
         | ``colorScheme``          | Emulates `'prefers-colors-scheme'` media feature, supported values are `'light'`, `'dark'`, `'no-preference'`. |
         | ``defaultBrowserType``   | If no browser is open and `New Context` opens a new browser with defaults, it now uses this setting. Very useful together with `Get Device` keyword. |
         | ``deviceScaleFactor``    | Specify device scale factor (can be thought of as dpr). Defaults to ``1``. |
