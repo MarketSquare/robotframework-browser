@@ -83,7 +83,7 @@ Adding Locator Handler With All Args Should Work
         Log    All OK with error ${error}
     END
 
-Add Custom Locator Handler
+Add Custom Locator Handler For Click
     VAR    &{handler_spec}    action=click    selector=id=OverlayCloseButton
     Add Locator Handler Custom    id=overlay    [${handler_spec}]
     Click    id=CreateOverlayButton    # Overlay is displayed
@@ -99,6 +99,134 @@ Add Custom Locator Handler
     Add Locator Handler Custom    id=overlay    [${handler_spec}]
     Click    id=CreateOverlayButton    # Overlay is displayed
     Click    id=textHeading    # Overlay should be closed
+
+Add Custom Locator Handler With Click Check Fill And Uncheck
+    VAR    &{handler_spec_check}
+    ...    action=CHECK    # Case of action does not matter
+    ...    selector=id=overlayCheckbox
+    ...    force=${True}
+    ...    timeout=${4}
+    VAR    &{handler_spec_fill}
+    ...    action=Fill
+    ...    selector=id=overlayInput
+    ...    value=This is a value
+    ...    force=${True}
+    ...    timeout=${4}
+    VAR    &{handler_spec_uncheck}
+    ...    action=uncheck
+    ...    selector=id=overlayCheckbox
+    ...    force=${True}
+    ...    timeout=${4}
+    VAR    &{handler_spec_click}
+    ...    action=click
+    ...    selector=id=OverlayCloseButton
+    ...    button=left
+    ...    clickCount=${1}
+    ...    delay=${0.1}
+    ...    force=${True}
+    Add Locator Handler Custom
+    ...    id=overlay
+    ...    [${handler_spec_check}, ${handler_spec_fill}, ${handler_spec_uncheck}, ${handler_spec_click}]
+    Click    id=CreateOverlayButton    # Overlay is displayed
+    Click    id=textHeading    # Overlay should be closed
+
+Adding Custom Locator Handler With Wrong Order Does Not Fail
+    [Documentation]    This test will pass because if the handler will fail whole NodeJS grpc server would close.
+    VAR    &{handler_spec_click}
+    ...    action=click
+    ...    selector=id=OverlayCloseButton
+    ...    button=left
+    ...    clickCount=${1}
+    ...    delay=${0.1}
+    ...    force=${True}
+    VAR    &{handler_spec_check}
+    ...    action=CHECK
+    ...    selector=id=overlayCheckbox
+    ...    force=${True}
+    ...    timeout=${4}
+    Add Locator Handler Custom
+    ...    id=overlay
+    ...    [${handler_spec_click}, ${handler_spec_check} ]
+    Click    id=CreateOverlayButton    # Overlay is displayed
+    Click    id=textHeading    # Overlay should be closed
+
+Adding Custom Locator Handler Fill Without Value Shuld Fail
+    VAR    &{handler_spec_fill}
+    ...    action=Fill
+    ...    selector=id=overlayInput
+    ...    force=${True}
+    ...    timeout=${4}
+    TRY
+        Add Locator Handler Custom
+        ...    id=overlay
+        ...    [${handler_spec_fill}]
+    EXCEPT    ValueError: Value must be defined for fill action    AS    ${error}
+        Log    All OK with error ${error}
+    END
+
+Add Custom Locator Handler Which Is Not Fill But Constains Value Should Fail
+    VAR    &{handler_spec_click}
+    ...    action=click
+    ...    selector=id=OverlayCloseButton
+    ...    value=Should not be here
+    ...    button=left
+    ...    clickCount=${1}
+    ...    delay=${0.1}
+    ...    force=${True}
+    TRY
+        Add Locator Handler Custom
+        ...    id=overlay
+        ...    [${handler_spec_click}]
+    EXCEPT    ValueError: Value must not be defined for action other than fill    AS    ${error}
+        Log    All OK with error ${error}
+    END
+
+Adding Custom Locator Handler Without Action Should Fail
+    VAR    &{handler_spec_click}
+    ...    selector=id=OverlayCloseButton
+    ...    value=Should not be here
+    ...    button=left
+    ...    clickCount=${1}
+    ...    delay=${0.1}
+    ...    force=${True}
+    TRY
+        Add Locator Handler Custom
+        ...    id=overlay
+        ...    [${handler_spec_click}]
+    EXCEPT    ValueError: Action must be defined in the handler specification*    type=GLOB    AS    ${error}
+        Log    All OK with error ${error}
+    END
+
+Adding Custom Locator Handler Without Selector Should Fail
+    VAR    &{handler_spec_click}
+    ...    action=click
+    ...    button=left
+    ...    clickCount=${1}
+    ...    delay=${0.1}
+    ...    force=${True}
+    TRY
+        Add Locator Handler Custom
+        ...    id=overlay
+        ...    [${handler_spec_click}]
+    EXCEPT    ValueError: Selector must be defined in the handler specification*    type=GLOB    AS    ${error}
+        Log    All OK with error ${error}
+    END
+
+Adding Custom Locator Handler Wiht Invalid Action Should Fail
+    VAR    &{handler_spec_click}
+    ...    action=INVALID
+    ...    selector=id=OverlayCloseButton
+    ...    button=left
+    ...    clickCount=${1}
+    ...    delay=${0.1}
+    ...    force=${True}
+    TRY
+        Add Locator Handler Custom
+        ...    id=overlay
+        ...    [${handler_spec_click}]
+    EXCEPT    ValueError: Action was INVALID, it must be one of the following: click, fill, check, uncheck    AS    ${error}
+        Log    All OK with error ${error}
+    END
 
 *** Keywords ***
 Overlay Suite Setup

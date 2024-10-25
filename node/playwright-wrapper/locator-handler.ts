@@ -82,7 +82,6 @@ export async function addLocatorHandlerCustom(
     const hadlerSpecs = request.getHandlerspecsList();
     const overlayLocator = await findLocator(state, overlaySelector, false, undefined, true);
     locatorCache.add(`${state.getActivePageId()}-${overlaySelector}`, overlayLocator);
-    const allActions: string[] = [];
     await activePage.addLocatorHandler(
         overlayLocator,
         async () => {
@@ -92,10 +91,31 @@ export async function addLocatorHandlerCustom(
                 const actionSelector = handlerSpec.getSelector();
                 const actionLocator = await findLocator(state, actionSelector, false, undefined, true);
                 const options = JSON.parse(handlerSpec.getOptionsasjson());
-                allActions.push(action);
-                if (action === 'click') {
-                    logger.info(`Overlay click on element ${actionSelector} with options: ${JSON.stringify(options)}`);
-                    await actionLocator.click({ ...options });
+                try {
+                    if (action === 'click') {
+                        logger.info(
+                            `Overlay click on element ${actionSelector} with options: ${JSON.stringify(options)}`,
+                        );
+                        await actionLocator.click({ ...options });
+                    } else if (action === 'fill') {
+                        const value = handlerSpec.getValue();
+                        logger.info(
+                            `Overlay fill on element ${actionSelector} with value ${value} with options: ${JSON.stringify(options)}`,
+                        );
+                        await actionLocator.fill(value, { ...options });
+                    } else if (action === 'check') {
+                        logger.info(
+                            `Overlay check on element ${actionSelector} with options: ${JSON.stringify(options)}`,
+                        );
+                        await actionLocator.check({ ...options });
+                    } else if (action === 'uncheck') {
+                        logger.info(
+                            `Overlay uncheck on element ${actionSelector} with options: ${JSON.stringify(options)}`,
+                        );
+                        await actionLocator.uncheck({ ...options });
+                    }
+                } catch (error) {
+                    logger.error(`Error in custom locator handler: ${error}`);
                 }
             }
         },

@@ -148,18 +148,25 @@ class LocatorHandler(LibraryComponent):
         handler.times = str(times) if times is not None else "None"
         for spec in handler_spec:
             if "action" not in spec:
-                raise ValueError("Action must be defined in the handler specification")
+                raise ValueError(
+                    f"Action must be defined in the handler specification: {spec}"
+                )
             if "selector" not in spec:
                 raise ValueError(
-                    "Selector must be defined in the handler specification"
+                    f"Selector must be defined in the handler specification: {spec}"
                 )
-            if spec["action"] == "fill" and "value" not in spec:
+            action = spec["action"].lower()
+            if action not in ["click", "fill", "check", "uncheck"]:
+                raise ValueError(
+                    f"Action was {spec['action']}, it must be one of the following: click, fill, check, uncheck"
+                )
+            if action == "fill" and "value" not in spec:
                 raise ValueError("Value must be defined for fill action")
-            if spec["action"] != "fill" and "value" in spec:
+            if action != "fill" and "value" in spec:
                 raise ValueError("Value must not be defined for action other than fill")
             handler_action = Request.LocatorHandlerAddCustomAction()
-            handler_action.action = spec["action"]
-            if spec["action"] == "fill":
+            handler_action.action = action
+            if action == "fill":
                 handler_action.value = spec["value"]
                 spec.pop("value", None)
             else:
