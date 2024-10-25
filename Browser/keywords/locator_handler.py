@@ -69,26 +69,6 @@ class LocatorHandler(LibraryComponent):
         | `Type Text`    id:password    password    # Or if overlay is visible here, then handler is called here
         | `Click`    id:login
         | `Remove Locator Handler`    id:button    # Removes the locator handler from page
-
-        The keyword only clicks the, example it is possible to accept or dismiss possible cookie
-        consent popups. If there is a need for more complex interactions, it is recommended to create a custom
-        js extension to handle the interactions.
-
-        Example:
-        | async function customLocatorHandler(locator, clickLocator, page) {
-        |     console.log("Adding custom locator handler for: " + locator);
-        |     const pageLocator = page.locator(locator).first();
-        |     await page.addLocatorHandler(
-        |         pageLocator,
-        |         async () => {
-        |             console.log("Handling custom locator: " + clickLocator);
-        |             await page.locator(clickLocator).click();
-        |             // More complex interactions can be added here
-        |         }
-        |     );
-        | }
-        | exports.__esModule = true;
-        | exports.customLocatorHandler = customLocatorHandler;
         """
         logger.info(
             f"Add locator handlee: {selector} and clicking element: {click_selector}"
@@ -128,18 +108,90 @@ class LocatorHandler(LibraryComponent):
         """Add a handler function which will activate when `selector` is visible and performs halder specification.
 
         When element indicated by `selector` is visible, the handler will perform the actions specified
-        in the `handler_spec`. The `handler_spec` is a list of dictionaries, where each dictionary contains
-        defines one action. The dictionary must contain the key `action` which defines the action to be
+        in the `handler_spec`.
+
+        | =Arguments= | =Description= |
+        | ``selector`` | Is the selector to the element which indicated that locator handler should be called. |
+        | ``noWaitAfter`` | By default, after calling the handler Playwright will wait until the overlay becomes hidden, and only then library will continue with the action/assertion that triggered the handler. This option allows to opt-out of this behavior, so that overlay can stay visible after the handler has run. |
+        | ``times`` | Is the number of times to how often locator handler is is called. None is unlimited. |
+        | ``handler_spec`` | Is a list of dictionaries which defines the actions to be performed. |
+
+        The `handler_spec` is a list of dictionaries, where each dictionary defines one action.
+        The dictionary must contain the key `action` which defines the action to be
         performed. The action can be one of the following:
         [https://playwright.dev/docs/api/class-locator#locator-click|click],
         [https://playwright.dev/docs/api/class-locator#locator-fill|fill],
         [https://playwright.dev/docs/api/class-locator#locator-check|check] and
-        [https://playwright.dev/docs/api/class-locator#locator-uncheck|uncheck]. Dictionary must also contain
-        key `selector` which defines the element to be interacted with. The `fill` action must also contain
-        the key `value` which defines the value to be filled in the element. Additional keys
-        are passed to the action as keyword arguments. Example for the
+        [https://playwright.dev/docs/api/class-locator#locator-uncheck|uncheck]. Action is also case
+        insensitive. The dictionary must also contain key `selector` which defines the element
+        to be interacted with. The `fill` action must also contain the key `value` which defines
+        the value to be filled in the element. Additional keys are passed to the action as
+        keyword arguments. Example for the
         [https://playwright.dev/docs/api/class-locator#locator-click|click] action refer to the Playwright's
         documentation which options are posisble.
+
+        The `selector`, `noWaitAfter` and `times` are for the locator handler
+        [https://playwright.dev/docs/api/class-page#page-add-locator-handler|method].
+        The handler is tied to the active page, if there is need to add handler to another page, this keyword
+        needs to be called separetly for each page. If the `times` argument is set to positive value,
+        the locator handler is removed after the handler has been called the specified number of times.
+
+        Running the handler will alter your page state mid-test. For example it will change the currently
+        focused element and move the mouse. Make sure that keywords that run after the handler are
+        self-contained and do not rely on the focus and mouse state being unchanged.
+
+        Please note that the automatic argument conversion is not done for the `handler_spec` dictionary.
+        This is because Robot Framework does not that values inside the dictionary are actually
+        arguments to a seperate Playwright API call. Therefore user is responsible of the user to convert
+        the values to the correct type. Example if timeout is needed, the value must be converted to a number
+        in Robot Framework test data side.
+
+        Example adds locator handler to fill input id=overlayInput with value "Hello" and click
+        element id=OverlayCloseButton when id=Overlay is visible:
+        | `New Page`    ${URL}
+        | VAR    &{handler_spec_fill}
+        | ...    action=Fill
+        | ...    selector=id=overlayInput
+        | ...    value=Hello
+        | VAR    &{handler_spec_click}
+        | ...    action=click
+        | ...    selector=id=OverlayCloseButton
+        | `Add Locator Handler Custom`
+        | ...    id=overlay
+        | ...    [${handler_spec_fill}, ${handler_spec_click}]
+        | `Type Text`    id:username    user    # If element with id=Overlay appears, the handler will click the button id=ButtonInOverlay
+        | `Type Text`    id:password    password    # Or if overlay is visible here, then handler is called here
+        | `Click`    id:login
+
+        Example with click and different options and types:
+        | VAR    &{handler_spec}
+        | ...    action=CLICK    # Action is case insensitive
+        | ...    selector=id=OverlayCloseButton
+        | ...    button=left
+        | ...    clickCount=${1}
+        | ...    delay=${0.1}
+        | ...    force=${True}
+        | Add Locator Handler Custom    id=overlay    [${handler_spec}]
+
+        The keyword can only handle click, fill, check and uncheck Playwright API calls. If there is a
+        need for more complex interactions, it is recommended to create a custom js extension to handle
+        the interactions.
+
+        Example:
+        | async function customLocatorHandler(locator, pageLocator, clickLocator, page) {
+        |     console.log("Adding custom locator handler for: " + locator);
+        |     const pageLocator = page.locator(locator).first();
+        |     await page.addLocatorHandler(
+        |         pageLocator,
+        |         async () => {
+        |             console.log("Handling custom locator: " + clickLocator);
+        |             // More complex interactions can be added here
+        |             await page.locator(clickLocator).click();
+        |         }
+        |     );
+        | }
+        | exports.__esModule = true;
+        | exports.customLocatorHandler = customLocatorHandler;
         """
         logger.info(f"Add locator handler: {selector}")
         handler = Request.LocatorHandlerAddCustom()
