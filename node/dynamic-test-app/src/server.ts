@@ -14,6 +14,7 @@ program
   .option('-T, --tls', 'enables TLS (HTTPS)', false)
   .option('-c, --certificate <path>', 'path to server certificate in PEM format')
   .option('-k, --private-key <path>', 'path to private key in PEM format')
+  .option('-P, --passphrase <passphrase>', 'passphrase for the private key')
   .option('-C, --certificate-authority <path>', 'path to CA certificate in PEM format')
   .option('-M, --mutual-tls', 'mutual TLS authentication with a client certificate (implies TLS)', false)
 
@@ -24,6 +25,7 @@ const port = parseInt(options.port);
 const tls: boolean = options.tls;
 const certificate = options.certificate;
 const privateKey = options.privateKey;
+const passphrase = options.passphrase;
 const certificateAuthority = options.certificateAuthority;
 const mutualTls: boolean = options.mutualTls;
 
@@ -164,6 +166,7 @@ if (tls || mutualTls) {
     const serverOptions = {
         cert: certificate ? fs.readFileSync(path.join(__dirname, certificate)) : undefined,
         key: privateKey ? fs.readFileSync(path.join(__dirname, privateKey)) : undefined,
+        passphrase: passphrase ?? undefined,
         ca: certificateAuthority ? fs.readFileSync(path.join(__dirname, certificateAuthority)) : undefined,
         requestCert: mutualTls,
         rejectUnauthorized: mutualTls,

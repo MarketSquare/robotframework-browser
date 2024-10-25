@@ -1,6 +1,8 @@
 *** Variables ***
 ${SERVER_PORT} =                        7272
 ${SERVER} =                             localhost:${SERVER_PORT}
+${HTTPS_SERVER_PORT} =                  7373
+${HTTPS_SERVER} =                       localhost:${HTTPS_SERVER_PORT}
 ${BROWSER} =                            chromium
 ${DELAY} =                              0
 ${HEADLESS} =                           TRUE
@@ -11,6 +13,8 @@ ${SELECTOR_PREFIX} =                    ${None}
 ${SELECTOR_PREFIX_WAITING} =            ${{'${SELECTOR_PREFIX}'[0:-1] + " control=enter-frame >> " if $SELECTOR_PREFIX else ""}}
 ${SELECTOR_PREFIX_SPACED} =             ${{$SELECTOR_PREFIX + ' ' if $SELECTOR_PREFIX else ''}}
 ${ROOT_URL} =                           http://${SERVER}/${SUFFIX}
+${HTTPS_ROOT_URL} =                     https://${HTTPS_SERVER}/${SUFFIX}
+${HTTPS_SERVER_URL} =                   https://${HTTPS_SERVER}
 ${LOGIN_URL} =                          ${ROOT_URL}dist/#/
 ${DRAGGAME_URL} =                       ${ROOT_URL}dist/#/draggame
 ${DOG_AND_CAT_URL} =                    ${ROOT_URL}dogandcat.html

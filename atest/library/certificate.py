@@ -144,7 +144,7 @@ def generate_server_certificate(server_san: str, cert_path: str, key_path: str, 
 
 
 
-def generate_client_certificate(client_cn: str, cert_path: str, key_path: str, key_passphrase: bytes, ca_cert_path: str, ca_key_path: str, ca_key_passphrase: bytes):
+def generate_client_certificate(client_cn: str, cert_path: str, key_path: str, key_passphrase: str, ca_cert_path: str, ca_key_path: str, ca_key_passphrase: str):
 
     # load CA key
     with open(ca_key_path, "rb") as f:

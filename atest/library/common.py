@@ -35,6 +35,31 @@ def start_test_server():
     return port
 
 
+def start_test_https_server(server_cert_path: str, server_key_path: str, server_key_passphrase: str, ca_cert_path: str, mutual_tls: bool = False):
+    global SERVERS
+    port = str(find_free_port())
+    # For some reason, we need to have cwd at project root for the server to run properly.
+    root_dir = Path(os.path.dirname(__file__)) / ".." / ".."
+    root_dir = root_dir.resolve()
+    test_app_path = root_dir / "node" / "dynamic-test-app" / "dist" / "server.js"
+    print(test_app_path)
+    # TODO: remove str() when Python 3.7 support is dropped.
+    process = Popen(
+        ["node", str(test_app_path), 
+          "-p", port, 
+          "-c", server_cert_path, 
+          "-k", server_key_path, 
+          "-P", server_key_passphrase, 
+          "-C", ca_cert_path,
+          "-M" if mutual_tls else "-T"],
+        stdout=PIPE,
+        stderr=STDOUT,
+        cwd=str(root_dir),
+    )
+    SERVERS[port] = process
+    return port
+
+
 def stop_test_server(port: str):
     global SERVERS
     if port in SERVERS:
