@@ -1,8 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource            imports.resource
 
-Test Setup      Test Setup For Clock
-Suite Teardown    Suite Teardown For Clock
+Suite Teardown      Suite Teardown For Clock
+Test Setup          Test Setup For Clock
 
 *** Test Cases ***
 Set Time To Fixed
@@ -16,7 +16,6 @@ Set Time To System
     ${time_past_hour} =    Get Current Date    increment=-5 hours    result_format=%d.%m.%Y klo %H
     Clock Set Time    ${time_past}    system
     Get Text    id=current-time    starts    ${time_past_hour}
-
 
 *** Keywords ***
 Test Setup For Clock
