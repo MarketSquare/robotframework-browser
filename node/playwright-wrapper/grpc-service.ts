@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import * as browserControl from './browser-control';
+import * as clock from './clock';
 import * as cookie from './cookie';
 import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
@@ -374,6 +375,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     getElements = this.wrapping(evaluation.getElements);
     getByX = this.wrapping(evaluation.getByX);
     addStyleTag = this.wrappingPage(evaluation.addStyleTag);
+    setTime = this.wrapping(clock.setTime);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     waitForRequest = this.wrappingPage(network.waitForRequest);
     waitForResponse = this.wrappingPage(network.waitForResponse);

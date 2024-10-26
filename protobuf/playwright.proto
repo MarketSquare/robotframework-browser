@@ -22,7 +22,7 @@ message Request {
   }
 
   message ClockSetTime {
-    string time = 1;
+    float time = 1;
     string setType = 2;
   }
 
@@ -577,5 +577,5 @@ service  Playwright {
   rpc EmulateMedia(Request.EmulateMedia) returns (Response.String);
 
   /* Clock messages */
-  rpc setTime(Request.ClockSetTime) returns (Response.String);
+  rpc SetTime(Request.ClockSetTime) returns (Response.Empty);
 }

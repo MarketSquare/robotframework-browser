@@ -1297,3 +1297,17 @@ class FileUploadBuffer(TypedDict):
     name: str
     mimeType: str
     buffer: str
+
+
+class ClockType(Enum):
+    """Defines how time is set.
+
+    The recommended approach is to use fixed to set the time to a
+    specific value.
+
+    ``fixed``: Sets the fixed time for Date.now() and new Date().
+    ``system``: Is only recommended for advanced use cases.
+    """
+
+    fixed = auto()
+    system = auto()
