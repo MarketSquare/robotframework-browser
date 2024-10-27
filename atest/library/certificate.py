@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 
-def generate_ca_certificate(cert_path: str, key_path: str, key_passphrase: str):
+def generate_ca_certificate(cert_path: str, key_path: str):
 
     # generate CA key
     ca_key = ec.generate_private_key(ec.SECP256R1())
@@ -14,8 +14,8 @@ def generate_ca_certificate(cert_path: str, key_path: str, key_passphrase: str):
     with open(key_path, "wb") as f:
         f.write(ca_key.private_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.BestAvailableEncryption(str.encode(key_passphrase)),
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
         ))
 
     subject = issuer = x509.Name([
@@ -62,12 +62,12 @@ def generate_ca_certificate(cert_path: str, key_path: str, key_passphrase: str):
 
 
 
-def generate_server_certificate(server_san: str, cert_path: str, key_path: str, key_passphrase: str, ca_cert_path: str, ca_key_path: str, ca_key_passphrase: str):
+def generate_server_certificate(server_san: str, cert_path: str, key_path: str, ca_cert_path: str, ca_key_path: str):
 
     # load CA key
     with open(ca_key_path, "rb") as f:
         ca_key_data = f.read()
-    ca_key = load_pem_private_key(ca_key_data, str.encode(ca_key_passphrase))
+    ca_key = load_pem_private_key(ca_key_data, None)
 
     # load CA cert
     with open(ca_cert_path, "rb") as f:
@@ -81,8 +81,8 @@ def generate_server_certificate(server_san: str, cert_path: str, key_path: str, 
     with open(key_path, "wb") as f:
         f.write(server_key.private_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.BestAvailableEncryption(str.encode(key_passphrase)),
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
         ))
 
     subject = x509.Name([
@@ -144,12 +144,12 @@ def generate_server_certificate(server_san: str, cert_path: str, key_path: str, 
 
 
 
-def generate_client_certificate(client_cn: str, cert_path: str, key_path: str, key_passphrase: str, ca_cert_path: str, ca_key_path: str, ca_key_passphrase: str):
+def generate_client_certificate(client_cn: str, cert_path: str, key_path: str, ca_cert_path: str, ca_key_path: str):
 
     # load CA key
     with open(ca_key_path, "rb") as f:
         ca_key_data = f.read()
-    ca_key = load_pem_private_key(ca_key_data, str.encode(ca_key_passphrase))
+    ca_key = load_pem_private_key(ca_key_data, None)
 
     # load CA cert
     with open(ca_cert_path, "rb") as f:
@@ -163,8 +163,8 @@ def generate_client_certificate(client_cn: str, cert_path: str, key_path: str, k
     with open(key_path, "wb") as f:
         f.write(client_key.private_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.BestAvailableEncryption(str.encode(key_passphrase)),
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
         ))
 
     subject = x509.Name([
