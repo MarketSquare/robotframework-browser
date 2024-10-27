@@ -1,8 +1,8 @@
 import * as express from 'express';
+import * as fs from 'fs';
+import * as https from 'https';
 import * as path from 'path';
 import { Command } from 'commander';
-import * as https from 'https';
-import * as fs from 'fs';
 
 const app = express.default();
 // eslint-disable-next-line
@@ -10,13 +10,13 @@ app.use(express.json());
 
 const program = new Command();
 program
-  .option('-p, --port <number>', 'port number', '7272')
-  .option('-T, --tls', 'enables TLS (HTTPS)', false)
-  .option('-c, --certificate <path>', 'path to server certificate in PEM format')
-  .option('-k, --private-key <path>', 'path to private key in PEM format')
-  .option('-P, --passphrase <passphrase>', 'passphrase for the private key')
-  .option('-C, --certificate-authority <path>', 'path to CA certificate in PEM format')
-  .option('-M, --mutual-tls', 'mutual TLS authentication with a client certificate (implies TLS)', false)
+    .option('-p, --port <number>', 'port number', '7272')
+    .option('-T, --tls', 'enables TLS (HTTPS)', false)
+    .option('-c, --certificate <path>', 'path to server certificate in PEM format')
+    .option('-k, --private-key <path>', 'path to private key in PEM format')
+    .option('-P, --passphrase <passphrase>', 'passphrase for the private key')
+    .option('-C, --certificate-authority <path>', 'path to CA certificate in PEM format')
+    .option('-M, --mutual-tls', 'mutual TLS authentication with a client certificate (implies TLS)', false);
 
 program.parse(process.argv);
 const options = program.opts();
@@ -142,9 +142,11 @@ if (tls || mutualTls) {
         ca: certificateAuthority ? fs.readFileSync(path.join(__dirname, certificateAuthority)) : undefined,
         requestCert: mutualTls,
         rejectUnauthorized: mutualTls,
-    }
+    };
 
-    https.createServer(serverOptions, app).listen(port, () => console.log(`Successfully started server on https://localhost:${port}`))
+    https
+        .createServer(serverOptions, app)
+        .listen(port, () => console.log(`Successfully started server on https://localhost:${port}`));
 } else {
     app.listen(port, () => console.log(`Successfully started server on http://localhost:${port}`));
 }

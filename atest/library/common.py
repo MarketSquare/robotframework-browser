@@ -35,25 +35,31 @@ def start_test_server():
     return port
 
 
-def start_test_https_server(server_cert_path: str, server_key_path: str, server_key_passphrase: str, ca_cert_path: str, mutual_tls: bool = False):
+def start_test_https_server(server_cert_path: str, server_key_path: str, ca_cert_path: str, mutual_tls: bool = False):
     global SERVERS
     port = str(find_free_port())
-    # For some reason, we need to have cwd at project root for the server to run properly.
+
     root_dir = Path(os.path.dirname(__file__)) / ".." / ".."
     root_dir = root_dir.resolve()
-    test_app_path = root_dir / "node" / "dynamic-test-app" / "dist" / "server.js"
+    test_app_dir = root_dir / "node" / "dynamic-test-app" / "dist"
+    test_app_path = test_app_dir / "server.js"
+
+    # This seems to be a very strange behaviour: if we start the server with absolute paths, it prepends
+    # them with its own path and is unable to find the file. Therefore we have to count the relative path from its directory.
+    server_cert_path = os.path.relpath(os.path.abspath(server_cert_path), start = test_app_dir)
+    server_key_path = os.path.relpath(os.path.abspath(server_key_path), start = test_app_dir)
+    ca_cert_path = os.path.relpath(os.path.abspath(ca_cert_path), start = test_app_dir)
+
     print(test_app_path)
     # TODO: remove str() when Python 3.7 support is dropped.
     process = Popen(
         ["node", str(test_app_path), 
           "-p", port, 
-          "-c", server_cert_path, 
+          "-c", server_cert_path,
           "-k", server_key_path, 
-          "-P", server_key_passphrase, 
           "-C", ca_cert_path,
           "-M" if mutual_tls else "-T"],
-        stdout=PIPE,
-        stderr=STDOUT,
+        text=True,
         cwd=str(root_dir),
     )
     SERVERS[port] = process
@@ -63,8 +69,24 @@ def start_test_https_server(server_cert_path: str, server_key_path: str, server_
 def stop_test_server(port: str):
     global SERVERS
     if port in SERVERS:
-        SERVERS[port].kill()
+        p = SERVERS[port]
+        if p.poll() is not None:
+            logger.warn(f"process has already exited")
+        else:
+            p.terminate()
+        try:
+            p.wait(timeout=5)
+        except:
+            logger.warn(f"process did not finish in time, killing")
+            p.kill()
+        outs = p.communicate(timeout=5)
+        if p.returncode is not None and p.returncode != 0:
+            logger.warn(f"Process exited with code {p.returncode}, output follows")
+            logger.warn(outs)
         del SERVERS[port]
+    else:
+        logger.warn(f"Server with port {port} not found")
+
 
 
 def get_current_scope_from_lib(keyword: FormatterKeywords) -> list:
