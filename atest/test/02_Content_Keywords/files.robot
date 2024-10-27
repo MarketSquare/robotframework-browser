@@ -230,7 +230,9 @@ Generate Test Text File
     [Arguments]    ${length_of_text}
     ${filename} =    Set Variable    ${length_of_text}.txt
     ${length_of_text} =    Convert To Integer    ${length_of_text}
-    Evaluate    open('${CURDIR}/${filename}', 'w').write(''.join(random.choices(string.ascii_letters + string.digits, k=${length_of_text})))    random,string
+    Evaluate
+    ...    open('${CURDIR}/${filename}', 'w').write(''.join(random.choices(string.ascii_letters + string.digits, k=${length_of_text})))
+    ...    random,string
     RETURN    ${filename}
 
 Upload Sized File
