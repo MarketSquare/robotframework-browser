@@ -230,9 +230,10 @@ Generate Test Text File
     [Arguments]    ${length_of_text}
     ${filename} =    Set Variable    ${length_of_text}.txt
     ${length_of_text} =    Convert To Integer    ${length_of_text}
+    ${full_path} =    Normalize Path    ${CURDIR}${/}${filename}
     Evaluate
-    ...    open(str(pathlib.Path('${CURDIR}') / '${filename}'), 'w').write(''.join(random.choices(string.ascii_letters + string.digits, k=${length_of_text})))
-    ...    random,string,pathlib
+    ...    open(r'${full_path}', 'w').write(''.join(random.choices(string.ascii_letters + string.digits, k=${length_of_text})))
+    ...    random,string
     RETURN    ${filename}
 
 Upload Sized File
