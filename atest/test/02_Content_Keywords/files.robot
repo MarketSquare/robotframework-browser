@@ -227,11 +227,10 @@ Generate Test File
     RETURN    ${filename}.file
 
 Generate Test Text File
-    [Arguments]    ${leght_of_text}
-    ${filename} =    Set Variable    ${leght_of_text}.txt
-    ${leght_of_text} =    Convert To Integer    ${leght_of_text}
-    ${text} =    Generate Random String    length=${leght_of_text}
-    OperatingSystem.Create File    ${CURDIR}/${filename}    ${text}
+    [Arguments]    ${length_of_text}
+    ${filename} =    Set Variable    ${length_of_text}.txt
+    ${length_of_text} =    Convert To Integer    ${length_of_text}
+    Evaluate    open('${CURDIR}/${filename}', 'w').write(''.join(random.choices(string.ascii_letters + string.digits, k=${length_of_text})))    random,string
     RETURN    ${filename}
 
 Upload Sized File
