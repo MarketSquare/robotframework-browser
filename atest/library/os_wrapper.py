@@ -3,7 +3,7 @@ import os
 import random
 import sys
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -119,3 +119,22 @@ def is_macos() -> bool:
 
 def get_python_binary_path() -> str:
     return sys.executable
+
+
+def _parse_fi_date(date: str) -> datetime:
+    try:
+        return datetime.strptime(date, "%d.%m.%Y klo %H.%M.%S")
+    except ValueError:
+        return datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+
+ROBOT_LIBRARY_CONVERTERS = {datetime: _parse_fi_date}
+
+
+
+def delta_time_is_less_than(time1: datetime, time2: datetime, max_difference: timedelta = timedelta(seconds=30)) -> bool:
+    """Fail if the difference between time1 and time2 is greater than difference."""
+    time_difference = abs(time1.timestamp() - time2.timestamp())
+    logger.info(f"time1: {time1}, time2: {time2}, max difference: {max_difference.seconds}, difference: {time_difference}")
+    if time_difference > max_difference.seconds:
+        raise AssertionError(f"Time difference {time_difference} is greater than {max_difference.seconds}")
+    return True
