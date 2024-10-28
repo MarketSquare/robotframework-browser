@@ -9,6 +9,7 @@ from typing import Optional
 
 from robot.api import logger  # type: ignore
 from robot.libraries.OperatingSystem import OperatingSystem  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robot.utils import timestr_to_secs  # type: ignore
 
 
@@ -122,6 +123,8 @@ def get_python_binary_path() -> str:
 
 
 def _parse_fi_date(date: str) -> datetime:
+    if not date:
+        return datetime.fromtimestamp(1)
     try:
         return datetime.strptime(date, "%d.%m.%Y klo %H.%M.%S")
     except ValueError:
@@ -130,11 +133,22 @@ def _parse_fi_date(date: str) -> datetime:
 ROBOT_LIBRARY_CONVERTERS = {datetime: _parse_fi_date}
 
 
+def delta_time_is_less_than(expected_time: datetime, locator: str, max_difference: timedelta = timedelta(seconds=30), timeout: timedelta = timedelta(seconds=30)):
+    """Fail if the difference between time and time in selector is greater than difference within timeout."""
+    browser = BuiltIn().get_library_instance("Browser")
+    time_page = _parse_fi_date(browser.get_text(locator))
+    wait_time = time.monotonic() + int(timestr_to_secs(timeout.total_seconds()))
+    while not _delta_time_is_less_than(time_page, expected_time, max_difference):
+        time_page = _parse_fi_date(browser.get_text(locator))
+        if wait_time < time.monotonic():
+            BuiltIn().run_keyword("Take Screenshot")
+            raise AssertionError(f"Time difference is greater than {max_difference}")
 
-def delta_time_is_less_than(time1: datetime, time2: datetime, max_difference: timedelta = timedelta(seconds=30)) -> bool:
+def _delta_time_is_less_than(time1: datetime, time2: datetime, max_difference: timedelta = timedelta(seconds=30)) -> bool:
     """Fail if the difference between time1 and time2 is greater than difference."""
     time_difference = abs(time1.timestamp() - time2.timestamp())
     logger.info(f"time1: {time1}, time2: {time2}, max difference: {max_difference.seconds}, difference: {time_difference}")
     if time_difference > max_difference.seconds:
-        raise AssertionError(f"Time difference {time_difference} is greater than {max_difference.seconds}")
+        logger.info(f"Time difference {time_difference} is greater than {max_difference.seconds}")
+        return False
     return True
