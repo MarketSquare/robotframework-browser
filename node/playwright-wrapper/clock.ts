@@ -31,6 +31,9 @@ export async function setTime(request: Request.ClockSetTime, state: PlaywrightSt
     } else if (clockType === 'system') {
         logger.info(`Setting time to ${time} as system`);
         activePage.clock.setSystemTime(time);
+    } else if (clockType === 'install') {
+        logger.info(`Setting time to ${time} as install`);
+        activePage.clock.install({ time: time });
     } else {
         return emptyWithLog('Invalid clock type');
     }

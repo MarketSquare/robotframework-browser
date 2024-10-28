@@ -1307,7 +1307,13 @@ class ClockType(Enum):
 
     ``fixed``: Sets the fixed time for Date.now() and new Date().
     ``system``: Is only recommended for advanced use cases.
+    ``install``: initializes the clock and allows you to:
+            `pause_at`: Pauses the time at a specific time.
+            `fast_forward`: Fast forwards the time.
+            `run_for`: Runs the time for a specific duration.
+            `resume`: Resumes the time.
     """
 
     fixed = auto()
     system = auto()
+    install = auto()

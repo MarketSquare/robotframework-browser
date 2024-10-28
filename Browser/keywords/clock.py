@@ -21,17 +21,21 @@ from ..utils import ClockType, keyword, logger
 class Clock(LibraryComponent):
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def clock_set_time(self, time: datetime, clock_type: ClockType = ClockType.fixed):
+    def clock_set_time(self, time: datetime, clock_type: ClockType = ClockType.install):
         """Sets the time of the browser's internal clock.
 
         | Argument | Description |
         | time     | The time to set. Suppots Robot Framework date and time format |
-        | clock_type | The clock type to set. Default is `Fixed`. |
+        | clock_type | The clock type to set. Default is `install`. |
 
-        The Fixed makes Date.now and new Date() return fixed fake
+        The fixed makes Date.now and new Date() return fixed fake
         time at all times, keeps all the timers running.
 
-        The System sets current system time but does not trigger any timers.
+        The system sets current system time but does not trigger any timers.
+
+        The install fake timers are used to manually control the flow of time in tests.
+        They allow you to advance time, fire timers, and control the behavior
+        of time-dependent functions.
         """
         logger.info(
             f"Setting clock to {time} {time.timestamp()} with type {clock_type.name}"

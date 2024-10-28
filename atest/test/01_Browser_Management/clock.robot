@@ -8,7 +8,7 @@ Test Setup          Test Setup For Clock
 *** Test Cases ***
 Set Time To Fixed
     ${time_past} =    Get Current Date    increment=-5 hours    result_format=%Y-%m-%d %H:%M:%S
-    Clock Set Time    ${time_past}
+    Clock Set Time    ${time_past}    Fixed
     Delta Time Is Less Than    ${time_past}    id=current-time    180
 
     ${time_past} =    Get Current Date    increment=-2 hours    result_format=%Y-%m-%d %H:%M:%S
@@ -18,7 +18,11 @@ Set Time To Fixed
 Set Time To System
     ${time_past} =    Get Current Date    increment=+5 hours    result_format=%Y-%m-%d %H:%M:%S
     Clock Set Time    ${time_past}    system
-    ${set_time} =    Get Text    id=current-time    matches    \\d{4}
+    Delta Time Is Less Than    ${time_past}    id=current-time    180
+
+Set Time Install
+    ${time_past} =    Get Current Date    increment=-15 hours    result_format=%Y-%m-%d %H:%M:%S
+    Clock Set Time    ${time_past}    install
     Delta Time Is Less Than    ${time_past}    id=current-time    180
 
 *** Keywords ***
