@@ -43,5 +43,5 @@ Setup
     Set Global Variable    ${https_port}    ${port}
 
 Suite Teardown
-    Stop Test Server    ${HTTPS_SERVER_PORT}
+    Stop Test Server    ${https_port}
     Suite Cleanup
