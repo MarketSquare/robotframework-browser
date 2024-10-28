@@ -33,4 +33,4 @@ Test Setup For Clock
     New Page    ${CLOCK_URL}
 
 Suite Teardown For Clock
-    Close Browser
+    Close Context

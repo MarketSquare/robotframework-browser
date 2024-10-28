@@ -146,8 +146,8 @@ def delta_time_is_less_than(expected_time: datetime, locator: str, max_differenc
 
 def _delta_time_is_less_than(time1: datetime, time2: datetime, max_difference: timedelta = timedelta(seconds=30)) -> bool:
     """Fail if the difference between time1 and time2 is greater than difference."""
+    logger.info(f"time1: {time1}, time2: {time2}, max difference: {max_difference.seconds}")
     time_difference = abs(time1.timestamp() - time2.timestamp())
-    logger.info(f"time1: {time1}, time2: {time2}, max difference: {max_difference.seconds}, difference: {time_difference}")
     if time_difference > max_difference.seconds:
         logger.info(f"Time difference {time_difference} is greater than {max_difference.seconds}")
         return False
