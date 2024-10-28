@@ -450,8 +450,12 @@ Launch Browser Server Via CLI
     ...    headless\=${HEADLESS}
     ...    port\=8273
     ...    wsPath\=server3
-    Sleep    10s
-    Connect To Browser    wsEndpoint=ws://localhost:8277/server2    browser=chromium
+    Wait Until Keyword Succeeds
+    ...    10s
+    ...    1s
+    ...    Connect To Browser
+    ...    wsEndpoint=ws://localhost:8277/server2
+    ...    browser=chromium
     New Page    ${LOGIN_URL}
     Get Title    ==    Login Page
     Close Browser    ALL
