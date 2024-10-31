@@ -124,7 +124,9 @@ def get_python_binary_path() -> str:
 
 def _parse_fi_date(date: str) -> datetime:
     if not date:
-        return datetime.fromtimestamp(1)
+        # 2000-01-01 because of Windos raising OsError
+        # https://docs.python.org/3/library/datetime.html#datetime.datetime.timestamp
+        return datetime.fromtimestamp(946688461)
     try:
         return datetime.strptime(date, "%d.%m.%Y klo %H.%M.%S")
     except ValueError:
