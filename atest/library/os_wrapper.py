@@ -3,12 +3,13 @@ import os
 import random
 import sys
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
 from robot.api import logger  # type: ignore
 from robot.libraries.OperatingSystem import OperatingSystem  # type: ignore
+from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robot.utils import timestr_to_secs  # type: ignore
 
 
@@ -119,3 +120,56 @@ def is_macos() -> bool:
 
 def get_python_binary_path() -> str:
     return sys.executable
+
+
+def _parse_fi_date(date: str) -> datetime:
+    if not date:
+        # 2000-01-01 because of Windos raising OsError
+        # https://docs.python.org/3/library/datetime.html#datetime.datetime.timestamp
+        return datetime.fromtimestamp(946688461)
+    try:
+        return datetime.strptime(date, "%d.%m.%Y klo %H.%M.%S")
+    except ValueError:
+        return datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+
+ROBOT_LIBRARY_CONVERTERS = {datetime: _parse_fi_date}
+
+
+def delta_time_is_less_than(expected_time: datetime, locator: str, max_difference: timedelta = timedelta(seconds=30), timeout: timedelta = timedelta(seconds=30)):
+    """Fail if the difference between time and time in selector is greater than difference within timeout."""
+    browser = BuiltIn().get_library_instance("Browser")
+    time_page = _parse_fi_date(browser.get_text(locator))
+    wait_time = time.monotonic() + int(timestr_to_secs(timeout.total_seconds()))
+    while not _delta_time_is_less_than(time_page, expected_time, max_difference):
+        time_page = _parse_fi_date(browser.get_text(locator))
+        if wait_time < time.monotonic():
+            BuiltIn().run_keyword("Take Screenshot")
+            raise AssertionError(f"Time difference is greater than {max_difference}")
+        time.sleep(0.42)
+
+def _delta_time_is_less_than(time1: datetime, time2: datetime, max_difference: timedelta = timedelta(seconds=30)) -> bool:
+    """Fail if the difference between time1 and time2 is greater than difference."""
+    logger.info(f"time1: {time1}, time2: {time2}, max difference: {max_difference.seconds}")
+    time_difference = abs(time1.timestamp() - time2.timestamp())
+    if time_difference > max_difference.seconds:
+        logger.info(f"Time difference {time_difference} is greater than {max_difference.seconds}")
+        return False
+    return True
+
+
+def time1_is_less_than_time2(time1: datetime, time2: datetime) -> bool:
+    """Fail if time1 is greater than time2."""
+    logger.info(f"Time1 is {time1} and time2 is {time2}")
+    if time1.timestamp() > time2.timestamp():
+        logger.info(f"Time1 {time1} is greater than time2 {time2}")
+        raise ValueError(f"Time1 {time1} is greater than time2 {time2}")
+    return True
+
+
+def dates_are_equal(date1: datetime, date2: datetime) -> bool:
+    """Fail if time1 is not equal to time2."""
+    logger.info(f"Time1 is {date1} and time2 is {date2}")
+    if date1.timestamp() != date2.timestamp():
+        logger.info(f"Time1 {date1} is not equal to time2 {date2}")
+        raise ValueError(f"Time1 {date1} is not equal to time2 {date2}")
+    return True

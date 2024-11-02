@@ -20,6 +20,17 @@ message Request {
   message ClosePage {
     bool runBeforeUnload = 1;
   }
+
+  message ClockSetTime {
+    int32 time = 1;
+    string setType = 2;
+  }
+
+  message ClockAdvance {
+    int32 time = 1;
+    string advanceType = 2;
+  }
+
   message Label {
     string label = 1;
   }
@@ -569,4 +580,10 @@ service  Playwright {
   /* pdf */
   rpc Pdf(Request.Pdf) returns (Response.String);
   rpc EmulateMedia(Request.EmulateMedia) returns (Response.String);
+
+  /* Clock messages */
+  rpc SetTime(Request.ClockSetTime) returns (Response.Empty);
+  rpc ClockResume(Request.Empty) returns (Response.Empty);
+  rpc ClockPauseAt(Request.ClockSetTime) returns (Response.Empty);
+  rpc AdvanceClock(Request.ClockAdvance) returns (Response.Empty);
 }

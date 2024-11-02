@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from .browser_control import Control
+from .clock import Clock
 from .cookie import Cookie
 from .device_descriptors import Devices
 from .evaluation import Evaluation
@@ -32,6 +33,7 @@ from .webapp_state import WebAppState
 __all__ = [
     "Control",
     "Cookie",
+    "Clock",
     "Devices",
     "Getters",
     "Evaluation",

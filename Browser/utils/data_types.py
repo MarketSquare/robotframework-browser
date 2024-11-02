@@ -1297,3 +1297,38 @@ class FileUploadBuffer(TypedDict):
     name: str
     mimeType: str
     buffer: str
+
+
+class ClockType(Enum):
+    """Defines how time is set.
+
+    The recommended approach is to use fixed to set the time to a
+    specific value.
+
+    ``fixed``: Sets the fixed time for Date.now() and new Date().
+    ``system``: Is only recommended for advanced use cases.
+    ``install``: initializes the clock and allows you to:
+            `pause_at`: Pauses the time at a specific time.
+            `fast_forward`: Fast forwards the time.
+            `run_for`: Runs the time for a specific duration.
+            `resume`: Resumes the time.
+    """
+
+    fixed = auto()
+    system = auto()
+    install = auto()
+
+
+class CLockAdvanceType(Enum):
+    """Defines how time is advanced.
+
+    ``fast_forward``: Advance the clock by jumping forward in time.
+    ``run_for``: Advance the clock, firing all the time-related callbacks.
+
+    fast_forward will Only fires due timers at most once. This is
+    equivalent to user closing the laptop lid for a while and reopening it
+    later, after given time.
+    """
+
+    fast_forward = auto()
+    run_for = auto()

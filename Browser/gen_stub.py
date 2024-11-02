@@ -45,6 +45,8 @@ def get_type_string_from_type(argument_type: type) -> str:
     if PY310 and str(argument_type).startswith("typing."):
         return str(argument_type).replace("NoneType", "None")
     if hasattr(argument_type, "__name__"):
+        if argument_type.__name__ == "datetime":
+            return "datetime.datetime"
         return argument_type.__name__
     arg_type_str = str(argument_type.__repr__()).lstrip("typing.")
     return arg_type_str.replace("NoneType", "None")
@@ -104,6 +106,20 @@ function_list = get_function_list_from_keywords(br.get_keyword_names())
 
 
 pyi_boilerplate = """\
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import datetime
 import typing
 import os
