@@ -48,7 +48,7 @@ class Clock(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SetTime(
                 Request.ClockSetTime(
-                    time=time.timestamp(),
+                    time=int(time.timestamp()),
                     setType=clock_type.name,
                 )
             )
@@ -65,3 +65,29 @@ class Clock(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             respose = stub.ClockResume(Request.Empty())
             logger.info(respose.log)
+
+    @keyword(tags=("Setter", "Clock"))
+    def clock_pause_at(self, time: datetime):
+        """Advance the clock by jumping forward in time and pause the time.
+
+        | Argument | Description |
+        | time     | The time to pause the clock at. |
+
+        Only fires due timers at most once. This is equivalent to user
+        closing the laptop lid for a while and reopening it at the specified
+        time and pausing. Plause can not move clock backwards.
+
+        Example:
+        | `CLock Set Time` | 2024-10-31 17:34:00 | # Set the clock to a specific time |
+        | Do Something | # Implement this in your keyword |
+        | `Clock Pause At` | 2024-10-31 18:34:00 | # Pause the clock at a specific time |
+        | Check Something | # Also this is implemnted in your keyword |
+        | `Clock Resume` | # Resume the clock |
+        | Do Something Else | # Do something after clock runs normally |
+        """
+        logger.info(f"Pausing clock at {time} {time.timestamp() * 1000}")
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ClockPauseAt(
+                Request.ClockSetTime(time=int(time.timestamp()))
+            )
+            logger.info(response.log)

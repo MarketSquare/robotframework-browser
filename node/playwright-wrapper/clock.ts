@@ -25,24 +25,37 @@ export async function setTime(request: Request.ClockSetTime, state: PlaywrightSt
     let time = request.getTime();
     time = time * 1000;
     const clockType = request.getSettype();
+    const setTime = new Date(time).toISOString();
     if (clockType === 'fixed') {
-        logger.info(`Setting time to ${time} as fixed`);
+        logger.info(`Setting time to ${time} ${setTime} as fixed`);
         activePage.clock.setFixedTime(time);
     } else if (clockType === 'system') {
-        logger.info(`Setting time to ${time} as system`);
+        logger.info(`Setting time to ${time} ${setTime} as system`);
         activePage.clock.setSystemTime(time);
     } else if (clockType === 'install') {
-        logger.info(`Setting time to ${time} as install`);
+        logger.info(`Setting time to ${time} ${setTime} as install`);
         activePage.clock.install({ time: time });
     } else {
+        logger.info(`Invalid clock type ${clockType}`);
         return emptyWithLog('Invalid clock type');
     }
-    return emptyWithLog(`Time set to ${time} as ${clockType}`);
+    return emptyWithLog(`Time set to ${setTime} as ${clockType}`);
 }
 
-export async function clockResume(request: Request.ClockSetTime, state: PlaywrightState): Promise<Response.Empty> {
+export async function clockResume(request: Request.Empty, state: PlaywrightState): Promise<Response.Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     activePage.clock.resume();
     return emptyWithLog('Clock resumed');
+}
+
+export async function clockPauseAt(request: Request.ClockSetTime, state: PlaywrightState): Promise<Response.Empty> {
+    const activePage = state.getActivePage();
+    exists(activePage, 'Could not find active page');
+    let time = request.getTime();
+    time = time * 1000;
+    const setTime = new Date(time).toISOString();
+    logger.info(`Pausing clock at ${time} ${setTime}`);
+    await activePage.clock.pauseAt(time);
+    return emptyWithLog(`Clock paused at ${setTime}`);
 }

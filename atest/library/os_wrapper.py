@@ -145,6 +145,7 @@ def delta_time_is_less_than(expected_time: datetime, locator: str, max_differenc
         if wait_time < time.monotonic():
             BuiltIn().run_keyword("Take Screenshot")
             raise AssertionError(f"Time difference is greater than {max_difference}")
+        time.sleep(0.42)
 
 def _delta_time_is_less_than(time1: datetime, time2: datetime, max_difference: timedelta = timedelta(seconds=30)) -> bool:
     """Fail if the difference between time1 and time2 is greater than difference."""
@@ -162,4 +163,13 @@ def time1_is_less_than_time2(time1: datetime, time2: datetime) -> bool:
     if time1.timestamp() > time2.timestamp():
         logger.info(f"Time1 {time1} is greater than time2 {time2}")
         raise ValueError(f"Time1 {time1} is greater than time2 {time2}")
+    return True
+
+
+def dates_are_equal(date1: datetime, date2: datetime) -> bool:
+    """Fail if time1 is not equal to time2."""
+    logger.info(f"Time1 is {date1} and time2 is {date2}")
+    if date1.timestamp() != date2.timestamp():
+        logger.info(f"Time1 {date1} is not equal to time2 {date2}")
+        raise ValueError(f"Time1 {date1} is not equal to time2 {date2}")
     return True

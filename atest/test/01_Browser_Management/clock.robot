@@ -25,10 +25,20 @@ Set Time Install
     Clock Set Time    ${time_past}    install
     Delta Time Is Less Than    ${time_past}    id=current-time    180
 
-Clock Install And Resume
-    ${time_set} =    Get Current Date    increment=5 hours    result_format=%Y-%m-%d %H:%M:%S
+Clock Install, Pause Resume
+    ${time_set} =    Get Current Date    increment=6 hours    result_format=%Y-%m-%d %H:%M:%S
     Clock Set Time    ${time_set}
     Delta Time Is Less Than    ${time_set}    id=current-time    180
+    ${pause_time} =    Get Current Date    increment=7 hours    result_format=%Y-%m-%d %H:%M:%S
+    Clock Pause At    ${pause_time}
+    Sleep    2s    # Wait for the clock to pause
+    ${time1} =    Get Text    id=current-time
+    Sleep    2s    # Make sure that clock is still paused
+    ${time2} =    Get Text    id=current-time
+    Should Be Equal As Strings    ${time1}    ${time2}
+    Should Not Be Empty    ${time1}
+    Should Not Be Empty    ${time2}
+    Dates Are Equal    ${pause_time}    ${time1}
     Clock Resume
     ${time1} =    Get Text    id=current-time
     Sleep    2s    # Wait for the clock to update
@@ -41,6 +51,7 @@ Suite Setup For Clock
 
 Test Setup For Clock
     New Page    ${CLOCK_URL}
+    Get Text    id=current-time    !=    ${EMPTY}    # To make sure that clock is loaded
 
 Suite Teardown For Clock
     Close Context
