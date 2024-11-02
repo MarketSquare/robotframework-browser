@@ -1317,3 +1317,18 @@ class ClockType(Enum):
     fixed = auto()
     system = auto()
     install = auto()
+
+
+class CLockAdvanceType(Enum):
+    """Defines how time is advanced.
+
+    ``fast_forward``: Advance the clock by jumping forward in time.
+    ``run_for``: Advance the clock, firing all the time-related callbacks.
+
+    fast_forward will Only fires due timers at most once. This is
+    equivalent to user closing the laptop lid for a while and reopening it
+    later, after given time.
+    """
+
+    fast_forward = auto()
+    run_for = auto()

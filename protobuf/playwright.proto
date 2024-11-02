@@ -26,11 +26,10 @@ message Request {
     string setType = 2;
   }
 
-  message ClockRunFor {
-    float time = 1;
+  message ClockAdvance {
+    int32 time = 1;
+    string advanceType = 2;
   }
-
-
 
   message Label {
     string label = 1;
@@ -586,5 +585,5 @@ service  Playwright {
   rpc SetTime(Request.ClockSetTime) returns (Response.Empty);
   rpc ClockResume(Request.Empty) returns (Response.Empty);
   rpc ClockPauseAt(Request.ClockSetTime) returns (Response.Empty);
-  /* rpc ClockRunFor(Request.ClockSetTime) returns (Response.Empty); */
+  rpc AdvanceClock(Request.ClockAdvance) returns (Response.Empty);
 }

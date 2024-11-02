@@ -59,3 +59,18 @@ export async function clockPauseAt(request: Request.ClockSetTime, state: Playwri
     await activePage.clock.pauseAt(time);
     return emptyWithLog(`Clock paused at ${setTime}`);
 }
+
+export async function advanceClock(request: Request.ClockAdvance, state: PlaywrightState): Promise<Response.Empty> {
+    const activePage = state.getActivePage();
+    exists(activePage, 'Could not find active page');
+    const time = request.getTime();
+    const timeMs = time * 1000;
+    const advanceType = request.getAdvancetype();
+    logger.info(`Advancing clock by ${timeMs} ${advanceType}`);
+    if (advanceType === 'fast_forward') {
+        await activePage.clock.fastForward(timeMs);
+    } else if (advanceType === 'run_for') {
+        await activePage.clock.runFor(timeMs);
+    }
+    return emptyWithLog(`Clock advanced by ${timeMs} seconds by ${advanceType}`);
+}

@@ -378,6 +378,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     setTime = this.wrapping(clock.setTime);
     clockResume = this.wrapping(clock.clockResume);
     clockPauseAt = this.wrapping(clock.clockPauseAt);
+    advanceClock = this.wrapping(clock.advanceClock);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     waitForRequest = this.wrappingPage(network.waitForRequest);
     waitForResponse = this.wrappingPage(network.waitForResponse);

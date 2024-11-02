@@ -11,11 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import ClockType, keyword, logger
+from ..utils import CLockAdvanceType, ClockType, keyword, logger
 
 
 class Clock(LibraryComponent):
@@ -89,5 +89,31 @@ class Clock(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.ClockPauseAt(
                 Request.ClockSetTime(time=int(time.timestamp()))
+            )
+            logger.info(response.log)
+
+    @keyword(tags=("Setter", "Clock"))
+    def clock_advance(
+        self,
+        time: timedelta,
+        advance_type: CLockAdvanceType = CLockAdvanceType.fast_forward,
+    ):
+        """Advance the clock by a specified amount of time.
+
+        | Argument | Description |
+        | time     | The time to advance. |
+        | advance_type | The type of advance. Default is `fast_forward`. |
+
+        The `run_forward` advances the clock by firing all the time-related callbacks.
+        The `fast_forward` advances the clock by jumping forward in time. Only fires
+        due timers at most once.
+        """
+        logger.info(f"Advancing clock by {time} with type {advance_type.name}")
+        with self.playwright.grpc_channel() as stub:
+            response = stub.AdvanceClock(
+                Request.ClockAdvance(
+                    time=int(time.total_seconds()),
+                    advanceType=advance_type.name,
+                )
             )
             logger.info(response.log)
