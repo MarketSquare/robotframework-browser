@@ -26,6 +26,12 @@ message Request {
     string setType = 2;
   }
 
+  message ClockRunFor {
+    float time = 1;
+  }
+
+
+
   message Label {
     string label = 1;
   }
@@ -578,4 +584,5 @@ service  Playwright {
 
   /* Clock messages */
   rpc SetTime(Request.ClockSetTime) returns (Response.Empty);
+  rpc ClockResume(Request.Empty) returns (Response.Empty);
 }

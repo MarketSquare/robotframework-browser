@@ -39,3 +39,10 @@ export async function setTime(request: Request.ClockSetTime, state: PlaywrightSt
     }
     return emptyWithLog(`Time set to ${time} as ${clockType}`);
 }
+
+export async function clockResume(request: Request.ClockSetTime, state: PlaywrightState): Promise<Response.Empty> {
+    const activePage = state.getActivePage();
+    exists(activePage, 'Could not find active page');
+    activePage.clock.resume();
+    return emptyWithLog('Clock resumed');
+}

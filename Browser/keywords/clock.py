@@ -20,7 +20,7 @@ from ..utils import ClockType, keyword, logger
 
 class Clock(LibraryComponent):
 
-    @keyword(tags=("Setter", "BrowserControl"))
+    @keyword(tags=("Setter", "Clock"))
     def clock_set_time(self, time: datetime, clock_type: ClockType = ClockType.install):
         """Sets the time of the browser's internal clock.
 
@@ -36,6 +36,11 @@ class Clock(LibraryComponent):
         The install fake timers are used to manually control the flow of time in tests.
         They allow you to advance time, fire timers, and control the behavior
         of time-dependent functions.
+
+        How to use clock related keywords, see
+        [https://playwright.dev/docs/clock|Playwright clock documentation].
+        Also reviewing the Playwright
+        [https://playwright.dev/docs/api/class-clock|Clock API] is recommended.
         """
         logger.info(
             f"Setting clock to {time} {time.timestamp()} with type {clock_type.name}"
@@ -48,3 +53,15 @@ class Clock(LibraryComponent):
                 )
             )
             logger.info(response.log)
+
+    @keyword(tags=("Setter", "Clock"))
+    def clock_resume(self):
+        """Resumes the clock.
+
+        Once keyword method is called, time resumes flowing,
+        timers are fired as usual.
+        """
+        logger.info("Resuming clock")
+        with self.playwright.grpc_channel() as stub:
+            respose = stub.ClockResume(Request.Empty())
+            logger.info(respose.log)

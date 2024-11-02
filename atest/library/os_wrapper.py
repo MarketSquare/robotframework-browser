@@ -154,3 +154,12 @@ def _delta_time_is_less_than(time1: datetime, time2: datetime, max_difference: t
         logger.info(f"Time difference {time_difference} is greater than {max_difference.seconds}")
         return False
     return True
+
+
+def time1_is_less_than_time2(time1: datetime, time2: datetime) -> bool:
+    """Fail if time1 is greater than time2."""
+    logger.info(f"Time1 is {time1} and time2 is {time2}")
+    if time1.timestamp() > time2.timestamp():
+        logger.info(f"Time1 {time1} is greater than time2 {time2}")
+        raise ValueError(f"Time1 {time1} is greater than time2 {time2}")
+    return True
