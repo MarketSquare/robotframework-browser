@@ -62,10 +62,10 @@ Clock Advance Run_for Argument
     ${time2} =    Get Text    id=current-time
     Should Be Equal As Strings    ${time1}    ${time2}
     Dates Are Equal    ${pause_time}    ${time2}
-    Clock Advance    30 minutes    run_for
+    Clock Advance    10 seconds    run_for
     Sleep    2s    # Wait for the clock to advance
     ${time3} =    Get Text    id=current-time
-    ${advance_time} =    Add Time To Date    ${pause_time}    30 minutes    result_format=%Y-%m-%d %H:%M:%S
+    ${advance_time} =    Add Time To Date    ${pause_time}    10 seconds    result_format=%Y-%m-%d %H:%M:%S
     Dates Are Equal    ${advance_time}    ${time3}
 
 *** Keywords ***
