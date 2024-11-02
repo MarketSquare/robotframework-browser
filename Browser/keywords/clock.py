@@ -85,7 +85,7 @@ class Clock(LibraryComponent):
         | `Clock Resume` | # Resume the clock |
         | Do Something Else | # Do something after clock runs normally |
         """
-        logger.info(f"Pausing clock at {time} {time.timestamp() * 1000}")
+        logger.info(f"Pausing clock at {time}")
         with self.playwright.grpc_channel() as stub:
             response = stub.ClockPauseAt(
                 Request.ClockSetTime(time=int(time.timestamp()))
