@@ -80,68 +80,36 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page: Pag
     } catch (e) {
         logger.info(`Error reading response ${e}`);
     }
+    const jsonData = JSON.stringify({
+        status: data.status(),
+        headers: JSON.stringify(data.headers()),
+        statusText: data.statusText(),
+        url: data.url(),
+        ok: data.ok(),
+        request: {
+            headers: JSON.stringify(data.request().headers()),
+            method: data.request().method(),
+            postData: data.request().postData(),
+        },
+    });
     const chunkSize = 3500000;
     const responseChunks = [];
     if (body && body.length > chunkSize) {
         logger.info(`body.length: ${body.length}`);
         for (let i = 0; i < body.length; i += chunkSize) {
             const chunk = body.substring(i, i + chunkSize);
-            const response = jsonResponse(
-                JSON.stringify({
-                    status: data.status(),
-                    headers: JSON.stringify(data.headers()),
-                    statusText: data.statusText(),
-                    url: data.url(),
-                    ok: data.ok(),
-                    request: {
-                        headers: JSON.stringify(data.request().headers()),
-                        method: data.request().method(),
-                        postData: data.request().postData(),
-                    },
-                }),
-                `Response received, chunk ${i}`,
-                chunk,
-            );
+            const response = jsonResponse(jsonData, `Response received, chunk ${i}`, chunk);
             logger.info(`chunked response: ${i}`);
             responseChunks.push(response);
         }
     } else {
         if (body !== null) {
-            const response = jsonResponse(
-                JSON.stringify({
-                    status: data.status(),
-                    headers: JSON.stringify(data.headers()),
-                    statusText: data.statusText(),
-                    url: data.url(),
-                    ok: data.ok(),
-                    request: {
-                        headers: JSON.stringify(data.request().headers()),
-                        method: data.request().method(),
-                        postData: data.request().postData(),
-                    },
-                }),
-                'Response received',
-                body,
-            );
+            const response = jsonResponse(jsonData, 'Response received', body);
             responseChunks.push(response);
         } else {
-            const response = jsonResponse(
-                JSON.stringify({
-                    status: data.status(),
-                    body: null,
-                    headers: JSON.stringify(data.headers()),
-                    statusText: data.statusText(),
-                    url: data.url(),
-                    ok: data.ok(),
-                    request: {
-                        headers: JSON.stringify(data.request().headers()),
-                        method: data.request().method(),
-                        postData: data.request().postData(),
-                    },
-                }),
-                'Response received with empty body',
-                '',
-            );
+            const jsonDataMap = JSON.parse(jsonData);
+            jsonDataMap.body = null;
+            const response = jsonResponse(JSON.stringify(jsonDataMap), 'Response received with empty body', '');
             responseChunks.push(response);
         }
     }
