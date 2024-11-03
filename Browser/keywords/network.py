@@ -15,7 +15,7 @@
 import contextlib
 import json
 from datetime import timedelta
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional, Union
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -50,7 +50,8 @@ def _jsonize_content(data, bodykey):
         and data[bodykey]
     ):
         with contextlib.suppress(json.decoder.JSONDecodeError):
-            data[bodykey] = json.loads(data[bodykey])
+            if not isinstance(data[bodykey], dict):
+                data[bodykey] = json.loads(data[bodykey])
 
 
 class Network(LibraryComponent):
@@ -107,10 +108,9 @@ class Network(LibraryComponent):
                 logger.debug(f"Returned response is of type {type(response_dict)}")
                 return response_dict
 
-    def _wait_for_http(self, method: Literal["Request", "Response"], matcher, timeout):
+    def _wait_for_http_request(self, matcher, timeout):
         with self.playwright.grpc_channel() as stub:
-            function = getattr(stub, f"WaitFor{method}")
-            response = function(
+            response = stub.WaitForRequest(
                 Request().HttpCapture(
                     urlOrPredicate=matcher,
                     timeout=self.get_timeout(timeout),
@@ -118,11 +118,26 @@ class Network(LibraryComponent):
             )
             logger.debug(response.log)
             # Add format response back here
-            return (
-                response.body
-                if method == "Request"
-                else _format_response(json.loads(response.json))
-            )
+            return response.body
+
+    def _wait_for_http_response(self, matcher, timeout):
+        body = ""
+        with self.playwright.grpc_channel() as stub:
+            for responce in stub.WaitForResponse(
+                Request().HttpCapture(
+                    urlOrPredicate=matcher,
+                    timeout=self.get_timeout(timeout),
+                )
+            ):
+                logger.info(responce.log)
+                body = body + responce.bodyPart
+            response_json = json.loads(responce.json)
+            not_none = object()
+            with contextlib.suppress(json.decoder.JSONDecodeError):
+                body = json.loads(body)
+            if response_json.get("body", not_none) is not None and body:
+                response_json["body"] = body
+            return _format_response(response_json)
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
@@ -143,7 +158,7 @@ class Network(LibraryComponent):
 
         [https://forum.robotframework.org/t//4348|Comment >>]
         """
-        request = self._wait_for_http("Request", matcher, timeout)
+        request = self._wait_for_http_request(matcher, timeout)
         try:
             return DotDict(request)
         except Exception:
@@ -229,7 +244,7 @@ class Network(LibraryComponent):
 
         [https://forum.robotframework.org/t//4349|Comment >>]
         """
-        response = self._wait_for_http("Response", matcher, timeout)
+        response = self._wait_for_http_response(matcher, timeout)
         try:
             return DotDict(response)
         except Exception:

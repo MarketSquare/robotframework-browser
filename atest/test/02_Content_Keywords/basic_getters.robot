@@ -125,7 +125,7 @@ Get Classes With Strict
     [Tags]    slow
     [Setup]    Ensure Location    ${LOGIN_URL}
     Run Keyword And Expect Error
-    ...    *strict mode violation*//button*resolved to 15 elements*
+    ...    *strict mode violation*//button*resolved to ${BUTTON_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Classes    //button
     Set Strict Mode    False
     ${classes} =    Get Classes    //button
