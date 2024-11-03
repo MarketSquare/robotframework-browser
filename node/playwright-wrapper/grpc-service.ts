@@ -381,7 +381,21 @@ export class PlaywrightServer implements IPlaywrightServer {
     advanceClock = this.wrapping(clock.advanceClock);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     waitForRequest = this.wrappingPage(network.waitForRequest);
-    waitForResponse = this.wrappingPage(network.waitForResponse);
+    async waitForResponse(call: ServerWritableStream<Request.HttpCapture, Response.Json>): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const results = await network.waitForResponse(request, this.getActivePage(call));
+            for (const result of results) {
+                logger.info(`Sending response ${result.getLog()}`);
+                call.write(result);
+            }
+        } catch (e) {
+            call.emit('error', errorResponse(e));
+        }
+        call.end();
+    }
+
     waitForNavigation = this.wrappingPage(network.waitForNavigation);
     waitForPageLoadState = this.wrappingPage(network.WaitForPageLoadState);
     getDownloadState = this.wrapping(network.getDownloadState);

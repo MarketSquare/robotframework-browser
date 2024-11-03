@@ -23,6 +23,34 @@ app.get('/api/get/json', (req, res) => {
     res.send(JSON.stringify({ greeting: 'HELLO' }));
 });
 
+app.get('/api/get/json/big', (req, res) => {
+    res.header('Content-Type', 'application/json');
+    res.send(
+        JSON.stringify({
+            long1: '1 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long2: '2 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long3: '3 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long4: '4 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long5: '5 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long6: '6 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long7: '7 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long8: '8 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long9: '9 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long10: '10 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long11: '11 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long12: '12 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long13: '13 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long14: '14 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long15: '15 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long16: '16 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long17: '17 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long18: '18 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long19: '19 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+            long20: '20 Mauris vitae orci magna. Pellentesque eu volutpat elit. '.repeat(10000),
+        }),
+    );
+});
+
 app.options('/api/options', (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

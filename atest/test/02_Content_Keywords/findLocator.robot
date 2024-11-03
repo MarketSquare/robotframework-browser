@@ -12,7 +12,7 @@ Normal Selector
 
 Normal With Strict Mode
     Run Keyword And Expect Error
-    ...    *strict mode violation*//button*resolved to 15 elements:*
+    ...    *strict mode violation*//button*resolved to ${BUTTON_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Click    //button
     Set Strict Mode    False
     Click    //button
