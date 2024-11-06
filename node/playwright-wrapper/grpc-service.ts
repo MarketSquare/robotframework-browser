@@ -530,13 +530,14 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async reload(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
+        call: ServerUnaryCall<Request.Json, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
+            const body = request.getBody();
             if (request === null) throw Error('No request');
-            const result = await browserControl.reload(this.getActivePage(call));
+            const result = await browserControl.reload(this.getActivePage(call), body);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
