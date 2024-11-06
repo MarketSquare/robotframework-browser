@@ -100,7 +100,7 @@ jobs:
             node-version: 22.x
             shard: 3
           - os: ubuntu-latest
-            python-version: "3.11"
+            python-version: "3.13"
             node-version: 20.x
             shard: 4
           - os: windows-latest
