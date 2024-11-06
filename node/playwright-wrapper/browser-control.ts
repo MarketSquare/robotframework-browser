@@ -111,9 +111,11 @@ export async function setOffline(request: Request.Bool, context?: BrowserContext
     return emptyWithLog(`Set context to ${offline}`);
 }
 
-export async function reload(page: Page): Promise<Response.Empty> {
-    await page.reload();
-    return emptyWithLog('Reloaded page');
+export async function reload(page: Page, body: string): Promise<Response.Empty> {
+    const options = JSON.parse(body);
+    logger.info(`Reload page with options: ${body}`);
+    await page.reload(options);
+    return emptyWithLog(`Reloaded page with options: ${body}`);
 }
 
 export async function setGeolocation(request: Request.Json, context?: BrowserContext): Promise<Response.Empty> {

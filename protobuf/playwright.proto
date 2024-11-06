@@ -545,7 +545,7 @@ service  Playwright {
 
   rpc ScrollToElement(Request.ElementSelector) returns (Response.Empty);
   rpc SetOffline(Request.Bool) returns (Response.Empty);
-  rpc Reload(Request.Empty) returns (Response.Empty);
+  rpc Reload(Request.Json) returns (Response.Empty);
 
   /* Playwright State handling keywords */
   rpc SwitchPage(Request.IdWithTimeout) returns (Response.String);
