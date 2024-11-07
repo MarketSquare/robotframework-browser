@@ -103,6 +103,11 @@ class Getters(LibraryComponent):
         Optionally does a string assertion. See `Assertions` for further details for
         the assertion arguments. By default assertion is not done.
 
+        If there need to get element html, use `Get Property` instead.
+        Example:
+        | ${html1} = [ `Get Property` | ${selector} | innerHTML |
+        | ${html2} = [ `Get Property` | ${selector} | outerHTML |
+
         [https://forum.robotframework.org/t//4275|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
