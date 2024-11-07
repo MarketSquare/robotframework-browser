@@ -41,6 +41,8 @@ Get Text With Nonmatching Selector
 Get Property And Assert
     Get Property    h1    innerText    ==    Login Page
     Get Property    h1    innerText    !=    ${None}
+    Get Property    id=progress    innerHTML    contains    <div id="progress_bar" style="width: 10%; heig
+    Get Property    id=progress    outerHTML    contains    <div id="progress" style="position:
 
 Get Property With Strict Mode
     [Tags]    slow
