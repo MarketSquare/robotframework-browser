@@ -9,9 +9,14 @@ Test Teardown       Close Browser    ALL
 *** Test Cases ***
 Open Browser With Client Certificate
     New Browser    browser=${BROWSER}    headless=${HEADLESS}
+    ${cert} =    Create Dictionary
+    ...    origin=https://localhost:${https_port}
+    ...    certPath=${OUTPUT_DIR}/client.crt
+    ...    keyPath=${OUTPUT_DIR}/client.key
+    ${certs} =    Create List    ${cert}
     New Context
     ...    ignoreHTTPSErrors=True
-    ...    clientCertificates=[{'origin': 'https://localhost:${https_port}', 'certPath': '${OUTPUT_DIR}/client.crt', 'keyPath': '${OUTPUT_DIR}/client.key'}]
+    ...    clientCertificates=${certs}
     New Page    https://localhost:${https_port}/
 
 Open Browser Without Client Certificate
