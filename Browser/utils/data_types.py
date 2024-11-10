@@ -1299,6 +1299,19 @@ class FileUploadBuffer(TypedDict):
     buffer: str
 
 
+class CoverageType(Enum):
+    """Enum that defines the type of coverage to collect.
+
+    ``js``: [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JavaScript] coverage.
+    ``css``: [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS] coverage.
+    ``all``: Both [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS] and [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS] coverage.
+    """
+
+    js = auto()
+    css = auto()
+    all = auto()
+
+
 class ClockType(Enum):
     """Defines how time is set.
 

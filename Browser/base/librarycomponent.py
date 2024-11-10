@@ -323,6 +323,10 @@ class LibraryComponent:
             duration=duration, width=width, style=style, color=color
         )
 
+    @property
+    def coverage_types(self) -> dict:
+        return self.library._coverage_types
+
     def presenter_mode(self, selector, strict):
         selector = self.resolve_selector(selector)
         if self.library.presenter_mode:

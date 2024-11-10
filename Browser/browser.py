@@ -40,6 +40,7 @@ from .keywords import (
     Clock,
     Control,
     Cookie,
+    Coverage,
     Devices,
     Evaluation,
     Formatter,
@@ -840,6 +841,7 @@ class Browser(DynamicCore):
             self._browser_control,
             Cookie(self),
             Clock(self),
+            Coverage(self),
             Crawling(self),
             Devices(self),
             Evaluation(self),
@@ -915,6 +917,7 @@ class Browser(DynamicCore):
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
         self.scope_stack["assertion_formatter"] = SettingsStack({}, self)
+        self._coverage_types = {}
 
     @property
     def playwright(self) -> Playwright:

@@ -31,6 +31,16 @@ message Request {
     string advanceType = 2;
   }
 
+  message CoverateStart {
+    string coverateType = 1;
+  }
+
+  message CoverageStop {
+    string configFile = 1;
+    string outputDir = 2;
+    string coverateType = 3;
+  }
+
   message Label {
     string label = 1;
   }
@@ -587,4 +597,8 @@ service  Playwright {
   rpc ClockResume(Request.Empty) returns (Response.Empty);
   rpc ClockPauseAt(Request.ClockSetTime) returns (Response.Empty);
   rpc AdvanceClock(Request.ClockAdvance) returns (Response.Empty);
+
+  /* Coverage */
+  rpc StartCoverage(Request.CoverateStart) returns (Response.String);
+  rpc StopCoverage(Request.CoverageStop) returns (Response.Empty);
 }

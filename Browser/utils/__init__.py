@@ -21,6 +21,7 @@ from .data_types import (
     ConditionInputs,
     CookieSameSite,
     CookieType,
+    CoverageType,
     CLockAdvanceType,
     ClockType,
     DownloadInfo,
