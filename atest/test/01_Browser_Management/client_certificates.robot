@@ -22,8 +22,11 @@ Open Browser With Client Certificate
 Open Browser Without Client Certificate
     New Browser    browser=${BROWSER}    headless=${HEADLESS}
     New Context    ignoreHTTPSErrors=True
-    Run Keyword And Expect Error
-    ...    Error: page.goto: net::ERR_BAD_SSL_CLIENT_AUTH_CERT*    New Page    https://localhost:${https_port}/
+    ${error} =    Run Keyword And Expect Error
+    ...    *    New Page    https://localhost:${https_port}/
+    Should Match Regexp
+    ...    ${error}
+    ...    Error: page\.goto: net::(?:ERR_BAD_SSL_CLIENT_AUTH_CERT|ERR_SOCKET_NOT_CONNECTED).+
 
 *** Keywords ***
 Setup

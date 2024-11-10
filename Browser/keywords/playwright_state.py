@@ -621,7 +621,6 @@ class PlaywrightState(LibraryComponent):
         trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
         params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
-        logger.info(options)
         response = self._new_context(options, trace_file)
         context_options = self._mask_credentials(json.loads(response.contextOptions))
         logger.info(response.log)
