@@ -729,6 +729,7 @@ export async function newContext(
     openBrowsers: PlaywrightState,
 ): Promise<Response.NewContextResponse> {
     const options = JSON.parse(request.getRawoptions());
+    logger.info('Creating new context with options: ' + JSON.stringify(options));
     const defaultTimeout = request.getDefaulttimeout();
     const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType, defaultTimeout);
     const traceFile = request.getTracefile();
