@@ -21,7 +21,7 @@ from ..utils import CLockAdvanceType, ClockType, keyword, logger
 class Clock(LibraryComponent):
 
     @keyword(tags=("Setter", "Clock"))
-    def clock_set_time(self, time: datetime, clock_type: ClockType = ClockType.install):
+    def set_time(self, time: datetime, clock_type: ClockType = ClockType.install):
         """Sets the time of the browser's internal clock.
 
         | Argument | Description |
@@ -55,7 +55,7 @@ class Clock(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "Clock"))
-    def clock_resume(self):
+    def resume_clock(self):
         """Resumes the clock.
 
         Once keyword method is called, time resumes flowing,
@@ -67,7 +67,7 @@ class Clock(LibraryComponent):
             logger.info(respose.log)
 
     @keyword(tags=("Setter", "Clock"))
-    def clock_pause_at(self, time: datetime):
+    def pause_at(self, time: datetime):
         """Advance the clock by jumping forward in time and pause the time.
 
         | Argument | Description |
@@ -78,11 +78,11 @@ class Clock(LibraryComponent):
         time and pausing. Plause can not move clock backwards.
 
         Example:
-        | `CLock Set Time` | 2024-10-31 17:34:00 | # Set the clock to a specific time |
+        | `Set Time` | 2024-10-31 17:34:00 | # Set the clock to a specific time |
         | Do Something | # Implement this in your keyword |
-        | `Clock Pause At` | 2024-10-31 18:34:00 | # Pause the clock at a specific time |
+        | `Pause At` | 2024-10-31 18:34:00 | # Pause the clock at a specific time |
         | Check Something | # Also this is implemnted in your keyword |
-        | `Clock Resume` | # Resume the clock |
+        | `Resume Clock` | # Resume the clock |
         | Do Something Else | # Do something after clock runs normally |
         """
         logger.info(f"Pausing clock at {time}")
@@ -93,7 +93,7 @@ class Clock(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "Clock"))
-    def clock_advance(
+    def advance_clock(
         self,
         time: timedelta,
         advance_type: CLockAdvanceType = CLockAdvanceType.fast_forward,
