@@ -62,6 +62,11 @@ async function delayedRequest() {
     console.log(await fetch('/api/get/json'));
 }
 
+async function delayedRequestBig() {
+    await sleep(250);
+    console.log(await fetch('/api/get/json/big'));
+}
+
 function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
     let fileNames = '';
@@ -237,6 +242,9 @@ export default function Site() {
                 </button>
                 <button id="delayed_request" onClick={delayedRequest}>
                     Fires a request in 200ms
+                </button>
+                <button id="delayed_request_big" onClick={delayedRequestBig}>
+                    Fires a big request in 250ms
                 </button>
                 <button id="alerts" onClick={() => alert('Am an alert')}>
                     Pops up an alert

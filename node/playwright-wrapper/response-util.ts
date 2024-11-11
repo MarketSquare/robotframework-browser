@@ -70,10 +70,11 @@ export function stringResponse(body: string, logMessage: string): Response.Strin
     return response;
 }
 
-export function jsonResponse(body: string, logMessage: string) {
+export function jsonResponse(body: string, logMessage: string, bodyPart: string = '') {
     const response = new Response.Json();
     response.setJson(body);
     response.setLog(logMessage);
+    response.setBodypart(bodyPart);
     return response;
 }
 

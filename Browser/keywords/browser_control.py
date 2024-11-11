@@ -17,7 +17,7 @@ import uuid
 from collections.abc import Iterable
 from datetime import timedelta
 from pathlib import Path
-from typing import ClassVar, Optional, Union
+from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
 from robot.utils import get_link_path
 
@@ -32,6 +32,9 @@ from ..utils.data_types import (
     ScreenshotFileTypes,
     ScreenshotReturnType,
 )
+
+if TYPE_CHECKING:
+    from typing import Any  # noqa: F401
 
 
 class Control(LibraryComponent):
@@ -510,13 +513,30 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def reload(self):
+    def reload(
+        self,
+        timeout: Optional[timedelta] = None,
+        waitUntil: PageLoadStates = PageLoadStates.load,
+    ):
         """Reloads current active page.
+
+        | =Arguments= | =Description= |
+        | ``timeout`` | Maximum time for the reload to succeed. |
+        | ``waitUntil`` | When to consider operation succeeded, defaults to `load`. |
+
+        waitUntill events can be either:
+        ``domcontentloaded`` - consider operation to be finished when the DOMContentLoaded event is fired.
+        ``load`` - consider operation to be finished when the load event is fired.
+        ``networkidle`` - consider operation to be finished when there are no network connections for at least 500 ms.
+        ``commit`` - consider operation to be finished when network response is received and the document started loading. |
 
         [https://forum.robotframework.org/t//4317|Comment >>]
         """
+        options = {"waitUntil": str(waitUntil.name)}  # type: dict[str, Any]
+        if timeout is not None:
+            options["timeout"] = int(timeout.total_seconds() * 1000)
         with self.playwright.grpc_channel() as stub:
-            response = stub.Reload(Request().Empty())
+            response = stub.Reload(Request().Json(body=json.dumps(options)))
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))

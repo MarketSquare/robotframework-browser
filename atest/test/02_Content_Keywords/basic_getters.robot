@@ -41,6 +41,8 @@ Get Text With Nonmatching Selector
 Get Property And Assert
     Get Property    h1    innerText    ==    Login Page
     Get Property    h1    innerText    !=    ${None}
+    Get Property    id=progress    innerHTML    contains    <div id="progress_bar" style="width: 10%; heig
+    Get Property    id=progress    outerHTML    contains    <div id="progress" style="position:
 
 Get Property With Strict Mode
     [Tags]    slow
@@ -125,7 +127,7 @@ Get Classes With Strict
     [Tags]    slow
     [Setup]    Ensure Location    ${LOGIN_URL}
     Run Keyword And Expect Error
-    ...    *strict mode violation*//button*resolved to 15 elements*
+    ...    *strict mode violation*//button*resolved to ${BUTTON_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Classes    //button
     Set Strict Mode    False
     ${classes} =    Get Classes    //button
@@ -339,14 +341,14 @@ Get Console Log Test
     [Setup]    Setup
     ${first} =    Get Console Log    then    len(value)
     Click With Options    "Click with Options"    left    ALT    SHIFT
-    ${logs} =    Get Console Log    validate    len(value) == 3
-    Should Be Equal    ${logs}[0][type]    log
-    Should Start With    ${logs}[0][text]    Mouse button: left
-    Should Be True    $logs[0]['location']['url'].startswith('${LOGIN_URL[:-2]}')
-    Should Be Equal    ${logs}[1][type]    error
-    Should Be Equal    ${logs}[1][text]    1
-    Should Be Equal    ${logs}[2][type]    warning
-    Should Be True    ${logs}[2][text] > 0
+    ${logs} =    Get Console Log    validate    len(value) == 5
+    Should Be Equal    ${logs}[2][type]    log
+    Should Start With    ${logs}[2][text]    Mouse button: left
+    Should Be True    $logs[2]['location']['url'].startswith('${LOGIN_URL[:-2]}')
+    Should Be Equal    ${logs}[3][type]    error
+    Should Be Equal    ${logs}[3][text]    1
+    Should Be Equal    ${logs}[4][type]    warning
+    Should Be True    ${logs}[4][text] > 0
     ${errors} =    Get Page Errors    validate    len(value) == 2
     Should Be Equal    ${errors}[0][name]    EvalError
     Should Be Equal    ${errors}[0][message]    You are not allowed to use this site

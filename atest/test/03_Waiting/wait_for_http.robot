@@ -37,7 +37,39 @@ Wait For Request Predicate
 
 Wait For Response Synchronous
     Click    \#delayed_request
-    Wait For Response    timeout=1s
+    ${data} =    Wait For Response    timeout=1s
+    ${body} =    Set Variable    ${data.body}
+    ${expected_body} =    Create Dictionary    greeting=HELLO
+    Dictionaries Should Be Equal    ${body}    ${expected_body}
+
+Wait For Request Async Big
+    Click    id=delayed_request_big
+    ${data} =    Wait For Response    timeout=15s
+    ${body} =    Set Variable    ${data.body}
+    ${keys} =    Create List
+    ...    long1
+    ...    long2
+    ...    long3
+    ...    long4
+    ...    long5
+    ...    long6
+    ...    long7
+    ...    long8
+    ...    long9
+    ...    long10
+    ...    long11
+    ...    long12
+    ...    long13
+    ...    long14
+    ...    long15
+    ...    long16
+    ...    long17
+    ...    long18
+    ...    long19
+    ...    long20
+    FOR    ${key}    IN    @{keys}
+        Dictionary Should Contain Key    ${body}    ${key}
+    END
 
 Wait For Response Synchronous With Default Timeout
     Click    \#delayed_request

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import * as browserControl from './browser-control';
+import * as clock from './clock';
 import * as cookie from './cookie';
 import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
@@ -374,9 +375,27 @@ export class PlaywrightServer implements IPlaywrightServer {
     getElements = this.wrapping(evaluation.getElements);
     getByX = this.wrapping(evaluation.getByX);
     addStyleTag = this.wrappingPage(evaluation.addStyleTag);
+    setTime = this.wrapping(clock.setTime);
+    clockResume = this.wrapping(clock.clockResume);
+    clockPauseAt = this.wrapping(clock.clockPauseAt);
+    advanceClock = this.wrapping(clock.advanceClock);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     waitForRequest = this.wrappingPage(network.waitForRequest);
-    waitForResponse = this.wrappingPage(network.waitForResponse);
+    async waitForResponse(call: ServerWritableStream<Request.HttpCapture, Response.Json>): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const results = await network.waitForResponse(request, this.getActivePage(call));
+            for (const result of results) {
+                logger.info(`Sending response ${result.getLog()}`);
+                call.write(result);
+            }
+        } catch (e) {
+            call.emit('error', errorResponse(e));
+        }
+        call.end();
+    }
+
     waitForNavigation = this.wrappingPage(network.waitForNavigation);
     waitForPageLoadState = this.wrappingPage(network.WaitForPageLoadState);
     getDownloadState = this.wrapping(network.getDownloadState);
@@ -511,13 +530,14 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async reload(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
+        call: ServerUnaryCall<Request.Json, Response.Empty>,
         callback: sendUnaryData<Response.Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
+            const body = request.getBody();
             if (request === null) throw Error('No request');
-            const result = await browserControl.reload(this.getActivePage(call));
+            const result = await browserControl.reload(this.getActivePage(call), body);
             callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);

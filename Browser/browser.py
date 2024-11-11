@@ -37,6 +37,7 @@ from robotlibcore import DynamicCore, PluginParser  # type: ignore
 from .base import ContextCache, LibraryComponent
 from .generated.playwright_pb2 import Request, Response
 from .keywords import (
+    Clock,
     Control,
     Cookie,
     Devices,
@@ -834,6 +835,7 @@ class Browser(DynamicCore):
             self._playwright_state,
             self._browser_control,
             Cookie(self),
+            Clock(self),
             Crawling(self),
             Devices(self),
             Evaluation(self),
