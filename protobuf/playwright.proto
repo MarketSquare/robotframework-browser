@@ -37,8 +37,8 @@ message Request {
 
   message CoverageStop {
     string configFile = 1;
-    string outputDir = 2;
-    string coverateType = 3;
+    string coverageDir = 2;
+    string folderPrefix = 3;
   }
 
   message Label {
@@ -599,6 +599,6 @@ service  Playwright {
   rpc AdvanceClock(Request.ClockAdvance) returns (Response.Empty);
 
   /* Coverage */
-  rpc StartCoverage(Request.CoverateStart) returns (Response.String);
-  rpc StopCoverage(Request.CoverageStop) returns (Response.Empty);
+  rpc StartCoverage(Request.CoverateStart) returns (Response.Empty);
+  rpc StopCoverage(Request.CoverageStop) returns (Response.String);
 }

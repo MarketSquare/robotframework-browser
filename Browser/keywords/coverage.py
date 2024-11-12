@@ -18,7 +18,7 @@ from typing import Optional
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import CoverageType, SelectionType, keyword, logger
+from ..utils import CoverageType, keyword, logger
 
 
 class Coverage(LibraryComponent):
@@ -54,19 +54,22 @@ class Coverage(LibraryComponent):
                 )
             )
             logger.info(response.log)
-            page_id = response.body
-        self.coverage_types[page_id] = coverage_type
         return str(coverage_type)
 
     @keyword(tags=("Getter", "Coverage"))
     def stop_coverage(
         self,
         config_file: Optional[PathLike] = None,
+        folder_prefix: Optional[str] = None,
     ) -> Path:
         """Stops the coverage for the current page.
 
         | =Arguments= | =Description= |
         | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file] |
+        | ``folder_prefix`` | Optional folder prefix for the page coverage report. |
+
+        If folder prefix is present, the folder name will be the prefix + page id.
+        If folder prefix is not provided, the folder name will be the page id.
 
         Creates a coverage report by using
         [https://www.npmjs.com/package/monocart-coverage-reports|monocart-coverage-reports]
@@ -74,22 +77,25 @@ class Coverage(LibraryComponent):
         [https://github.com/cenfun/monocart-coverage-reports/blob/HEAD/lib/default/options.js|options.js]
         file for more details. Returns the path to the folder where
         coverage reported."""
-        catalog = self.library.get_page_ids(page=SelectionType.CURRENT)
-        if not catalog:
-            raise ValueError("No pages open")
-        page = catalog[0]
-        coverage_type = self.coverage_types.pop(page, CoverageType.all)
-        coverage_dir = Path(self.outputdir) / "coverage_reports" / f"{page}_coverage"
-        logger.info(
-            f"Stopping coverage for {page} with {coverage_type.name} to {coverage_dir}"
-        )
+        folder_prefix = f"{folder_prefix}_" if folder_prefix else ""
+        coverage_base_dir = Path(self.outputdir) / "coverage_reports"
         with self.playwright.grpc_channel() as stub:
             response = stub.StopCoverage(
                 Request.CoverageStop(
                     configFile=str(config_file) if config_file else "",
-                    outputDir=str(coverage_dir),
-                    coverateType=coverage_type.name,
+                    coverageDir=str(coverage_base_dir),
+                    folderPrefix=folder_prefix,
                 )
             )
             logger.info(response.log)
-        return coverage_dir
+        coverage_dir = Path(response.body)
+        coverage_index_html = coverage_dir.glob("*.html")
+        if not coverage_index_html:
+            logger.info(
+                f"No coverage report found from  {coverage_dir}. Default folder or file type "
+                "could have been changed by {config_file}, return the coverage folder."
+            )
+            return coverage_dir
+        file_path = next(iter(coverage_index_html))
+        logger.info(f"Coverage report saved to {file_path.as_uri()}")
+        return file_path

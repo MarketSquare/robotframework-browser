@@ -8,16 +8,14 @@ Coverage
     Start Coverage
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
-    ${coverage_dir} =    Stop Coverage
-    ${files} =    OperatingSystem.List Files In Directory    ${coverage_dir}
-    Should Not Be Empty    ${files}
+    ${coverage_file} =    Stop Coverage
+    File Should Not Be Empty    ${coverage_file}
     Close Page
 
 Coverage With Options
     Start Coverage
     Go To    ${LOGIN_URL}
-    Click    id=delayed_request
-    ${coverage_dir} =    Stop Coverage    ${CURDIR}/coverageConfig.js
-    ${files} =    OperatingSystem.List Files In Directory    ${coverage_dir}
-    Should Not Be Empty    ${files}
+    Click    id=delayed_request_big
+    ${coverage_file} =    Stop Coverage
+    File Should Not Be Empty    ${coverage_file}
     Close Page

@@ -917,7 +917,6 @@ class Browser(DynamicCore):
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
         self.scope_stack["assertion_formatter"] = SettingsStack({}, self)
-        self._coverage_types = {}
 
     @property
     def playwright(self) -> Playwright:
