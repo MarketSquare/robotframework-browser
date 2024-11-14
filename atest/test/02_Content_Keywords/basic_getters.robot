@@ -341,14 +341,26 @@ Get Console Log Test
     [Setup]    Setup
     ${first} =    Get Console Log    then    len(value)
     Click With Options    "Click with Options"    left    ALT    SHIFT
-    ${logs} =    Get Console Log    validate    len(value) == 5
-    Should Be Equal    ${logs}[2][type]    log
-    Should Start With    ${logs}[2][text]    Mouse button: left
-    Should Be True    $logs[2]['location']['url'].startswith('${LOGIN_URL[:-2]}')
-    Should Be Equal    ${logs}[3][type]    error
-    Should Be Equal    ${logs}[3][text]    1
-    Should Be Equal    ${logs}[4][type]    warning
-    Should Be True    ${logs}[4][text] > 0
+    # Sometimes test app emist React Router Future Flag Warning: React Router ...
+    # And sometimes it does not. This is to handle that problem.
+    ${logs} =    Get Console Log    validate    len(value) == 5 or len(value) == 3
+    ${logs_len} =    Get Length    ${logs}
+    IF    $logs_len == 5
+        VAR    ${index1}    ${2}
+        VAR    ${index2}    ${3}
+        VAR    ${index3}    ${4}
+    ELSE
+        VAR    ${index1}    ${0}
+        VAR    ${index2}    ${1}
+        VAR    ${index3}    ${2}
+    END
+    Should Be Equal    ${logs}[${index1}][type]    log
+    Should Start With    ${logs}[${index1}][text]    Mouse button: left
+    Should Be True    $logs[${index1}]['location']['url'].startswith('${LOGIN_URL[:-2]}')
+    Should Be Equal    ${logs}[${index2}][type]    error
+    Should Be Equal    ${logs}[${index2}][text]    1
+    Should Be Equal    ${logs}[${index3}][type]    warning
+    Should Be True    ${logs}[${index3}][text] > 0
     ${errors} =    Get Page Errors    validate    len(value) == 2
     Should Be Equal    ${errors}[0][name]    EvalError
     Should Be Equal    ${errors}[0][message]    You are not allowed to use this site
