@@ -1332,6 +1332,8 @@ class CLockAdvanceType(Enum):
 
     fast_forward = auto()
     run_for = auto()
+
+
 class ClientCertificate(TypedDict, total=False):
     """Defines client certificate.
 
