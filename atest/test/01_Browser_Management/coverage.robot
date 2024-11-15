@@ -5,7 +5,7 @@ Test Setup      New Page    ${EMPTY}
 
 *** Test Cases ***
 Coverage
-    Start Coverage
+    Start Coverage    reportAnonymousScripts=True    resetOnNavigation=True
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
     ${coverage_file} =    Stop Coverage

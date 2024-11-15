@@ -24,11 +24,18 @@ from ..utils import CoverageType, keyword, logger
 class Coverage(LibraryComponent):
 
     @keyword(tags=("Setter", "Coverage"))
-    def start_coverage(self, coverage_type: CoverageType = CoverageType.all) -> str:
+    def start_coverage(
+        self,
+        coverage_type: CoverageType = CoverageType.all,
+        reportAnonymousScripts: bool = False,
+        resetOnNavigation: bool = True,
+    ) -> str:
         """Starts the coverage for the current page.
 
         | =Arguments= | =Description= |
         | ``coverage_type`` | Type of coverage to start. Default is `all`. |
+        | ``reportAnonymousScripts`` | Whether to report anonymous scripts. Default is `False`. Only valid for JS coverage. |
+        | ``resetOnNavigation`` | Whether to reset coverage on navigation. Default is `True`. |
 
         The `coverage_type` can be one of the following:
         - `all`: Both [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS] and [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
@@ -51,6 +58,8 @@ class Coverage(LibraryComponent):
             response = stub.StartCoverage(
                 Request.CoverateStart(
                     coverateType=coverage_type.name,
+                    resetOnNavigation=resetOnNavigation,
+                    reportAnonymousScripts=reportAnonymousScripts,
                 )
             )
             logger.info(response.log)

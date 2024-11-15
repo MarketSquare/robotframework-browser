@@ -33,6 +33,8 @@ message Request {
 
   message CoverateStart {
     string coverateType = 1;
+    bool resetOnNavigation = 2;
+    bool reportAnonymousScripts = 3;
   }
 
   message CoverageStop {

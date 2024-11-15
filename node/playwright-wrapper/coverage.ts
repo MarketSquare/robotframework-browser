@@ -12,13 +12,17 @@ export async function startCoverage(request: Request.CoverateStart, state: Playw
     exists(activePage, 'Could not find active page');
     const coverageType = request.getCoveratetype();
     state.addCoverageType(coverageType);
+    const resetOnNavigation = request.getResetonnavigation();
+    const reportAnonymousScripts = request.getReportanonymousscripts();
     if (coverageType === 'js' || coverageType === 'all') {
-        logger.info('Starting JS coverage');
-        await activePage.coverage.startJSCoverage();
+        logger.info(
+            `Starting JS coverage with resetOnNavigation: ${resetOnNavigation} and reportAnonymousScripts: ${reportAnonymousScripts}`,
+        );
+        await activePage.coverage.startJSCoverage({ resetOnNavigation, reportAnonymousScripts });
     }
     if (coverageType === 'css' || coverageType === 'all') {
-        logger.info('Starting CSS coverage');
-        await activePage.coverage.startCSSCoverage();
+        logger.info(`Starting CSS coverage with resetOnNavigation: ${resetOnNavigation}`);
+        await activePage.coverage.startCSSCoverage({ resetOnNavigation });
     }
     return emptyWithLog(`Coverage started for ${coverageType}`);
 }
