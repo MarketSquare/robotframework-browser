@@ -55,11 +55,13 @@ def combine(
         args = [
             "npx",
             "mcr",
-            "command",
+            "--logging",
+            "debug",
             "--inputDir",
             f"{tmp_path!s}",
             "--outputDir",
             f"{output_folder!s}",
+            "command",
         ]
         if config is not None:
             args.extend(["--config", f"{config!s}"])
