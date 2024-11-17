@@ -26,6 +26,7 @@ def combine(
     config: Union[Path, None],
     logger: logging.Logger,
     shell: bool,
+    install_dir: Path,
 ) -> None:
     logger.info(f"Combining coverage files from {input_folder} to {output_folder}")
     if config is not None and config.is_file():
@@ -62,5 +63,5 @@ def combine(
         ]
         if config is not None:
             args.extend(["--config", f"{config!s}"])
-        subprocess.run(args, check=True, shell=shell)
+        subprocess.run(args, check=True, shell=shell, cwd=install_dir)
         logger.info(f"Combined coverage files to {output_folder}")

@@ -695,7 +695,7 @@ def coverage(input: Path, output: Path, config: Optional[Path] = None):  # noqa:
     monocart-coverage-reports options file. For more details see:
     https://www.npmjs.com/package/monocart-coverage-reports#config-file
     """
-    combine(input, output, config, logger, SHELL)
+    combine(input, output, config, logger, SHELL, INSTALLATION_DIR)
 
 
 if __name__ == "__main__":
