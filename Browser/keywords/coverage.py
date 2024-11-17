@@ -38,9 +38,9 @@ class Coverage(LibraryComponent):
         | ``resetOnNavigation`` | Whether to reset coverage on navigation. Default is `True`. |
 
         The `coverage_type` can be one of the following:
-        - `all`: Both [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS] and [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
-        - `css`: [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS].
-        - `js`: [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
+        - ``all``: Both [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS] and [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
+        - ``css``: [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS].
+        - ``js``: [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
 
         Coverage must started when page is open and before any action is
         performed on the page. Coverage be stopped by calling `Stop Coverage` keyword
