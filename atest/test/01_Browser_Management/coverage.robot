@@ -5,18 +5,18 @@ Test Setup      New Page    ${EMPTY}
 
 *** Test Cases ***
 Coverage
-    Start Coverage    reportAnonymousScripts=True    resetOnNavigation=True
+    Start Coverage    js    reportAnonymousScripts=True    resetOnNavigation=True
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
-    ${coverage_file} =    Stop Coverage
+    ${coverage_file} =    Stop Coverage    config_file=${CURDIR}/coverageConfig.js
     File Should Not Be Empty    ${coverage_file}
     Close Page
 
 Coverage With Options
-    Start Coverage
+    ${type} =    Start Coverage
+    Should Be Equal    ${type}    CoverageType.all
     Add Locator Handler Click    id=overlay    id=OverlayCloseButton
     Go To    ${OWERLAY_URL}
-    Click    id=CreateOverlayButton
     Click    id=CreateOverlayButton
     Click    id=textHeading
     ${coverage_file} =    Stop Coverage    config_file=${CURDIR}/coverageConfig.js    folder_prefix=SimplePage
@@ -25,4 +25,33 @@ Coverage With Options
     Should Contain    ${coverage_file2}    SimplePage
     Close Page
     New Page    ${coverage_file.as_uri()}
+    Get Text    .mcr-title    equal    Browser library Coverage Report
+
+Run Rfbrowser To Combine Coverage Reports
+    ${entry_cmd} =    Get Enty Command
+    ${process} =    Run Process
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_1
+    ...    shell=True
+    Log    ${process.stdout}
+    Log    ${process.stderr}
+    Should Be Equal As Integers    ${process.rc}    0
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/combined_coverage_reports_1
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
+    ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_1/index.html
+    New Page    ${uri}
+    Get Text    .mcr-title    equal    Coverage Report
+    Close Page
+
+Run Rfbrowser To Combine Coverage Reports With Config
+    ${entry_cmd} =    Get Enty Command
+    ${process} =    Run Process
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_2 --config ${CURDIR}/coverageConfig.js
+    ...    shell=True
+    Log    ${process.stdout}
+    Log    ${process.stderr}
+    Should Be Equal As Integers    ${process.rc}    0
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/combined_coverage_reports_2
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
+    ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_2/index.html
+    New Page    ${uri}
     Get Text    .mcr-title    equal    Browser library Coverage Report
