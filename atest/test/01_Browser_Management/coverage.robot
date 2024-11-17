@@ -66,6 +66,9 @@ Run Rfbrowser To Combine Coverage Reports And No Input Dir
     Should Be Equal As Integers    ${process.rc}    2
 
 Run Rfbrowser To Combine Coverage Reports And No Raw Files
+    ${process0} =    Run Process    npx mcr --help    shell=True
+    Log    ${process0.stdout}
+    Log    ${process0.stderr}
     Create Directory    ${OUTPUT_DIR}/no_raw_files
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
