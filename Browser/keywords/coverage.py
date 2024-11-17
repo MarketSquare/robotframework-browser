@@ -39,12 +39,16 @@ class Coverage(LibraryComponent):
 
         The `coverage_type` can be one of the following:
         - `all`: Both [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS] and [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
-        - css: [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS].
-        - js: [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
+        - `css`: [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS].
+        - `js`: [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
 
-        Coverage must started called when page is open and before any action is
+        Coverage must started when page is open and before any action is
         performed on the page. Coverage be stopped by calling `Stop Coverage` keyword
         and must be called before page is closed.
+
+        Several coverage reports can be combined after test execution by using
+        `rfbrowser coverage /path/to/basefolder/ /path/to/outputfolder/`. See more details
+        by running `rfbrowser coverage --help` command.
 
         Example:
         | `New Page`
