@@ -20,12 +20,10 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Union
 
-from .constant import IS_WINDOWS, SHELL, INSTALLATION_DIR
+from .constant import INSTALLATION_DIR, IS_WINDOWS, SHELL
 
 
-def _find_coverage_files(
-    input_folder: Path, logger: logging.Logger
-) -> Iterator:
+def _find_coverage_files(input_folder: Path, logger: logging.Logger) -> Iterator:
     for file in input_folder.iterdir():
         if file.is_dir() and file.joinpath("raw").is_dir():
             raw_dir = file.joinpath("raw")

@@ -1,6 +1,5 @@
-from pathlib import Path
 import platform
-
+from pathlib import Path
 
 INSTALLATION_DIR = Path(__file__).parent.parent / "wrapper"
 NODE_MODULES = INSTALLATION_DIR / "node_modules"

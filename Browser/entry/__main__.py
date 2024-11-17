@@ -28,7 +28,15 @@ from typing import TYPE_CHECKING, Optional
 import click
 import seedir  # type: ignore
 
-from .constant import INSTALL_LOG, LOG_FILE, INSTALLATION_DIR, PLAYWRIGHT_BROWSERS_PATH, SHELL, ROOT_FOLDER, NODE_MODULES
+from .constant import (
+    INSTALL_LOG,
+    INSTALLATION_DIR,
+    LOG_FILE,
+    NODE_MODULES,
+    PLAYWRIGHT_BROWSERS_PATH,
+    ROOT_FOLDER,
+    SHELL,
+)
 from .coverage_combine import combine
 from .transform import trasform
 from .translation import compare_translatoin, get_library_translaton
