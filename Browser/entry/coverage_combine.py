@@ -16,8 +16,23 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Union
+
+from .constant import IS_WINDOWS, SHELL, INSTALLATION_DIR
+
+
+def _find_coverage_files(
+    input_folder: Path, logger: logging.Logger
+) -> Iterator:
+    for file in input_folder.iterdir():
+        if file.is_dir() and file.joinpath("raw").is_dir():
+            raw_dir = file.joinpath("raw")
+            logger.info(f"Folder {raw_dir} found")
+            for raw_file in raw_dir.iterdir():
+                if raw_file.is_file():
+                    yield raw_file
 
 
 def combine(
@@ -25,8 +40,6 @@ def combine(
     output_folder: Path,
     config: Union[Path, None],
     logger: logging.Logger,
-    shell: bool,
-    install_dir: Path,
 ) -> None:
     logger.info(f"Combining coverage files from {input_folder} to {output_folder}")
     if config is not None and config.is_file():
@@ -38,17 +51,12 @@ def combine(
         logger.error(f"Output folder {output_folder} already exists, deleting it first")
         shutil.rmtree(output_folder)
     output_folder.mkdir(parents=True)
-    raw_reports = []
+    raw_reports = False
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
-        for file in input_folder.iterdir():
-            if file.is_dir() and file.joinpath("raw").is_dir():
-                raw_dir = file.joinpath("raw")
-                logger.info(f"Folder {raw_dir} found")
-                for raw_file in raw_dir.iterdir():
-                    if raw_file.is_file():
-                        shutil.copy(raw_file, tmp_path.joinpath(raw_file.name))
-                        raw_reports.append(raw_file)
+        for raw_file in _find_coverage_files(input_folder, logger):
+            shutil.copy(raw_file, tmp_path.joinpath(raw_file.name))
+            raw_reports = True
         if not raw_reports:
             logger.error(f"No raw reports found from {input_folder}")
             sys.exit(2)
@@ -61,9 +69,11 @@ def combine(
             f"{tmp_path!s}",
             "--outputDir",
             f"{output_folder!s}",
-            "command",
         ]
         if config is not None:
             args.extend(["--config", f"{config!s}"])
-        subprocess.run(args, check=True, shell=shell, cwd=install_dir)
+        if not IS_WINDOWS:
+            args.append("command")
+        logger.info(f"Running command: {args}")
+        subprocess.run(args, check=True, shell=SHELL, cwd=INSTALLATION_DIR)
         logger.info(f"Combined coverage files to {output_folder}")

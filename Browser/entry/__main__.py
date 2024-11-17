@@ -16,7 +16,6 @@ import contextlib
 import json
 import logging
 import os
-import platform
 import re
 import shutil
 import subprocess
@@ -29,6 +28,7 @@ from typing import TYPE_CHECKING, Optional
 import click
 import seedir  # type: ignore
 
+from .constant import INSTALL_LOG, LOG_FILE, INSTALLATION_DIR, PLAYWRIGHT_BROWSERS_PATH, SHELL, ROOT_FOLDER, NODE_MODULES
 from .coverage_combine import combine
 from .transform import trasform
 from .translation import compare_translatoin, get_library_translaton
@@ -36,20 +36,12 @@ from .translation import compare_translatoin, get_library_translaton
 if TYPE_CHECKING:
     from ..browser import Browser
 
-INSTALLATION_DIR = Path(__file__).parent.parent / "wrapper"
-NODE_MODULES = INSTALLATION_DIR / "node_modules"
-# This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
-# But shell=True breaks our linux CI
-SHELL = bool(platform.platform().startswith("Windows"))
-ROOT_FOLDER = Path(__file__).resolve().parent.parent
-log_file = "rfbrowser.log"
-INSTALL_LOG = ROOT_FOLDER / log_file
-PLAYWRIGHT_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
+
 try:
     INSTALL_LOG.touch(exist_ok=True)
 except Exception as error:
     print(f"Could not write to {INSTALL_LOG}, got error: {error}")  # noqa: T201
-    INSTALL_LOG = Path.cwd() / log_file
+    INSTALL_LOG = Path.cwd() / LOG_FILE
     print(f"Writing install log to: {INSTALL_LOG}")  # noqa: T201
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
@@ -695,7 +687,7 @@ def coverage(input: Path, output: Path, config: Optional[Path] = None):  # noqa:
     monocart-coverage-reports options file. For more details see:
     https://www.npmjs.com/package/monocart-coverage-reports#config-file
     """
-    combine(input, output, config, logger, SHELL, INSTALLATION_DIR)
+    combine(input, output, config, logger)
 
 
 if __name__ == "__main__":
