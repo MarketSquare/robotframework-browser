@@ -29,7 +29,9 @@ Coverage With Options
     Get Text    .mcr-title    equal    Browser library Coverage Report
 
 Run Rfbrowser To Combine Coverage Reports
-    [Tags]    no-windows-support
+    # [Tags]    no-windows-support
+    ${path} =    Get Environment Variable    PATH
+    Log    ${path}
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
     ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_1
