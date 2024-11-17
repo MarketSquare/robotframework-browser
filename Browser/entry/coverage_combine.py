@@ -30,11 +30,11 @@ def combine(
     logger.info(f"Combining coverage files from {input_folder} to {output_folder}")
     if config is not None and config.is_file():
         logger.info(f"Using configuration from {config}")
-    if not input_folder.is_dir():
-        logger.error(f"Input {input_folder} is not a directory or does not exist")
-        sys.exit(3)
+    if config is not None and not config.is_file():
+        logger.error(f"Configuration file {config} does not exist")
+        sys.exit(2)
     if output_folder.exists():
-        logger.error(f"Output folder {output_folder} already exists, delete it first")
+        logger.error(f"Output folder {output_folder} already exists, deleting it first")
         shutil.rmtree(output_folder)
     output_folder.mkdir(parents=True)
     raw_reports = []
