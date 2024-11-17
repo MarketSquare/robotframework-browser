@@ -29,6 +29,7 @@ Coverage With Options
     Get Text    .mcr-title    equal    Browser library Coverage Report
 
 Run Rfbrowser To Combine Coverage Reports
+    [Tags]    no-windows-support
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
     ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_1
@@ -44,6 +45,7 @@ Run Rfbrowser To Combine Coverage Reports
     Close Page
 
 Run Rfbrowser To Combine Coverage Reports With Config
+    [Tags]    no-windows-support
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
     ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_2 --config ${CURDIR}/coverageConfig.js
@@ -67,14 +69,6 @@ Run Rfbrowser To Combine Coverage Reports And No Input Dir
     Should Be Equal As Integers    ${process.rc}    2
 
 Run Rfbrowser To Combine Coverage Reports And No Raw Files
-    ${folder}    ${file} =    OperatingSystem.Split Path    ${FILE}
-    ${raw} =    OperatingSystem.Join Paths    ${folder}    raw
-    ${comined} =    OperatingSystem.Join Paths    ${OUTPUT_DIR}    combined_tidii
-    ${process0} =    Run Process
-    ...    npx mcr --logging debug --inputDir ${raw}[0] --outputDir ${comined}[0] command
-    ...    shell=True
-    Log    ${process0.stdout}
-    Log    ${process0.stderr}
     Create Directory    ${OUTPUT_DIR}/no_raw_files
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process

@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Union
 
-from .constant import INSTALLATION_DIR, SHELL
+from .constant import INSTALLATION_DIR, IS_WINDOWS, SHELL
 
 
 def _find_coverage_files(input_folder: Path, logger: logging.Logger) -> Iterator:
@@ -57,6 +57,9 @@ def combine(
             raw_reports = True
         if not raw_reports:
             logger.error(f"No raw reports found from {input_folder}")
+            sys.exit(2)
+        if IS_WINDOWS:
+            logger.info("Running coverage combine on Windows is not supported")
             sys.exit(2)
         args = [
             "npx",
