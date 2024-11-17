@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Union
 
-from .constant import INSTALLATION_DIR, IS_WINDOWS, SHELL
+from .constant import INSTALLATION_DIR, SHELL
 
 
 def _find_coverage_files(input_folder: Path, logger: logging.Logger) -> Iterator:
@@ -70,8 +70,7 @@ def combine(
         ]
         if config is not None:
             args.extend(["--config", f"{config!s}"])
-        if not IS_WINDOWS:
-            args.append("command")
+        args.append("command")
         logger.info(f"Running command: {args}")
         subprocess.run(args, check=True, shell=SHELL, cwd=INSTALLATION_DIR)
         logger.info(f"Combined coverage files to {output_folder}")
