@@ -9,6 +9,7 @@ Coverage
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
     ${coverage_file} =    Stop Coverage    config_file=${CURDIR}/coverageConfig.js
+    VAR    ${FILE}    ${coverage_file}    scope=suite
     File Should Not Be Empty    ${coverage_file}
     Close Page
 
@@ -66,7 +67,12 @@ Run Rfbrowser To Combine Coverage Reports And No Input Dir
     Should Be Equal As Integers    ${process.rc}    2
 
 Run Rfbrowser To Combine Coverage Reports And No Raw Files
-    ${process0} =    Run Process    npx mcr --help    shell=True
+    ${folder}    ${file} =    OperatingSystem.Split Path    ${FILE}
+    ${raw} =    OperatingSystem.Join Paths    ${folder}    raw
+    ${comined} =    OperatingSystem.Join Paths    ${OUTPUT_DIR}    combined_tidii
+    ${process0} =    Run Process
+    ...    npx mcr --logging debug --inputDir ${raw}[0] --outputDir ${comined}[0] command
+    ...    shell=True
     Log    ${process0.stdout}
     Log    ${process0.stderr}
     Create Directory    ${OUTPUT_DIR}/no_raw_files
