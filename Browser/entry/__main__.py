@@ -305,7 +305,7 @@ def cli(ctx, silent):
     Run rfbrowser clean-node command also before uninstalling the library with pip. This makes sure that playwright
     browser binaries are not left in the disk after the pip uninstall command.
 
-    coverage command will combine the coverage reports from the page and create a single report.
+    coverage command will combine the coverage reports from the pages and create a single report.
 
     show-trace command will start the Playwright trace viewer tool.
 
@@ -664,7 +664,7 @@ def translation(
     help="Optional path to monocart-coverage-reports options file.",
 )
 def coverage(input: Path, output: Path, config: Optional[Path] = None):  # noqa: A002
-    """Combine coverage reports from the page and create a single report.
+    """Combine coverage reports from the pages and create a single report.
 
     Coverage report should have raw data available in the input folder. The
     raw is collected when Stop Coverage keyword is called with config file
