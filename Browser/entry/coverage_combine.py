@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Union
 
-from .constant import INSTALLATION_DIR, IS_WINDOWS, ROOT_FOLDER, SHELL
+from .constant import INSTALLATION_DIR, ROOT_FOLDER, SHELL
 
 
 def _find_coverage_files(input_folder: Path, logger: logging.Logger) -> Iterator:
@@ -75,9 +75,10 @@ def combine(
         #     args.extend(["--config", f"{config!s}"])
         # # This is trick to make combine to work from command line
         # args.append("dir") if IS_WINDOWS else args.append("ls")
-        args = ["node", ROOT_FOLDER / "wrapper" / "coverage_combine.js", f"{tmp_path!s}", f"{output_folder!s}"]
+        wrapper_js = ROOT_FOLDER / "wrapper" / "coverage_combine.js"
+        args = ["node", str(wrapper_js), str(tmp_path), str(output_folder)]
         if config is not None:
-            args.append(f"{config!s}")
+            args.append(str(config))
         logger.info(f"Running command: {args}")
         subprocess.run(args, check=True, shell=SHELL, cwd=INSTALLATION_DIR)
         logger.info(f"Combined coverage files to {output_folder}")
