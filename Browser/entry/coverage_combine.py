@@ -73,7 +73,8 @@ def combine(
         ]
         if config is not None:
             args.extend(["--config", f"{config!s}"])
-        args.append("command")
+        # This is trick to make combine to work from command line
+        args.append("dir") if IS_WINDOWS else args.append("ls")
         logger.info(f"Running command: {args}")
         subprocess.run(args, check=True, shell=SHELL, cwd=INSTALLATION_DIR)
         logger.info(f"Combined coverage files to {output_folder}")
