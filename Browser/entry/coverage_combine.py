@@ -58,9 +58,9 @@ def combine(
         if not raw_reports:
             logger.error(f"No raw reports found from {input_folder}")
             sys.exit(2)
-        if IS_WINDOWS:
-            logger.info("Running coverage combine on Windows is not supported")
-            sys.exit(2)
+        # if IS_WINDOWS:
+        #     logger.info("Running coverage combine on Windows is not supported")
+        #     sys.exit(2)
         args = [
             "npx",
             "mcr",
