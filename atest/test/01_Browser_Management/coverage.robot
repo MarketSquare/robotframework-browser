@@ -29,7 +29,6 @@ Coverage With Options
     Get Text    .mcr-title    equal    Browser library Coverage Report
 
 Run Rfbrowser To Combine Coverage Reports
-    # [Tags]    no-windows-support
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
     ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_1
@@ -45,7 +44,6 @@ Run Rfbrowser To Combine Coverage Reports
     Close Page
 
 Run Rfbrowser To Combine Coverage Reports With Config
-    # [Tags]    no-windows-support
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
     ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_2 --config ${CURDIR}/coverageConfig.js

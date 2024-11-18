@@ -58,23 +58,6 @@ def combine(
         if not raw_reports:
             logger.error(f"No raw reports found from {input_folder}")
             sys.exit(2)
-        # if IS_WINDOWS:
-        #     logger.info("Running coverage combine on Windows is not supported")
-        #     sys.exit(2)
-        # args = [
-        #     "npx",
-        #     "mcr",
-        #     "--logging",
-        #     "debug",
-        #     "--inputDir",
-        #     f"{tmp_path!s}",
-        #     "--outputDir",
-        #     f"{output_folder!s}",
-        # ]
-        # if config is not None:
-        #     args.extend(["--config", f"{config!s}"])
-        # # This is trick to make combine to work from command line
-        # args.append("dir") if IS_WINDOWS else args.append("ls")
         wrapper_js = ROOT_FOLDER / "wrapper" / "coverage_combine.js"
         args = ["node", str(wrapper_js), str(tmp_path), str(output_folder)]
         if config is not None:

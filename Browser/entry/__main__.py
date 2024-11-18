@@ -694,9 +694,6 @@ def coverage(input: Path, output: Path, config: Optional[Path] = None):  # noqa:
     The config argument is optional and can be used to provide a path to a
     monocart-coverage-reports options file. For more details see:
     https://www.npmjs.com/package/monocart-coverage-reports#config-file
-
-    Currently this command is only supported on Linux and MacOS. Windows
-    is not supported.
     """
     combine(input, output, config, logger)
 
