@@ -216,6 +216,7 @@ def node_build(c):
     c.run("npm run build")
     shutil.rmtree(wrapper_dir / "static", ignore_errors=True)
     shutil.copytree(node_dir / "playwright-wrapper" / "static", wrapper_dir / "static")
+    shutil.copy(PYTHON_SRC_DIR / "entry" / "coverage_combine.js", wrapper_dir)
 
 
 @task

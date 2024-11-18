@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Union
 
-from .constant import INSTALLATION_DIR, IS_WINDOWS, SHELL
+from .constant import INSTALLATION_DIR, IS_WINDOWS, ROOT_FOLDER, SHELL
 
 
 def _find_coverage_files(input_folder: Path, logger: logging.Logger) -> Iterator:
@@ -61,20 +61,23 @@ def combine(
         # if IS_WINDOWS:
         #     logger.info("Running coverage combine on Windows is not supported")
         #     sys.exit(2)
-        args = [
-            "npx",
-            "mcr",
-            "--logging",
-            "debug",
-            "--inputDir",
-            f"{tmp_path!s}",
-            "--outputDir",
-            f"{output_folder!s}",
-        ]
+        # args = [
+        #     "npx",
+        #     "mcr",
+        #     "--logging",
+        #     "debug",
+        #     "--inputDir",
+        #     f"{tmp_path!s}",
+        #     "--outputDir",
+        #     f"{output_folder!s}",
+        # ]
+        # if config is not None:
+        #     args.extend(["--config", f"{config!s}"])
+        # # This is trick to make combine to work from command line
+        # args.append("dir") if IS_WINDOWS else args.append("ls")
+        args = ["node", ROOT_FOLDER / "wrapper" / "coverage_combine.js", f"{tmp_path!s}", f"{output_folder!s}"]
         if config is not None:
-            args.extend(["--config", f"{config!s}"])
-        # This is trick to make combine to work from command line
-        args.append("dir") if IS_WINDOWS else args.append("ls")
+            args.append(f"{config!s}")
         logger.info(f"Running command: {args}")
         subprocess.run(args, check=True, shell=SHELL, cwd=INSTALLATION_DIR)
         logger.info(f"Combined coverage files to {output_folder}")
