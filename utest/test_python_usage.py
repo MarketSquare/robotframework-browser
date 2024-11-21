@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+import time
 from unittest.mock import Mock
 
 import pytest
@@ -20,6 +21,29 @@ def application_server():
     process = subprocess.Popen(
         ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
     )
+    
+    # Wait for server to bind to port
+    import socket
+    start_time = time.time()
+    while time.time() - start_time < 10:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            result = sock.connect_ex(('localhost', 7272))
+            if result == 0:
+                sock.close()
+                break
+        except:
+            pass
+        finally:
+            sock.close()
+        time.sleep(0.1)
+    else:
+        process.terminate()
+        raise RuntimeError("Server failed to start within timeout")
+    
+    # Give the server a moment to initialize after binding
+    time.sleep(0.5)
+    
     yield
     process.terminate()
 
