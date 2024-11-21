@@ -1151,7 +1151,14 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
-    def _start_keyword(self, _name, attrs):
+    def _start_keyword(self, name, attrs):
+        source = Path(attrs["source"])
+        if source.is_dir():
+            source = source / "__init__.robot"
+            if not source.exists():
+                source = None
+        kw_call = f"{name}  {'  '.join(attrs['args'])}" if attrs["args"] else name
+        self._playwright_state.open_trace_group(kw_call, source, line=attrs["lineno"])
         if not (
             self.show_keyword_call_banner is False
             or (self.show_keyword_call_banner is None and not self.presenter_mode)
@@ -1194,6 +1201,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return tags
 
     def _end_keyword(self, _name, attrs):
+        self._playwright_state.close_trace_group()
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
             self._set_logging(True)
 

@@ -1567,3 +1567,34 @@ class PlaywrightState(LibraryComponent):
                 Request().DownloadID(id=get_download_id(download))
             )
             logger.info(response.log)
+
+    def open_trace_group(self, name: str, file: Optional[Path] = None, line: int = 0, column: int = 0):
+        """Opens the trace group in the trace viewer.
+
+        | =Arguments= | =Description= |
+        | name        | Name of the trace group. |
+        | file        | Path to the file. |
+        | line        | Line number. |
+        | column      | Column number. |
+
+        [https://forum.robotframework.org/t//6479|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.OpenTraceGroup(
+                Request().TraceGroup(
+                    name=name, file=str(file or ""), line=line, column=column
+                )
+            )
+            # logger.info(response.log)
+
+    def close_trace_group(self):
+        """Closes the trace group in the trace viewer.
+
+        | =Arguments= | =Description= |
+        | name        | Name of the trace group. |
+
+        [https://forum.robotframework.org/t//6480|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.CloseTraceGroup(Request().Empty())
+            # logger.info(response.log)

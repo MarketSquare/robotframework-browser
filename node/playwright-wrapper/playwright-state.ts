@@ -908,6 +908,27 @@ export async function connectToBrowser(
     return stringResponse(browserState.id, 'Successfully connected to browser');
 }
 
+export async function openTraceGroup(
+    request: Request.TraceGroup,
+    openBrowsers: PlaywrightState,
+): Promise<Response.Empty> {
+    const tracing = openBrowsers?.getActiveContext()?.tracing;
+    const name = request.getName();
+    const file = request.getFile();
+    const line = request.getLine();
+    const column = request.getColumn();
+    tracing?.group(name, {
+        location: { file, line, column },
+    });
+    return emptyWithLog('Opened trace group');
+}
+
+export async function closeTraceGroup(openBrowsers: PlaywrightState): Promise<Response.Empty> {
+    const tracing = openBrowsers?.getActiveContext()?.tracing;
+    tracing?.groupEnd();
+    return emptyWithLog('Closed trace group');
+}
+
 async function _switchPage(id: Uuid, browserState: BrowserState) {
     const context = browserState.context?.c;
     if (!context) throw new Error('Tried to switch page, no open context');
