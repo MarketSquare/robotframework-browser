@@ -73,6 +73,7 @@ from .utils import (
 from .utils.data_types import (
     DelayedKeyword,
     HighLightElement,
+    KeywordCallStackEntry,
     LambdaFunction,
     RegExp,
     SelectionType,
@@ -896,6 +897,7 @@ class Browser(DynamicCore):
         self._current_loglevel: Optional[str] = None
         self.is_test_case_running = False
         self.auto_closing_default_run_before_unload: bool = False
+        self._keyword_stack: list[KeywordCallStackEntry] = []
 
         translation_file = self._get_translation(language)
         DynamicCore.__init__(self, libraries, translation_file)
@@ -1158,12 +1160,17 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             source = source / "__init__.robot"
             if not source.exists():
                 source = None
-        kw_call = (
-            f"{name}    {'    '.join(attrs['args'])}"  # noqa: RUF001
-            if attrs["args"]
-            else name
-        )
-        self._playwright_state.open_trace_group(kw_call, source, line=attrs["lineno"])
+        kw_call_stack_entry = {
+            "name": (
+                f"{name}    {'    '.join(attrs['args'])}"  # noqa: RUF001
+                if attrs["args"]
+                else name
+            ),
+            "file": source,
+            "line": attrs["lineno"],
+        }
+        self._keyword_stack.append(kw_call_stack_entry)
+        self._playwright_state.open_trace_group(**kw_call_stack_entry)
         if not (
             self.show_keyword_call_banner is False
             or (self.show_keyword_call_banner is None and not self.presenter_mode)
@@ -1206,6 +1213,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return tags
 
     def _end_keyword(self, _name, attrs):
+        if self._keyword_stack:
+            self._keyword_stack.pop()
         self._playwright_state.close_trace_group()
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
             self._set_logging(True)

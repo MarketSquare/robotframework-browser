@@ -689,6 +689,10 @@ export async function closeContext(openBrowsers: PlaywrightState): Promise<Respo
     }
     await openBrowsers.getActiveContext()?.close();
     activeBrowser.popContext();
+    // Closing Persistent Context if Context is closed.
+    if (activeBrowser.contextStack.length === 0 && activeBrowser.browser === null) {
+        closeBrowser(openBrowsers);
+    }
     return emptyWithLog('Successfully closed Context');
 }
 
@@ -920,10 +924,13 @@ export async function openTraceGroup(
     const file = request.getFile();
     const line = request.getLine();
     const column = request.getColumn();
+    const contextId = request.getContextid();
     openBrowsers?.browserStack.forEach((browserState) =>
-        browserState.contextStack.forEach((indexedContext) =>
-            indexedContext.c.tracing?.group(name, { location: { file, line, column } }),
-        ),
+        browserState.contextStack.forEach((indexedContext) => {
+            if (!contextId || indexedContext.id === contextId) {
+                indexedContext.c.tracing?.group(name, { location: { file, line, column } });
+            }
+        }),
     );
     return emptyWithLog('Opened trace group');
 }

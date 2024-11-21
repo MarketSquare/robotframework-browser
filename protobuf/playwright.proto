@@ -46,6 +46,7 @@ message Request {
     string file = 2;
     int32 line = 3;
     int32 column = 4;
+    string contextId = 5;
   }
 
   message Label {

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from pathlib import Path
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
@@ -95,6 +96,14 @@ class NotSet(Enum):
     """
 
     not_set = "not_set"
+
+
+class KeywordCallStackEntry(TypedDict):
+    """Information about the keyword call stack."""
+
+    name: str
+    file: Path
+    line: int
 
 
 class SelectOptions(TypedDict):
@@ -617,15 +626,15 @@ class LambdaFunction:
 FormatterKeywords = Enum(
     "FormatterKeywords",
     {
-        "Get Url": auto(),
-        "Get Page Source": auto(),
-        "Get Title": auto(),
-        "Get Text": auto(),
-        "Get Property": auto(),
         "Get Attribute": auto(),
+        "Get Browser Catalog": auto(),
+        "Get Page Source": auto(),
+        "Get Property": auto(),
         "Get Select Options": auto(),
         "Get Style": auto(),
-        "Get Browser Catalog": auto(),
+        "Get Text": auto(),
+        "Get Title": auto(),
+        "Get Url": auto(),
         "LocalStorage Get Item": auto(),
         "SessionStorage Get Item": auto(),
     },
@@ -776,11 +785,11 @@ class RequestMethod(Enum):
     """Enum that defines the request type."""
 
     HEAD = auto()
+    DELETE = auto()
     GET = auto()
+    PATCH = auto()
     POST = auto()
     PUT = auto()
-    PATCH = auto()
-    DELETE = auto()
 
 
 class MouseButtonAction(Enum):
@@ -887,28 +896,28 @@ ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
 Permission = Enum(
     "Permission",
     {
-        "geolocation": "geolocation",
-        "midi": "midi",
-        "midi_sysex": "midi-sysex",
-        "midi-sysex": "midi-sysex",
-        "notifications": "notifications",
-        "camera": "camera",
-        "microphone": "microphone",
-        "background_sync": "background-sync",
-        "background-sync": "background-sync",
-        "ambient_light_sensor": "ambient-light-sensor",
-        "ambient-light-sensor": "ambient-light-sensor",
         "accelerometer": "accelerometer",
+        "accessibility-events": "accessibility-events",
+        "accessibility_events": "accessibility-events",
+        "ambient-light-sensor": "ambient-light-sensor",
+        "ambient_light_sensor": "ambient-light-sensor",
+        "background-sync": "background-sync",
+        "background_sync": "background-sync",
+        "camera": "camera",
+        "clipboard-read": "clipboard-read",
+        "clipboard_read": "clipboard-read",
+        "clipboard-write": "clipboard-write",
+        "clipboard_write": "clipboard-write",
+        "geolocation": "geolocation",
         "gyroscope": "gyroscope",
         "magnetometer": "magnetometer",
-        "accessibility_events": "accessibility-events",
-        "accessibility-events": "accessibility-events",
-        "clipboard_read": "clipboard-read",
-        "clipboard-read": "clipboard-read",
-        "clipboard_write": "clipboard-write",
-        "clipboard-write": "clipboard-write",
-        "payment_handler": "payment-handler",
+        "midi": "midi",
+        "midi-sysex": "midi-sysex",
+        "midi_sysex": "midi-sysex",
+        "microphone": "microphone",
+        "notifications": "notifications",
         "payment-handler": "payment-handler",
+        "payment_handler": "payment-handler",
     },
 )
 Permission.__doc__ = """Enum that defines the permission to grant to a context.

@@ -194,8 +194,9 @@ class PlaywrightState(LibraryComponent):
             )
             if active_browser["id"] != browser_instance["id"]:
                 self.switch_browser(browser_instance["id"])
-            contexts = self._get_context(context, browser_instance["contexts"])
-            self._close_context(contexts)
+            with suppress(Exception):
+                contexts = self._get_context(context, browser_instance["contexts"])
+                self._close_context(contexts)
 
     def _close_context(self, contexts):
         with self.playwright.grpc_channel() as stub:
@@ -215,7 +216,7 @@ class PlaywrightState(LibraryComponent):
             except StopIteration:
                 logger.info("No open context found.")
                 return []
-        return [find_by_id(context, contexts)]
+        return [find_by_id(context, contexts, log_error=False)]
 
     def _get_browser_ids(self, browser) -> list:
         catalog = self._get_browser_catalog(include_page_details=False)
@@ -237,9 +238,9 @@ class PlaywrightState(LibraryComponent):
             current_ctx = self.switch_context("CURRENT")
             if current_ctx == "NO CONTEXT OPEN":
                 return []
-            contexts = [find_by_id(current_ctx, contexts)]
+            contexts = [find_by_id(current_ctx, contexts, log_error=False)]
         elif context_selection != SelectionType.ALL:
-            contexts = [find_by_id(str(context_selection), contexts)]
+            contexts = [find_by_id(str(context_selection), contexts, log_error=False)]
         return contexts
 
     @keyword(tags=("Setter", "BrowserControl"))
@@ -283,7 +284,10 @@ class PlaywrightState(LibraryComponent):
             for browser_id in browser_ids:
                 self.switch_browser(browser_id["id"])
                 contexts_ids = browser_id["contexts"]
-                contexts_ids = self._get_context_id(context, contexts_ids)
+                try:
+                    contexts_ids = self._get_context_id(context, contexts_ids)
+                except StopIteration:
+                    continue
                 for context_id in contexts_ids:
                     self.switch_context(context_id["id"])
                     if page == SelectionType.ALL:
@@ -730,8 +734,9 @@ class PlaywrightState(LibraryComponent):
         options = json.dumps(params, default=str)
 
         with self.playwright.grpc_channel() as stub:
-            catalog_json = stub.GetBrowserCatalog(Request().Empty())
-            catalog = json.loads(catalog_json.json)
+            # catalog_json = stub.GetBrowserCatalog(Request().Empty())
+            # catalog = json.loads(catalog_json.json)
+            catalog = self._get_browser_catalog(include_page_details=False)
             previously_active_browser_id = None
             existing_browser_ids = []
             for browser_info in catalog:
@@ -746,6 +751,17 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
+            if trace_file:
+                for keyword_call in self.keyword_stack:
+                    stub.OpenTraceGroup(
+                        Request().TraceGroup(
+                            name=keyword_call["name"],
+                            file=str(keyword_call["file"]),
+                            line=keyword_call["line"],
+                            column=0,
+                            contextId=response.id,
+                        )
+                    )
 
             context_options = self._mask_credentials(
                 json.loads(response.contextOptions)
@@ -765,6 +781,7 @@ class PlaywrightState(LibraryComponent):
                     )
                 except Exception as e:
                     if browser_id in existing_browser_ids:
+                        # with suppress(Exception):
                         self.close_context()
                         self.switch_browser(previously_active_browser_id)
                         logger.debug(
@@ -819,13 +836,25 @@ class PlaywrightState(LibraryComponent):
     # Only to ease unit test mocking.
     def _new_context(self, options: str, trace_file: Union[Path, str]):
         with self.playwright.grpc_channel() as stub:
-            return stub.NewContext(
+            context = stub.NewContext(
                 Request().Context(
                     rawOptions=options,
                     defaultTimeout=int(self.timeout),
                     traceFile=str(trace_file),
                 )
             )
+            if trace_file:
+                for keyword_call in self.keyword_stack:
+                    stub.OpenTraceGroup(
+                        Request().TraceGroup(
+                            name=keyword_call["name"],
+                            file=str(keyword_call["file"]),
+                            line=keyword_call["line"],
+                            column=0,
+                            contextId=context.id,
+                        )
+                    )
+        return context
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
@@ -1604,7 +1633,7 @@ class PlaywrightState(LibraryComponent):
         with suppress(Exception), self.playwright.grpc_channel() as stub:
             stub.OpenTraceGroup(
                 Request().TraceGroup(
-                    name=name, file=str(file or ""), line=line, column=column
+                    name=name, file=str(file or ""), line=line, column=column, contextId=""
                 )
             )
 
