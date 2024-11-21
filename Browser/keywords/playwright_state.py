@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from contextlib import suppress
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -184,17 +185,21 @@ class PlaywrightState(LibraryComponent):
         """
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
-        for browser_instance in self._get_browser_ids(browser):
+        for browser_instance in reversed(self._get_browser_ids(browser)):
             if browser_instance["id"] == "NO BROWSER OPEN":
                 logger.info("No browsers open. can not closing context.")
                 return
-            self.switch_browser(browser_instance["id"])
+            active_browser = self._get_active_browser_item(
+                self._get_browser_catalog(include_page_details=False)
+            )
+            if active_browser["id"] != browser_instance["id"]:
+                self.switch_browser(browser_instance["id"])
             contexts = self._get_context(context, browser_instance["contexts"])
             self._close_context(contexts)
 
     def _close_context(self, contexts):
         with self.playwright.grpc_channel() as stub:
-            for context in contexts:
+            for context in reversed(contexts):
                 self.context_cache.remove(context["id"])
                 self.switch_context(context["id"])
                 response = stub.CloseContext(Request().Empty())
@@ -213,7 +218,7 @@ class PlaywrightState(LibraryComponent):
         return [find_by_id(context, contexts)]
 
     def _get_browser_ids(self, browser) -> list:
-        catalog = self.get_browser_catalog()
+        catalog = self._get_browser_catalog(include_page_details=False)
         if browser == SelectionType.ALL:
             browser_ids = [browser_instance["id"] for browser_instance in catalog]
         elif browser == SelectionType.CURRENT:
@@ -1014,19 +1019,25 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4259|Comment >>]
         """
+
+        catalog = self._get_browser_catalog()
+        logger.debug(json.dumps(catalog, indent=2))
+        formatter = self.get_assertion_formatter("Get Browser Catalog")
+        return verify_assertion(
+            catalog,
+            assertion_operator,
+            assertion_expected,
+            "Browser Catalog",
+            message,
+            formatter,
+        )
+
+    def _get_browser_catalog(self, include_page_details: bool = True) -> list:
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetBrowserCatalog(Request().Empty())
-            parsed = json.loads(response.json)
-            logger.debug(json.dumps(parsed, indent=2))
-            formatter = self.get_assertion_formatter("Get Browser Catalog")
-            return verify_assertion(
-                parsed,
-                assertion_operator,
-                assertion_expected,
-                "Browser Catalog",
-                message,
-                formatter,
+            response = stub.GetBrowserCatalog(
+                Request().Bool(value=include_page_details)
             )
+            return json.loads(response.json)
 
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     def get_console_log(
@@ -1327,7 +1338,7 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     def _get_page_parent_ids(self, page_id: str) -> tuple[str, str]:
-        browser_catalog = self.get_browser_catalog()
+        browser_catalog = self._get_browser_catalog(include_page_details=False)
         for browser in browser_catalog:
             for context in browser["contexts"]:
                 for page in context["pages"]:
@@ -1336,7 +1347,7 @@ class PlaywrightState(LibraryComponent):
         raise ValueError(f"No page with requested id '{page_id}' found.")
 
     def _get_context_parent_id(self, context_id: str) -> str:
-        browser_catalog = self.get_browser_catalog()
+        browser_catalog = self._get_browser_catalog(include_page_details=False)
         for browser in browser_catalog:
             for context in browser["contexts"]:
                 if context["id"] == context_id:
@@ -1361,11 +1372,16 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4260|Comment >>]
         """
         if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            browser_item = self._get_active_browser_item(
+                self._get_browser_catalog(include_page_details=False)
+            )
             if "id" in browser_item:
                 return [browser_item["id"]]
         else:
-            return [browser["id"] for browser in self.get_browser_catalog()]
+            return [
+                browser["id"]
+                for browser in self._get_browser_catalog(include_page_details=False)
+            ]
         return []
 
     @keyword(tags=("Getter", "BrowserControl"))
@@ -1389,7 +1405,9 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4264|Comment >>]
         """
         if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            browser_item = self._get_active_browser_item(
+                self._get_browser_catalog(include_page_details=False)
+            )
             if context == SelectionType.CURRENT:
                 if "activeContext" in browser_item:
                     return [browser_item["activeContext"]]
@@ -1397,13 +1415,13 @@ class PlaywrightState(LibraryComponent):
                 return [context["id"] for context in browser_item["contexts"]]
         elif context == SelectionType.CURRENT:
             context_ids = []
-            for browser_item in self.get_browser_catalog():
+            for browser_item in self._get_browser_catalog(include_page_details=False):
                 if "activeContext" in browser_item:
                     context_ids.append(browser_item["activeContext"])
             return context_ids
         else:
             context_ids = []
-            for browser_item in self.get_browser_catalog():
+            for browser_item in self._get_browser_catalog(include_page_details=False):
                 for context_item in browser_item["contexts"]:
                     context_ids.append(context_item["id"])
             return context_ids
@@ -1442,7 +1460,9 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4274|Comment >>]
         """
         if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            browser_item = self._get_active_browser_item(
+                self._get_browser_catalog(include_page_details=False)
+            )
             if "contexts" in browser_item:
                 if context == SelectionType.CURRENT:
                     return self._get_page_ids_from_context_list(
@@ -1453,7 +1473,7 @@ class PlaywrightState(LibraryComponent):
                 )
         else:
             context_list = []
-            for browser_item in self.get_browser_catalog():
+            for browser_item in self._get_browser_catalog(include_page_details=False):
                 if "contexts" in browser_item:
                     if context == SelectionType.CURRENT:
                         context_list.extend(self._get_active_context_item(browser_item))
@@ -1568,7 +1588,9 @@ class PlaywrightState(LibraryComponent):
             )
             logger.info(response.log)
 
-    def open_trace_group(self, name: str, file: Optional[Path] = None, line: int = 0, column: int = 0):
+    def open_trace_group(
+        self, name: str, file: Optional[Path] = None, line: int = 0, column: int = 0
+    ):
         """Opens the trace group in the trace viewer.
 
         | =Arguments= | =Description= |
@@ -1579,13 +1601,12 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//6479|Comment >>]
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.OpenTraceGroup(
+        with suppress(Exception), self.playwright.grpc_channel() as stub:
+            stub.OpenTraceGroup(
                 Request().TraceGroup(
                     name=name, file=str(file or ""), line=line, column=column
                 )
             )
-            # logger.info(response.log)
 
     def close_trace_group(self):
         """Closes the trace group in the trace viewer.
@@ -1595,6 +1616,5 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//6480|Comment >>]
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.CloseTraceGroup(Request().Empty())
-            # logger.info(response.log)
+        with suppress(Exception), self.playwright.grpc_channel() as stub:
+            stub.CloseTraceGroup(Request().Empty())

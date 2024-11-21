@@ -583,7 +583,7 @@ service  Playwright {
   rpc CloseTraceGroup(Request.Empty) returns (Response.Empty);
   rpc GetConsoleLog(Request.Bool) returns (Response.Json);
   rpc GetErrorMessages(Request.Bool) returns (Response.Json);
-  rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
+  rpc GetBrowserCatalog(Request.Bool) returns (Response.Json);
   rpc GetDownloadState(Request.DownloadID) returns (Response.Json);
   rpc CancelDownload(Request.DownloadID) returns (Response.Empty);
   rpc SaveStorageState(Request.FilePath) returns (Response.Empty);

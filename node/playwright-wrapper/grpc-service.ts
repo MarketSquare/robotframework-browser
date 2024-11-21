@@ -156,7 +156,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     closePage = this.wrapping(playwrightState.closePage);
     openTraceGroup = this.wrapping(playwrightState.openTraceGroup);
     closeTraceGroup = this.wrappingState(playwrightState.closeTraceGroup);
-    getBrowserCatalog = this.wrappingState(playwrightState.getBrowserCatalog);
+    getBrowserCatalog = this.wrapping(playwrightState.getBrowserCatalog);
     getConsoleLog = this.wrapping(playwrightState.getConsoleLog);
     getErrorMessages = this.wrapping(playwrightState.getErrorMessages);
 

@@ -75,6 +75,7 @@ from .utils.data_types import (
     HighLightElement,
     LambdaFunction,
     RegExp,
+    SelectionType,
     SupportedBrowsers,
 )
 from .version import __version__ as VERSION
@@ -1157,7 +1158,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             source = source / "__init__.robot"
             if not source.exists():
                 source = None
-        kw_call = f"{name}  {'  '.join(attrs['args'])}" if attrs["args"] else name
+        kw_call = (
+            f"{name}    {'    '.join(attrs['args'])}"  # noqa: RUF001
+            if attrs["args"]
+            else name
+        )
         self._playwright_state.open_trace_group(kw_call, source, line=attrs["lineno"])
         if not (
             self.show_keyword_call_banner is False
@@ -1221,7 +1226,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 return
             try:
                 catalog_before_test = self._execution_stack.pop()
+                self._playwright_state.open_trace_group(
+                    f"Auto Closing    Test: {name}",  # noqa: RUF001
+                    file=attrs.get("source"),
+                    line=attrs.get("lineno", 0),
+                )
                 self._prune_execution_stack(catalog_before_test)
+                self._playwright_state.close_trace_group()
             except AssertionError as e:
                 logger.debug(f"Test Case: {name}, End Test: {e}")
             except ConnectionError as e:
@@ -1235,8 +1246,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.debug("Browser._end_suite empty execution stack")
                 return
             try:
+                self._playwright_state.open_trace_group(
+                    f"Auto Closing    Suite: {name}",  # noqa: RUF001
+                    file=attrs.get("source"),
+                )
                 catalog_before_suite = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_suite)
+                self._playwright_state.close_trace_group()
             except AssertionError as e:
                 logger.debug(f"Test Suite: {name}, End Suite: {e}")
             except ConnectionError as e:
@@ -1256,8 +1272,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
         new_ctx_ids = [c for c in ctx_after_ids if c not in ctx_before_ids]
         for ctx_id in new_ctx_ids:
-            self._playwright_state.switch_context(ctx_id)
-            self._playwright_state.close_context()
+            self._playwright_state.open_trace_group(
+                f"Auto Closing Context    {ctx_id}", None  # noqa: RUF001
+            )
+            self._playwright_state.close_context(ctx_id, SelectionType.ALL)
+            self._playwright_state.close_trace_group()
         pages_before = [
             (p["id"], c["id"])
             for b in catalog_before
@@ -1273,11 +1292,15 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         ]
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
+            self._playwright_state.open_trace_group(
+                f"Auto Closing Page    {page_id}", None  # noqa: RUF001
+            )
             self._playwright_state.close_page(
                 page_id,
                 ctx_id,
                 runBeforeUnload=self.auto_closing_default_run_before_unload,
             )
+            self._playwright_state.close_trace_group()
 
     def _alter_keyword_error(self, name: str, args: tuple) -> tuple:
         if not (args and isinstance(args, tuple)):

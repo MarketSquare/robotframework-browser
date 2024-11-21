@@ -296,7 +296,7 @@ export class PlaywrightState {
         this.browserServer = [];
     }
     extensions: Record<string, (...args: unknown[]) => unknown>[];
-    private browserStack: BrowserState[];
+    public browserStack: BrowserState[];
     private browserServer: BrowserServer[];
     get activeBrowser() {
         return lastItem(this.browserStack);
@@ -338,7 +338,7 @@ export class PlaywrightState {
         for (const browser of browsers) {
             try {
                 await browser.close();
-            } catch (e) {} // eslint-disable-line
+            } catch (e) { } // eslint-disable-line
         }
         this.browserStack = [];
     }
@@ -348,7 +348,7 @@ export class PlaywrightState {
         for (const server of servers) {
             try {
                 await server.close();
-            } catch (e) {} // eslint-disable-line
+            } catch (e) { } // eslint-disable-line
         }
         this.browserServer = [];
     }
@@ -365,18 +365,22 @@ export class PlaywrightState {
         await selectedServer.close();
     }
 
-    public async getCatalog() {
+    public async getCatalog(includePageDetails: boolean) {
         const pageToContents = async (page: IndexedPage) => {
             let title = null;
-            const titlePromise = page.p.title();
-            const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 350));
-            try {
-                title = await Promise.race([titlePromise, titleTimeout]);
-            } catch (e) {} // eslint-disable-line
+            let url = null;
+            if (includePageDetails) {
+                url = page.p.url();
+                const titlePromise = page.p.title();
+                const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 350));
+                try {
+                    title = await Promise.race([titlePromise, titleTimeout]);
+                } catch (e) { } // eslint-disable-line
+            }
             return {
                 type: 'page',
                 title,
-                url: page.p.url(),
+                url,
                 id: page.id,
                 timestamp: page.timestamp,
             };
@@ -912,20 +916,22 @@ export async function openTraceGroup(
     request: Request.TraceGroup,
     openBrowsers: PlaywrightState,
 ): Promise<Response.Empty> {
-    const tracing = openBrowsers?.getActiveContext()?.tracing;
     const name = request.getName();
     const file = request.getFile();
     const line = request.getLine();
     const column = request.getColumn();
-    tracing?.group(name, {
-        location: { file, line, column },
-    });
+    openBrowsers?.browserStack.forEach((browserState) =>
+        browserState.contextStack.forEach((indexedContext) =>
+            indexedContext.c.tracing?.group(name, { location: { file, line, column } }),
+        ),
+    );
     return emptyWithLog('Opened trace group');
 }
 
 export async function closeTraceGroup(openBrowsers: PlaywrightState): Promise<Response.Empty> {
-    const tracing = openBrowsers?.getActiveContext()?.tracing;
-    tracing?.groupEnd();
+    openBrowsers?.browserStack.forEach((browserState) =>
+        browserState.contextStack.forEach((indexedContext) => indexedContext.c.tracing?.groupEnd()),
+    );
     return emptyWithLog('Closed trace group');
 }
 
@@ -1041,8 +1047,9 @@ export async function switchBrowser(request: Request.Index, openBrowsers: Playwr
     );
 }
 
-export async function getBrowserCatalog(openBrowsers: PlaywrightState): Promise<Response.Json> {
-    return jsonResponse(JSON.stringify(await openBrowsers.getCatalog()), 'Catalog received');
+export async function getBrowserCatalog(request: Request.Bool, openBrowsers: PlaywrightState): Promise<Response.Json> {
+    const includePageDetails = request.getValue();
+    return jsonResponse(JSON.stringify(await openBrowsers.getCatalog(includePageDetails)), 'Catalog received');
 }
 
 export async function getConsoleLog(request: Request.Bool, openBrowsers: PlaywrightState): Promise<Response.Json> {
