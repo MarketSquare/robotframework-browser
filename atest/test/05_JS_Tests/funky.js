@@ -50,6 +50,19 @@ async function moreDefaults(bTrue = true,
     };
 }
 
+async function contextAndBrowserDemo(message, context, browser, logger) {
+    logger(`Message: ${message}`);
+    logger(`Browser: ${browser}`);
+    logger(`Context: ${context}`)
+    const pages = context.pages();
+    logger(`Number of pages in context: ${pages.length}`);
+    return {
+        message,
+        browserType: browser?.browserType().name() ?? "NO BROWSER",
+        pageCount: pages.length
+    };
+}
+
 exports.__esModule = true;
 exports.myFunkyKeyword = myFunkyKeyword;
 exports.createRemoteBrowser = createRemoteBrowser;
@@ -58,3 +71,4 @@ exports.crashKeyword = crashKeyword;
 exports.withDefaultValue = withDefaultValue;
 exports.moreDefaults = moreDefaults;
 exports.myNewStyleFunkyKeyword = myNewStyleFunkyKeyword;
+exports.contextAndBrowserDemo = contextAndBrowserDemo;

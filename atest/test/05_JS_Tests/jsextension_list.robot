@@ -80,6 +80,19 @@ List Imports
     ${r} =    My Other Keyword    test
     Should Be Equal    ${r}    test
 
+Using Context And Browser In Custom Js Keyword
+    New Browser    chromium
+    New Context    viewport={'width': 1920, 'height': 1080}
+    New Page    ${LOGIN_URL}
+    ${result} =    Context And Browser Demo    Testing context and browser access
+    Should Be Equal    ${result}[message]    Testing context and browser access
+    Should Be Equal    ${result}[browserType]    chromium
+    Should Be Equal As Numbers    ${result}[pageCount]    ${1}
+    # Create another page to verify pageCount changes
+    New Page    ${LOGIN_URL}
+    ${result2} =    Context And Browser Demo    Checking with two pages
+    Should Be Equal As Numbers    ${result2}[pageCount]    ${2}
+
 *** Keywords ***
 Close Remote Clean
     Close Browser

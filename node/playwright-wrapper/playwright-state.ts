@@ -128,6 +128,8 @@ export async function extensionKeywordCall(
     const namedArguments = Object.fromEntries(args['arguments']);
     const apiArguments = new Map();
     apiArguments.set('page', state.getActivePage());
+    apiArguments.set('context', state.getActiveContext());
+    apiArguments.set('browser', state.getActiveBrowser()?.browser);
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse(JSON.stringify(''), msg)));
     apiArguments.set('playwright', playwright);
     const functionArguments = getArgumentNamesFromJavascriptKeyword(keyword).map(
