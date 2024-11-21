@@ -14,7 +14,6 @@ package_data = {
     "": ["*"],
     "Browser": [
         "wrapper/index.js",
-        "wrapper/coverage_combine.js",
         "wrapper/package.json",
         "wrapper/package-lock.json",
         "wrapper/static/selector-finder.js",

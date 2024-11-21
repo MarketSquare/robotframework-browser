@@ -20,7 +20,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Union
 
-from .constant import INSTALLATION_DIR, ROOT_FOLDER, SHELL
+from .constant import INSTALLATION_DIR, SHELL
 
 
 def _find_coverage_files(input_folder: Path, logger: logging.Logger) -> Iterator:
@@ -58,10 +58,19 @@ def combine(
         if not raw_reports:
             logger.error(f"No raw reports found from {input_folder}")
             sys.exit(2)
-        wrapper_js = ROOT_FOLDER / "wrapper" / "coverage_combine.js"
-        args = ["node", str(wrapper_js), str(tmp_path), str(output_folder)]
+        args = [
+            "npx",
+            "mcr",
+            "merge",
+            "-r",
+            "v8",
+            "--inputDir",
+            str(tmp_path),
+            "--outputDir",
+            str(output_folder),
+        ]
         if config is not None:
-            args.append(str(config))
+            args.extend(["--config", str(config)])
         logger.info(f"Running command: {args}")
         subprocess.run(args, check=True, shell=SHELL, cwd=INSTALLATION_DIR)
         logger.info(f"Combined coverage files to {output_folder}")
