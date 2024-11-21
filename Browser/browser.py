@@ -680,6 +680,10 @@ class Browser(DynamicCore):
 
     ``page``: [https://playwright.dev/docs/api/class-page|the playwright Page object].
 
+    ``context``: [https://playwright.dev/docs/api/class-browsercontext|the playwright BrowserContext object].
+
+    ``browser``: [https://playwright.dev/docs/api/class-browser|the playwright Browser object].
+
     ``args``: the rest of values from Robot Framework keyword call ``*args``.
 
     ``logger``: callback function that takes strings as arguments and writes them to robot log. Can be called multiple times.
@@ -1015,7 +1019,7 @@ class Browser(DynamicCore):
         arg_set_texts = []
         for item in argument_names_and_vals:
             arg_name = item[0]
-            if arg_name in ["logger", "playwright", "page"]:
+            if arg_name in ["logger", "playwright", "page", "context", "browser"]:
                 arg_set_texts.append(f'("{arg_name}", "RESERVED")')
             else:
                 arg_set_texts.append(f'("{arg_name}", {arg_name})')
@@ -1060,6 +1064,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             "logger": "RESERVED",
             "playwright": "RESERVED",
             "page": "RESERVED",
+            "context": "RESERVED",
+            "browser": "RESERVED",
         }
         _args_browser_internal = {
             "arguments": [
