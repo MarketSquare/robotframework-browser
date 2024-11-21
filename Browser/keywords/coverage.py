@@ -102,13 +102,13 @@ class Coverage(LibraryComponent):
             )
             logger.info(response.log)
         coverage_dir = Path(response.body)
-        coverage_index_html = coverage_dir.glob("*.html")
+        coverage_index_html = list(coverage_dir.glob("*.html"))
         if not coverage_index_html:
             logger.info(
                 f"No coverage report found from  {coverage_dir}. Default folder or file type "
                 "could have been changed by {config_file}, return the coverage folder."
             )
             return coverage_dir
-        file_path = next(iter(coverage_index_html))
+        file_path = coverage_index_html[0]
         logger.info(f"Coverage report saved to {file_path.as_uri()}")
         return file_path

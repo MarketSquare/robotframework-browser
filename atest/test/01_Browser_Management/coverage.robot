@@ -28,6 +28,15 @@ Coverage With Options
     New Page    ${coverage_file.as_uri()}
     Get Text    .mcr-title    equal    Browser library Coverage Report
 
+Coverage With MarkDown
+    Start Coverage
+    Go To    ${LOGIN_URL}
+    Click    id=delayed_request_big
+    ${coverage_folder} =    Stop Coverage    config_file=${CURDIR}/coverageConfigMD.js
+    ${text} =    Get File    ${coverage_folder}/coverage-summary.md
+    Should Contain    ${text}    Browser library Coverage Report MD
+    Close Page
+
 Run Rfbrowser To Combine Coverage Reports
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
@@ -46,7 +55,7 @@ Run Rfbrowser To Combine Coverage Reports
 Run Rfbrowser To Combine Coverage Reports With Config
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_2 --config ${CURDIR}/coverageConfig.js
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_2 --config ${CURDIR}/coverageConfigCombine.js
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
@@ -55,7 +64,7 @@ Run Rfbrowser To Combine Coverage Reports With Config
     Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
     ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_2/index.html
     New Page    ${uri}
-    Get Text    .mcr-title    equal    Browser library Coverage Report
+    Get Text    .mcr-title    equal    Browser library Combined Coverage Report
 
 Run Rfbrowser To Combine Coverage Reports And No Input Dir
     ${entry_cmd} =    Get Enty Command
