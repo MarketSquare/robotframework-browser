@@ -458,12 +458,12 @@ export class PlaywrightState {
     public getActivePageId = (): string | undefined => {
         return this.activeBrowser?.page?.id;
     };
-    public getCoverageType = (): string | undefined => {
+    public getCoverageOptions(): CoverageOptions | undefined {
         return this.activeBrowser?.page?.coverage;
-    };
-    public addCoverageType = (coverageType: string): void => {
+    }
+    public addCoverageOptions = (coverage: CoverageOptions): void => {
         if (this.activeBrowser?.page) {
-            this.activeBrowser.page.coverage = coverageType;
+            this.activeBrowser.page.coverage = coverage;
         }
     };
 }
@@ -515,6 +515,13 @@ export type DownloadInfo = {
     suggestedFilename: string;
 };
 
+export type CoverageOptions = {
+    type: string;
+    directory: string;
+    folderPrefix: string;
+    configFile: string;
+};
+
 export type IndexedPage = {
     p: Page;
     id: Uuid;
@@ -524,7 +531,7 @@ export type IndexedPage = {
     consoleMessages: TimedConsoleMessage[];
     consoleIndex: number;
     activeDownloads: Map<Uuid, DownloadInfo>;
-    coverage: string | undefined;
+    coverage: CoverageOptions | undefined;
 };
 
 type Uuid = string;

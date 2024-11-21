@@ -11,7 +11,16 @@ export async function startCoverage(request: Request.CoverateStart, state: Playw
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const coverageType = request.getCoveratetype();
-    state.addCoverageType(coverageType);
+    const coverageDir = request.getCoveragedir();
+    const folderPrefix = request.getFolderprefix();
+    const configFile = request.getConfigfile();
+    const coverageOptions = {
+        type: coverageType,
+        directory: coverageDir,
+        folderPrefix: folderPrefix,
+        configFile: configFile,
+    };
+    state.addCoverageOptions(coverageOptions);
     const resetOnNavigation = request.getResetonnavigation();
     const reportAnonymousScripts = request.getReportanonymousscripts();
     if (coverageType === 'js' || coverageType === 'all') {
@@ -27,10 +36,17 @@ export async function startCoverage(request: Request.CoverateStart, state: Playw
     return emptyWithLog(`Coverage started for ${coverageType}`);
 }
 
-export async function stopCoverage(request: Request.CoverageStop, state: PlaywrightState): Promise<Response.String> {
+export async function stopCoverage(request: Request.Empty, state: PlaywrightState): Promise<Response.String> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    const coverageType = state.getCoverageType();
+    const coverageOptions = state.getCoverageOptions();
+    if (coverageOptions === null) {
+        return stringResponse('', 'Coverage not started');
+    }
+    const coverageDir = coverageOptions?.directory ?? '';
+    const folderPrefix = coverageOptions?.folderPrefix ?? '';
+    const configFile = coverageOptions?.configFile ?? '';
+    const coverageType = coverageOptions?.type;
     let allCoverage: any[] = [];
     if (coverageType === 'js' || coverageType === 'all') {
         logger.info('Stopping JS coverage');
@@ -43,12 +59,9 @@ export async function stopCoverage(request: Request.CoverageStop, state: Playwri
         allCoverage = [...allCoverage, ...cssCoverage];
     }
     const pageId = state.getActivePageId();
-    const coverageDir = request.getCoveragedir();
-    const folderPrefix = request.getFolderprefix();
     let outputDir = join(coverageDir, folderPrefix + pageId);
     outputDir = normalize(outputDir);
     const mcr = new CoverageReport({ outputDir: outputDir });
-    const configFile = request.getConfigfile();
     if (configFile !== '') {
         logger.info({ 'Config file: ': configFile });
         await mcr.loadConfig(configFile);
