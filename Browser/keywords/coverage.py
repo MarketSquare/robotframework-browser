@@ -29,6 +29,7 @@ class Coverage(LibraryComponent):
         coverage_type: CoverageType = CoverageType.all,
         reportAnonymousScripts: bool = False,
         resetOnNavigation: bool = True,
+        raw: bool = False,
         config_file: Optional[PathLike] = None,
         folder_prefix: Optional[str] = None,
     ) -> str:
@@ -38,6 +39,7 @@ class Coverage(LibraryComponent):
         | ``coverage_type`` | Type of coverage to start. Default is `all`. |
         | ``reportAnonymousScripts`` | Whether to report anonymous scripts. Default is `False`. Only valid for JS coverage. |
         | ``resetOnNavigation`` | Whether to reset coverage on navigation. Default is `True`. |
+        | ``raw`` | Whether to save raw coverage data. Default is `False`. |
         | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file] |
         | ``folder_prefix`` | Optional folder prefix for the page coverage report. |
 
@@ -53,9 +55,13 @@ class Coverage(LibraryComponent):
         performed on the page. Coverage be stopped by calling `Stop Coverage` keyword
         and must be called before page is closed.
 
-        Several coverage reports can be combined after test execution by using
-        `rfbrowser coverage /path/to/basefolder/ /path/to/outputfolder/`. See more details
-        by running `rfbrowser coverage --help` command.
+        The `raw` argument saves the raw coverage data in the coverage folder. The raw data
+        is needed to combine multiple coverage reports to single report. Singel report can
+        be created with `rfbrowser coverage /path/to/basefolder/ /path/to/outputfolder/`
+        command. Pleaee note that the `raw` argument is ignored if the `config_file`
+        is defined. In this case user is responsible to also set the raw reporter
+        in the config file. To see more details about combining coverage data, run:
+        `rfbrowser coverage --help` command.
 
         Example:
         | `New Page`
@@ -76,6 +82,7 @@ class Coverage(LibraryComponent):
                     configFile=str(config_file) if config_file else "",
                     coverageDir=str(coverage_base_dir),
                     folderPrefix=folder_prefix,
+                    raw=raw,
                 )
             )
             logger.info(response.log)

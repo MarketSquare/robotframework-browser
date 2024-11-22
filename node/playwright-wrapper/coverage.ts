@@ -1,3 +1,17 @@
+// Copyright 2020-     Robot Framework Foundation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import { CoverageReport } from 'monocart-coverage-reports';
 import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
@@ -14,11 +28,13 @@ export async function startCoverage(request: Request.CoverateStart, state: Playw
     const coverageDir = request.getCoveragedir();
     const folderPrefix = request.getFolderprefix();
     const configFile = request.getConfigfile();
+    const raw = request.getRaw();
     const coverageOptions = {
         type: coverageType,
         directory: coverageDir,
         folderPrefix: folderPrefix,
         configFile: configFile,
+        raw: raw,
     };
     state.addCoverageOptions(coverageOptions);
     const resetOnNavigation = request.getResetonnavigation();
@@ -47,6 +63,7 @@ export async function stopCoverage(request: Request.Empty, state: PlaywrightStat
     const folderPrefix = coverageOptions?.folderPrefix ?? '';
     const configFile = coverageOptions?.configFile ?? '';
     const coverageType = coverageOptions?.type;
+    const raw = coverageOptions?.raw ?? false;
     let allCoverage: any[] = [];
     if (coverageType === 'js' || coverageType === 'all') {
         logger.info('Stopping JS coverage');
@@ -61,7 +78,20 @@ export async function stopCoverage(request: Request.Empty, state: PlaywrightStat
     const pageId = state.getActivePageId();
     let outputDir = join(coverageDir, folderPrefix + pageId);
     outputDir = normalize(outputDir);
-    const mcr = new CoverageReport({ outputDir: outputDir });
+    let options = {};
+    if (raw && configFile === '') {
+        logger.info('Raw and v8 coverage enabled');
+        options = {
+            outputDir: outputDir,
+            reports: [['raw'], ['v8']],
+        };
+    } else {
+        logger.info('v8 coverage disabled');
+        options = {
+            outputDir: outputDir,
+        };
+    }
+    const mcr = new CoverageReport(options);
     if (configFile !== '') {
         logger.info({ 'Config file: ': configFile });
         await mcr.loadConfig(configFile);

@@ -178,3 +178,8 @@ def dates_are_equal(date1: datetime, date2: datetime) -> bool:
 def file_as_uri(path: str) -> Path:
     """Return file as uri."""
     return Path(path).as_uri()
+
+
+def get_parent(path: str) -> Path:
+    """Return parent of the path."""
+    return Path(path).parent

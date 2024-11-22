@@ -38,6 +38,7 @@ message Request {
     string configFile = 4;
     string coverageDir = 5;
     string folderPrefix = 6;
+    bool raw = 7;
   }
 
   message Label {

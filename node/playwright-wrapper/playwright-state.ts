@@ -520,6 +520,7 @@ export type CoverageOptions = {
     directory: string;
     folderPrefix: string;
     configFile: string;
+    raw: boolean;
 };
 
 export type IndexedPage = {

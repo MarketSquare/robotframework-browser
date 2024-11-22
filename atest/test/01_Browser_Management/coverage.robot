@@ -41,6 +41,26 @@ Coverage With MarkDown
     Should Contain    ${text}    Browser library Coverage Report MD
     Close Page
 
+Coverage With Raw
+    Start Coverage    raw=True
+    Go To    ${LOGIN_URL}
+    Click    id=delayed_request_big
+    ${coverage_file} =    Stop Coverage
+    ${coverage_folder} =    Get Parent    ${coverage_file}
+    ${files} =    List Files In Directory    ${coverage_folder}/raw
+    Should Not Be Empty    ${files}
+
+Coverage With MarkDown And Raw
+    Start Coverage    config_file=${CURDIR}/coverageConfigMD.js    raw=True
+    Go To    ${LOGIN_URL}
+    Click    id=delayed_request_big
+    ${coverage_folder} =    Stop Coverage
+    ${text} =    Get File    ${coverage_folder}/coverage-summary.md
+    Should Contain    ${text}    Browser library Coverage Report MD
+    ${files} =    List Files In Directory    ${coverage_folder}/raw
+    Should Not Be Empty    ${files}
+    Close Page
+
 Run Rfbrowser To Combine Coverage Reports
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
