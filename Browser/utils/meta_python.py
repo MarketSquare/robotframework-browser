@@ -17,11 +17,10 @@ from typing import Any, TypeVar
 
 def locals_to_params(args: dict) -> dict:
     copy: dict[str, Any] = {}
-    for key in args:
+    for key, value in args.items():
         if key == "self":
             continue
-        if args[key] is not None:
-            value = args[key]
+        if value is not None:
             if isinstance(value, Enum):
                 copy[key] = value.name
             elif isinstance(value, list):

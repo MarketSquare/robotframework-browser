@@ -32,14 +32,14 @@ from .waiter import Waiter
 from .webapp_state import WebAppState
 
 __all__ = [
+    "Clock",
     "Control",
     "Cookie",
     "Coverage",
-    "Clock",
     "Devices",
-    "Getters",
     "Evaluation",
     "Formatter",
+    "Getters",
     "Interaction",
     "LocatorHandler",
     "Network",

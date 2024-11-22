@@ -735,7 +735,7 @@ class Interaction(LibraryComponent):
         """
         selector = self.presenter_mode(selector, self.strict_mode)
         matchers = ""
-        if not values or len(values) == 1 and not values[0]:
+        if not values or (len(values) == 1 and not values[0]):
             self.deselect_options(selector)
             return []
 
