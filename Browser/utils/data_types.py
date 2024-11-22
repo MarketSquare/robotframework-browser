@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from pathlib import Path
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
@@ -102,7 +101,7 @@ class KeywordCallStackEntry(TypedDict):
     """Information about the keyword call stack."""
 
     name: str
-    file: Path
+    file: str
     line: int
 
 
@@ -1372,3 +1371,17 @@ class ClientCertificate(TypedDict, total=False):
     keyPath: str
     pfxPath: str
     passphrase: str
+
+
+class TracingGroupMode(Enum):
+    """Defines in what detail level keywords are written to Playwright trace.
+
+    - ``Full`` All keyword calls are written to trace as groups even if they do not call Browser keywords.
+    - ``Browser`` Just Browser library keywords are written to the logs as groups.
+    - ``Playwright`` No additional keywords are logged, just the Playwright API calls.
+
+    """
+
+    Full = auto()
+    Browser = auto()
+    Playwright = auto()

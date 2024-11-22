@@ -20,14 +20,19 @@ from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.utils import timestr_to_secs
 
 from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger
-from ..utils.data_types import AutoClosingLevel, DelayedKeyword, HighLightElement, KeywordCallStackEntry
+from ..utils.data_types import (
+    AutoClosingLevel,
+    DelayedKeyword,
+    HighLightElement,
+    KeywordCallStackEntry,
+)
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -54,8 +59,24 @@ class LibraryComponent:
         return self.library._auto_closing_level
 
     @property
-    def keyword_stack(self) -> List[KeywordCallStackEntry]:
+    def keyword_stack(self) -> list[KeywordCallStackEntry]:
         return self.library._keyword_stack
+
+    @property
+    def tracing_contexts(self) -> list[str]:
+        return self.library._tracing_contexts
+
+    @tracing_contexts.setter
+    def tracing_contexts(self, value: list):
+        self.library._tracing_contexts = value
+
+    @property
+    def buffered_browser_catalog(self) -> list:
+        return self.library._buffered_browser_catalog
+
+    @buffered_browser_catalog.setter
+    def buffered_browser_catalog(self, value: list):
+        self.library._buffered_browser_catalog = value
 
     @property
     def keyword_call_banner_add_style(self) -> str:

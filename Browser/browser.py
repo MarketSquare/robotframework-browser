@@ -78,6 +78,7 @@ from .utils.data_types import (
     RegExp,
     SelectionType,
     SupportedBrowsers,
+    TracingGroupMode,
 )
 from .version import __version__ as VERSION
 
@@ -801,6 +802,7 @@ class Browser(DynamicCore):
         enable_presenter_mode: Union[HighLightElement, bool] = False,
         external_browser_executable: Optional[dict[SupportedBrowsers, str]] = None,
         jsextension: Union[list[str], str, None] = None,
+        language: Optional[str] = None,
         playwright_process_port: Optional[int] = None,
         plugins: Union[list[str], str, None] = None,
         retry_assertions_for: timedelta = timedelta(seconds=1),
@@ -809,7 +811,7 @@ class Browser(DynamicCore):
         show_keyword_call_banner: Optional[bool] = None,
         strict: bool = True,
         timeout: timedelta = timedelta(seconds=10),
-        language: Optional[str] = None,
+        tracing_group_mode: TracingGroupMode = TracingGroupMode.Playwright,
     ):
         """Browser library can be taken into use with optional arguments:
 
@@ -889,6 +891,7 @@ class Browser(DynamicCore):
         else:
             self._plugin_keywords = []
         self.presenter_mode: Union[HighLightElement, bool] = enable_presenter_mode
+        self.tracing_group_mode = tracing_group_mode
         self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
         self.pause_on_failure: set[str] = set()
@@ -898,6 +901,8 @@ class Browser(DynamicCore):
         self.is_test_case_running = False
         self.auto_closing_default_run_before_unload: bool = False
         self._keyword_stack: list[KeywordCallStackEntry] = []
+        self._tracing_contexts: list[str] = []
+        self._buffered_browser_catalog: list = []
 
         translation_file = self._get_translation(language)
         DynamicCore.__init__(self, libraries, translation_file)
@@ -1160,17 +1165,16 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             source = source / "__init__.robot"
             if not source.exists():
                 source = None
-        kw_call_stack_entry = {
-            "name": (
-                f"{name}    {'    '.join(attrs['args'])}"  # noqa: RUF001
-                if attrs["args"]
-                else name
-            ),
-            "file": source,
-            "line": attrs["lineno"],
-        }
+        kw_call_stack_entry = self._create_keyword_call_stack_entry(
+            name or attrs.get("value", ""),
+            attrs["args"],
+            source,
+            attrs["lineno"],
+            attrs["type"],
+        )
         self._keyword_stack.append(kw_call_stack_entry)
-        self._playwright_state.open_trace_group(**kw_call_stack_entry)
+        if self.tracing_group_mode == TracingGroupMode.Full:
+            self._playwright_state.open_trace_group(**kw_call_stack_entry)
         if not (
             self.show_keyword_call_banner is False
             or (self.show_keyword_call_banner is None and not self.presenter_mode)
@@ -1191,8 +1195,24 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             ):
                 self.screenshot_on_failure(test.name)
 
+    def _create_keyword_call_stack_entry(
+        self, name: str, args: list, source: Union[str, Path], lineno: int, typ: str
+    ) -> KeywordCallStackEntry:
+        if typ not in ["SETUP", "KEYWORD", "TEARDOWN"]:
+            args = [name] if name else []
+            name = typ
+        return {
+            "name": (
+                f"{name}    {'    '.join(args)}" if args else name  # noqa: RUF001
+            ),
+            "file": str(source),
+            "line": int(lineno),
+        }
+
     def run_keyword(self, name, args, kwargs=None):
         try:
+            if self.tracing_group_mode == TracingGroupMode.Browser:
+                self._playwright_state.open_trace_group(**(self._keyword_stack[-1]))
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except AssertionError as e:
             self.keyword_error()
@@ -1205,6 +1225,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 sys.__stdout__.flush()
                 input()
             raise e
+        finally:
+            if self.tracing_group_mode == TracingGroupMode.Browser:
+                self._playwright_state.close_trace_group()
 
     def get_keyword_tags(self, name: str) -> list:
         tags = list(DynamicCore.get_keyword_tags(self, name))
@@ -1215,7 +1238,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _end_keyword(self, _name, attrs):
         if self._keyword_stack:
             self._keyword_stack.pop()
-        self._playwright_state.close_trace_group()
+        if self.tracing_group_mode == TracingGroupMode.Full:
+            self._playwright_state.close_trace_group()
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
             self._set_logging(True)
 

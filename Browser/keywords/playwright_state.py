@@ -23,7 +23,7 @@ from uuid import uuid4
 from assertionengine import AssertionOperator, verify_assertion
 from robot.utils import get_link_path
 
-from Browser.utils.data_types import BrowserInfo
+from Browser.utils.data_types import BrowserInfo, TracingGroupMode
 from Browser.utils.misc import get_download_id
 
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
@@ -152,6 +152,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.CloseBrowser(Request.Empty())
             closed_browser_id = response.body
             self.delete_browser_id_from_arg_mapping(closed_browser_id)
+            self._update_tracing_contexts()
             self.library.pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
 
@@ -185,7 +186,7 @@ class PlaywrightState(LibraryComponent):
         """
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
-        for browser_instance in reversed(self._get_browser_ids(browser)):
+        for browser_instance in self._get_browser_ids(browser):
             if browser_instance["id"] == "NO BROWSER OPEN":
                 logger.info("No browsers open. can not closing context.")
                 return
@@ -197,10 +198,18 @@ class PlaywrightState(LibraryComponent):
             with suppress(Exception):
                 contexts = self._get_context(context, browser_instance["contexts"])
                 self._close_context(contexts)
+        self._update_tracing_contexts()
+
+    def _update_tracing_contexts(self):
+        if self.library._tracing_contexts:
+            ctx_ids = self.get_context_ids()
+            self.library._tracing_contexts = [
+                ctx_id for ctx_id in self.library._tracing_contexts if ctx_id in ctx_ids
+            ]
 
     def _close_context(self, contexts):
         with self.playwright.grpc_channel() as stub:
-            for context in reversed(contexts):
+            for context in contexts:
                 self.context_cache.remove(context["id"])
                 self.switch_context(context["id"])
                 response = stub.CloseContext(Request().Empty())
@@ -502,6 +511,7 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseBrowserServer(Request().ConnectBrowser(url=wsEndpoint))
             logger.info(response.log)
+            self._update_tracing_contexts()
 
     def _switch_to_existing_browser(
         self, reuse_existing: bool, parameter_hash: int
@@ -734,8 +744,6 @@ class PlaywrightState(LibraryComponent):
         options = json.dumps(params, default=str)
 
         with self.playwright.grpc_channel() as stub:
-            # catalog_json = stub.GetBrowserCatalog(Request().Empty())
-            # catalog = json.loads(catalog_json.json)
             catalog = self._get_browser_catalog(include_page_details=False)
             previously_active_browser_id = None
             existing_browser_ids = []
@@ -751,17 +759,7 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            if trace_file:
-                for keyword_call in self.keyword_stack:
-                    stub.OpenTraceGroup(
-                        Request().TraceGroup(
-                            name=keyword_call["name"],
-                            file=str(keyword_call["file"]),
-                            line=keyword_call["line"],
-                            column=0,
-                            contextId=response.id,
-                        )
-                    )
+            self.add_context_stack_to_trace(trace_file=trace_file, ctx_id=response.id)
 
             context_options = self._mask_credentials(
                 json.loads(response.contextOptions)
@@ -843,18 +841,17 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            if trace_file:
-                for keyword_call in self.keyword_stack:
-                    stub.OpenTraceGroup(
-                        Request().TraceGroup(
-                            name=keyword_call["name"],
-                            file=str(keyword_call["file"]),
-                            line=keyword_call["line"],
-                            column=0,
-                            contextId=context.id,
-                        )
-                    )
+            self.add_context_stack_to_trace(trace_file=trace_file, ctx_id=context.id)
         return context
+
+    def add_context_stack_to_trace(self, trace_file, ctx_id):
+        if trace_file:
+            self.library._tracing_contexts.append(ctx_id)
+            if self.library.tracing_group_mode == TracingGroupMode.Full:
+                for keyword_call in self.keyword_stack:
+                    self.open_trace_group(**keyword_call, context_id=ctx_id)
+            elif self.library.tracing_group_mode == TracingGroupMode.Browser:
+                self.open_trace_group(**(self.keyword_stack[-1]), context_id=ctx_id)
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
@@ -1066,7 +1063,8 @@ class PlaywrightState(LibraryComponent):
             response = stub.GetBrowserCatalog(
                 Request().Bool(value=include_page_details)
             )
-            return json.loads(response.json)
+            self.buffered_browser_catalog = json.loads(response.json)
+            return self.buffered_browser_catalog
 
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     def get_console_log(
@@ -1204,20 +1202,16 @@ class PlaywrightState(LibraryComponent):
 
     def _slice_messages(self, message, last):
         if isinstance(last, int):
-            returned_messages = message[-last:]
-        elif isinstance(last, timedelta):
-            returned_messages = []
-            now = datetime.now(timezone.utc)
-            for msg in reversed(message):
-                if (
-                    datetime.strptime(msg["time"], "%Y-%m-%dT%H:%M:%S.%f%z")
-                    < now - last
-                ):
-                    # Only from python 3.11 and later... datetime.fromisoformat(msg["time"]) < now - last:
-                    break
-                returned_messages.append(msg)
-        else:
-            returned_messages = message
+            return message[-last:]
+        if not isinstance(last, timedelta):
+            return message
+        returned_messages = []
+        now = datetime.now(timezone.utc)
+        for msg in reversed(message):
+            if datetime.strptime(msg["time"], "%Y-%m-%dT%H:%M:%S.%f%z") < now - last:
+                # Only from python 3.11 and later... datetime.fromisoformat(msg["time"]) < now - last:
+                break
+            returned_messages.append(msg)
         return returned_messages
 
     @keyword(tags=("Setter", "BrowserControl"))
@@ -1617,33 +1611,35 @@ class PlaywrightState(LibraryComponent):
             )
             logger.info(response.log)
 
+    # Mute this from automatic group logging before this is exposed as keyword
     def open_trace_group(
-        self, name: str, file: Optional[Path] = None, line: int = 0, column: int = 0
+        self,
+        name: str,
+        file: Union[Path, str, None] = None,
+        line: int = 0,
+        column: int = 0,
+        context_id: str = "",
     ):
-        """Opens the trace group in the trace viewer.
-
-        | =Arguments= | =Description= |
-        | name        | Name of the trace group. |
-        | file        | Path to the file. |
-        | line        | Line number. |
-        | column      | Column number. |
-
-        [https://forum.robotframework.org/t//6479|Comment >>]
-        """
+        """Opens the trace group in the trace viewer"""
+        if not self.library._tracing_contexts:
+            logger.trace("Tracing not active.")
+            return
         with suppress(Exception), self.playwright.grpc_channel() as stub:
             stub.OpenTraceGroup(
                 Request().TraceGroup(
-                    name=name, file=str(file or ""), line=line, column=column, contextId=""
+                    name=name,
+                    file=str(file or ""),
+                    line=line,
+                    column=column,
+                    contextId=context_id,
                 )
             )
 
+    # Mute this from automatic group logging before this is exposed as keyword
     def close_trace_group(self):
-        """Closes the trace group in the trace viewer.
-
-        | =Arguments= | =Description= |
-        | name        | Name of the trace group. |
-
-        [https://forum.robotframework.org/t//6480|Comment >>]
-        """
+        """Closes the trace group in the trace viewer"""
+        if not self.library._tracing_contexts:
+            logger.trace("Tracing not active.")
+            return
         with suppress(Exception), self.playwright.grpc_channel() as stub:
             stub.CloseTraceGroup(Request().Empty())
