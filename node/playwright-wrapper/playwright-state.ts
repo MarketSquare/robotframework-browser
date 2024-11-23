@@ -365,10 +365,10 @@ export class PlaywrightState {
         await selectedServer.close();
     }
 
-    public async getCatalog(includePageDetails: boolean) {
+    public async getCatalog(includePageDetails: boolean = true) {
         const pageToContents = async (page: IndexedPage) => {
             let title = null;
-            let url = null;
+            let url = '';
             if (includePageDetails) {
                 url = page.p.url();
                 const titlePromise = page.p.title();
@@ -379,7 +379,7 @@ export class PlaywrightState {
             }
             return {
                 type: 'page',
-                title,
+                title: title || '',
                 url,
                 id: page.id,
                 timestamp: page.timestamp,
@@ -925,20 +925,26 @@ export async function openTraceGroup(
     const line = request.getLine();
     const column = request.getColumn();
     const contextId = request.getContextid();
-    openBrowsers?.browserStack.forEach((browserState) =>
-        browserState.contextStack.forEach((indexedContext) => {
-            if (!contextId || indexedContext.id === contextId) {
-                indexedContext.c.tracing?.group(name, { location: { file, line, column } });
+    if (openBrowsers?.browserStack) {
+        for (const browserState of openBrowsers.browserStack) {
+            for (const indexedContext of browserState.contextStack) {
+                if (!contextId || indexedContext.id === contextId) {
+                    await indexedContext.c?.tracing?.group(name, { location: { file, line, column } });
+                }
             }
-        }),
-    );
+        }
+    }
     return emptyWithLog('Opened trace group');
 }
 
 export async function closeTraceGroup(openBrowsers: PlaywrightState): Promise<Response.Empty> {
-    openBrowsers?.browserStack.forEach((browserState) =>
-        browserState.contextStack.forEach((indexedContext) => indexedContext.c.tracing?.groupEnd()),
-    );
+    if (openBrowsers?.browserStack) {
+        for (const browserState of openBrowsers.browserStack) {
+            for (const indexedContext of browserState.contextStack) {
+                await indexedContext.c?.tracing?.groupEnd();
+            }
+        }
+    }
     return emptyWithLog('Closed trace group');
 }
 
@@ -1055,7 +1061,7 @@ export async function switchBrowser(request: Request.Index, openBrowsers: Playwr
 }
 
 export async function getBrowserCatalog(request: Request.Bool, openBrowsers: PlaywrightState): Promise<Response.Json> {
-    const includePageDetails = request.getValue();
+    const includePageDetails = request.getValue() || true;
     return jsonResponse(JSON.stringify(await openBrowsers.getCatalog(includePageDetails)), 'Catalog received');
 }
 
