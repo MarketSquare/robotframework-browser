@@ -16,4 +16,4 @@ Start Test Application
 
 Suite Teardown
     Stop Test Server    ${SERVER_PORT}
-    # Suite Cleanup
+    Suite Cleanup
