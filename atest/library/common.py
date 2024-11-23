@@ -24,9 +24,8 @@ def start_test_server():
     root_dir = root_dir.resolve()
     test_app_path = root_dir / "node" / "dynamic-test-app" / "dist" / "server.js"
     print(test_app_path)
-    # TODO: remove str() when Python 3.7 support is dropped.
     process = Popen(
-        ["node", str(test_app_path), "-p", port],
+        ["node", test_app_path, "-p", port],
         stdout=PIPE,
         stderr=STDOUT,
         cwd=str(root_dir),
@@ -51,12 +50,11 @@ def start_test_https_server(server_cert_path: str, server_key_path: str, ca_cert
     ca_cert_path = os.path.relpath(os.path.abspath(ca_cert_path), start = test_app_dir)
 
     print(test_app_path)
-    # TODO: remove str() when Python 3.7 support is dropped.
     process = Popen(
-        ["node", str(test_app_path), 
-          "-p", port, 
+        ["node", test_app_path,
+          "-p", port,
           "-c", server_cert_path,
-          "-k", server_key_path, 
+          "-k", server_key_path,
           "-C", ca_cert_path,
           "-M" if mutual_tls else "-T"],
         text=True,
