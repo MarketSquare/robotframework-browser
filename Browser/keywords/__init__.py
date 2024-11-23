@@ -15,6 +15,7 @@
 from .browser_control import Control
 from .clock import Clock
 from .cookie import Cookie
+from .coverage import Coverage
 from .device_descriptors import Devices
 from .evaluation import Evaluation
 from .formatter import Formatter
@@ -31,13 +32,14 @@ from .waiter import Waiter
 from .webapp_state import WebAppState
 
 __all__ = [
+    "Clock",
     "Control",
     "Cookie",
-    "Clock",
+    "Coverage",
     "Devices",
-    "Getters",
     "Evaluation",
     "Formatter",
+    "Getters",
     "Interaction",
     "LocatorHandler",
     "Network",

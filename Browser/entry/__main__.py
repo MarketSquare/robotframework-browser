@@ -16,7 +16,6 @@ import contextlib
 import json
 import logging
 import os
-import platform
 import re
 import shutil
 import subprocess
@@ -29,29 +28,33 @@ from typing import TYPE_CHECKING, Optional
 import click
 import seedir  # type: ignore
 
+from .constant import (
+    INSTALL_LOG,
+    INSTALLATION_DIR,
+    LOG_FILE,
+    NODE_MODULES,
+    PLAYWRIGHT_BROWSERS_PATH,
+    ROOT_FOLDER,
+    SHELL,
+)
+from .coverage_combine import combine
 from .transform import trasform
 from .translation import compare_translatoin, get_library_translaton
 
 if TYPE_CHECKING:
     from ..browser import Browser
 
-INSTALLATION_DIR = Path(__file__).parent.parent / "wrapper"
-NODE_MODULES = INSTALLATION_DIR / "node_modules"
-# This is required because weirdly windows doesn't have `npm` in PATH without shell=True.
-# But shell=True breaks our linux CI
-SHELL = bool(platform.platform().startswith("Windows"))
-ROOT_FOLDER = Path(__file__).resolve().parent.parent
-log_file = "rfbrowser.log"
-INSTALL_LOG = ROOT_FOLDER / log_file
-PLAYWRIGHT_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
+
 try:
     INSTALL_LOG.touch(exist_ok=True)
 except Exception as error:
     print(f"Could not write to {INSTALL_LOG}, got error: {error}")  # noqa: T201
-    INSTALL_LOG = Path.cwd() / log_file
+    INSTALL_LOG = Path.cwd() / LOG_FILE
     print(f"Writing install log to: {INSTALL_LOG}")  # noqa: T201
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)-8s] %(message)s",
@@ -67,7 +70,7 @@ logging.basicConfig(
 def _write_marker(silent_mode: bool = False):
     if silent_mode:
         return
-    logging.info("=" * 110)
+    logger.info("=" * 110)
 
 
 def _log(message: str, silent_mode: bool = False):
@@ -76,9 +79,9 @@ def _log(message: str, silent_mode: bool = False):
     if os.name == "nt":
         message = re.sub(r"[^\x00-\x7f]", r" ", message)
     try:
-        logging.info(message.strip("\n"))
+        logger.info(message.strip("\n"))
     except UnicodeEncodeError as error:
-        logging.info(f"Could not log line, suppress error {error}")
+        logger.info(f"Could not log line, suppress error {error}")
 
 
 def _process_poller(process: subprocess.Popen, silent_mode: bool):
@@ -88,7 +91,7 @@ def _process_poller(process: subprocess.Popen, silent_mode: bool):
             try:
                 _log(output, silent_mode)
             except Exception as err:
-                logging.info(f"While writing log file, got error: {err}")
+                logger.info(f"While writing log file, got error: {err}")
 
     if process.returncode != 0:
         raise RuntimeError(
@@ -102,26 +105,26 @@ def _python_info():
     python_version = (
         f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     )
-    logging.info(f"Used Python is: {sys.executable}\nVersion: {python_version}")
+    logger.info(f"Used Python is: {sys.executable}\nVersion: {python_version}")
     _write_marker()
-    logging.info("pip freeze output:\n\n")
+    logger.info("pip freeze output:\n\n")
     process = subprocess.run(  # noqa: PLW1510
         [sys.executable, "-m", "pip", "freeze"],
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
         timeout=60,
     )
-    logging.info(process.stdout.decode("UTF-8"))
+    logger.info(process.stdout.decode("UTF-8"))
     _write_marker()
 
 
 def _check_files_and_access():
     if not (INSTALLATION_DIR / "package.json").is_file():
-        logging.info(
+        logger.info(
             f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json ",
             "\nPrinting contents:\n",
         )
-        logging.info(f"\n{_walk_install_dir()}")
+        logger.info(f"\n{_walk_install_dir()}")
         raise RuntimeError("Could not find robotframework-browser's package.json")
     if not os.access(INSTALLATION_DIR, os.W_OK):
         sys.tracebacklimit = 0
@@ -140,7 +143,7 @@ def _check_npm():
         FileNotFoundError,
         PermissionError,
     ) as exception:
-        logging.info(
+        logger.info(
             "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
             "See https://nodejs.org/ for documentation"
         )
@@ -212,19 +215,19 @@ def _node_info():
     process = subprocess.run(  # noqa: PLW1510
         ["npm", "-v"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=SHELL
     )
-    logging.info("npm version is:n")
-    logging.info(process.stdout.decode("UTF-8"))
+    logger.info("npm version is:n")
+    logger.info(process.stdout.decode("UTF-8"))
     _write_marker()
 
 
 def _log_install_dir(error_msg=True):
     if error_msg:
-        logging.info(
+        logger.info(
             f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for. "
             "unknown reason. Investigate the npm output and fix possible problems."
             "\nPrinting contents:\n"
         )
-    logging.info(f"\n{_walk_install_dir()}")
+    logger.info(f"\n{_walk_install_dir()}")
     _write_marker()
 
 
@@ -247,9 +250,9 @@ def print_version(ctx, param, value):
     package_json_data = json.loads(package_json.read_text())
     match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
     pw_version = match.group(0) if match else "unknown"
-    logging.info(f"Installed Browser library version is: {browser_lib_version}")
-    logging.info(f'Robot Framework version: "{get_rf_version()}"')
-    logging.info(f'Installed Playwright is: "{pw_version}"')
+    logger.info(f"Installed Browser library version is: {browser_lib_version}")
+    logger.info(f'Robot Framework version: "{get_rf_version()}"')
+    logger.info(f'Installed Playwright is: "{pw_version}"')
     _write_marker()
 
 
@@ -277,6 +280,7 @@ def cli(ctx, silent):
     Possible commands are:
     init
     clean-node
+    coverage
     show-trace
     launch-browser-server
     transform
@@ -300,6 +304,8 @@ def cli(ctx, silent):
 
     Run rfbrowser clean-node command also before uninstalling the library with pip. This makes sure that playwright
     browser binaries are not left in the disk after the pip uninstall command.
+
+    coverage command will combine the coverage reports from the pages and create a single report.
 
     show-trace command will start the Playwright trace viewer tool.
 
@@ -381,7 +387,7 @@ def init(ctx, skip_browsers, with_deps, browser):
         _write_marker(silent_mode)
     except Exception as err:
         _write_marker(silent_mode)
-        logging.info(traceback.format_exc())
+        logger.info(traceback.format_exc())
         _python_info()
         _node_info()
         _log_install_dir()
@@ -402,9 +408,9 @@ def clean_node():
     _write_marker()
 
     if not NODE_MODULES.is_dir():
-        logging.info(f"Could not find {NODE_MODULES}, nothing to delete.")
+        logger.info(f"Could not find {NODE_MODULES}, nothing to delete.")
         return
-    logging.info(f"Delete library node dependencies from {NODE_MODULES}")
+    logger.info(f"Delete library node dependencies from {NODE_MODULES}")
     shutil.rmtree(NODE_MODULES)
 
 
@@ -421,7 +427,7 @@ def show_trace(file: Path):
     https://marketsquare.github.io/robotframework-browser/Browser.html#New%20Contex
     """
     absolute_file = file.resolve(strict=True)
-    logging.info(f"Opening file: {absolute_file}")
+    logger.info(f"Opening file: {absolute_file}")
     playwright = NODE_MODULES / "playwright-core"
     local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
@@ -495,27 +501,25 @@ def launch_browser_server(browser, options):
     """
     from ..browser import Browser, SupportedBrowsers
 
-    logging.getLogger().setLevel(logging.INFO)
-
     browser_lib = Browser()
     params = convert_options_types(options, browser_lib)
     wsEndpoint = browser_lib.launch_browser_server(
         browser=SupportedBrowsers[browser], **params
     )
-    logging.info(f"Browser server started at:\n\n\n{wsEndpoint}\n\n")
-    logging.info("Press Ctrl-C to stop the server")
+    logger.info(f"Browser server started at:\n\n\n{wsEndpoint}\n\n")
+    logger.info("Press Ctrl-C to stop the server")
     try:
         while True:
             pass
     except (KeyboardInterrupt, SystemExit):
-        logging.info("Stopping browser server by user request")
+        logger.info("Stopping browser server by user request")
     except Exception as err:
-        logging.info(f"Stopping browser server due to error: {err}")
+        logger.info(f"Stopping browser server due to error: {err}")
         traceback.print_exc()
     finally:
         with contextlib.suppress(Exception):
             browser_lib._playwright_state.close_browser_server("ALL")
-        logging.info("Browser server stopped")
+        logger.info("Browser server stopped")
 
 
 def convert_options_types(options: list[str], browser_lib: "Browser"):
@@ -568,7 +572,7 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     from all test data files in /path/to/test folder
     """
     if not wait_until_network_is_idle:
-        logging.info("No transformer defined, exiting.")
+        logger.info("No transformer defined, exiting.")
         return
     trasform(path, wait_until_network_is_idle)
 
@@ -630,17 +634,90 @@ def translation(
     translation = get_library_translaton(plugings, jsextension)
     if compare:
         if table := compare_translatoin(filename, translation):
-            logging.info(
+            logger.info(
                 "Found differences between translation and library, see below for details."
             )
             for line in table:
-                logging.info(line)
+                logger.info(line)
         else:
-            logging.info("Translation is valid, no updated needed.")
+            logger.info("Translation is valid, no updated needed.")
     else:
         with filename.open("w") as file:
             json.dump(translation, file, indent=4)
-        logging.info(f"Translation file created in {filename.absolute()}")
+        logger.info(f"Translation file created in {filename.absolute()}")
+
+
+@cli.command()
+@click.argument(
+    "input",
+    type=click.Path(exists=True, dir_okay=True, path_type=Path),
+    required=True,
+)
+@click.argument(
+    "output",
+    type=click.Path(exists=False, dir_okay=True, path_type=Path),
+    required=True,
+)
+@click.option(
+    "--config",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Optional path to monocart-coverage-reports options file.",
+)
+@click.option(
+    "--name",
+    help="Report name for title in the report.",
+)
+@click.option(
+    "--reports",
+    help="Comma separted list of reports to create. Default is 'v8'.",
+    default="v8",
+)
+def coverage(
+    input: Path,  # noqa: A002
+    output: Path,
+    config: Optional[Path] = None,
+    name: Optional[str] = None,
+    reports: str = "v8",
+):
+    """Combine coverage reports from the pages and create a single report.
+
+    Coverage report should have raw data available in the input folder. The
+    raw is collected when Stop Coverage keyword is called with config file
+    and it has:
+
+    module.exports = {
+        reports: [['raw']]
+    }
+
+    Note this will only save raw data, if you need to also save coverage
+    report for each page, use:
+
+    module.exports = {
+        reports: [['raw'], ['v8']]
+    }
+
+
+    The input argument is the base folder where the coverage reports are
+    located. Command will look into each subfolder and if the subfolder
+    contains "raw" folder, it will use data from the "raw" folder for
+    comibined reports
+
+    The output argument is the folder where the combined report is saved.
+    If folder does not exist, it is created. If folder exists, it's content
+    is deleted before report is created.
+
+    The config argument is optional and can be used to provide a path to a
+    monocart-coverage-reports options file. For more details see:
+    https://www.npmjs.com/package/monocart-coverage-reports#config-file
+
+    The name argument is optional and can be used to provide a name for the
+    report.
+
+    The reports argument is optional and can be used to provide a list of
+    reportes to create. Default is 'v8'. If you want to create multiple
+    provde a comma separated list. Example: 'v8,html'
+    """
+    combine(input, output, config, logger, name, reports)
 
 
 if __name__ == "__main__":

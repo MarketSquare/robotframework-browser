@@ -31,6 +31,16 @@ message Request {
     string advanceType = 2;
   }
 
+  message CoverateStart {
+    string coverateType = 1;
+    bool resetOnNavigation = 2;
+    bool reportAnonymousScripts = 3;
+    string configFile = 4;
+    string coverageDir = 5;
+    string folderPrefix = 6;
+    bool raw = 7;
+  }
+
   message Label {
     string label = 1;
   }
@@ -587,4 +597,8 @@ service  Playwright {
   rpc ClockResume(Request.Empty) returns (Response.Empty);
   rpc ClockPauseAt(Request.ClockSetTime) returns (Response.Empty);
   rpc AdvanceClock(Request.ClockAdvance) returns (Response.Empty);
+
+  /* Coverage */
+  rpc StartCoverage(Request.CoverateStart) returns (Response.Empty);
+  rpc StopCoverage(Request.Empty) returns (Response.String);
 }

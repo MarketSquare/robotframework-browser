@@ -270,6 +270,7 @@ function indexedPage(newPage: Page): IndexedPage {
         consoleMessages,
         consoleIndex: 0,
         activeDownloads: new Map(),
+        coverage: undefined,
     };
 }
 
@@ -457,6 +458,14 @@ export class PlaywrightState {
     public getActivePageId = (): string | undefined => {
         return this.activeBrowser?.page?.id;
     };
+    public getCoverageOptions(): CoverageOptions | undefined {
+        return this.activeBrowser?.page?.coverage;
+    }
+    public addCoverageOptions = (coverage: CoverageOptions): void => {
+        if (this.activeBrowser?.page) {
+            this.activeBrowser.page.coverage = coverage;
+        }
+    };
 }
 
 class LocatorCache {
@@ -506,6 +515,14 @@ export type DownloadInfo = {
     suggestedFilename: string;
 };
 
+export type CoverageOptions = {
+    type: string;
+    directory: string;
+    folderPrefix: string;
+    configFile: string;
+    raw: boolean;
+};
+
 export type IndexedPage = {
     p: Page;
     id: Uuid;
@@ -515,6 +532,7 @@ export type IndexedPage = {
     consoleMessages: TimedConsoleMessage[];
     consoleIndex: number;
     activeDownloads: Map<Uuid, DownloadInfo>;
+    coverage: CoverageOptions | undefined;
 };
 
 type Uuid = string;

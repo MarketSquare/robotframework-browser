@@ -15,6 +15,7 @@
 import * as browserControl from './browser-control';
 import * as clock from './clock';
 import * as cookie from './cookie';
+import * as coverage from './coverage';
 import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
 import * as getters from './getters';
@@ -247,6 +248,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     newPage = this.wrapping(playwrightState.newPage);
     newContext = this.wrapping(playwrightState.newContext);
     newBrowser = this.wrapping(playwrightState.newBrowser);
+    startCoverage = this.wrapping(coverage.startCoverage);
+    stopCoverage = this.wrapping(coverage.stopCoverage);
     launchBrowserServer = this.wrapping(playwrightState.launchBrowserServer);
     newPersistentContext = this.wrapping(playwrightState.newPersistentContext);
     connectToBrowser = this.wrapping(playwrightState.connectToBrowser);

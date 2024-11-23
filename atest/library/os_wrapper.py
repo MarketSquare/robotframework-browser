@@ -173,3 +173,13 @@ def dates_are_equal(date1: datetime, date2: datetime) -> bool:
         logger.info(f"Time1 {date1} is not equal to time2 {date2}")
         raise ValueError(f"Time1 {date1} is not equal to time2 {date2}")
     return True
+
+
+def file_as_uri(path: str) -> Path:
+    """Return file as uri."""
+    return Path(path).as_uri()
+
+
+def get_parent(path: str) -> Path:
+    """Return parent of the path."""
+    return Path(path).parent
