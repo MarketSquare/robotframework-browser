@@ -18,7 +18,7 @@ import sys
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from .constant import INSTALLATION_DIR, SHELL
 
@@ -38,6 +38,8 @@ def combine(
     output_folder: Path,
     config: Union[Path, None],
     logger: logging.Logger,
+    name: Optional[str] = None,
+    reports="v8",
 ) -> None:
     logger.info(f"Combining coverage files from {input_folder} to {output_folder}")
     if config is not None and config.is_file():
@@ -62,8 +64,8 @@ def combine(
             "npx",
             "mcr",
             "merge",
-            "-r",
-            "v8",
+            "--reports",
+            reports,
             "--inputDir",
             str(tmp_path),
             "--outputDir",
@@ -71,6 +73,8 @@ def combine(
         ]
         if config is not None:
             args.extend(["--config", str(config)])
+        if name is not None:
+            args.extend(["--name", name])
         logger.info(f"Running command: {args}")
         subprocess.run(args, check=True, shell=SHELL, cwd=INSTALLATION_DIR)
         logger.info(f"Combined coverage files to {output_folder}")

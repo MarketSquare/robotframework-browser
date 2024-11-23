@@ -64,7 +64,7 @@ Coverage With MarkDown And Raw
 Run Rfbrowser To Combine Coverage Reports
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_1
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_1 --name "New name"
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
@@ -73,13 +73,13 @@ Run Rfbrowser To Combine Coverage Reports
     Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
     ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_1/index.html
     New Page    ${uri}
-    Get Text    .mcr-title    equal    Coverage Report
+    Get Text    .mcr-title    equal    New name
     Close Page
 
-Run Rfbrowser To Combine Coverage Reports With Config
+Run Rfbrowser To Combine Coverage Reports With Different Reports
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_2 --config ${CURDIR}/coverageConfigCombine.js
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_2 --reports html
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
@@ -88,12 +88,27 @@ Run Rfbrowser To Combine Coverage Reports With Config
     Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
     ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_2/index.html
     New Page    ${uri}
+    Get Text    h1    equal    All files
+    Close Page
+
+Run Rfbrowser To Combine Coverage Reports With Config
+    ${entry_cmd} =    Get Enty Command
+    ${process} =    Run Process
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_3 --config ${CURDIR}/coverageConfigCombine.js
+    ...    shell=True
+    Log    ${process.stdout}
+    Log    ${process.stderr}
+    Should Be Equal As Integers    ${process.rc}    0
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/combined_coverage_reports_3
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
+    ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_3/index.html
+    New Page    ${uri}
     Get Text    .mcr-title    equal    Browser library Combined Coverage Report
 
 Run Rfbrowser To Combine Coverage Reports And No Input Dir
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/does_not_exist ${OUTPUT_DIR}/combined_coverage_reports_3 --config ${CURDIR}/coverageConfig.js
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/does_not_exist ${OUTPUT_DIR}/combined_coverage_reports_4 --config ${CURDIR}/coverageConfig.js
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
@@ -103,7 +118,7 @@ Run Rfbrowser To Combine Coverage Reports And No Raw Files
     Create Directory    ${OUTPUT_DIR}/no_raw_files
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/no_raw_files ${OUTPUT_DIR}/combined_coverage_reports_4
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/no_raw_files ${OUTPUT_DIR}/combined_coverage_reports_5
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
@@ -113,7 +128,7 @@ Run Rfbrowser To Combine Coverage Reports And Invalid Config File
     Create Directory    ${OUTPUT_DIR}/no_raw_files
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/no_raw_files ${OUTPUT_DIR}/combined_coverage_reports_4 --config ${CURDIR}/not_here.js
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/no_raw_files ${OUTPUT_DIR}/combined_coverage_reports_6 --config ${CURDIR}/not_here.js
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}

@@ -663,7 +663,22 @@ def translation(
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     help="Optional path to monocart-coverage-reports options file.",
 )
-def coverage(input: Path, output: Path, config: Optional[Path] = None):  # noqa: A002
+@click.option(
+    "--name",
+    help="Report name for title in the report.",
+)
+@click.option(
+    "--reports",
+    help="Comma separted list of reports to create. Default is 'v8'.",
+    default="v8",
+)
+def coverage(
+    input: Path,  # noqa: A002
+    output: Path,
+    config: Optional[Path] = None,
+    name: Optional[str] = None,
+    reports: str = "v8",
+):
     """Combine coverage reports from the pages and create a single report.
 
     Coverage report should have raw data available in the input folder. The
@@ -694,8 +709,15 @@ def coverage(input: Path, output: Path, config: Optional[Path] = None):  # noqa:
     The config argument is optional and can be used to provide a path to a
     monocart-coverage-reports options file. For more details see:
     https://www.npmjs.com/package/monocart-coverage-reports#config-file
+
+    The name argument is optional and can be used to provide a name for the
+    report.
+
+    The reports argument is optional and can be used to provide a list of
+    reportes to create. Default is 'v8'. If you want to create multiple
+    provde a comma separated list. Example: 'v8,html'
     """
-    combine(input, output, config, logger)
+    combine(input, output, config, logger, name, reports)
 
 
 if __name__ == "__main__":
