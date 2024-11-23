@@ -20,6 +20,7 @@ Open Browser With Client Certificate
     New Page    https://localhost:${https_port}/
 
 Open Browser Without Client Certificate
+    [Tags]    no-windows-support
     New Browser    browser=${BROWSER}    headless=${HEADLESS}
     New Context    ignoreHTTPSErrors=True
     ${error} =    Run Keyword And Expect Error
