@@ -75,8 +75,8 @@ export async function stopCoverage(request: Request.Empty, state: PlaywrightStat
         const cssCoverage = await activePage.coverage.stopCSSCoverage();
         allCoverage = [...allCoverage, ...cssCoverage];
     }
-    const pageId = state.getActivePageId();
-    let outputDir = join(coverageDir, folderPrefix + pageId);
+    const pageId = state.getActivePageId() ?? '';
+    let outputDir = join(coverageDir, folderPrefix, pageId);
     outputDir = normalize(outputDir);
     let options = {};
     if (raw && configFile === '') {

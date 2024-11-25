@@ -1132,6 +1132,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def state_file(self):
         return self.browser_output / "state"
 
+    @property
+    def coverage_output(self) -> Path:
+        return self.browser_output / "coverage"
+
     def _start_suite(self, _name, attrs):
         self.suite_ids[attrs["id"]] = None
         self._add_to_scope_stack(attrs["id"], Scope.Suite)
