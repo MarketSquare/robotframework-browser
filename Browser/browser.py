@@ -1457,7 +1457,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def _failure_screenshot_path(self):
         valid_chars = f"-_.() {string.ascii_letters}{string.digits}"
-        test_name = BuiltIn().get_variable_value("${TEST NAME}", "GENERIC")
+        test_name = (
+            BuiltIn().get_variable_value("${TEST NAME}", "GENERIC")
+            if EXECUTION_CONTEXTS.current
+            else ""
+        )
         return str(
             Path(self.outputdir)
             / Path(

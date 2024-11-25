@@ -22,7 +22,7 @@ from typing import Any, Optional, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
-from robot.libraries.BuiltIn import BuiltIn
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.utils import get_link_path
 
 from Browser.utils.data_types import BrowserInfo, TracingGroupMode
@@ -804,8 +804,12 @@ class PlaywrightState(LibraryComponent):
             )
 
     def _resolve_trace_file(self, tracing: Union[bool, None, str]) -> Union[Path, str]:
-        tracing_by_var = is_truthy(
-            BuiltIn().get_variable_value("${ROBOT_FRAMEWORK_BROWSER_TRACING}", "")
+        tracing_by_var = (
+            is_truthy(
+                BuiltIn().get_variable_value("${ROBOT_FRAMEWORK_BROWSER_TRACING}", "")
+            )
+            if EXECUTION_CONTEXTS.current
+            else False
         )
         tracing_by_env = is_truthy(os.getenv("ROBOT_FRAMEWORK_BROWSER_TRACING") or "")
         if not tracing and not tracing_by_var and not tracing_by_env:
