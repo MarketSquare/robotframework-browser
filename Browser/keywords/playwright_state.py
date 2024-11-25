@@ -573,7 +573,7 @@ class PlaywrightState(LibraryComponent):
         ] = ServiceWorkersPermissions.allow,
         storageState: Optional[str] = None,
         timezoneId: Optional[str] = None,
-        tracing: Union[bool, None, Path] = None,
+        tracing: Union[bool, Path, None] = None,
         userAgent: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
@@ -614,7 +614,7 @@ class PlaywrightState(LibraryComponent):
         | ``serviceWorkers``       | Whether to allow sites to register Service workers. Defaults to 'allow'. |
         | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must be full path to the file. |
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
-        | ``tracing``              | Boolean ``True`` (recommendation) or file path or directory where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. The string `{contextid}` will be replaces with the context id. Path to *.zip files can be absolute or relative to ${OUTPUT_DIR}. Path to folders can be absolute or relative to ${OUTPUT_DIR}/browser/traces. If boolean ``True`` or a directory is given, the trace file will automatically be named ``trace_{contextid}.tip``. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces/temp. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. |
+        | ``tracing``              | Boolean ``True`` (recommendation) or file path or directory where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. The string `{contextid}` will be replaces with the context id. Path to *.zip files can be absolute or relative to ${OUTPUT_DIR}. Path to folders can be absolute or relative to ${OUTPUT_DIR}/browser/traces. If boolean ``True`` or a directory is given, the trace file will automatically be named ``trace_{contextid}.tip``. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces/temp. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. Tracing can also be enables by setting a Robot Framework variable or environment variable ``ROBOT_FRAMEWORK_BROWSER_TRACING`` to ``True``. |
         | ``userAgent``            | Specific user agent to use in this context. |
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
 
@@ -706,7 +706,7 @@ class PlaywrightState(LibraryComponent):
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
         timezoneId: Optional[str] = None,
-        tracing: Union[bool, None, Path] = None,
+        tracing: Union[bool, Path, None] = None,
         url: Optional[str] = None,
         userAgent: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(

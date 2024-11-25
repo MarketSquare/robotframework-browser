@@ -818,7 +818,7 @@ class Browser(DynamicCore):
 
         | =Argument=                        | =Description= |
         | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
-        | ``auto_delete_passed_tracing``    | If ``auto_closing_level`` is set to ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` is set to boolean ``True``, traces of passed tests or suites, depending on the context scope, will be automatically deleted from the folder ``${OUTPUT_DIR}/browser/traces``. Also temp files will all be deleted after the whole execution ends. |
+        | ``auto_delete_passed_tracing``    | If ``auto_closing_level`` is set to ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of passed tests or suites, depending on the context scope, not be saved. Also temp files will all be deleted after the whole execution ends. |
         | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. For more details, see `PlaywrightLogTypes`. |
         | ``enable_presenter_mode``         | Automatic highlights the interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. By default, the call banner keyword is also enabled unless explicitly disabled. |
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
@@ -1323,7 +1323,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._playwright_state.close_context(
                 ctx_id,
                 SelectionType.ALL,
-                save_trace=not bool(self.auto_delete_passed_tracing and status == "PASS"),
+                save_trace=not bool(
+                    self.auto_delete_passed_tracing and status == "PASS"
+                ),
             )
             self._playwright_state.close_trace_group()
         pages_before = [
