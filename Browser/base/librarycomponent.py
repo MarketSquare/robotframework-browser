@@ -198,6 +198,10 @@ class LibraryComponent:
     def state_file(self):
         return self.library.state_file
 
+    @property
+    def coverage_ouput(self) -> Path:
+        return self.library.coverage_output
+
     def initialize_js_extension(
         self, js_extension_path: Union[Path, str]
     ) -> Response.Keywords:

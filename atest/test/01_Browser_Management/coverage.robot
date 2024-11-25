@@ -6,7 +6,7 @@ Test Setup      New Page    ${EMPTY}
 *** Test Cases ***
 Coverage
     Start Coverage
-    ...    js
+    ...    coverage_type=js
     ...    reportAnonymousScripts=True
     ...    resetOnNavigation=True
     ...    config_file=${CURDIR}/coverageConfig.js
@@ -18,7 +18,7 @@ Coverage
     Close Page
 
 Coverage With Options
-    ${type} =    Start Coverage    config_file=${CURDIR}/coverageConfig.js    folder_prefix=SimplePage
+    ${type} =    Start Coverage    config_file=${CURDIR}/coverageConfig.js    folder=SimplePage
     Should Be Equal    ${type}    CoverageType.all
     Add Locator Handler Click    id=overlay    id=OverlayCloseButton
     Go To    ${OWERLAY_URL}
@@ -64,13 +64,13 @@ Coverage With MarkDown And Raw
 Run Rfbrowser To Combine Coverage Reports
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_1 --name "New name"
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/browser/coverage ${OUTPUT_DIR}/combined_coverage_reports_1 --name "New name"
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
     Should Be Equal As Integers    ${process.rc}    0
     Directory Should Not Be Empty    ${OUTPUT_DIR}/combined_coverage_reports_1
-    Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/browser/coverage
     ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_1/index.html
     New Page    ${uri}
     Get Text    .mcr-title    equal    New name
@@ -79,13 +79,13 @@ Run Rfbrowser To Combine Coverage Reports
 Run Rfbrowser To Combine Coverage Reports With Different Reports
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_2 --reports html
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/browser/coverage ${OUTPUT_DIR}/combined_coverage_reports_2 --reports html
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
     Should Be Equal As Integers    ${process.rc}    0
     Directory Should Not Be Empty    ${OUTPUT_DIR}/combined_coverage_reports_2
-    Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/browser/coverage
     ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_2/index.html
     New Page    ${uri}
     Get Text    h1    equal    All files
@@ -94,13 +94,13 @@ Run Rfbrowser To Combine Coverage Reports With Different Reports
 Run Rfbrowser To Combine Coverage Reports With Config
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/coverage_reports ${OUTPUT_DIR}/combined_coverage_reports_3 --config ${CURDIR}/coverageConfigCombine.js
+    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/browser/coverage ${OUTPUT_DIR}/combined_coverage_reports_3 --config ${CURDIR}/coverageConfigCombine.js
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
     Should Be Equal As Integers    ${process.rc}    0
     Directory Should Not Be Empty    ${OUTPUT_DIR}/combined_coverage_reports_3
-    Directory Should Not Be Empty    ${OUTPUT_DIR}/coverage_reports
+    Directory Should Not Be Empty    ${OUTPUT_DIR}/browser/coverage
     ${uri} =    File As Uri    ${OUTPUT_DIR}/combined_coverage_reports_3/index.html
     New Page    ${uri}
     Get Text    .mcr-title    equal    Browser library Combined Coverage Report
