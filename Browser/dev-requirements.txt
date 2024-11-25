@@ -20,6 +20,7 @@ coverage >= 7.2.3
 robotframework-tidy >= 4.9.0
 python-dateutil >= 2.8.2
 robotframework-crypto >= 0.3.0
+robotframework-archivelibrary >= 0.4.3
 uv
 # Include normal dependencies from requirements.txt. Makes it possible to use
 # requirements-dev.txt as a single requirement file in PyCharm and other IDEs.

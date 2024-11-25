@@ -41,6 +41,14 @@ message Request {
     bool raw = 7;
   }
 
+  message TraceGroup {
+    string name = 1;
+    string file = 2;
+    int32 line = 3;
+    int32 column = 4;
+    string contextId = 5;
+  }
+
   message Label {
     string label = 1;
   }
@@ -570,11 +578,13 @@ service  Playwright {
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
-  rpc CloseContext(Request.Empty) returns (Response.Empty);
+  rpc CloseContext(Request.Bool) returns (Response.Empty);
   rpc ClosePage(Request.ClosePage) returns (Response.PageReportResponse);
+  rpc OpenTraceGroup(Request.TraceGroup) returns (Response.Empty);
+  rpc CloseTraceGroup(Request.Empty) returns (Response.Empty);
   rpc GetConsoleLog(Request.Bool) returns (Response.Json);
   rpc GetErrorMessages(Request.Bool) returns (Response.Json);
-  rpc GetBrowserCatalog(Request.Empty) returns (Response.Json);
+  rpc GetBrowserCatalog(Request.Bool) returns (Response.Json);
   rpc GetDownloadState(Request.DownloadID) returns (Response.Json);
   rpc CancelDownload(Request.DownloadID) returns (Response.Empty);
   rpc SaveStorageState(Request.FilePath) returns (Response.Empty);

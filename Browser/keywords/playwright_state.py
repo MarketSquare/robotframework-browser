@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import json
+import os
+from contextlib import suppress
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -20,10 +22,12 @@ from typing import Any, Optional, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.utils import get_link_path
 
-from Browser.utils.data_types import BrowserInfo
+from Browser.utils.data_types import BrowserInfo, TracingGroupMode
 from Browser.utils.misc import get_download_id
+from Browser.utils.robot_booleans import is_truthy
 
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
@@ -151,6 +155,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.CloseBrowser(Request.Empty())
             closed_browser_id = response.body
             self.delete_browser_id_from_arg_mapping(closed_browser_id)
+            self._update_tracing_contexts()
             self.library.pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
 
@@ -164,6 +169,8 @@ class PlaywrightState(LibraryComponent):
         self,
         context: Union[SelectionType, str] = SelectionType.CURRENT,
         browser: Union[SelectionType, str] = SelectionType.CURRENT,
+        *,
+        save_trace: bool = True,
     ):
         """Closes a Context.
 
@@ -173,6 +180,7 @@ class PlaywrightState(LibraryComponent):
         | =Argument=  | =Description= |
         | ``context`` | Context to close. ``CURRENT`` selects the active context. ``ALL`` closes all contexts. When a context id is provided, that context is closed. |
         | ``browser`` | Browser where to close context. ``CURRENT`` selects the active browser. ``ALL`` closes all browsers. When a browser id is provided, that browser is closed. |
+        | ``save_trace`` | If set to ``False``, the trace of this context is not saved, even if it was enables by `New Context`. Defaults to ``True``. |
 
         Example:
         | `Close Context`                          #  Closes current context and current browser
@@ -188,16 +196,31 @@ class PlaywrightState(LibraryComponent):
             if browser_instance["id"] == "NO BROWSER OPEN":
                 logger.info("No browsers open. can not closing context.")
                 return
-            self.switch_browser(browser_instance["id"])
-            contexts = self._get_context(context, browser_instance["contexts"])
-            self._close_context(contexts)
+            active_browser = self._get_active_browser_item(
+                self._get_browser_catalog(include_page_details=False)
+            )
+            if active_browser["id"] != browser_instance["id"]:
+                self.switch_browser(browser_instance["id"])
+            with suppress(Exception):
+                contexts = self._get_context(context, browser_instance["contexts"])
+                self._close_pw_context(contexts, save_trace)
+        self._update_tracing_contexts()
 
-    def _close_context(self, contexts):
+    def _update_tracing_contexts(self):
+        if self.library.tracing_contexts:
+            all_context_ids = self.get_context_ids()
+            self.library.tracing_contexts = [
+                ctx_id
+                for ctx_id in self.library.tracing_contexts
+                if ctx_id in all_context_ids
+            ]
+
+    def _close_pw_context(self, contexts, save_trace=True):
         with self.playwright.grpc_channel() as stub:
             for context in contexts:
                 self.context_cache.remove(context["id"])
                 self.switch_context(context["id"])
-                response = stub.CloseContext(Request().Empty())
+                response = stub.CloseContext(Request().Bool(value=save_trace))
                 logger.info(response.log)
 
     def _get_context(self, context, contexts):
@@ -210,10 +233,10 @@ class PlaywrightState(LibraryComponent):
             except StopIteration:
                 logger.info("No open context found.")
                 return []
-        return [find_by_id(context, contexts)]
+        return [find_by_id(context, contexts, log_error=False)]
 
     def _get_browser_ids(self, browser) -> list:
-        catalog = self.get_browser_catalog()
+        catalog = self._get_browser_catalog(include_page_details=False)
         if browser == SelectionType.ALL:
             browser_ids = [browser_instance["id"] for browser_instance in catalog]
         elif browser == SelectionType.CURRENT:
@@ -232,9 +255,9 @@ class PlaywrightState(LibraryComponent):
             current_ctx = self.switch_context("CURRENT")
             if current_ctx == "NO CONTEXT OPEN":
                 return []
-            contexts = [find_by_id(current_ctx, contexts)]
+            contexts = [find_by_id(current_ctx, contexts, log_error=False)]
         elif context_selection != SelectionType.ALL:
-            contexts = [find_by_id(str(context_selection), contexts)]
+            contexts = [find_by_id(str(context_selection), contexts, log_error=False)]
         return contexts
 
     @keyword(tags=("Setter", "BrowserControl"))
@@ -278,7 +301,10 @@ class PlaywrightState(LibraryComponent):
             for browser_id in browser_ids:
                 self.switch_browser(browser_id["id"])
                 contexts_ids = browser_id["contexts"]
-                contexts_ids = self._get_context_id(context, contexts_ids)
+                try:
+                    contexts_ids = self._get_context_id(context, contexts_ids)
+                except StopIteration:
+                    continue
                 for context_id in contexts_ids:
                     self.switch_context(context_id["id"])
                     if page == SelectionType.ALL:
@@ -493,6 +519,7 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseBrowserServer(Request().ConnectBrowser(url=wsEndpoint))
             logger.info(response.log)
+            self._update_tracing_contexts()
 
     def _switch_to_existing_browser(
         self, reuse_existing: bool, parameter_hash: int
@@ -546,7 +573,7 @@ class PlaywrightState(LibraryComponent):
         ] = ServiceWorkersPermissions.allow,
         storageState: Optional[str] = None,
         timezoneId: Optional[str] = None,
-        tracing: Optional[str] = None,
+        tracing: Union[bool, Path, None] = None,
         userAgent: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
@@ -587,7 +614,7 @@ class PlaywrightState(LibraryComponent):
         | ``serviceWorkers``       | Whether to allow sites to register Service workers. Defaults to 'allow'. |
         | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must be full path to the file. |
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
-        | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. |
+        | ``tracing``              | Boolean ``True`` (recommendation) or file path or directory where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. The string `{contextid}` will be replaces with the context id. Path to *.zip files can be absolute or relative to ${OUTPUT_DIR}. Path to folders can be absolute or relative to ${OUTPUT_DIR}/browser/traces. If boolean ``True`` or a directory is given, the trace file will automatically be named ``trace_{contextid}.tip``. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces/temp. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. Tracing can also be enables by setting a Robot Framework variable or environment variable ``ROBOT_FRAMEWORK_BROWSER_TRACING`` to ``True``. |
         | ``userAgent``            | Specific user agent to use in this context. |
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
 
@@ -618,7 +645,7 @@ class PlaywrightState(LibraryComponent):
                 for permission in permissions
             ]
         params["viewport"] = copy(viewport)
-        trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
+        trace_file = self._resolve_trace_file(tracing)
         params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
         response = self._new_context(options, trace_file)
@@ -679,7 +706,7 @@ class PlaywrightState(LibraryComponent):
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
         timezoneId: Optional[str] = None,
-        tracing: Optional[str] = None,
+        tracing: Union[bool, Path, None] = None,
         url: Optional[str] = None,
         userAgent: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
@@ -719,14 +746,13 @@ class PlaywrightState(LibraryComponent):
                 for permission in permissions
             ]
         params["viewport"] = copy(viewport)
-        trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
+        trace_file = self._resolve_trace_file(tracing)
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
         params = self._set_context_options(params, httpCredentials, None)
         options = json.dumps(params, default=str)
 
         with self.playwright.grpc_channel() as stub:
-            catalog_json = stub.GetBrowserCatalog(Request().Empty())
-            catalog = json.loads(catalog_json.json)
+            catalog = self._get_browser_catalog(include_page_details=False)
             previously_active_browser_id = None
             existing_browser_ids = []
             for browser_info in catalog:
@@ -741,7 +767,9 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-
+            self.add_context_and_keyword_call_stack_to_trace(
+                trace_file=trace_file, ctx_id=response.id
+            )
             context_options = self._mask_credentials(
                 json.loads(response.contextOptions)
             )
@@ -778,6 +806,27 @@ class PlaywrightState(LibraryComponent):
                 NewPageDetails(page_id=response.pageId, video_path=video_path),
             )
 
+    def _resolve_trace_file(self, tracing: Union[bool, None, Path]) -> str:
+        if isinstance(tracing, str):
+            tracing = Path(tracing)
+        tracing_by_var = (
+            is_truthy(
+                BuiltIn().get_variable_value("${ROBOT_FRAMEWORK_BROWSER_TRACING}", "")
+            )
+            if EXECUTION_CONTEXTS.current
+            else False
+        )
+        tracing_by_env = is_truthy(os.getenv("ROBOT_FRAMEWORK_BROWSER_TRACING") or "")
+        if not tracing and not tracing_by_var and not tracing_by_env:
+            return ""
+        if tracing is True or tracing_by_var or tracing_by_env:
+            return str(
+                self.traces_output
+            )  # will be extended by '`trace_${context_id}.zip`' on js side.
+        if isinstance(tracing, Path) and tracing.suffix == ".zip":
+            return str(Path(self.outputdir, tracing).resolve())
+        return str(Path(self.traces_output, str(tracing)).resolve())
+
     def _set_context_options(self, params, httpCredentials, storageState):
         params = convert_typed_dict(self.new_context.__annotations__, params)
         params = self._set_video_path(params)
@@ -807,20 +856,37 @@ class PlaywrightState(LibraryComponent):
             raise ValueError(
                 f"Must use {SupportedBrowsers.chromium.name} browser with channel definition"
             )
-        trace_dir = self.traces_output / str(uuid4())
-        params["tracesDir"] = str(trace_dir)
+        params["tracesDir"] = str(self.traces_temp / str(uuid4()))
         return params
 
-    # Only to ease unit test mocking.
     def _new_context(self, options: str, trace_file: Union[Path, str]):
         with self.playwright.grpc_channel() as stub:
-            return stub.NewContext(
+            context = stub.NewContext(
                 Request().Context(
                     rawOptions=options,
                     defaultTimeout=int(self.timeout),
                     traceFile=str(trace_file),
                 )
             )
+            self.add_context_and_keyword_call_stack_to_trace(
+                trace_file=trace_file, ctx_id=context.id
+            )
+        return context
+
+    def add_context_and_keyword_call_stack_to_trace(self, trace_file, ctx_id):
+        if (
+            not trace_file
+            or self.library.tracing_group_mode == TracingGroupMode.Playwright
+        ):
+            return None
+        self.library.tracing_contexts.append(ctx_id)
+        if self.library.tracing_group_mode == TracingGroupMode.Browser:
+            return self.open_trace_group(
+                **(self.library.keyword_call_stack[-1]), context_id=ctx_id
+            )
+        for keyword_call in self.library.keyword_call_stack:
+            self.open_trace_group(**keyword_call, context_id=ctx_id)
+        return None
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
@@ -1014,19 +1080,25 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4259|Comment >>]
         """
+
+        catalog = self._get_browser_catalog()
+        logger.debug(json.dumps(catalog, indent=2))
+        formatter = self.get_assertion_formatter("Get Browser Catalog")
+        return verify_assertion(
+            catalog,
+            assertion_operator,
+            assertion_expected,
+            "Browser Catalog",
+            message,
+            formatter,
+        )
+
+    def _get_browser_catalog(self, include_page_details: bool = True) -> list:
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetBrowserCatalog(Request().Empty())
-            parsed = json.loads(response.json)
-            logger.debug(json.dumps(parsed, indent=2))
-            formatter = self.get_assertion_formatter("Get Browser Catalog")
-            return verify_assertion(
-                parsed,
-                assertion_operator,
-                assertion_expected,
-                "Browser Catalog",
-                message,
-                formatter,
+            response = stub.GetBrowserCatalog(
+                Request().Bool(value=include_page_details)
             )
+            return json.loads(response.json)
 
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     def get_console_log(
@@ -1164,20 +1236,16 @@ class PlaywrightState(LibraryComponent):
 
     def _slice_messages(self, message, last):
         if isinstance(last, int):
-            returned_messages = message[-last:]
-        elif isinstance(last, timedelta):
-            returned_messages = []
-            now = datetime.now(timezone.utc)
-            for msg in reversed(message):
-                if (
-                    datetime.strptime(msg["time"], "%Y-%m-%dT%H:%M:%S.%f%z")
-                    < now - last
-                ):
-                    # Only from python 3.11 and later... datetime.fromisoformat(msg["time"]) < now - last:
-                    break
-                returned_messages.append(msg)
-        else:
-            returned_messages = message
+            return message[-last:]
+        if not isinstance(last, timedelta):
+            return message
+        returned_messages = []
+        now = datetime.now(timezone.utc)
+        for msg in reversed(message):
+            if datetime.strptime(msg["time"], "%Y-%m-%dT%H:%M:%S.%f%z") < now - last:
+                # Only from python 3.11 and later... datetime.fromisoformat(msg["time"]) < now - last:
+                break
+            returned_messages.append(msg)
         return returned_messages
 
     @keyword(tags=("Setter", "BrowserControl"))
@@ -1327,7 +1395,7 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     def _get_page_parent_ids(self, page_id: str) -> tuple[str, str]:
-        browser_catalog = self.get_browser_catalog()
+        browser_catalog = self._get_browser_catalog(include_page_details=False)
         for browser in browser_catalog:
             for context in browser["contexts"]:
                 for page in context["pages"]:
@@ -1336,7 +1404,7 @@ class PlaywrightState(LibraryComponent):
         raise ValueError(f"No page with requested id '{page_id}' found.")
 
     def _get_context_parent_id(self, context_id: str) -> str:
-        browser_catalog = self.get_browser_catalog()
+        browser_catalog = self._get_browser_catalog(include_page_details=False)
         for browser in browser_catalog:
             for context in browser["contexts"]:
                 if context["id"] == context_id:
@@ -1361,11 +1429,16 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4260|Comment >>]
         """
         if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            browser_item = self._get_active_browser_item(
+                self._get_browser_catalog(include_page_details=False)
+            )
             if "id" in browser_item:
                 return [browser_item["id"]]
         else:
-            return [browser["id"] for browser in self.get_browser_catalog()]
+            return [
+                browser["id"]
+                for browser in self._get_browser_catalog(include_page_details=False)
+            ]
         return []
 
     @keyword(tags=("Getter", "BrowserControl"))
@@ -1389,7 +1462,9 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4264|Comment >>]
         """
         if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            browser_item = self._get_active_browser_item(
+                self._get_browser_catalog(include_page_details=False)
+            )
             if context == SelectionType.CURRENT:
                 if "activeContext" in browser_item:
                     return [browser_item["activeContext"]]
@@ -1397,13 +1472,13 @@ class PlaywrightState(LibraryComponent):
                 return [context["id"] for context in browser_item["contexts"]]
         elif context == SelectionType.CURRENT:
             context_ids = []
-            for browser_item in self.get_browser_catalog():
+            for browser_item in self._get_browser_catalog(include_page_details=False):
                 if "activeContext" in browser_item:
                     context_ids.append(browser_item["activeContext"])
             return context_ids
         else:
             context_ids = []
-            for browser_item in self.get_browser_catalog():
+            for browser_item in self._get_browser_catalog(include_page_details=False):
                 for context_item in browser_item["contexts"]:
                     context_ids.append(context_item["id"])
             return context_ids
@@ -1442,7 +1517,9 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4274|Comment >>]
         """
         if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(self.get_browser_catalog())
+            browser_item = self._get_active_browser_item(
+                self._get_browser_catalog(include_page_details=False)
+            )
             if "contexts" in browser_item:
                 if context == SelectionType.CURRENT:
                     return self._get_page_ids_from_context_list(
@@ -1453,7 +1530,7 @@ class PlaywrightState(LibraryComponent):
                 )
         else:
             context_list = []
-            for browser_item in self.get_browser_catalog():
+            for browser_item in self._get_browser_catalog(include_page_details=False):
                 if "contexts" in browser_item:
                     if context == SelectionType.CURRENT:
                         context_list.extend(self._get_active_context_item(browser_item))
@@ -1567,3 +1644,34 @@ class PlaywrightState(LibraryComponent):
                 Request().DownloadID(id=get_download_id(download))
             )
             logger.info(response.log)
+
+    # Mute this from automatic group logging before this is exposed as keyword
+    def open_trace_group(
+        self,
+        name: str,
+        file: Union[Path, str, None] = None,
+        line: int = 0,
+        column: int = 0,
+        context_id: str = "",
+    ):
+        """Opens the trace group in the trace viewer"""
+        if not self.library.tracing_contexts:
+            return
+        with suppress(Exception), self.playwright.grpc_channel() as stub:
+            stub.OpenTraceGroup(
+                Request().TraceGroup(
+                    name=name,
+                    file=str(file or ""),
+                    line=line,
+                    column=column,
+                    contextId=context_id,
+                )
+            )
+
+    # Mute this from automatic group logging before this is exposed as keyword
+    def close_trace_group(self):
+        """Closes the trace group in the trace viewer"""
+        if not self.library.tracing_contexts:
+            return
+        with suppress(Exception), self.playwright.grpc_channel() as stub:
+            stub.CloseTraceGroup(Request().Empty())

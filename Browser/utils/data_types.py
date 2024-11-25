@@ -97,6 +97,14 @@ class NotSet(Enum):
     not_set = "not_set"
 
 
+class KeywordCallStackEntry(TypedDict):
+    """Information about the keyword call stack."""
+
+    name: str
+    file: str
+    line: int
+
+
 class SelectOptions(TypedDict):
     """Dictionary with the following keys and their values
     "index", "value", "label" and "selected".
@@ -617,15 +625,15 @@ class LambdaFunction:
 FormatterKeywords = Enum(
     "FormatterKeywords",
     {
-        "Get Url": auto(),
-        "Get Page Source": auto(),
-        "Get Title": auto(),
-        "Get Text": auto(),
-        "Get Property": auto(),
         "Get Attribute": auto(),
+        "Get Browser Catalog": auto(),
+        "Get Page Source": auto(),
+        "Get Property": auto(),
         "Get Select Options": auto(),
         "Get Style": auto(),
-        "Get Browser Catalog": auto(),
+        "Get Text": auto(),
+        "Get Title": auto(),
+        "Get Url": auto(),
         "LocalStorage Get Item": auto(),
         "SessionStorage Get Item": auto(),
     },
@@ -776,11 +784,11 @@ class RequestMethod(Enum):
     """Enum that defines the request type."""
 
     HEAD = auto()
+    DELETE = auto()
     GET = auto()
+    PATCH = auto()
     POST = auto()
     PUT = auto()
-    PATCH = auto()
-    DELETE = auto()
 
 
 class MouseButtonAction(Enum):
@@ -887,28 +895,28 @@ ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
 Permission = Enum(
     "Permission",
     {
-        "geolocation": "geolocation",
-        "midi": "midi",
-        "midi_sysex": "midi-sysex",
-        "midi-sysex": "midi-sysex",
-        "notifications": "notifications",
-        "camera": "camera",
-        "microphone": "microphone",
-        "background_sync": "background-sync",
-        "background-sync": "background-sync",
-        "ambient_light_sensor": "ambient-light-sensor",
-        "ambient-light-sensor": "ambient-light-sensor",
         "accelerometer": "accelerometer",
+        "accessibility-events": "accessibility-events",
+        "accessibility_events": "accessibility-events",
+        "ambient-light-sensor": "ambient-light-sensor",
+        "ambient_light_sensor": "ambient-light-sensor",
+        "background-sync": "background-sync",
+        "background_sync": "background-sync",
+        "camera": "camera",
+        "clipboard-read": "clipboard-read",
+        "clipboard_read": "clipboard-read",
+        "clipboard-write": "clipboard-write",
+        "clipboard_write": "clipboard-write",
+        "geolocation": "geolocation",
         "gyroscope": "gyroscope",
         "magnetometer": "magnetometer",
-        "accessibility_events": "accessibility-events",
-        "accessibility-events": "accessibility-events",
-        "clipboard_read": "clipboard-read",
-        "clipboard-read": "clipboard-read",
-        "clipboard_write": "clipboard-write",
-        "clipboard-write": "clipboard-write",
-        "payment_handler": "payment-handler",
+        "midi": "midi",
+        "midi-sysex": "midi-sysex",
+        "midi_sysex": "midi-sysex",
+        "microphone": "microphone",
+        "notifications": "notifications",
         "payment-handler": "payment-handler",
+        "payment_handler": "payment-handler",
     },
 )
 Permission.__doc__ = """Enum that defines the permission to grant to a context.
@@ -1363,3 +1371,21 @@ class ClientCertificate(TypedDict, total=False):
     keyPath: str
     pfxPath: str
     passphrase: str
+
+
+class TracingGroupMode(Enum):
+    """Defines in what detail level keywords are written to Playwright trace.
+
+    Playwrright trace is a full log of all playwright actions and events that happen in the browser during the test run.
+    This includes all API calls, events, logs, network requests, and responses as well as the DOM at every moment during execution.
+    This trace can be activated with the ``tracing`` parameter of `New Context` keyword.
+
+    - ``Full`` All keyword calls are written to trace as groups even if they do not call Browser keywords.
+    - ``Browser`` Just Browser library keywords are written to the logs as groups.
+    - ``Playwright`` No additional keywords are logged, just the Playwright API calls.
+
+    """
+
+    Full = auto()
+    Browser = auto()
+    Playwright = auto()

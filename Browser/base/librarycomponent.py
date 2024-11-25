@@ -27,7 +27,11 @@ from robot.utils import timestr_to_secs
 
 from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger
-from ..utils.data_types import AutoClosingLevel, DelayedKeyword, HighLightElement
+from ..utils.data_types import (
+    AutoClosingLevel,
+    DelayedKeyword,
+    HighLightElement,
+)
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -171,20 +175,24 @@ class LibraryComponent:
         return self.library.outputdir
 
     @property
-    def browser_output(self):
+    def browser_output(self) -> Path:
         return self.library.browser_output
 
     @property
-    def screenshots_output(self):
+    def screenshots_output(self) -> Path:
         return self.library.screenshots_output
 
     @property
-    def video_output(self):
+    def video_output(self) -> Path:
         return self.library.video_output
 
     @property
-    def traces_output(self):
+    def traces_output(self) -> Path:
         return self.library.traces_output
+
+    @property
+    def traces_temp(self) -> Path:
+        return self.library.traces_temp
 
     @property
     def state_file(self):
