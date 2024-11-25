@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import os
 from contextlib import suppress
 from copy import copy
 from datetime import datetime, timedelta, timezone
@@ -21,10 +22,12 @@ from typing import Any, Optional, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
+from robot.libraries.BuiltIn import BuiltIn
 from robot.utils import get_link_path
 
 from Browser.utils.data_types import BrowserInfo, TracingGroupMode
 from Browser.utils.misc import get_download_id
+from Browser.utils.robot_booleans import is_truthy
 
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
@@ -201,10 +204,12 @@ class PlaywrightState(LibraryComponent):
         self._update_tracing_contexts()
 
     def _update_tracing_contexts(self):
-        if self.library._tracing_contexts:
-            ctx_ids = self.get_context_ids()
-            self.library._tracing_contexts = [
-                ctx_id for ctx_id in self.library._tracing_contexts if ctx_id in ctx_ids
+        if self.library.tracing_contexts:
+            all_context_ids = self.get_context_ids()
+            self.library.tracing_contexts = [
+                ctx_id
+                for ctx_id in self.library.tracing_contexts
+                if ctx_id in all_context_ids
             ]
 
     def _close_context(self, contexts):
@@ -565,7 +570,7 @@ class PlaywrightState(LibraryComponent):
         ] = ServiceWorkersPermissions.allow,
         storageState: Optional[str] = None,
         timezoneId: Optional[str] = None,
-        tracing: Optional[str] = None,
+        tracing: Union[bool, None, str] = None,
         userAgent: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
@@ -606,7 +611,7 @@ class PlaywrightState(LibraryComponent):
         | ``serviceWorkers``       | Whether to allow sites to register Service workers. Defaults to 'allow'. |
         | ``storageState``         | Restores the storage stated created by the `Save Storage State` keyword. Must be full path to the file. |
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
-        | ``tracing``              | File name where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. Example trace.zip will be saved to ${OUTPUT_DIR}/traces.zip. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces. If file name is defined, tracing will be enabled for all pages in the context. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. |
+        | ``tracing``              | Boolean ``True`` (recommendation) or file path or directory where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. The string `{contextid}` will be replaces with the context id. Path to *.zip files can be absolute or relative to ${OUTPUT_DIR}. Path to folders can be absolute or relative to ${OUTPUT_DIR}/browser/traces. If boolean ``True`` or a directory is given, the trace file will automatically be named ``trace_{contextid}.tip``. Temporary trace files will be saved to ${OUTPUT_DIR}/Browser/traces/temp. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. |
         | ``userAgent``            | Specific user agent to use in this context. |
         | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. null disables the default viewport. If ``width`` and ``height`` is  ``0``, the viewport will scale with the window. |
 
@@ -637,7 +642,7 @@ class PlaywrightState(LibraryComponent):
                 for permission in permissions
             ]
         params["viewport"] = copy(viewport)
-        trace_file = str(Path(self.outputdir, tracing).resolve()) if tracing else ""
+        trace_file = self._resolve_trace_file(tracing)
         params = self._set_context_options(params, httpCredentials, storageState)
         options = json.dumps(params, default=str)
         response = self._new_context(options, trace_file)
@@ -698,7 +703,7 @@ class PlaywrightState(LibraryComponent):
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
         timezoneId: Optional[str] = None,
-        tracing: Optional[str] = None,
+        tracing: Union[bool, None, str] = None,
         url: Optional[str] = None,
         userAgent: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
@@ -738,7 +743,7 @@ class PlaywrightState(LibraryComponent):
                 for permission in permissions
             ]
         params["viewport"] = copy(viewport)
-        trace_file = Path(self.outputdir, tracing).resolve() if tracing else ""
+        trace_file = self._resolve_trace_file(tracing)
         params = self._set_browser_options(params, browser, channel, slowMo, timeout)
         params = self._set_context_options(params, httpCredentials, None)
         options = json.dumps(params, default=str)
@@ -759,8 +764,9 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            self.add_context_stack_to_trace(trace_file=trace_file, ctx_id=response.id)
-
+            self.add_context_and_keyword_call_stack_to_trace(
+                trace_file=trace_file, ctx_id=response.id
+            )
             context_options = self._mask_credentials(
                 json.loads(response.contextOptions)
             )
@@ -779,7 +785,6 @@ class PlaywrightState(LibraryComponent):
                     )
                 except Exception as e:
                     if browser_id in existing_browser_ids:
-                        # with suppress(Exception):
                         self.close_context()
                         self.switch_browser(previously_active_browser_id)
                         logger.debug(
@@ -797,6 +802,26 @@ class PlaywrightState(LibraryComponent):
                 response.id,
                 NewPageDetails(page_id=response.pageId, video_path=video_path),
             )
+
+    def _resolve_trace_file(self, tracing: Union[bool, None, str]) -> Union[Path, str]:
+        tracing_by_var = is_truthy(
+            BuiltIn().get_variable_value("${ROBOT_FRAMEWORK_BROWSER_TRACING}", "")
+        )
+        tracing_by_env = is_truthy(os.getenv("ROBOT_FRAMEWORK_BROWSER_TRACING") or "")
+        if not tracing and not tracing_by_var and not tracing_by_env:
+            return ""
+        if tracing is True or tracing_by_var or tracing_by_env:
+            return (
+                self.traces_output
+            )  # will be extended by '`trace_${context_id}.zip`' on js side.
+        if str(tracing).lower().endswith(".zip"):
+            return Path(self.outputdir, str(tracing)).resolve()
+        return Path(self.traces_output, str(tracing)).resolve()
+
+    def _delete_trace_file(self, context_id: str):
+        trace_file = self.traces_output / f"trace_{context_id}.zip"
+        with suppress(Exception):
+            trace_file.unlink(missing_ok=True)
 
     def _set_context_options(self, params, httpCredentials, storageState):
         params = convert_typed_dict(self.new_context.__annotations__, params)
@@ -827,11 +852,9 @@ class PlaywrightState(LibraryComponent):
             raise ValueError(
                 f"Must use {SupportedBrowsers.chromium.name} browser with channel definition"
             )
-        trace_dir = self.traces_output / str(uuid4())
-        params["tracesDir"] = str(trace_dir)
+        params["tracesDir"] = str(self.traces_temp / str(uuid4()))
         return params
 
-    # Only to ease unit test mocking.
     def _new_context(self, options: str, trace_file: Union[Path, str]):
         with self.playwright.grpc_channel() as stub:
             context = stub.NewContext(
@@ -841,17 +864,25 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            self.add_context_stack_to_trace(trace_file=trace_file, ctx_id=context.id)
+            self.add_context_and_keyword_call_stack_to_trace(
+                trace_file=trace_file, ctx_id=context.id
+            )
         return context
 
-    def add_context_stack_to_trace(self, trace_file, ctx_id):
-        if trace_file:
-            self.library._tracing_contexts.append(ctx_id)
-            if self.library.tracing_group_mode == TracingGroupMode.Full:
-                for keyword_call in self.keyword_stack:
-                    self.open_trace_group(**keyword_call, context_id=ctx_id)
-            elif self.library.tracing_group_mode == TracingGroupMode.Browser:
-                self.open_trace_group(**(self.keyword_stack[-1]), context_id=ctx_id)
+    def add_context_and_keyword_call_stack_to_trace(self, trace_file, ctx_id):
+        if (
+            not trace_file
+            or self.library.tracing_group_mode == TracingGroupMode.Playwright
+        ):
+            return None
+        self.library.tracing_contexts.append(ctx_id)
+        if self.library.tracing_group_mode == TracingGroupMode.Browser:
+            return self.open_trace_group(
+                **(self.library.keyword_call_stack[-1]), context_id=ctx_id
+            )
+        for keyword_call in self.library.keyword_call_stack:
+            self.open_trace_group(**keyword_call, context_id=ctx_id)
+        return None
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
@@ -1063,8 +1094,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.GetBrowserCatalog(
                 Request().Bool(value=include_page_details)
             )
-            self.buffered_browser_catalog = json.loads(response.json)
-            return self.buffered_browser_catalog
+            return json.loads(response.json)
 
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     def get_console_log(
@@ -1621,8 +1651,7 @@ class PlaywrightState(LibraryComponent):
         context_id: str = "",
     ):
         """Opens the trace group in the trace viewer"""
-        if not self.library._tracing_contexts:
-            logger.trace("Tracing not active.")
+        if not self.library.tracing_contexts:
             return
         with suppress(Exception), self.playwright.grpc_channel() as stub:
             stub.OpenTraceGroup(
@@ -1638,8 +1667,7 @@ class PlaywrightState(LibraryComponent):
     # Mute this from automatic group logging before this is exposed as keyword
     def close_trace_group(self):
         """Closes the trace group in the trace viewer"""
-        if not self.library._tracing_contexts:
-            logger.trace("Tracing not active.")
+        if not self.library.tracing_contexts:
             return
         with suppress(Exception), self.playwright.grpc_channel() as stub:
             stub.CloseTraceGroup(Request().Empty())

@@ -23,7 +23,7 @@ import types
 from concurrent.futures._base import Future
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from assertionengine import AssertionOperator
 from overrides import overrides
@@ -796,6 +796,7 @@ class Browser(DynamicCore):
         self,
         *_,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
+        auto_delete_passed_tracing: bool = True,
         enable_playwright_debug: Union[
             PlaywrightLogTypes, bool
         ] = PlaywrightLogTypes.library,
@@ -811,16 +812,18 @@ class Browser(DynamicCore):
         show_keyword_call_banner: Optional[bool] = None,
         strict: bool = True,
         timeout: timedelta = timedelta(seconds=10),
-        tracing_group_mode: TracingGroupMode = TracingGroupMode.Playwright,
+        tracing_group_mode: TracingGroupMode = TracingGroupMode.Full,
     ):
         """Browser library can be taken into use with optional arguments:
 
         | =Argument=                        | =Description= |
         | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
+        | ``auto_delete_passed_tracing``    | If ``auto_closing_level`` is set to ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` is set to boolean ``True``, traces of passed tests or suites, depending on the context scope, will be automatically deleted from the folder ``${OUTPUT_DIR}/browser/traces``. Also temp files will all be deleted after the whole execution ends. |
         | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. For more details, see `PlaywrightLogTypes`. |
         | ``enable_presenter_mode``         | Automatic highlights the interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. By default, the call banner keyword is also enabled unless explicitly disabled. |
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
         | ``jsextension``                   | Path to Javascript modules exposed as extra keywords. The modules must be in CommonJS. It can either be a single path, a comma-separated lists of path or a real list of strings |
+        | ``language``                      | Defines language which is used to translate keyword names and documentation. |
         | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
         | ``plugins``                       | Allows extending the Browser library with external Python classes. Can either be a single class/module, a comma-separated list or a real list of strings |
         | ``retry_assertions_for``          | Timeout for retrying assertions on keywords before failing the keywords. This timeout starts counting from the first failure. Global ``timeout`` will still be in effect. This allows stopping execution faster to assertion failure when element is found fast. |
@@ -829,7 +832,7 @@ class Browser(DynamicCore):
         | ``show_keyword_call_banner``      | If set to ``True``, will show a banner with the keyword name and arguments before the keyword is executed at the bottom of the page. If set to ``False``, will not show the banner. If set to None, which is the default, will show the banner only if the presenter mode is enabled. `Get Page Source` and `Take Screenshot` will not show the banner, because that could negatively affect your test cases/tasks. This feature may be super helpful when you are debugging your tests and using tracing from `New Context` or `Video recording` features. |
         | ``strict``                        | If keyword selector points multiple elements and keywords should interact with one element, keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords or by ``Set Strict Mode`` keyword. |
         | ``timeout``                       | Timeout for keywords that operate on elements. The keywords will wait for this time for the element to appear into the page. Defaults to "10s" => 10 seconds. |
-        | ``language``                      | Defines language which is used to translate keyword names and documentation. |
+        | ``tracing_group_mode``            | Defines how Robot Framework keyword calls are logged in Playwright trace log. Default is `Full`. For more details, see `TracingGroupMode`. |
         """
         if _:
             raise ValueError("Browser library does not accept positional arguments.")
@@ -872,7 +875,8 @@ class Browser(DynamicCore):
         else:
             self._playwright_log = self._get_log_file_name()
         self._playwright: Optional[Playwright] = None
-        self._auto_closing_level: AutoClosingLevel = auto_closing_level
+        self._auto_closing_level = auto_closing_level
+        self.auto_delete_passed_tracing = auto_delete_passed_tracing
         # Parsing needs keywords to be discovered.
         self.external_browser_executable: dict[SupportedBrowsers, str] = (
             external_browser_executable or {}
@@ -900,9 +904,8 @@ class Browser(DynamicCore):
         self._current_loglevel: Optional[str] = None
         self.is_test_case_running = False
         self.auto_closing_default_run_before_unload: bool = False
-        self._keyword_stack: list[KeywordCallStackEntry] = []
-        self._tracing_contexts: list[str] = []
-        self._buffered_browser_catalog: list = []
+        self.keyword_call_stack: list[KeywordCallStackEntry] = []
+        self.tracing_contexts: list[str] = []
 
         translation_file = self._get_translation(language)
         DynamicCore.__init__(self, libraries, translation_file)
@@ -1110,16 +1113,20 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return Path(self.outputdir, "browser")
 
     @property
-    def screenshots_output(self):
+    def screenshots_output(self) -> Path:
         return self.browser_output / "screenshot"
 
     @property
-    def video_output(self):
+    def video_output(self) -> Path:
         return self.browser_output / "video"
 
     @property
-    def traces_output(self):
+    def traces_output(self) -> Path:
         return self.browser_output / "traces"
+
+    @property
+    def traces_temp(self) -> Path:
+        return self.traces_output / "temp"
 
     @property
     def state_file(self):
@@ -1172,7 +1179,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             attrs["lineno"],
             attrs["type"],
         )
-        self._keyword_stack.append(kw_call_stack_entry)
+        self.keyword_call_stack.append(kw_call_stack_entry)
         if self.tracing_group_mode == TracingGroupMode.Full:
             self._playwright_state.open_trace_group(**kw_call_stack_entry)
         if not (
@@ -1211,8 +1218,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def run_keyword(self, name, args, kwargs=None):
         try:
-            if self.tracing_group_mode == TracingGroupMode.Browser:
-                self._playwright_state.open_trace_group(**(self._keyword_stack[-1]))
+            if (
+                self.tracing_group_mode == TracingGroupMode.Browser
+                and self.keyword_call_stack
+            ):
+                self._playwright_state.open_trace_group(**(self.keyword_call_stack[-1]))
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except AssertionError as e:
             self.keyword_error()
@@ -1226,7 +1236,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 input()
             raise e
         finally:
-            if self.tracing_group_mode == TracingGroupMode.Browser:
+            if (
+                self.tracing_group_mode == TracingGroupMode.Browser
+                and self.keyword_call_stack
+            ):
                 self._playwright_state.close_trace_group()
 
     def get_keyword_tags(self, name: str) -> list:
@@ -1236,8 +1249,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return tags
 
     def _end_keyword(self, _name, attrs):
-        if self._keyword_stack:
-            self._keyword_stack.pop()
+        if self.keyword_call_stack:
+            self.keyword_call_stack.pop()
         if self.tracing_group_mode == TracingGroupMode.Full:
             self._playwright_state.close_trace_group()
         if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
@@ -1254,42 +1267,37 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             if self.presenter_mode:
                 logger.debug("Presenter mode: Wait for 5 seconds before pruning pages")
                 time.sleep(5.0)
-            if len(self._execution_stack) == 0:
-                logger.debug("Browser._end_test empty execution stack")
-                return
-            try:
-                catalog_before_test = self._execution_stack.pop()
-                self._playwright_state.open_trace_group(
-                    f"Auto Closing    Test: {name}",  # noqa: RUF001
-                    file=attrs.get("source"),
-                    line=attrs.get("lineno", 0),
-                )
-                self._prune_execution_stack(catalog_before_test)
-                self._playwright_state.close_trace_group()
-            except AssertionError as e:
-                logger.debug(f"Test Case: {name}, End Test: {e}")
-            except ConnectionError as e:
-                logger.debug(f"Browser._end_test connection problem: {e}")
+            self.execute_auto_closing(name, attrs, "Test", attrs["status"])
 
     def _end_suite(self, name, attrs):
         self._remove_from_scope_stack(attrs["id"])
         self.suite_ids.pop(attrs["id"], None)
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
-            if len(self._execution_stack) == 0:
-                logger.debug("Browser._end_suite empty execution stack")
-                return
-            try:
-                self._playwright_state.open_trace_group(
-                    f"Auto Closing    Suite: {name}",  # noqa: RUF001
-                    file=attrs.get("source"),
-                )
-                catalog_before_suite = self._execution_stack.pop()
-                self._prune_execution_stack(catalog_before_suite)
-                self._playwright_state.close_trace_group()
-            except AssertionError as e:
-                logger.debug(f"Test Suite: {name}, End Suite: {e}")
-            except ConnectionError as e:
-                logger.debug(f"Browser._end_suite connection problem: {e}")
+            self.execute_auto_closing(name, attrs, "Suite", attrs["status"])
+
+    def _close(self):
+        if self.auto_delete_passed_tracing and self.traces_temp.is_dir():
+            shutil.rmtree(str(self.traces_temp), ignore_errors=True)
+
+    def execute_auto_closing(
+        self, name: str, attrs: dict, typ: Literal["Test", "Suite"], status: str
+    ):
+        if len(self._execution_stack) == 0:
+            logger.debug(f"Browser._end_{typ.lower()} empty execution stack")
+            return
+        try:
+            catalog_before = self._execution_stack.pop()
+            self._playwright_state.open_trace_group(
+                f"Auto Closing    {typ}: {name}",  # noqa: RUF001
+                file=attrs.get("source"),
+                line=attrs.get("lineno", 0),
+            )
+            self._prune_execution_stack(catalog_before, status)
+            self._playwright_state.close_trace_group()
+        except AssertionError as e:
+            logger.debug(f"{typ}: {name}, End {typ}: {e}")
+        except ConnectionError as e:
+            logger.debug(f"Browser._end_{typ.lower()} connection problem: {e}")
 
     def _add_to_scope_stack(self, scope_id: str, scope: Scope):
         for stack in self.scope_stack.values():
@@ -1299,16 +1307,22 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         for stack in self.scope_stack.values():
             stack.end(scope_id)
 
-    def _prune_execution_stack(self, catalog_before: dict) -> None:
+    def _prune_execution_stack(self, catalog_before: dict, status: str) -> None:
         catalog_after = self.get_browser_catalog()
-        ctx_before_ids = [c["id"] for b in catalog_before for c in b["contexts"]]
-        ctx_after_ids = [c["id"] for b in catalog_after for c in b["contexts"]]
-        new_ctx_ids = [c for c in ctx_after_ids if c not in ctx_before_ids]
+        ctx_before_ids: list[str] = [
+            c["id"] for b in catalog_before for c in b["contexts"]
+        ]
+        ctx_after_ids: list[str] = [
+            c["id"] for b in catalog_after for c in b["contexts"]
+        ]
+        new_ctx_ids: list[str] = [c for c in ctx_after_ids if c not in ctx_before_ids]
         for ctx_id in new_ctx_ids:
             self._playwright_state.open_trace_group(
                 f"Auto Closing Context    {ctx_id}", None  # noqa: RUF001
             )
             self._playwright_state.close_context(ctx_id, SelectionType.ALL)
+            if self.auto_delete_passed_tracing and status == "PASS":
+                self._playwright_state._delete_trace_file(ctx_id)
             self._playwright_state.close_trace_group()
         pages_before = [
             (p["id"], c["id"])

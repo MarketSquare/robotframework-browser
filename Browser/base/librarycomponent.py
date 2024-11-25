@@ -31,7 +31,6 @@ from ..utils.data_types import (
     AutoClosingLevel,
     DelayedKeyword,
     HighLightElement,
-    KeywordCallStackEntry,
 )
 
 if TYPE_CHECKING:
@@ -57,26 +56,6 @@ class LibraryComponent:
     @property
     def _auto_closing_level(self) -> AutoClosingLevel:
         return self.library._auto_closing_level
-
-    @property
-    def keyword_stack(self) -> list[KeywordCallStackEntry]:
-        return self.library._keyword_stack
-
-    @property
-    def tracing_contexts(self) -> list[str]:
-        return self.library._tracing_contexts
-
-    @tracing_contexts.setter
-    def tracing_contexts(self, value: list):
-        self.library._tracing_contexts = value
-
-    @property
-    def buffered_browser_catalog(self) -> list:
-        return self.library._buffered_browser_catalog
-
-    @buffered_browser_catalog.setter
-    def buffered_browser_catalog(self, value: list):
-        self.library._buffered_browser_catalog = value
 
     @property
     def keyword_call_banner_add_style(self) -> str:
@@ -196,20 +175,24 @@ class LibraryComponent:
         return self.library.outputdir
 
     @property
-    def browser_output(self):
+    def browser_output(self) -> Path:
         return self.library.browser_output
 
     @property
-    def screenshots_output(self):
+    def screenshots_output(self) -> Path:
         return self.library.screenshots_output
 
     @property
-    def video_output(self):
+    def video_output(self) -> Path:
         return self.library.video_output
 
     @property
-    def traces_output(self):
+    def traces_output(self) -> Path:
         return self.library.traces_output
+
+    @property
+    def traces_temp(self) -> Path:
+        return self.library.traces_temp
 
     @property
     def state_file(self):

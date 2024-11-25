@@ -1376,6 +1376,10 @@ class ClientCertificate(TypedDict, total=False):
 class TracingGroupMode(Enum):
     """Defines in what detail level keywords are written to Playwright trace.
 
+    Playwrright trace is a full log of all playwright actions and events that happen in the browser during the test run.
+    This includes all API calls, events, logs, network requests, and responses as well as the DOM at every moment during execution.
+    This trace can be activated with the ``tracing`` parameter of `New Context` keyword.
+
     - ``Full`` All keyword calls are written to trace as groups even if they do not call Browser keywords.
     - ``Browser`` Just Browser library keywords are written to the logs as groups.
     - ``Playwright`` No additional keywords are logged, just the Playwright API calls.
