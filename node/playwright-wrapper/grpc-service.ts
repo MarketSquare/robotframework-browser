@@ -152,7 +152,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     closeBrowser = this.wrappingState(playwrightState.closeBrowser);
     closeBrowserServer = this.wrapping(playwrightState.closeBrowserServer);
     closeAllBrowsers = this.wrappingState(playwrightState.closeAllBrowsers);
-    closeContext = this.wrappingState(playwrightState.closeContext);
+    closeContext = this.wrapping(playwrightState.closeContext);
     closePage = this.wrapping(playwrightState.closePage);
     openTraceGroup = this.wrapping(playwrightState.openTraceGroup);
     closeTraceGroup = this.wrappingState(playwrightState.closeTraceGroup);

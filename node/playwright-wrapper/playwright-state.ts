@@ -699,10 +699,11 @@ export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<R
     return emptyWithLog('Closed all browsers');
 }
 
-export async function closeContext(openBrowsers: PlaywrightState): Promise<Response.Empty> {
+export async function closeContext(request: Request.Bool, openBrowsers: PlaywrightState): Promise<Response.Empty> {
+    const saveTrace = request.getValue();
     const activeBrowser = openBrowsers.getActiveBrowser();
     const traceFile = openBrowsers.getTraceFile();
-    if (traceFile) {
+    if (traceFile && saveTrace) {
         await openBrowsers.getActiveContext()?.tracing.stop({ path: traceFile });
     }
     await openBrowsers.getActiveContext()?.close();

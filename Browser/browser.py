@@ -796,7 +796,7 @@ class Browser(DynamicCore):
         self,
         *_,
         auto_closing_level: AutoClosingLevel = AutoClosingLevel.TEST,
-        auto_delete_passed_tracing: bool = True,
+        auto_delete_passed_tracing: bool = False,
         enable_playwright_debug: Union[
             PlaywrightLogTypes, bool
         ] = PlaywrightLogTypes.library,
@@ -1320,9 +1320,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._playwright_state.open_trace_group(
                 f"Auto Closing Context    {ctx_id}", None  # noqa: RUF001
             )
-            self._playwright_state.close_context(ctx_id, SelectionType.ALL)
-            if self.auto_delete_passed_tracing and status == "PASS":
-                self._playwright_state._delete_trace_file(ctx_id)
+            self._playwright_state.close_context(
+                ctx_id,
+                SelectionType.ALL,
+                save_trace=not bool(self.auto_delete_passed_tracing and status == "PASS"),
+            )
             self._playwright_state.close_trace_group()
         pages_before = [
             (p["id"], c["id"])

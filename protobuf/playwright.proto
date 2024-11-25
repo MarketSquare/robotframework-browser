@@ -578,7 +578,7 @@ service  Playwright {
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
-  rpc CloseContext(Request.Empty) returns (Response.Empty);
+  rpc CloseContext(Request.Bool) returns (Response.Empty);
   rpc ClosePage(Request.ClosePage) returns (Response.PageReportResponse);
   rpc OpenTraceGroup(Request.TraceGroup) returns (Response.Empty);
   rpc CloseTraceGroup(Request.Empty) returns (Response.Empty);

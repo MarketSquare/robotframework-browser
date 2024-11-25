@@ -169,6 +169,8 @@ class PlaywrightState(LibraryComponent):
         self,
         context: Union[SelectionType, str] = SelectionType.CURRENT,
         browser: Union[SelectionType, str] = SelectionType.CURRENT,
+        *,
+        save_trace: bool = True,
     ):
         """Closes a Context.
 
@@ -178,6 +180,7 @@ class PlaywrightState(LibraryComponent):
         | =Argument=  | =Description= |
         | ``context`` | Context to close. ``CURRENT`` selects the active context. ``ALL`` closes all contexts. When a context id is provided, that context is closed. |
         | ``browser`` | Browser where to close context. ``CURRENT`` selects the active browser. ``ALL`` closes all browsers. When a browser id is provided, that browser is closed. |
+        | ``save_trace`` | If set to ``False``, the trace of this context is not saved, even if it was enables by `New Context`. Defaults to ``True``. |
 
         Example:
         | `Close Context`                          #  Closes current context and current browser
@@ -200,7 +203,7 @@ class PlaywrightState(LibraryComponent):
                 self.switch_browser(browser_instance["id"])
             with suppress(Exception):
                 contexts = self._get_context(context, browser_instance["contexts"])
-                self._close_context(contexts)
+                self._close_pw_context(contexts, save_trace)
         self._update_tracing_contexts()
 
     def _update_tracing_contexts(self):
@@ -212,12 +215,12 @@ class PlaywrightState(LibraryComponent):
                 if ctx_id in all_context_ids
             ]
 
-    def _close_context(self, contexts):
+    def _close_pw_context(self, contexts, save_trace=True):
         with self.playwright.grpc_channel() as stub:
             for context in contexts:
                 self.context_cache.remove(context["id"])
                 self.switch_context(context["id"])
-                response = stub.CloseContext(Request().Empty())
+                response = stub.CloseContext(Request().Bool(value=save_trace))
                 logger.info(response.log)
 
     def _get_context(self, context, contexts):
@@ -570,7 +573,7 @@ class PlaywrightState(LibraryComponent):
         ] = ServiceWorkersPermissions.allow,
         storageState: Optional[str] = None,
         timezoneId: Optional[str] = None,
-        tracing: Union[bool, None, str] = None,
+        tracing: Union[bool, None, Path] = None,
         userAgent: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
             width=1280, height=720
@@ -703,7 +706,7 @@ class PlaywrightState(LibraryComponent):
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
         timezoneId: Optional[str] = None,
-        tracing: Union[bool, None, str] = None,
+        tracing: Union[bool, None, Path] = None,
         url: Optional[str] = None,
         userAgent: Optional[str] = None,
         viewport: Optional[ViewportDimensions] = ViewportDimensions(
@@ -803,7 +806,9 @@ class PlaywrightState(LibraryComponent):
                 NewPageDetails(page_id=response.pageId, video_path=video_path),
             )
 
-    def _resolve_trace_file(self, tracing: Union[bool, None, str]) -> Union[Path, str]:
+    def _resolve_trace_file(self, tracing: Union[bool, None, Path]) -> str:
+        if isinstance(tracing, str):
+            tracing = Path(tracing)
         tracing_by_var = (
             is_truthy(
                 BuiltIn().get_variable_value("${ROBOT_FRAMEWORK_BROWSER_TRACING}", "")
@@ -815,17 +820,12 @@ class PlaywrightState(LibraryComponent):
         if not tracing and not tracing_by_var and not tracing_by_env:
             return ""
         if tracing is True or tracing_by_var or tracing_by_env:
-            return (
+            return str(
                 self.traces_output
             )  # will be extended by '`trace_${context_id}.zip`' on js side.
-        if str(tracing).lower().endswith(".zip"):
-            return Path(self.outputdir, str(tracing)).resolve()
-        return Path(self.traces_output, str(tracing)).resolve()
-
-    def _delete_trace_file(self, context_id: str):
-        trace_file = self.traces_output / f"trace_{context_id}.zip"
-        with suppress(Exception):
-            trace_file.unlink(missing_ok=True)
+        if isinstance(tracing, Path) and tracing.suffix == ".zip":
+            return str(Path(self.outputdir, tracing).resolve())
+        return str(Path(self.traces_output, str(tracing)).resolve())
 
     def _set_context_options(self, params, httpCredentials, storageState):
         params = convert_typed_dict(self.new_context.__annotations__, params)
