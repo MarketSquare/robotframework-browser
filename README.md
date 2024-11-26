@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-159-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-160-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -381,6 +381,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/henriquediassep"><img src="https://avatars.githubusercontent.com/u/17513934?v=4?s=100" width="100px;" alt="Henrique Branco"/><br /><sub><b>Henrique Branco</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ahenriquediassep" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mika-b"><img src="https://avatars.githubusercontent.com/u/29384035?v=4?s=100" width="100px;" alt="mika-b"/><br /><sub><b>mika-b</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amika-b" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/okraus-ari"><img src="https://avatars.githubusercontent.com/u/176952405?v=4?s=100" width="100px;" alt="okraus-ari"/><br /><sub><b>okraus-ari</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=okraus-ari" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ecare-joost"><img src="https://avatars.githubusercontent.com/u/59823670?v=4?s=100" width="100px;" alt="ecare-joost"/><br /><sub><b>ecare-joost</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aecare-joost" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
