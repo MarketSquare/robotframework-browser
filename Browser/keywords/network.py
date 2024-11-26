@@ -41,16 +41,17 @@ def _format_response(response: dict) -> dict:
 
 
 def _jsonize_content(data, bodykey):
-    headers = json.loads(data["headers"])
+    headers = json.loads(data.get("headers", "{}"))
     data["headers"] = headers
     lower_headers = {k.lower(): v for k, v in headers.items()}
     if (
         "content-type" in lower_headers
         and "application/json" in lower_headers["content-type"]
+        and bodykey in data
         and data[bodykey]
     ):
         with contextlib.suppress(json.decoder.JSONDecodeError):
-            if not isinstance(data[bodykey], dict):
+            if not isinstance(data[bodykey], (dict, list)):
                 data[bodykey] = json.loads(data[bodykey])
 
 
