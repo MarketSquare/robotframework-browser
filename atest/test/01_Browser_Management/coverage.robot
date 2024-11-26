@@ -62,9 +62,10 @@ Coverage With MarkDown And Raw
     Close Page
 
 Run Rfbrowser To Combine Coverage Reports
+    ${rel_path} =    Relative To    ${OUTPUT_DIR}    ${EXECDIR}
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
-    ...    ${entry_cmd} coverage ${OUTPUT_DIR}/browser/coverage ${OUTPUT_DIR}/combined_coverage_reports_1 --name "New name"
+    ...    ${entry_cmd} coverage ${rel_path}/browser/coverage ${rel_path}/combined_coverage_reports_1 --name "New name"
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}

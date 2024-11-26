@@ -41,6 +41,9 @@ def combine(
     name: Optional[str] = None,
     reports="v8",
 ) -> None:
+    cwd = Path(Path.cwd())
+    if not cwd.is_relative_to(output_folder):
+        output_folder = cwd.joinpath(output_folder)
     logger.info(f"Combining coverage files from {input_folder} to {output_folder}")
     if config is not None and config.is_file():
         logger.info(f"Using configuration from {config}")
