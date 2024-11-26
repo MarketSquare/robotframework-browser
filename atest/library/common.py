@@ -34,7 +34,12 @@ def start_test_server():
     return port
 
 
-def start_test_https_server(server_cert_path: str, server_key_path: str, ca_cert_path: str, mutual_tls: bool = False):
+def start_test_https_server(
+    server_cert_path: str,
+    server_key_path: str,
+    ca_cert_path: str,
+    mutual_tls: bool = False,
+):
     global SERVERS
     port = str(find_free_port())
 
@@ -45,18 +50,29 @@ def start_test_https_server(server_cert_path: str, server_key_path: str, ca_cert
 
     # This seems to be a very strange behaviour: if we start the server with absolute paths, it prepends
     # them with its own path and is unable to find the file. Therefore we have to count the relative path from its directory.
-    server_cert_path = os.path.relpath(os.path.abspath(server_cert_path), start = test_app_dir)
-    server_key_path = os.path.relpath(os.path.abspath(server_key_path), start = test_app_dir)
-    ca_cert_path = os.path.relpath(os.path.abspath(ca_cert_path), start = test_app_dir)
+    server_cert_path = os.path.relpath(
+        os.path.abspath(server_cert_path), start=test_app_dir
+    )
+    server_key_path = os.path.relpath(
+        os.path.abspath(server_key_path), start=test_app_dir
+    )
+    ca_cert_path = os.path.relpath(os.path.abspath(ca_cert_path), start=test_app_dir)
 
     print(test_app_path)
     process = Popen(
-        ["node", test_app_path,
-          "-p", port,
-          "-c", server_cert_path,
-          "-k", server_key_path,
-          "-C", ca_cert_path,
-          "-M" if mutual_tls else "-T"],
+        [
+            "node",
+            test_app_path,
+            "-p",
+            port,
+            "-c",
+            server_cert_path,
+            "-k",
+            server_key_path,
+            "-C",
+            ca_cert_path,
+            "-M" if mutual_tls else "-T",
+        ],
         text=True,
         cwd=str(root_dir),
     )
@@ -86,7 +102,6 @@ def stop_test_server(port: str):
         logger.warn(f"Server with port {port} not found")
 
 
-
 def get_current_scope_from_lib(keyword: FormatterKeywords) -> list:
     browser = BuiltIn().get_library_instance("Browser")
     stack = browser.scope_stack["assertion_formatter"].get()
@@ -99,4 +114,6 @@ def numbers_are_close(number1: int, number2, difference: int) -> bool:
     logger.info(f"Numbers difference is {size_difference}")
     if size_difference < difference:
         return True
-    raise ValueError(f"Numbers differece is {size_difference}, but it should have been {difference}")
+    raise ValueError(
+        f"Numbers differece is {size_difference}, but it should have been {difference}"
+    )

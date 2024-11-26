@@ -605,7 +605,9 @@ def lint_python(c, fix=False):
     print("Run mypy:")
     c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/ bootstrap.py")
     print("Run black:")
-    c.run("black --config Browser/pyproject.toml tasks.py Browser/ bootstrap.py")
+    c.run(
+        "black --config Browser/pyproject.toml tasks.py Browser/ bootstrap.py utest atest"
+    )
     print("Run ruff:")
     ruff_cmd = "ruff check --config Browser/pyproject.toml Browser/ bootstrap.py"
     if fix:

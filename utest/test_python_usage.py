@@ -21,14 +21,15 @@ def application_server():
     process = subprocess.Popen(
         ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
     )
-    
+
     # Wait for server to bind to port
     import socket
+
     start_time = time.time()
     while time.time() - start_time < 10:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            result = sock.connect_ex(('localhost', 7272))
+            result = sock.connect_ex(("localhost", 7272))
             if result == 0:
                 sock.close()
                 break
@@ -40,10 +41,10 @@ def application_server():
     else:
         process.terminate()
         raise RuntimeError("Server failed to start within timeout")
-    
+
     # Give the server a moment to initialize after binding
     time.sleep(0.5)
-    
+
     yield
     process.terminate()
 
@@ -97,10 +98,12 @@ def atexit_register(monkeypatch):
     monkeypatch.setattr(atexit, "register", register)
     return register
 
+
 def test_playwright_lazy_initialization(browser):
     assert browser._playwright is None
     browser.get_browser_catalog()
     assert isinstance(browser.playwright, Browser.playwright.Playwright)
+
 
 def test_open_page_get_text(application_server, browser):
     browser.new_page("localhost:7272/dist/")
@@ -229,6 +232,7 @@ def test_promise_to_wait_for_elements_state_with_name_arguments(browser):
     browser.go_to(url="https://www.google.com")
     assert (promise.running() or promise.done()) is True
 
+
 @pytest.fixture()
 def browser_locator_handler(tmpdir):
     Browser.Browser._output_dir = tmpdir
@@ -237,6 +241,7 @@ def browser_locator_handler(tmpdir):
     browser = Browser.Browser(jsextension=str(extension))
     yield browser
     browser.close_browser("ALL")
+
 
 def test_custom_locator_handler(browser_locator_handler, application_server):
     browser_locator_handler.new_page("http://localhost:7272/overlay.html")
