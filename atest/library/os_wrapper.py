@@ -209,3 +209,7 @@ def file_as_uri(path: str) -> Path:
 def get_parent(path: str) -> Path:
     """Return parent of the path."""
     return Path(path).parent
+
+def relative_to(path1: Path, path2: Path) -> str:
+    """Return relative path."""
+    return path1.relative_to(path2)
