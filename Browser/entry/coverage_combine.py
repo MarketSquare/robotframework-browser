@@ -24,7 +24,7 @@ from .constant import INSTALLATION_DIR, SHELL
 
 
 def _find_coverage_files(input_folder: Path, logger: logging.Logger) -> Iterator:
-    for file in input_folder.iterdir():
+    for file in input_folder.rglob("*"):
         if file.is_dir() and file.joinpath("raw").is_dir():
             raw_dir = file.joinpath("raw")
             logger.info(f"Folder {raw_dir} found")

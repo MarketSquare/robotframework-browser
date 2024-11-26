@@ -13,7 +13,6 @@ Coverage
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
     ${coverage_file} =    Stop Coverage
-    VAR    ${FILE}    ${coverage_file}    scope=suite
     File Should Not Be Empty    ${coverage_file}
     Close Page
 
@@ -69,6 +68,9 @@ Run Rfbrowser To Combine Coverage Reports
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
+    Should Contain    ${process.stdout}    page=
+    # Test Coverage With Options use argument folder=SimplePage and it must be in srdout at found folders.
+    Should Contain    ${process.stdout}    SimplePage${/}page=
     Should Be Equal As Integers    ${process.rc}    0
     Directory Should Not Be Empty    ${OUTPUT_DIR}/combined_coverage_reports_1
     Directory Should Not Be Empty    ${OUTPUT_DIR}/browser/coverage
