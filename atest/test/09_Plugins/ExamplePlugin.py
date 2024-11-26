@@ -41,7 +41,8 @@ class ExamplePlugin(LibraryComponent):
     def get_location_object(self) -> dict:
         """Returns the location object of the current page.
 
-        This keyword calles the python keyword `Evaluate Javascript` to get the location object."""
+        This keyword calles the python keyword `Evaluate Javascript` to get the location object.
+        """
         location_dict = self.library.evaluate_javascript(None, f"window.location")
         logger.info(f"Location object:\n {json.dumps(location_dict, indent=2)}")
         return DotDict(location_dict)

@@ -45,17 +45,13 @@ def test_format_response_with_invalid_json_body():
 
 
 def test_format_response_with_no_body():
-    response = _format_response(
-        {"headers": '{"content-type": "application/json"}'}
-    )
+    response = _format_response({"headers": '{"content-type": "application/json"}'})
     assert "body" not in response
     assert response["headers"]["content-type"] == "application/json"
 
 
 def test_format_response_with_no_headers():
-    response = _format_response(
-        {"body": '{"key":"value1"}'}
-    )
+    response = _format_response({"body": '{"key":"value1"}'})
     assert response["body"] == '{"key":"value1"}'
     assert response["headers"] == {}
 
@@ -77,7 +73,10 @@ def test_format_response_with_json_list_body():
     assert response["headers"]["content-type"] == "application/json"
 
     response = _format_response(
-        {"headers": '{"content-type": "application/json"}', "body": json.loads(body_list)}
+        {
+            "headers": '{"content-type": "application/json"}',
+            "body": json.loads(body_list),
+        }
     )
     assert isinstance(response["body"], list)
     assert response["body"][0]["key"] == "value1"

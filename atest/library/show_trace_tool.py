@@ -18,7 +18,7 @@ def run_rfbrowser_help():
             cwd=exec_dir,
             stderr=subprocess.STDOUT,
             stdout=file,
-            shell=True
+            shell=True,
         )
     time.sleep(2)
     help_text = out_file.read_text()
@@ -42,12 +42,14 @@ def start_show_trace(zip_file: str):
             cwd=exec_dir,
             stderr=subprocess.STDOUT,
             stdout=file,
-            shell=True
+            shell=True,
         )
     logger.info("Give process time to start")
     time.sleep(3)
     logger.info(f"Trace viewer output: {out_file.read_text()}")
-    assert process.returncode is None, "Process should be still running, but it was not."
+    assert (
+        process.returncode is None
+    ), "Process should be still running, but it was not."
     return process, out_file
 
 
@@ -57,7 +59,7 @@ def _check_trace_process(process: subprocess.Popen, out_file: Path):
         psutil.pid_exists(pid)
     except NoSuchProcess:
         logger.info(process.stdout)
-        raise 
+        raise
     proc = psutil.Process(pid)
     binary = False
     show_trace = False
@@ -84,7 +86,10 @@ def _check_trace_process(process: subprocess.Popen, out_file: Path):
             if "node" in child_proc.name().lower():
                 logger.info(child_proc.name())
                 node = True
-            if "chromium" in child_proc.name().lower() or "chrome" in child_proc.name().lower():
+            if (
+                "chromium" in child_proc.name().lower()
+                or "chrome" in child_proc.name().lower()
+            ):
                 logger.info(child_proc.name())
                 chromium = True
         if chromium and node:
@@ -107,4 +112,3 @@ def check_trace_process(prcess: subprocess.Popen, out_file: Path):
         logger.info(f"Trace file output: {out_file.read_text()}")
         time.sleep(1)
     raise ValueError("No valid trace process found")
-

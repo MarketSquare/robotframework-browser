@@ -21,6 +21,7 @@ def test_cookie_as_dot_dict_negative_expiry(cookie: Cookie):
     data = cookie._cookie_as_dot_dict({"expires": epoch})
     assert data.expires == datetime.fromtimestamp(epoch, tz=timezone.utc)
 
+
 def test_expiry(cookie: Cookie):
     assert cookie._expiry("1") == 1
     assert cookie._expiry("1 000") == 1000
