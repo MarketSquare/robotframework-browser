@@ -1472,6 +1472,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ecare-joost",
+      "name": "ecare-joost",
+      "avatar_url": "https://avatars.githubusercontent.com/u/59823670?v=4",
+      "profile": "https://github.com/ecare-joost",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
