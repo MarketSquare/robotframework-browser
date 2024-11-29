@@ -1491,6 +1491,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "ArttuKnowit",
+      "name": "ArttuKnowit",
+      "avatar_url": "https://avatars.githubusercontent.com/u/105268255?v=4",
+      "profile": "https://github.com/ArttuKnowit",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
