@@ -1212,12 +1212,16 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if typ not in ["SETUP", "KEYWORD", "TEARDOWN"]:
             args = [name] if name else []
             name = typ
+        try:
+            lineno = int(lineno)
+        except (ValueError, TypeError):
+            lineno = 0
         return {
             "name": (
                 f"{name}    {'    '.join(args)}" if args else name  # noqa: RUF001
             ),
             "file": str(source),
-            "line": int(lineno),
+            "line": lineno,
         }
 
     def run_keyword(self, name, args, kwargs=None):

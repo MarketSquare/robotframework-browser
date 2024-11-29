@@ -74,8 +74,8 @@ class Coverage(LibraryComponent):
         logger.info(f"Starting coverage for {coverage_type.name}")
         with self.playwright.grpc_channel() as stub:
             response = stub.StartCoverage(
-                Request.CoverateStart(
-                    coverateType=coverage_type.name,
+                Request.CoverageStart(
+                    coverageType=coverage_type.name,
                     resetOnNavigation=resetOnNavigation,
                     reportAnonymousScripts=reportAnonymousScripts,
                     configFile=str(config_file) if config_file else "",

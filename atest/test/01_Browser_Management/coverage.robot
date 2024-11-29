@@ -1,7 +1,15 @@
 *** Settings ***
 Resource        imports.resource
 
-Test Setup      New Page    ${EMPTY}
+Test Setup      Open Page And Store ID
+
+*** Variables ***
+${PAGE_ID}
+
+*** Keywords ***
+Open Page And Store ID
+    &{page_info}    New Page
+    Set Suite Variable    ${PAGE_ID}    ${page_info.page_id}
 
 *** Test Cases ***
 Coverage
@@ -13,8 +21,21 @@ Coverage
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
     ${coverage_file} =    Stop Coverage
+    Should Be Equal    ${coverage_file}    ${{pathlib.Path($OUTPUT_DIR) / "coverage_reports" / $PAGE_ID / "index.html"}}
     File Should Not Be Empty    ${coverage_file}
-    Close Page
+
+Coverage AutoClosing
+    Start Coverage
+    ...    js
+    ...    reportAnonymousScripts=True
+    ...    resetOnNavigation=True
+    ...    config_file=${CURDIR}/coverageConfig.js
+    Go To    ${LOGIN_URL}
+    Click    id=delayed_request
+
+Check Coverage AutoClosing
+    [Setup]    NONE
+    File Should Not Be Empty    ${{pathlib.Path($OUTPUT_DIR) / "coverage_reports" / $PAGE_ID / "index.html"}}
 
 Coverage With Options
     ${type} =    Start Coverage    config_file=${CURDIR}/coverageConfig.js    folder=SimplePage
@@ -23,10 +44,9 @@ Coverage With Options
     Go To    ${OWERLAY_URL}
     Click    id=CreateOverlayButton
     Click    id=textHeading
-    ${coverage_file} =    Stop Coverage
-    File Should Not Be Empty    ${coverage_file}
-    ${coverage_file2} =    Convert To String    ${coverage_file}
-    Should Contain    ${coverage_file2}    SimplePage
+    Close Context
+    ${coverage_file}    Evaluate    pathlib.Path($OUTPUT_DIR) / "coverage_reports" / f"SimplePage_{$PAGE_ID}" / "index.html"
+    File Should Not Be Empty     ${coverage_file}
     Close Page
     New Page    ${coverage_file.as_uri()}
     Get Text    .mcr-title    equal    Browser library Coverage Report

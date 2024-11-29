@@ -31,8 +31,8 @@ message Request {
     string advanceType = 2;
   }
 
-  message CoverateStart {
-    string coverateType = 1;
+  message CoverageStart {
+    string coverageType = 1;
     bool resetOnNavigation = 2;
     bool reportAnonymousScripts = 3;
     string configFile = 4;
@@ -609,6 +609,6 @@ service  Playwright {
   rpc AdvanceClock(Request.ClockAdvance) returns (Response.Empty);
 
   /* Coverage */
-  rpc StartCoverage(Request.CoverateStart) returns (Response.Empty);
+  rpc StartCoverage(Request.CoverageStart) returns (Response.Empty);
   rpc StopCoverage(Request.Empty) returns (Response.String);
 }
