@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-161-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-162-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -383,6 +383,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/okraus-ari"><img src="https://avatars.githubusercontent.com/u/176952405?v=4?s=100" width="100px;" alt="okraus-ari"/><br /><sub><b>okraus-ari</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=okraus-ari" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ecare-joost"><img src="https://avatars.githubusercontent.com/u/59823670?v=4?s=100" width="100px;" alt="ecare-joost"/><br /><sub><b>ecare-joost</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aecare-joost" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/PaulBrandUWV"><img src="https://avatars.githubusercontent.com/u/160221050?v=4?s=100" width="100px;" alt="PaulBrandUWV"/><br /><sub><b>PaulBrandUWV</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3APaulBrandUWV" title="Bug reports">🐛</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ArttuKnowit"><img src="https://avatars.githubusercontent.com/u/105268255?v=4?s=100" width="100px;" alt="ArttuKnowit"/><br /><sub><b>ArttuKnowit</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AArttuKnowit" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
