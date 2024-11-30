@@ -29,7 +29,7 @@ class Coverage(LibraryComponent):
         *,
         config_file: Optional[PathLike] = None,
         coverage_type: CoverageType = CoverageType.all,
-        folder: Optional[str] = None,
+        path: Path = Path(),
         raw: bool = False,
         reportAnonymousScripts: bool = False,
         resetOnNavigation: bool = True,
@@ -39,7 +39,7 @@ class Coverage(LibraryComponent):
         | =Arguments= | =Description= |
         | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file] |
         | ``coverage_type`` | Type of coverage to start. Default is `all`. |
-        | ``folder`` | Optional folder prefix for the page coverage report. |
+        | ``path`` | Absolute or relative directory path (relative to ``${OUTPUT_DIR}/browser/coverage/``) where the coverage is store in a directory with the page id name. |
         | ``raw`` | Whether to save raw coverage data. Default is `False`. |
         | ``reportAnonymousScripts`` | Whether to report anonymous scripts. Default is `False`. Only valid for JS coverage. |
         | ``resetOnNavigation`` | Whether to reset coverage on navigation. Default is `True`. |
@@ -49,12 +49,9 @@ class Coverage(LibraryComponent):
         - ``css``: [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS].
         - ``js``: [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
 
-        If folder is present, the coverage will be saved to Browser/coverage/folder/pageid folder.
-        if folder is not preset, coverage will be saved to Browser/coverage/pageid folder.
-
         Coverage must started when page is open and before any action is
-        performed on the page. Coverage be stopped by calling `Stop Coverage` keyword
-        and must be called before page is closed.
+        performed on the page. Coverage will be stored when calling `Stop Coverage` keyword
+        or page or context is closed. This is done automatically when using the auto closing.
 
         The `raw` argument saves the raw coverage data in the coverage folder. The raw data
         is needed to combine multiple coverage reports to single report. Singel report can
@@ -74,13 +71,12 @@ class Coverage(LibraryComponent):
         logger.info(f"Starting coverage for {coverage_type.name}")
         with self.playwright.grpc_channel() as stub:
             response = stub.StartCoverage(
-                Request.CoverateStart(
-                    coverateType=coverage_type.name,
+                Request.CoverageStart(
+                    coverageType=coverage_type.name,
                     resetOnNavigation=resetOnNavigation,
                     reportAnonymousScripts=reportAnonymousScripts,
                     configFile=str(config_file) if config_file else "",
-                    coverageDir=str(self.coverage_ouput),
-                    folderPrefix=folder or "",
+                    coverageDir=str(self.coverage_ouput / path),
                     raw=raw,
                 )
             )

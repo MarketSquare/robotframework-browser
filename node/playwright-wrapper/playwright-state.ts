@@ -40,6 +40,7 @@ import {
 import { exists } from './playwright-invoke';
 
 import * as path from 'path';
+import { CoverageReport, CoverageReportOptions } from 'monocart-coverage-reports';
 import { ServerWritableStream } from '@grpc/grpc-js';
 import { pino } from 'pino';
 import strip from 'strip-comments';
@@ -541,7 +542,6 @@ export type DownloadInfo = {
 export type CoverageOptions = {
     type: string;
     directory: string;
-    folderPrefix: string;
     configFile: string;
     raw: boolean;
 };
@@ -706,6 +706,9 @@ export async function closeContext(request: Request.Bool, openBrowsers: Playwrig
     if (traceFile && saveTrace) {
         await openBrowsers.getActiveContext()?.tracing.stop({ path: traceFile });
     }
+    for (const page of activeBrowser.context?.pageStack || []) {
+        await _saveCoverageReport(page);
+    }
     await openBrowsers.getActiveContext()?.close();
     activeBrowser.popContext();
     // Closing Persistent Context if Context is closed.
@@ -721,6 +724,9 @@ export async function closePage(
 ): Promise<Response.PageReportResponse> {
     const activeBrowser = openBrowsers.getActiveBrowser();
     const closedPage = activeBrowser.popPage();
+    if (closedPage) {
+        await _saveCoverageReport(closedPage);
+    }
     const unload = request.getRunbeforeunload();
     if (!closedPage) throw new Error('No open page');
     logger.info(`Closing page with runBeforeUnload ${unload}`);
@@ -1072,4 +1078,72 @@ export async function saveStorageState(
     const stateFile = request.getPath();
     await context.c.storageState({ path: stateFile });
     return emptyWithLog('Current context state is saved to: ' + stateFile);
+}
+
+export async function startCoverage(request: Request.CoverageStart, state: PlaywrightState): Promise<Response.Empty> {
+    const activePage = state.getActivePage();
+    exists(activePage, 'Could not find active page');
+    const coverageOptions: CoverageOptions = {
+        type: request.getCoveragetype(),
+        directory: request.getCoveragedir(),
+        configFile: request.getConfigfile(),
+        raw: request.getRaw(),
+    };
+    state.addCoverageOptions(coverageOptions);
+    const resetOnNavigation = request.getResetonnavigation();
+    const reportAnonymousScripts = request.getReportanonymousscripts();
+    if (['js', 'all'].includes(coverageOptions.type)) {
+        logger.info(
+            `Starting JS coverage with resetOnNavigation: ${resetOnNavigation} and reportAnonymousScripts: ${reportAnonymousScripts}`,
+        );
+        await activePage.coverage.startJSCoverage({ reportAnonymousScripts, resetOnNavigation });
+    }
+    if (['css', 'all'].includes(coverageOptions.type)) {
+        logger.info(`Starting CSS coverage with resetOnNavigation: ${resetOnNavigation}`);
+        await activePage.coverage.startCSSCoverage({ resetOnNavigation });
+    }
+    return emptyWithLog(`Coverage started for ${coverageOptions.type}`);
+}
+
+export async function stopCoverage(request: Request.Empty, state: PlaywrightState): Promise<Response.String> {
+    const activeIndexedPage = state.activeBrowser?.page;
+    exists(activeIndexedPage, 'Could not find active page');
+    return _saveCoverageReport(activeIndexedPage);
+}
+
+async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Response.String> {
+    const { coverage: coverageOptions, p: activePage, id: pageId } = activeIndexedPage;
+    activeIndexedPage.coverage = undefined;
+    if (!coverageOptions) {
+        return stringResponse('', 'Coverage not started');
+    }
+    const { directory: coverageDir = '', configFile = '', type: coverageType, raw = false } = coverageOptions;
+
+    const allCoverage: any[] = [];
+    if (['js', 'all'].includes(coverageType)) {
+        logger.info('Stopping JS coverage');
+        allCoverage.push(...(await activePage.coverage.stopJSCoverage()));
+    }
+    if (['css', 'all'].includes(coverageType)) {
+        logger.info('Stopping CSS coverage');
+        allCoverage.push(...(await activePage.coverage.stopCSSCoverage()));
+    }
+
+    const outputDir = path.normalize(path.join(coverageDir, pageId));
+    const options: CoverageReportOptions = { outputDir: outputDir };
+    if (raw && configFile === '') {
+        logger.info('Raw and v8 coverage enabled');
+        options.reports = [['raw'], ['v8']];
+    } else {
+        logger.info('v8 coverage disabled');
+    }
+
+    const mcr = new CoverageReport(options);
+    if (configFile) {
+        logger.info({ 'Config file: ': configFile });
+        await mcr.loadConfig(configFile);
+    }
+    await mcr.add(allCoverage);
+    await mcr.generate();
+    return stringResponse(outputDir, 'Coverage stopped and report generated');
 }

@@ -1,7 +1,10 @@
 *** Settings ***
 Resource        imports.resource
 
-Test Setup      New Page    ${EMPTY}
+Test Setup      Open Page And Store ID
+
+*** Variables ***
+${PAGE_ID} =    ${EMPTY}
 
 *** Test Cases ***
 Coverage
@@ -13,11 +16,26 @@ Coverage
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
     ${coverage_file} =    Stop Coverage
+    Should Be Equal
+    ...    ${coverage_file}
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
     File Should Not Be Empty    ${coverage_file}
-    Close Page
+
+Coverage AutoClosing
+    Start Coverage
+    ...    coverage_type=js
+    ...    reportAnonymousScripts=True
+    ...    resetOnNavigation=True
+    ...    config_file=${CURDIR}/coverageConfig.js
+    Go To    ${LOGIN_URL}
+    Click    id=delayed_request
+
+Check Coverage AutoClosing
+    [Setup]    NONE
+    File Should Not Be Empty    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
 
 Coverage With Options
-    ${type} =    Start Coverage    config_file=${CURDIR}/coverageConfig.js    folder=SimplePage
+    ${type} =    Start Coverage    config_file=${CURDIR}/coverageConfig.js    path=SimplePage
     Should Be Equal    ${type}    CoverageType.all
     Add Locator Handler Click    id=overlay    id=OverlayCloseButton
     Go To    ${OWERLAY_URL}
@@ -25,8 +43,9 @@ Coverage With Options
     Click    id=textHeading
     ${coverage_file} =    Stop Coverage
     File Should Not Be Empty    ${coverage_file}
-    ${coverage_file2} =    Convert To String    ${coverage_file}
-    Should Contain    ${coverage_file2}    SimplePage
+    Should Be Equal
+    ...    ${coverage_file}
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / "SimplePage" / $PAGE_ID / "index.html" }}
     Close Page
     New Page    ${coverage_file.as_uri()}
     Get Text    .mcr-title    equal    Browser library Coverage Report
@@ -35,8 +54,9 @@ Coverage With MarkDown
     Start Coverage    config_file=${CURDIR}/coverageConfigMD.js
     Go To    ${LOGIN_URL}
     Click    id=delayed_request_big
-    ${coverage_folder} =    Stop Coverage
-    ${text} =    Get File    ${coverage_folder}/coverage-summary.md
+    Close Context
+    ${text} =    Get File
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "coverage-summary.md" }}
     Should Contain    ${text}    Browser library Coverage Report MD
     Close Page
 
@@ -136,3 +156,8 @@ Run Rfbrowser To Combine Coverage Reports And Invalid Config File
     Log    ${process.stdout}
     Log    ${process.stderr}
     Should Be Equal As Integers    ${process.rc}    2
+
+*** Keywords ***
+Open Page And Store ID
+    &{page_info} =    New Page
+    Set Suite Variable    ${PAGE_ID}    ${page_info.page_id}

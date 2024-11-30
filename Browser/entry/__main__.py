@@ -44,6 +44,13 @@ from .translation import compare_translatoin, get_library_translaton
 if TYPE_CHECKING:
     from ..browser import Browser
 
+is_terminal = sys.stdout.isatty()
+try:
+    import pty
+
+    has_pty = True
+except ImportError:
+    has_pty = False
 
 try:
     INSTALL_LOG.touch(exist_ok=True)
@@ -53,24 +60,25 @@ except Exception as error:
     print(f"Writing install log to: {INSTALL_LOG}")  # noqa: T201
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", flags=re.IGNORECASE)
+PROGRESS_MATCHER = re.compile(
+    r"(?P<size>\d+(?:\.\d+)*\s\w*B)\s\[\]\s(?P<percent>\d+)(?P<time>%\s.+)"
+)
+PROGRESS_SIZE = 50
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+handlers: list[logging.StreamHandler] = [
+    RotatingFileHandler(
+        INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"
+    ),
+]
+if not is_terminal:
+    handlers.append(logging.StreamHandler(sys.stdout))
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)-8s] %(message)s",
-    handlers=[
-        RotatingFileHandler(
-            INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-16"
-        ),
-        logging.StreamHandler(sys.stdout),
-    ],
+    handlers=handlers,
 )
-
-
-def _write_marker(silent_mode: bool = False):
-    if silent_mode:
-        return
-    logger.info("=" * 110)
 
 
 def _log(message: str, silent_mode: bool = False):
@@ -80,18 +88,21 @@ def _log(message: str, silent_mode: bool = False):
         message = re.sub(r"[^\x00-\x7f]", r" ", message)
     try:
         logger.info(message.strip("\n"))
-    except UnicodeEncodeError as error:
+        if is_terminal:
+            print(message.strip("\n"), flush=True)  # noqa: T201
+    except Exception as error:
         logger.info(f"Could not log line, suppress error {error}")
+
+
+def _write_marker(silent_mode: bool = False):
+    _log(f'\n{"=" * 70}', silent_mode)
 
 
 def _process_poller(process: subprocess.Popen, silent_mode: bool):
     while process.poll() is None:
         if process.stdout:
             output = process.stdout.readline().decode("UTF-8")
-            try:
-                _log(output, silent_mode)
-            except Exception as err:
-                logger.info(f"While writing log file, got error: {err}")
+            _log(output, silent_mode)
 
     if process.returncode != 0:
         raise RuntimeError(
@@ -105,26 +116,26 @@ def _python_info():
     python_version = (
         f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     )
-    logger.info(f"Used Python is: {sys.executable}\nVersion: {python_version}")
+    _log(f"Used Python is: {sys.executable}\nVersion: {python_version}")
     _write_marker()
-    logger.info("pip freeze output:\n\n")
+    _log("pip freeze output:\n\n")
     process = subprocess.run(  # noqa: PLW1510
         [sys.executable, "-m", "pip", "freeze"],
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
         timeout=60,
     )
-    logger.info(process.stdout.decode("UTF-8"))
+    _log(process.stdout.decode("UTF-8"))
     _write_marker()
 
 
 def _check_files_and_access():
     if not (INSTALLATION_DIR / "package.json").is_file():
-        logger.info(
-            f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json ",
-            "\nPrinting contents:\n",
+        _log(
+            f"Installation directory `{INSTALLATION_DIR}` does not contain the required package.json "
+            "\nPrinting contents:\n"
         )
-        logger.info(f"\n{_walk_install_dir()}")
+        _log(f"\n{_walk_install_dir()}")
         raise RuntimeError("Could not find robotframework-browser's package.json")
     if not os.access(INSTALLATION_DIR, os.W_OK):
         sys.tracebacklimit = 0
@@ -143,11 +154,87 @@ def _check_npm():
         FileNotFoundError,
         PermissionError,
     ) as exception:
-        logger.info(
+        _log(
             "Couldn't execute npm. Please ensure you have node.js and npm installed and in PATH."
             "See https://nodejs.org/ for documentation"
         )
         raise exception
+
+
+def _unix_process_executor_with_bar(command, cwd=None, silent_mode=False):
+    if not has_pty:
+        return
+    master_fd, slave_fd = pty.openpty()
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        cwd=cwd,
+        stdout=slave_fd,
+        stderr=slave_fd,
+        stdin=subprocess.PIPE,
+        close_fds=True,
+    )
+    os.close(slave_fd)
+    last_file_msg = ""
+
+    while True:
+        try:
+            output = os.read(master_fd, 1024)
+            if not output:  # End of output
+                break
+            if silent_mode:
+                continue
+            message = output.decode("utf-8")
+            if os.name == "nt":
+                message = re.sub(r"[^\x00-\x7f]", r" ", message)
+            last_file_msg = log_progress_update(last_file_msg, message)
+        except OSError:
+            break
+    os.close(master_fd)
+    process.wait()
+
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"Problem installing node dependencies. "
+            f"Process returned with exit status {process.returncode}"
+        )
+
+
+def log_progress_update(last_file_msg, message):
+    try:
+        message, file_msg = format_progress_bar(message)
+        if is_terminal:
+            print(message, end="", flush=True)  # noqa: T201
+        if file_msg.strip() and last_file_msg.split("%")[0] != file_msg.split("%")[0]:
+            logger.info(file_msg.strip("\n"))
+            return file_msg
+        return last_file_msg
+    except Exception as error:
+        logger.info(f"Could not log line, suppress error {error}")
+
+
+def format_progress_bar(message: str) -> tuple[str, str]:
+    progress_match = PROGRESS_MATCHER.search(message)
+    if progress_match:
+        size = progress_match.group("size")
+        percent = progress_match.group("percent")
+        time = progress_match.group("time")
+        with contextlib.suppress(Exception):
+            file_msg = ANSI_ESCAPE.sub(
+                "",
+                (
+                    f"total: {size}, progress: {percent}{time}"
+                    if int(percent) % 20 == 0
+                    else ""
+                ),
+            )
+            bar = "=" * (int(percent) // (100 // PROGRESS_SIZE))
+            message = message.replace(
+                " [] ", f" [{bar}{' ' * (PROGRESS_SIZE - len(bar))}] ", 1
+            )
+    else:
+        file_msg = ANSI_ESCAPE.sub("", message)
+    return message, file_msg
 
 
 def _rfbrowser_init(
@@ -188,15 +275,22 @@ def _rfbrowser_init(
             f"Installing browser {browser_as_str}binaries to {install_dir}",
             silent_mode,
         )
-        _log(cmd)
-        process = subprocess.Popen(
-            cmd,
-            shell=True,
-            cwd=INSTALLATION_DIR,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        _process_poller(process, silent_mode)
+        _log(cmd, silent_mode)
+        if has_pty:
+            _unix_process_executor_with_bar(
+                cmd,
+                cwd=INSTALLATION_DIR,
+                silent_mode=silent_mode,
+            )
+        else:
+            process = subprocess.Popen(
+                cmd,
+                shell=True,
+                cwd=INSTALLATION_DIR,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            _process_poller(process, silent_mode)
     _log("rfbrowser init completed", silent_mode)
 
 
@@ -215,19 +309,19 @@ def _node_info():
     process = subprocess.run(  # noqa: PLW1510
         ["npm", "-v"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=SHELL
     )
-    logger.info("npm version is:n")
-    logger.info(process.stdout.decode("UTF-8"))
+    _log("npm version is:n")
+    _log(process.stdout.decode("UTF-8"))
     _write_marker()
 
 
 def _log_install_dir(error_msg=True):
     if error_msg:
-        logger.info(
+        _log(
             f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for. "
             "unknown reason. Investigate the npm output and fix possible problems."
             "\nPrinting contents:\n"
         )
-    logger.info(f"\n{_walk_install_dir()}")
+    _log(f"\n{_walk_install_dir()}")
     _write_marker()
 
 
@@ -250,9 +344,9 @@ def print_version(ctx, param, value):
     package_json_data = json.loads(package_json.read_text())
     match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
     pw_version = match.group(0) if match else "unknown"
-    logger.info(f"Installed Browser library version is: {browser_lib_version}")
-    logger.info(f'Robot Framework version: "{get_rf_version()}"')
-    logger.info(f'Installed Playwright is: "{pw_version}"')
+    _log(f"Installed Browser library version is: {browser_lib_version}")
+    _log(f'Robot Framework version: "{get_rf_version()}"')
+    _log(f'Installed Playwright is: "{pw_version}"')
     _write_marker()
 
 
@@ -387,7 +481,7 @@ def init(ctx, skip_browsers, with_deps, browser):
         _write_marker(silent_mode)
     except Exception as err:
         _write_marker(silent_mode)
-        logger.info(traceback.format_exc())
+        _log(traceback.format_exc())
         _python_info()
         _node_info()
         _log_install_dir()
@@ -408,9 +502,9 @@ def clean_node():
     _write_marker()
 
     if not NODE_MODULES.is_dir():
-        logger.info(f"Could not find {NODE_MODULES}, nothing to delete.")
+        _log(f"Could not find {NODE_MODULES}, nothing to delete.")
         return
-    logger.info(f"Delete library node dependencies from {NODE_MODULES}")
+    _log(f"Delete library node dependencies from {NODE_MODULES}")
     shutil.rmtree(NODE_MODULES)
 
 
@@ -427,7 +521,7 @@ def show_trace(file: Path):
     https://marketsquare.github.io/robotframework-browser/Browser.html#New%20Contex
     """
     absolute_file = file.resolve(strict=True)
-    logger.info(f"Opening file: {absolute_file}")
+    _log(f"Opening file: {absolute_file}")
     playwright = NODE_MODULES / "playwright-core"
     local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
@@ -506,20 +600,20 @@ def launch_browser_server(browser, options):
     wsEndpoint = browser_lib.launch_browser_server(
         browser=SupportedBrowsers[browser], **params
     )
-    logger.info(f"Browser server started at:\n\n\n{wsEndpoint}\n\n")
-    logger.info("Press Ctrl-C to stop the server")
+    _log(f"Browser server started at:\n\n\n{wsEndpoint}\n\n")
+    _log("Press Ctrl-C to stop the server")
     try:
         while True:
             pass
     except (KeyboardInterrupt, SystemExit):
-        logger.info("Stopping browser server by user request")
+        _log("Stopping browser server by user request")
     except Exception as err:
-        logger.info(f"Stopping browser server due to error: {err}")
+        _log(f"Stopping browser server due to error: {err}")
         traceback.print_exc()
     finally:
         with contextlib.suppress(Exception):
             browser_lib._playwright_state.close_browser_server("ALL")
-        logger.info("Browser server stopped")
+        _log("Browser server stopped")
 
 
 def convert_options_types(options: list[str], browser_lib: "Browser"):
@@ -572,7 +666,7 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     from all test data files in /path/to/test folder
     """
     if not wait_until_network_is_idle:
-        logger.info("No transformer defined, exiting.")
+        _log("No transformer defined, exiting.")
         return
     trasform(path, wait_until_network_is_idle)
 
@@ -634,17 +728,17 @@ def translation(
     translation = get_library_translaton(plugings, jsextension)
     if compare:
         if table := compare_translatoin(filename, translation):
-            logger.info(
+            _log(
                 "Found differences between translation and library, see below for details."
             )
             for line in table:
-                logger.info(line)
+                _log(line)
         else:
-            logger.info("Translation is valid, no updated needed.")
+            _log("Translation is valid, no updated needed.")
     else:
         with filename.open("w") as file:
             json.dump(translation, file, indent=4)
-        logger.info(f"Translation file created in {filename.absolute()}")
+        _log(f"Translation file created in {filename.absolute()}")
 
 
 @cli.command()

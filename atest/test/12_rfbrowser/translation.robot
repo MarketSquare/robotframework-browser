@@ -64,35 +64,34 @@ Compare Translation Files
     ${lines} =    Split To Lines    ${process.stdout}
     Log    ${lines}
     Length Should Be    ${lines}    10
-    ${re_prefix} =    Set Variable    \\d{4}-\\d\\d-\\d\\d\\s.{13}\\[INFO\\s{4}\\]\\s
     Should Match Regexp
     ...    ${lines}[0]
-    ...    ${re_prefix}Found differences between translation and library, see below for details\.
-    Should Match Regexp    ${lines}[1]    ${re_prefix}\\| Keyword name${SPACE * 23}\\| Reason${SPACE * 33}\\|
+    ...    Found differences between translation and library, see below for details\.
+    Should Match Regexp    ${lines}[1]    \\| Keyword name${SPACE * 23}\\| Reason${SPACE * 33}\\|
     Should Match Regexp
     ...    ${lines}[2]
-    ...    ${re_prefix}\\| ---------------------------------- \\| -------------------------------------- \\|
+    ...    \\| ---------------------------------- \\| -------------------------------------- \\|
     Should Match Regexp
     ...    ${lines}[3]
-    ...    ${re_prefix}\\| cancel_download${SPACE * 20}\\| Documentation update needed${SPACE * 12}\\|
+    ...    \\| cancel_download${SPACE * 20}\\| Documentation update needed${SPACE * 12}\\|
     Should Match Regexp
     ...    ${lines}[4]
-    ...    ${re_prefix}\\| close_page${SPACE * 25}\\| Keyword is missing translation${SPACE * 9}\\|
+    ...    \\| close_page${SPACE * 25}\\| Keyword is missing translation${SPACE * 9}\\|
     Should Match Regexp
     ...    ${lines}[5]
-    ...    ${re_prefix}\\| grant_permissions${SPACE * 18}\\| Keyword is missing translation${SPACE * 9}\\|
+    ...    \\| grant_permissions${SPACE * 18}\\| Keyword is missing translation${SPACE * 9}\\|
     Should Match Regexp
     ...    ${lines}[6]
-    ...    ${re_prefix}\\| focus${SPACE * 30}\\| Documentation update needed${SPACE * 12}\\|
+    ...    \\| focus${SPACE * 30}\\| Documentation update needed${SPACE * 12}\\|
     Should Match Regexp
     ...    ${lines}[7]
-    ...    ${re_prefix}\\| get_style${SPACE * 26}\\| Keyword tranlsaton is missing checksum \\|
+    ...    \\| get_style${SPACE * 26}\\| Keyword tranlsaton is missing checksum \\|
     Should Match Regexp
     ...    ${lines}[8]
-    ...    ${re_prefix}\\| __intro__${SPACE * 26}\\| Documentation update needed${SPACE * 12}\\|
+    ...    \\| __intro__${SPACE * 26}\\| Documentation update needed${SPACE * 12}\\|
     Should Match Regexp
     ...    ${lines}[9]
-    ...    ${re_prefix}\\| not_there${SPACE * 26}\\| Keyword not found from library${SPACE * 9}\\|
+    ...    \\| not_there${SPACE * 26}\\| Keyword not found from library${SPACE * 9}\\|
     [Teardown]    Remove Files    ${OUTPUT_DIR}/translation_new.json
 
 Translation Files Does Not Require Updates
@@ -106,6 +105,5 @@ Translation Files Does Not Require Updates
     Log    ${process.stderr}
     Log    ${process.stdout}
     Should Be Equal As Integers    ${process.rc}    0
-    ${re_prefix} =    Set Variable    \\d{4}-\\d\\d-\\d\\d\\s.{13}\\[INFO\\s{4}\\]\\s
-    Should Match Regexp    ${process.stdout}    ${re_prefix}Translation is valid, no updated needed.
+    Should Match Regexp    ${process.stdout}    Translation is valid, no updated needed.
     [Teardown]    Remove Files    ${OUTPUT_DIR}/translation_new.json

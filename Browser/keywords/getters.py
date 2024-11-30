@@ -972,7 +972,6 @@ class Getters(LibraryComponent):
                 "selected",
             ]
         }
-        logger.console(self.get_frame_selector())
         with self.playwright.grpc_channel() as stub:
             response = stub.GetByX(
                 Request().GetByOptions(
