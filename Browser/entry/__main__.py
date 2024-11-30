@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 is_terminal = sys.stdout.isatty()
 try:
     import pty
+    has_pty = True
 except ImportError:
     has_pty = False
 
@@ -274,7 +275,7 @@ def _rfbrowser_init(
             silent_mode,
         )
         _log(cmd, silent_mode)
-        if pty:
+        if has_pty:
             _unix_process_executor_with_bar(
                 cmd,
                 cwd=INSTALLATION_DIR,
