@@ -82,3 +82,21 @@ def test_format_response_with_json_list_body():
     assert response["body"][0]["key"] == "value1"
     assert response["body"][1]["key"] == "value2"
     assert response["headers"]["content-type"] == "application/json"
+
+
+def testtest_format_response_with_json_int_body():
+    body_int = 1
+    response = _format_response(
+        {"headers": '{"content-type": "application/json"}', "body": body_int}
+    )
+    assert response["body"] == 1
+    assert response["headers"]["content-type"] == "application/json"
+
+
+def testtest_format_response_with_json_byte_body():
+    body_byte = b"byte"
+    response = _format_response(
+        {"headers": '{"content-type": "application/json"}', "body": body_byte}
+    )
+    assert response["body"] == b"byte"
+    assert response["headers"]["content-type"] == "application/json"
