@@ -50,8 +50,7 @@ def _jsonize_content(data, bodykey):
         and bodykey in data
         and data[bodykey]
     ):
-        with contextlib.suppress(json.decoder.JSONDecodeError):
-            if not isinstance(data[bodykey], (dict, list)):
+        with contextlib.suppress(json.decoder.JSONDecodeError, TypeError):
                 data[bodykey] = json.loads(data[bodykey])
 
 
