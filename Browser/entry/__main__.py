@@ -64,14 +64,16 @@ PROGRESS_MATCHER = re.compile(
 PROGRESS_SIZE = 50
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+handlers = [
+    RotatingFileHandler(INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"),
+]
+is_terminal = sys.stdout.isatty()
+if not is_terminal:
+    handlers.append(logging.StreamHandler(sys.stdout))
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)-8s] %(message)s",
-    handlers=[
-        RotatingFileHandler(
-            INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-16"
-        )
-    ],
+    handlers=handlers,
 )
 
 
@@ -82,7 +84,8 @@ def _log(message: str, silent_mode: bool = False):
         message = re.sub(r"[^\x00-\x7f]", r" ", message)
     try:
         logger.info(message.strip("\n"))
-        print(message.strip("\n"), flush=True)  # noqa: T201
+        if is_terminal:
+            print(message.strip("\n"), flush=True)  # noqa: T201
     except Exception as error:
         logger.info(f"Could not log line, suppress error {error}")
 
@@ -199,7 +202,8 @@ def _unix_process_executor_with_bar(command, cwd=None, silent_mode=False):
                         )
                 else:
                     file_msg = ANSI_ESCAPE.sub("", message)
-                print(message, end="", flush=True)  # noqa: T201
+                if is_terminal:
+                    print(message, end="", flush=True)  # noqa: T201
                 if (
                     file_msg.strip()
                     and last_file_msg.split("%")[0] != file_msg.split("%")[0]
