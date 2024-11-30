@@ -16,7 +16,6 @@ import contextlib
 import json
 import logging
 import os
-import pty
 import re
 import shutil
 import subprocess
@@ -45,6 +44,10 @@ from .translation import compare_translatoin, get_library_translaton
 if TYPE_CHECKING:
     from ..browser import Browser
 
+try:
+    import pty
+except ImportError:
+    pty = None
 
 try:
     INSTALL_LOG.touch(exist_ok=True)
@@ -151,7 +154,7 @@ def _check_npm():
         raise exception
 
 
-def _process_poller_with_bar(command, cwd=None, silent_mode=False):
+def _unix_process_executor_with_bar(command, cwd=None, silent_mode=False):
     master_fd, slave_fd = pty.openpty()
     process = subprocess.Popen(
         command,
@@ -256,11 +259,21 @@ def _rfbrowser_init(
             silent_mode,
         )
         _log(cmd, silent_mode)
-        _process_poller_with_bar(
-            cmd,
-            cwd=INSTALLATION_DIR,
-            silent_mode=silent_mode,
-        )
+        if pty:
+            _unix_process_executor_with_bar(
+                cmd,
+                cwd=INSTALLATION_DIR,
+                silent_mode=silent_mode,
+            )
+        else:
+            process = subprocess.Popen(
+                cmd,
+                shell=True,
+                cwd=INSTALLATION_DIR,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            _process_poller(process, silent_mode)
     _log("rfbrowser init completed", silent_mode)
 
 
