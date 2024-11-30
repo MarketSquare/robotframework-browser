@@ -4,12 +4,7 @@ Resource        imports.resource
 Test Setup      Open Page And Store ID
 
 *** Variables ***
-${PAGE_ID}
-
-*** Keywords ***
-Open Page And Store ID
-    &{page_info}    New Page
-    Set Suite Variable    ${PAGE_ID}    ${page_info.page_id}
+${PAGE_ID} =    ${EMPTY}
 
 *** Test Cases ***
 Coverage
@@ -21,7 +16,9 @@ Coverage
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
     ${coverage_file} =    Stop Coverage
-    Should Be Equal    ${coverage_file}    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
+    Should Be Equal
+    ...    ${coverage_file}
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
     File Should Not Be Empty    ${coverage_file}
 
 Coverage AutoClosing
@@ -46,7 +43,9 @@ Coverage With Options
     Click    id=textHeading
     ${coverage_file} =    Stop Coverage
     File Should Not Be Empty    ${coverage_file}
-    Should Be Equal    ${coverage_file}    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / "SimplePage" / $PAGE_ID / "index.html" }}
+    Should Be Equal
+    ...    ${coverage_file}
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / "SimplePage" / $PAGE_ID / "index.html" }}
     Close Page
     New Page    ${coverage_file.as_uri()}
     Get Text    .mcr-title    equal    Browser library Coverage Report
@@ -56,7 +55,8 @@ Coverage With MarkDown
     Go To    ${LOGIN_URL}
     Click    id=delayed_request_big
     Close Context
-    ${text} =    Get File    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "coverage-summary.md" }}
+    ${text} =    Get File
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "coverage-summary.md" }}
     Should Contain    ${text}    Browser library Coverage Report MD
     Close Page
 
@@ -156,3 +156,8 @@ Run Rfbrowser To Combine Coverage Reports And Invalid Config File
     Log    ${process.stdout}
     Log    ${process.stderr}
     Should Be Equal As Integers    ${process.rc}    2
+
+*** Keywords ***
+Open Page And Store ID
+    &{page_info} =    New Page
+    Set Suite Variable    ${PAGE_ID}    ${page_info.page_id}

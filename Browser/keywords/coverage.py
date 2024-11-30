@@ -29,7 +29,7 @@ class Coverage(LibraryComponent):
         *,
         config_file: Optional[PathLike] = None,
         coverage_type: CoverageType = CoverageType.all,
-        path: Path = Path(""),
+        path: Path = Path(),
         raw: bool = False,
         reportAnonymousScripts: bool = False,
         resetOnNavigation: bool = True,

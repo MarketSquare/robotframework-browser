@@ -1117,12 +1117,7 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     if (!coverageOptions) {
         return stringResponse('', 'Coverage not started');
     }
-    const {
-        directory: coverageDir = '',
-        configFile = '',
-        type: coverageType,
-        raw = false,
-    } = coverageOptions;
+    const { directory: coverageDir = '', configFile = '', type: coverageType, raw = false } = coverageOptions;
 
     const allCoverage: any[] = [];
     if (['js', 'all'].includes(coverageType)) {

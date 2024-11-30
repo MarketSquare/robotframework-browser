@@ -88,6 +88,8 @@ def keyword_line(keyword_arguments, keyword_types, method_name) -> str:
                 default_value = f"{type(default_value).__name__}.{default_value.name}"
             elif isinstance(default_value, Deprecated):
                 default_value = "Deprecated()"
+            elif isinstance(default_value, Path):
+                default_value = f"pathlib.Path('{default_value}')"
             arg_str = f"{arg_str} = {default_value!s}"
         else:
             arg_str = argument
@@ -126,6 +128,7 @@ import os
 from concurrent.futures import Future
 from os import PathLike
 import pathlib
+from pathlib import Path
 from typing import Any
 
 import assertionengine
