@@ -44,10 +44,11 @@ from .translation import compare_translatoin, get_library_translaton
 if TYPE_CHECKING:
     from ..browser import Browser
 
+is_terminal = sys.stdout.isatty()
 try:
     import pty
 except ImportError:
-    pty = None
+    has_pty = False
 
 try:
     INSTALL_LOG.touch(exist_ok=True)
@@ -64,10 +65,11 @@ PROGRESS_MATCHER = re.compile(
 PROGRESS_SIZE = 50
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-handlers = [
-    RotatingFileHandler(INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"),
+handlers: list[logging.StreamHandler] = [
+    RotatingFileHandler(
+        INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"
+    ),
 ]
-is_terminal = sys.stdout.isatty()
 if not is_terminal:
     handlers.append(logging.StreamHandler(sys.stdout))
 logging.basicConfig(
@@ -158,6 +160,8 @@ def _check_npm():
 
 
 def _unix_process_executor_with_bar(command, cwd=None, silent_mode=False):
+    if not has_pty:
+        return
     master_fd, slave_fd = pty.openpty()
     process = subprocess.Popen(
         command,
@@ -181,37 +185,7 @@ def _unix_process_executor_with_bar(command, cwd=None, silent_mode=False):
             message = output.decode("utf-8")
             if os.name == "nt":
                 message = re.sub(r"[^\x00-\x7f]", r" ", message)
-            try:
-                progress_match = PROGRESS_MATCHER.search(message)
-                if progress_match:
-                    size = progress_match.group("size")
-                    percent = progress_match.group("percent")
-                    time = progress_match.group("time")
-                    with contextlib.suppress(Exception):
-                        file_msg = ANSI_ESCAPE.sub(
-                            "",
-                            (
-                                f"total: {size}, progress: {percent}{time}"
-                                if int(percent) % 20 == 0
-                                else ""
-                            ),
-                        )
-                        bar = "=" * (int(percent) // (100 // PROGRESS_SIZE))
-                        message = message.replace(
-                            " [] ", f" [{bar}{' ' * (PROGRESS_SIZE - len(bar))}] ", 1
-                        )
-                else:
-                    file_msg = ANSI_ESCAPE.sub("", message)
-                if is_terminal:
-                    print(message, end="", flush=True)  # noqa: T201
-                if (
-                    file_msg.strip()
-                    and last_file_msg.split("%")[0] != file_msg.split("%")[0]
-                ):
-                    logger.info(file_msg.strip("\n"))
-                    last_file_msg = file_msg
-            except Exception as error:
-                logger.info(f"Could not log line, suppress error {error}")
+            last_file_msg = log_progress_update(last_file_msg, message)
         except OSError:
             break
     os.close(master_fd)
@@ -222,6 +196,43 @@ def _unix_process_executor_with_bar(command, cwd=None, silent_mode=False):
             f"Problem installing node dependencies. "
             f"Process returned with exit status {process.returncode}"
         )
+
+
+def log_progress_update(last_file_msg, message):
+    try:
+        message, file_msg = format_progress_bar(message)
+        if is_terminal:
+            print(message, end="", flush=True)  # noqa: T201
+        if file_msg.strip() and last_file_msg.split("%")[0] != file_msg.split("%")[0]:
+            logger.info(file_msg.strip("\n"))
+            return file_msg
+        return last_file_msg
+    except Exception as error:
+        logger.info(f"Could not log line, suppress error {error}")
+
+
+def format_progress_bar(message: str) -> tuple[str, str]:
+    progress_match = PROGRESS_MATCHER.search(message)
+    if progress_match:
+        size = progress_match.group("size")
+        percent = progress_match.group("percent")
+        time = progress_match.group("time")
+        with contextlib.suppress(Exception):
+            file_msg = ANSI_ESCAPE.sub(
+                "",
+                (
+                    f"total: {size}, progress: {percent}{time}"
+                    if int(percent) % 20 == 0
+                    else ""
+                ),
+            )
+            bar = "=" * (int(percent) // (100 // PROGRESS_SIZE))
+            message = message.replace(
+                " [] ", f" [{bar}{' ' * (PROGRESS_SIZE - len(bar))}] ", 1
+            )
+    else:
+        file_msg = ANSI_ESCAPE.sub("", message)
+    return message, file_msg
 
 
 def _rfbrowser_init(
