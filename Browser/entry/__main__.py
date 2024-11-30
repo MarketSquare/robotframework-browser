@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 is_terminal = sys.stdout.isatty()
 try:
     import pty
+
     has_pty = True
 except ImportError:
     has_pty = False
