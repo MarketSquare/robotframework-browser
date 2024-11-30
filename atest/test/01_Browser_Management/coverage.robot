@@ -21,12 +21,12 @@ Coverage
     Go To    ${LOGIN_URL}
     Click    id=delayed_request
     ${coverage_file} =    Stop Coverage
-    Should Be Equal    ${coverage_file}    ${{pathlib.Path($OUTPUT_DIR) / "coverage_reports" / $PAGE_ID / "index.html"}}
+    Should Be Equal    ${coverage_file}    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
     File Should Not Be Empty    ${coverage_file}
 
 Coverage AutoClosing
     Start Coverage
-    ...    js
+    ...    coverage_type=js
     ...    reportAnonymousScripts=True
     ...    resetOnNavigation=True
     ...    config_file=${CURDIR}/coverageConfig.js
@@ -35,18 +35,18 @@ Coverage AutoClosing
 
 Check Coverage AutoClosing
     [Setup]    NONE
-    File Should Not Be Empty    ${{pathlib.Path($OUTPUT_DIR) / "coverage_reports" / $PAGE_ID / "index.html"}}
+    File Should Not Be Empty    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
 
 Coverage With Options
-    ${type} =    Start Coverage    config_file=${CURDIR}/coverageConfig.js    folder=SimplePage
+    ${type} =    Start Coverage    config_file=${CURDIR}/coverageConfig.js    path=SimplePage
     Should Be Equal    ${type}    CoverageType.all
     Add Locator Handler Click    id=overlay    id=OverlayCloseButton
     Go To    ${OWERLAY_URL}
     Click    id=CreateOverlayButton
     Click    id=textHeading
-    Close Context
-    ${coverage_file}    Evaluate    pathlib.Path($OUTPUT_DIR) / "coverage_reports" / f"SimplePage_{$PAGE_ID}" / "index.html"
-    File Should Not Be Empty     ${coverage_file}
+    ${coverage_file} =    Stop Coverage
+    File Should Not Be Empty    ${coverage_file}
+    Should Be Equal    ${coverage_file}    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / "SimplePage" / $PAGE_ID / "index.html" }}
     Close Page
     New Page    ${coverage_file.as_uri()}
     Get Text    .mcr-title    equal    Browser library Coverage Report
@@ -55,8 +55,8 @@ Coverage With MarkDown
     Start Coverage    config_file=${CURDIR}/coverageConfigMD.js
     Go To    ${LOGIN_URL}
     Click    id=delayed_request_big
-    ${coverage_folder} =    Stop Coverage
-    ${text} =    Get File    ${coverage_folder}/coverage-summary.md
+    Close Context
+    ${text} =    Get File    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "coverage-summary.md" }}
     Should Contain    ${text}    Browser library Coverage Report MD
     Close Page
 

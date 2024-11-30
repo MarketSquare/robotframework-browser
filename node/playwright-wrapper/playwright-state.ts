@@ -542,7 +542,6 @@ export type DownloadInfo = {
 export type CoverageOptions = {
     type: string;
     directory: string;
-    folderPrefix: string;
     configFile: string;
     raw: boolean;
 };
@@ -1087,7 +1086,6 @@ export async function startCoverage(request: Request.CoverageStart, state: Playw
     const coverageOptions: CoverageOptions = {
         type: request.getCoveragetype(),
         directory: request.getCoveragedir(),
-        folderPrefix: request.getFolderprefix(),
         configFile: request.getConfigfile(),
         raw: request.getRaw(),
     };
@@ -1121,7 +1119,6 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     }
     const {
         directory: coverageDir = '',
-        folderPrefix = '',
         configFile = '',
         type: coverageType,
         raw = false,
@@ -1137,7 +1134,7 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
         allCoverage.push(...(await activePage.coverage.stopCSSCoverage()));
     }
 
-    const outputDir = path.normalize(path.join(coverageDir, folderPrefix + pageId));
+    const outputDir = path.normalize(path.join(coverageDir, pageId));
     const options: CoverageReportOptions = { outputDir: outputDir };
     if (raw && configFile === '') {
         logger.info('Raw and v8 coverage enabled');

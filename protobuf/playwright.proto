@@ -37,8 +37,7 @@ message Request {
     bool reportAnonymousScripts = 3;
     string configFile = 4;
     string coverageDir = 5;
-    string folderPrefix = 6;
-    bool raw = 7;
+    bool raw = 6;
   }
 
   message TraceGroup {
