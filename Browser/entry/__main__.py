@@ -193,8 +193,6 @@ def _rfbrowser_init(
             cmd,
             shell=True,
             cwd=INSTALLATION_DIR,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
         )
         _process_poller(process, silent_mode)
     _log("rfbrowser init completed", silent_mode)
