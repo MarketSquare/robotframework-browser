@@ -205,6 +205,7 @@ message Request {
     string browser = 1;
     string url = 2;
     bool connectCDP = 3;
+    int32 timeout = 4;
   }
 
   message TextInput {

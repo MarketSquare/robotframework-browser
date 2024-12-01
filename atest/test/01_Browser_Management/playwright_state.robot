@@ -469,6 +469,20 @@ Launch Browser Server Via CLI
     Get Viewport Size    height    ==    100
     [Teardown]    Terminate All Processes
 
+Connect To Browser With Timeout
+    TRY
+        Connect To Browser    wsEndpoint=ws://10.66.66.66:8277/server2    timeout=100ms
+    EXCEPT    TimeoutError: browserType.connect: Timeout 100ms exceeded.*    type=glob
+        Log    failed correctly
+    END
+
+Connect To Browser With CDP With Timeout
+    TRY
+        Connect To Browser    wsEndpoint=ws://10.66.66.66:8277/server2    timeout=10ms    use_cdp=True
+    EXCEPT    TimeoutError: browserType.connectOverCDP: Timeout 10ms exceeded.*    type=glob
+        Log    failed correctly
+    END
+
 *** Keywords ***
 Open Browser And Assert Login Page
     [Arguments]    ${local_browser}

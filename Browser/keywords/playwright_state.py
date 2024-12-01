@@ -352,6 +352,8 @@ class PlaywrightState(LibraryComponent):
         wsEndpoint: str,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         use_cdp: bool = False,
+        *,
+        timeout: timedelta = timedelta(seconds=30),
     ):
         """Connect to a Playwright browser server via playwright websocket or Chrome DevTools Protocol.
 
@@ -365,6 +367,7 @@ class PlaywrightState(LibraryComponent):
         | ``wsEndpoint`` | Address to connect to. Either ``ws://`` or ``http://`` if cdp is used. |
         | ``browser``    | Opens the specified browser. Defaults to ``chromium``. |
         | ``use_cdp``    | Connect to browser via Chrome DevTools Protocol. Defaults to False. Works only with Chromium based browsers. |
+        | ``timeout``    | Maximum time in Robot Framework time format to wait for the connection to be established. Defaults to 30 seconds. Pass 0 to disable timeout. |
 
         To Connect to a Browser viw Chrome DevTools Protocol, the browser must be started with this protocol enabled.
         This typically done by starting a Chrome browser with the argument ``--remote-debugging-port=9222`` or similar.
@@ -374,10 +377,14 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4242|Comment >>]
         """
+        timeout_ms = int(self.convert_timeout(timeout))
         with self.playwright.grpc_channel() as stub:
             response = stub.ConnectToBrowser(
                 Request().ConnectBrowser(
-                    url=wsEndpoint, browser=browser.name, connectCDP=use_cdp
+                    url=wsEndpoint,
+                    browser=browser.name,
+                    connectCDP=use_cdp,
+                    timeout=timeout_ms,
                 )
             )
             logger.info(response.log)
