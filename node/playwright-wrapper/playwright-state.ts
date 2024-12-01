@@ -199,22 +199,18 @@ async function _launchBrowserServer(
     return browser;
 }
 
-async function _connectBrowser(browserName: string, url: string, connectCDP: boolean): Promise<BrowserAndConfs> {
+async function _connectBrowser(
+    browserName: string,
+    url: string,
+    connectCDP: boolean,
+    timeout: number | undefined,
+): Promise<BrowserAndConfs> {
     logger.info(`Connecting to browser: ${browserName} at ${url} via ${connectCDP ? 'CDP' : 'WebSocket'}`);
-    let browserType: BrowserType;
-    switch (browserName) {
-        case 'firefox':
-            browserType = firefox;
-            break;
-        case 'webkit':
-            browserType = webkit;
-            break;
-        default:
-            browserType = chromium;
-            browserName = 'chromium';
-            break;
-    }
-    const browser = connectCDP ? await browserType.connectOverCDP(url) : await browserType.connect(url);
+    const browserType = _getBrowserType(browserName);
+    timeout = timeout || 30000;
+    const browser = connectCDP
+        ? await browserType.connectOverCDP(url, { timeout })
+        : await browserType.connect(url, { timeout });
     return {
         browser,
         browserType: browserName as 'chromium' | 'firefox' | 'webkit',
@@ -902,7 +898,8 @@ export async function connectToBrowser(
     const browserType = request.getBrowser();
     const url = request.getUrl();
     const connectCDP = request.getConnectcdp();
-    const browserAndConfs = await _connectBrowser(browserType, url, connectCDP);
+    const timeout = request.getTimeout();
+    const browserAndConfs = await _connectBrowser(browserType, url, connectCDP, timeout);
     const browserState = openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully connected to browser');
 }
