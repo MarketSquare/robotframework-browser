@@ -184,7 +184,8 @@ def _unix_process_executor_with_bar(command, cwd=None, silent_mode=False):
                 break
             if silent_mode:
                 continue
-            message = output.decode("utf-8")
+            with contextlib.suppress(UnicodeDecodeError):
+                message = output.decode("utf-8", errors="backslashreplace")
             if os.name == "nt":
                 message = re.sub(r"[^\x00-\x7f]", r" ", message)
             last_file_msg = log_progress_update(last_file_msg, message)
