@@ -1500,6 +1500,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "tomppa65",
+      "name": "T. Silvola",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9744026?v=4",
+      "profile": "https://github.com/tomppa65",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
