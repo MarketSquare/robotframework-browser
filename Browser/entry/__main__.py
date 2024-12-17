@@ -39,7 +39,7 @@ from .constant import (
 )
 from .coverage_combine import combine
 from .transform import trasform
-from .translation import compare_translatoin, get_library_translaton
+from .translation import compare_translation, get_library_translation
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -726,9 +726,9 @@ def translation(
     of keywords which documentation sha256 does not match. This will ease
     translation projects to identify keywords which documentation needs updating.
     """
-    translation = get_library_translaton(plugings, jsextension)
+    translation = get_library_translation(plugings, jsextension)
     if compare:
-        if table := compare_translatoin(filename, translation):
+        if table := compare_translation(filename, translation):
             _log(
                 "Found differences between translation and library, see below for details."
             )
