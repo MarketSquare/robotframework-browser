@@ -1527,6 +1527,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "loomanw",
+      "name": "William Looman",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38555868?v=4",
+      "profile": "https://github.com/loomanw",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
