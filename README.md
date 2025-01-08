@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-165-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-166-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -389,6 +389,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/tomppa65"><img src="https://avatars.githubusercontent.com/u/9744026?v=4?s=100" width="100px;" alt="T. Silvola"/><br /><sub><b>T. Silvola</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Atomppa65" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/teemuteemu"><img src="https://avatars.githubusercontent.com/u/2570951?v=4?s=100" width="100px;" alt="Teemu Kallio"/><br /><sub><b>Teemu Kallio</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ateemuteemu" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/joseajunior"><img src="https://avatars.githubusercontent.com/u/77733175?v=4?s=100" width="100px;" alt="José Almeida"/><br /><sub><b>José Almeida</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ajoseajunior" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/loomanw"><img src="https://avatars.githubusercontent.com/u/38555868?v=4?s=100" width="100px;" alt="William Looman"/><br /><sub><b>William Looman</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=loomanw" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
