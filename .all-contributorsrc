@@ -1554,6 +1554,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "dean4711",
+      "name": "André",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5942386?v=4",
+      "profile": "https://github.com/dean4711",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
