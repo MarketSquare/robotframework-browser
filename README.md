@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-168-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-169-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -392,6 +392,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/loomanw"><img src="https://avatars.githubusercontent.com/u/38555868?v=4?s=100" width="100px;" alt="William Looman"/><br /><sub><b>William Looman</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=loomanw" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mekxtari"><img src="https://avatars.githubusercontent.com/u/22319364?v=4?s=100" width="100px;" alt="mekxtari"/><br /><sub><b>mekxtari</b></sub></a><br /><a href="#ideas-mekxtari" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/keef78"><img src="https://avatars.githubusercontent.com/u/167465772?v=4?s=100" width="100px;" alt="keef78"/><br /><sub><b>keef78</b></sub></a><br /><a href="#ideas-keef78" title="Ideas, Planning, & Feedback">🤔</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/dean4711"><img src="https://avatars.githubusercontent.com/u/5942386?v=4?s=100" width="100px;" alt="André"/><br /><sub><b>André</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=dean4711" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
