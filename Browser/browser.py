@@ -804,6 +804,7 @@ class Browser(DynamicCore):
         external_browser_executable: Optional[dict[SupportedBrowsers, str]] = None,
         jsextension: Union[list[str], str, None] = None,
         language: Optional[str] = None,
+        playwright_process_host: Optional[str] = None,
         playwright_process_port: Optional[int] = None,
         plugins: Union[list[str], str, None] = None,
         retry_assertions_for: timedelta = timedelta(seconds=1),
@@ -824,6 +825,7 @@ class Browser(DynamicCore):
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
         | ``jsextension``                   | Path to Javascript modules exposed as extra keywords. The modules must be in CommonJS. It can either be a single path, a comma-separated lists of path or a real list of strings |
         | ``language``                      | Defines language which is used to translate keyword names and documentation. |
+        | ``playwright_process_host``       | Hostname / Host address which should be used when spawning the Playwright process. Defaults to 127.0.0.1. |
         | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
         | ``plugins``                       | Allows extending the Browser library with external Python classes. Can either be a single class/module, a comma-separated list or a real list of strings |
         | ``retry_assertions_for``          | Timeout for retrying assertions on keywords before failing the keywords. This timeout starts counting from the first failure. Global ``timeout`` will still be in effect. This allows stopping execution faster to assertion failure when element is found fast. |
@@ -865,6 +867,7 @@ class Browser(DynamicCore):
             WebAppState(self),
         ]
         self.enable_playwright_debug = enable_playwright_debug
+        self.playwright_process_host = playwright_process_host
         self.playwright_process_port = playwright_process_port
         if self.enable_playwright_debug is True:
             self.enable_playwright_debug = PlaywrightLogTypes.playwright
@@ -937,6 +940,7 @@ class Browser(DynamicCore):
             self._playwright = Playwright(
                 self,
                 self.enable_playwright_debug,
+                self.playwright_process_host,
                 self.playwright_process_port,
                 self._playwright_log,
             )
