@@ -6,6 +6,6 @@ WORKDIR /app
 COPY Browser/dev-requirements.txt dev-requirements.txt
 # the base image has the stable browser, so we don't want to double install it's deps
 RUN touch requirements.txt
-RUN pip3 install --no-cache-dir --upgrade pip wheel
-RUN pip3 install --no-cache-dir --user -r ./dev-requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages --upgrade pip wheel
+RUN pip3 install --no-cache-dir --break-system-packages --user -r ./dev-requirements.txt
 COPY tasks.py tasks.py
