@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from .assertion_formatter import Formatter
 from .browser_control import Control
 from .clock import Clock
 from .cookie import Cookie
 from .coverage import Coverage
 from .device_descriptors import Devices
 from .evaluation import Evaluation
-from .formatter import Formatter
 from .getters import Getters
 from .interaction import Interaction
 from .locator_handler import LocatorHandler

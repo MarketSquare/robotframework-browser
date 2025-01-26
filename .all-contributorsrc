@@ -1333,7 +1333,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/30448651?v=4",
       "profile": "https://github.com/falcon030",
       "contributions": [
-        "doc"
+        "doc",
+        "code"
       ]
     },
     {
@@ -1553,6 +1554,15 @@
       "profile": "https://github.com/keef78",
       "contributions": [
         "ideas"
+      ]
+    },
+    {
+      "login": "dean4711",
+      "name": "André",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5942386?v=4",
+      "profile": "https://github.com/dean4711",
+      "contributions": [
+        "code"
       ]
     }
   ],
