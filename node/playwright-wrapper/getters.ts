@@ -217,7 +217,13 @@ export async function getElementStates(
         states = stateEnum.attached;
         states += (await locator.isVisible()) ? stateEnum.visible : stateEnum.hidden;
         states += (await locator.isEnabled()) ? stateEnum.enabled : stateEnum.disabled;
-        states += (await locator.isEditable()) ? stateEnum.editable : stateEnum.readonly;
+        try {
+            states += (await locator.isEditable()) ? stateEnum.editable : stateEnum.readonly;
+        } catch (error) {
+            logger.info(`Element is not editable: ${error}`);
+            states += stateEnum.readonly;
+        }
+        logger.info('Checking checked state');
         states += await getCheckedState(locator);
         try {
             const element = await locator.elementHandle();

@@ -255,7 +255,7 @@ Get Element States
     Wait For Elements State    h1
     ${state} =    Get Element States    h1
     Sort List    ${state}
-    ${expected} =    Create List    attached    defocused    editable    enabled    visible
+    ${expected} =    Create List    attached    defocused    enabled    readonly    visible
     FOR    ${state}    ${exp}    IN ZIP    ${state}    ${expected}
         Should Be Equal    ${state}    ${exp}
     END
