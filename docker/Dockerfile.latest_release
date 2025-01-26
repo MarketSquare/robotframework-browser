@@ -36,7 +36,7 @@ RUN pip3 --version \
     pip3 install  --no-cache-dir --user --break-system-packages --upgrade pip wheel
 
 # Install RobotFramework and Browser library
-RUN pip3 install --no-cache-dir --user --break-system-packages --upgrade robotframework robotframework-browser==19.1.2
+RUN pip3 install --no-cache-dir --user --break-system-packages --upgrade robotframework robotframework-browser==19.2.0
 
 # Initialize Browser library
 RUN python3 -m Browser.entry init
