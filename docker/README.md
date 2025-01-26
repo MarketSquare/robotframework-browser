@@ -2,7 +2,7 @@
 
 Dockerfile.tests is used for our own CI and docker image build flow.
 
-Dockerfile.latest_release is used as the base to build our published docker images. 
+Dockerfile.latest_release is used as the base to build our published docker images.
 See [packages](https://github.com/MarketSquare/robotframework-browser/packages) for latest released docker image on github packages, and [dockerhub tags](https://hub.docker.com/r/marketsquare/robotframework-browser/tags?page=1&ordering=last_updated) for latest image on dockerhub.
 
 Example pull: `docker pull marketsquare/robotframework-browser`
@@ -25,3 +25,23 @@ When testing with chrome we recommend downloading a copy of `seccomp_profile.jso
 (Get it directly with `wget https://raw.githubusercontent.com/microsoft/playwright/master/utils/docker/seccomp_profile.json` )
 
 All dependencies are installed to support running tests as `pwuser` in the docker image. Running tests as root or other non `pwuser` can cause problems.
+
+# Build docker file locally
+
+To build docker image locally, go ./docker folder and give command
+
+```bash
+cd docker
+docker build --no-cache -t tidii --file Dockerfile.latest_release .
+```
+
+or output to file:
+```bash
+cd docker
+docker build --no-cache -t tidii --file Dockerfile.latest_release . > out.txt 2>&1
+```
+
+Run test with locally build image
+```bash
+docker run -v ./atest/:/test  -t tidii:latest bash -c "robot --outputdir /test/output /test"
+````
