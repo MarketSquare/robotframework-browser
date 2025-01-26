@@ -1333,7 +1333,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/30448651?v=4",
       "profile": "https://github.com/falcon030",
       "contributions": [
-        "doc"
+        "doc",
+        "code"
       ]
     },
     {
@@ -1533,6 +1534,33 @@
       "name": "William Looman",
       "avatar_url": "https://avatars.githubusercontent.com/u/38555868?v=4",
       "profile": "https://github.com/loomanw",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "mekxtari",
+      "name": "mekxtari",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22319364?v=4",
+      "profile": "https://github.com/mekxtari",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "keef78",
+      "name": "keef78",
+      "avatar_url": "https://avatars.githubusercontent.com/u/167465772?v=4",
+      "profile": "https://github.com/keef78",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "dean4711",
+      "name": "André",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5942386?v=4",
+      "profile": "https://github.com/dean4711",
       "contributions": [
         "code"
       ]

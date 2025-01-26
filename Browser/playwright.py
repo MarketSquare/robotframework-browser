@@ -133,7 +133,7 @@ class Playwright(LibraryComponent):
         )
 
     def wait_until_server_up(self):
-        for _ in range(50):
+        for _ in range(150):  # About 15 seconds
             with grpc.insecure_channel(f"127.0.0.1:{self.port}") as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)

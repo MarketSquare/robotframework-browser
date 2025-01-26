@@ -499,7 +499,7 @@ class Control(LibraryComponent):
         Example:
         | ${permissions} =    Create List    geolocation
         | `New Context`    permissions=${permissions}
-        | `Set Geolocation`    60.173708, 24.982263    3    # Points to Korkeasaari in Helsinki.
+        | `Set Geolocation`    60.173708    24.982263    3    # Points to Korkeasaari in Helsinki.
 
         [https://forum.robotframework.org/t//4329|Comment >>]
         """
