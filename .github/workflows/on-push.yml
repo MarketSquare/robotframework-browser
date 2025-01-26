@@ -159,6 +159,7 @@ jobs:
         pip install uv
         uv pip install wheel --python ${{ matrix.python-version }} --system
         uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }} --system
+        uv pip install robotframework==7.1.1 --python ${{ matrix.python-version }} --system
     - name: Build Protos and check with tsc
       run: |
         inv node-build
@@ -277,6 +278,7 @@ jobs:
           rfbrowser init
           uv pip install wheel --python ${{ matrix.python-version }} --system
           uv pip install -r Browser/dev-requirements.txt  --python ${{ matrix.python-version }} --system
+          uv pip install robotframework==7.1.1 --python ${{ matrix.python-version }} --system
       - name: Test on unix-like os - serial mode
         if: matrix.os == 'ubuntu-latest'
         env:
