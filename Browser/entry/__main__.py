@@ -38,7 +38,7 @@ from .constant import (
     SHELL,
 )
 from .coverage_combine import combine
-from .transform import transform
+from .transform import transform as tidy_transform
 from .translation import compare_translation, get_library_translation
 
 if TYPE_CHECKING:
@@ -669,7 +669,7 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     if not wait_until_network_is_idle:
         _log("No transformer defined, exiting.")
         return
-    transform(path, wait_until_network_is_idle)
+    tidy_transform(path, wait_until_network_is_idle)
 
 
 @cli.command()
