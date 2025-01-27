@@ -408,7 +408,7 @@ def cli(ctx, silent):
 
     transform will run Robotidy with Browser library transformer and handle keyword deprecations.
 
-    translation will generate detaul tranlsation json file from library keywords.
+    translation will generate default translation json file from library keywords.
 
     See each command argument help for more details what (optional) arguments that command supports.
     """
@@ -653,7 +653,7 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
     default=False,
 )
 def transform(path: Path, wait_until_network_is_idle: bool):
-    """Runs Robotidy with Browser library transofrormer.
+    """Runs Robotidy with Browser library transformer.
 
     This will help users to convert automatically deprecated to new ones. Conversion
     is not allways possible and to perform automatically and always reguires human
