@@ -257,7 +257,7 @@ Get Element Count Custom Error
 Get Element States And Check Error Message Equal
     Wait For Elements State    h1
     Run Keyword And Expect Error
-    ...    EQUALS:Elements states '['attached', 'defocused', 'editable', 'enabled', 'visible']' (list) should be '['attached', 'enabled', 'readonly', 'visible']' (list)
+    ...    EQUALS:Elements states '['attached', 'defocused', 'enabled', 'readonly', 'visible']' (list) should be '['attached', 'enabled', 'readonly', 'visible']' (list)
     ...    Get Element States
     ...    h1
     ...    ==
@@ -269,7 +269,7 @@ Get Element States And Check Error Message Equal
 Get Element States And Check Error Message Contains
     Wait For Elements State    h1
     Run Keyword And Expect Error
-    ...    EQUALS:Elements states '['attached', 'defocused', 'editable', 'enabled', 'visible']' (list) should contain '['detached', 'enabled', 'readonly', 'visible']' (list)
+    ...    EQUALS:Elements states '['attached', 'defocused', 'enabled', 'readonly', 'visible']' (list) should contain '['detached', 'enabled', 'readonly', 'visible']' (list)
     ...    Get Element States
     ...    h1
     ...    *=
@@ -293,7 +293,7 @@ Get Element States And Check Custom Error
 Get Element States And Check Custom Error With Values
     Wait For Elements State    h1
     Run Keyword And Expect Error
-    ...    EQUALS:Oh NOO! <h1> should contain ['selected'] but the states where ['attached', 'defocused', 'editable', 'enabled', 'visible']
+    ...    EQUALS:Oh NOO! <h1> should contain ['selected'] but the states where ['attached', 'defocused', 'enabled', 'readonly', 'visible']
     ...    Get Element States
     ...    h1
     ...    *=

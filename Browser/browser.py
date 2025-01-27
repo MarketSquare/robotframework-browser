@@ -1146,6 +1146,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 self.video_output,
                 self.traces_output,
                 self.state_file,
+                self.coverage_output,
             ]:
                 if path.is_dir():
                     logger.debug(f"Removing: {path}")
