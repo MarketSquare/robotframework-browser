@@ -22,7 +22,7 @@ KEYWORD_NAME = "Keyword name"
 DOC_CHANGED = "Documentation update needed"
 NO_LIB_KEYWORD = "Keyword not found from library"
 MISSING_TRANSLATION = "Keyword is missing translation"
-MISSING_CHECKSUM = "Keyword tranlsaton is missing checksum"
+MISSING_CHECKSUM = "Keyword translation is missing checksum"
 MAX_REASON_LEN = max(
     len(DOC_CHANGED),
     len(NO_LIB_KEYWORD),
