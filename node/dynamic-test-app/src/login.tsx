@@ -203,7 +203,7 @@ export default function Site() {
         };
         return (
             <>
-                <h1>Login Page</h1>
+                <h1 id="heading1">Login Page</h1>
                 <p>Please input your user name and password and click the login button.</p>
                 <form name="login_form" onSubmit={handleSubmit}>
                     <table>
