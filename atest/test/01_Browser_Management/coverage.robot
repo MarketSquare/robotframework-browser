@@ -157,6 +157,18 @@ Run Rfbrowser To Combine Coverage Reports And Invalid Config File
     Log    ${process.stderr}
     Should Be Equal As Integers    ${process.rc}    2
 
+No Config File
+    Start Coverage
+    ...    coverage_type=js
+    ...    config_file=not_here.js
+    Go To    ${LOGIN_URL}
+    Click    id=delayed_request
+    ${coverage_file} =    Stop Coverage
+    Should Be Equal
+    ...    ${coverage_file}
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
+    File Should Not Be Empty    ${coverage_file}
+
 *** Keywords ***
 Open Page And Store ID
     &{page_info} =    New Page
