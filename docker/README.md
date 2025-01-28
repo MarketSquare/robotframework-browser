@@ -45,3 +45,8 @@ Run test with locally build image
 ```bash
 docker run -v ./atest/:/test  -t tidii:latest bash -c "robot --outputdir /test/output /test"
 ````
+
+To start bash in container
+```bash
+docker run -i  -t tidii:latest bash
+```
