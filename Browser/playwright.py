@@ -93,12 +93,18 @@ class Playwright(LibraryComponent):
         )
 
     def start_playwright(self) -> Optional[Popen]:
-        existing_port = self.port or os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
+        env_node_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
+        existing_port = self.port or env_node_port
         if existing_port is not None:
             self.port = existing_port
-            logger.info(
-                f"ROBOT_FRAMEWORK_BROWSER_NODE_PORT {existing_port} defined in env skipping Browser process start"
-            )
+            if env_node_port is None:
+                logger.info(
+                    f"Using previously saved or imported port {existing_port}, skipping Browser process start"
+                )
+            else:
+                logger.info(
+                    f"ROBOT_FRAMEWORK_BROWSER_NODE_PORT {existing_port} defined in env, skipping Browser process start"
+                )
             return None
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
