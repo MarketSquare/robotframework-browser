@@ -26,6 +26,7 @@ import {
     webkit,
 } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
 
 import { Request, Response } from './generated/playwright_pb';
 import {
@@ -1142,5 +1143,9 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     }
     await mcr.add(allCoverage);
     await mcr.generate();
-    return stringResponse(outputDir, 'Coverage stopped and report generated');
+    let message = 'Coverage stopped and report generated';
+    if (!fs.existsSync(configFile)) {
+        message += `. But no config file found at ${configFile}`;
+    }
+    return stringResponse(outputDir, message);
 }
