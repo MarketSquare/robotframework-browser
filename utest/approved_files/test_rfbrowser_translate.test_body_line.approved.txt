@@ -1,8 +1,8 @@
 body
 
-0) | new_page                                   | Keyword is missing translation         |
-1) | this_is_long_keyword_which_is_42_chars_len | Keyword is missing translation         |
-2) | close                                      | Documentation update needed            |
-3) | new_page | Keyword is missing translation         |
-4) | click    | Keyword not found from library         |
-5) | click    | Documentation update needed            |
+0) | new_page                                   | Keyword is missing translation          |
+1) | this_is_long_keyword_which_is_42_chars_len | Keyword is missing translation          |
+2) | close                                      | Documentation update needed             |
+3) | new_page | Keyword is missing translation          |
+4) | click    | Keyword not found from library          |
+5) | click    | Documentation update needed             |

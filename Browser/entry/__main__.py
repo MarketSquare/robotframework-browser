@@ -38,7 +38,7 @@ from .constant import (
     SHELL,
 )
 from .coverage_combine import combine
-from .transform import trasform
+from .transform import transform as tidy_transform
 from .translation import compare_translation, get_library_translation
 
 if TYPE_CHECKING:
@@ -408,7 +408,7 @@ def cli(ctx, silent):
 
     transform will run Robotidy with Browser library transformer and handle keyword deprecations.
 
-    translation will generate detaul tranlsation json file from library keywords.
+    translation will generate default translation json file from library keywords.
 
     See each command argument help for more details what (optional) arguments that command supports.
     """
@@ -653,7 +653,7 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
     default=False,
 )
 def transform(path: Path, wait_until_network_is_idle: bool):
-    """Runs Robotidy with Browser library transofrormer.
+    """Runs Robotidy with Browser library transformer.
 
     This will help users to convert automatically deprecated to new ones. Conversion
     is not allways possible and to perform automatically and always reguires human
@@ -669,7 +669,7 @@ def transform(path: Path, wait_until_network_is_idle: bool):
     if not wait_until_network_is_idle:
         _log("No transformer defined, exiting.")
         return
-    trasform(path, wait_until_network_is_idle)
+    tidy_transform(path, wait_until_network_is_idle)
 
 
 @cli.command()
