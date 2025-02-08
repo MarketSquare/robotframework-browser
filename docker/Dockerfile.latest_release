@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.50.0-noble
+FROM mcr.microsoft.com/playwright:v1.50.1-noble
 
 # Update apt-get
 USER root
@@ -23,18 +23,15 @@ RUN chmod a+rwx -R /home/pwuser/.cache || true
 # Switch to pwuser for the remaining operations
 USER pwuser
 
-# Print pip version
-RUN pip3 --version
-
 # Create venv and active it
 RUN python3 -m venv /home/pwuser/.venv
 ENV PATH="/home/pwuser/.venv/bin:$PATH"
 
 # Upgrade pip and wheel for the user
-RUN pip3 install --no-cache-dir --upgrade pip wheel
+RUN pip3 install --no-cache-dir --upgrade pip wheel uv
 
 # Install RobotFramework and Browser library
-RUN pip3 install --no-cache-dir --upgrade robotframework robotframework-browser==19.3.1
+RUN uv pip install --no-cache-dir --upgrade robotframework robotframework-browser==19.3.1
 
 # Initialize Browser library without browsers binaries
 RUN python3 -m Browser.entry init --skip-browsers
