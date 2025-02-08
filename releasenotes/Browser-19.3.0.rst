@@ -66,9 +66,10 @@ this should fix the installation issues for users.
 Acknowledgements
 ================
 
-**EXPLAIN** or remove these.
-
-- Fix entry point documentation (`#4017`_)
+Fix entry point documentation (`#4017`_)
+-----------------------------------------
+Many thanks for William Looman for fixing the entry point documentation
+and doing some internal refactoring for module names.
 
 Full list of fixes and enhancements
 ===================================
