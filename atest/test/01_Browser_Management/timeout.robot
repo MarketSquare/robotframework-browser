@@ -60,7 +60,7 @@ Set Browser Timeout Should Fail With Invalid Value And Not Change Existing Value
 
 Calling Set Browser Timeout Without Open Contex Should Not Fail
     [Documentation]
-    ...    LOG 1:2    INFO    GLOB:    No context open.
+    ...    LOG 2:2    INFO    GLOB:    No context open.
     Set Browser Timeout    1s
     Close Browser    ALL
     Set Browser Timeout    1s

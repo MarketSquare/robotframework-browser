@@ -102,8 +102,8 @@ Screenshotting Without Path
 
 Screenshot Filename Incrementation
     [Documentation]
-    ...    LOG 1:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png" target="_blank"><img src="test_screenshot_1.png" width="800px"/></a>
-    ...    LOG 2:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png" target="_blank"><img src="test_screenshot_2.png" width="800px"/></a>
+    ...    LOG 2:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png" target="_blank"><img src="test_screenshot_1.png" width="800px"/></a>
+    ...    LOG 3:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png" target="_blank"><img src="test_screenshot_2.png" width="800px"/></a>
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
     File Should Exist    ${TestScreenshot}_1.png
@@ -112,14 +112,14 @@ Screenshot Filename Incrementation
 
 Embed ScreenShot To Log.html File
     [Documentation]
-    ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 2:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
     ${path} =    Take Screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
     Should Be Equal    ${path}    EMBED
 
 Embed Element Picture To Log.html File
     [Documentation]
-    ...    LOG 1:*    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 2:*    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
     ${path} =    Take Screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED
