@@ -1171,12 +1171,16 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.debug(f"Browser._start_test connection problem: {e}")
 
-    def _start_keyword(self, name, attrs):
+    def _resolve_path(self, attrs: dict) -> Union[Path, None]:
         source = Path(attrs["source"])
         if source.is_dir():
             source = source / "__init__.robot"
             if not source.exists():
-                source = None
+                return None
+        return source
+
+    def _start_keyword(self, name, attrs):
+        source = self._resolve_path(attrs)
         kw_call_stack_entry = self._create_keyword_call_stack_entry(
             name or attrs.get("value", ""),
             attrs["args"],
@@ -1208,7 +1212,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 self.screenshot_on_failure(test.name)
 
     def _create_keyword_call_stack_entry(
-        self, name: str, args: list, source: Union[str, Path], lineno: int, typ: str
+        self,
+        name: str,
+        args: list,
+        source: Union[str, Path, None],
+        lineno: int,
+        typ: str,
     ) -> KeywordCallStackEntry:
         if typ not in ["SETUP", "KEYWORD", "TEARDOWN"]:
             args = [name] if name else []
@@ -1236,7 +1245,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         except AssertionError as e:
             self.keyword_error()
             e.args = self._alter_keyword_error(name, e.args)
-            if self.pause_on_failure:
+            if self.pause_on_failure and sys.__stdout__ is not None:
                 sys.__stdout__.write(f"\n[ FAIL ] {e}")
                 sys.__stdout__.write(
                     "\n[Paused on failure] Press Enter to continue..\n"
@@ -1548,12 +1557,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 data = plugin.get_language()
             except AttributeError:
                 continue
-            if (
-                isinstance(data, dict)
-                and data.get("language", "").lower() == lang
-                and data.get("path")
-            ):
-                return Path(data.get("path")).absolute()
             if isinstance(data, list):
                 for item in data:
                     if item.get("language", "").lower() == lang and item.get("path"):

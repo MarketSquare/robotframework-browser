@@ -44,7 +44,7 @@ class Playwright(LibraryComponent):
     def __init__(
         self,
         library: "Browser",
-        enable_playwright_debug: PlaywrightLogTypes,
+        enable_playwright_debug: Union[PlaywrightLogTypes, bool],
         port: Optional[int] = None,
         playwright_log: Union[Path, None] = Path(Path.cwd()),
     ):
