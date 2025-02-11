@@ -112,7 +112,7 @@ jobs:
             node-version: 18.x
             shard: 2
           - os: ubuntu-latest
-            python-version: "3.9"
+            python-version: "3.13"
             node-version: 18.x
             shard: 3
           - os: ubuntu-latest
