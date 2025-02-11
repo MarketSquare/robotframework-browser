@@ -8,7 +8,7 @@ ruff>=0.2.1
 wheel>=0.40.0
 robotframework-pabot >= 4.0.0
 twine >= 4.0.2
-robotstatuschecker >= 3.0.1
+robotstatuschecker >= 4.1.1
 rellu >= 0.7
 approvaltests == 14.3.0
 pytest-mock==3.14.0

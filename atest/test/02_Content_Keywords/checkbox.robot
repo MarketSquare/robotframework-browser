@@ -34,7 +34,7 @@ Get Checkbox State Custom Error
 
 Check Checkbox
     [Documentation]
-    ...    LOG 3:*    DEBUG    REGEXP: Checked checkbox: .*?\\[name=can_send_sms\\] with force: false
+    ...    LOG 4:*    DEBUG    REGEXP: Checked checkbox: .*?\\[name=can_send_sms\\] with force: false
     ${state} =    Get Checkbox State    [name=can_send_sms]    ==    off
     Should Not Be True    ${state}
     Check Checkbox    [name=can_send_sms]
@@ -43,7 +43,7 @@ Check Checkbox
 
 Check Checkbox With Force
     [Documentation]
-    ...    LOG 1:*    DEBUG    REGEXP: Checked checkbox: .*?\\[name=can_send_sms\\] with force: true
+    ...    LOG 2:*    DEBUG    REGEXP: Checked checkbox: .*?\\[name=can_send_sms\\] with force: true
     Check Checkbox    [name=can_send_sms]    True
     ${state} =    Get Checkbox State    [name=can_send_sms]    ==    on
 
@@ -62,7 +62,7 @@ Uncheck Checkbox
 
 Uncheck Checkbox With Force
     [Documentation]
-    ...    LOG 1:*    DEBUG    REGEXP: Unchecked checkbox: .*?\\[name=can_send_email\\] with force: true
+    ...    LOG 2:*    DEBUG    REGEXP: Unchecked checkbox: .*?\\[name=can_send_email\\] with force: true
     Uncheck Checkbox    [name=can_send_email]    True
     Get Checkbox State    [name=can_send_email]    ==    ${False}
 
