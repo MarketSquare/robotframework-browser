@@ -19,6 +19,7 @@ Click With All Modifier
     ...    left
     ...    Alt
     ...    Control
+    ...    ControlOrMeta
     ...    Meta
     ...    Shift
     Get Text    \#mouse_button    ==    left
