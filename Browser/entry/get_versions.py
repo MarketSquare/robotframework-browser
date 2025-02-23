@@ -26,6 +26,26 @@ def get_rf_version():
     return process.stdout.decode("utf-8").split(" ")[2]
 
 
+def get_pw_version() -> str:
+    process = subprocess.run(
+        ["npm", "list", "playwright"],
+        capture_output=True,
+        check=False,
+        cwd=INSTALLATION_DIR,
+    )
+    std_out = process.stdout.decode("utf-8")
+    match = re.search(r"\@\d+\.\d+\.?\d*$", std_out)
+    if match:
+        return match.group(0)
+    log(
+        f"Could not get Playwright version, got: {std_out}, reading it from package.json"
+    )
+    package_json = INSTALLATION_DIR / "package.json"
+    package_json_data = json.loads(package_json.read_text())
+    match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
+    return match.group(0) if match else "unknown"
+
+
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
@@ -34,10 +54,7 @@ def print_version(ctx, param, value):
     version_text = version_file.read_text()
     match = re.search(r"\"\d+\.\d+.\d+\"", version_text)
     browser_lib_version = match.group(0) if match else "unknown"
-    package_json = INSTALLATION_DIR / "package.json"
-    package_json_data = json.loads(package_json.read_text())
-    match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
-    pw_version = match.group(0) if match else "unknown"
+    pw_version = get_pw_version()
     log(f"Installed Browser library version is: {browser_lib_version}")
     log(f'Robot Framework version: "{get_rf_version()}"')
     log(f'Installed Playwright is: "{pw_version}"')
