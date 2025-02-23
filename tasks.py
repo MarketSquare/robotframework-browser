@@ -773,7 +773,7 @@ def docs(c, version=None):
 def create_package(c):
     shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
     shutil.copy(ROOT_DIR / "package-lock.json", ROOT_DIR / "Browser" / "wrapper")
-    c.run("python setup.py sdist bdist_wheel")
+    c.run("python -m build")
 
 
 @task(clean, build, docs, create_package)
