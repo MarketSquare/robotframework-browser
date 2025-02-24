@@ -602,9 +602,8 @@ def _add_skips(default_args, include_mac=False):
 
 @task
 def lint_python(c, fix=False):
-    print("Run mypy:")
-    c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/ bootstrap.py")
-    print("Run black:")
+    print("Run ruuf format:")
+    ruff_cmd = "ruff format --config Browser/pyproject.toml Browser/ bootstrap.py tasks.py utest"
     c.run(
         "black --config Browser/pyproject.toml tasks.py Browser/ bootstrap.py utest atest"
     )
@@ -615,6 +614,8 @@ def lint_python(c, fix=False):
     if IN_CI:
         ruff_cmd = f"{ruff_cmd} --output-format=github"
     c.run(ruff_cmd)
+    print("Run mypy:")
+    c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/ bootstrap.py")
 
 
 @task

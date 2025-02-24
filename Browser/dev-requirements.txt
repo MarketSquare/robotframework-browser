@@ -1,10 +1,9 @@
 invoke >= 2.2.0
 pytest >= 7.4.2
 pytest-watch >= 4.2.0
-black >= 24.1.1
 mypy >= 1.8.0
 mypy-protobuf >= 3.5.0
-ruff>=0.2.1
+ruff>=0.9.7
 wheel>=0.40.0
 robotframework-pabot >= 4.0.0
 twine >= 4.0.2
