@@ -22,7 +22,6 @@ from ..utils import CoverageType, keyword, logger
 
 
 class Coverage(LibraryComponent):
-
     @keyword(tags=("Setter", "Coverage", "Experimental"))
     def start_coverage(
         self,

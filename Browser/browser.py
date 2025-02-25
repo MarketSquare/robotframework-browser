@@ -1336,7 +1336,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         new_ctx_ids: list[str] = [c for c in ctx_after_ids if c not in ctx_before_ids]
         for ctx_id in new_ctx_ids:
             self._playwright_state.open_trace_group(
-                f"Auto Closing Context    {ctx_id}", None  # noqa: RUF001
+                f"Auto Closing Context    {ctx_id}",  # noqa: RUF001
+                None,
             )
             self._playwright_state.close_context(
                 ctx_id,
@@ -1362,7 +1363,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
             self._playwright_state.open_trace_group(
-                f"Auto Closing Page    {page_id}", None  # noqa: RUF001
+                f"Auto Closing Page    {page_id}",  # noqa: RUF001
+                None,
             )
             self._playwright_state.close_page(
                 page_id,

@@ -39,7 +39,6 @@ PdfMargingDefault: PdfMarging = {
 
 
 class Pdf(LibraryComponent):
-
     @keyword(tags=("Getter", "PageContent"))
     def save_page_as_pdf(
         self,

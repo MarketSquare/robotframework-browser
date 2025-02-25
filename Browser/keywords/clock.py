@@ -19,7 +19,6 @@ from ..utils import CLockAdvanceType, ClockType, keyword, logger
 
 
 class Clock(LibraryComponent):
-
     @keyword(tags=("Setter", "Clock"))
     def set_time(self, time: datetime, clock_type: ClockType = ClockType.install):
         """Sets the time of the browser's internal clock.

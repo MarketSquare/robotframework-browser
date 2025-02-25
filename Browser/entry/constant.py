@@ -67,4 +67,4 @@ def log(message: str, silent_mode: bool = False):
 
 
 def write_marker(silent_mode: bool = False):
-    log(f'\n{"=" * 70}', silent_mode)
+    log(f"\n{'=' * 70}", silent_mode)
