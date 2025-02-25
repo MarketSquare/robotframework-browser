@@ -88,7 +88,7 @@ Library was tested with Playwright REPLACE_PW_VERSION
 def deps(c, system=False):
     c.run("pip install -U pip")
     c.run("pip install -U uv")
-    uv_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system'*(system or IS_GITPOD)}"
+    uv_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
     if IN_CI:
         print(f"Install packages to Python found from {sys.executable}.")
         uv_cmd = f"{uv_cmd} --python {sys.executable}"
@@ -602,18 +602,32 @@ def _add_skips(default_args, include_mac=False):
 
 @task
 def lint_python(c, fix=False):
-    print("Run ruuf format:")
-    ruff_cmd = "ruff format --config Browser/pyproject.toml Browser/ bootstrap.py tasks.py utest"
-    c.run(
-        "black --config Browser/pyproject.toml tasks.py Browser/ bootstrap.py utest atest"
-    )
-    print("Run ruff:")
-    ruff_cmd = "ruff check --config Browser/pyproject.toml Browser/ bootstrap.py"
+    ruff_cmd_format = [
+        "ruff",
+        "format",
+        "--config",
+        "Browser/pyproject.toml",
+        "Browser/",
+        "bootstrap.py",
+        "tasks.py",
+        "utest",
+    ]
+    ruff_cmd_check = [
+        "ruff",
+        "check",
+        "--config",
+        "Browser/pyproject.toml",
+        "Browser/",
+        "bootstrap.py",
+    ]
     if fix:
-        ruff_cmd = f"{ruff_cmd} --fix"
-    if IN_CI:
-        ruff_cmd = f"{ruff_cmd} --output-format=github"
-    c.run(ruff_cmd)
+        ruff_cmd_check.insert(2, "--fix")
+    else:
+        ruff_cmd_format.insert(2, "--check")
+    print(f"Run ruff format: {ruff_cmd_format}")
+    c.run(" ".join(ruff_cmd_format))
+    print(f"Run ruff check: {ruff_cmd_check}")
+    c.run(" ".join(ruff_cmd_check))
     print("Run mypy:")
     c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/ bootstrap.py")
 

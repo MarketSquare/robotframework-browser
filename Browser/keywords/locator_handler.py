@@ -21,7 +21,6 @@ from ..utils import keyword, logger
 
 
 class LocatorHandler(LibraryComponent):
-
     @keyword(tags=("Setter", "PageContent"))
     def add_locator_handler_click(
         self,

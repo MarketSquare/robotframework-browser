@@ -63,7 +63,7 @@ class Cookie(LibraryComponent):
         return "; ".join(pairs)
 
     def _cookie_as_string(self, cookie: dict) -> str:
-        return f'{cookie["name"]}={cookie["value"]}'
+        return f"{cookie['name']}={cookie['value']}"
 
     def _format_cookies_as_dot_dict(self, cookies: list[dict]):
         as_list = []

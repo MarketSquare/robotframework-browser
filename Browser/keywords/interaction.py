@@ -898,9 +898,9 @@ class Interaction(LibraryComponent):
         received_text = self.wait_for_alerts([action], [prompt_input], [None], timeout)
         received_text = received_text[0] if received_text else ""
         if text is not None:
-            assert (
-                text == received_text
-            ), f'Alert text was: "{received_text}" but it should have been: "{text}"'
+            assert text == received_text, (
+                f'Alert text was: "{received_text}" but it should have been: "{text}"'
+            )
         else:
             logger.debug("Not verifying alter text.")
         return received_text
@@ -975,9 +975,9 @@ class Interaction(LibraryComponent):
             if expected_text is None:
                 index += 1
                 continue
-            assert (
-                expected_text == received_text
-            ), f'Alert index {index} text was: "{received_text}" but it should have been: "{expected_text}"'
+            assert expected_text == received_text, (
+                f'Alert index {index} text was: "{received_text}" but it should have been: "{expected_text}"'
+            )
             index += 1
         return response.items
 
