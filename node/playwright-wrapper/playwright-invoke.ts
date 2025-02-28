@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { configure, wrap } from 'agentql';
 import { Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
@@ -39,6 +40,11 @@ export async function findLocator(
 ): Promise<Locator> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
+
+    if (selector.startsWith('$"') && selector.endsWith('"')) {
+        return findSmartLocator(activePage, selector.slice(2, -1));
+    }
+
     if (strictMode) {
         selector = selector.replaceAll(' >>> ', ' >> internal:control=enter-frame >> ');
     } else {
@@ -52,6 +58,20 @@ export async function findLocator(
     } else {
         return await findLocatorNotStrict(activePage, selector, firstOnly);
     }
+}
+
+/*
+ * Find locator by natural language prompt via AgentQL
+ */
+async function findSmartLocator(
+    activePage: Page,
+    selector: string,
+): Promise<Locator> {
+    configure({ apiKey: process.env.AGENTQL_API_KEY });
+    const agentqlPage = await wrap(activePage);
+    const result = agentqlPage.getByPrompt(selector);
+    exists(result, 'Could not find locator via AgentQL');
+    return result as Promise<Locator>;
 }
 
 async function findNthLocator(activePage: Page, selector: string, nthLocator: number): Promise<Locator> {
