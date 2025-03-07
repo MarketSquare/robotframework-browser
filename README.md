@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-171-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-172-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -397,6 +397,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/dean4711"><img src="https://avatars.githubusercontent.com/u/5942386?v=4?s=100" width="100px;" alt="André"/><br /><sub><b>André</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=dean4711" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarvKler"><img src="https://avatars.githubusercontent.com/u/98239503?v=4?s=100" width="100px;" alt="MarvKler"/><br /><sub><b>MarvKler</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AMarvKler" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/vcarnogu"><img src="https://avatars.githubusercontent.com/u/13346869?v=4?s=100" width="100px;" alt="Vaclav Carnogursky"/><br /><sub><b>Vaclav Carnogursky</b></sub></a><br /><a href="#ideas-vcarnogu" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Way"><img src="https://avatars.githubusercontent.com/u/122285?v=4?s=100" width="100px;" alt="Alexander Vey"/><br /><sub><b>Alexander Vey</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Away" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
