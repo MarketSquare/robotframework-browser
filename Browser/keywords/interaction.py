@@ -883,15 +883,15 @@ class Interaction(LibraryComponent):
         Example with returning text:
 
         | ${promise} =         `Promise To`    `Wait For Alert`    action=accept
-        | `Click`              id=alerts
+        | `Click`                id=alerts
         | ${text} =            `Wait For`      ${promise}
         | Should Be Equal      ${text}         Am an alert
 
         Example with text verify:
 
-        | ${promise} =       Promise To    Wait For Alert    action=accept    text=Am an alert
-        | Click              id=alerts
-        | ${text} =          Wait For      ${promise}
+        | ${promise} =       `Promise To`    `Wait For Alert`    action=accept    text=Am an alert
+        | `Click`              id=alerts
+        | ${text} =          `Wait For`      ${promise}
 
         [https://forum.robotframework.org/t//4343|Comment >>]
         """
@@ -933,24 +933,24 @@ class Interaction(LibraryComponent):
 
         Example to handle two alerts, first one is accepted and second one is dismissed:
 
-        | ${promise} =    Promise To
-        | ...    Wait For Alerts
+        | ${promise} =    `Promise To`
+        | ...    `Wait For Alerts`
         | ...    ["accept", "dismiss"]
         | ...    [None, None]
         | ...    [None, None]
-        | Click    id=alerts
-        | ${texts} =    Wait For    ${promise}
+        | `Click`    id=alerts
+        | ${texts} =    `Wait For`    ${promise}
 
         Example to handle confirm and prompt alert. Examople assumes that the fisrt is a
         confirm and second one is prompt:
 
-        | ${promise} =    Promise To
-        | ...    Wait For Alerts
+        | ${promise} =    `Promise To`
+        | ...    `Wait For Alerts`
         | ...    ["dismiss", "accept"]
         | ...    [None, "I am a prompt"]
         | ...    ["First alert accepted?", None]
-        | Click    id=confirmAndPromt
-        | ${texts} =    Wait For    ${promise}
+        | `Click`    id=confirmAndPromt
+        | ${texts} =    `Wait For`    ${promise}
 
         [https://forum.robotframework.org/t/7887|Comment >>]
         """
