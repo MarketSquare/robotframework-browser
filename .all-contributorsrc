@@ -1592,6 +1592,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "issue",
+      "name": "Baris Altuncay",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1318642?v=4",
+      "profile": "https://github.com/issue",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
