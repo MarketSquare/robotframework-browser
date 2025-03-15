@@ -110,9 +110,9 @@ class Playwright(LibraryComponent):
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
         if self.playwright_log:
-            logfile = self.playwright_log.open("w")
+            logfile = self.playwright_log.open("w", encoding="utf-8")
         else:
-            logfile = Path(os.devnull).open("w")  # noqa: SIM115
+            logfile = Path(os.devnull).open("w", encoding="utf-8")  # noqa: SIM115
         port = str(find_free_port())
         if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
             os.environ["DEBUG"] = "pw:api"

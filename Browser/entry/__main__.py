@@ -678,7 +678,7 @@ def translation(
         else:
             log("Translation is valid, no updated needed.")
     else:
-        with filename.open("w") as file:
+        with filename.open("w", encoding="utf-8") as file:
             json.dump(translation, file, indent=4)
         log(f"Translation file created in {filename.absolute()}")
 
