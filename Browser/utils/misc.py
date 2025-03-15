@@ -51,7 +51,7 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
 
 
     """
-    logfile = output_dir.open("w")
+    logfile = output_dir.open("w", encoding="utf-8")
     os.environ["DEBUG"] = "pw:api"
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
     port = str(find_free_port())
