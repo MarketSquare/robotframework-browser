@@ -20,7 +20,7 @@ def get_abs_scroll_coordinates(
     query: Any, scroll_size: int, min_str: str, max_str: str
 ):
     try:
-        return int(round(float(query)))
+        return round(float(query))
     except ValueError:
         pass
     if isinstance(query, str):
@@ -37,7 +37,7 @@ def get_abs_scroll_coordinates(
 
 def get_rel_scroll_coordinates(query: Any, full: int, client: int, dimension_str: str):
     try:
-        return int(round(float(query)))
+        return round(float(query))
     except ValueError:
         pass
     if isinstance(query, str):

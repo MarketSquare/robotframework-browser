@@ -78,10 +78,14 @@ class Playwright(LibraryComponent):
         installation_dir = rfbrowser_dir / "wrapper"
         # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
         project_folder = rfbrowser_dir.parent
-        subfolders = os.listdir(project_folder) + os.listdir(installation_dir)
-
-        if "node_modules" in subfolders:
+        if any(
+            [
+                (project_folder / "node_modules").is_dir(),
+                (installation_dir / "node_modules").is_dir(),
+            ]
+        ):
             return
+
         raise RuntimeError(
             "\n#############################################################"
             "\n#                                                           #"  # noqa: RUF001
