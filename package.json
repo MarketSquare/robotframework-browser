@@ -38,7 +38,7 @@
     "@grpc/grpc-js": "^1.13.0",
     "@medv/finder": "^4.0.2",
     "google-protobuf": "3.21.4",
-    "monocart-coverage-reports": "^2.12.2",
+    "monocart-coverage-reports": "^2.12.3",
     "pino": "^9.6.0",
     "playwright": "^1.51.0",
     "strip-comments": "^2.0.1",
