@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-174-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-175-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -400,6 +400,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Way"><img src="https://avatars.githubusercontent.com/u/122285?v=4?s=100" width="100px;" alt="Alexander Vey"/><br /><sub><b>Alexander Vey</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Away" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/brazdauskasv"><img src="https://avatars.githubusercontent.com/u/17760245?v=4?s=100" width="100px;" alt="Vaclovas Brazdauskas"/><br /><sub><b>Vaclovas Brazdauskas</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Abrazdauskasv" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/BenDTay"><img src="https://avatars.githubusercontent.com/u/60380705?v=4?s=100" width="100px;" alt="Benjamin Taylor"/><br /><sub><b>Benjamin Taylor</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ABenDTay" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Reinaard"><img src="https://avatars.githubusercontent.com/u/18013740?v=4?s=100" width="100px;" alt="Rein van der Vegt"/><br /><sub><b>Rein van der Vegt</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AReinaard" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
