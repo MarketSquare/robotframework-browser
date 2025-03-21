@@ -68,7 +68,7 @@ class Pdf(LibraryComponent):
         | ``displayHeaderFooter`` | Display header and footer. Defaults to False. |
         | ``footerTemplate`` | HTML template for the print footer. Should use the same format as the ``headerTemplate``. |
         | ``format`` | Paper format. If set, takes priority over width or height options. Defaults to 'Letter'. |
-        | ``headerTemplate`` | HTML template for the print header.  See detailled explanation in below |
+        | ``headerTemplate`` | HTML template for the print header.  See detailed explanation in below |
         | ``height`` | Paper height, accepts values labeled with units. |
         | ``landscape`` | Paper orientation. Defaults to false. |
         | ``margin`` | Defines pdf margins, see `PdfMarging` for more details |
@@ -161,7 +161,7 @@ class Pdf(LibraryComponent):
         and/or the 'prefers-colors-scheme' media feature, using
         the colorScheme argument.
 
-        Usefull to reder the page in corret format before using
+        Useful to render the page in correct format before using
         `Save Page As Pdf` keyword.
         """
         with self.playwright.grpc_channel() as stub:

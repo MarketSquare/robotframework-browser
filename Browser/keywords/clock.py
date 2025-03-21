@@ -24,7 +24,7 @@ class Clock(LibraryComponent):
         """Sets the time of the browser's internal clock.
 
         | Argument | Description |
-        | time     | The time to set. Suppots Robot Framework date and time format |
+        | time     | The time to set. Supports Robot Framework date and time format |
         | clock_type | The clock type to set. Default is `install`. |
 
         The fixed makes Date.now and new Date() return fixed fake
@@ -74,13 +74,13 @@ class Clock(LibraryComponent):
 
         Only fires due timers at most once. This is equivalent to user
         closing the laptop lid for a while and reopening it at the specified
-        time and pausing. Plause can not move clock backwards.
+        time and pausing. Pause can not move clock backwards.
 
         Example:
         | `Set Time` | 2024-10-31 17:34:00 | # Set the clock to a specific time |
         | Do Something | # Implement this in your keyword |
         | `Pause At` | 2024-10-31 18:34:00 | # Pause the clock at a specific time |
-        | Check Something | # Also this is implemnted in your keyword |
+        | Check Something | # Also this is implemented in your keyword |
         | `Resume Clock` | # Resume the clock |
         | Do Something Else | # Do something after clock runs normally |
         """
