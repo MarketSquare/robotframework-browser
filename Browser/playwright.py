@@ -37,7 +37,7 @@ from .utils import PlaywrightLogTypes, find_free_port, logger
 
 
 class Playwright(LibraryComponent):
-    """A wrapper for communicating with nodejs Playwirght process."""
+    """A wrapper for communicating with nodejs Playwright process."""
 
     port: Optional[str]
 

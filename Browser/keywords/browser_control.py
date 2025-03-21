@@ -165,7 +165,7 @@ class Control(LibraryComponent):
         Example
         | `Take Screenshot`                                 # Takes screenshot from page with default filename
         | `Take Screenshot`   selector=id=username_field    # Captures element in image
-        | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
+        | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenshot should last
         | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
         | `Take Screenshot`   EMBED                         # Screenshot is embedded as Base64 image to the log.html.
 
