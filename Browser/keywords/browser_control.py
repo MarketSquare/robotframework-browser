@@ -343,7 +343,7 @@ class Control(LibraryComponent):
                 logger.info(response.log)
         except Exception as error:  # Suppress  all errors
             if "Browser has been closed" in str(error):
-                logger.debug(f"Suppress error {error} when setting timeout.")
+                logger.trace(f"Suppress error {error} when setting timeout.")
             else:
                 raise
 
