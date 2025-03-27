@@ -101,8 +101,8 @@ Type Secret With Strict
 
 Fill Secret Placeholder-env-var
     [Documentation]    ...
-    ...    LOG 3:2    NONE
-    ...    LOG 5:2    NONE
+    ...    LOG 2:2    NONE
+    ...    LOG 4:2    NONE
     [Tags]    no-iframe
     Set Environment Variable    PH_ENV_VAR    password11
     Type Secret    css=input#username_field    %PH_ENV_VAR    ${0.02}    ${TRUE}
@@ -158,8 +158,8 @@ Fill Secret Robot-env-var Mixed2
 
 Fill Secret Placeholder-robot-var
     [Documentation]
-    ...    LOG 3:2    NONE
-    ...    LOG 5:2    NONE
+    ...    LOG 2:2    NONE
+    ...    LOG 4:2    NONE
     [Tags]    no-iframe
     ${var} =    Set Variable    password123
     Type Secret    css=input#username_field    $var
@@ -262,7 +262,7 @@ Type Secret Env
 
 Type Secret Local
     [Documentation]
-    ...    LOG 3:2    NONE
+    ...    LOG 2:2    NONE
     [Tags]    no-iframe
     ${var} =    Set Variable    password321
     Type Secret    css=input#password_field    $var

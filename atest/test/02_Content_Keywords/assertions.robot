@@ -87,7 +87,7 @@ Equal With Lambda Formatter:
 
 Get Attribute Names Does Not Support Formatter2:
     [Documentation]
-    ...    LOG 2:*    DEBUG    GLOB:    Assertion polling statistics:*
+    ...    LOG 1:*    DEBUG    GLOB:    Assertion polling statistics:*
     [Setup]    Go To    ${SPACES_URL}
     Get Attribute Names    id=two    ==    id
     [Teardown]    Formatter TearDown

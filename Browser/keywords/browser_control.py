@@ -341,14 +341,7 @@ class Control(LibraryComponent):
         try:
             with self.playwright.grpc_channel() as stub:
                 response = stub.SetTimeout(Request().Timeout(timeout=timeout))
-                if loglevel == "INFO":
-                    logger.info(response.log)
-                elif loglevel == "TRACE":
-                    logger.trace(response.log)
-                else:
-                    raise ValueError(
-                        f"Invalid loglevel {loglevel}. Valid values are INFO or TRACE."
-                    )
+                logger.write(response.log, loglevel)
         except Exception as error:  # Suppress  all errors
             if "Browser has been closed" in str(error):
                 logger.trace(f"Suppress error {error} when setting timeout.")

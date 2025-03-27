@@ -58,9 +58,7 @@ Set Browser Timeout Should Fail With Invalid Value And Not Change Existing Value
     Should Not Be Equal    ${old}    Nan
     Should Be Equal    ${new}    1 minute
 
-Calling Set Browser Timeout Without Open Contex Should Not Fail
-    [Documentation]
-    ...    LOG 2:2    INFO    GLOB:    No context open.
+Calling Set Browser Timeout Without Open Context Should Not Fail
     Set Browser Timeout    1s
     Close Browser    ALL
     Set Browser Timeout    1s

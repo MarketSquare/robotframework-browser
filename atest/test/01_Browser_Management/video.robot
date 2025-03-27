@@ -6,7 +6,7 @@ Suite Setup     Video Setup
 *** Test Cases ***
 Create Video With Full Path
     [Documentation]
-    ...    LOG 6:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
+    ...    LOG 5:3    INFO    GLOB:    *video width="1280" height="720" controls*src="video*.webm"*
     ${files} =    Glob Files Count    ${OUTPUT_DIR}/video
     Should Be Equal    ${0}    ${files}
     ${record_video} =    Create Dictionary    dir    ${OUTPUT_DIR}/video
@@ -19,7 +19,7 @@ Create Video With Full Path
 
 Create Video With Relative Path
     [Documentation]
-    ...    LOG 6:3    INFO    GLOB:    *video width="1280" height="720" controls*src="browser/video/my_video*.webm"*
+    ...    LOG 5:3    INFO    GLOB:    *video width="1280" height="720" controls*src="browser/video/my_video*.webm"*
     ${files} =    Glob Files Count    ${{pathlib.Path("${OUTPUT_DIR}/browser/video/my_video")}}
     Should Be Equal    ${0}    ${files}
     ${record_video} =    Create Dictionary    dir    my_video
@@ -62,7 +62,7 @@ Create Video With Relative Path And Persistent Context
 
 Create Video With VideoSize
     [Documentation]
-    ...    LOG 5:3    INFO    GLOB:    *width="300" height="200"*.webm"*
+    ...    LOG 4:3    INFO    GLOB:    *width="300" height="200"*.webm"*
     ${size} =    Create Dictionary    width    300    height    ${200}
     ${record_video} =    Create Dictionary    size    ${size}
     New Context    recordVideo=${record_video}
@@ -77,7 +77,7 @@ Create Video With VideoSize
 
 Create Video With Viewport
     [Documentation]
-    ...    LOG 5:3    INFO    GLOB:    *width="400" height="250"*.webm"*
+    ...    LOG 4:3    INFO    GLOB:    *width="400" height="250"*.webm"*
     ${size} =    Create Dictionary    width    400    height    250
     ${record_video} =    Create Dictionary    dir    ${OUTPUT_DIR}/video
     New Context    recordVideo=${record_video}    viewport=${size}
@@ -91,7 +91,7 @@ Create Video With Viewport
 
 No Video
     [Documentation]
-    ...    LOG 3:3    DEBUG    Video is not enabled.
+    ...    LOG 2:3    DEBUG    Video is not enabled.
     New Context
     New Page    ${LOGIN_URL}
     Get Browser Catalog
