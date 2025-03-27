@@ -19,6 +19,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
+from robot.api.logger import LOGLEVEL
 from robot.utils import get_link_path
 
 from ..base import LibraryComponent
@@ -336,11 +337,18 @@ class Control(LibraryComponent):
         self.timeout_stack.set(self.convert_timeout(timeout), scope)
         return old_timeout
 
-    def set_playwright_timeout(self, timeout):
+    def set_playwright_timeout(self, timeout, loglevel: LOGLEVEL = "INFO"):
         try:
             with self.playwright.grpc_channel() as stub:
                 response = stub.SetTimeout(Request().Timeout(timeout=timeout))
-                logger.info(response.log)
+                if loglevel == "INFO":
+                    logger.info(response.log)
+                elif loglevel == "TRACE":
+                    logger.trace(response.log)
+                else:
+                    raise ValueError(
+                        f"Invalid loglevel {loglevel}. Valid values are INFO or TRACE."
+                    )
         except Exception as error:  # Suppress  all errors
             if "Browser has been closed" in str(error):
                 logger.trace(f"Suppress error {error} when setting timeout.")
