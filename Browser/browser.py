@@ -913,7 +913,9 @@ class Browser(DynamicCore):
         self.scope_stack["timeout"] = SettingsStack(
             self.convert_timeout(timeout),
             self,
-            self._browser_control.set_playwright_timeout,
+            lambda time_out: self._browser_control.set_playwright_timeout(
+                time_out, loglevel="TRACE"
+            ),
         )
         self.scope_stack["retry_assertions_for"] = SettingsStack(
             self.convert_timeout(retry_assertions_for), self
@@ -1154,7 +1156,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             try:
                 self._execution_stack.append(
-                    [] if self._playwright is None else self.get_browser_catalog()
+                    []  # type: ignore
+                    if self._playwright is None
+                    else self._playwright_state._get_browser_catalog()
                 )
             except ConnectionError as e:
                 logger.trace(f"Browser._start_suite connection problem: {e}")
@@ -1166,7 +1170,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(
-                    [] if self._playwright is None else self.get_browser_catalog()
+                    []  # type: ignore
+                    if self._playwright is None
+                    else self._playwright_state._get_browser_catalog()
                 )
             except ConnectionError as e:
                 logger.trace(f"Browser._start_test connection problem: {e}")
@@ -1326,7 +1332,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             stack.end(scope_id)
 
     def _prune_execution_stack(self, catalog_before: dict, status: str) -> None:
-        catalog_after = self.get_browser_catalog()
+        catalog_after = self._playwright_state._get_browser_catalog()
         ctx_before_ids: list[str] = [
             c["id"] for b in catalog_before for c in b["contexts"]
         ]
