@@ -264,31 +264,31 @@ New Context With DefaultBrowserType Chromium
 
 When Context Without Browser Is Created This Is Logged For User
     [Documentation]
-    ...    LOG    2:5    INFO    No browser was open. New browser was automatically opened when this context is created.
-    ...    LOG    2:7    NONE
-    ...    LOG    3:6    NONE
+    ...    LOG    1:5    INFO    No browser was open. New browser was automatically opened when this context is created.
+    ...    LOG    1:7    NONE
+    ...    LOG    2:6    NONE
     [Setup]    Close Browser    ALL
     New Context
     New Context
 
 When Page Without Browser Is Created This Is Logged For User
     [Documentation]
-    ...    LOG    2:3    INFO    No browser and context was open. New browser and context was automatically opened when page is created.
-    ...    LOG    2:4    DEBUG    Video is not enabled.
-    ...    LOG    2:5    NONE
-    ...    LOG    3:3    DEBUG    Video is not enabled.
-    ...    LOG    3:4    NONE
+    ...    LOG    1:3    INFO    No browser and context was open. New browser and context was automatically opened when page is created.
+    ...    LOG    1:4    DEBUG    Video is not enabled.
+    ...    LOG    1:5    NONE
+    ...    LOG    2:3    DEBUG    Video is not enabled.
+    ...    LOG    2:4    NONE
     [Setup]    Close Browser    ALL
     New Page
     New Page
 
 When Page Without Context Is Created This Is Logged For User
     [Documentation]
-    ...    LOG    3:3    INFO    No context was open. New context was automatically opened when this page is created.
-    ...    LOG    3:4    DEBUG    Video is not enabled.
-    ...    LOG    3:5    NONE
-    ...    LOG    4:3    DEBUG    Video is not enabled.
-    ...    LOG    4:4    NONE
+    ...    LOG    2:3    INFO    No context was open. New context was automatically opened when this page is created.
+    ...    LOG    2:4    DEBUG    Video is not enabled.
+    ...    LOG    2:5    NONE
+    ...    LOG    3:3    DEBUG    Video is not enabled.
+    ...    LOG    3:4    NONE
     [Tags]    slow
     [Setup]    Close Browser    ALL
     New Browser    headless=${HEADLESS}    reuse_existing=False
@@ -410,7 +410,7 @@ Launch Browser Server CLI
 
 Launch Browser Server CLI With Video
     [Documentation]
-    ...    LOG 6:3    DEBUG    Video is not enabled.
+    ...    LOG 5:3    DEBUG    Video is not enabled.
     ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}    port=8271    wsPath=server1
     Should Be Equal    ${wsEndpoint}    ws://localhost:8271/server1
     ${browser} =    Connect To Browser    ws://localhost:8271/server1

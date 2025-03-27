@@ -913,7 +913,9 @@ class Browser(DynamicCore):
         self.scope_stack["timeout"] = SettingsStack(
             self.convert_timeout(timeout),
             self,
-            self._browser_control.set_playwright_timeout,
+            lambda time_out: self._browser_control.set_playwright_timeout(
+                time_out, loglevel="TRACE"
+            ),
         )
         self.scope_stack["retry_assertions_for"] = SettingsStack(
             self.convert_timeout(retry_assertions_for), self
@@ -1149,15 +1151,17 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 self.coverage_output,
             ]:
                 if path.is_dir():
-                    logger.debug(f"Removing: {path}")
+                    logger.trace(f"Removing: {path}")
                     shutil.rmtree(str(path), ignore_errors=True)
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             try:
                 self._execution_stack.append(
-                    [] if self._playwright is None else self.get_browser_catalog()
+                    []  # type: ignore
+                    if self._playwright is None
+                    else self._playwright_state._get_browser_catalog()
                 )
             except ConnectionError as e:
-                logger.debug(f"Browser._start_suite connection problem: {e}")
+                logger.trace(f"Browser._start_suite connection problem: {e}")
 
     def _start_test(self, _name, attrs):
         self.current_test_id = attrs["id"]
@@ -1166,10 +1170,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(
-                    [] if self._playwright is None else self.get_browser_catalog()
+                    []  # type: ignore
+                    if self._playwright is None
+                    else self._playwright_state._get_browser_catalog()
                 )
             except ConnectionError as e:
-                logger.debug(f"Browser._start_test connection problem: {e}")
+                logger.trace(f"Browser._start_test connection problem: {e}")
 
     def _resolve_path(self, attrs: dict) -> Union[Path, None]:
         source = Path(attrs["source"])
@@ -1283,7 +1289,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
             if self.presenter_mode:
-                logger.debug("Presenter mode: Wait for 5 seconds before pruning pages")
+                logger.trace("Presenter mode: Wait for 5 seconds before pruning pages")
                 time.sleep(5.0)
             self.execute_auto_closing(name, attrs, "Test", attrs["status"])
 
@@ -1301,7 +1307,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self, name: str, attrs: dict, typ: Literal["Test", "Suite"], status: str
     ):
         if len(self._execution_stack) == 0:
-            logger.debug(f"Browser._end_{typ.lower()} empty execution stack")
+            logger.trace(f"Browser._end_{typ.lower()} empty execution stack")
             return
         try:
             catalog_before = self._execution_stack.pop()
@@ -1313,9 +1319,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._prune_execution_stack(catalog_before, status)
             self._playwright_state.close_trace_group()
         except AssertionError as e:
-            logger.debug(f"{typ}: {name}, End {typ}: {e}")
+            logger.trace(f"{typ}: {name}, End {typ}: {e}")
         except ConnectionError as e:
-            logger.debug(f"Browser._end_{typ.lower()} connection problem: {e}")
+            logger.trace(f"Browser._end_{typ.lower()} connection problem: {e}")
 
     def _add_to_scope_stack(self, scope_id: str, scope: Scope):
         for stack in self.scope_stack.values():
@@ -1326,7 +1332,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             stack.end(scope_id)
 
     def _prune_execution_stack(self, catalog_before: dict, status: str) -> None:
-        catalog_after = self.get_browser_catalog()
+        catalog_after = self._playwright_state._get_browser_catalog()
         ctx_before_ids: list[str] = [
             c["id"] for b in catalog_before for c in b["contexts"]
         ]

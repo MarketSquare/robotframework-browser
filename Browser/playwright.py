@@ -102,11 +102,11 @@ class Playwright(LibraryComponent):
         if existing_port is not None:
             self.port = existing_port
             if env_node_port is None:
-                logger.info(
+                logger.trace(
                     f"Using previously saved or imported port {existing_port}, skipping Browser process start"
                 )
             else:
-                logger.info(
+                logger.trace(
                     f"ROBOT_FRAMEWORK_BROWSER_NODE_PORT {existing_port} defined in env, skipping Browser process start"
                 )
             return None
@@ -132,7 +132,7 @@ class Playwright(LibraryComponent):
         node_args.append(port)
         if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
-        logger.info(f"Node startup parameters: {node_args}")
+        logger.trace(f"Node startup parameters: {node_args}")
         return Popen(
             node_args,
             shell=False,
@@ -148,7 +148,7 @@ class Playwright(LibraryComponent):
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
                     response = stub.Health(Request().Empty())
-                    logger.debug(
+                    logger.trace(
                         f"Connected to the playwright process at port {self.port}: {response}"
                     )
                     return
@@ -193,25 +193,25 @@ class Playwright(LibraryComponent):
                 "Remember to remove manually all process left running."
             )
             return
-        logger.debug("Closing all open browsers, contexts and pages in Playwright")
+        logger.trace("Closing all open browsers, contexts and pages in Playwright")
         try:
             with self.grpc_channel() as stub:
                 response = stub.CloseAllBrowsers(Request().Empty())
-                logger.info(response.log)
+                logger.debug(response.log)
             self._channel.close()
         except Exception as exc:
             logger.debug(f"Failed to close browsers: {exc}")
         try:
             with self.grpc_channel() as stub:
                 response = stub.CloseBrowserServer(Request().ConnectBrowser(url="ALL"))
-                logger.info(response.log)
+                logger.debug(response.log)
         except Exception as exc:
             logger.debug(f"Failed to close browser servers: {exc}")
         # Access (possibly) cached property without actually invoking it
         playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:
-            logger.debug("Closing Playwright process")
+            logger.trace("Closing Playwright process")
             playwright_process.kill()
-            logger.debug("Playwright process killed")
+            logger.trace("Playwright process killed")
         else:
-            logger.debug("Disconnected from external Playwright process")
+            logger.trace("Disconnected from external Playwright process")

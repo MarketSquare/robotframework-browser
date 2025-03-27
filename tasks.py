@@ -294,6 +294,7 @@ def atest(
     processes=None,
     framed=False,
     exclude=None,
+    loglevel=None,
 ):
     """Runs Robot Framework acceptance tests with pabot.
 
@@ -306,6 +307,7 @@ def atest(
         debug: Use robotframework-debugger as test listener
         smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
+        loglevel: Set log level for robot framework
     """
     if IS_GITPOD and (not processes or int(processes) > 6):
         processes = "6"
@@ -336,13 +338,14 @@ def atest(
         args.extend(["--variable", "SUFFIX:framing.html?url="])
         args.extend(["--variable", "SELECTOR_PREFIX:id=iframe_id >>>"])
         args.extend(["--exclude", "no-iframe"])
+    loglevel = loglevel or "DEBUG"
     args.extend(["--exclude", "tidy-transformer"])
     ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
 
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-        rc = _run_pabot(args, shard, include_mac)
+        rc = _run_pabot(args, shard, include_mac, loglevel=loglevel)
     finally:
         background_process.kill()
 
@@ -542,7 +545,7 @@ def atest_coverage(c):
     robot.run("atest/test", **robot_args)
 
 
-def _run_pabot(extra_args=None, shard=None, include_mac=False):
+def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG"):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
         sys.executable,
@@ -564,7 +567,7 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False):
         "--exclude",
         "not-implemented",
         "--loglevel",
-        "DEBUG",
+        loglevel,
         "--report",
         "NONE",
         "--log",
