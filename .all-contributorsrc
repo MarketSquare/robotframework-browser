@@ -338,7 +338,8 @@
       "contributions": [
         "bug",
         "doc",
-        "ideas"
+        "ideas",
+        "code"
       ]
     },
     {
@@ -1582,6 +1583,51 @@
       "profile": "https://github.com/vcarnogu",
       "contributions": [
         "ideas"
+      ]
+    },
+    {
+      "login": "way",
+      "name": "Alexander Vey",
+      "avatar_url": "https://avatars.githubusercontent.com/u/122285?v=4",
+      "profile": "https://github.com/Way",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "brazdauskasv",
+      "name": "Vaclovas Brazdauskas",
+      "avatar_url": "https://avatars.githubusercontent.com/u/17760245?v=4",
+      "profile": "https://github.com/brazdauskasv",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "BenDTay",
+      "name": "Benjamin Taylor",
+      "avatar_url": "https://avatars.githubusercontent.com/u/60380705?v=4",
+      "profile": "https://github.com/BenDTay",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "Reinaard",
+      "name": "Rein van der Vegt",
+      "avatar_url": "https://avatars.githubusercontent.com/u/18013740?v=4",
+      "profile": "https://github.com/Reinaard",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "otemek",
+      "name": "tomek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3636875?v=4",
+      "profile": "https://github.com/otemek",
+      "contributions": [
+        "bug"
       ]
     }
   ],

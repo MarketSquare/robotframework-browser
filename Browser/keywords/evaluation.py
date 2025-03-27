@@ -98,7 +98,7 @@ class Evaluation(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | Selectors which shall be highlighted. See the `Finding elements` section for details about the selectors. |
         | ``duration`` | Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds. If set to 0 seconds, the highlighting is not deleted. |
-        | ``width`` | Sets the width of the higlight border. Defaults to 2px. |
+        | ``width`` | Sets the width of the highlight border. Defaults to 2px. |
         | ``style`` | Sets the style of the border. Defaults to dotted. |
         | ``color`` | Sets the color of the border. Valid colors i.e. are: ``red``, ``blue``, ``yellow``, ``pink``, ``black`` |
         | ``mode`` | Sets the mode of the highlight. Valid modes are: ``border`` (classic mode), ``playwright`` (Playwrights native). If ``playwright`` is used, ``width``, ``style`` and ``color`` is ignored and only one highlighting can happen at the same time. |

@@ -246,7 +246,7 @@ class Waiter(LibraryComponent):
         | =Arguments= | =Description= |
         | ``condition`` | A condition, defined with Browser getter keywords, without the word ``Get``. |
         | ``*args`` | Arguments to pass to the condition keyword. |
-        | ``timeout`` | Timout to wait for the condition to become True. Uses default timeout of the library if not set. As the other assertion keywords this timeout only influences the time the assertion is retried. The browser timout is used to wait for the element to be found. |
+        | ``timeout`` | Timeout to wait for the condition to become True. Uses default timeout of the library if not set. As the other assertion keywords this timeout only influences the time the assertion is retried. The browser timeout is used to wait for the element to be found. |
         | ``message`` | Overrides the default error message. |
 
 
@@ -325,7 +325,7 @@ class Waiter(LibraryComponent):
         """
         if state == PageLoadStates.commit:
             logger.info(
-                "commit state is not supported by keyword, will just return immediatley."
+                "commit state is not supported by keyword, will just return immediately."
             )
             return
         timeout_ = self.get_timeout(timeout)

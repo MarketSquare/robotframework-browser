@@ -37,7 +37,7 @@ from .utils import PlaywrightLogTypes, find_free_port, logger
 
 
 class Playwright(LibraryComponent):
-    """A wrapper for communicating with nodejs Playwirght process."""
+    """A wrapper for communicating with nodejs Playwright process."""
 
     port: Optional[str]
 
@@ -78,10 +78,14 @@ class Playwright(LibraryComponent):
         installation_dir = rfbrowser_dir / "wrapper"
         # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
         project_folder = rfbrowser_dir.parent
-        subfolders = os.listdir(project_folder) + os.listdir(installation_dir)
-
-        if "node_modules" in subfolders:
+        if any(
+            [
+                (project_folder / "node_modules").is_dir(),
+                (installation_dir / "node_modules").is_dir(),
+            ]
+        ):
             return
+
         raise RuntimeError(
             "\n#############################################################"
             "\n#                                                           #"  # noqa: RUF001
@@ -110,9 +114,9 @@ class Playwright(LibraryComponent):
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
         if self.playwright_log:
-            logfile = self.playwright_log.open("w")
+            logfile = self.playwright_log.open("w", encoding="utf-8")
         else:
-            logfile = Path(os.devnull).open("w")  # noqa: SIM115
+            logfile = Path(os.devnull).open("w", encoding="utf-8")  # noqa: SIM115
         port = str(find_free_port())
         if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
             os.environ["DEBUG"] = "pw:api"

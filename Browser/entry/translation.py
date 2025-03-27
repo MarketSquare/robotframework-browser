@@ -90,7 +90,7 @@ def _table_doc_updated(lib_kw: str, max_name_lenght: int, reason: str) -> str:
 
 
 def compare_translation(filename: Path, library_translation: dict):
-    with filename.open("r") as file:
+    with filename.open("r", encoding="utf-8") as file:
         project_translation = json.load(file)
     max_kw_lenght = _max_kw_name_lenght(library_translation)
     table_body = []

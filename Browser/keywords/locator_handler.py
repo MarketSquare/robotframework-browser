@@ -37,12 +37,12 @@ class LocatorHandler(LibraryComponent):
 
         The handler will click the element indicated by `click_selector`.
 
-        When testing a web page, sometimes unexpected overlkays, exaple "Accept Coocies" dialog
+        When testing a web page, sometimes unexpected overlays, example "Accept Cookies" dialog
         might appear and block the interaction with the page, like `Click` keyword. These
         overlays can be problematic to handle, because they might appear randomly in the page.
         This keyword allows to create automatic method, which will close those overlays by
-        clicking the element indicated by ``click_selector``. Handler is activaed when
-        element indicated by ``selector`` is visible. For furhter information, see Playwright's
+        clicking the element indicated by ``click_selector``. Handler is activated when
+        element indicated by ``selector`` is visible. For further information, see Playwright's
         [https://playwright.dev/docs/api/class-page#page-add-locator-handler|addLocatorHandler]
         method.
 
@@ -58,7 +58,7 @@ class LocatorHandler(LibraryComponent):
         The arguments `click_selector`, `click_clickCount`, `click_delay` and `click_force` are same as
         `Click` keyword. The `selector`, `noWaitAfter` and `times` are for the locator handler. The
         handler is tied to the active page, if there is need to add handler to another page, this keyword
-        needs to be called separetly for each page. If the `times` argument is set to positive value,
+        needs to be called separately for each page. If the `times` argument is set to positive value,
         the locator handler is removed after the handler has been called the specified number of times.
 
         Example add locator handler to click button with id="ButtonInOverlay" when id=Overlay is visible:
@@ -70,7 +70,7 @@ class LocatorHandler(LibraryComponent):
         | `Remove Locator Handler`    id:button    # Removes the locator handler from page
         """
         logger.info(
-            f"Add locator handlee: {selector} and clicking element: {click_selector}"
+            f"Add locator handle: {selector} and clicking element: {click_selector}"
         )
         handler_spec = {
             "action": "click",
@@ -104,7 +104,7 @@ class LocatorHandler(LibraryComponent):
         noWaitAfter: bool = True,
         times: Optional[int] = None,
     ):
-        """Add a handler function which will activate when `selector` is visible and performs halder specification.
+        """Add a handler function which will activate when `selector` is visible and performs handler specification.
 
         When element indicated by `selector` is visible, the handler will perform the actions specified
         in the `handler_spec`.
@@ -127,12 +127,12 @@ class LocatorHandler(LibraryComponent):
         the value to be filled in the element. Additional keys are passed to the action as
         keyword arguments. Example for the
         [https://playwright.dev/docs/api/class-locator#locator-click|click] action refer to the Playwright's
-        documentation which options are posisble.
+        documentation which options are possible.
 
         The `selector`, `noWaitAfter` and `times` are for the locator handler
         [https://playwright.dev/docs/api/class-page#page-add-locator-handler|method].
         The handler is tied to the active page, if there is need to add handler to another page, this keyword
-        needs to be called separetly for each page. If the `times` argument is set to positive value,
+        needs to be called separately for each page. If the `times` argument is set to positive value,
         the locator handler is removed after the handler has been called the specified number of times.
 
         Running the handler will alter your page state mid-test. For example it will change the currently
@@ -140,8 +140,8 @@ class LocatorHandler(LibraryComponent):
         self-contained and do not rely on the focus and mouse state being unchanged.
 
         Please note that the automatic argument conversion is not done for the `handler_spec` dictionary.
-        This is because Robot Framework does not that values inside the dictionary are actually
-        arguments to a seperate Playwright API call. Therefore user is responsible of the user to convert
+        This is because Robot Framework does not convert values inside the dictionary that are actually
+        arguments to a separate Playwright API call. Therefore the user is responsible to convert
         the values to the correct type. Example if timeout is needed, the value must be converted to a number
         in Robot Framework test data side.
 

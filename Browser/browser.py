@@ -755,7 +755,7 @@ class Browser(DynamicCore):
 
     The package must implement single API call, ``get_language`` without any arguments. Method must return a
     dictionary containing two keys: ``language`` and ``path``. The language key value defines which language
-    the package contains. Also value should match (case insentive) the library ``language`` import parameter.
+    the package contains. Also value should match (case insensitive) the library ``language`` import parameter.
     The path parameter value should be full path to the translation file.
 
     == Translation file ==
@@ -764,8 +764,8 @@ class Browser(DynamicCore):
     format. The keys of json are the methods names, not the keyword names, which implements keywords. Value of
     key is json object which contains two keys: ``name`` and ``doc``. The ``name`` key contains the keyword
     translated name and `doc` contains translated documentation. Providing doc and name are optional, example
-    translation json file can only provide translations to keyword names or only to documentatin. But it is
-    always recomended to provide translation to both name and doc. Special key ``__intro__`` is for class level
+    translation json file can only provide translations to keyword names or only to documentation. But it is
+    always recommended to provide translation to both name and doc. Special key ``__intro__`` is for class level
     documentation and ``__init__`` is for init level documentation. These special values ``name`` can not be
     translated, instead ``name`` should be kept the same.
 
