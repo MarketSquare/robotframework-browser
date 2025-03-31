@@ -755,7 +755,7 @@ class Browser(DynamicCore):
 
     The package must implement single API call, ``get_language`` without any arguments. Method must return a
     dictionary containing two keys: ``language`` and ``path``. The language key value defines which language
-    the package contains. Also value should match (case insentive) the library ``language`` import parameter.
+    the package contains. Also value should match (case insensitive) the library ``language`` import parameter.
     The path parameter value should be full path to the translation file.
 
     == Translation file ==
@@ -764,8 +764,8 @@ class Browser(DynamicCore):
     format. The keys of json are the methods names, not the keyword names, which implements keywords. Value of
     key is json object which contains two keys: ``name`` and ``doc``. The ``name`` key contains the keyword
     translated name and `doc` contains translated documentation. Providing doc and name are optional, example
-    translation json file can only provide translations to keyword names or only to documentatin. But it is
-    always recomended to provide translation to both name and doc. Special key ``__intro__`` is for class level
+    translation json file can only provide translations to keyword names or only to documentation. But it is
+    always recommended to provide translation to both name and doc. Special key ``__intro__`` is for class level
     documentation and ``__init__`` is for init level documentation. These special values ``name`` can not be
     translated, instead ``name`` should be kept the same.
 
@@ -916,7 +916,9 @@ class Browser(DynamicCore):
         self.scope_stack["timeout"] = SettingsStack(
             self.convert_timeout(timeout),
             self,
-            self._browser_control.set_playwright_timeout,
+            lambda time_out: self._browser_control.set_playwright_timeout(
+                time_out, loglevel="TRACE"
+            ),
         )
         self.scope_stack["retry_assertions_for"] = SettingsStack(
             self.convert_timeout(retry_assertions_for), self
@@ -1150,17 +1152,20 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 self.video_output,
                 self.traces_output,
                 self.state_file,
+                self.coverage_output,
             ]:
                 if path.is_dir():
-                    logger.debug(f"Removing: {path}")
+                    logger.trace(f"Removing: {path}")
                     shutil.rmtree(str(path), ignore_errors=True)
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             try:
                 self._execution_stack.append(
-                    [] if self._playwright is None else self.get_browser_catalog()
+                    []  # type: ignore
+                    if self._playwright is None
+                    else self._playwright_state._get_browser_catalog()
                 )
             except ConnectionError as e:
-                logger.debug(f"Browser._start_suite connection problem: {e}")
+                logger.trace(f"Browser._start_suite connection problem: {e}")
 
     def _start_test(self, _name, attrs):
         self.current_test_id = attrs["id"]
@@ -1169,17 +1174,23 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(
-                    [] if self._playwright is None else self.get_browser_catalog()
+                    []  # type: ignore
+                    if self._playwright is None
+                    else self._playwright_state._get_browser_catalog()
                 )
             except ConnectionError as e:
-                logger.debug(f"Browser._start_test connection problem: {e}")
+                logger.trace(f"Browser._start_test connection problem: {e}")
 
-    def _start_keyword(self, name, attrs):
+    def _resolve_path(self, attrs: dict) -> Union[Path, None]:
         source = Path(attrs["source"])
         if source.is_dir():
             source = source / "__init__.robot"
             if not source.exists():
-                source = None
+                return None
+        return source
+
+    def _start_keyword(self, name, attrs):
+        source = self._resolve_path(attrs)
         kw_call_stack_entry = self._create_keyword_call_stack_entry(
             name or attrs.get("value", ""),
             attrs["args"],
@@ -1211,7 +1222,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 self.screenshot_on_failure(test.name)
 
     def _create_keyword_call_stack_entry(
-        self, name: str, args: list, source: Union[str, Path], lineno: int, typ: str
+        self,
+        name: str,
+        args: list,
+        source: Union[str, Path, None],
+        lineno: int,
+        typ: str,
     ) -> KeywordCallStackEntry:
         if typ not in ["SETUP", "KEYWORD", "TEARDOWN"]:
             args = [name] if name else []
@@ -1239,7 +1255,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         except AssertionError as e:
             self.keyword_error()
             e.args = self._alter_keyword_error(name, e.args)
-            if self.pause_on_failure:
+            if self.pause_on_failure and sys.__stdout__ is not None:
                 sys.__stdout__.write(f"\n[ FAIL ] {e}")
                 sys.__stdout__.write(
                     "\n[Paused on failure] Press Enter to continue..\n"
@@ -1277,7 +1293,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self.wait_for_all_promises()
         if self._auto_closing_level == AutoClosingLevel.TEST:
             if self.presenter_mode:
-                logger.debug("Presenter mode: Wait for 5 seconds before pruning pages")
+                logger.trace("Presenter mode: Wait for 5 seconds before pruning pages")
                 time.sleep(5.0)
             self.execute_auto_closing(name, attrs, "Test", attrs["status"])
 
@@ -1295,7 +1311,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self, name: str, attrs: dict, typ: Literal["Test", "Suite"], status: str
     ):
         if len(self._execution_stack) == 0:
-            logger.debug(f"Browser._end_{typ.lower()} empty execution stack")
+            logger.trace(f"Browser._end_{typ.lower()} empty execution stack")
             return
         try:
             catalog_before = self._execution_stack.pop()
@@ -1307,9 +1323,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._prune_execution_stack(catalog_before, status)
             self._playwright_state.close_trace_group()
         except AssertionError as e:
-            logger.debug(f"{typ}: {name}, End {typ}: {e}")
+            logger.trace(f"{typ}: {name}, End {typ}: {e}")
         except ConnectionError as e:
-            logger.debug(f"Browser._end_{typ.lower()} connection problem: {e}")
+            logger.trace(f"Browser._end_{typ.lower()} connection problem: {e}")
 
     def _add_to_scope_stack(self, scope_id: str, scope: Scope):
         for stack in self.scope_stack.values():
@@ -1320,7 +1336,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             stack.end(scope_id)
 
     def _prune_execution_stack(self, catalog_before: dict, status: str) -> None:
-        catalog_after = self.get_browser_catalog()
+        catalog_after = self._playwright_state._get_browser_catalog()
         ctx_before_ids: list[str] = [
             c["id"] for b in catalog_before for c in b["contexts"]
         ]
@@ -1330,7 +1346,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         new_ctx_ids: list[str] = [c for c in ctx_after_ids if c not in ctx_before_ids]
         for ctx_id in new_ctx_ids:
             self._playwright_state.open_trace_group(
-                f"Auto Closing Context    {ctx_id}", None  # noqa: RUF001
+                f"Auto Closing Context    {ctx_id}",  # noqa: RUF001
+                None,
             )
             self._playwright_state.close_context(
                 ctx_id,
@@ -1356,7 +1373,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
             self._playwright_state.open_trace_group(
-                f"Auto Closing Page    {page_id}", None  # noqa: RUF001
+                f"Auto Closing Page    {page_id}",  # noqa: RUF001
+                None,
             )
             self._playwright_state.close_page(
                 page_id,
@@ -1551,12 +1569,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 data = plugin.get_language()
             except AttributeError:
                 continue
-            if (
-                isinstance(data, dict)
-                and data.get("language", "").lower() == lang
-                and data.get("path")
-            ):
-                return Path(data.get("path")).absolute()
             if isinstance(data, list):
                 for item in data:
                     if item.get("language", "").lower() == lang and item.get("path"):

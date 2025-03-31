@@ -22,7 +22,6 @@ from ..utils import CoverageType, keyword, logger
 
 
 class Coverage(LibraryComponent):
-
     @keyword(tags=("Setter", "Coverage", "Experimental"))
     def start_coverage(
         self,
@@ -69,6 +68,8 @@ class Coverage(LibraryComponent):
         | `Stop Coverage`
         """
         logger.info(f"Starting coverage for {coverage_type.name}")
+        if config_file and not config_file.is_file():  # type: ignore[attr-defined]
+            logger.info(f"Config file {config_file} not found. Ignoring the file.")
         with self.playwright.grpc_channel() as stub:
             response = stub.StartCoverage(
                 Request.CoverageStart(

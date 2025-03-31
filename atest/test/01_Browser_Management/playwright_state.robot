@@ -267,7 +267,6 @@ When Context Without Browser Is Created This Is Logged For User
     ...    LOG    1:5    INFO    No browser was open. New browser was automatically opened when this context is created.
     ...    LOG    1:7    NONE
     ...    LOG    2:6    NONE
-    [Tags]    slow
     [Setup]    Close Browser    ALL
     New Context
     New Context
@@ -279,7 +278,6 @@ When Page Without Browser Is Created This Is Logged For User
     ...    LOG    1:5    NONE
     ...    LOG    2:3    DEBUG    Video is not enabled.
     ...    LOG    2:4    NONE
-    [Tags]    slow
     [Setup]    Close Browser    ALL
     New Page
     New Page

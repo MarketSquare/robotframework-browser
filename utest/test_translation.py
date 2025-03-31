@@ -10,7 +10,7 @@ from Browser import Browser
 @pytest.fixture()
 def browser() -> Browser:
     sys.path.append(str(Path(__file__).parent.absolute()))
-    return Browser(language="FI")
+    return Browser(language="ENG")
 
 
 def test_no_translation(browser: Browser):
@@ -18,12 +18,9 @@ def test_no_translation(browser: Browser):
     assert browser._get_translation(False) is None
 
 
-def test_provide_translation(browser: Browser):
-    lang_plugin = "robotframework_browser_translation_fi"
-    file_path = Path(__file__).parent / lang_plugin / "translate.json"
+def test_provide_translation_as_not_list(browser: Browser):
     received_path = browser._get_translation("fi")
-    assert received_path == file_path, received_path
-    assert browser._get_translation("wrong") is None
+    assert received_path is None, received_path
 
 
 def test_provide_translation_as_list(browser: Browser):

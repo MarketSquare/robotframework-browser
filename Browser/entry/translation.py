@@ -22,7 +22,7 @@ KEYWORD_NAME = "Keyword name"
 DOC_CHANGED = "Documentation update needed"
 NO_LIB_KEYWORD = "Keyword not found from library"
 MISSING_TRANSLATION = "Keyword is missing translation"
-MISSING_CHECKSUM = "Keyword tranlsaton is missing checksum"
+MISSING_CHECKSUM = "Keyword translation is missing checksum"
 MAX_REASON_LEN = max(
     len(DOC_CHANGED),
     len(NO_LIB_KEYWORD),
@@ -90,7 +90,7 @@ def _table_doc_updated(lib_kw: str, max_name_lenght: int, reason: str) -> str:
 
 
 def compare_translation(filename: Path, library_translation: dict):
-    with filename.open("r") as file:
+    with filename.open("r", encoding="utf-8") as file:
         project_translation = json.load(file)
     max_kw_lenght = _max_kw_name_lenght(library_translation)
     table_body = []

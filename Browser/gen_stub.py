@@ -160,7 +160,7 @@ pyi_non_kw_methods = """\
 """
 
 init_method = KeywordBuilder.build(br.__init__)
-with Path("Browser/browser.pyi").open("w") as stub_file:
+with Path("Browser/browser.pyi").open("w", encoding="utf-8") as stub_file:
     stub_file.write(pyi_boilerplate)
     init_string = keyword_line(
         init_method.argument_specification, init_method.argument_types, "__init__"

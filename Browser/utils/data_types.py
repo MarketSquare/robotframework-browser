@@ -833,6 +833,7 @@ class KeyboardModifier(Enum):
 
     Alt = auto()
     Control = auto()
+    ControlOrMeta = auto()
     Meta = auto()
     Shift = auto()
 

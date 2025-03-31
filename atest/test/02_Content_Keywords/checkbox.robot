@@ -49,7 +49,7 @@ Check Checkbox With Force
 
 Check Checkbox With Strict
     # TODO: Change: "*2" to correct value after PW update
-    Run Keyword And Expect Error    *strict mode violation*//input[@type*resolved to*2 elements*    Check Checkbox
+    Run Keyword And Expect Error    *strict mode violation*//input[@type*resolved to 2 elements*    Check Checkbox
     ...    //input[@type="checkbox"]
     Set Strict Mode    False
     Check Checkbox    //input[@type="checkbox"]

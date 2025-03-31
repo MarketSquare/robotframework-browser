@@ -898,9 +898,9 @@ class Interaction(LibraryComponent):
         received_text = self.wait_for_alerts([action], [prompt_input], [None], timeout)
         received_text = received_text[0] if received_text else ""
         if text is not None:
-            assert (
-                text == received_text
-            ), f'Alert text was: "{received_text}" but it should have been: "{text}"'
+            assert text == received_text, (
+                f'Alert text was: "{received_text}" but it should have been: "{text}"'
+            )
         else:
             logger.debug("Not verifying alter text.")
         return received_text
@@ -941,7 +941,7 @@ class Interaction(LibraryComponent):
         | Click    id=alerts
         | ${texts} =    Wait For    ${promise}
 
-        Example to handle confirm and prompt alert. Examople assumes that the fisrt is a
+        Example to handle confirm and prompt alert. Example assumes that the first is a
         confirm and second one is prompt:
 
         | ${promise} =    Promise To
@@ -949,7 +949,7 @@ class Interaction(LibraryComponent):
         | ...    ["dismiss", "accept"]
         | ...    [None, "I am a prompt"]
         | ...    ["First alert accepted?", None]
-        | Click    id=confirmAndPromt
+        | Click    id=confirmAndPrompt
         | ${texts} =    Wait For    ${promise}
 
         [https://forum.robotframework.org/t/7887|Comment >>]
@@ -975,9 +975,9 @@ class Interaction(LibraryComponent):
             if expected_text is None:
                 index += 1
                 continue
-            assert (
-                expected_text == received_text
-            ), f'Alert index {index} text was: "{received_text}" but it should have been: "{expected_text}"'
+            assert expected_text == received_text, (
+                f'Alert index {index} text was: "{received_text}" but it should have been: "{expected_text}"'
+            )
             index += 1
         return response.items
 
@@ -1063,7 +1063,7 @@ class Interaction(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector_from`` | Identifies the element, which center is the start-point. |
         | ``selector_to`` | Identifies the element, which center is the end-point. |
-        | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
+        | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         See the `Finding elements` section for details about the selectors.
 
@@ -1110,7 +1110,7 @@ class Interaction(LibraryComponent):
 
         | ``from_x`` & ``from_y`` | Identify the start-point on page. |
         | ``to_x`` & ``to_y`` | Identify the end-point. |
-        | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
+        | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         Example:
         | `Drag And Drop By Coordinates`
@@ -1139,7 +1139,7 @@ class Interaction(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector_from`` | identifies the element, which center is the start-point. |
         | ``x`` & ``y`` | identifies the end-point which is relative to the start-point. |
-        | ``steps`` | defines how many intermediate mouse move events are sent. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
+        | ``steps`` | defines how many intermediate mouse move events are sent. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         See the `Finding elements` section for details about the selectors.
 
@@ -1183,7 +1183,7 @@ class Interaction(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | Identifies the element, which center is the start-point. |
         | ``x`` & ``y`` | Are relative coordinates to the center of the elements bounding box. |
-        | ``steps`` | Number of intermediate steps for the mouse event. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
+        | ``steps`` | Number of intermediate steps for the mouse event. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1217,7 +1217,7 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``x`` & ``y`` | Are absolute coordinates starting at the top left of the page. |
-        | ``steps`` | Number of intermediate steps for the mouse event. Often it is nessesary to send more than one intermediate event to get the desired result. Defaults to 1. |
+        | ``steps`` | Number of intermediate steps for the mouse event. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         Example:
         | `Mouse Move`    400    400
@@ -1238,7 +1238,7 @@ class Interaction(LibraryComponent):
         | ``deltaX`` & ``deltaY`` | Pixels that are scrolled horizontally & vertically. |
 
         Example:
-        | # Before doing a mouse wheel interaction. A mouse needs to be posisioned on the browser window.
+        | # Before doing a mouse wheel interaction. A mouse needs to be positioned on the browser window.
         | `Hover`    body
         | `Mouse Wheel`    0    250
 
@@ -1262,7 +1262,7 @@ class Interaction(LibraryComponent):
         Useful keys for ``down`` and ``up`` for example are:
         ``Shift``, ``Control``, ``Alt``, ``Meta``, ``ShiftLeft``
 
-        Example excecution:
+        Example execution:
         | `Keyboard Key`    press    S
         | `Keyboard Key`    down     Shift
         | `Keyboard Key`    press    ArrowLeft
@@ -1342,7 +1342,7 @@ class Interaction(LibraryComponent):
         or folders. in `extra_paths`.
 
         If path is a directory, it will be uploaded all files from the directory.
-        Subdirections are not included. It is possible to upload files and directories
+        Subdirectories are not included. It is possible to upload files and directories
         with the same keyword.
 
         | =Arguments= | =Description= |

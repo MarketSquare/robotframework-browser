@@ -19,6 +19,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
+from robot.api.logger import LOGLEVEL
 from robot.utils import get_link_path
 
 from ..base import LibraryComponent
@@ -165,7 +166,7 @@ class Control(LibraryComponent):
         Example
         | `Take Screenshot`                                 # Takes screenshot from page with default filename
         | `Take Screenshot`   selector=id=username_field    # Captures element in image
-        | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenhost should last
+        | # Takes screenshot with jpeg extension, defines image quality and timeout how long taking screenshot should last
         | `Take Screenshot`   fullPage=True    fileType=jpeg    quality=50    timeout=10s
         | `Take Screenshot`   EMBED                         # Screenshot is embedded as Base64 image to the log.html.
 
@@ -336,14 +337,14 @@ class Control(LibraryComponent):
         self.timeout_stack.set(self.convert_timeout(timeout), scope)
         return old_timeout
 
-    def set_playwright_timeout(self, timeout):
+    def set_playwright_timeout(self, timeout, loglevel: LOGLEVEL = "INFO"):
         try:
             with self.playwright.grpc_channel() as stub:
                 response = stub.SetTimeout(Request().Timeout(timeout=timeout))
-                logger.info(response.log)
+                logger.write(response.log, loglevel)
         except Exception as error:  # Suppress  all errors
             if "Browser has been closed" in str(error):
-                logger.debug(f"Suppress error {error} when setting timeout.")
+                logger.trace(f"Suppress error {error} when setting timeout.")
             else:
                 raise
 
@@ -499,7 +500,7 @@ class Control(LibraryComponent):
         Example:
         | ${permissions} =    Create List    geolocation
         | `New Context`    permissions=${permissions}
-        | `Set Geolocation`    60.173708, 24.982263    3    # Points to Korkeasaari in Helsinki.
+        | `Set Geolocation`    60.173708    24.982263    3    # Points to Korkeasaari in Helsinki.
 
         [https://forum.robotframework.org/t//4329|Comment >>]
         """

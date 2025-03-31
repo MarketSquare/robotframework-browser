@@ -74,10 +74,10 @@ class Network(LibraryComponent):
         The response is a Python dictionary with following attributes:
           - ``status`` <int> The status code of the response.
           - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR. This may not be available for all browser.
-          - ``body`` <dict> | <str> The response body. If the body can be parsed as a JSON obejct,
+          - ``body`` <dict> | <str> The response body. If the body can be parsed as a JSON object,
           it will be returned as Python dictionary, otherwise it is returned as a string.
           - ``headers`` <dict> A dictionary containing all response headers.
-          - ``ok`` <bool> Whether the request was successfull, i.e. the ``status`` is range 200-299.
+          - ``ok`` <bool> Whether the request was successful, i.e. the ``status`` is range 200-299.
 
         Here's an example of using Robot Framework dictionary variables and extended variable syntax to
         do assertions on the response object:
@@ -257,7 +257,7 @@ class Network(LibraryComponent):
 
         If you have:
         | `Wait Until Network Is Idle`    timeout=3s
-        then chnnage it to:
+        then change it to:
         | `Wait For Load State`    networkidle    timeout=3s
 
         Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.

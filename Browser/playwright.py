@@ -37,14 +37,14 @@ from .utils import PlaywrightLogTypes, find_free_port, logger
 
 
 class Playwright(LibraryComponent):
-    """A wrapper for communicating with nodejs Playwirght process."""
+    """A wrapper for communicating with nodejs Playwright process."""
 
     port: Optional[str]
 
     def __init__(
         self,
         library: "Browser",
-        enable_playwright_debug: PlaywrightLogTypes,
+        enable_playwright_debug: Union[PlaywrightLogTypes, bool],
         host: Optional[str] = None,
         port: Optional[int] = None,
         playwright_log: Union[Path, None] = Path(Path.cwd()),
@@ -80,10 +80,14 @@ class Playwright(LibraryComponent):
         installation_dir = rfbrowser_dir / "wrapper"
         # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
         project_folder = rfbrowser_dir.parent
-        subfolders = os.listdir(project_folder) + os.listdir(installation_dir)
-
-        if "node_modules" in subfolders:
+        if any(
+            [
+                (project_folder / "node_modules").is_dir(),
+                (installation_dir / "node_modules").is_dir(),
+            ]
+        ):
             return
+
         raise RuntimeError(
             "\n#############################################################"
             "\n#                                                           #"  # noqa: RUF001
@@ -95,20 +99,26 @@ class Playwright(LibraryComponent):
         )
 
     def start_playwright(self) -> Optional[Popen]:
-        existing_port = self.port or os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
+        env_node_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
+        existing_port = self.port or env_node_port
         if existing_port is not None:
             self.port = existing_port
-            logger.info(
-                f"ROBOT_FRAMEWORK_BROWSER_NODE_PORT {existing_port} defined in env skipping Browser process start"
-            )
+            if env_node_port is None:
+                logger.trace(
+                    f"Using previously saved or imported port {existing_port}, skipping Browser process start"
+                )
+            else:
+                logger.trace(
+                    f"ROBOT_FRAMEWORK_BROWSER_NODE_PORT {existing_port} defined in env, skipping Browser process start"
+                )
             return None
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
         if self.playwright_log:
-            logfile = self.playwright_log.open("w")
+            logfile = self.playwright_log.open("w", encoding="utf-8")
         else:
-            logfile = Path(os.devnull).open("w")  # noqa: SIM115
+            logfile = Path(os.devnull).open("w", encoding="utf-8")  # noqa: SIM115
         host = str(self.host) if self.host is not None else "127.0.0.1"
         port = str(find_free_port())
         if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
@@ -127,7 +137,7 @@ class Playwright(LibraryComponent):
         node_args.append(port)
         if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
             os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
-        logger.info(f"Node startup parameters: {node_args}")
+        logger.trace(f"Node startup parameters: {node_args}")
         return Popen(
             node_args,
             shell=False,
@@ -143,7 +153,7 @@ class Playwright(LibraryComponent):
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
                     response = stub.Health(Request().Empty())
-                    logger.debug(
+                    logger.trace(
                         f"Connected to the playwright process at {self.host}:{self.port}: {response}"
                     )
                     return
@@ -188,25 +198,25 @@ class Playwright(LibraryComponent):
                 "Remember to remove manually all process left running."
             )
             return
-        logger.debug("Closing all open browsers, contexts and pages in Playwright")
+        logger.trace("Closing all open browsers, contexts and pages in Playwright")
         try:
             with self.grpc_channel() as stub:
                 response = stub.CloseAllBrowsers(Request().Empty())
-                logger.info(response.log)
+                logger.debug(response.log)
             self._channel.close()
         except Exception as exc:
             logger.debug(f"Failed to close browsers: {exc}")
         try:
             with self.grpc_channel() as stub:
                 response = stub.CloseBrowserServer(Request().ConnectBrowser(url="ALL"))
-                logger.info(response.log)
+                logger.debug(response.log)
         except Exception as exc:
             logger.debug(f"Failed to close browser servers: {exc}")
         # Access (possibly) cached property without actually invoking it
         playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:
-            logger.debug("Closing Playwright process")
+            logger.trace("Closing Playwright process")
             playwright_process.kill()
-            logger.debug("Playwright process killed")
+            logger.trace("Playwright process killed")
         else:
-            logger.debug("Disconnected from external Playwright process")
+            logger.trace("Disconnected from external Playwright process")

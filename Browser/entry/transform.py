@@ -18,7 +18,7 @@ from pathlib import Path
 TIDY_TRANSFORMER_DIR = Path(__file__).parent.parent / "tidy_transformer"
 
 
-def trasform(
+def transform(
     path: Path,
     wait_until_network_is_idle: bool,
 ) -> None:

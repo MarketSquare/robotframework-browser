@@ -1,7 +1,7 @@
 all with long kw name
 
-0) | Keyword name                               | Reason                                 |
-1) | ------------------------------------------ | -------------------------------------- |
-2) | new_page                                   | Keyword tranlsaton is missing checksum |
-3) | this_is_long_keyword_which_is_42_chars_len | Keyword is missing translation         |
-4) | close                                      | Documentation update needed            |
+0) | Keyword name                               | Reason                                  |
+1) | ------------------------------------------ | --------------------------------------- |
+2) | new_page                                   | Keyword translation is missing checksum |
+3) | this_is_long_keyword_which_is_42_chars_len | Keyword is missing translation          |
+4) | close                                      | Documentation update needed             |

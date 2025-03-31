@@ -22,6 +22,7 @@ from typing import Any, Optional, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
+from robot.api.logger import LOGLEVEL
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.utils import get_link_path
 
@@ -200,7 +201,7 @@ class PlaywrightState(LibraryComponent):
                 self._get_browser_catalog(include_page_details=False)
             )
             if active_browser["id"] != browser_instance["id"]:
-                self.switch_browser(browser_instance["id"])
+                self._switch_browser(browser_instance["id"], "TRACE")
             with suppress(Exception):
                 contexts = self._get_context(context, browser_instance["contexts"])
                 self._close_pw_context(contexts, save_trace)
@@ -1268,9 +1269,15 @@ class PlaywrightState(LibraryComponent):
         [https://forum.robotframework.org/t//4334|Comment >>]
         """
         logger.info(f"Switching browser to {id}")
+        return self._switch_browser(id)
+
+    def _switch_browser(self, id: str, loglevel: LOGLEVEL = "INFO") -> str:  # noqa: A002
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchBrowser(Request().Index(index=id))
-            logger.info(response.log)
+            logger.write(
+                response.log,
+                loglevel=loglevel,
+            )
             return response.body
 
     @keyword(tags=("Setter", "BrowserControl"))

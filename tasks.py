@@ -88,7 +88,7 @@ Library was tested with Playwright REPLACE_PW_VERSION
 def deps(c, system=False):
     c.run("pip install -U pip")
     c.run("pip install -U uv")
-    uv_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system'*(system or IS_GITPOD)}"
+    uv_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
     if IN_CI:
         print(f"Install packages to Python found from {sys.executable}.")
         uv_cmd = f"{uv_cmd} --python {sys.executable}"
@@ -294,6 +294,7 @@ def atest(
     processes=None,
     framed=False,
     exclude=None,
+    loglevel=None,
 ):
     """Runs Robot Framework acceptance tests with pabot.
 
@@ -306,6 +307,7 @@ def atest(
         debug: Use robotframework-debugger as test listener
         smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
+        loglevel: Set log level for robot framework
     """
     if IS_GITPOD and (not processes or int(processes) > 6):
         processes = "6"
@@ -336,13 +338,14 @@ def atest(
         args.extend(["--variable", "SUFFIX:framing.html?url="])
         args.extend(["--variable", "SELECTOR_PREFIX:id=iframe_id >>>"])
         args.extend(["--exclude", "no-iframe"])
+    loglevel = loglevel or "DEBUG"
     args.extend(["--exclude", "tidy-transformer"])
     ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
 
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-        rc = _run_pabot(args, shard, include_mac)
+        rc = _run_pabot(args, shard, include_mac, loglevel=loglevel)
     finally:
         background_process.kill()
 
@@ -471,7 +474,7 @@ def atest_robot(c, zip=None, smoke=False):
     process.wait(ATEST_TIMEOUT)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
-    robotstatuschecker.process_output(output_xml, verbose=False)
+    robotstatuschecker.process_output(output_xml)
     rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
     if zip:
         _clean_zip_dir()
@@ -542,7 +545,7 @@ def atest_coverage(c):
     robot.run("atest/test", **robot_args)
 
 
-def _run_pabot(extra_args=None, shard=None, include_mac=False):
+def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG"):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
         sys.executable,
@@ -564,7 +567,7 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False):
         "--exclude",
         "not-implemented",
         "--loglevel",
-        "DEBUG",
+        loglevel,
         "--report",
         "NONE",
         "--log",
@@ -580,7 +583,7 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False):
     process.wait(ATEST_TIMEOUT)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
-    robotstatuschecker.process_output(output_xml, verbose=False)
+    robotstatuschecker.process_output(output_xml)
     rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
     print(f"DONE rc=({rc})")
     return rc
@@ -602,19 +605,34 @@ def _add_skips(default_args, include_mac=False):
 
 @task
 def lint_python(c, fix=False):
+    ruff_cmd_format = [
+        "ruff",
+        "format",
+        "--config",
+        "Browser/pyproject.toml",
+        "Browser/",
+        "bootstrap.py",
+        "tasks.py",
+        "utest",
+    ]
+    ruff_cmd_check = [
+        "ruff",
+        "check",
+        "--config",
+        "Browser/pyproject.toml",
+        "Browser/",
+        "bootstrap.py",
+    ]
+    if fix:
+        ruff_cmd_check.insert(2, "--fix")
+    else:
+        ruff_cmd_format.insert(2, "--check")
+    print(f"Run ruff format: {ruff_cmd_format}")
+    c.run(" ".join(ruff_cmd_format))
+    print(f"Run ruff check: {ruff_cmd_check}")
+    c.run(" ".join(ruff_cmd_check))
     print("Run mypy:")
     c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/ bootstrap.py")
-    print("Run black:")
-    c.run(
-        "black --config Browser/pyproject.toml tasks.py Browser/ bootstrap.py utest atest"
-    )
-    print("Run ruff:")
-    ruff_cmd = "ruff check --config Browser/pyproject.toml Browser/ bootstrap.py"
-    if fix:
-        ruff_cmd = f"{ruff_cmd} --fix"
-    if IN_CI:
-        ruff_cmd = f"{ruff_cmd} --output-format=github"
-    c.run(ruff_cmd)
 
 
 @task
@@ -773,7 +791,7 @@ def docs(c, version=None):
 def create_package(c):
     shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
     shutil.copy(ROOT_DIR / "package-lock.json", ROOT_DIR / "Browser" / "wrapper")
-    c.run("python setup.py sdist bdist_wheel")
+    c.run("python -m build")
 
 
 @task(clean, build, docs, create_package)

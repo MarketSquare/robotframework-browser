@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 import shutil
 import subprocess
 import sys
@@ -20,10 +19,10 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Optional, Union
 
-from .constant import INSTALLATION_DIR, SHELL
+from .constant import INSTALLATION_DIR, SHELL, logger
 
 
-def _find_coverage_files(input_folder: Path, logger: logging.Logger) -> Iterator:
+def _find_coverage_files(input_folder: Path) -> Iterator:
     for file in input_folder.rglob("*"):
         if file.is_dir() and file.joinpath("raw").is_dir():
             raw_dir = file.joinpath("raw")
@@ -37,7 +36,6 @@ def combine(
     input_folder: Path,
     output_folder: Path,
     config: Union[Path, None],
-    logger: logging.Logger,
     name: Optional[str] = None,
     reports="v8",
 ) -> None:
@@ -57,7 +55,7 @@ def combine(
     raw_reports = False
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
-        for raw_file in _find_coverage_files(input_folder, logger):
+        for raw_file in _find_coverage_files(input_folder):
             shutil.copy(raw_file, tmp_path.joinpath(raw_file.name))
             raw_reports = True
         if not raw_reports:

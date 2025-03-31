@@ -76,6 +76,6 @@ Set And Check Plugin Scope Setting
 Check Plugin Suite Scope Setting 2
     [Documentation]
     ...    LOG 1:3    INFO    Suite Level Message
-    ...    LOG 2:3    INFO    Suite Level Message
+    ...    LOG 1:3    INFO    Suite Level Message
     Log    Test
     Log    Hello

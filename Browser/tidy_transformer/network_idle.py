@@ -43,7 +43,6 @@ OLD_KW_NAME_WITH_LIB = "browser.wait until network is idle"
 
 
 class NetworkIdle(Transformer):
-
     def visit_KeywordCall(self, node: KeywordCall):  # noqa: N802
         keyword_token = node.get_token(Token.KEYWORD)
         if is_same_keyword(keyword_token.value, OLD_KW_NAME):
