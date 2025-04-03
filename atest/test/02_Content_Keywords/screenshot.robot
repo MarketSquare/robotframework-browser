@@ -259,7 +259,17 @@ Screenshot On Failure
     ...    error_threshold=100000
     Compare Images    ${no_highlight}    ${OUTPUT_DIR}/browser/screenshot/fail-screenshot-2.png    error_threshold=1000
 
+Failing Selector Variable
+    Register Keyword To Run On Failure    Run On Failure Variable Assertion    input >> ../.. >> input    scope=Test
+    Run Keyword And Expect Error
+    ...    *
+    ...    Get Text    input >> ../.. >> input    ==    Hello
+
 *** Keywords ***
+Run On Failure Variable Assertion
+    [Arguments]    ${selector}
+    Should Be Equal    ${selector}    ${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}
+
 Screenshot Timeout
     Set Browser Timeout    1s
     New Page    ${LOGIN_URL}
