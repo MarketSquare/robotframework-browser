@@ -604,10 +604,13 @@ class HighlightMode(Enum):
     This is the classic way to highlight an element of Browser librarary.
 
     ``playwright``: Highlights the element with Playwrights built in function.
+
+    ``both``: Highlights the element with both methods.
     """
 
     border = auto()
     playwright = auto()
+    both = auto()
 
 
 class LambdaFunction:
@@ -887,6 +890,7 @@ ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference", "null"])
 ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
         Supported values are 'light', 'dark', 'no-preference' and `null`.
         Passing `null` disables color scheme emulation.
+        `no-preference` is deprecated.
 
         See [https://playwright.dev/docs/api/class-page?_highlight=emulatemedia#pageemulatemediaparams |emulateMedia(options)]
         for more details.
