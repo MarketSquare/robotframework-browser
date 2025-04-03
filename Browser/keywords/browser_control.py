@@ -15,23 +15,28 @@ import base64
 import json
 import uuid
 from collections.abc import Iterable
+from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
 from robot.api.logger import LOGLEVEL
+from robot.libraries.BuiltIn import BuiltIn
 from robot.utils import get_link_path
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import Scope, keyword, logger
-from ..utils.data_types import (
+from ..utils import (
     BoundingBox,
+    HighlightMode,
     PageLoadStates,
     Permission,
     Scale,
+    Scope,
     ScreenshotFileTypes,
     ScreenshotReturnType,
+    keyword,
+    logger,
 )
 
 if TYPE_CHECKING:
@@ -133,6 +138,7 @@ class Control(LibraryComponent):
         disableAnimations: bool = False,
         fileType: ScreenshotFileTypes = ScreenshotFileTypes.png,
         fullPage: bool = False,
+        highlight_selector: Optional[str] = None,
         log_screenshot: bool = True,
         mask: Union[list[str], str] = "",
         maskColor: Optional[str] = None,
@@ -151,6 +157,7 @@ class Control(LibraryComponent):
         | ``disableAnimations`` | When set to ``True``, stops CSS animations, CSS transitions and Web Animations. Animations get different treatment depending on their duration:  - finite animations are fast-forwarded to completion, so they'll fire transitionend event.  - infinite animations are canceled to initial state, and then played over after the screenshot. |
         | ``fileType`` | ``png`` or ``jpeg`` Specify screenshot type, defaults to ``png`` . |
         | ``fullPage`` | When True, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to False. |
+        | ``highlight_selector`` | Highlights elements while taking the screenshot. Highlight method is ``playwright``. This highlighting also automatically happens if the Robot Framework variable ``${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}`` is set to a selector string and is available on page. This is the case if ``highlight_on_failure`` has been set to ``True`` when importing Browser library. |
         | ``log_screenshot`` | When set to ``False`` the screenshot is taken but not logged into log.html. |
         | ``mask`` | Specify selectors that should be masked when the screenshot is taken. Masked elements will be overlayed with a pink box ``#FF00FF`` that completely covers its bounding box. Argument can take a single selector string or a list of selector strings if multiple different elements should be masked. |
         | ``maskColor`` | Specify the color of the overlay box for masked elements, in CSS color format. Default color is pink #FF00FF. |
@@ -172,35 +179,36 @@ class Control(LibraryComponent):
 
         [https://forum.robotframework.org/t//4337|Comment >>]
         """
-        file_name = (
-            uuid.uuid4().hex
-            if filename is None or self._is_embed(filename)
-            else filename
-        )
-        string_path_no_extension = str(
-            self._get_screenshot_path(file_name, fileType.name)
-        )
-        with self.playwright.grpc_channel() as stub:
-            options = self._create_screenshot_options(
-                crop,
-                disableAnimations,
-                fileType,
-                fullPage,
-                omitBackground,
-                quality,
-                string_path_no_extension,
-                timeout,
-                maskColor,
-                scale,
+        with self._highlighting(highlight_selector):
+            file_name = (
+                uuid.uuid4().hex
+                if filename is None or self._is_embed(filename)
+                else filename
             )
-            response = stub.TakeScreenshot(
-                Request().ScreenshotOptions(
-                    selector=self.resolve_selector(selector) or "",
-                    mask=json.dumps(self._get_mask_selectors(mask)),
-                    options=json.dumps(options),
-                    strict=self.strict_mode,
+            string_path_no_extension = str(
+                self._get_screenshot_path(file_name, fileType.name)
+            )
+            with self.playwright.grpc_channel() as stub:
+                options = self._create_screenshot_options(
+                    crop,
+                    disableAnimations,
+                    fileType,
+                    fullPage,
+                    omitBackground,
+                    quality,
+                    string_path_no_extension,
+                    timeout,
+                    maskColor,
+                    scale,
                 )
-            )
+                response = stub.TakeScreenshot(
+                    Request().ScreenshotOptions(
+                        selector=self.resolve_selector(selector) or "",
+                        mask=json.dumps(self._get_mask_selectors(mask)),
+                        options=json.dumps(options),
+                        strict=self.strict_mode,
+                    )
+                )
             logger.debug(response.log)
             screenshot_path_str = response.body
             screenshot_path = Path(screenshot_path_str)
@@ -229,6 +237,30 @@ class Control(LibraryComponent):
             if return_as is ScreenshotReturnType.base64:
                 return base64_screenshot.decode()
             return None
+
+    @contextmanager
+    def _highlighting(self, highlight_selector: Optional[str]):
+        """Context manager to temporarily set the log level."""
+        failing_selector = BuiltIn().get_variable_value(
+            "${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}", None
+        )
+        if highlight_selector or failing_selector:
+            if failing_selector:
+                logger.info(f"Highlighting failing selector: {failing_selector}")
+            self.library.highlight_elements(
+                highlight_selector or failing_selector,
+                duration=timedelta(seconds=0),
+                mode=HighlightMode.playwright,
+            )
+        try:
+            yield
+        finally:
+            if highlight_selector or failing_selector:
+                self.library.highlight_elements(
+                    "",
+                    duration=timedelta(seconds=0),
+                    mode=HighlightMode.playwright,
+                )
 
     def _create_screenshot_options(
         self,
@@ -411,6 +443,25 @@ class Control(LibraryComponent):
         old_prefix = self.selector_prefix
         self.selector_prefix_stack.set(prefix or "", scope)
         return old_prefix
+
+    @keyword(tags=("Setter", "Config"))
+    def set_highlight_on_failure(
+        self, highlight: bool = True, scope: Scope = Scope.Suite
+    ) -> bool:
+        """Controls if the element is highlighted on failure.
+
+        | =Arguments= | =Description= |
+        | ``highlight`` | If `True` element is highlighted on failure during a screenshot is taken. If `False` element is not highlighted in the screenshot. |
+        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
+
+        Example:
+        | `Set Highlight On Failure`    True
+
+        [https://forum.robotframework.org/t//4740|Comment >>] #TODO add real link
+        """
+        old_highlight_on_failure = self.highlight_on_failure
+        self.highlight_on_failure_stack.set(highlight, scope)
+        return old_highlight_on_failure
 
     @keyword(tags=("Setter", "Config"))
     def show_keyword_banner(

@@ -234,7 +234,47 @@ Screenshot Returns Bytes And Path String
         Log    correct error
     END
 
+Screenshot On Failure
+    [Documentation]
+    ...    LOG 6:2    INFO    Highlighting 5 elements
+    ...    LOG 7.1:3    INFO    Highlighting failing selector: input
+    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.*
+    ${no_highlight} =    Take Screenshot
+    Highlight Elements    input    duration=0    mode=playwright
+    ${manual_highlight} =    Take Screenshot
+    Highlight Elements    ${EMPTY}    duration=0    mode=playwright
+    ${integrated_highlight} =    Take Screenshot    highlight_selector=input
+    Run Keyword And Expect Error
+    ...    *
+    ...    Get Text    input    ==    Hello
+    Compare Images    ${manual_highlight}    ${integrated_highlight}    error_threshold=100000
+    Compare Images
+    ...    ${manual_highlight}
+    ...    ${OUTPUT_DIR}/browser/screenshot/fail-screenshot-1.png
+    ...    error_threshold=100000
+    Set Highlight On Failure    False
+    Run Keyword And Expect Error
+    ...    *
+    ...    Get Text    input    ==    Hello
+    Run Keyword And Expect Error
+    ...    ValueError: Box * has difference of *
+    ...    Compare Images
+    ...    ${manual_highlight}
+    ...    ${OUTPUT_DIR}/browser/screenshot/fail-screenshot-2.png
+    ...    error_threshold=100000
+    Compare Images    ${no_highlight}    ${OUTPUT_DIR}/browser/screenshot/fail-screenshot-2.png    error_threshold=1000
+
+Failing Selector Variable
+    Register Keyword To Run On Failure    Run On Failure Variable Assertion    input >> ../.. >> input    scope=Test
+    Run Keyword And Expect Error
+    ...    *
+    ...    Get Text    input >> ../.. >> input    ==    Hello
+
 *** Keywords ***
+Run On Failure Variable Assertion
+    [Arguments]    ${selector}
+    Should Be Equal    ${selector}    ${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}
+
 Screenshot Timeout
     Set Browser Timeout    1s
     New Page    ${LOGIN_URL}

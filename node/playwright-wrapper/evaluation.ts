@@ -442,9 +442,10 @@ export async function highlightElements(
         color,
         strictMode,
         state,
-        mode as 'border' | 'playwright',
+        mode as 'border' | 'playwright' | 'both',
     );
-    return intResponse(count, `Highlighted ${count} elements for ${duration}.`);
+    const message = duration ? `Highlighted ${count} elements for ${duration} ms.` : `Highlighting ${count} elements`;
+    return intResponse(count, message);
 }
 
 type EvaluationOptions = {
@@ -462,7 +463,7 @@ async function highlightAll(
     color: string,
     strictMode: boolean,
     state: PlaywrightState,
-    mode: 'border' | 'playwright' = 'border',
+    mode: 'border' | 'playwright' | 'both' = 'border',
 ): Promise<number> {
     const locator = await findLocator(state, selector, strictMode, undefined, false);
     let count: number;
@@ -473,14 +474,16 @@ async function highlightAll(
         return 0;
     }
     logger.info(`Locator count is ${count}`);
-    if (mode === 'playwright') {
+    if (['playwright', 'both'].includes(mode)) {
         locator.highlight();
         if (duration !== 0) {
             setTimeout(() => {
                 state.getActivePage()?.locator('none.highlight-no-element').highlight();
             }, duration);
         }
-        return count;
+        if (mode === 'playwright') {
+            return count;
+        }
     }
     await locator.evaluateAll(
         (elements: Array<Element>, options: EvaluationOptions) => {
