@@ -94,6 +94,18 @@ class LibraryComponent:
         self.library.scope_stack["run_on_failure"] = stack
 
     @property
+    def highlight_on_failure(self) -> bool:
+        return self.library.scope_stack["highlight_on_failure"].get()
+
+    @property
+    def highlight_on_failure_stack(self) -> SettingsStack:
+        return self.library.scope_stack["highlight_on_failure"]
+
+    @highlight_on_failure_stack.setter
+    def highlight_on_failure_stack(self, stack: SettingsStack):
+        self.library.scope_stack["highlight_on_failure"] = stack
+
+    @property
     def assertion_formatter_stack(self) -> SettingsStack:
         return self.library.scope_stack["assertion_formatter"]
 

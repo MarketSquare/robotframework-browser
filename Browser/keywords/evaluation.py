@@ -115,7 +115,9 @@ class Evaluation(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.HighlightElements(
                 Request().ElementSelectorWithDuration(
-                    selector=self.resolve_selector(selector),
+                    selector=self.resolve_selector(selector)
+                    if selector
+                    else "ROBOT_FRAMEWORK_BROWSER_NO_ELEMENT",
                     duration=int(self.convert_timeout(duration)),
                     width=width,
                     style=style,
@@ -125,10 +127,11 @@ class Evaluation(LibraryComponent):
                 )
             )
         count: int = response.body
-        if count == 0:
-            logger.info("Could not find elements to highlight.")
-        else:
-            logger.info(response.log)
+        if selector:
+            if count == 0:
+                logger.info("Could not find elements to highlight.")
+            else:
+                logger.info(response.log)
         return count
 
     @keyword(tags=("Setter", "PageContent"))

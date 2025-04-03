@@ -19,7 +19,7 @@ import { stringResponse } from './response-util';
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
-export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState): Promise<Response.Empty> {
+export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState): Promise<Response.String> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const pdfPath = request.getPath();

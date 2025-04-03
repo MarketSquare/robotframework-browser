@@ -67,6 +67,7 @@ from .utils import (
     is_falsy,
     keyword,
     logger,
+    suppress_logging,
 )
 
 # Importing this directly from .utils break the stub type checks
@@ -802,6 +803,7 @@ class Browser(DynamicCore):
         ] = PlaywrightLogTypes.library,
         enable_presenter_mode: Union[HighLightElement, bool] = False,
         external_browser_executable: Optional[dict[SupportedBrowsers, str]] = None,
+        highlight_on_failure: bool = False,
         jsextension: Union[list[str], str, None] = None,
         language: Optional[str] = None,
         playwright_process_port: Optional[int] = None,
@@ -822,6 +824,7 @@ class Browser(DynamicCore):
         | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. For more details, see `PlaywrightLogTypes`. |
         | ``enable_presenter_mode``         | Automatic highlights the interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. By default, the call banner keyword is also enabled unless explicitly disabled. |
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
+        | ``highlight_on_failure``          | If set to ``True``, will highlight the element in the screenshot when a keyword fails, by highlighting the selector used in the failed keyword. If set to ``False``, will not highlight the element. |
         | ``jsextension``                   | Path to Javascript modules exposed as extra keywords. The modules must be in CommonJS. It can either be a single path, a comma-separated lists of path or a real list of strings |
         | ``language``                      | Defines language which is used to translate keyword names and documentation. |
         | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
@@ -925,6 +928,9 @@ class Browser(DynamicCore):
         self.scope_stack["run_on_failure"] = SettingsStack(
             self._parse_run_on_failure_keyword(run_on_failure), self
         )
+        self.scope_stack["highlight_on_failure"] = SettingsStack(
+            highlight_on_failure, self
+        )
         self.scope_stack["show_keyword_call_banner"] = SettingsStack(
             show_keyword_call_banner, self
         )
@@ -953,6 +959,10 @@ class Browser(DynamicCore):
     @property
     def run_on_failure_keyword(self) -> DelayedKeyword:
         return self.scope_stack["run_on_failure"].get()
+
+    @property
+    def highlight_on_failure(self) -> bool:
+        return self.scope_stack["highlight_on_failure"].get()
 
     @property
     def timeout(self):
@@ -1249,7 +1259,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 self._playwright_state.open_trace_group(**(self.keyword_call_stack[-1]))
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except AssertionError as e:
-            self.keyword_error()
+            selector = self._get_selector_value_from_keyword_call(name, args, kwargs)
+            self.keyword_error(selector)
             e.args = self._alter_keyword_error(name, e.args)
             if self.pause_on_failure and sys.__stdout__ is not None:
                 sys.__stdout__.write(f"\n[ FAIL ] {e}")
@@ -1265,6 +1276,24 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 and self.keyword_call_stack
             ):
                 self._playwright_state.close_trace_group()
+
+    def _get_selector_value_from_keyword_call(self, name, args, kwargs):
+        selector = kwargs.get("selector")
+        if not selector and args:
+            arguments = self.get_keyword_arguments(name)
+            for i, arg in enumerate(args):
+                if isinstance(arg, str) and arg.startswith("*"):
+                    break
+                if (
+                    isinstance(arguments[i], str)
+                    and arguments[i].startswith("selector")
+                ) or (
+                    isinstance(arguments[i], tuple)
+                    and arguments[i][0].startswith("selector")
+                ):
+                    selector = arg
+                    break
+        return selector
 
     def get_keyword_tags(self, name: str) -> list:
         tags = list(DynamicCore.get_keyword_tags(self, name))
@@ -1444,7 +1473,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 )
             )
 
-    def keyword_error(self):
+    def keyword_error(self, selector):
         """Runs keyword on failure."""
         if self._running_on_failure_keyword or not self.run_on_failure_keyword.name:
             return
@@ -1452,6 +1481,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         varargs = self.run_on_failure_keyword.args
         kwargs = self.run_on_failure_keyword.kwargs
         try:
+            if selector and self.highlight_on_failure:
+                with suppress_logging():
+                    BuiltIn()._variables.set_suite(
+                        "${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}",
+                        selector,
+                        children=False,
+                    )
             if self.run_on_failure_keyword.name in self.keywords:
                 if (
                     self.run_on_failure_keyword.name == "take_screenshot"
@@ -1484,6 +1520,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     "playwright-log.txt is not created, consider enabling it for debug reasons."
                 )
             self._running_on_failure_keyword = False
+            if selector and self.highlight_on_failure:
+                with suppress_logging():
+                    BuiltIn()._variables.set_suite(
+                        "${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}",
+                        None,
+                        children=False,
+                    )
 
     def _failure_screenshot_path(self):
         valid_chars = f"-_.() {string.ascii_letters}{string.digits}"
