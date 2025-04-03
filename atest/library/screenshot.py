@@ -24,11 +24,18 @@ def get_pixel_color(img_path: str, x: int, y: int) -> Tuple[int, int]:
 
 
 def compare_images(
-    img1_path: str, img2_bytes: bytes, expect_failure: ExpectFailure = ExpectFailure.no
+    img1_path: str,
+    img2_bytes_or_path: bytes | str,
+    expect_failure: ExpectFailure = ExpectFailure.no,
+    error_threshold: int = 10,
 ):
     """Returns True if the images are the same, False otherwise"""
     im1: Image.Image = Image.open(img1_path).convert("RGB")
-    im2: Image.Image = Image.open(BytesIO(img2_bytes)).convert("RGB")
+    im2: Image.Image = (
+        Image.open(BytesIO(img2_bytes_or_path)).convert("RGB")
+        if isinstance(img2_bytes_or_path, bytes)
+        else Image.open(img2_bytes_or_path).convert("RGB")
+    )
     diff: Image.Image = ImageChops.difference(im1, im2)
     buffered = BytesIO()
     diff.save(buffered, format="PNG")
@@ -47,9 +54,10 @@ def compare_images(
             error_sum = error_sum + abs(pixel1[0] - pixel2[0])
             error_sum = error_sum + abs(pixel1[1] - pixel2[1])
             error_sum = error_sum + abs(pixel1[2] - pixel2[2])
-        logger.info(f"Difference between pixes is {error_sum}")
-        if error_sum > 10:
+        logger.info(f"Difference between pixles is {error_sum}")
+        if error_sum > error_threshold:
             raise ValueError(f"Box {box} has difference of {error_sum}")
+        return
     elif box and expect_failure == ExpectFailure.yes:
         logger.info(f"box: {box}, type({type(box)})")
     assert box is None
