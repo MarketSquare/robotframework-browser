@@ -58,6 +58,23 @@ def console(msg: Any):
     logger.console(msg)
 
 
+def write(msg: Any, loglevel: logger.LOGLEVEL, html=False):
+    if loglevel == "TRACE":
+        trace(msg, html)
+    elif loglevel == "DEBUG":
+        debug(msg, html)
+    elif loglevel == "INFO":
+        info(msg, html)
+    elif loglevel == "CONSOLE":
+        console(msg)
+    elif loglevel == "WARN":
+        warn(msg, html)
+    elif loglevel == "ERROR":
+        error(msg, html)
+    else:
+        raise ValueError(f"Unknown log level: {loglevel}")
+
+
 def stash_this_thread():
     identifier = threading.get_ident()
     if identifier in _THREAD_STASHES:
