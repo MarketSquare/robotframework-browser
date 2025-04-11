@@ -10,6 +10,7 @@ Library     Browser
 ...             enable_playwright_debug=${True}
 ...             enable_presenter_mode=False
 ...             selector_prefix=${SELECTOR_PREFIX}
+...             highlight_on_failure=True
 Library     ../library/common.py
 Library     ../library/os_wrapper.py
 Library     ../library/show_trace_tool.py
