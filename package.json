@@ -7,7 +7,7 @@
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react-dom": "^19.1.2",
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.4",
     "@types/uuid": "^10.0.0",
@@ -26,7 +26,7 @@
     "lint-staged": "^15.5.0",
     "prettier": "^3.5.3",
     "react": "^18.3.0",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.1.0",
     "react-draggable": "^4.4.6",
     "react-router-dom": "^7.5.0",
     "ts-loader": "^9.5.2",
