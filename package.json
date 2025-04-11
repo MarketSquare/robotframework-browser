@@ -35,7 +35,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.13.2",
+    "@grpc/grpc-js": "^1.13.3",
     "@medv/finder": "^4.0.2",
     "google-protobuf": "3.21.4",
     "monocart-coverage-reports": "^2.12.3",
