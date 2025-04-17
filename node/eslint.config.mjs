@@ -28,11 +28,6 @@ export default [{
         parser: tsParser,
         ecmaVersion: 2020,
         sourceType: "module",
-
-        parserOptions: {
-            project: "./tsconfig.json",
-            tsconfigRootDir: "./node",
-        },
     },
 
     rules: {
