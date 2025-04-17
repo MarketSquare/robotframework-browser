@@ -1,5 +1,3 @@
-import { DraggableData, DraggableEvent } from 'react-draggable';
-import Draggable from 'react-draggable';
 import React, { ChangeEvent, MouseEvent, useRef, useState } from 'react';
 
 function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
@@ -88,27 +86,6 @@ function testPrompt(promptResultElement: React.RefObject<HTMLElement>) {
     const input = prompt('Enter a value');
     if (input) promptResultElement.current!.innerHTML = input;
     else promptResultElement.current!.innerHTML = 'prompt_not_filled';
-}
-
-function DraggableDiv() {
-    const onControlledDrag = (e: DraggableEvent, position: DraggableData) => {
-        const { x, y } = position;
-        setControlledPosition({ x, y });
-    };
-    const [controlledPosition, setControlledPosition] = useState({ x: 0, y: 0 });
-    return (
-        <Draggable position={controlledPosition} onDrag={onControlledDrag}>
-            <div className="box" id="draggable">
-                My position can be changed programmatically. <br />I have a drag handler to sync state.
-                <div>
-                    x<div id="dragX">{controlledPosition.x}</div>
-                </div>
-                <div>
-                    y<div id="dragY">{controlledPosition.y}</div>
-                </div>
-            </div>
-        </Draggable>
-    );
 }
 
 export default function Site() {
@@ -256,7 +233,7 @@ export default function Site() {
                 <div id="network_pinger" ref={networkPinger}>
                     Online
                 </div>
-                <button className="pure-button">Doesn't do anything</button>
+                <button id="ManyClass" className="pure-button another something kala">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
@@ -384,7 +361,6 @@ export default function Site() {
                     Download file{' '}
                 </a>
                 <ProgressBar />
-                <DraggableDiv />
             </>
         );
     }

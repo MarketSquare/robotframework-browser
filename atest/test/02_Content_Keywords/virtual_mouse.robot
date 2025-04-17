@@ -22,22 +22,30 @@ Move In Circle
     Mouse Move    0    0
 
 Draggable Test
-    ${x} =    Get Boundingbox    \#draggable    x
-    ${y} =    Get Boundingbox    \#draggable    y
+    [Setup]    New Page    ${DRAGGAME_URL}
+    ${x} =    Get Boundingbox    id=blue-box    x
+    ${y} =    Get Boundingbox    id=blue-box    y
     # evaluate end coordinates
-    ${xnew} =    Evaluate    ${x}+400
-    ${ynew} =    Evaluate    ${y}+400
+    ${xnew} =    Evaluate    ${x}-200
+    ${ynew} =    Evaluate    ${y}-200
     Mouse Button    down    ${x}    ${y}
     Mouse Button    up    ${xnew}    ${ynew}
     # just do a random move to make sure the element is not stuck to mouse any more
     Mouse Move    0    0
-    Get Text    \#dragX    ==    400
-    Get Text    \#dragY    ==    400
+    Get Text    id=blue-box-x-value    ==    360
+    Get Text    id=blue-box-y-value    ==    80
 
 Drag And Drop
-    Drag And Drop    id=draggable    id=clickWithOptions
-    ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
-    ${dest_center} =    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
+    [Setup]    New Page    ${DRAGGAME_URL}
+    Drag And Drop    id=blue-box    id=invisible-element
+    Take Screenshot
+    ${dest_center} =    Get Boundingbox
+    ...    id=invisible-element
+    ...    ALL
+    ...    evaluate
+    ...    ${Center_Func}
+    ...    allow_hidden=True
+    Take Screenshot
     Assert Position    ${dest_center}[x]    ${dest_center}[y]    ${tol}
 
 Drag And Drop With Strict
@@ -47,34 +55,37 @@ Drag And Drop With Strict
     ...    Drag And Drop    //input    id=clickWithOptions
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
-    ...    Drag And Drop    id=draggable    //input
+    ...    Drag And Drop    id=clickWithOptions    //input
     Set Strict Mode    False
-    Drag And Drop    id=draggable    //input
+    Drag And Drop    id=clickWithOptions    //input
     Drag And Drop    //input    id=clickWithOptions
     [Teardown]    Set Strict Mode    True
 
 Drag And Drop With Coordinates
     [Tags]    slow
     [Timeout]    60s
-    ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
-    ${obj_dim} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Dim_Func}
-    ${dest_center} =    Get Boundingbox    id=clickWithOptions    ALL    evaluate    ${Center_Func}
+    [Setup]    New Page    ${DRAGGAME_URL}
+    ${obj_center} =    Get Boundingbox    id=blue-box    ALL    evaluate    ${Center_Func}
+    ${obj_dim} =    Get Boundingbox    id=blue-box    ALL    evaluate    ${Dim_Func}
+    ${dest_center} =    Get Boundingbox    id=goal-post    ALL    evaluate    ${Center_Func}
     # Tests with implicit argument drop=True
     Drag And Drop By Coordinates
     ...    from_x=${obj_center}[x]    from_y=${obj_center}[y]
     ...    to_x=${dest_center}[x]    to_y=${dest_center}[y]    steps=200
     Assert Position    ${dest_center}[x]    ${dest_center}[y]    ${tol}
+    Take Screenshot
     Drag And Drop By Coordinates
     ...    from_x=${dest_center}[x]    from_y=${dest_center}[y]
     ...    to_x=${obj_center}[x]    to_y=${obj_center}[y]    steps=200
+    Take Screenshot
     Assert Position    ${obj_center}[x]    ${obj_center}[y]    ${tol}
     # Tests with explicit values True or False for argument drop
-    # "Start coordinates" of draggable object:
+    # "Start coordinates" of blue-box object:
     ${x1} =    Set Variable    ${obj_center}[x]
     ${y1} =    Set Variable    ${obj_center}[y]
     ${width} =    Set Variable    ${obj_dim}[width]
     ${height} =    Set Variable    ${obj_dim}[height]
-    Log    Draggable object: ${obj_center}
+    Log    blue-box object: ${obj_center}
     # coordinates where to drag in relative values:
     ${x2} =    Evaluate    ${x1} + 0.1 * ${width}
     ${y2} =    Evaluate    ${y1} - 1.0 * ${height}
@@ -88,12 +99,19 @@ Drag And Drop With Coordinates
     ${time} =    Set Variable    1
 
 Hover And Drop To Hover
-    Hover    id=draggable    10    10
+    [Setup]    New Page    ${DRAGGAME_URL}
+    ${x} =    Get Text    id=blue-box-x-value
+    ${y} =    Get Text    id=blue-box-y-value
+    Hover    id=blue-box    10    10
     Mouse Button    down
-    Hover    id=draggable    30    40
+    Hover    id=blue-box    30    40
     Mouse Button    up
-    Get Text    \#dragX    ==    20
-    Get Text    \#dragY    ==    30
+    ${x} =    Evaluate    ${x}+30
+    ${y} =    Evaluate    ${y}+40
+    ${x} =    Convert To String    ${x}
+    ${y} =    Convert To String    ${y}
+    Get Text    id=blue-box-x-value    ==    ${x}
+    Get Text    id=blue-box-y-value    ==    ${y}
 
 Hover With Strict
     Set Strict Mode    True
@@ -105,16 +123,18 @@ Hover With Strict
     [Teardown]    Set Strict Mode    True
 
 Drag And Drop With Move Relative
-    Relative DnD    32    64    32    64
-    Relative DnD    0    -64    32    0
-    Relative DnD    -20    0    12    0
-    Relative DnD    -22    -20    -10    -20
+    [Setup]    New Page    ${DRAGGAME_URL}
+    Relative DnD    32    64    672    424
+    Relative DnD    0    -64    752    440
+    Relative DnD    -20    0    812    520
+    Relative DnD    -22    -20    870    580
 
 Drag And Drop Relative To
-    DnD Relative To    32    64    32    64
-    DnD Relative To    0    -64    32    0
-    DnD Relative To    -20    0    12    0
-    DnD Relative To    -22    -20    -10    -20
+    [Setup]    New Page    ${DRAGGAME_URL}
+    DnD Relative To    32    64    672    424
+    DnD Relative To    0    -64    752    440
+    DnD Relative To    -20    0    812    520
+    DnD Relative To    -22    -20    870    580
 
 Click Count
     ${x} =    Get Boundingbox    \#clickWithOptions    x
@@ -172,15 +192,15 @@ Scroll By Mouse Wheel
 *** Keywords ***
 Relative DnD
     [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}
-    Hover    id=draggable
+    Hover    id=blue-box
     Mouse Button    down
-    Mouse Move Relative To    id=draggable    ${x}    ${y}    steps=2
+    Mouse Move Relative To    id=blue-box    ${x}    ${y}    steps=2
     Mouse Button    up
-    Get Text    \#dragX    ==    ${txt_x}
-    Get Text    \#dragY    ==    ${txt_y}
+    Get Text    id=blue-box-x-value    ==    ${txt_x}
+    Get Text    id=blue-box-y-value    ==    ${txt_y}
 
 DnD Relative To
     [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}
-    Drag And Drop Relative To    id=draggable    ${x}    ${y}    steps=2
-    Get Text    id=dragX    ==    ${txt_x}
-    Get Text    id=dragY    ==    ${txt_y}
+    Drag And Drop Relative To    id=blue-box    ${x}    ${y}    steps=2
+    Get Text    id=blue-box-x-value    ==    ${txt_x}
+    Get Text    id=blue-box-y-value    ==    ${txt_y}
