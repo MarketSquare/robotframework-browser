@@ -233,16 +233,16 @@ Get Attribute Names Custom Error
 
 Get Classes Default Error
     Run Keyword And Expect Error
-    ...    EQUALS: Classes of ${SELECTOR_PREFIX_SPACED}id=draggable '['box', 'react-draggable']' (list) should contain '['not-here']' (list)
+    ...    EQUALS: Classes of id=ManyClass '['pure-button', 'another', 'something', 'kala']' (list) should contain '['not-here']' (list)
     ...    Get Classes
-    ...    id=draggable
+    ...    id=ManyClass
     ...    contains
     ...    not-here
 
 Get Classes Custom Error
     Run Keyword And Expect Error
     ...    My Custom Error
-    ...    Get Classes    id=draggable    contains    not-here    message=My Custom Error
+    ...    Get Classes    id=ManyClass    contains    not-here    message=My Custom Error
 
 Get Element Count Default Error
     Run Keyword And Expect Error

@@ -75,10 +75,10 @@ Assert Position
     ...    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
     ${Node_Func} =    Set Variable
     ...    {'x': (value["x"]), 'y': (value["y"])}
-    ${obj_node} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Node_Func}
-    ${obj_center} =    Get Boundingbox    id=draggable    ALL    evaluate    ${Center_Func}
-    ${x_diff} =    Evaluate    ${obj_center}[x] - ${expect_x}
-    ${y_diff} =    Evaluate    ${obj_center}[y] - ${expect_y}
+    ${obj_node} =    Get Boundingbox    id=blue-box    ALL    evaluate    ${Node_Func}
+    ${obj_center} =    Get Boundingbox    id=blue-box    ALL    evaluate    ${Center_Func}
+    ${x_diff} =    Evaluate    ${obj_node}[x] - ${expect_x}
+    ${y_diff} =    Evaluate    ${obj_node}[y] - ${expect_y}
     Log Many    Node x,y: \t${obj_node}[x],\t${obj_node}[y]
     ...    Center x,y: \t${obj_center}[x],\t${obj_center}[y]\nExpected xy \t${expect_x},\t${expect_y}
     ...    X-Diff: ${x_diff}, Y-Diff: ${y_diff}, tolerance: ${tol}

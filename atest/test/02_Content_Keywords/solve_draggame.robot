@@ -7,7 +7,7 @@ Test Setup      New Page    ${DRAGGAME_URL}
 Move Obstacle To Goal And Make A Goal
     Get Text    h2    ==    Put the circle in the goal
     Drag And Drop    id=blue-box    id=invisible-element    steps=10
-    Drag And Drop    id=red-circle    id=goal    steps=10
+    Drag And Drop    id=red-circle    id=goal-post    steps=10
     Get Text    h2    ==    GOAL!!!
 
 Move Obstacle Away And Drag And Drop
@@ -16,7 +16,7 @@ Move Obstacle Away And Drag And Drop
     Mouse Button    down
     Mouse Move Relative To    id=blue-box    200
     Mouse Button    up
-    Drag And Drop    id=red-circle    id=goal    steps=10
+    Drag And Drop    id=red-circle    id=goal-post    steps=10
     Get Text    h2    ==    GOAL!!!
 
 Test
