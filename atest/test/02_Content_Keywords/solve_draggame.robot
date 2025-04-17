@@ -3,21 +3,21 @@ Resource        imports.resource
 
 Test Setup      New Page    ${DRAGGAME_URL}
 
-Force Tags      no-iframe
-
 *** Test Cases ***
 Move Obstacle To Goal And Make A Goal
     Get Text    h2    ==    Put the circle in the goal
-    Drag And Drop    css=.obstacle    css=.goal
-    Drag And Drop    css=.circle    css=.goal
-    Get Text    h2    ==    GOAL!!
+    Drag And Drop    id=blue-box    id=invisible-element    steps=10
+    Drag And Drop    id=red-circle    id=goal    steps=10
+    Get Text    h2    ==    GOAL!!!
 
 Move Obstacle Away And Drag And Drop
-    Hover    "Obstacle"
+    Get Text    h2    ==    Put the circle in the goal
+    Hover    id=blue-box
     Mouse Button    down
-    Mouse Move Relative To    "Obstacle"    500
+    Mouse Move Relative To    id=blue-box    200
     Mouse Button    up
-    Drag And Drop    "Circle"    "Goal"
+    Drag And Drop    id=red-circle    id=goal    steps=10
+    Get Text    h2    ==    GOAL!!!
 
 Test
     [Tags]    slow
