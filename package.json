@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/express": "^5.0.1",
-    "@types/react": "^18.3.12",
+    "@types/react": "^19.1.2",
     "@types/react-dom": "^18.3.1",
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.4",
@@ -25,7 +25,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.5.1",
     "prettier": "^3.5.3",
-    "react": "^18.3.0",
+    "react": "^19.1.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.3.1",
