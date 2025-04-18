@@ -19,16 +19,26 @@ import { PlaywrightService } from './generated/playwright_grpc_pb';
 import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
-const port = process.argv.slice(2);
-if (Object.keys(port).length == 0) {
+const args = process.argv.slice(2);
+
+const host = args[0];
+const port = args[1];
+
+if (!host) {
+    throw new Error(`No host defined`);
+}
+
+if (!port) {
     throw new Error(`No port defined`);
 }
+
 const server = new Server();
 server.addService(
     PlaywrightService as unknown as ServiceDefinition<UntypedServiceImplementation>,
     new PlaywrightServer() as unknown as UntypedServiceImplementation,
 );
-server.bindAsync(`127.0.0.1:${port}`, ServerCredentials.createInsecure(), () => {
-    logger.info(`Listening on ${port}`);
+
+server.bindAsync(`${host}:${port}`, ServerCredentials.createInsecure(), () => {
+    logger.info(`Listening on ${host}:${port}`);
     server.start();
 });
