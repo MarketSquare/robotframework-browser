@@ -883,15 +883,15 @@ class Interaction(LibraryComponent):
         Example with returning text:
 
         | ${promise} =         `Promise To`    `Wait For Alert`    action=accept
-        | `Click`              id=alerts
+        | `Click`               id=alerts
         | ${text} =            `Wait For`      ${promise}
         | Should Be Equal      ${text}         Am an alert
 
         Example with text verify:
 
-        | ${promise} =       Promise To    Wait For Alert    action=accept    text=Am an alert
+        | ${promise} =       `Promise To`    Wait For Alert    action=accept    text=Am an alert
         | Click              id=alerts
-        | ${text} =          Wait For      ${promise}
+        | ${text} =          `Wait For`      ${promise}
 
         [https://forum.robotframework.org/t//4343|Comment >>]
         """
