@@ -125,7 +125,9 @@ class Playwright(LibraryComponent):
         port = str(find_free_port())
         if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
             os.environ["DEBUG"] = "pw:api"
-        logger.info(f"Starting Browser process {playwright_script} using at {host}:{port}")
+        logger.info(
+            f"Starting Browser process {playwright_script} using at {host}:{port}"
+        )
         self.host = host
         self.port = port
         node_args = ["node"]
