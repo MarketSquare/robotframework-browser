@@ -54,11 +54,13 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
     logfile = output_dir.open("w", encoding="utf-8")
     os.environ["DEBUG"] = "pw:api"
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+    host = "127.0.0.1"
     port = str(find_free_port())
     process = subprocess.Popen(
         [
             "node",
             "Browser/wrapper/index.js",
+            host,
             port,
         ],
         stdout=logfile,
