@@ -103,6 +103,8 @@ class Playwright(LibraryComponent):
         existing_port = self.port or env_node_port
         if existing_port is not None:
             self.port = existing_port
+            if self.host is None:
+                self.host = "127.0.0.1"
             if env_node_port is None:
                 logger.trace(
                     f"Using previously saved or imported port {existing_port}, skipping Browser process start"
