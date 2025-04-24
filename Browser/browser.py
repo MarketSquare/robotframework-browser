@@ -1182,7 +1182,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 logger.trace(f"Browser._start_test connection problem: {e}")
 
     def _resolve_path(self, attrs: dict) -> Union[Path, None]:
-        source = Path(attrs["source"])
+        source = Path(attrs["source"]) if "source" in attrs and attrs["source"] is not None else None
         if source.is_dir():
             source = source / "__init__.robot"
             if not source.exists():
