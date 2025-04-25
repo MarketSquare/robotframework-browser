@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-177-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-178-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -405,6 +405,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/otemek"><img src="https://avatars.githubusercontent.com/u/3636875?v=4?s=100" width="100px;" alt="tomek"/><br /><sub><b>tomek</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aotemek" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/node137"><img src="https://avatars.githubusercontent.com/u/101278079?v=4?s=100" width="100px;" alt="node137"/><br /><sub><b>node137</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Anode137" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/barambulka"><img src="https://avatars.githubusercontent.com/u/164974059?v=4?s=100" width="100px;" alt="barambulka"/><br /><sub><b>barambulka</b></sub></a><br /><a href="#ideas-barambulka" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
 </table>
