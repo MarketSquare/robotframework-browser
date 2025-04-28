@@ -1647,6 +1647,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "timdegroot1996",
+      "name": "timdegroot",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11198755?v=4",
+      "profile": "https://github.com/timdegroot1996",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
