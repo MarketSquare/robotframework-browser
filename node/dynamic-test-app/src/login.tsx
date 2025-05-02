@@ -233,7 +233,9 @@ export default function Site() {
                 <div id="network_pinger" ref={networkPinger}>
                     Online
                 </div>
-                <button id="ManyClass" className="pure-button another something kala">Doesn't do anything</button>
+                <button id="ManyClass" className="pure-button another something kala">
+                    Doesn't do anything
+                </button>
                 <button className="pure-button">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
                 <button className="pure-button">Doesn't do anything</button>
