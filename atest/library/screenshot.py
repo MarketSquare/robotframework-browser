@@ -2,7 +2,7 @@ import base64
 from enum import Enum, auto
 from io import BytesIO
 from PIL import Image, ImageChops
-from typing import Tuple
+from typing import Tuple, Union
 from robot.api import logger
 
 
@@ -25,7 +25,7 @@ def get_pixel_color(img_path: str, x: int, y: int) -> Tuple[int, int]:
 
 def compare_images(
     img1_path: str,
-    img2_bytes_or_path: bytes | str,
+    img2_bytes_or_path: Union[bytes, str],
     expect_failure: ExpectFailure = ExpectFailure.no,
     error_threshold: int = 10,
 ):
