@@ -1117,7 +1117,7 @@ class PlaywrightState(LibraryComponent):
         *,
         full: bool = False,
         last: Union[int, timedelta, None] = None,
-    ) -> dict:
+    ) -> list[dict]:
         """Returns the console log of the active page.
 
         If assertions are used and fail, this keyword will fail immediately without retrying.
@@ -1132,7 +1132,7 @@ class PlaywrightState(LibraryComponent):
         The returned data is a `list` of log messages.
 
         A log message is a `dict` with the following structure:
-        | {
+        | [{
         |   "type": str,
         |   "text": str,
         |   "location": {
@@ -1141,7 +1141,7 @@ class PlaywrightState(LibraryComponent):
         |     "columnNumber": int
         |   },
         |   "time": str
-        | }
+        | }]
 
         Example:
         | [{
