@@ -53,7 +53,11 @@ const DropZone = ({ onDrop, onGoal }) => {
         drop: (item, monitor) => {
             const offset = monitor.getClientOffset();
             if (offset) {
-                const isInGoal = offset.x >= 50 && offset.x <= 150 && offset.y >= window.innerHeight / 2 - 50 && offset.y <= window.innerHeight / 2 + 50;
+                const isInGoal =
+                    offset.x >= 50 &&
+                    offset.x <= 150 &&
+                    offset.y >= window.innerHeight / 2 - 50 &&
+                    offset.y <= window.innerHeight / 2 + 50;
 
                 if (isInGoal && item.type === ItemTypes.CIRCLE) {
                     onGoal();
