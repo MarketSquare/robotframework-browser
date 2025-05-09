@@ -20,7 +20,6 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
-from robot.api.logger import LOGLEVEL
 from robot.libraries.BuiltIn import BuiltIn
 from robot.utils import get_link_path
 
@@ -38,6 +37,7 @@ from ..utils import (
     keyword,
     logger,
 )
+from ..utils.logger import LOGLEVEL
 
 if TYPE_CHECKING:
     from typing import Any  # noqa: F401

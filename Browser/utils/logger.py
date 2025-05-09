@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import threading
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 from robot.api import logger
+
+try:
+    from robot.api.logger import LOGLEVEL
+except ImportError:  # TODO: Remove when Robot Framework 7 is minimum version
+    LOGLEVEL = Literal["TRACE", "DEBUG", "INFO", "CONSOLE", "HTML", "WARN", "ERROR"]  # type: ignore
 
 _THREAD_STASHES: dict[int, list[list[Callable]]] = {}
 
@@ -58,7 +63,7 @@ def console(msg: Any):
     logger.console(msg)
 
 
-def write(msg: Any, loglevel: logger.LOGLEVEL, html=False):
+def write(msg: Any, loglevel: LOGLEVEL, html=False):
     if loglevel == "TRACE":
         trace(msg, html)
     elif loglevel == "DEBUG":

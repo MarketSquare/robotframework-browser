@@ -22,7 +22,6 @@ from typing import Any, Optional, Union
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, verify_assertion
-from robot.api.logger import LOGLEVEL
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.utils import get_link_path
 
@@ -57,6 +56,7 @@ from ..utils import (
     locals_to_params,
     logger,
 )
+from ..utils.logger import LOGLEVEL
 
 
 class PlaywrightState(LibraryComponent):
