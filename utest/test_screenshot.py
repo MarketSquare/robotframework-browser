@@ -1,10 +1,10 @@
-
 import os
 import subprocess
 from typing import Generator
 import pytest
 import Browser
 import uuid
+
 
 @pytest.fixture()
 def application_server():
@@ -23,9 +23,9 @@ def browser(tmpdir):
     browser.close_browser("ALL")
 
 
-def test_take_screenshot(application_server, browser:Browser.Browser):
-    browser.new_page('localhost:7272/dist/')
-    screenshot_path = browser.take_screenshot(r'screenshot-{}'.format(uuid.uuid4()))
+def test_take_screenshot(application_server, browser):
+    browser.new_page("localhost:7272/dist/")
+    screenshot_path = browser.take_screenshot(r"screenshot-{}".format(uuid.uuid4()))
     assert os.path.exists(screenshot_path)
     screenshot_path = browser.take_screenshot()
     assert os.path.exists(screenshot_path)
