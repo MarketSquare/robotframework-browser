@@ -20,7 +20,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, Optional, Union
 
-from robot.libraries.BuiltIn import BuiltIn
+from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.utils import get_link_path
 
 from ..base import LibraryComponent
@@ -241,9 +241,15 @@ class Control(LibraryComponent):
     @contextmanager
     def _highlighting(self, highlight_selector: Optional[str]):
         """Context manager to temporarily set the log level."""
-        failing_selector = BuiltIn().get_variable_value(
-            "${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}", None
-        )
+        try:
+            failing_selector = BuiltIn().get_variable_value(
+                "${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}", None
+            )
+        except RobotNotRunningError:
+            logger.info(
+                "Cannot access execution context — selector highlighting skipped"
+            )
+            failing_selector = None
         if highlight_selector or failing_selector:
             if failing_selector:
                 logger.info(f"Highlighting failing selector: {failing_selector}")
