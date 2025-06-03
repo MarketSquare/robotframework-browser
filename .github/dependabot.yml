@@ -17,6 +17,7 @@ updates:
       grpc:
         patterns:
         - "grpcio*"
+        - "protobu*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
