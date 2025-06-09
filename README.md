@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-181-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-182-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -409,6 +409,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/timdegroot1996"><img src="https://avatars.githubusercontent.com/u/11198755?v=4?s=100" width="100px;" alt="timdegroot"/><br /><sub><b>timdegroot</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=timdegroot1996" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/montsamu"><img src="https://avatars.githubusercontent.com/u/134346?v=4?s=100" width="100px;" alt="Samuel Montgomery-Blinn"/><br /><sub><b>Samuel Montgomery-Blinn</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=montsamu" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/chevallier-xpl"><img src="https://avatars.githubusercontent.com/u/110472200?v=4?s=100" width="100px;" alt="Paul Chevallier"/><br /><sub><b>Paul Chevallier</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Achevallier-xpl" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/JaakkoPakarinen"><img src="https://avatars.githubusercontent.com/u/211503503?v=4?s=100" width="100px;" alt="JaakkoPakarinen"/><br /><sub><b>JaakkoPakarinen</b></sub></a><br /><a href="#ideas-JaakkoPakarinen" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
 </table>
