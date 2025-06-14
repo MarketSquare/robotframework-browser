@@ -265,6 +265,13 @@ Failing Selector Variable
     ...    *
     ...    Get Text    input >> ../.. >> input    ==    Hello
 
+Screenshot With UUID
+    ${file} =    Take Screenshot    UUID
+    ${file} =    Get File Name    ${file}
+    Log    ${file}
+    Length Should Be    ${file}    36
+    Should Match Regexp    ${file}    [a-f0-9]{32}\\.png
+
 *** Keywords ***
 Run On Failure Variable Assertion
     [Arguments]    ${selector}
