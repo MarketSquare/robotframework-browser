@@ -4,18 +4,19 @@ Library     Browser    auto_delete_passed_tracing=True    tracing_group_mode=Ful
 Library     OperatingSystem
 Library     ArchiveLibrary
 Library     tracing_groups.py
+Library     Collections
 
 *** Variables ***
 ${context_id} =                     ${EMPTY}
-&{Initialize Context And Page} =    apiName=Initialize Context And Page    class=Tracing    method=tracingGroup
-&{Browser.New Context} =            apiName=Browser.New Context    class=Tracing    method=tracingGroup
-&{Keyword Without Browser} =        apiName=Keyword Without Browser    class=Tracing    method=tracingGroup
-&{BuiltIn.Log} =                    apiName=BuiltIn.Log    class=Tracing    method=tracingGroup
-&{Browser.New Page} =               apiName=Browser.New Page    class=Tracing    method=tracingGroup
-&{browserContext.newPage} =         apiName=browserContext.newPage    class=BrowserContext    method=newPage
-&{page.goto} =                      apiName=page.goto    class=Frame    method=goto
-&{BuiltIn.Set Suite Variable} =     apiName=BuiltIn.Set Suite Variable    class=Tracing    method=tracingGroup
-&{Browser.Close Context} =          apiName=Browser.Close Context    class=Tracing    method=tracingGroup
+&{Initialize Context And Page} =    title=Initialize Context And Page    class=Tracing    method=tracingGroup
+&{Browser.New Context} =            title=Browser.New Context    class=Tracing    method=tracingGroup
+&{Keyword Without Browser} =        title=Keyword Without Browser    class=Tracing    method=tracingGroup
+&{BuiltIn.Log} =                    title=BuiltIn.Log    class=Tracing    method=tracingGroup
+&{Browser.New Page} =               title=Browser.New Page    class=Tracing    method=tracingGroup
+&{browserContext.newPage} =         title=Default value    class=BrowserContext    method=newPage
+&{page.goto} =                      title=Default value    class=Frame    method=goto
+&{BuiltIn.Set Suite Variable} =     title=BuiltIn.Set Suite Variable    class=Tracing    method=tracingGroup
+&{Browser.Close Context} =          title=Browser.Close Context    class=Tracing    method=tracingGroup
 @{elements} =
 ...                                 ${Initialize Context And Page}
 ...                                 ${Browser.New Context}
@@ -41,13 +42,14 @@ Manual Context Close Shall Not Remove Trace File
     ...    dest=${OUTPUT_DIR}/browser/traces/trace_${context_id}/
     ${trace} =    Get Trace Lines    ${OUTPUT_DIR}/browser/traces/trace_${context_id}/trace.trace
     FOR    ${trace_entry}    ${expected}    IN ZIP    ${trace}    ${elements}    mode=SHORTEST
-        Should Start With    ${trace_entry}[apiName]    ${expected.apiName}
+        ${title} =    Get From Dictionary    ${trace_entry}    title    Default value
+        Should Start With    ${title}    ${expected.title}
         Should Be Equal    ${trace_entry}[class]    ${expected}[class]
         Should Be Equal    ${trace_entry}[method]    ${expected.method}
         ${stack} =    Evaluate    $trace_entry.get('stack')
         IF    $stack is not None
             ${line} =    Get File Line    &{stack}[0]
-            Should Contain    ${line}    ${{$expected['apiName'].replace(' ', ' ')}}
+            Should Contain    ${line}    ${{$expected['title'].replace(' ', ' ')}}
         END
     END
 
