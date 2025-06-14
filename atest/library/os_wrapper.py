@@ -214,3 +214,7 @@ def get_parent(path: str) -> Path:
 def relative_to(path1: Path, path2: Path) -> str:
     """Return relative path."""
     return path1.relative_to(path2)
+
+def get_file_name(path: str) -> str:
+    """Return file name from path."""
+    return Path(path).name
