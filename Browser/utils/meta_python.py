@@ -37,7 +37,7 @@ T = TypeVar("T")
 
 
 def find_by_id(_id: str, item_list: list[dict[str, T]], log_error=True) -> dict[str, T]:
-    from ..utils import logger
+    from ..utils import logger  # noqa: PLC0415
 
     def filter_fn(item):
         return item["id"] == _id

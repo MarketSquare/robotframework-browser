@@ -25,7 +25,7 @@ class RobotTypeConverter(TypeConverter):
         if arg_type is None:
             return None
         try:
-            from robot.api import TypeInfo
+            from robot.api import TypeInfo  # noqa: PLC0415
 
             if not isinstance(arg_type, TypeInfo):
                 type_hint = TypeInfo.from_type_hint(arg_type)
