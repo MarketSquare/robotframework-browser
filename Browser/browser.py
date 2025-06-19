@@ -1434,7 +1434,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             re.VERBOSE,
         )
         clean_message = ansi_escape.sub("", args[0])
-        return (clean_message,) + args[1:]
+        return (clean_message, *args[1:])
 
     def _set_logging(self, status: bool):
         try:

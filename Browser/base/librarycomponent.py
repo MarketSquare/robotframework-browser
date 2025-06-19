@@ -280,7 +280,7 @@ class LibraryComponent:
                     logger.trace(
                         "Getting CryptoLibrary failed, trying to import directly."
                     )
-                    from CryptoLibrary.utils import CryptoUtility  # type: ignore
+                    from CryptoLibrary.utils import CryptoUtility  # type: ignore  # noqa
 
                     self._crypto = CryptoUtility()
             except ImportError:

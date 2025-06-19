@@ -34,7 +34,7 @@ MAX_REASON_LEN = max(
 def get_library_translation(
     plugings: Optional[str] = None, jsextension: Optional[str] = None
 ) -> dict:
-    from Browser import Browser
+    from Browser import Browser  # noqa: PLC0415
 
     browser = Browser(plugins=plugings, jsextension=jsextension)
     translation = {}

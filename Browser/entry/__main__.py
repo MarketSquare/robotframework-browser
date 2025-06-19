@@ -535,7 +535,7 @@ def launch_browser_server(browser, options):
     \b
     Example: re.search(r"ws://.*", console_output).group()
     """
-    from ..browser import Browser, SupportedBrowsers
+    from ..browser import Browser, SupportedBrowsers  # noqa: PLC0415
 
     browser_lib = Browser()
     params = convert_options_types(options, browser_lib)
@@ -559,7 +559,7 @@ def launch_browser_server(browser, options):
 
 
 def convert_options_types(options: list[str], browser_lib: "Browser"):
-    from Browser.utils.data_types import RobotTypeConverter
+    from Browser.utils.data_types import RobotTypeConverter  # noqa: PLC0415
 
     keyword_types = browser_lib.get_keyword_types("launch_browser_server")
 
