@@ -16,7 +16,7 @@ Pillow==11.2.1
 beautifulsoup4 >= 4.12.2
 psutil >= 5.9.4
 coverage >= 7.2.3
-robotframework-tidy >= 4.9.0
+robotframework-tidy >= 4.17.0
 python-dateutil >= 2.8.2
 robotframework-crypto >= 0.3.0
 robotframework-archivelibrary >= 0.4.3
