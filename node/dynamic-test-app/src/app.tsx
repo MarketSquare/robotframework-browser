@@ -3,13 +3,16 @@ import DragGame from './draggame';
 import Login from './login';
 import React from 'react';
 
-export default function App() {
+const App: React.FC = () => {
     return (
         <HashRouter>
+            {/* Add other components or content here */}
             <Routes>
                 <Route path="/draggame" element={<DragGame />} />
                 <Route path="/" element={<Login />} />
             </Routes>
         </HashRouter>
     );
-}
+};
+
+export default App;

@@ -130,7 +130,7 @@ const InvisibleDropZone = ({ onDrop }) => {
     );
 };
 
-const DragGame = () => {
+const DragGame: React.FC = () => {
     const [items, setItems] = useState([
         { id: 1, type: ItemTypes.CIRCLE, x: window.innerWidth / 2 - 25, y: window.innerHeight / 2 - 25 }, // Red circle in the middle
         { id: 2, type: ItemTypes.BOX, x: window.innerWidth / 2 - 80, y: window.innerHeight / 2 - 80 }, // Blue box in the middle

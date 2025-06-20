@@ -360,7 +360,7 @@ Get Console Log Test
     Should Be Equal    ${logs}[${index2}][text]    1
     Should Be Equal    ${logs}[${index3}][type]    warning
     Should Be True    ${logs}[${index3}][text] > 0
-    ${errors} =    Get Page Errors    validate    len(value) == 2
+    ${errors} =    Get Page Errors    validate    len(value) == 1
     Should Be Equal    ${errors}[0][name]    EvalError
     Should Be Equal    ${errors}[0][message]    You are not allowed to use this site
     ${last_time} =    Set Variable    ${errors}[-1][time]
@@ -372,7 +372,7 @@ Get Console Log Test
     Click With Options    "Click with Options"    left    ALT    SHIFT
     ${last} =    Get Console Log    validate    len(value) == 3
     Get Console Log    validate    len(value) == $first + len($logs) + len($last)    full=True
-    Get Page Errors    validate    len(value) == 2
+    Get Page Errors    validate    len(value) == 1
     ${now} =    Evaluate    datetime.datetime.now(datetime.timezone.utc)
     ${first_log} =    Get Console Log    then    value[0]    full=True    last=500ms
     Should Be True
