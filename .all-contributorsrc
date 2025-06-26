@@ -1701,6 +1701,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "mauricekoster",
+      "name": "Maurice Koster",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4836127?v=4",
+      "profile": "https://github.com/mauricekoster",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
