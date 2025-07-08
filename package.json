@@ -13,7 +13,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.36.0",
     "@typescript-eslint/parser": "^8.32.1",
-    "esbuild": "^0.25.5",
+    "esbuild": "^0.25.6",
     "esbuild-node-externals": "^1.18.0",
     "eslint": "^9.30.1",
     "eslint-config-prettier": "^10.1.5",
