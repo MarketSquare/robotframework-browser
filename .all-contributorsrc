@@ -1710,6 +1710,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "kitsiosk",
+      "name": "Kitsios Konstantinos",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20650935?v=4",
+      "profile": "https://kitsiosk.github.io",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
