@@ -17,7 +17,7 @@ See [keyword documentation](https://marketsquare.github.io/robotframework-browse
 
 # Installation instructions
 
-Only Python 3.9 or newer is supported. From Node side 18, 20 and 22 LTS versions are supported.
+Only Python 3.9 or newer is supported. From Node side 20 and 22 LTS versions are supported.
 
 1. Install node.js e.g. from https://nodejs.org/en/download/
 2. Update pip `pip install -U pip` to ensure latest version is used
