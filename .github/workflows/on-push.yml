@@ -201,17 +201,6 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         inv atest --shard ${{ matrix.shard }}/4 -z true
-    - name: Install rflogs
-      if: always()
-      run: |
-        pip install rflogs
-    - name: Upload test results to RF Logs
-      if: always()
-      env:
-        RFLOGS_API_KEY: ${{ secrets.RFLOGS_API_KEY }}
-      working-directory: ${{ github.workspace }}/atest/output
-      run: |
-        rflogs upload --tag branch:${{ github.head_ref || github.ref_name }} --tag shard:${{ matrix.shard }} --tag os:${{ matrix.os }} --tag python-version:${{ matrix.python-version }} --tag node-version:${{ matrix.node-version }} || true
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
