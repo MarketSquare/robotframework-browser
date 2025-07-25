@@ -47,6 +47,7 @@ jobs:
         pip install uv
         uv pip install wheel --python 3.11  --system --verbose
         uv pip install -r Browser/dev-requirements.txt  --python 3.11 --system
+        uv pip install -r pyproject.toml  --python 3.11  --system
     - name: Install python dependencies in Windows
       if: matrix.os != 'ubuntu-latest'
       run: |
@@ -54,6 +55,7 @@ jobs:
         pip install uv
         uv pip install wheel --python 3.11  --system --verbose
         uv pip install -r Browser/dev-requirements.txt  --python 3.11  --system
+        uv pip install -r pyproject.toml  --python 3.11  --system
     - name: Build Protos and check with tsc
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -161,6 +163,7 @@ jobs:
         pip install uv
         uv pip install wheel --python ${{ matrix.python-version }} --system
         uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }} --system
+        uv pip install -r pyproject.toml  --python ${{ matrix.python-version }} --system
     - name: Build Protos and check with tsc
       run: |
         inv node-build

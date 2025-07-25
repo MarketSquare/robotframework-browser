@@ -32,6 +32,18 @@ subprocess.run(
     ],
     check=True,
 )
+subprocess.run(
+    [
+        venv_python,
+        "-m",
+        "uv",
+        "pip",
+        "install",
+        "-r",
+        str(src_dir / "pyproject.toml"),
+    ],
+    check=True,
+)
 
 activate_script = (
     "source .venv/bin/activate"

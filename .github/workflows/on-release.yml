@@ -25,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install uv
           uv pip install -r Browser/dev-requirements.txt  --python 3.12 --system
+          uv pip install -r pyproject.toml  --python 3.12 --system
           inv build
       - name: Build docs
         run: |

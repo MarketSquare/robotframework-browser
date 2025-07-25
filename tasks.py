@@ -88,11 +88,18 @@ Library was tested with Playwright REPLACE_PW_VERSION
 def deps(c, system=False):
     c.run("pip install -U pip")
     c.run("pip install -U uv")
-    uv_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
+    print("Installing dev dependencies.")
+    uv_dev_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
+    uv_deps_cmd = (
+        f"uv pip install -r pyproject.toml{' --system' * (system or IS_GITPOD)}"
+    )
     if IN_CI:
         print(f"Install packages to Python found from {sys.executable}.")
-        uv_cmd = f"{uv_cmd} --python {sys.executable}"
-    c.run(uv_cmd)
+        uv_dev_cmd = f"{uv_dev_cmd} --python {sys.executable}"
+        uv_deps_cmd = f"{uv_deps_cmd} --python {sys.executable}"
+    c.run(uv_dev_cmd)
+    print("Install package dependencies.")
+    c.run(uv_deps_cmd)
     if os.environ.get("CI"):
         shutil.rmtree("node_modules", ignore_errors=True)
 
@@ -609,7 +616,7 @@ def lint_python(c, fix=False):
         "ruff",
         "format",
         "--config",
-        "Browser/pyproject.toml",
+        "pyproject.toml",
         "Browser/",
         "bootstrap.py",
         "tasks.py",
@@ -619,7 +626,7 @@ def lint_python(c, fix=False):
         "ruff",
         "check",
         "--config",
-        "Browser/pyproject.toml",
+        "pyproject.toml",
         "Browser/",
         "bootstrap.py",
     ]
@@ -654,7 +661,7 @@ def lint_robot(c):
     in_ci = os.getenv("GITHUB_WORKFLOW")
     print(f"Lint Robot files {'in ci' if in_ci else ''}")
     atest_folder = Path("atest/").resolve()
-    config_file = Path("Browser/pyproject.toml").resolve()
+    config_file = Path("pyproject.toml").resolve()
     base_commnd = ["robotidy", "--config", str(config_file)]
     if IN_CI:
         base_commnd.insert(1, "--check")
