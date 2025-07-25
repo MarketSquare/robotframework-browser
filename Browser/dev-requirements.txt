@@ -22,6 +22,3 @@ robotframework-crypto >= 0.3.0
 robotframework-archivelibrary >= 0.4.3
 uv >= 0.6.2
 build >= 1.2.2
-# Include normal dependencies from requirements.txt. Makes it possible to use
-# requirements-dev.txt as a single requirement file in PyCharm and other IDEs.
--r requirements.txt
