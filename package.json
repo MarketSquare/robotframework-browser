@@ -29,7 +29,7 @@
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.7.0",
+    "react-router-dom": "^7.7.1",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
