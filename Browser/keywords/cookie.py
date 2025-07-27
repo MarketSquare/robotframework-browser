@@ -95,7 +95,7 @@ class Cookie(LibraryComponent):
         url: Optional[str] = None,
         domain: Optional[str] = None,
         path: Optional[str] = None,
-        expires: Optional[str] = None,
+        expires: Union[str, datetime, None] = None,
         httpOnly: Optional[bool] = None,
         secure: Optional[bool] = None,
         sameSite: Optional[CookieSameSite] = None,
@@ -109,7 +109,7 @@ class Cookie(LibraryComponent):
         | ``url`` | Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
         | ``domain`` | Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
         | ``path`` | Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
-        | ``expires`` | Given expiry for the cookie. Can be of date format or unix time. Supports the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime] library or an epoch timestamp. - example: 2027-09-28 16:21:35 |
+        | ``expires`` | Given expiry for the cookie. Can be of date format or unix time or a datetime object. Supports the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime] library or an epoch timestamp. - example: 2027-09-28 16:21:35 |
         | ``httpOnly`` | Sets the httpOnly token. |
         | ``secure`` | Sets the secure token. |
         | ``samesite`` | Sets the samesite mode. |
@@ -131,7 +131,9 @@ class Cookie(LibraryComponent):
             response = stub.AddCookie(Request.Json(body=cookie_json))
             logger.info(response.log)
 
-    def _expiry(self, expiry: str) -> int:
+    def _expiry(self, expiry: Union[str, datetime]) -> int:
+        if isinstance(expiry, datetime):
+            return int(expiry.timestamp())
         try:
             expiry_cleaned = str(expiry).replace(" ", "")
             if "," in expiry_cleaned and "." in expiry_cleaned:

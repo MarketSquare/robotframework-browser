@@ -27,3 +27,8 @@ def test_expiry(cookie: Cookie):
     assert cookie._expiry("1 000") == 1000
     assert cookie._expiry("10,0") == 10
     assert cookie._expiry("10 000.0") == 10000
+    assert cookie._expiry(datetime.fromtimestamp(123456)) == 123456
+    assert (
+        cookie._expiry(datetime(2001, 9, 9, 1, 46, 40, tzinfo=timezone.utc))
+        == 1_000_000_000
+    )
