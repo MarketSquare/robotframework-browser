@@ -148,6 +148,43 @@ Add Cookie With Expiry As Epoch In Different Format
     ${epoch_as_str} =    Convert To String    ${cookie}[expires]
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
 
+Add Cookie With Expiry As Datetime Object
+    ${url} =    Get Url
+    ${datetime} =    Evaluate    datetime.datetime.now() + datetime.timedelta(hours=1)    # local time
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    expires=${datetime}
+    ${cookies} =    Get Cookies
+    Check Cookie    ${cookies}    1    Foo    Bar
+    ${expires_str} =    Convert To String    ${cookies}[0][expires]
+    Should Match Regexp    ${expires_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
+    ${local_time_expires} =    Evaluate    $cookies[0]['expires'].astimezone()
+    Should Be Equal    ${datetime.year}    ${local_time_expires.year}
+    Should Be Equal    ${datetime.month}    ${local_time_expires.month}
+    Should Be Equal    ${datetime.day}    ${local_time_expires.day}
+    Should Be Equal    ${datetime.hour}    ${local_time_expires.hour}
+    Should Be Equal    ${datetime.minute}    ${local_time_expires.minute}
+    Should Be Equal    ${datetime.second}    ${local_time_expires.second}
+
+Add Cookie With Expiry From Other Cookie
+    ${url} =    Get Url
+    ${date_string} =    Get Current Date    increment=1 day
+    Add Cookie
+    ...    Foo
+    ...    Bar
+    ...    url=${url}
+    ...    expires=${date_string}
+    ${cookies} =    Get Cookies
+    Add Cookie
+    ...    Baz
+    ...    Qux
+    ...    url=${url}
+    ...    expires=${cookies}[0][expires]
+    ${cookies} =    Get Cookies
+    Should Be Equal    ${cookies}[0][expires]    ${cookies}[1][expires]
+
 Delete All Cookies
     ${url} =    Get Url
     Add Cookie    Foo    Bar    url=${url}
