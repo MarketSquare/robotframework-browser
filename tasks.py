@@ -324,7 +324,7 @@ def atest(
     args.extend(
         [
             "--ordering",
-            "atest/atest_order.txt",
+            "atest/atest_order.data",
             "--pythonpath",
             ".",
         ]
