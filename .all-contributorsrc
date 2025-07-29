@@ -1720,6 +1720,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "tobiasBora",
+      "name": "Tobias Bora",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2164118?v=4",
+      "profile": "https://github.com/tobiasBora",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
