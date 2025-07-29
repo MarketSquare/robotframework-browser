@@ -859,23 +859,25 @@ def version(c, version):
     node_version_file = ROOT_DIR / "package.json"
     node_version_matcher = re.compile('"version": ".*"')
     _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
-    setup_py_file = ROOT_DIR / "setup.py"
-    _replace_version(setup_py_file, node_version_matcher, f'"version": "{version}"')
-
+    package_lock = ROOT_DIR / "package-lock.json"
+    data = json.loads(package_lock.read_text())
+    data["version"] = version
+    data["packages"][""]["version"] = version
+    package_lock.write_text(json.dumps(data, indent=2))
+    py_project_toml = ROOT_DIR / "pyproject.toml"
+    py_project_toml_matcher = re.compile('version = ".*"')
+    _replace_version(py_project_toml, py_project_toml_matcher, f'version = "{version}"', 1)
     dockerfile = ROOT_DIR / "docker" / "Dockerfile.latest_release"
     docker_version_matcher = re.compile("robotframework-browser==.*")
     _replace_version(
         dockerfile, docker_version_matcher, f"robotframework-browser=={version}"
     )
-    # workflow_file = root_dir / ".github" / "workflows" / "python-package.yml"
-    # workflow_version_matcher = re.compile("VERSION: .*")
-    # _replace_version(workflow_file, workflow_version_matcher, f"VERSION: {version}")
 
 
-def _replace_version(filepath, matcher, version):
+def _replace_version(filepath, matcher, version, count=0):
     content = filepath.open().read()
     with open(filepath, "w") as out:
-        out.write(matcher.sub(version, content))
+        out.write(matcher.sub(version, content, count))
 
 
 @task

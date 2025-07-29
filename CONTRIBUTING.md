@@ -21,7 +21,7 @@ This should be sufficiant for a PR.
 
 To open the browser project in that environment just call gitpod with your development fork url as argument.
 
-`http://gitpod.io/#<your repo>` 
+`http://gitpod.io/#<your repo>`
 
 i.e. with the original repository: https://gitpod.io/#https://github.com/MarketSquare/robotframework-browser
 
@@ -99,7 +99,7 @@ and Node components.
 ```
 inv version $VERSION
 inv build
-git add Browser/version.py package.json package-lock.json setup.py docker/Dockerfile.latest_release
+git add Browser/version.py package.json package-lock.json pyproject.toml docker/Dockerfile.latest_release
 git commit -m "Update version to: $VERSION"
 git push
 ```
