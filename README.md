@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-186-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-187-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -416,6 +416,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Brownies"><img src="https://avatars.githubusercontent.com/u/3786418?v=4?s=100" width="100px;" alt="Lassi Heikkinen"/><br /><sub><b>Lassi Heikkinen</b></sub></a><br /><a href="#ideas-Brownies" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/MarketSquare/robotframework-browser/commits?author=Brownies" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mauricekoster"><img src="https://avatars.githubusercontent.com/u/4836127?v=4?s=100" width="100px;" alt="Maurice Koster"/><br /><sub><b>Maurice Koster</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amauricekoster" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://kitsiosk.github.io"><img src="https://avatars.githubusercontent.com/u/20650935?v=4?s=100" width="100px;" alt="Kitsios Konstantinos"/><br /><sub><b>Kitsios Konstantinos</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=kitsiosk" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/tobiasBora"><img src="https://avatars.githubusercontent.com/u/2164118?v=4?s=100" width="100px;" alt="Tobias Bora"/><br /><sub><b>Tobias Bora</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AtobiasBora" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
