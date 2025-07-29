@@ -866,7 +866,9 @@ def version(c, version):
     package_lock.write_text(json.dumps(data, indent=2))
     py_project_toml = ROOT_DIR / "pyproject.toml"
     py_project_toml_matcher = re.compile('version = ".*"')
-    _replace_version(py_project_toml, py_project_toml_matcher, f'version = "{version}"', 1)
+    _replace_version(
+        py_project_toml, py_project_toml_matcher, f'version = "{version}"', 1
+    )
     dockerfile = ROOT_DIR / "docker" / "Dockerfile.latest_release"
     docker_version_matcher = re.compile("robotframework-browser==.*")
     _replace_version(
