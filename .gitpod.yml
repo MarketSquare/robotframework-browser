@@ -4,6 +4,7 @@ tasks:
     command: |
       python -m pip install --upgrade pip
       pip install -r Browser/dev-requirements.txt
+      pip install -r pyproject.toml
       inv deps --system
       npx --yes playwright install-deps
       inv build
