@@ -227,6 +227,7 @@ async function _createIndexedContext(
 ): Promise<IndexedContext> {
     const contextId = `context=${uuidv4()}`;
     if (defaultTimeout) {
+        logger.info(`Setting default timeout for context ${contextId} to ${defaultTimeout}`);
         context.setDefaultTimeout(defaultTimeout);
     }
     if (traceFile) {
@@ -335,13 +336,14 @@ export class PlaywrightState {
         timeout: number | undefined,
     ): Promise<IBrowserState> {
         const currentBrowser = this.activeBrowser;
-        logger.info('currentBrowser: ' + currentBrowser);
         if (currentBrowser === undefined) {
+            logger.info('No active browser, creating a new one');
             const browserAndConfs = await _newBrowser(browserType || 'chromium', true, timeout);
             const newState = new BrowserState(browserAndConfs);
             this.browserStack.push(newState);
             return { browser: newState, newBrowser: true };
         } else {
+            logger.info(`currentBrowser: ${JSON.stringify(currentBrowser)}`);
             return { browser: currentBrowser, newBrowser: false };
         }
     }
@@ -616,7 +618,7 @@ export class BrowserState {
                 throw new Error('Tried to switch to context, which did not exist anymore.');
             }
             this._contextStack.push(newContext);
-            logger.info('Changed active context');
+            logger.info(`Changed active context: ${newContext.id}`);
         } else logger.info('Set active context to undefined');
     }
 
