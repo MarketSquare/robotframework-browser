@@ -80,7 +80,7 @@ Library was tested with Playwright REPLACE_PW_VERSION
 .. _Playwright: https://github.com/microsoft/playwright
 .. _pip: http://pip-installer.org
 .. _PyPI: https://pypi.python.org/pypi/robotframework-browser
-.. _issue tracker: https://github.com/MarketSquare/robotframework-browser/milestones/{version.milestone}
+.. _issue tracker: https://github.com/MarketSquare/robotframework-browser/issues?q=state%3Aclosed%20milestone%3A{version.milestone}
 """
 
 
