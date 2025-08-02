@@ -32,12 +32,13 @@ except ModuleNotFoundError:
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
-DIST_DIR = ROOT_DIR / "dist"
-BUILD_DIR = ROOT_DIR / "build"
+dist_dir = ROOT_DIR / "dist"
+build_dir = ROOT_DIR / "build"
+NODE_BINARY = ROOT_DIR / "node_binary"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
 PYTHON_SRC_DIR = ROOT_DIR / "Browser"
 python_protobuf_dir = PYTHON_SRC_DIR / "generated"
-wrapper_dir = PYTHON_SRC_DIR / "wrapper"
+WRAPPER_DIR = PYTHON_SRC_DIR / "wrapper"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
 npm_deps_timestamp_file = ROOT_DIR / "node_modules" / ".installed"
@@ -130,6 +131,7 @@ def clean(c):
         ZIP_DIR,
         Path("./.mypy_cache"),
         PYTHON_SRC_DIR / "wrapper",
+        NODE_BINARY,
     ]:
         if target.exists():
             shutil.rmtree(target)
@@ -219,8 +221,8 @@ def _node_protobuf_gen(c):
 @task(protobuf)
 def node_build(c):
     c.run("npm run build")
-    shutil.rmtree(wrapper_dir / "static", ignore_errors=True)
-    shutil.copytree(node_dir / "playwright-wrapper" / "static", wrapper_dir / "static")
+    shutil.rmtree(WRAPPER_DIR / "static", ignore_errors=True)
+    shutil.copytree(node_dir / "playwright-wrapper" / "static", WRAPPER_DIR / "static")
 
 
 @task
@@ -372,7 +374,7 @@ def _clean_pabot_results(rc: int):
 
 
 @task(clean_atest)
-def atest_robot(c, smoke=False):
+def atest_robot(c, smoke=False, suite=None):
     """Run atest with Robot Framework
 
     Arguments:
@@ -403,6 +405,8 @@ def atest_robot(c, smoke=False):
             str(ATEST_OUTPUT),
         ]
     )
+    if suite:
+        command_args.extend(["--suite", suite])
     command_args = _add_skips(command_args)
     command_args.append("atest/test")
     env = os.environ.copy()
@@ -720,16 +724,45 @@ def docs(c, version=None):
         output.rename(target)
 
 
+def _copy_package_files():
+    WRAPPER_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copy(ROOT_DIR / "package.json", WRAPPER_DIR)
+    shutil.copy(ROOT_DIR / "package-lock.json", WRAPPER_DIR)
+
+
 @task
 def create_package(c):
-    shutil.copy(ROOT_DIR / "package.json", ROOT_DIR / "Browser" / "wrapper")
-    shutil.copy(ROOT_DIR / "package-lock.json", ROOT_DIR / "Browser" / "wrapper")
+    _copy_package_files()
     c.run("python -m build")
 
 
 @task(clean, build, docs, create_package)
 def package(c):
     """Build python wheel for release."""
+
+
+def _os_platform():
+    pl = platform.system().lower()
+    if pl == "darwin":
+        return "macos"
+    elif pl == "windows":
+        return "win"
+    else:
+        return "linux"
+
+
+@task(clean, build)
+def package_nodejs(c, architecture):
+    """Build NodeJS binary for release."""
+    print(f"Build NodeJS binary to {NODE_BINARY}.")
+
+    _copy_package_files()
+    target = f"node22-{_os_platform()}-{architecture}"
+    print(f"Target: {target}")
+    index_js = WRAPPER_DIR.joinpath("index.js")
+    c.run(
+        f"pkg --public --targets {target} --output {NODE_BINARY.joinpath('grpc_server')} {index_js}"
+    )
 
 
 @task
