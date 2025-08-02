@@ -13,6 +13,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.32.1",
+    "@yao-pkg/pkg": "github:yao-pkg/pkg",
     "esbuild": "^0.25.8",
     "esbuild-node-externals": "^1.18.0",
     "eslint": "^9.32.0",
