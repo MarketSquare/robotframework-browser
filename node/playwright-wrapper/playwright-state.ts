@@ -1135,12 +1135,19 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     } else {
         logger.info('v8 coverage disabled');
     }
-
-    const mcr = new CoverageReport(options);
-    if (configFile) {
-        logger.info({ 'Config file: ': configFile });
-        await mcr.loadConfig(configFile);
+    let mergedOptions: CoverageReportOptions;
+    if (fs.existsSync(configFile)) {
+        logger.info({ 'Config file exists: ': configFile });
+        const configFileModule = await eval('require')(configFile);
+        mergedOptions = { ...configFileModule, ...options };
+        console.log({ 'Merged options: ': mergedOptions });
+    } else {
+        console.log({ 'No config file found': configFile });
+        mergedOptions = { ...options };
     }
+
+    const mcr = new CoverageReport(mergedOptions);
+
     await mcr.add(allCoverage);
     await mcr.generate();
     let message = 'Coverage stopped and report generated';
