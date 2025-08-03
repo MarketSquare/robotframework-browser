@@ -477,7 +477,7 @@ def atest_robot(c, zip=None, smoke=False, suite=None):
         ]
     )
     if suite:
-        command_args.extend(["--suite", suite]) 
+        command_args.extend(["--suite", suite])
     command_args = _add_skips(command_args)
     command_args.append("atest/test")
     env = os.environ.copy()
