@@ -96,7 +96,7 @@ export async function initializeExtension(
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
     logger.info(`Initializing extension: ${request.getPath()}`);
-    const extension: Record<string, (...args: unknown[]) => unknown> = eval('require')(request.getPath());
+    const extension: Record<string, (...args: unknown[]) => unknown> = require(request.getPath()); // eslint-disable-line
     state.extensions.push(extension);
     const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
     logger.info(`Adding ${kws.length} keywords from JS Extension`);
@@ -1140,7 +1140,7 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     let mergedOptions: CoverageReportOptions;
     if (fs.existsSync(configFile)) {
         logger.info({ 'Config file exists: ': configFile });
-        const configFileModule = await eval('require')(configFile);
+        const configFileModule = require(configFile);  // eslint-disable-line
         mergedOptions = { ...configFileModule, ...options };
         console.log({ 'Merged options: ': mergedOptions });
     } else {
