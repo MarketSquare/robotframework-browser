@@ -18,11 +18,17 @@ import os
 import platform
 import time
 from functools import cached_property
+from io import TextIOWrapper
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 from typing import TYPE_CHECKING, Optional, Union
 
 import grpc  # type: ignore
+
+try:
+    from BrowserBatteries import start_grpc_server
+except ImportError:
+    start_grpc_server = None  # type: ignore[assignment]
 
 from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
@@ -34,6 +40,10 @@ if TYPE_CHECKING:
     from .browser import Browser
 
 from .utils import PlaywrightLogTypes, find_free_port, logger
+
+
+def _run_grpc_server() -> bool:
+    return start_grpc_server is not None
 
 
 class Playwright(LibraryComponent):
@@ -66,7 +76,15 @@ class Playwright(LibraryComponent):
         return process
 
     def ensure_node_dependencies(self):
-        # Checks if node is in PATH, errors if it isn't
+        """Ensure that node dependencies are installed.
+
+        If BrowserBatteries is installed, does nothing.
+        """
+        if _run_grpc_server():
+            logger.trace(
+                "Running gRPC server from BrowserBatteries, no need to check node"
+            )
+            return
         try:
             run(["node", "-v"], stdout=DEVNULL, check=True)
         except (CalledProcessError, FileNotFoundError, PermissionError) as err:
@@ -114,13 +132,19 @@ class Playwright(LibraryComponent):
                     f"ROBOT_FRAMEWORK_BROWSER_NODE_PORT {existing_port} defined in env, skipping Browser process start"
                 )
             return None
-        current_dir = Path(__file__).parent
-        workdir = current_dir / "wrapper"
-        playwright_script = workdir / "index.js"
         if self.playwright_log:
             logfile = self.playwright_log.open("w", encoding="utf-8")
         else:
             logfile = Path(os.devnull).open("w", encoding="utf-8")  # noqa: SIM115
+        if _run_grpc_server():
+            return start_grpc_server(logfile)
+        return self._start_playwright_from_node(logfile)
+
+    def _start_playwright_from_node(self, logfile: TextIOWrapper) -> Popen:
+        """Start Playwright from nodejs wrapper."""
+        current_dir = Path(__file__).parent
+        workdir = current_dir / "wrapper"
+        playwright_script = workdir / "index.js"
         host = str(self.host) if self.host is not None else "127.0.0.1"
         port = str(find_free_port())
         if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
