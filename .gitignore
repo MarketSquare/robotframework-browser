@@ -36,7 +36,6 @@ Browser/.installed
 
 browser_batteries/BrowserBatteries/bin/
 browser_batteries/robotframework_browser_batteries.egg-info
-browser_batteries/.DS_Store
 
 # Robot Framework outputs
 log.html
