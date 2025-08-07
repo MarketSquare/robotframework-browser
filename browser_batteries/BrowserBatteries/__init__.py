@@ -13,5 +13,16 @@
 # limitations under the License.
 
 
-def run_grpc_server():
-    """Run the gRPC server."""
+from io import TextIOWrapper
+from pathlib import Path
+from subprocess import Popen
+
+from robot.api import logger
+
+
+def start_grpc_server(logfile: TextIOWrapper) -> Popen:
+    """Run the prebuilt gRPC server."""
+    current_dir = Path(__file__).parent
+    playwright_script = current_dir / "bin" / "grpc_server"
+    logger.trace(f"Starting gRPC server from {playwright_script}")
+    return Popen([str(playwright_script)])
