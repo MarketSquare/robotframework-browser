@@ -34,7 +34,8 @@ ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 dist_dir = ROOT_DIR / "dist"
 build_dir = ROOT_DIR / "build"
-NODE_BINARY = ROOT_DIR / "node_binary"
+BROWSER_BATTERIES_DIR = ROOT_DIR / "browser_batteries"
+NODE_BINARY_PATH = BROWSER_BATTERIES_DIR / "BrowserBatteries" / "bin"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
 PYTHON_SRC_DIR = ROOT_DIR / "Browser"
 python_protobuf_dir = PYTHON_SRC_DIR / "generated"
@@ -131,7 +132,8 @@ def clean(c):
         ZIP_DIR,
         Path("./.mypy_cache"),
         PYTHON_SRC_DIR / "wrapper",
-        NODE_BINARY,
+        NODE_BINARY_PATH,
+        BROWSER_BATTERIES_DIR / "dist",
     ]:
         if target.exists():
             shutil.rmtree(target)
@@ -551,6 +553,7 @@ def lint_python(c, fix=False):
         "bootstrap.py",
         "tasks.py",
         "utest",
+        "browser_batteries",
     ]
     ruff_cmd_check = [
         "ruff",
@@ -558,6 +561,7 @@ def lint_python(c, fix=False):
         "--config",
         "pyproject.toml",
         "Browser/",
+        "browser_batteries/",
         "bootstrap.py",
     ]
     if fix:
@@ -569,7 +573,17 @@ def lint_python(c, fix=False):
     print(f"Run ruff check: {ruff_cmd_check}")
     c.run(" ".join(ruff_cmd_check))
     print("Run mypy:")
-    c.run("mypy --exclude .venv --config-file Browser/mypy.ini Browser/ bootstrap.py")
+    mypy_cmd = [
+        "mypy",
+        "--exclude",
+        ".venv",
+        "--config-file",
+        "Browser/mypy.ini",
+        "Browser/",
+        "bootstrap.py",
+        "browser_batteries/",
+    ]
+    c.run(" ".join(mypy_cmd))
 
 
 @task
@@ -754,14 +768,14 @@ def _os_platform():
 @task(clean, build)
 def package_nodejs(c, architecture):
     """Build NodeJS binary for release."""
-    print(f"Build NodeJS binary to {NODE_BINARY}.")
+    print(f"Build NodeJS binary to {NODE_BINARY_PATH}.")
 
     _copy_package_files()
     target = f"node22-{_os_platform()}-{architecture}"
     print(f"Target: {target}")
     index_js = WRAPPER_DIR.joinpath("index.js")
     c.run(
-        f"pkg --public --targets {target} --output {NODE_BINARY.joinpath('grpc_server')} {index_js}"
+        f"pkg --public --targets {target} --output {NODE_BINARY_PATH.joinpath('grpc_server')} {index_js}"
     )
 
 
