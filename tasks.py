@@ -14,6 +14,7 @@ from typing import Iterable
 from xml.etree import ElementTree as ET
 
 from invoke import Exit, task
+from invoke.context import Context
 
 try:
     import bs4
@@ -235,6 +236,34 @@ def create_test_app(c):
 @task(deps, protobuf, node_build, create_test_app)
 def build(c):
     c.run("python -m Browser.gen_stub")
+
+
+def _os_platform() -> str:
+    pl = platform.system().lower()
+    if pl == "darwin":
+        return "macos"
+    elif pl == "windows":
+        return "win"
+    else:
+        return "linux"
+
+
+def _build_nodejs(c: Context, architecture: str):
+    """Build NodeJS binary for GRPC server."""
+    print(f"Build NodeJS binary to {NODE_BINARY_PATH}.")
+    _copy_package_files()
+    target = f"node22-{_os_platform()}-{architecture}"
+    print(f"Target: {target}")
+    index_js = WRAPPER_DIR.joinpath("index.js")
+    c.run(
+        f"pkg --public --targets {target} --output {NODE_BINARY_PATH.joinpath('grpc_server')} {index_js}"
+    )
+
+
+@task(clean, build)
+def build_nodejs(c: Context, architecture: str):
+    """Build GRPC server binary from NodeJS side."""
+    _build_nodejs(c, architecture)
 
 
 def _sources_changed(source_files: Iterable[Path], timestamp_file: Path):
@@ -751,32 +780,17 @@ def create_package(c):
 
 
 @task(clean, build, docs, create_package)
-def package(c):
-    """Build python wheel for release."""
-
-
-def _os_platform():
-    pl = platform.system().lower()
-    if pl == "darwin":
-        return "macos"
-    elif pl == "windows":
-        return "win"
-    else:
-        return "linux"
+def package(c: Context):
+    """Build python wheel for Browser release."""
 
 
 @task(clean, build)
-def package_nodejs(c, architecture):
-    """Build NodeJS binary for release."""
-    print(f"Build NodeJS binary to {NODE_BINARY_PATH}.")
-
-    _copy_package_files()
-    target = f"node22-{_os_platform()}-{architecture}"
-    print(f"Target: {target}")
-    index_js = WRAPPER_DIR.joinpath("index.js")
-    c.run(
-        f"pkg --public --targets {target} --output {NODE_BINARY_PATH.joinpath('grpc_server')} {index_js}"
-    )
+def package_nodejs(c: Context, architecture: str):
+    """Build Python wheel from BrowserBattiers release."""
+    _build_nodejs(c, architecture)
+    with c.cd(BROWSER_BATTERIES_DIR):
+        print(f"Building Browser Batteries package in {BROWSER_BATTERIES_DIR}")
+        c.run("python -m build")
 
 
 @task
