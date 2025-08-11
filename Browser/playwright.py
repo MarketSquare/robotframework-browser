@@ -42,10 +42,6 @@ if TYPE_CHECKING:
 from .utils import PlaywrightLogTypes, find_free_port, logger
 
 
-def _run_grpc_server() -> bool:
-    return start_grpc_server is not None
-
-
 class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwright process."""
 
@@ -80,7 +76,7 @@ class Playwright(LibraryComponent):
 
         If BrowserBatteries is installed, does nothing.
         """
-        if _run_grpc_server():
+        if start_grpc_server is not None:
             logger.trace(
                 "Running gRPC server from BrowserBatteries, no need to check node"
             )
@@ -136,9 +132,9 @@ class Playwright(LibraryComponent):
             logfile = self.playwright_log.open("w", encoding="utf-8")
         else:
             logfile = Path(os.devnull).open("w", encoding="utf-8")  # noqa: SIM115
-        if _run_grpc_server():
-            return start_grpc_server(logfile)
-        return self._start_playwright_from_node(logfile)
+        if start_grpc_server is None:
+            return self._start_playwright_from_node(logfile)
+        return start_grpc_server(logfile)
 
     def _start_playwright_from_node(self, logfile: TextIOWrapper) -> Popen:
         """Start Playwright from nodejs wrapper."""
