@@ -39,7 +39,7 @@
     "@medv/finder": "^4.0.2",
     "google-protobuf": "3.21.4",
     "monocart-coverage-reports": "^2.12.6",
-    "pino": "^9.8.0",
+    "pino": "^9.9.0",
     "playwright": "^1.54.2",
     "strip-comments": "^2.0.1",
     "uuid": "^11.1.0"
