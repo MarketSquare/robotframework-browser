@@ -43,7 +43,9 @@ python_protobuf_dir = PYTHON_SRC_DIR / "generated"
 WRAPPER_DIR = PYTHON_SRC_DIR / "wrapper"
 node_protobuf_dir = ROOT_DIR / "node" / "playwright-wrapper" / "generated"
 node_dir = ROOT_DIR / "node"
-npm_deps_timestamp_file = ROOT_DIR / "node_modules" / ".installed"
+NODE_MODULES = ROOT_DIR / "node_modules"
+npm_deps_timestamp_file = NODE_MODULES / ".installed"
+
 node_lint_timestamp_file = node_dir / ".linted"
 ATEST_TIMEOUT = 900
 cpu_count = os.cpu_count() or 1
@@ -103,7 +105,7 @@ def deps(c, system=False):
     print("Install package dependencies.")
     c.run(uv_deps_cmd)
     if os.environ.get("CI"):
-        shutil.rmtree("node_modules", ignore_errors=True)
+        shutil.rmtree(str(NODE_MODULES), ignore_errors=True)
 
     if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
         arch = " --target_arch=x64" if platform.processor() == "arm" else ""
@@ -196,14 +198,9 @@ def _python_protobuf_gen(c):
 def _node_protobuf_gen(c):
     plugin_suffix = ".cmd" if platform.platform().startswith("Windows") else ""
     protoc_plugin = (
-        ROOT_DIR
-        / "node_modules"
-        / ".bin"
-        / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
+        NODE_MODULES / ".bin" / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
     )
-    protoc_ts_plugin = (
-        ROOT_DIR / "node_modules" / ".bin" / f"protoc-gen-ts{plugin_suffix}"
-    )
+    protoc_ts_plugin = NODE_MODULES / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     cmd = (
         "npm run grpc_tools_node_protoc -- "
         f"--js_out=import_style=commonjs,binary:{node_protobuf_dir} "
@@ -318,6 +315,14 @@ def clean_atest(c):
     _clean_zip_dir()
 
 
+def _batteries(batteries: bool):
+    if batteries:
+        print("Running with BrowserBatteries")
+        sys.path.append(str(BROWSER_BATTERIES_DIR))
+        browser_path = NODE_MODULES / "playwright-core" / ".local-browsers"
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(browser_path)
+
+
 @task(clean_atest, create_test_app)
 def atest(
     c,
@@ -332,6 +337,7 @@ def atest(
     framed=False,
     exclude=None,
     loglevel=None,
+    batteries=False,
 ):
     """Runs Robot Framework acceptance tests with pabot.
 
@@ -344,6 +350,7 @@ def atest(
         smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
         loglevel: Set log level for robot framework
+        batteries: Run test with BrowserBatteries. Assumes that GRPC server is build.
     """
     if IS_GITPOD and (not processes or int(processes) > 6):
         processes = "6"
@@ -377,7 +384,7 @@ def atest(
     loglevel = loglevel or "DEBUG"
     args.extend(["--exclude", "tidy-transformer"])
     ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
-
+    _batteries(batteries)
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
@@ -405,11 +412,12 @@ def _clean_pabot_results(rc: int):
 
 
 @task(clean_atest)
-def atest_robot(c, smoke=False, suite=None):
+def atest_robot(c, smoke=False, suite=None, batteries=False):
     """Run atest with Robot Framework
 
     Arguments:
         smoke: If true, runs only tests that take less than 500ms.
+        batteries: If true, includes BrowserBatteries in the test run.
     """
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     sys_var_ci = int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))
@@ -440,6 +448,7 @@ def atest_robot(c, smoke=False, suite=None):
         command_args.extend(["--suite", suite])
     command_args = _add_skips(command_args)
     command_args.append("atest/test")
+    _batteries(batteries)
     env = os.environ.copy()
     process = subprocess.Popen(command_args, env=env)
     process.wait(ATEST_TIMEOUT)
@@ -466,11 +475,14 @@ def atest_failed(c):
 
 
 @task()
-def run_tests(c, tests):
+def run_tests(c, tests, batteries=False):
     """Run robot with dev Browser.
 
-    Parameter [tests] is the path to tests to run.
+    Arguments:
+        tests: is the path to tests to run.
+        batteries: If true, includes BrowserBatteries in the test run.
     """
+    _batteries(batteries)
     env = os.environ.copy()
     process = subprocess.Popen(
         [
