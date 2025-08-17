@@ -8,39 +8,40 @@ import subprocess
 from pathlib import Path
 from venv import EnvBuilder
 
-venv_dir = Path(__file__).parent / ".venv"
+ROOT_DIR = Path(__file__).parent
+VENV_DIR = ROOT_DIR / ".venv"
 if not platform.platform().startswith("Windows"):
-    venv_python = venv_dir / "bin" / "python"
+    VENV_PYTHON = VENV_DIR / "bin" / "python"
 else:
-    venv_python = venv_dir / "Scripts" / "python.exe"
-src_dir = Path(__file__).parent / "Browser"
+    VENV_PYTHON = VENV_DIR / "Scripts" / "python.exe"
+SRC_DIR = ROOT_DIR / "Browser"
 
-if not venv_dir.exists():
-    print(f"Creating virtualenv in {venv_dir}")
-    EnvBuilder(with_pip=True).create(venv_dir)
+if not VENV_DIR.exists():
+    print(f"Creating virtualenv in {VENV_DIR}")
+    EnvBuilder(with_pip=True).create(VENV_DIR)
 
-subprocess.run([venv_python, "-m", "pip", "install", "-U", "uv"], check=True)
+subprocess.run([VENV_PYTHON, "-m", "pip", "install", "-U", "uv"], check=True)
 subprocess.run(
     [
-        venv_python,
+        VENV_PYTHON,
         "-m",
         "uv",
         "pip",
         "install",
         "-r",
-        str(src_dir / "dev-requirements.txt"),
+        str(SRC_DIR / "dev-requirements.txt"),
     ],
     check=True,
 )
 subprocess.run(
     [
-        venv_python,
+        VENV_PYTHON,
         "-m",
         "uv",
         "pip",
         "install",
         "-r",
-        str(src_dir / "pyproject.toml"),
+        str(ROOT_DIR / "pyproject.toml"),
     ],
     check=True,
 )
@@ -50,5 +51,5 @@ activate_script = (
     if not platform.platform().startswith("Windows")
     else ".venv\\Scripts\\activate.bat"
 )
-print(f"Virtualenv `{venv_dir}` is ready and up-to-date.")
+print(f"Virtualenv `{VENV_DIR}` is ready and up-to-date.")
 print(f"Run `{activate_script}` to activate the virtualenv.")
