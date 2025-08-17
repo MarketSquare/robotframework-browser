@@ -132,24 +132,26 @@ class Playwright(LibraryComponent):
             logfile = self.playwright_log.open("w", encoding="utf-8")
         else:
             logfile = Path(os.devnull).open("w", encoding="utf-8")  # noqa: SIM115
+        host = str(self.host) if self.host is not None else "127.0.0.1"
+        port = str(find_free_port())
+        self.host = host
+        self.port = port
         if start_grpc_server is None:
-            return self._start_playwright_from_node(logfile)
-        return start_grpc_server(logfile)
+            return self._start_playwright_from_node(logfile, host, port)
+        return start_grpc_server(logfile, host, port, self.enable_playwright_debug)
 
-    def _start_playwright_from_node(self, logfile: TextIOWrapper) -> Popen:
+    def _start_playwright_from_node(
+        self, logfile: TextIOWrapper, host: str, port: str
+    ) -> Popen:
         """Start Playwright from nodejs wrapper."""
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        host = str(self.host) if self.host is not None else "127.0.0.1"
-        port = str(find_free_port())
         if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
             os.environ["DEBUG"] = "pw:api"
         logger.info(
             f"Starting Browser process {playwright_script} using at {host}:{port}"
         )
-        self.host = host
-        self.port = port
         node_args = ["node"]
         node_debug_options = os.environ.get(
             "ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS"

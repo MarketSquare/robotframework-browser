@@ -13,16 +13,43 @@
 # limitations under the License.
 
 
+import os
 from io import TextIOWrapper
 from pathlib import Path
-from subprocess import Popen
+from subprocess import STDOUT, Popen
 
 from robot.api import logger
 
+from Browser.utils.data_types import PlaywrightLogTypes
 
-def start_grpc_server(logfile: TextIOWrapper) -> Popen:
+
+def start_grpc_server(
+    logfile: TextIOWrapper,
+    host: str,
+    port: str,
+    enable_playwright_debug: "PlaywrightLogTypes | bool",
+) -> Popen:
     """Run the prebuilt gRPC server."""
     current_dir = Path(__file__).parent
     playwright_script = current_dir / "bin" / "grpc_server"
-    logger.trace(f"Starting gRPC server from {playwright_script}")
-    return Popen([str(playwright_script)])
+    logger.info(f"Starting GRPC process {playwright_script} using at {host}:{port}")
+    args = [str(playwright_script), host, port]
+    workdir = current_dir / "bin"
+    if enable_playwright_debug == PlaywrightLogTypes.playwright:
+        logger.trace("Enabling Playwright debug logging")
+        os.environ["DEBUG"] = "pw:api"
+    if os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS"):
+        logger.trace(
+            "it is not possible to define ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS for BrowserBatteries"
+        )
+    if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+        logger.trace("Setting PLAYWRIGHT_BROWSERS_PATH to '0'")
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+    logger.trace(f"GRPC startup parameters: {args}")
+    return Popen(
+        args,
+        cwd=workdir,
+        env=os.environ,
+        stdout=logfile,
+        stderr=STDOUT,
+    )
