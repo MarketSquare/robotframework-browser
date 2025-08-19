@@ -37,7 +37,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.13.4",
     "@medv/finder": "^4.0.2",
-    "google-protobuf": "3.21.4",
+    "google-protobuf": "4.0.0",
     "monocart-coverage-reports": "^2.12.6",
     "pino": "^9.9.0",
     "playwright": "^1.54.2",
