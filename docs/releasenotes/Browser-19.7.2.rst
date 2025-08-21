@@ -42,6 +42,7 @@ Most important enhancements
 
 - Update Docker to use PW 1.55.0 (`#4357`_)
 -------------------------------------------
+
 We did forget to update the Docker container to use Playwright 1.55.0 in the previous release.
 
 Full list of fixes and enhancements
