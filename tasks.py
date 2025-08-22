@@ -251,7 +251,6 @@ def _build_nodejs(c: Context, architecture: str):
     _copy_package_files()
     target = f"node22-{_os_platform()}-{architecture}"
     print(f"Target: {target}")
-    index_js = str(WRAPPER_DIR.joinpath("index.js"))
     cmd = [
         "node",
         "node_modules/@yao-pkg/pkg/lib-es5/bin.js",
@@ -260,7 +259,7 @@ def _build_nodejs(c: Context, architecture: str):
         target,
         "--output",
         str(NODE_BINARY_PATH.joinpath("grpc_server")),
-        index_js,
+        ".",
     ]
     c.run(" ".join(cmd))
 
@@ -339,7 +338,7 @@ def atest(
     include=None,
     shard=None,
     debug=False,
-    include_mac=None,
+    include_mac=False,
     smoke=False,
     processes=None,
     framed=False,
