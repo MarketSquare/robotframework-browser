@@ -294,7 +294,6 @@ def atest(
     test=None,
     include=None,
     shard=None,
-    zip=None,
     debug=False,
     include_mac=None,
     smoke=False,
@@ -310,7 +309,6 @@ def atest(
         test: Select which test to run.
         include: Select test by tag
         shard: Shard tests
-        zip: Create zip file from output files.
         debug: Use robotframework-debugger as test listener
         smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
@@ -355,10 +353,6 @@ def atest(
         rc = _run_pabot(args, shard, include_mac, loglevel=loglevel)
     finally:
         background_process.kill()
-
-    if zip:
-        _clean_zip_dir()
-        print(f"Zip file created to: {_create_zip(rc, shard)}")
     sys.exit(rc)
 
 
@@ -377,35 +371,6 @@ def _clean_pabot_results(rc: int):
         shutil.rmtree(pabot_results, onerror=on_error)
     else:
         print("Not deleting pabot_results on error")
-
-
-def _create_zip(rc: int, shard: str):
-    shard = shard.replace("/", "of")
-    zip_dir = ZIP_DIR / "output"
-    zip_dir.mkdir(parents=True)
-    _clean_pabot_results(rc)
-    py_version = platform.python_version()
-    node_process = subprocess.run(
-        ["node", "--version"], capture_output=True, check=False
-    )
-    node_version = node_process.stdout.strip().decode("utf-8")
-    zip_name = f"{sys.platform}-rf-{rf_version}-py-{py_version}-node-{node_version}-shard-{shard}.zip"
-    zip_path = zip_dir / zip_name
-    print(f"Creating zip  in: {zip_path}")
-    zip_file = zipfile.ZipFile(zip_path, "w")
-    for file in ATEST_OUTPUT.glob("**/*.*"):
-        zip_file = _files_to_zip(zip_file, file, ATEST_OUTPUT)
-    for file in UTEST_OUTPUT.glob("*.*"):
-        zip_file = _files_to_zip(zip_file, file, UTEST_OUTPUT)
-    zip_file.close()
-    return zip_path
-
-
-def _files_to_zip(zip_file, file, relative_to):
-    file = PurePath(file)
-    arc_name = file.relative_to(str(relative_to))
-    zip_file.write(file, arc_name)
-    return zip_file
 
 
 @task()
@@ -442,11 +407,10 @@ def copy_xunit(c):
 
 
 @task(clean_atest)
-def atest_robot(c, zip=None, smoke=False):
+def atest_robot(c, smoke=False):
     """Run atest with Robot Framework
 
     Arguments:
-        zip: Create zip file from output files.
         smoke: If true, runs only tests that take less than 500ms.
     """
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
@@ -483,9 +447,6 @@ def atest_robot(c, zip=None, smoke=False):
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml)
     rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
-    if zip:
-        _clean_zip_dir()
-        print(f"Zip file created to: {_create_zip(rc)}")
     _clean_pabot_results(rc)
     print(f"DONE rc=({rc})")
     sys.exit(rc)

@@ -195,20 +195,20 @@ jobs:
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-        xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/4 -z true
+        xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/4
     - name: Run Robot Framework tests on Windows
       if: matrix.os == 'windows-latest'
       run: |
-        inv atest --shard ${{ matrix.shard }}/4 -z true
+        inv atest --shard ${{ matrix.shard }}/4
     - name: Run Robot Framework tests on macOS
       if: matrix.os == 'macos-latest'
       run: |
-        inv atest --shard ${{ matrix.shard }}/4 -z true
+        inv atest --shard ${{ matrix.shard }}/4
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
         name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
-        path: zip_results/output
+        path: atest/output
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
