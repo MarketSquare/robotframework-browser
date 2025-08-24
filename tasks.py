@@ -321,11 +321,13 @@ def clean_atest(c):
 
 
 def _batteries(batteries: bool):
+    batteries_dir = str(BROWSER_BATTERIES_DIR)
     if batteries:
         print("Running with BrowserBatteries")
-        sys.path.append(str(BROWSER_BATTERIES_DIR))
+        sys.path.append(batteries_dir)
         browser_path = NODE_MODULES / "playwright-core" / ".local-browsers"
         os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(browser_path)
+    return batteries_dir
 
 
 @task(clean_atest, create_test_app)
@@ -424,6 +426,7 @@ def atest_robot(c, smoke=False, suite=None, batteries=False):
 
     Arguments:
         smoke: If true, runs only tests that take less than 500ms.
+        suite: Select which suite to run.
         batteries: If true, includes BrowserBatteries in the test run.
     """
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
@@ -453,9 +456,11 @@ def atest_robot(c, smoke=False, suite=None, batteries=False):
     )
     if suite:
         command_args.extend(["--suite", suite])
+    if batteries:
+        batteries_dir = _batteries(batteries)
+        command_args.extend(["--pythonpath", batteries_dir])
     command_args = _add_skips(command_args)
     command_args.append("atest/test")
-    _batteries(batteries)
     env = os.environ.copy()
     process = subprocess.Popen(command_args, env=env)
     process.wait(ATEST_TIMEOUT)
