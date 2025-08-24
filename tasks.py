@@ -24,8 +24,6 @@ try:
     from robot import __version__ as rf_version
     from robot import rebot_cli
     from robot.libdoc import libdoc
-
-    from Browser.utils import spawn_node_process
 except ModuleNotFoundError:
     traceback.print_exc()
     print('Assuming that this is for "inv deps" command and ignoring error.')
@@ -392,6 +390,8 @@ def atest(
     args.extend(["--exclude", "tidy-transformer"])
     ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
     _batteries(batteries)
+    from Browser.utils import spawn_node_process
+
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
