@@ -35,27 +35,27 @@ jobs:
       run: |
         npm ci
         npx playwright install --with-deps
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v6
       with:
-        python-version: 3.11
+        python-version: 3.12
         cache: 'pip'
     - name: Install python dependencies in Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
         python -m pip install --upgrade pip
         pip install uv
-        uv pip install wheel --python 3.11  --system --verbose
-        uv pip install -r Browser/dev-requirements.txt  --python 3.11 --system
-        uv pip install -r pyproject.toml  --python 3.11  --system
+        uv pip install wheel --python 3.12  --system --verbose
+        uv pip install -r Browser/dev-requirements.txt  --python 3.12 --system
+        uv pip install -r pyproject.toml  --python 3.12  --system
     - name: Install python dependencies in Windows
       if: matrix.os != 'ubuntu-latest'
       run: |
         python -m pip install --upgrade pip
         pip install uv
-        uv pip install wheel --python 3.11  --system --verbose
-        uv pip install -r Browser/dev-requirements.txt  --python 3.11  --system
-        uv pip install -r pyproject.toml  --python 3.11  --system
+        uv pip install wheel --python 3.12  --system --verbose
+        uv pip install -r Browser/dev-requirements.txt  --python 3.12  --system
+        uv pip install -r pyproject.toml  --python 3.12  --system
     - name: Build Protos and check with tsc
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -64,22 +64,26 @@ jobs:
     - name: Build test app
       run: |
         inv create-test-app
-    - name: Create Distributable Package
+    - name: Create Distributable Browser Package
       run: |
         inv docs
         inv create-package
-        inv package-nodejs x64
     - uses: actions/upload-artifact@v4
       name: Upload rfbrowser-wheel
       if: matrix.os == 'ubuntu-latest'
       with:
         name: rfbrowser-wheel
         path: dist/robotframework_browser-*-py3-none-any.whl
+        if-no-files-found: error
+    - name: Create Distributable BrowserBatteries Package
+      run: |
+        inv package-nodejs x64
     - uses: actions/upload-artifact@v4
       name: Upload BrowserBatteries-wheel
       with:
         name: BrowserBatteries-wheel-${{ matrix.os }}
         path: browser_batteries/dist/robotframework_browser_batteries-*-py3-none-any.whl
+        if-no-files-found: error
     - name: Package demoapp
       run: |
         inv demo-app
@@ -87,6 +91,7 @@ jobs:
       with:
         name: demoapp-${{ matrix.os }}
         path: zip_results/demoapp
+        if-no-files-found: error
   testing:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
