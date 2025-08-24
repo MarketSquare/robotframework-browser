@@ -316,10 +316,11 @@ jobs:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           rm -rf Browser
+          rm -rf browser_batteries
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum invoke atest-robot --smoke --batteries
-      - name: Test on unix-like os - serial mode - Browse
+      - name: Test on unix-like os - serial mode - Browser
         if: matrix.os == 'ubuntu-latest' && matrix.node-version != '22.x'
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
@@ -334,6 +335,7 @@ jobs:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           Remove-Item -Path .\Browser -Force -Recurse
+          Remove-Item -Path .\browser_batteries -Force -Recurse
           invoke atest-robot --smoke --batteries
       - name: Run Robot Framework tests on windows on Browser
         if: ${{ matrix.os != 'ubuntu-latest' }} && matrix.node-version != '22.x'
