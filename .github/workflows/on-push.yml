@@ -204,10 +204,14 @@ jobs:
       if: matrix.shard == 1
       run: |
         invoke utest
-    - name: Build BrowserBatteries
-      if: matrix.batteries == 'BrowserBatteries'
+    - name: Build BrowserBatteries for x64
+      if: matrix.batteries == 'BrowserBatteries' && matrix.os != 'macos-latest'
       run: |
         inv build-nodejs x64
+    - name: Build BrowserBatteries for arm64
+      if: matrix.batteries == 'BrowserBatteries' && matrix.os == 'macos-latest'
+      run: |
+        inv build-nodejs arm64
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest' && matrix.batteries != 'BrowserBatteries'
       run: |
@@ -217,13 +221,21 @@ jobs:
       run: |
           xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/4 --batteries
     - name: Run Robot Framework tests on Windows
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-latest' && matrix.batteries != 'BrowserBatteries'
       run: |
         inv atest --shard ${{ matrix.shard }}/4
+    - name: Run Robot Framework tests on Windows with BrowserBatteries
+      if: matrix.os == 'windows-latest' && matrix.batteries == 'BrowserBatteries'
+      run: |
+        inv atest --shard ${{ matrix.shard }}/4 --batteries
     - name: Run Robot Framework tests on macOS
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-latest' && matrix.batteries != 'BrowserBatteries'
       run: |
         inv atest --shard ${{ matrix.shard }}/4
+    - name: Run Robot Framework tests on macOS with BrowserBatteries
+      if: matrix.os == 'macos-latest' && matrix.batteries == 'BrowserBatteries'
+      run: |
+        inv atest --shard ${{ matrix.shard }}/4 --batteries
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
