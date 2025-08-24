@@ -65,15 +65,21 @@ jobs:
       run: |
         inv create-test-app
     - name: Create Distributable Package
-      if: matrix.os == 'ubuntu-latest'
       run: |
         inv docs
         inv create-package
+        inv package-nodejs x64
     - uses: actions/upload-artifact@v4
+      name: Upload rfbrowser-wheel
       if: matrix.os == 'ubuntu-latest'
       with:
         name: rfbrowser-wheel
         path: dist/robotframework_browser-*-py3-none-any.whl
+    - uses: actions/upload-artifact@v4
+      name: Upload BrowserBatteries-wheel
+      with:
+        name: BrowserBatteries-wheel-${{ matrix.os }}
+        path: browser_batteries/dist/robotframework_browser_batteries-*-py3-none-any.whl
     - name: Package demoapp
       run: |
         inv demo-app
@@ -256,19 +262,21 @@ jobs:
         python-version: [3.9, 3.11]
         node-version: [20.x, 24.x]
         exclude:
-          - python-version: 3.9
-            node-version: 20.x
           - os: windows-latest
             python-version: 3.9
           - os: windows-latest
             node-version: 20.x
     steps:
       - uses: actions/checkout@v5
-      - name: Download package for install testing
+      - name: Download Browser package for install testing
         uses: actions/download-artifact@v5
         with:
           name: rfbrowser-wheel
-      - name: Download package for install testing
+      - name: Download BrowserBatteries package for install testing
+        uses: actions/download-artifact@v5
+        with:
+          name: BrowserBatteries-wheel-${{ matrix.os }}
+      - name: Download demo-app for install testing
         uses: actions/download-artifact@v5
         with:
           name: demoapp-${{ matrix.os }}
@@ -294,21 +302,20 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
       - name: Install Robot Framework Browser on unix-like
+        if: matrix.os != 'windows-latest'
         run: |
           pip install uv
           uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }} --system
-        if: matrix.os != 'windows-latest'
-      - name: Install Robot Framework Browser on windows
+      - name: Install Robot Framework BrowserBatteries on unix-like
+        if: matrix.os != 'windows-latest' && matrix.node-version == '20.x'
         run: |
-          pip install uv
-          uv pip install (gci *.whl)--python ${{ matrix.python-version }} --system
-        if: matrix.os == 'windows-latest'
+          uv pip install ./robotframework_browser_batteries-*-none-any.whl  --python ${{ matrix.python-version }} --system
       - name: Install node deps and python deps for test running
         run: |
           rfbrowser init
           uv pip install wheel --python ${{ matrix.python-version }} --system
           uv pip install -r Browser/dev-requirements.txt  --python ${{ matrix.python-version }} --system
-      - name: Test on unix-like os - serial mode
+      - name: Test on unix-like os - serial mode - Browser
         if: matrix.os == 'ubuntu-latest'
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
@@ -318,7 +325,17 @@ jobs:
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum invoke atest-robot --smoke
-      - name: Run Robot Framework tests on windows or macOS
+      - name: Test on unix-like os - serial mode - BrowserBatteries
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          SYS_VAR_CI_INSTALL_TEST: 1
+        run: |
+          echo ${{ matrix.os }}
+          rm -rf Browser
+          export DISPLAY=:99.0
+          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
+          xvfb-run --auto-servernum invoke atest-robot --smoke --batteries
+      - name: Run Robot Framework tests on windows or macOS Browser
         if: ${{ matrix.os != 'ubuntu-latest' }}
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
@@ -326,15 +343,28 @@ jobs:
           echo ${{ matrix.os }}
           Remove-Item -Path .\Browser -Force -Recurse
           invoke atest-robot --smoke
+      - name: Run Robot Framework tests on windows or macOS BrowserBatteries
+        if: ${{ matrix.os != 'ubuntu-latest' }}
+        env:
+          SYS_VAR_CI_INSTALL_TEST: 1
+        run: |
+          echo ${{ matrix.os }}
+          Remove-Item -Path .\Browser -Force -Recurse
+          invoke atest-robot --smoke --batteries
       - name: Uninstall on Linux or MacOS
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           rfbrowser clean-node
           uv pip uninstall robotframework-browser  --python ${{ matrix.python-version }} --system
+      - name: Uninstall BrowserBatteries on Linux or MacOS
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          rfbrowser clean-node
+          uv pip uninstall robotframework-browser-batteries  --python ${{ matrix.python-version }} --system
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
-          name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
+          name: ${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}-Clean_install_results
           path: atest/output
       - name: Github Job Summary
         if: ${{ always() }}
