@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/express": "^5.0.3",
-    "@types/react": "^19.1.11",
+    "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.8",
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.4",
