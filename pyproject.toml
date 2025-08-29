@@ -46,6 +46,10 @@ rfbrowser = "Browser.entry.__main__:cli"
 
 [project.optional-dependencies]
 tidy = ["robotframework-tidy>=4.12.0"]
+batteries = [
+  "robotframework-browser-batteries==19.7.2",
+  "tqdm==4.67.1"
+]
 
 [project.urls]
 Homepage = "https://robotframework-browser.org/"
@@ -64,6 +68,7 @@ exclude = [
   "node_modules*",
   "docs*",
   "node*",
+  "browser_batteries*",
 ]
 
 [tool.setuptools.package-data]

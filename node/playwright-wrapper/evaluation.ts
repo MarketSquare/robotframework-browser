@@ -555,6 +555,7 @@ export async function download(request: Request.DownloadOptions, state: Playwrig
             });
     };
     const downloadStarted = _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish);
+    logger.info(`Starting download from ${urlString} to ${saveAs}`);
     await page.evaluate(script, urlString);
     return await downloadStarted;
 }
