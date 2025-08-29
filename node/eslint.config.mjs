@@ -31,7 +31,7 @@ export default [{
 
         parserOptions: {
             project: "./tsconfig.json",
-            tsconfigRootDir: "./node",
+            tsconfigRootDir: __dirname,
         },
     },
 
