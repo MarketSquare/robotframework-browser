@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
 import zipfile
@@ -12,9 +13,12 @@ from datetime import datetime
 from pathlib import Path, PurePath
 from typing import Iterable
 from xml.etree import ElementTree as ET
+from typing import IO
 
 from invoke import Exit, task
 from invoke.context import Context
+import requests
+from tqdm import tqdm
 
 try:
     import bs4
@@ -29,6 +33,7 @@ except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
 ROOT_DIR = Path(os.path.dirname(__file__))
+PACKAGE_JSON = ROOT_DIR / "package.json"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 FLIP_RATE = ROOT_DIR / "flip_rate"
@@ -262,6 +267,102 @@ def _build_nodejs(c: Context, architecture: str):
         ".",
     ]
     c.run(" ".join(cmd))
+
+
+# From https://github.com/tqdm/tqdm?tab=readme-ov-file#hooks-and-callbacks
+
+
+def _download(link: str, file: IO[bytes]):
+    response = requests.get(link, stream=True)
+    with tqdm.wrapattr(
+        file,
+        "write",
+        miniters=1,
+        desc=link.split("/")[-1],
+        total=int(response.headers.get("content-length", 0)),
+    ) as fout:
+        for chunk in response.iter_content(chunk_size=4096):
+            fout.write(chunk)
+
+
+def _parse_cdn_mirror(data: str) -> list[str]:
+    found = False
+    content = data.splitlines(keepends=False)
+    playwright_cdn_mirrors = []
+    for line in content:
+        if "const PLAYWRIGHT_CDN_MIRRORS" in line:
+            found = True
+            continue
+        if found and "];" in line:
+            break
+        if found:
+            playwright_cdn_mirrors.append(line[line.index("'") + 1 : line.rindex("'")])
+    return playwright_cdn_mirrors
+
+
+def _append(line: str) -> bool:
+    valid_line = True
+    if "'<unknown>'" in line:
+        return False
+    if "undefined," in line:
+        return False
+    if "//" in line:
+        return False
+    if "bidi" in line:
+        return False
+    if "as DownloadPaths" in line:
+        return False
+    return True
+
+
+def _find_download_paths(data: str) -> dict:
+    found = False
+    download_paths = "{"
+
+    for line in data.splitlines(keepends=False):
+        if "const DOWNLOAD_PATHS:" in line:
+            found = True
+            continue
+        if found and "};" in line:
+            break
+        if found and _append(line):
+            download_paths += line.strip()
+    download_paths += "}"
+    download_paths = (
+        download_paths.replace("'", '"').replace(",},", "},").replace("},}", "}}")
+    )
+    return json.loads(download_paths)
+
+
+@task
+def cdn_mirror(c: Context):
+    """Copies CDN mirrors from Playwright to download browser binaries."""
+    pw_version = json.load(PACKAGE_JSON.open())["dependencies"]["playwright"]
+    pw_version = re.search(r"\d+\.\d+\.\d+", pw_version).group(0)
+    pw_version = f"v{pw_version}"
+    print(f"Playwright version: {pw_version}")
+    browser_url = (
+        "https://raw.githubusercontent.com/microsoft/playwright/"
+        f"{pw_version}/packages/playwright-core/browsers.json"
+    )
+    index_url = (
+        "https://raw.githubusercontent.com/microsoft/playwright/"
+        f"{pw_version}/packages/playwright-core/src/server/registry/index.ts"
+    )
+
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        _download(browser_url, tmpfile)
+        tmpfile.seek(0)
+        browser_json = json.loads(tmpfile.read().decode("utf-8"))
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        _download(index_url, tmpfile)
+        tmpfile.seek(0)
+        ts_data = tmpfile.read().decode("utf-8")
+        playwright_cdn_mirrors = _parse_cdn_mirror(ts_data)
+        print(f"Playwright CDN mirrors: {playwright_cdn_mirrors}")
+        download_paths = _find_download_paths(ts_data)
+        print(f"Download paths: {download_paths}")
+    print(f"Browsers.json keys: {browser_json['browsers']}")
 
 
 @task(clean, build)
@@ -828,7 +929,7 @@ def docs(c, version=None):
 
 def _copy_package_files():
     WRAPPER_DIR.mkdir(parents=True, exist_ok=True)
-    shutil.copy(ROOT_DIR / "package.json", WRAPPER_DIR)
+    shutil.copy(PACKAGE_JSON, WRAPPER_DIR)
     shutil.copy(ROOT_DIR / "package-lock.json", WRAPPER_DIR)
 
 
@@ -883,7 +984,7 @@ def release_notes(c, version=None, username=None, password=None, write=False):
 
 
 def _get_pw_version() -> str:
-    with open(ROOT_DIR / "package.json") as file:
+    with open(PACKAGE_JSON) as file:
         data = json.load(file)
     version = data["dependencies"]["playwright"]
     match = re.search(r"\d+\.\d+\.\d+", version)
@@ -902,9 +1003,8 @@ def version(c, version):
     py_version_file = ROOT_DIR / "Browser" / "version.py"
     py_version_matcher = re.compile("__version__ = .*")
     _replace_version(py_version_file, py_version_matcher, f'__version__ = "{version}"')
-    node_version_file = ROOT_DIR / "package.json"
     node_version_matcher = re.compile('"version": ".*"')
-    _replace_version(node_version_file, node_version_matcher, f'"version": "{version}"')
+    _replace_version(PACKAGE_JSON, node_version_matcher, f'"version": "{version}"')
     package_lock = ROOT_DIR / "package-lock.json"
     data = json.loads(package_lock.read_text())
     data["version"] = version

@@ -22,3 +22,4 @@ robotframework-crypto >= 0.3.0
 robotframework-archivelibrary >= 0.4.3
 uv >= 0.6.2
 build >= 1.2.2
+tqdm>=4.67.1
