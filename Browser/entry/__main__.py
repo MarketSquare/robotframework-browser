@@ -255,11 +255,26 @@ def _rfbrowser_init(
 
 
 def _walk_install_dir():
+    def mask(x: Path) -> bool:  # noqa: PLR0911
+        if "index.js" in x.parts:
+            return True
+        if "package-lock.json" in x.parts:
+            return True
+        if "package.json" in x.parts:
+            return True
+        if "node_modules" in x.parts[-1]:
+            return True
+        if "playwright" in x.parts:
+            return True
+        if "playwright-core" in x.parts:
+            return True
+        return "monocart-coverage-reports" in x.parts
+
     return seedir.seedir(
         INSTALLATION_DIR,
         indent=4,
-        printout=False,
-        exclude_folders=["__pycache__", ".git"],
+        mask=mask,
+        beyond="content",
         depthlimit=4,
         itemlimit=(None, 5),
     )
@@ -277,7 +292,7 @@ def _node_info():
 def _log_install_dir(error_msg=True):
     if error_msg:
         log(
-            f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for. "
+            f"Installation directory `{INSTALLATION_DIR!s}` does not contain the required files for "
             "unknown reason. Investigate the npm output and fix possible problems."
             "\nPrinting contents:\n"
         )
