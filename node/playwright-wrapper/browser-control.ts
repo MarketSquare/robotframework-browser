@@ -20,6 +20,16 @@ import { emptyWithLog, stringResponse } from './response-util';
 import { exists, findLocator } from './playwright-invoke';
 import { logger } from './browser_logger';
 
+const { program: pwProgram } =
+  require('playwright-core/lib/cli/program') as { program: import('commander').Command };
+
+export async function executePlaywright(request: Request.Json): Promise<Response.Empty> {
+  const args = JSON.parse(request.getBody());
+  pwProgram.exitOverride();
+  await pwProgram.parseAsync(args, { from: 'user' });
+  return emptyWithLog('Installed browsers');
+}
+
 export async function grantPermissions(request: Request.Permissions, state: PlaywrightState): Promise<Response.Empty> {
     const browserContext = state.getActiveContext();
     if (!browserContext) {
