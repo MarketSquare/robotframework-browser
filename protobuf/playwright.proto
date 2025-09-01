@@ -598,6 +598,7 @@ service  Playwright {
   rpc SaveStorageState(Request.FilePath) returns (Response.Empty);
 
   rpc GrantPermissions(Request.Permissions) returns (Response.Empty);
+  rpc ExecutePlaywright(Request.Json) returns (Response.Empty);
   rpc ClearPermissions(Request.Empty) returns (Response.Empty);
 
   /* Extension handling */
