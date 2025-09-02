@@ -28,4 +28,4 @@
 
 import { pino, stdTimeFunctions } from 'pino';
 
-export const logger = pino({ timestamp: stdTimeFunctions.isoTime });
+export const logger = pino({ timestamp: stdTimeFunctions.isoTime, level: process.env.PINO_LOG_LEVEL || 'info'});
