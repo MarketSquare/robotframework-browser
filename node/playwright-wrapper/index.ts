@@ -16,8 +16,7 @@ import { PlaywrightServer } from './grpc-service';
 import { Server, ServerCredentials, ServiceDefinition, UntypedServiceImplementation } from '@grpc/grpc-js';
 
 import { PlaywrightService } from './generated/playwright_grpc_pb';
-import { pino } from 'pino';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+import { logger } from './browser_logger';
 
 const args = process.argv.slice(2);
 

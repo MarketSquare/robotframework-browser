@@ -1,5 +1,4 @@
-import { pino } from 'pino';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+import { logger } from './browser_logger';
 
 // Idea and async logger method from https://github.com/norbornen/execution-time-decorator/
 // eslint-disable-next-line

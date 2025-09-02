@@ -31,8 +31,7 @@ import { ServerReadableStream, ServerUnaryCall, ServerWritableStream, sendUnaryD
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { class_async_logger } from './keyword-decorators';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
-import { pino } from 'pino';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+import { logger } from './browser_logger';
 
 @class_async_logger
 export class PlaywrightServer implements IPlaywrightServer {

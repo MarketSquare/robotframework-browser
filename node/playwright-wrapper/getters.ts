@@ -19,9 +19,7 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
 import { exists, findLocator } from './playwright-invoke';
-
-import { pino } from 'pino';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+import { logger } from './browser_logger';
 
 export async function getTitle(page: Page): Promise<Response.String> {
     const title = await page.title();
