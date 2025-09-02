@@ -43,8 +43,8 @@ import { exists } from './playwright-invoke';
 import * as path from 'path';
 import { CoverageReport, CoverageReportOptions } from 'monocart-coverage-reports';
 import { ServerWritableStream } from '@grpc/grpc-js';
-import strip from 'strip-comments';
 import { logger } from './browser_logger';
+import strip from 'strip-comments';
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
