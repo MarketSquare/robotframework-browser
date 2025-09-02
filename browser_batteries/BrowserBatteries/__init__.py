@@ -14,9 +14,9 @@
 
 
 import os
-from io import TextIOWrapper
 from pathlib import Path
 from subprocess import STDOUT, Popen
+from typing import TextIO
 
 from robot.api import logger
 
@@ -24,7 +24,7 @@ from Browser.utils.data_types import PlaywrightLogTypes
 
 
 def start_grpc_server(
-    logfile: TextIOWrapper,
+    logfile: TextIO,
     host: str,
     port: str,
     enable_playwright_debug: "PlaywrightLogTypes | bool",

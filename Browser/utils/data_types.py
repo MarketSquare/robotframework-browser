@@ -1396,29 +1396,37 @@ class TracingGroupMode(Enum):
     Playwright = auto()
 
 
-InstallableBrowser = Enum("InstallableBrowser", {
-    "chromium": "chromium",
-    "firefox": "firefox",
-    "webkit": "webkit",
-    "chromium-headless-shell": "chromium-headless-shell",
-    "chromium-tip-of-tree-headless-shell": "chromium-tip-of-tree-headless-shell",
-    "chrome": "chrome",
-    "chrome-beta": "chrome-beta",
-    "msedge": "msedge",
-    "msedge-beta": "msedge-beta",
-    "msedge-dev": "msedge-dev",
-})
-InstallableBrowser.__doc__ = """Enum of browsers that can be installed with `Install Browser` keyword."""
+InstallableBrowser = Enum(
+    "InstallableBrowser",
+    {
+        "chromium": "chromium",
+        "firefox": "firefox",
+        "webkit": "webkit",
+        "chromium-headless-shell": "chromium-headless-shell",
+        "chromium-tip-of-tree-headless-shell": "chromium-tip-of-tree-headless-shell",
+        "chrome": "chrome",
+        "chrome-beta": "chrome-beta",
+        "msedge": "msedge",
+        "msedge-beta": "msedge-beta",
+        "msedge-dev": "msedge-dev",
+    },
+)
+InstallableBrowser.__doc__ = (
+    """Enum of browsers that can be installed with `Install Browser` keyword."""
+)
 
 
-InstallationOptions = Enum("InstallationOptions", {
-    "with-deps": "--with-deps",
-    "dry-run": "--dry-run",
-    "list": "--list",
-    "force": "--force",
-    "only-shell": "--only-shell",
-    "no-shell": "--no-shell",
-})
+InstallationOptions = Enum(
+    "InstallationOptions",
+    {
+        "with-deps": "--with-deps",
+        "dry-run": "--dry-run",
+        "list": "--list",
+        "force": "--force",
+        "only-shell": "--only-shell",
+        "no-shell": "--no-shell",
+    },
+)
 InstallationOptions.__doc__ = """Enum of installation options for `Install Browser` keyword.
 
 - with-deps   install system dependencies for browsers

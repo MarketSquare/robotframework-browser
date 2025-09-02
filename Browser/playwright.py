@@ -18,7 +18,6 @@ import os
 import platform
 import time
 from functools import cached_property
-from io import TextIOWrapper
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 from typing import TYPE_CHECKING, Optional, TextIO, Union
@@ -141,7 +140,9 @@ class Playwright(LibraryComponent):
         self.port = port
         if start_grpc_server is None:
             return self._start_playwright_from_node(self._get_logfile(), host, port)
-        return start_grpc_server(self._get_logfile(), host, port, self.enable_playwright_debug)
+        return start_grpc_server(
+            self._get_logfile(), host, port, self.enable_playwright_debug
+        )
 
     def _start_playwright_from_node(
         self, logfile: TextIO, host: str, port: str
