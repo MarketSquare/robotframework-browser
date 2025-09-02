@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import base64
-from enum import Enum
 import json
 import uuid
 from collections.abc import Iterable
@@ -638,13 +637,18 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     @keyword
-    def install_browser(self, browser: Optional[InstallableBrowser] = None, *options: InstallationOptions):
+    def install_browser(
+        self,
+        browser: Optional[InstallableBrowser] = None,
+        *options: InstallationOptions,
+    ):
         """Executes a Playwright command with the given arguments."""
         with self.playwright.grpc_channel() as stub:
             try:
                 response = stub.ExecutePlaywright(
                     Request().Json(
-                        body=json.dumps(['install']
+                        body=json.dumps(
+                            ["install"]
                             + [opt.value for opt in options]
                             + ([browser.value] if browser else [])
                         )
@@ -653,4 +657,3 @@ class Control(LibraryComponent):
                 logger.info(response.log)
             except Exception:
                 logger.error("Error executing Playwright command")
-

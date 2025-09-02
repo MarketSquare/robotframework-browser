@@ -369,7 +369,12 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
 
 
 @cli.command()
-@click.argument("browser", type=click.Choice([b.value for b in InstallableBrowser]), required=False, default=None)
+@click.argument(
+    "browser",
+    type=click.Choice([b.value for b in InstallableBrowser]),
+    required=False,
+    default=None,
+)
 def install_browser(browser: Optional[str] = None, **flags):
     """Install Playwright Browsers.
 
@@ -380,10 +385,11 @@ def install_browser(browser: Optional[str] = None, **flags):
     selected = []
     for name, enabled in flags.items():
         if enabled:
-            key = name.replace("_", "-")           # e.g. with_deps -> with-deps
+            key = name.replace("_", "-")  # e.g. with_deps -> with-deps
             selected.append(InstallationOptions[key])
     from ..browser import Browser, PlaywrightLogTypes  # noqa: PLC0415
     from ..playwright import Playwright  # noqa: PLC0415
+
     os.environ["PINO_LOG_LEVEL"] = "error"
     browser_lib = Browser()
     browser_lib._playwright = Playwright(
@@ -393,9 +399,13 @@ def install_browser(browser: Optional[str] = None, **flags):
     )
     with contextlib.suppress(Exception):
         browser_lib.install_browser(browser_enum, *selected)
+
+
 for opt in InstallationOptions:
     param_name = opt.name.replace("-", "_")
-    install_browser = click.option(opt.value, param_name, is_flag=True, help=opt.name)(install_browser)
+    install_browser = click.option(opt.value, param_name, is_flag=True, help=opt.name)(
+        install_browser
+    )
 
 
 @cli.command()
