@@ -18,9 +18,7 @@ import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, stringResponse } from './response-util';
 import { exists, findLocator } from './playwright-invoke';
-import { pino } from 'pino';
-
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+import { logger } from './browser_logger';
 
 export async function grantPermissions(request: Request.Permissions, state: PlaywrightState): Promise<Response.Empty> {
     const browserContext = state.getActiveContext();

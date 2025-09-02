@@ -20,9 +20,7 @@ import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog } from './response-util';
 import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
 import { getSelections } from './getters';
-
-import pino from 'pino';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+import { logger } from './browser_logger';
 
 export async function selectOption(
     request: Request.SelectElementSelector,

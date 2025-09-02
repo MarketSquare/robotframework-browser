@@ -43,10 +43,8 @@ import { exists } from './playwright-invoke';
 import * as path from 'path';
 import { CoverageReport, CoverageReportOptions } from 'monocart-coverage-reports';
 import { ServerWritableStream } from '@grpc/grpc-js';
-import { pino } from 'pino';
 import strip from 'strip-comments';
-
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+import { logger } from './browser_logger';
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
