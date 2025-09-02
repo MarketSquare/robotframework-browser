@@ -20,7 +20,7 @@ import time
 from functools import cached_property
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, TextIO, Union
 
 import grpc  # type: ignore
 
@@ -47,7 +47,7 @@ class Playwright(LibraryComponent):
         enable_playwright_debug: Union[PlaywrightLogTypes, bool],
         host: Optional[str] = None,
         port: Optional[int] = None,
-        playwright_log: Union[Path, None] = Path(Path.cwd()),
+        playwright_log: Optional[Union[Path, TextIO]] = Path(Path.cwd()),
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
@@ -98,6 +98,13 @@ class Playwright(LibraryComponent):
             f"\nInstallation path: {installation_dir}"
         )
 
+    def _get_logfile(self) -> TextIO:
+        if isinstance(self.playwright_log, Path):
+            return self.playwright_log.open("w", encoding="utf-8")
+        if self.playwright_log is None:
+            return Path(os.devnull).open("w", encoding="utf-8")
+        return self.playwright_log
+
     def start_playwright(self) -> Optional[Popen]:
         env_node_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
         existing_port = self.port or env_node_port
@@ -117,10 +124,6 @@ class Playwright(LibraryComponent):
         current_dir = Path(__file__).parent
         workdir = current_dir / "wrapper"
         playwright_script = workdir / "index.js"
-        if self.playwright_log:
-            logfile = self.playwright_log.open("w", encoding="utf-8")
-        else:
-            logfile = Path(os.devnull).open("w", encoding="utf-8")  # noqa: SIM115
         host = str(self.host) if self.host is not None else "127.0.0.1"
         port = str(find_free_port())
         if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
@@ -147,7 +150,7 @@ class Playwright(LibraryComponent):
             shell=False,
             cwd=workdir,
             env=os.environ,
-            stdout=logfile,
+            stdout=self._get_logfile(),
             stderr=STDOUT,
         )
 

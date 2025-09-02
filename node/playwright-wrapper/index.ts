@@ -17,7 +17,7 @@ import { Server, ServerCredentials, ServiceDefinition, UntypedServiceImplementat
 
 import { PlaywrightService } from './generated/playwright_grpc_pb';
 import { pino } from 'pino';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime, level: process.env.PINO_LOG_LEVEL || 'info' });
 
 const args = process.argv.slice(2);
 
@@ -40,5 +40,4 @@ server.addService(
 
 server.bindAsync(`${host}:${port}`, ServerCredentials.createInsecure(), () => {
     logger.info(`Listening on ${host}:${port}`);
-    server.start();
 });

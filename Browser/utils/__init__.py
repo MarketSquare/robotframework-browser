@@ -37,6 +37,8 @@ from .data_types import (
     HighLightElement,
     HighlightMode,
     HttpCredentials,
+    InstallableBrowser,
+    InstallationOptions,
     LambdaFunction,
     NewPageDetails,
     Media,
