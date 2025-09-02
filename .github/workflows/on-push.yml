@@ -194,24 +194,19 @@ jobs:
       with:
         node-version: 22.x
         cache: 'npm'
-    - name: Install nodejs dependencies
-      env:
-        PLAYWRIGHT_BROWSERS_PATH: 0
-      run: |
-        npm ci
-        npx playwright install --with-deps
     - name: Set up Python 3.12
       uses: actions/setup-python@v6
       with:
         python-version: 3.12
         cache: 'pip'
-    - name: Install python dependencies
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install uv
         uv pip install wheel --python 3.12  --system --verbose
         uv pip install -r Browser/dev-requirements.txt --python 3.12 --system
         uv pip install -r pyproject.toml  --python 3.12  --system
+        inv deps
     - name: Build Protos and check with tsc
       if: matrix.os == 'ubuntu-latest'
       run: |
