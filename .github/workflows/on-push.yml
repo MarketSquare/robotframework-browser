@@ -17,72 +17,6 @@ env:
   SYS_VAR_CI_INSTALL_TEST: 0
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ "ubuntu-latest", "windows-latest" ]
-    steps:
-    - uses: actions/checkout@v5
-    - name: Use Node.js
-      uses: actions/setup-node@v5
-      with:
-        node-version: 22.x
-        cache: 'npm'
-    - name: Install nodejs dependencies
-      env:
-        PLAYWRIGHT_BROWSERS_PATH: 0
-      run: |
-        npm ci
-        npx playwright install --with-deps
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v6
-      with:
-        python-version: 3.12
-        cache: 'pip'
-    - name: Install python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install uv
-        uv pip install wheel --python 3.12  --system --verbose
-        uv pip install -r Browser/dev-requirements.txt --python 3.12 --system
-        uv pip install -r pyproject.toml  --python 3.12  --system
-    - name: Build Protos and check with tsc
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        inv node-build
-        python -m Browser.gen_stub
-    - name: Build test app
-      run: |
-        inv create-test-app
-    - name: Create Distributable Browser Package
-      run: |
-        inv docs
-        inv create-package
-    - uses: actions/upload-artifact@v4
-      name: Upload rfbrowser-wheel
-      if: matrix.os == 'ubuntu-latest'
-      with:
-        name: rfbrowser-wheel
-        path: dist/robotframework_browser-*-py3-none-any.whl
-        if-no-files-found: error
-    - name: Create Distributable BrowserBatteries Package
-      run: |
-        inv package-nodejs x64
-    - uses: actions/upload-artifact@v4
-      name: Upload BrowserBatteries-wheel
-      with:
-        name: BrowserBatteries-wheel-${{ matrix.os }}
-        path: browser_batteries/dist/robotframework_browser_batteries-*-py3-none-any.whl
-        if-no-files-found: error
-    - name: Package demoapp
-      run: |
-        inv demo-app
-    - uses: actions/upload-artifact@v4
-      with:
-        name: demoapp-${{ matrix.os }}
-        path: zip_results/demoapp
-        if-no-files-found: error
   testing:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -248,6 +182,72 @@ jobs:
       run: |
         python -m GHAReports --robotlog atest/output/output.xml
 
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ "ubuntu-latest", "windows-latest" ]
+    steps:
+    - uses: actions/checkout@v5
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    - name: Install nodejs dependencies
+      env:
+        PLAYWRIGHT_BROWSERS_PATH: 0
+      run: |
+        npm ci
+        npx playwright install --with-deps
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: 3.12
+        cache: 'pip'
+    - name: Install python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install uv
+        uv pip install wheel --python 3.12  --system --verbose
+        uv pip install -r Browser/dev-requirements.txt --python 3.12 --system
+        uv pip install -r pyproject.toml  --python 3.12  --system
+    - name: Build Protos and check with tsc
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        inv node-build
+        python -m Browser.gen_stub
+    - name: Build test app
+      run: |
+        inv create-test-app
+    - name: Create Distributable Browser Package
+      run: |
+        inv docs
+        inv create-package
+    - uses: actions/upload-artifact@v4
+      name: Upload rfbrowser-wheel
+      if: matrix.os == 'ubuntu-latest'
+      with:
+        name: rfbrowser-wheel
+        path: dist/robotframework_browser-*-py3-none-any.whl
+        if-no-files-found: error
+    - name: Create Distributable BrowserBatteries Package
+      run: |
+        inv package-nodejs x64
+    - uses: actions/upload-artifact@v4
+      name: Upload BrowserBatteries-wheel
+      with:
+        name: BrowserBatteries-wheel-${{ matrix.os }}
+        path: browser_batteries/dist/robotframework_browser_batteries-*-py3-none-any.whl
+        if-no-files-found: error
+    - name: Package demoapp
+      run: |
+        inv demo-app
+    - uses: actions/upload-artifact@v4
+      with:
+        name: demoapp-${{ matrix.os }}
+        path: zip_results/demoapp
+        if-no-files-found: error
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
@@ -272,6 +272,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: BrowserBatteries-wheel-${{ matrix.os }}
+          path: zip_results/browser_batteries
       - name: Download demo-app for install testing
         uses: actions/download-artifact@v5
         with:
@@ -304,10 +305,17 @@ jobs:
       - name: Install Robot Framework BrowserBatteries on unix-like
         if: matrix.node-version == '22.x'
         run: |
-          uv pip install ./robotframework_browser_batteries-*-none-any.whl  --python ${{ matrix.python-version }} --system
-      - name: Install node deps and python deps for test running
+          uv pip install ./zip_results/browser_batteries/robotframework_browser_batteries-*-none-any.whl  --python ${{ matrix.python-version }} --system
+      - name: Install Robot Framework Browser install-browser
+        if: matrix.node-version == '22.x'
+        run: |
+          rfbrowser install-browser
+      - name: Install Robot Framework Browser init
+        if: matrix.node-version != '22.x'
         run: |
           rfbrowser init
+      - name: Install node deps and python deps for test running
+        run: |
           uv pip install wheel --python ${{ matrix.python-version }} --system
           uv pip install -r Browser/dev-requirements.txt  --python ${{ matrix.python-version }} --system
       - name: Test on unix-like os - serial mode - BrowserBatteries
@@ -320,6 +328,17 @@ jobs:
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum invoke atest-robot --smoke --batteries
+      - name: Test on unix-like os - serial mode - BrowserBatteries
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.x'
+        env:
+          SYS_VAR_CI_INSTALL_TEST: 1
+        run: |
+          rm -rf Browser
+          rm -rf browser_batteries
+          rm -rf node_modules/playwrigh*
+          export DISPLAY=:99.0
+          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
+          xvfb-run --auto-servernum invoke atest-robot --smoke
       - name: Test on unix-like os - serial mode - Browser
         if: matrix.os == 'ubuntu-latest' && matrix.node-version != '22.x'
         env:
@@ -330,19 +349,21 @@ jobs:
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum invoke atest-robot --smoke
       - name: Run Robot Framework tests on windows on BrowserBatteries
-        if: ${{ matrix.os != 'ubuntu-latest' }} && matrix.node-version == '22.x'
+        if: matrix.os == 'windows-latest' && matrix.node-version == '22.x'
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           Remove-Item -Path .\Browser -Force -Recurse
           Remove-Item -Path .\browser_batteries -Force -Recurse
-          invoke atest-robot --smoke --batteries
+          Remove-Item -Path .\node_modules\playwrigh* -Force -Recurse
+          invoke atest-robot --smoke
       - name: Run Robot Framework tests on windows on Browser
-        if: ${{ matrix.os != 'ubuntu-latest' }} && matrix.node-version != '22.x'
+        if: matrix.os == 'windows-latest' && matrix.node-version != '22.x'
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           Remove-Item -Path .\Browser -Force -Recurse
+          Remove-Item -Path .\browser_batteries -Force -Recurse
           invoke atest-robot --smoke
       - name: Uninstall Browser
         run: |
