@@ -811,6 +811,9 @@ def package(c: Context):
 @task(clean, build)
 def package_nodejs(c: Context, architecture: str):
     """Build Python wheel from BrowserBattiers release."""
+    pw_browser_bin = NODE_MODULES / "playwright-core" / ".local-browsers"
+    print(f"Removing existing Playwright browsers in {pw_browser_bin}")
+    shutil.rmtree(pw_browser_bin, ignore_errors=True)
     _build_nodejs(c, architecture)
     with c.cd(BROWSER_BATTERIES_DIR):
         print(f"Building Browser Batteries package in {BROWSER_BATTERIES_DIR}")
