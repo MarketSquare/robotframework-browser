@@ -390,7 +390,10 @@ def install_browser(browser: Optional[str] = None, **flags):
     from ..browser import Browser, PlaywrightLogTypes  # noqa: PLC0415
     from ..playwright import Playwright  # noqa: PLC0415
 
-    os.environ["PINO_LOG_LEVEL"] = "error"
+    os.environ["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "error"
+    if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+        pw_browsers_path = NODE_MODULES / "playwright-core" / ".local-browsers"
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(pw_browsers_path)
     browser_lib = Browser()
     browser_lib._playwright = Playwright(
         library=browser_lib,
