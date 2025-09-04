@@ -54,6 +54,9 @@
   },
   "pkg": {
     "scripts": "Browser/wrapper/*.js",
-    "assets": "Browser/wrapper/static/*"
+    "assets": [
+      "Browser/wrapper/static/*",
+      "node_modules/playwright-core/**/*"
+    ]
   }
 }
