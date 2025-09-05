@@ -298,8 +298,13 @@ jobs:
           pip install uv
           uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }} --system
       - name: Install Robot Framework BrowserBatteries on unix-like
-        if: matrix.node-version == '22.x'
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.x'
         run: |
+          uv pip install ./zip_results/browser_batteries/robotframework_browser_batteries-*-none-any.whl  --python ${{ matrix.python-version }} --system
+      - name: Install Robot Framework BrowserBatteries on windows
+        if: matrix.os == 'windows-latest' && matrix.node-version == '22.x'
+        run: |
+          dir ./zip_results/browser_batteries
           uv pip install ./zip_results/browser_batteries/robotframework_browser_batteries-*-none-any.whl  --python ${{ matrix.python-version }} --system
       - name: Install Robot Framework Browser install-browser
         if: matrix.node-version == '22.x'
@@ -321,17 +326,7 @@ jobs:
           rm -rf Browser
           rm -rf browser_batteries
           export DISPLAY=:99.0
-          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum invoke atest-robot --smoke --batteries
-      - name: Test on unix-like os - serial mode - BrowserBatteries
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.x'
-        env:
-          SYS_VAR_CI_INSTALL_TEST: 1
-        run: |
-          rm -rf Browser
-          rm -rf browser_batteries
           rm -rf node_modules/playwrigh*
-          export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum invoke atest-robot --smoke
       - name: Test on unix-like os - serial mode - Browser
@@ -340,6 +335,7 @@ jobs:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           rm -rf Browser
+          rm -rf browser_batteries
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum invoke atest-robot --smoke
