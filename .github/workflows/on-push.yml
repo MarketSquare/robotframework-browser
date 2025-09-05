@@ -293,10 +293,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-      - name: Install Robot Framework Browser
+      - name: Install Robot Framework Browser on unix-like
+        if: matrix.os != 'windows-latest'
         run: |
           pip install uv
           uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }} --system
+      - name: Install Robot Framework Browser on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          pip install uv
+          dir .
+          uv pip install (Resolve-Path ./robotframework_browser-*-py3-none-any.whl)  --python ${{ matrix.python-version }} --system
       - name: Install Robot Framework BrowserBatteries on unix-like
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.x'
         run: |
@@ -305,7 +312,7 @@ jobs:
         if: matrix.os == 'windows-latest' && matrix.node-version == '22.x'
         run: |
           dir ./zip_results/browser_batteries
-          uv pip install ./zip_results/browser_batteries/robotframework_browser_batteries-*-none-any.whl  --python ${{ matrix.python-version }} --system
+          uv pip install (Resolve-Path ./zip_results/browser_batteries/robotframework_browser_batteries-*-none-any.whl)  --python ${{ matrix.python-version }} --system
       - name: Install Robot Framework Browser install-browser
         if: matrix.node-version == '22.x'
         run: |
@@ -346,7 +353,6 @@ jobs:
         run: |
           Remove-Item -Path .\Browser -Force -Recurse
           Remove-Item -Path .\browser_batteries -Force -Recurse
-          Remove-Item -Path .\node_modules\playwrigh* -Force -Recurse
           invoke atest-robot --smoke
       - name: Run Robot Framework tests on windows on Browser
         if: matrix.os == 'windows-latest' && matrix.node-version != '22.x'
