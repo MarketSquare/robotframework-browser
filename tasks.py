@@ -245,10 +245,11 @@ def _os_platform() -> str:
 
 def _build_nodejs(c: Context, architecture: str):
     """Build NodeJS binary for GRPC server."""
-    print(f"Build NodeJS binary to {NODE_BINARY_PATH}.")
+    print(f"Build NodeJS binary to '{NODE_BINARY_PATH}'.")
     _copy_package_files()
     target = f"node22-{_os_platform()}-{architecture}"
     print(f"Target: {target}")
+    grpc_server = NODE_BINARY_PATH.joinpath("grpc_server")
     cmd = [
         "node",
         "node_modules/@yao-pkg/pkg/lib-es5/bin.js",
@@ -256,10 +257,15 @@ def _build_nodejs(c: Context, architecture: str):
         "--targets",
         target,
         "--output",
-        str(NODE_BINARY_PATH.joinpath("grpc_server")),
+        str(grpc_server),
         ".",
     ]
     c.run(" ".join(cmd))
+    if grpc_server.exists():
+        print(f"GRPC server binary created at '{grpc_server}'.")
+    else:
+        print(f"Failed to create GRPC server binary at '{grpc_server}'.")
+        sys.exit(1)
 
 
 @task(clean, build)
