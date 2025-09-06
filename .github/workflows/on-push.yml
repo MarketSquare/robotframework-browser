@@ -216,6 +216,7 @@ jobs:
       run: |
         inv create-test-app
     - name: Create Distributable Browser Package
+      if: matrix.os == 'ubuntu-latest'
       run: |
         inv docs
         inv create-package
@@ -302,7 +303,6 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           pip install uv
-          dir .
           uv pip install (Resolve-Path ./robotframework_browser-*-py3-none-any.whl)  --python ${{ matrix.python-version }} --system
       - name: Install Robot Framework BrowserBatteries on unix-like
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.x'
