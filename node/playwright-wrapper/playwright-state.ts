@@ -94,7 +94,7 @@ export async function initializeExtension(
     state: PlaywrightState,
 ): Promise<Response.Keywords> {
     logger.info(`Initializing extension: ${request.getPath()}`);
-    const extension: Record<string, (...args: unknown[]) => unknown> = eval('require')(request.getPath());
+    const extension: Record<string, (...args: unknown[]) => unknown> = require(request.getPath()); // eslint-disable-line
     state.extensions.push(extension);
     const kws = Object.keys(extension).filter((key) => extension[key] instanceof Function && !key.startsWith('__'));
     logger.info(`Adding ${kws.length} keywords from JS Extension`);
@@ -1135,12 +1135,19 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     } else {
         logger.info('v8 coverage disabled');
     }
-
-    const mcr = new CoverageReport(options);
-    if (configFile) {
-        logger.info({ 'Config file: ': configFile });
-        await mcr.loadConfig(configFile);
+    let mergedOptions: CoverageReportOptions;
+    if (fs.existsSync(configFile)) {
+        logger.info({ 'Config file exists: ': configFile });
+        const configFileModule = require(configFile);  // eslint-disable-line
+        mergedOptions = { ...configFileModule, ...options };
+        console.log({ 'Merged options: ': mergedOptions });
+    } else {
+        console.log({ 'No config file found': configFile });
+        mergedOptions = { ...options };
     }
+
+    const mcr = new CoverageReport(mergedOptions);
+
     await mcr.add(allCoverage);
     await mcr.generate();
     let message = 'Coverage stopped and report generated';
