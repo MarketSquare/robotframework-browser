@@ -34,7 +34,7 @@ UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 dist_dir = ROOT_DIR / "dist"
 build_dir = ROOT_DIR / "build"
 BROWSER_BATTERIES_DIR = ROOT_DIR / "browser_batteries"
-NODE_BINARY_PATH = BROWSER_BATTERIES_DIR / "BrowserBatteries" / "bin"
+BROWSER_BATTERIES_BIN_DIR = BROWSER_BATTERIES_DIR / "BrowserBatteries" / "bin"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
 PYTHON_SRC_DIR = ROOT_DIR / "Browser"
 python_protobuf_dir = PYTHON_SRC_DIR / "generated"
@@ -133,7 +133,7 @@ def clean(c):
         ZIP_DIR,
         Path("./.mypy_cache"),
         PYTHON_SRC_DIR / "wrapper",
-        NODE_BINARY_PATH,
+        BROWSER_BATTERIES_BIN_DIR,
         BROWSER_BATTERIES_DIR / "dist",
     ]:
         if target.exists():
@@ -245,11 +245,12 @@ def _os_platform() -> str:
 
 def _build_nodejs(c: Context, architecture: str):
     """Build NodeJS binary for GRPC server."""
-    print(f"Build NodeJS binary to '{NODE_BINARY_PATH}'.")
+    print(f"Build NodeJS binary to '{BROWSER_BATTERIES_BIN_DIR}'.")
     _copy_package_files()
     target = f"node22-{_os_platform()}-{architecture}"
     print(f"Target: {target}")
-    grpc_server = NODE_BINARY_PATH.joinpath("grpc_server")
+    grpc_server_bin = "grpc_server.exe" if os.name == "nt" else "grpc_server"
+    grpc_server = BROWSER_BATTERIES_BIN_DIR.joinpath(grpc_server_bin)
     cmd = [
         "node",
         "node_modules/@yao-pkg/pkg/lib-es5/bin.js",
