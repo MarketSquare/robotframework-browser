@@ -31,7 +31,8 @@ def start_grpc_server(
 ) -> Popen:
     """Run the prebuilt gRPC server."""
     current_dir = Path(__file__).parent
-    playwright_script = current_dir / "bin" / "grpc_server"
+    grpc_server = "grpc_server.exe" if os.name == "nt" else "grpc_server"
+    playwright_script = current_dir / "bin" / grpc_server
     logger.info(f"Starting GRPC process {playwright_script} using at {host}:{port}")
     args = [str(playwright_script), host, port]
     workdir = current_dir / "bin"
