@@ -250,6 +250,7 @@ export class PlaywrightServer implements IPlaywrightServer {
     newBrowser = this.wrapping(playwrightState.newBrowser);
     startCoverage = this.wrapping(playwrightState.startCoverage);
     stopCoverage = this.wrapping(playwrightState.stopCoverage);
+    mergeCoverage = this.wrapping(playwrightState.mergeCoverage);
     launchBrowserServer = this.wrapping(playwrightState.launchBrowserServer);
     newPersistentContext = this.wrapping(playwrightState.newPersistentContext);
     connectToBrowser = this.wrapping(playwrightState.connectToBrowser);

@@ -40,6 +40,14 @@ message Request {
     bool raw = 6;
   }
 
+  message CoverageMerge {
+    string input_folder = 1;
+    string output_folder = 2;
+    string config = 3;
+    string name = 4;
+    repeated string reports = 5;
+  }
+
   message TraceGroup {
     string name = 1;
     string file = 2;
@@ -611,4 +619,5 @@ service  Playwright {
   /* Coverage */
   rpc StartCoverage(Request.CoverageStart) returns (Response.Empty);
   rpc StopCoverage(Request.Empty) returns (Response.String);
+  rpc MergeCoverage(Request.CoverageMerge) returns (Response.Empty);
 }
