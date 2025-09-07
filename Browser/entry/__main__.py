@@ -30,6 +30,7 @@ from .constant import (
     INSTALLATION_DIR,
     NODE_MODULES,
     SHELL,
+    get_browser_lib,
     log,
     write_marker,
 )
@@ -387,19 +388,10 @@ def install_browser(browser: Optional[str] = None, **flags):
         if enabled:
             key = name.replace("_", "-")  # e.g. with_deps -> with-deps
             selected.append(InstallationOptions[key])
-    from ..browser import Browser, PlaywrightLogTypes  # noqa: PLC0415
-    from ..playwright import Playwright  # noqa: PLC0415
-
-    os.environ["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "error"
     if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
         pw_browsers_path = NODE_MODULES / "playwright-core" / ".local-browsers"
         os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(pw_browsers_path)
-    browser_lib = Browser()
-    browser_lib._playwright = Playwright(
-        library=browser_lib,
-        enable_playwright_debug=PlaywrightLogTypes.library,
-        playwright_log=sys.stdout,
-    )
+    browser_lib = get_browser_lib()
     with contextlib.suppress(Exception):
         browser_lib.install_browser(browser_enum, *selected)
 
