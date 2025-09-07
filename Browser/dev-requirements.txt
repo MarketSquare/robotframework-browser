@@ -1,24 +1,24 @@
 invoke >= 2.2.0
-pytest >= 7.4.2
+pytest >= 8.4.2
 pytest-watch >= 4.2.0
-mypy >= 1.8.0
+mypy >= 1.17.1
 mypy-protobuf >= 3.5.0
-ruff>=0.12.0
-wheel>=0.40.0
-robotframework-pabot >= 4.0.0
-twine >= 4.0.2
+ruff>=0.12.12
+wheel>=0.45.1
+robotframework-pabot >= 5.0.0
+twine >= 6.2.0
 robotstatuschecker >= 4.1.1
 rellu >= 0.7
 approvaltests == 15.3.2
 pytest-mock==3.15.0
 Pillow==11.3.0
 # Required for injecting google analytics tags on release
-beautifulsoup4 >= 4.12.2
-psutil >= 5.9.4
-coverage >= 7.2.3
-robotframework-tidy >= 4.17.0
-python-dateutil >= 2.8.2
-robotframework-crypto >= 0.3.0
+beautifulsoup4 >= 4.13.5
+psutil >= 7.0.0
+coverage >= 7.10.6
+robotframework-tidy >= 4.18.0
+python-dateutil >= 2.9.0
+robotframework-crypto >= 0.4.2
 robotframework-archivelibrary >= 0.4.3
-uv >= 0.6.2
-build >= 1.2.2
+uv >= 0.8.15
+build >= 1.3.0
