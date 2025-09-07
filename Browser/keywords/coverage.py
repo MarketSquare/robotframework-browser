@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import shutil
+import tempfile
+from collections.abc import Iterator
 from os import PathLike
 from pathlib import Path
 from typing import Optional
@@ -112,3 +115,106 @@ class Coverage(LibraryComponent):
         file_path = coverage_index_html[0]
         logger.info(f"Coverage report saved to {file_path.as_uri()}")
         return file_path
+
+    @keyword(tags=("Setter", "Coverage"))
+    def merge_coverage_reports(
+        self,
+        input_folder: Path,
+        output_folder: Path,
+        config_file: Optional[Path] = None,
+        name: Optional[str] = None,
+        reports: Optional[list[str]] = None,
+    ) -> Path:
+        """Combines multiple raw coverage reports to single report.
+
+        | =Arguments= | =Description= |
+        | ``input_folder`` | Path to the base folder where the raw coverage reports are located. |
+        | ``output_folder`` | Path to the folder where the combined report is stored. |
+        | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file] |
+        | ``name`` | Optional name for the combined report. |
+        | ``reports`` | Optional report format (default is "v8"). |
+
+        The input_folder argument is the base folder where the coverage reports are
+        located. Keyword will look into each subfolder and if the subfolder
+        contains "raw" folder, it will use data from the "raw" folder for
+        combined reports.
+
+        The output_folder argument is the folder where the combined report is saved.
+        If folder does not exist, it is created. If folder exists, it's content
+        is deleted before report is created.
+
+        The output_folder and input_folder must be full paths to the folders.
+
+        The config_file argument is optional and can be used to provide a path to a
+        monocart-coverage-reports options file. For more details see:
+        https://www.npmjs.com/package/monocart-coverage-reports#config-file
+
+        The name argument is optional and can be used to provide a name for the
+        combined report.
+
+        The reports argument is optional and can be used to provide a list of
+        reporters to create. Default is 'v8'.
+
+        The keyword combines only the raw reports. To get raw reports,
+        `Start Coverage` keyword must be called with `raw=True` argument.
+        Keyword should be used when there is a need to combine multiple reports
+        to single report. For example, when tests are run in multiple pages, the
+        example in below demonstrates how to use the keyword.
+
+        Example:
+        | `New Page`
+        | `Start Coverage`
+        | `Go To`    ${LOGIN_URL}
+        | Test Feature X In The Page
+        | `Stop Coverage`
+        | `New Page`
+        | `Start Coverage`
+        | `Go To`    ${LOGIN_URL}
+        | Test Feature Y In The Page
+        | `Stop Coverage`
+        | `Merge Coverage Reports`    ${OUTPUT_DIR}/browser/coverage    ${OUTPUT_DIR}/browser/combined-coverage
+        """
+        logger.info(
+            f"Combining coverage reports from {input_folder} to {output_folder}"
+        )
+        if config_file is not None and config_file.is_file():
+            logger.info(f"Using configuration from {config_file}")
+        if config_file is not None and not config_file.is_file():
+            raise FileNotFoundError(f"Configuration file {config_file} does not exist")
+        if output_folder.exists():
+            logger.warn(
+                f"Output folder {output_folder} already exists, deleting it first"
+            )
+            shutil.rmtree(output_folder)
+        raw_reports = False
+        reports = reports or ["v8"]
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            for raw_file in _find_coverage_files(input_folder):
+                shutil.copy(raw_file, tmp_path.joinpath(raw_file.name))
+                raw_reports = True
+            if not raw_reports:
+                logger.error(f"No raw reports found from {input_folder}")
+                raise FileNotFoundError(f"No raw reports found from {input_folder}")
+            with self.playwright.grpc_channel() as stub:
+                response = stub.MergeCoverage(
+                    Request.CoverageMerge(
+                        input_folder=str(tmp_path),
+                        output_folder=str(output_folder),
+                        config=str(config_file) if config_file else "",
+                        name=name if name else "",
+                        reports=reports,
+                    )
+                )
+                logger.info(response.log)
+        return output_folder
+
+
+def _find_coverage_files(input_folder: Path) -> Iterator:
+    for file in input_folder.rglob("*"):
+        if file.is_dir() and file.joinpath("raw").is_dir():
+            raw_dir = file.joinpath("raw")
+            logger.debug(f"Raw folder {raw_dir} found")
+            for raw_file in raw_dir.iterdir():
+                if raw_file.is_file():
+                    yield raw_file

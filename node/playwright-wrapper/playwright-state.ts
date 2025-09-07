@@ -1156,3 +1156,55 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     }
     return stringResponse(outputDir, message);
 }
+
+// eslint-disable-next-line
+export async function mergeCoverage(request: Request.CoverageMerge, state: PlaywrightState): Promise<Response.Empty> {
+    state.getActivePage(); // just to check if a browser is open
+    const inputFolder = request.getInputFolder();
+    const outputFolder = request.getOutputFolder();
+    const configFile = request.getConfig();
+    const name = request.getName();
+    const reports = request.getReportsList();
+    if (!inputFolder) {
+        throw Error('No input folders specified');
+    }
+    if (!outputFolder) {
+        throw Error('No output folder specified');
+    }
+    const options: CoverageReportOptions = {
+        name: name,
+        inputDir: inputFolder,
+        outputDir: outputFolder,
+    };
+    logger.info(`Reports to generate: ${reports}`);
+    if (reports && reports.length > 0) {
+        options.reports = reports.map((r) => [r]);
+    }
+    const defaultName = 'Browser library Merged Coverage Report';
+    let mergedOptions: CoverageReportOptions;
+    if (fs.existsSync(configFile)) {
+        logger.info(`Config file exists:  ${configFile}`);
+        const configFileModule = await eval('require')(configFile);
+        logger.info(`configFileModule options: ${JSON.stringify(configFileModule)}`);
+        mergedOptions = { ...configFileModule, ...options };
+        if (reports && reports.length === 1 && reports[0] === 'v8') {
+            mergedOptions.reports = [['v8'], configFileModule.reports || []].flat();
+        }
+        if (mergedOptions.name === '' && configFileModule.name) {
+            mergedOptions.name = configFileModule.name;
+        } else {
+            mergedOptions.name = defaultName;
+        }
+        logger.info(`Merged options: ${JSON.stringify(mergedOptions)}`);
+    } else {
+        logger.info(`No config file found: ${configFile}`);
+        mergedOptions = { ...options };
+        if (mergedOptions.name === '') {
+            mergedOptions.name = defaultName;
+        }
+    }
+    logger.info(`Final options: ${JSON.stringify(mergedOptions)}`);
+    logger.info(`Merging coverage from ${inputFolder} into ${outputFolder}`);
+    await new CoverageReport(mergedOptions).generate();
+    return emptyWithLog(`Coverage merged from ${inputFolder} into ${outputFolder}`);
+}
