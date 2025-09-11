@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import time
 import traceback
 import zipfile
@@ -247,7 +248,7 @@ def _os_platform() -> str:
 
 def _build_nodejs(c: Context, architecture: str):
     """Build NodeJS binary for GRPC server."""
-    print(f"Build NodeJS binary to '{BROWSER_BATTERIES_BIN_DIR}'.")
+    print(f"Build NodeJS binary to '{BROWSER_BATTERIES_BIN_DIR}' with architecture '{architecture}'.")
     _copy_package_files()
     target = f"node22-{_os_platform()}-{architecture}"
     print(f"Target: {target}")
@@ -851,16 +852,27 @@ def package(c: Context):
 
 
 @task(clean, build)
-def package_nodejs(c: Context, architecture: str):
+def package_nodejs(c: Context, architecture: str | None = None):
     """Build Python wheel from BrowserBattiers release."""
     pw_browser_bin = NODE_MODULES / "playwright-core" / ".local-browsers"
     print(f"Removing existing Playwright browsers in {pw_browser_bin}")
     shutil.rmtree(pw_browser_bin, ignore_errors=True)
+    architecture = architecture or platform.machine().lower()
     _build_nodejs(c, architecture)
     with c.cd(BROWSER_BATTERIES_DIR):
         print(f"Building Browser Batteries package in {BROWSER_BATTERIES_DIR}")
         c.run("python -m build")
 
+
+@task
+def foo(c):
+    _os_platform = sysconfig.get_platform()
+    _os_platform = _os_platform.replace("-", "_").replace(".", "_").replace(" ", "_")
+    dirst_dir = BROWSER_BATTERIES_DIR.joinpath("dist")
+    wheel_pkg = dirst_dir.glob("*.whl")
+    wheel_pkg = list(wheel_pkg)[0]
+    print(f"Wheel pkg: {wheel_pkg}")
+    print(wheel_pkg.name.replace("any", _os_platform))
 
 @task
 def release_notes(c, version=None, username=None, password=None, write=False):
