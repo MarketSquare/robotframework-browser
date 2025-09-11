@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import time
 import traceback
 import zipfile
@@ -88,20 +89,38 @@ Library was tested with Playwright REPLACE_PW_VERSION
 
 @task
 def deps(c, system=False):
+    """Install dependencies for development."""
     c.run("pip install -U pip")
-    c.run("pip install -U uv")
+    package_manager = "uv" if sysconfig.get_platform() != "win-arm64" else "pip"
+    if package_manager != "pip":
+        c.run("pip install -U uv")
+    else:
+        print("Skipping uv installation on win-arm64, using pip directly.")
     print("Installing dev dependencies.")
-    uv_dev_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
-    uv_deps_cmd = (
-        f"uv pip install -r pyproject.toml{' --system' * (system or IS_GITPOD)}"
-    )
-    if IN_CI:
+    if package_manager == "uv":
+        package_manager_dev_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
+        package_manager_deps_cmd = (
+            f"uv pip install -r pyproject.toml{' --system' * (system or IS_GITPOD)}"
+        )
+    else:
+        lines = []
+        for line in Path("Browser/dev-requirements.txt").open("r").readlines():
+            if "uv" in line:
+                print("Removing uv from dev-requirements.txt for win-arm64")
+                continue
+            lines.append(line)
+        Path("Browser/dev-requirements.txt").open("w").writelines(lines)
+        package_manager_dev_cmd = f"pip install -r Browser/dev-requirements.txt"
+        package_manager_deps_cmd = f"pip install -r pyproject.toml"
+    if IN_CI and package_manager == "uv":
         print(f"Install packages to Python found from {sys.executable}.")
-        uv_dev_cmd = f"{uv_dev_cmd} --python {sys.executable}"
-        uv_deps_cmd = f"{uv_deps_cmd} --python {sys.executable}"
-    c.run(uv_dev_cmd)
+        package_manager_dev_cmd = f"{package_manager_dev_cmd} --python {sys.executable}"
+        package_manager_deps_cmd = (
+            f"{package_manager_deps_cmd} --python {sys.executable}"
+        )
+    c.run(package_manager_dev_cmd)
     print("Install package dependencies.")
-    c.run(uv_deps_cmd)
+    c.run(package_manager_deps_cmd)
     if os.environ.get("CI"):
         shutil.rmtree(str(NODE_MODULES), ignore_errors=True)
 
@@ -245,7 +264,9 @@ def _os_platform() -> str:
 
 def _build_nodejs(c: Context, architecture: str):
     """Build NodeJS binary for GRPC server."""
-    print(f"Build NodeJS binary to '{BROWSER_BATTERIES_BIN_DIR}'.")
+    print(
+        f"Build NodeJS binary to '{BROWSER_BATTERIES_BIN_DIR}' with architecture '{architecture}'."
+    )
     _copy_package_files()
     target = f"node22-{_os_platform()}-{architecture}"
     print(f"Target: {target}")
@@ -815,16 +836,34 @@ def package(c: Context):
     """Build python wheel for Browser release."""
 
 
+def _get_architectures() -> str:
+    if sysconfig.get_platform() == "win-amd64":
+        return "x64"
+    return platform.machine().lower()
+
+
 @task(clean, build)
-def package_nodejs(c: Context, architecture: str):
+def package_nodejs(c: Context, architecture=None):
     """Build Python wheel from BrowserBattiers release."""
     pw_browser_bin = NODE_MODULES / "playwright-core" / ".local-browsers"
     print(f"Removing existing Playwright browsers in {pw_browser_bin}")
     shutil.rmtree(pw_browser_bin, ignore_errors=True)
+    architecture = architecture or _get_architectures()
     _build_nodejs(c, architecture)
     with c.cd(BROWSER_BATTERIES_DIR):
         print(f"Building Browser Batteries package in {BROWSER_BATTERIES_DIR}")
         c.run("python -m build")
+
+
+@task
+def foo(c):
+    _os_platform = sysconfig.get_platform()
+    _os_platform = _os_platform.replace("-", "_").replace(".", "_").replace(" ", "_")
+    dirst_dir = BROWSER_BATTERIES_DIR.joinpath("dist")
+    wheel_pkg = dirst_dir.glob("*.whl")
+    wheel_pkg = list(wheel_pkg)[0]
+    print(f"Wheel pkg: {wheel_pkg}")
+    print(wheel_pkg.name.replace("any", _os_platform))
 
 
 @task
