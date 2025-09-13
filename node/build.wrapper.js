@@ -10,5 +10,8 @@ esbuild.build(
     platform: "node",
     outfile: "./Browser/wrapper/index.js",
     plugins: [nodeExternalsPlugin()],
+    external: [
+      'playwright-core/*',
+    ],
   }
 ).catch(() => process.exit(1));

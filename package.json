@@ -4,6 +4,7 @@
   "main": "index.ts",
   "author": "Mikko Korpela <mikko.korpela@gmail.com>",
   "license": "Apache-2.0",
+  "bin": "Browser/wrapper/index.js",
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/react": "^19.1.12",
@@ -13,6 +14,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.41.0",
+    "@yao-pkg/pkg": "github:yao-pkg/pkg",
     "esbuild": "^0.25.9",
     "esbuild-node-externals": "^1.18.0",
     "eslint": "^9.35.0",
@@ -49,5 +51,12 @@
     "build": "node ./node/build.wrapper.js",
     "lint": "eslint \"node/**/*.{ts,tsx}\" --quiet --fix --config ./node/eslint.config.mjs",
     "grpc_tools_node_protoc": "grpc_tools_node_protoc"
+  },
+  "pkg": {
+    "scripts": "Browser/wrapper/*.js",
+    "assets": [
+      "Browser/wrapper/static/*",
+      "node_modules/playwright-core/**/*"
+    ]
   }
 }

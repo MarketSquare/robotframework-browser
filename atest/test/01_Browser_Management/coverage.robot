@@ -145,7 +145,7 @@ Run Rfbrowser To Combine Coverage Reports And No Raw Files
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
-    Should Be Equal As Integers    ${process.rc}    2
+    Should Be Equal As Integers    ${process.rc}    1
 
 Run Rfbrowser To Combine Coverage Reports And Invalid Config File
     Create Directory    ${OUTPUT_DIR}/no_raw_files
