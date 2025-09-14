@@ -32,9 +32,8 @@ except ModuleNotFoundError:
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
-FLIP_RATE = ROOT_DIR / "flip_rate"
-dist_dir = ROOT_DIR / "dist"
-build_dir = ROOT_DIR / "build"
+DIST_DIR = ROOT_DIR / "dist"
+BUILD_DIR = ROOT_DIR / "build"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
 PYTHON_SRC_DIR = ROOT_DIR / "Browser"
 python_protobuf_dir = PYTHON_SRC_DIR / "generated"
@@ -121,12 +120,11 @@ def deps(c, system=False):
 @task
 def clean(c):
     for target in [
-        dist_dir,
-        build_dir,
+        DIST_DIR,
+        BUILD_DIR,
         python_protobuf_dir,
         node_protobuf_dir,
         UTEST_OUTPUT,
-        FLIP_RATE,
         Path("./htmlcov"),
         ATEST_OUTPUT,
         ZIP_DIR,
@@ -371,39 +369,6 @@ def _clean_pabot_results(rc: int):
         shutil.rmtree(pabot_results, onerror=on_error)
     else:
         print("Not deleting pabot_results on error")
-
-
-@task()
-def copy_xunit(c):
-    """Copies local xunit files for flaky test analysis"""
-    xunit_dest_dir = FLIP_RATE / "xunit"
-    xunit_dest_dir.mkdir(parents=True, exist_ok=True)
-    robot_xunit = xunit_dest_dir / f"robot_xunit-{time.monotonic()}.xml"
-    try:
-        shutil.copy(ATEST_OUTPUT / "robot_xunit.xml", robot_xunit)
-    except Exception as error:
-        print(f"\nWhen copying robot xunit got error: {error}")
-        robot_copy = False
-    else:
-        robot_copy = True
-    pytest_xunit = xunit_dest_dir / f"pytest_xunit-{time.monotonic()}.xml"
-    try:
-        shutil.copy(UTEST_OUTPUT / "pytest_xunit.xml", pytest_xunit)
-    except Exception as error:
-        print(f"\nWhen copying pytest xunit got error: {error}")
-    else:
-        print(f"Copied {pytest_xunit}")
-    if robot_copy:
-        tree = ET.parse(robot_xunit)
-        root = tree.getroot()
-        now = datetime.now()
-        root.attrib["timestamp"] = now.strftime("%Y-%m-%dT%H:%M:%S.000000")
-        new_root = ET.Element("testsuites")
-        new_root.insert(0, root)
-        ET.ElementTree(new_root).write(robot_xunit)
-        print(f"Copied {robot_xunit}")
-    else:
-        print("Not modifying RF xunit output.")
 
 
 @task(clean_atest)
