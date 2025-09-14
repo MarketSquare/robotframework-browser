@@ -3,7 +3,7 @@ name: Build
 on: [push, pull_request]
 
 jobs:
-  build_wheels:
+  build_browser_batteries_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -16,7 +16,6 @@ jobs:
             target-platform: linux-aarch64
           - os: windows-latest
             target-platform: win-64
-          - os: windows-11-arm
           - os: macos-latest
             target-platform: osx-intel
           - os: macos-latest
@@ -28,7 +27,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
       - name: Install dependencies
         if: matrix.os != 'windows-11-arm'
         run: |
@@ -54,6 +56,86 @@ jobs:
           inv foo
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: browser-batteries-wheels-${{ matrix.os }}
           path: browser_batteries/dist/*.whl
           if-no-files-found: error
+
+  build_browser_wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.13
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          uv pip install wheel invoke --python 3.13 --system --verbose
+          inv deps
+      - name: Build Protos and check with tsc
+        run: |
+          inv node-build
+          python -m Browser.gen_stub
+      - name: Create Distributable Browser Package
+        run: |
+          inv docs
+          inv create-package
+      - uses: actions/upload-artifact@v4
+        name: Upload rfbrowser-wheel
+        with:
+          name: rfbrowser-wheel
+          path: dist/robotframework_browser-*-py3-none-any.whl
+          if-no-files-found: error
+      - name: Build test app
+        run: |
+          inv create-test-app
+      - name: Package demoapp
+        run: |
+          inv demo-app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demoapp
+          path: zip_results/demoapp
+          if-no-files-found: error
+  test_browser_wheels:
+    needs:
+      - build_browser_wheel
+      - build_browser_batteries_wheels
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target-platform: linux-x86_64
+          - os: ubuntu-latest
+            target-platform: linux-aarch64
+          - os: windows-latest
+            target-platform: win-64
+          - os: macos-latest
+            target-platform: osx-intel
+          - os: macos-latest
+            target-platform: osx-arm64
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.13
+      - name: Download rfbrowser-wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rfbrowser-wheel
+          path: rfbrowser-wheel
+      - name: Download BrowserBatteries wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-batteries-wheels-${{ matrix.os }}
+          path: browser-batteries-wheels
