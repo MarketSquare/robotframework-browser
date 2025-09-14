@@ -108,10 +108,18 @@ def deps(c, system=False):
             if "uv" in line:
                 print("Removing uv from dev-requirements.txt for win-arm64")
                 continue
+            if "robotframework-crypto" in line:
+                print(
+                    "Removing robotframework-crypto from dev-requirements.txt for win-arm64"
+                )
+                continue
+            if "rellu" in line:
+                print("Removing rellu from dev-requirements.txt for win-arm64")
+                continue
             lines.append(line)
         Path("Browser/dev-requirements.txt").open("w").writelines(lines)
         package_manager_dev_cmd = f"pip install -r Browser/dev-requirements.txt"
-        package_manager_deps_cmd = f"pip install -r pyproject.toml"
+        package_manager_deps_cmd = f"pip install ."
     if IN_CI and package_manager == "uv":
         print(f"Install packages to Python found from {sys.executable}.")
         package_manager_dev_cmd = f"{package_manager_dev_cmd} --python {sys.executable}"
@@ -121,7 +129,7 @@ def deps(c, system=False):
     c.run(package_manager_dev_cmd)
     print("Install package dependencies.")
     c.run(package_manager_deps_cmd)
-    if os.environ.get("CI"):
+    if IN_CI:
         shutil.rmtree(str(NODE_MODULES), ignore_errors=True)
 
     if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
