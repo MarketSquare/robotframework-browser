@@ -32,8 +32,8 @@ except ModuleNotFoundError:
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
-dist_dir = ROOT_DIR / "dist"
-build_dir = ROOT_DIR / "build"
+DIST_DIR = ROOT_DIR / "dist"
+BUILD_DIR = ROOT_DIR / "build"
 BROWSER_BATTERIES_DIR = ROOT_DIR / "browser_batteries"
 BROWSER_BATTERIES_BIN_DIR = BROWSER_BATTERIES_DIR / "BrowserBatteries" / "bin"
 proto_sources = (ROOT_DIR / "protobuf").glob("*.proto")
