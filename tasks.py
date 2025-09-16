@@ -87,40 +87,36 @@ Library was tested with Playwright REPLACE_PW_VERSION
 """
 
 
+def _node_deps(context: Context):
+    arch = " --target_arch=x64" if platform.processor() == "arm" else ""
+    context.run(
+        f"npm install{arch} --parseable true --progress false",
+        env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
+    )
+    context.run(
+        "npx --quiet playwright install  --with-deps",
+        env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
+    )
+    npm_deps_timestamp_file.touch()
+
+
 @task
-def deps(c, system=False):
-    """Install dependencies for development."""
+def deps(c, system=False, force=False):
+    """Install dependencies for development.
+
+    Args:
+        system: When set, installs packages to system Python instead of user.
+        force: When set, installs dependencies even there is no changes.
+    """
     c.run("pip install -U pip")
-    package_manager = "uv" if sysconfig.get_platform() != "win-arm64" else "pip"
-    if package_manager != "pip":
-        c.run("pip install -U uv")
-    else:
-        print("Skipping uv installation on win-arm64, using pip directly.")
+    c.run("pip install -U uv")
     print("Installing dev dependencies.")
-    if package_manager == "uv":
-        package_manager_dev_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
-        package_manager_deps_cmd = (
-            f"uv pip install -r pyproject.toml{' --system' * (system or IS_GITPOD)}"
-        )
-    else:
-        lines = []
-        for line in Path("Browser/dev-requirements.txt").open("r").readlines():
-            if "uv" in line:
-                print("Removing uv from dev-requirements.txt for win-arm64")
-                continue
-            if "robotframework-crypto" in line:
-                print(
-                    "Removing robotframework-crypto from dev-requirements.txt for win-arm64"
-                )
-                continue
-            if "rellu" in line:
-                print("Removing rellu from dev-requirements.txt for win-arm64")
-                continue
-            lines.append(line)
-        Path("Browser/dev-requirements.txt").open("w").writelines(lines)
-        package_manager_dev_cmd = f"pip install -r Browser/dev-requirements.txt"
-        package_manager_deps_cmd = f"pip install ."
-    if IN_CI and package_manager == "uv":
+
+    package_manager_dev_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
+    package_manager_deps_cmd = (
+        f"uv pip install -r pyproject.toml{' --system' * (system or IS_GITPOD)}"
+    )
+    if IN_CI:
         print(f"Install packages to Python found from {sys.executable}.")
         package_manager_dev_cmd = f"{package_manager_dev_cmd} --python {sys.executable}"
         package_manager_deps_cmd = (
@@ -133,35 +129,40 @@ def deps(c, system=False):
         shutil.rmtree(str(NODE_MODULES), ignore_errors=True)
 
     if _sources_changed([ROOT_DIR / "./package-lock.json"], npm_deps_timestamp_file):
-        arch = " --target_arch=x64" if platform.processor() == "arm" else ""
-        c.run(
-            f"npm install{arch} --parseable true --progress false",
-            env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
-        )
-        c.run(
-            "npx --quiet playwright install  --with-deps",
-            env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
-        )
-        npm_deps_timestamp_file.touch()
+        print("Installing node dependencies.")
+        _node_deps(c)
+    elif force:
+        print("Forcing to install node dependencies.")
+        _node_deps(c)
     else:
         print("no changes in package-lock.json, skipping npm install")
 
 
 @task
-def clean(c):
+def clean_mini(c):
+    """Cleans only build and test artifacts."""
     for target in [
         DIST_DIR,
         BUILD_DIR,
-        python_protobuf_dir,
-        node_protobuf_dir,
         UTEST_OUTPUT,
-        Path("./htmlcov"),
         ATEST_OUTPUT,
         ZIP_DIR,
-        Path("./.mypy_cache"),
-        PYTHON_SRC_DIR / "wrapper",
         BROWSER_BATTERIES_BIN_DIR,
         BROWSER_BATTERIES_DIR / "dist",
+    ]:
+        if target.exists():
+            shutil.rmtree(target)
+
+
+@task(clean_mini)
+def clean(c):
+    """Cleans build artifacts and temporary files."""
+    for target in [
+        python_protobuf_dir,
+        node_protobuf_dir,
+        Path("./htmlcov"),
+        Path("./.mypy_cache"),
+        PYTHON_SRC_DIR / "wrapper",
     ]:
         if target.exists():
             shutil.rmtree(target)
@@ -847,10 +848,13 @@ def package(c: Context):
 def _get_architectures() -> str:
     if sysconfig.get_platform() == "win-amd64":
         return "x64"
-    return platform.machine().lower()
+    machine = platform.machine().lower()
+    if machine == "aarch64":
+        return "arm64"
+    return machine
 
 
-@task(clean, build)
+@task(clean_mini, build)
 def package_nodejs(c: Context, architecture=None):
     """Build Python wheel from BrowserBattiers release."""
     pw_browser_bin = NODE_MODULES / "playwright-core" / ".local-browsers"
@@ -861,17 +865,19 @@ def package_nodejs(c: Context, architecture=None):
     with c.cd(BROWSER_BATTERIES_DIR):
         print(f"Building Browser Batteries package in {BROWSER_BATTERIES_DIR}")
         c.run("python -m build")
-
-
-@task
-def foo(c):
     _os_platform = sysconfig.get_platform()
     _os_platform = _os_platform.replace("-", "_").replace(".", "_").replace(" ", "_")
-    dirst_dir = BROWSER_BATTERIES_DIR.joinpath("dist")
-    wheel_pkg = dirst_dir.glob("*.whl")
+    dist_dir = BROWSER_BATTERIES_DIR.joinpath("dist")
+    wheel_pkg = dist_dir.glob("*.whl")
     wheel_pkg = list(wheel_pkg)[0]
-    print(f"Wheel pkg: {wheel_pkg}")
-    print(wheel_pkg.name.replace("any", _os_platform))
+    wheel_pkg_os_platform = wheel_pkg.name.replace("any", _os_platform)
+    wheel_pkg_os_platform = dist_dir / wheel_pkg_os_platform
+    print(f"Renaming {wheel_pkg} to have platform tag {wheel_pkg_os_platform}")
+    wheel_pkg.rename(wheel_pkg_os_platform)
+    tar_gz_pkg = dist_dir.glob("*.tar.gz")
+    tar_gz_pkg = list(tar_gz_pkg)[0]
+    print(f"Deleting tar.gz package {tar_gz_pkg}")
+    tar_gz_pkg.unlink()
 
 
 @task
@@ -936,6 +942,19 @@ def version(c, version):
     py_project_toml_matcher = re.compile('version = ".*"')
     _replace_version(
         py_project_toml, py_project_toml_matcher, f'version = "{version}"', 1
+    )
+    py_project_toml = BROWSER_BATTERIES_DIR / "pyproject.toml"
+    _replace_version(
+        py_project_toml, py_project_toml_matcher, f'version = "{version}"', 1
+    )
+    py_project_toml_matcher = re.compile(
+        r'dependencies = \["robotframework-browser==.*"\]'
+    )
+    _replace_version(
+        py_project_toml,
+        py_project_toml_matcher,
+        f'dependencies = ["robotframework-browser=={version}"]',
+        1,
     )
     dockerfile = ROOT_DIR / "docker" / "Dockerfile.latest_release"
     docker_version_matcher = re.compile("robotframework-browser==.*")
