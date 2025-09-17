@@ -6,10 +6,8 @@ import shutil
 import subprocess
 import sys
 import sysconfig
-import time
 import traceback
 import zipfile
-from datetime import datetime
 from pathlib import Path, PurePath
 from typing import Iterable
 from xml.etree import ElementTree as ET
@@ -149,6 +147,8 @@ def clean_mini(c):
         ZIP_DIR,
         BROWSER_BATTERIES_BIN_DIR,
         BROWSER_BATTERIES_DIR / "dist",
+        Path("./playwright-log.txt"),
+        PYTHON_SRC_DIR / "rfbrowser.log",
     ]:
         if target.exists():
             shutil.rmtree(target)
@@ -170,12 +170,10 @@ def clean(c):
     for file in [
         npm_deps_timestamp_file,
         node_lint_timestamp_file,
-        Path("./playwright-log.txt"),
         Path("./.coverage"),
         pyi_file,
         Path("./.ruff_cache"),
         Path("./.pytest_cache"),
-        PYTHON_SRC_DIR / "rfbrowser.log",
     ]:
         try:
             file.unlink()
@@ -840,7 +838,7 @@ def create_package(c):
     c.run("python -m build")
 
 
-@task(clean, build, docs, create_package)
+@task(clean_mini, build, docs, create_package)
 def package(c: Context):
     """Build python wheel for Browser release."""
 
