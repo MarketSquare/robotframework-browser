@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "robotframework-browser"
 version = "19.7.2"
 dependencies = [
-  "grpcio == 1.74.0",
-  "grpcio-tools == 1.74.0",
+  "grpcio == 1.75.0",
+  "grpcio-tools == 1.75.0",
   "protobuf == 6.32.1",
   "robotframework >= 5.0.1, < 8.0.0",
   "robotframework-pythonlibcore >= 4.4.1, < 5.0.0",
