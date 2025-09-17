@@ -118,7 +118,7 @@ jobs:
           pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
           pip install browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl
           rfbrowser --version
-          rfbrowser install-browser
+          rfbrowser install-browser  --with-deps
       - name: Install Browser and BrowserBatteries On Windows
         if: matrix.os == 'windows-latest'
         run: |
@@ -127,3 +127,35 @@ jobs:
           pip install (Resolve-Path browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl)
           rfbrowser --version
           rfbrowser install-browser
+      - name: Install test dependencies
+        run: |
+          pip install -r Browser/dev-requirements.txt
+      - name: Unzip demoapp *nix
+        if: matrix.os != 'windows-latest'
+        run: |
+          rm -rf Browser
+          rm -rf node
+          rm -rf browser_batteries
+          ls -l demoapp
+          unzip demoapp/demo-app*.zip -d .
+      - name: Unzip demoapp Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          Remove-Item -Path .\Browser -Force -Recurse
+          Remove-Item -Path .\node -Force -Recurse
+          Remove-Item -Path .\browser_batteries -Force -Recurse
+          dir demoapp
+          Expand-Archive -Path (Resolve-Path demoapp/demo-app*.zip) -DestinationPath .
+      - name: Run tests on ${{ matrix.os }} with packed demoapp
+        if : matrix.os == 'ubuntu-24.04-arm' || matrix.os == 'ubuntu-latest'
+        run: |
+          xvfb-run --auto-servernum invoke atest-robot --smoke
+      - name: Run tests on ${{ matrix.os }} with packed demoapp
+        if : matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+        run: |
+          inv atest-robot
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: Clean_install_results_${{ matrix.os }}
+          path: atest/output
