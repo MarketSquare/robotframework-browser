@@ -159,3 +159,38 @@ jobs:
         with:
           name: Clean_install_results_${{ matrix.os }}
           path: atest/output
+
+  publish-to-pypi:
+    needs:
+      - build_browser_wheels
+      - test_browser_wheels
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download rfbrowser-wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rfbrowser-wheel
+          path: dist
+      - name: Check
+        run: |
+          ls -l dist
+          python -m pip install --upgrade pip
+          pip install twine
+          twine check dist/*
+          rm -rf .dist/*
+      - name: Download rfbrowser-browser-wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: browser-batteries-wheels-*
+          path: dist
+          merge-multiple: true
+      - run: |
+          ls -R dist
+          twine check dist/*
+          rm -rf .dist/*
