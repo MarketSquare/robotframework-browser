@@ -865,6 +865,10 @@ def package_nodejs(c: Context, architecture=None):
         c.run("python -m build")
     _os_platform = sysconfig.get_platform()
     _os_platform = _os_platform.replace("-", "_").replace(".", "_").replace(" ", "_")
+    if _os_platform.startswith("macosx") and platform.machine().lower() == "x86_64":
+        _os_platform = _os_platform.replace(
+            "universal2", platform.machine().lower().lower()
+        )
     dist_dir = BROWSER_BATTERIES_DIR.joinpath("dist")
     wheel_pkg = dist_dir.glob("*.whl")
     wheel_pkg = list(wheel_pkg)[0]
