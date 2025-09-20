@@ -24,10 +24,13 @@ from typing import TYPE_CHECKING, Optional
 
 import click
 
+from Browser.utils.data_types import InstallableBrowser, InstallationOptions
+
 from .constant import (
     INSTALLATION_DIR,
     NODE_MODULES,
     SHELL,
+    get_browser_lib,
     log,
     write_marker,
 )
@@ -364,6 +367,40 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
             name=key, value=value
         )
     return params
+
+
+@cli.command()
+@click.argument(
+    "browser",
+    type=click.Choice([b.value for b in InstallableBrowser]),
+    required=False,
+    default=None,
+)
+def install_browser(browser: Optional[str] = None, **flags):
+    """Install Playwright Browsers.
+
+    It installs the specified browser by executing 'npx playwright install' command.
+    All installation options are passed to the command.
+    """
+    browser_enum = browser if browser is None else InstallableBrowser(browser)
+    selected = []
+    for name, enabled in flags.items():
+        if enabled:
+            key = name.replace("_", "-")  # e.g. with_deps -> with-deps
+            selected.append(InstallationOptions[key])
+    if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+        pw_browsers_path = NODE_MODULES / "playwright-core" / ".local-browsers"
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(pw_browsers_path)
+    browser_lib = get_browser_lib()
+    with contextlib.suppress(Exception):
+        browser_lib.install_browser(browser_enum, *selected)
+
+
+for opt in InstallationOptions:
+    param_name = opt.name.replace("-", "_")
+    install_browser = click.option(opt.value, param_name, is_flag=True, help=opt.name)(
+        install_browser
+    )
 
 
 @cli.command()
