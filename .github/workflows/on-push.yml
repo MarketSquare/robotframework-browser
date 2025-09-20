@@ -30,62 +30,50 @@ jobs:
           - os: windows-latest
             python-version: "3.10"
             node-version: 22.x
-            batteries: BrowserBatteries
             shard: 1
           - os: windows-latest
             python-version: "3.12"
             node-version: 20.x
-            batteries: Browser
             shard: 2
           - os: ubuntu-latest
             python-version: "3.10"
             node-version: 22.x
-            batteries: BrowserBatteries
             shard: 3
           - os: ubuntu-latest
             python-version: "3.11"
             node-version: 20.x
-            batteries: Browser
             shard: 4
           - os: windows-latest
             python-version: "3.9"
             node-version: 20.x
-            batteries: Browser
             shard: 1
           - os: ubuntu-latest
             python-version: "3.10"
             node-version: 20.x
-            batteries: Browser
             shard: 2
           - os: ubuntu-latest
             python-version: "3.13"
             node-version: 22.x
-            batteries: Browser
             shard: 3
           - os: ubuntu-latest
             python-version: "3.10"
             node-version: 24.x
-            batteries: Browser
             shard: 4
           - os: ubuntu-latest
             python-version: "3.11"
             node-version: 20.x
-            batteries: Browser
             shard: 1
           - os: macos-latest
             python-version: "3.11"
             node-version: 20.x
-            batteries: Browser
             shard: 1
           - os: macos-latest
             python-version: "3.12"
-            node-version: 22.x
-            batteries: BrowserBatteries
+            node-version: 20.x
             shard: 2
           - os: macos-latest
             python-version: "3.10"
             node-version: 20.x
-            batteries: Browser
             shard: 3
     steps:
     - uses: actions/checkout@v5
@@ -140,38 +128,18 @@ jobs:
       if: matrix.shard == 1
       run: |
         invoke utest
-    - name: Build BrowserBatteries for x64
-      if: matrix.batteries == 'BrowserBatteries' && matrix.os != 'macos-latest'
-      run: |
-        inv build-nodejs x64
-    - name: Build BrowserBatteries for arm64
-      if: matrix.batteries == 'BrowserBatteries' && matrix.os == 'macos-latest'
-      run: |
-        inv build-nodejs arm64
     - name: Run Robot Framework tests on linux
-      if: matrix.os == 'ubuntu-latest' && matrix.batteries != 'BrowserBatteries'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/4
-    - name: Run Robot Framework tests on linux with BrowserBatteries
-      if: matrix.os == 'ubuntu-latest' && matrix.batteries == 'BrowserBatteries'
-      run: |
-          xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/4 --batteries
     - name: Run Robot Framework tests on Windows
-      if: matrix.os == 'windows-latest' && matrix.batteries != 'BrowserBatteries'
+      if: matrix.os == 'windows-latest'
       run: |
         inv atest --shard ${{ matrix.shard }}/4
-    - name: Run Robot Framework tests on Windows with BrowserBatteries
-      if: matrix.os == 'windows-latest' && matrix.batteries == 'BrowserBatteries'
-      run: |
-        inv atest --shard ${{ matrix.shard }}/4 --batteries
     - name: Run Robot Framework tests on macOS
-      if: matrix.os == 'macos-latest' && matrix.batteries != 'BrowserBatteries'
+      if: matrix.os == 'macos-latest'
       run: |
         inv atest --shard ${{ matrix.shard }}/4
-    - name: Run Robot Framework tests on macOS with BrowserBatteries
-      if: matrix.os == 'macos-latest' && matrix.batteries == 'BrowserBatteries'
-      run: |
-        inv atest --shard ${{ matrix.shard }}/4 --batteries
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
@@ -190,23 +158,28 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - name: Use Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: 22.x
         cache: 'npm'
+    - name: Install nodejs dependencies
+      env:
+        PLAYWRIGHT_BROWSERS_PATH: 0
+      run: |
+        npm ci
+        npx playwright install --with-deps
     - name: Set up Python 3.12
       uses: actions/setup-python@v6
       with:
         python-version: 3.12
         cache: 'pip'
-    - name: Install dependencies
+    - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install uv
         uv pip install wheel --python 3.12  --system --verbose
-        uv pip install -r Browser/dev-requirements.txt --python 3.12 --system
+        uv pip install -r Browser/dev-requirements.txt  --python 3.12 --system
         uv pip install -r pyproject.toml  --python 3.12  --system
-        inv deps
     - name: Build Protos and check with tsc
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -215,27 +188,16 @@ jobs:
     - name: Build test app
       run: |
         inv create-test-app
-    - name: Create Distributable Browser Package
+    - name: Create Distributable Package
       if: matrix.os == 'ubuntu-latest'
       run: |
         inv docs
         inv create-package
     - uses: actions/upload-artifact@v4
-      name: Upload rfbrowser-wheel
       if: matrix.os == 'ubuntu-latest'
       with:
         name: rfbrowser-wheel
         path: dist/robotframework_browser-*-py3-none-any.whl
-        if-no-files-found: error
-    - name: Create Distributable BrowserBatteries Package
-      run: |
-        inv package-nodejs --architecture=x64
-    - uses: actions/upload-artifact@v4
-      name: Upload BrowserBatteries-wheel
-      with:
-        name: BrowserBatteries-wheel-${{ matrix.os }}
-        path: browser_batteries/dist/robotframework_browser_batteries-*.whl
-        if-no-files-found: error
     - name: Package demoapp
       run: |
         inv demo-app
@@ -243,7 +205,7 @@ jobs:
       with:
         name: demoapp-${{ matrix.os }}
         path: zip_results/demoapp
-        if-no-files-found: error
+
   test-install:
     needs: build
     runs-on: ${{ matrix.os }}
@@ -251,30 +213,27 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
-        python-version: [3.9, 3.11]
+        python-version: [3.9, 3.14]
         node-version: [20.x, 24.x]
         exclude:
+          - python-version: 3.9
+            node-version: 20.x
           - os: windows-latest
             python-version: 3.9
           - os: windows-latest
             node-version: 20.x
     steps:
       - uses: actions/checkout@v5
-      - name: Download Browser package for install testing
+      - name: Download package for install testing
         uses: actions/download-artifact@v5
         with:
           name: rfbrowser-wheel
-      - name: Download BrowserBatteries package for install testing
-        uses: actions/download-artifact@v5
-        with:
-          name: BrowserBatteries-wheel-${{ matrix.os }}
-          path: zip_results/browser_batteries
-      - name: Download demo-app for install testing
+      - name: Download package for install testing
         uses: actions/download-artifact@v5
         with:
           name: demoapp-${{ matrix.os }}
           path: zip_results/demoapp
-      - name: Unzip demoapp in linux or MacOS
+      - name: Unzip demoapp in *nix like
         if: matrix.os != 'windows-latest'
         run: |
           ls -l zip_results/demoapp
@@ -294,86 +253,46 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-      - name: Install Robot Framework Browser on unix-like
-        if: matrix.os != 'windows-latest'
+      - name: Install Robot Framework Browser on *nix like
         run: |
           pip install uv
           uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }} --system
-      - name: Install Robot Framework Browser on Windows
-        if: matrix.os == 'windows-latest'
+        if: matrix.os != 'windows-latest'
+      - name: Install Robot Framework Browser on windows
         run: |
           pip install uv
-          uv pip install (Resolve-Path ./robotframework_browser-*-py3-none-any.whl)  --python ${{ matrix.python-version }} --system
-      - name: Install Robot Framework BrowserBatteries on unix-like
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '24.x'
-        run: |
-          uv pip install ./zip_results/browser_batteries/robotframework_browser_batteries-*-none-*.whl  --python ${{ matrix.python-version }} --system
-      - name: Install Robot Framework BrowserBatteries on windows
-        if: matrix.os == 'windows-latest' && matrix.node-version == '24.x'
-        run: |
-          dir ./zip_results/browser_batteries
-          uv pip install (Resolve-Path ./zip_results/browser_batteries/robotframework_browser_batteries-*-none-*.whl)  --python ${{ matrix.python-version }} --system
-      - name: Install Robot Framework Browser install-browser
-        if: matrix.node-version == '22.x'
-        run: |
-          rfbrowser install-browser
-      - name: Install Robot Framework Browser init
-        if: matrix.node-version != '22.x'
-        run: |
-          rfbrowser init
+          uv pip install (gci *.whl)--python ${{ matrix.python-version }} --system
+        if: matrix.os == 'windows-latest'
       - name: Install node deps and python deps for test running
         run: |
+          rfbrowser init
           uv pip install wheel --python ${{ matrix.python-version }} --system
           uv pip install -r Browser/dev-requirements.txt  --python ${{ matrix.python-version }} --system
-      - name: Test on unix-like os - serial mode - BrowserBatteries
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '24.x'
+      - name: Test on Ubuntu - serial mode
+        if: matrix.os == 'ubuntu-latest'
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           rm -rf Browser
-          rm -rf browser_batteries
-          export DISPLAY=:99.0
-          rm -rf node_modules/playwrigh*
-          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum invoke atest-robot --smoke
-      - name: Test on unix-like os - serial mode - Browser
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version != '24.x'
-        env:
-          SYS_VAR_CI_INSTALL_TEST: 1
-        run: |
-          rm -rf Browser
-          rm -rf browser_batteries
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
           xvfb-run --auto-servernum invoke atest-robot --smoke
-      - name: Run Robot Framework tests on windows on BrowserBatteries
-        if: matrix.os == 'windows-latest' && matrix.node-version == '24.x'
+      - name: Run Robot Framework tests on windows or macOS
+        if: matrix.os != 'ubuntu-latest'
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           Remove-Item -Path .\Browser -Force -Recurse
-          Remove-Item -Path .\browser_batteries -Force -Recurse
           invoke atest-robot --smoke
-      - name: Run Robot Framework tests on windows on Browser
-        if: matrix.os == 'windows-latest' && matrix.node-version != '24.x'
-        env:
-          SYS_VAR_CI_INSTALL_TEST: 1
-        run: |
-          Remove-Item -Path .\Browser -Force -Recurse
-          Remove-Item -Path .\browser_batteries -Force -Recurse
-          invoke atest-robot --smoke
-      - name: Uninstall Browser
+      - name: Uninstall on Linux or MacOS
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           rfbrowser clean-node
-          uv pip uninstall robotframework-browser --python ${{ matrix.python-version }} --system
-      - name: Uninstall BrowserBatteries
-        if: matrix.node-version == '22.x'
-        run: |
-          uv pip uninstall robotframework-browser-batteries --python ${{ matrix.python-version }} --system
+          uv pip uninstall robotframework-browser  --python ${{ matrix.python-version }} --system
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
-          name: ${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}-Clean_install_results
+          name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
           path: atest/output
       - name: Github Job Summary
         if: ${{ always() }}
