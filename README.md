@@ -8,7 +8,8 @@
 
 ----
 
-[Robot Framework](https://robotframework.org) Browser library powered by [Playwright](https://playwright.dev/). Propelling browser automation into the future!
+[Robot Framework](https://robotframework.org) Browser library powered by
+[Playwright](https://playwright.dev/). Propelling browser automation into the future!
 
 Aiming for :rocket: speed, :white_check_mark: reliability and :microscope: visibility.
 
@@ -17,9 +18,38 @@ See [keyword documentation](https://marketsquare.github.io/robotframework-browse
 
 # Installation instructions
 
-Only Python 3.9 or newer is supported. From Node side 20, 22 and 24 LTS versions are supported.
+For both installation options only Python 3.9 or newer is supported. There are two main ways
+to install Browser library, with or without user having NodeJS installed.
 
-1. Install node.js e.g. from https://nodejs.org/en/download/
+The easiest way to install the Browser library is to use the
+[robotframework-browser-batteries](https://pypi.org/project/robotframework-browser-batteries/)
+package (BrowserBatteries). BrowserBatteries contains precompiled NodeJS binaries and
+NodeJS [dependencies](./package.json), so that users do not need to install NodeJS or its
+Node-side dependencies by them self.
+
+Limitations:
+- BrowserBatteries may not be available for every operating system or processor architecture.
+- If you develop plugins that require third-party NodeJS modules, those modules are not
+  compiled into the BrowserBatteries package.
+
+See [Installation without NodeJS](#installation-without-nodejs) for more details.
+
+If BrowserBatteries package is not suitable for you, for some reason, then you need to install NodeJS, install
+[robotframework-browser](https://pypi.org/project/robotframework-browser/)
+and install NodeJS dependencies. See more detail in
+[Installation with NodeJS](#nstallation-with-NodeJS) chapter
+
+## Installation without NodeJS
+1. Update pip `pip install -U pip` to ensure latest version is used
+2. Install robotframework-browser and robotframework-browser-batteries from the commandline:
+`pip install robotframework-browser[bb]`
+3. Install the Playwright browser binaries, run: `rfbrowser install-browser`
+  - if `rfbrowser` is not found, try `python -m Browser.entry install-browser`
+
+## Installation with NodeJS
+From Node side 20, 22 and 24 LTS versions are supported.
+
+1. Install NodeJS e.g. from https://nodejs.org/en/download/
 2. Update pip `pip install -U pip` to ensure latest version is used
 3. Install robotframework-browser from the commandline: `pip install robotframework-browser`
 4. Install the node dependencies: run `rfbrowser init` in your shell
@@ -27,12 +57,17 @@ Only Python 3.9 or newer is supported. From Node side 20, 22 and 24 LTS versions
 
 Please note that by default Chromium, Firefox and WebKit browser are installed, even those would be already
 installed in the system. The installation size depends on the operating system, but usually is +700Mb.
-It is possible to skip browser binaries installation with `rfbrowser init --skip-browsers` command, but then user
-is responsible for browser binary installation. It is possible to install only selected browser binaries by adding
+It is possible to skip browser binaries installation with `rfbrowser install-browser --skip-browsers`
+or `rfbrowser init --skip-browsers` command, but then user is responsible for Playwright browser binary
+installation. It is possible to install only selected browser binaries by adding
 `chromium`, `firefox` or `webkit` as arguments to init command. Example `rfbrowser init firefox` would install
-only Firefox binaries and `rfbrowser init firefox chromium` would install both Firefox and Chromium binaries.
+only Firefox binaries and `rfbrowser install-browser firefox chromium` would install both Firefox and
+Chromium binaries.
 
-Or use the [docker images](https://github.com/MarketSquare/robotframework-browser/pkgs/container/robotframework-browser%2Frfbrowser-stable). Documented at [docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
+Or use the
+[docker images](https://github.com/MarketSquare/robotframework-browser/pkgs/container/robotframework-browser%2Frfbrowser-stable)
+. Documented at
+[docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
 
 ## Install with transformer
 
@@ -45,7 +80,17 @@ by Browser library can be run with command: `rfbrowser transform --transformer-n
 keyword to `Wait For Load State` keyword. To see full list of transformers provided by Browser library, run
 command: `rfbrowser transform --help`.
 
-## Update instructions
+## Update instructions without NodeJS
+
+To upgrade your already installed robotframework-browser and robotframework-browser-batteries follow steps
+in below. Please note that robotframework-browser and robotframework-browser-batteries packages are
+tied together and having different versions of these packages is not supported.
+
+1. Update from commandline: `pip install -U robotframework-browser robotframework-browser-batteries`
+2. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
+3. Install the node dependencies for the newly installed version: `rfbrowser install-browser`
+
+## Update instructions with NodeJS
 
 To upgrade your already installed robotframework-browser library
 
@@ -57,8 +102,10 @@ To upgrade your already installed robotframework-browser library
 
 To completely uninstall library, including the browser binaries installed by Playwright,
 run following commands:
+
 1. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
 2. Uninstall with pip: `pip uninstall robotframework-browser`
+3. If you have BrowserBatteries installed, also run: `pip uninstall robotframework-browser-batteries`
 
 # Examples
 

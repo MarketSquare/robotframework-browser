@@ -151,7 +151,7 @@ def clean_mini(c):
         PYTHON_SRC_DIR / "rfbrowser.log",
     ]:
         if target.exists():
-            shutil.rmtree(target)
+            shutil.rmtree(target, ignore_errors=True)
 
 
 @task(clean_mini)

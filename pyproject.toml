@@ -46,6 +46,7 @@ rfbrowser = "Browser.entry.__main__:cli"
 
 [project.optional-dependencies]
 tidy = ["robotframework-tidy>=4.12.0"]
+bb = ["robotframework-browser-batteries>=19.7.2"]
 
 [project.urls]
 Homepage = "https://robotframework-browser.org/"
