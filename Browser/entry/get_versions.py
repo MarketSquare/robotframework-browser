@@ -15,8 +15,15 @@ import json
 import re
 import subprocess
 import sys
+from dataclasses import dataclass
 
 from .constant import INSTALLATION_DIR, ROOT_FOLDER, log, write_marker
+
+
+@dataclass
+class Version:
+    version: str
+    from_cmd: bool
 
 
 def get_rf_version():
@@ -26,7 +33,14 @@ def get_rf_version():
     return process.stdout.decode("utf-8").split(" ")[2]
 
 
-def get_pw_version() -> str:
+def _get_version_from_package_json():
+    package_json = INSTALLATION_DIR / "package.json"
+    package_json_data = json.loads(package_json.read_text())
+    match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
+    return match.group(0) if match else "unknown"
+
+
+def get_pw_version() -> Version:
     process = subprocess.run(
         ["npm", "list", "playwright"],
         capture_output=True,
@@ -34,20 +48,15 @@ def get_pw_version() -> str:
         shell=True,
         cwd=INSTALLATION_DIR,
     )
-    std_out = process.stdout.decode("utf-8")
-    match = re.search(r"((?:@[^@]*))$", std_out)
+    if process.returncode != 0:
+        return Version(_get_version_from_package_json(), False)
 
-    if match:
+    std_out = process.stdout.decode("utf-8")
+    if match := re.search(r"((?:@[^@]*))$", std_out):
         version_string = match.group(0)
         version_string = version_string.replace("@", "")
-        return version_string.replace("\r", "").replace("\n", "")
-    log(
-        f"Could not get Playwright version, got: {std_out}, reading it from package.json"
-    )
-    package_json = INSTALLATION_DIR / "package.json"
-    package_json_data = json.loads(package_json.read_text())
-    match = re.search(r"\d+\.\d+\.\d+", package_json_data["dependencies"]["playwright"])
-    return match.group(0) if match else "unknown"
+        return Version(version_string.replace("\r", "").replace("\n", ""), True)
+    return Version(_get_version_from_package_json(), False)
 
 
 def print_version(ctx, param, value):
@@ -60,6 +69,8 @@ def print_version(ctx, param, value):
     browser_lib_version = match.group(0) if match else "unknown"
     pw_version = get_pw_version()
     log(f"Installed Browser library version is: {browser_lib_version}")
-    log(f'Robot Framework version: "{get_rf_version()}"')
-    log(f'Installed Playwright is: "{pw_version}"')
+    log(f'Installed Robot Framework version: "{get_rf_version()}"')
+    log(
+        f'{"Installed" if pw_version.from_cmd else "Required"} Playwright is: "{pw_version.version}"'
+    )
     write_marker()
