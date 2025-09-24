@@ -40,7 +40,7 @@
     "google-protobuf": "4.0.0",
     "monocart-coverage-reports": "^2.12.9",
     "pino": "^9.11.0",
-    "playwright": "^1.55.0",
+    "playwright": "^1.55.1",
     "strip-comments": "^2.0.1",
     "uuid": "^13.0.0"
   },
