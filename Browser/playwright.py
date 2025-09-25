@@ -16,6 +16,8 @@ import atexit
 import contextlib
 import os
 import platform
+import signal
+import subprocess
 import time
 from functools import cached_property
 from pathlib import Path
@@ -220,7 +222,13 @@ class Playwright(LibraryComponent):
         playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:
             logger.trace("Closing Playwright process")
-            playwright_process.kill()
-            logger.trace("Playwright process killed")
+            playwright_process.send_signal(signal.CTRL_C_EVENT)
+            try:
+                playwright_process.wait(1)
+            except KeyboardInterrupt:
+                logger.trace("Playwright process stopped")
+            except subprocess.TimeoutExpired:
+                playwright_process.kill()
+                logger.trace("Playwright process killed")
         else:
             logger.trace("Disconnected from external Playwright process")
