@@ -13,8 +13,8 @@ architectures:
 | 22   | Linux    | x64          |
 | 22   | Linux    | arm64        |
 | 22   | Windows  | x64          |
-| 22   | Windows  | arm64        |
 | 22   | MacOs    | arm64        |
+| 22   | MacOs    | x64          |
 
 Build process relies on [yao-pkg](https://github.com/yao-pkg/pkg) and
 [pkg-fetch](https://github.com/yao-pkg/pkg-fetch) for NodeJS binary
