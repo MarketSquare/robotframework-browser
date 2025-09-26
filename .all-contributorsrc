@@ -1739,6 +1739,16 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "Lakitna",
+      "name": "Sander van Beek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22448210?v=4",
+      "profile": "http://www.lakitna.nl/",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
