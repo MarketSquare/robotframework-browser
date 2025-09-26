@@ -163,6 +163,10 @@ jobs:
         with:
           name: Clean_install_results_${{ matrix.os }}
           path: atest/output
+      - name: Github Job Summary
+        if: ${{ always() }}
+        run: |
+          python -m GHAReports --robotlog atest/output/output.xml
 
   publish-to-pypi:
     needs:
