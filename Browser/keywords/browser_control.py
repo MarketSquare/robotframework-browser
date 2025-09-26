@@ -636,13 +636,12 @@ class Control(LibraryComponent):
             response = stub.ClearPermissions(Request().Empty())
             logger.info(response.log)
 
-    @keyword
     def install_browser(
         self,
         browser: Optional[InstallableBrowser] = None,
         *options: InstallationOptions,
     ):
-        """Executes a Playwright command with the given arguments."""
+        """Executes a Playwright install command with the given arguments."""
         with self.playwright.grpc_channel() as stub:
             try:
                 response = stub.ExecutePlaywright(

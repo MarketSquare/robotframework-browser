@@ -38,7 +38,7 @@ from .constant import (
 )
 from .coverage_combine import combine
 from .get_versions import print_version
-from .install import log_install_dir, rfbrowser_init
+from .rfbrowser_init import log_install_dir, rfbrowser_init
 from .transform import transform as tidy_transform
 from .translation import compare_translation, get_library_translation
 
@@ -106,6 +106,7 @@ def cli(ctx, silent):
     \b
     Possible commands are:
     init
+    install
     clean-node
     coverage
     show-trace
@@ -120,6 +121,12 @@ def cli(ctx, silent):
     1) pip install robotframework-browser
     2) rfbrowser init.
 
+    install command will install the Playwright browsers. This command is needed when you install both Browser and
+    BrowserBatteries libraries. Example:
+    \b
+    1) pip install robotframework-browser robotframework-browser-batteries
+    2) rfbrowser install
+
     clean-node command is used to delete node side dependencies and installed browser binaries from the library
     default installation location. When upgrading browser library, it is recommended to clean old node side
     binaries after upgrading the Python side. Example:
@@ -128,6 +135,13 @@ def cli(ctx, silent):
     1) pip install -U robotframework-browser
     2) rfbrowser clean-node
     3) rfbrowser init.
+
+    Example with BrowserBatteries library:
+
+    \b
+    1) pip install -U robotframework-browser robotframework-browser-batteries
+    2) rfbrowser clean-node
+    3) rfbrowser install
 
     Run rfbrowser clean-node command also before uninstalling the library with pip. This makes sure that playwright
     browser binaries are not left in the disk after the pip uninstall command.
@@ -376,11 +390,17 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
     required=False,
     default=None,
 )
-def install_browser(browser: Optional[str] = None, **flags):
-    """Install Playwright Browsers.
+def install(browser: Optional[str] = None, **flags):
+    """Install Playwright Browsers binaries.
 
     It installs the specified browser by executing 'npx playwright install' command.
-    All installation options are passed to the command.
+
+    You should only run this command if you have both Browser and BrowserBatteries
+    libraries installed. Also you do not need to run `rfbrowser init` when after or
+    before this command.
+
+    Also not run this command if you have only installed Browser library. When Browser
+    library is installed, run only the `rfbrowser init` command.
     """
     browser_enum = browser if browser is None else InstallableBrowser(browser)
     selected = []
@@ -397,8 +417,8 @@ def install_browser(browser: Optional[str] = None, **flags):
 
 for opt in InstallationOptions:
     param_name = opt.name.replace("-", "_")
-    install_browser = click.option(opt.value, param_name, is_flag=True, help=opt.name)(
-        install_browser
+    install = click.option(opt.value, param_name, is_flag=True, help=opt.name)(
+        install
     )
 
 
