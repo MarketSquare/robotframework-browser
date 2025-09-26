@@ -18,6 +18,7 @@ import os
 import shutil
 import subprocess
 import sys
+import textwrap
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -402,6 +403,20 @@ def install(browser: Optional[str] = None, **flags):
     Also not run this command if you have only installed Browser library. When Browser
     library is installed, run only the `rfbrowser init` command.
     """
+    try:
+        import BrowserBatteries  # noqa: PLC0415 F401
+    except ImportError:
+        heading = "\nBrowserBatteries library is not installed."
+        body = (
+            "You should only run `rfbrowser install` command if you have both "
+            "Browser and BrowserBatteries libraries installed. If you have only "
+            "installed Browser library, run only the `rfbrowser init` command."
+        )
+
+        text_list = textwrap.wrap(body, width=50)
+        text_list.insert(0, "")
+        text_list.insert(0, heading)
+        raise RuntimeError("\n".join(text_list))
     browser_enum = browser if browser is None else InstallableBrowser(browser)
     selected = []
     for name, enabled in flags.items():
