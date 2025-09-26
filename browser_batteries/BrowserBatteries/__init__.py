@@ -20,6 +20,7 @@ from typing import TextIO
 
 from robot.api import logger
 
+from Browser.entry.constant import PLAYWRIGHT_BROWSERS_PATH
 from Browser.utils.data_types import PlaywrightLogTypes
 
 
@@ -43,9 +44,9 @@ def start_grpc_server(
         logger.trace(
             "it is not possible to define ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS for BrowserBatteries"
         )
-    if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
-        logger.trace("Setting PLAYWRIGHT_BROWSERS_PATH to '0'")
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+    if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+        logger.trace(f"Setting {PLAYWRIGHT_BROWSERS_PATH} to '0'")
+        os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
     logger.trace(f"GRPC startup parameters: {args}")
     logger.warn(f"GRPC startup parameters: {args}")
     return Popen(

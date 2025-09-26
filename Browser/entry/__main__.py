@@ -29,8 +29,10 @@ from Browser.utils.data_types import InstallableBrowser, InstallationOptions
 from .constant import (
     INSTALLATION_DIR,
     NODE_MODULES,
+    PLAYWRIGHT_BROWSERS_PATH,
     SHELL,
     get_browser_lib,
+    get_playwright_browser_path,
     log,
     write_marker,
 )
@@ -253,10 +255,8 @@ def show_trace(file: Path):
     """
     absolute_file = file.resolve(strict=True)
     log(f"Opening file: {absolute_file}")
-    playwright = NODE_MODULES / "playwright-core"
-    local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
-    env["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
+    env[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
     trace_arguments = [
         "npx",
         "playwright",
@@ -388,9 +388,8 @@ def install_browser(browser: Optional[str] = None, **flags):
         if enabled:
             key = name.replace("_", "-")  # e.g. with_deps -> with-deps
             selected.append(InstallationOptions[key])
-    if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
-        pw_browsers_path = NODE_MODULES / "playwright-core" / ".local-browsers"
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(pw_browsers_path)
+    if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+        os.environ[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
     browser_lib = get_browser_lib()
     with contextlib.suppress(Exception):
         browser_lib.install_browser(browser_enum, *selected)

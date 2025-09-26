@@ -29,6 +29,7 @@ try:
 except ImportError:
     start_grpc_server = None  # type: ignore[assignment]
 
+from Browser.entry.constant import PLAYWRIGHT_BROWSERS_PATH, get_playwright_browser_path
 from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
@@ -146,14 +147,8 @@ class Playwright(LibraryComponent):
         self.port = port
         if start_grpc_server is None:
             return self._start_playwright_from_node(self._get_logfile(), host, port)
-        if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
-            pw_browsers_path = (
-                self._browser_wrapper_dir
-                / "node_modules"
-                / "playwright-core"
-                / ".local-browsers"
-            )
-            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(pw_browsers_path)
+        if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+            os.environ[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
         return start_grpc_server(
             self._get_logfile(), host, port, self.enable_playwright_debug
         )
@@ -177,8 +172,8 @@ class Playwright(LibraryComponent):
         node_args.append(str(playwright_script))
         node_args.append(host)
         node_args.append(port)
-        if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
-            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+            os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
         logger.trace(f"Node startup parameters: {node_args}")
         return Popen(
             node_args,

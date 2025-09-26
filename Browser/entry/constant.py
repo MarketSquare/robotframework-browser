@@ -82,3 +82,9 @@ def get_browser_lib():
         playwright_log=sys.stdout,
     )
     return browser_lib
+
+
+def get_playwright_browser_path() -> Path:
+    if pw_env := os.getenv(PLAYWRIGHT_BROWSERS_PATH):
+        return Path(pw_env)
+    return NODE_MODULES / "playwright-core" / ".local-browsers"

@@ -24,6 +24,7 @@ from typing import Any, Union
 
 from robot.libraries.BuiltIn import BuiltIn
 
+from Browser.entry.constant import PLAYWRIGHT_BROWSERS_PATH
 from Browser.utils.data_types import DownloadInfo
 
 try:
@@ -60,7 +61,7 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
     logfile = output_dir.open("w", encoding="utf-8")
     os.environ["DEBUG"] = "pw:api"
     if start_grpc_server is None:
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
     host = "127.0.0.1"
     port = str(find_free_port())
     if start_grpc_server is None:
