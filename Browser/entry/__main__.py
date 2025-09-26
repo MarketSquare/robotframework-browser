@@ -417,9 +417,7 @@ def install(browser: Optional[str] = None, **flags):
 
 for opt in InstallationOptions:
     param_name = opt.name.replace("-", "_")
-    install = click.option(opt.value, param_name, is_flag=True, help=opt.name)(
-        install
-    )
+    install = click.option(opt.value, param_name, is_flag=True, help=opt.name)(install)
 
 
 @cli.command()

@@ -74,6 +74,8 @@ from .utils import (
 from .utils.data_types import (
     DelayedKeyword,
     HighLightElement,
+    InstallableBrowser,
+    InstallationOptions,
     KeywordCallStackEntry,
     LambdaFunction,
     RegExp,
@@ -1621,3 +1623,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     if item.get("language", "").lower() == lang and item.get("path"):
                         return Path(item.get("path")).absolute()
         return None
+
+    def install_browser(
+        self,
+        browser: Optional[InstallableBrowser] = None,
+        *options: InstallationOptions,
+    ):
+        self._browser_control.install_browser(browser, *options)
