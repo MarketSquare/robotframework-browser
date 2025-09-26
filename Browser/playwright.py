@@ -229,10 +229,8 @@ class Playwright(LibraryComponent):
 
     def _close_process(self, proc: Popen):
         if sys.platform == "win32":
-            # Windows
             proc.send_signal(signal.CTRL_C_EVENT)
         else:
-            # Linux & MacOS
             proc.send_signal(signal.SIGINT)
 
         try:

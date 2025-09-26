@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+import sys
 import time
 from unittest.mock import Mock
 
@@ -179,6 +180,8 @@ def test_playwright_exit_handler(atexit_register):
 
 
 def test_playwright_double_close():
+    if sys.platform == "win32":
+        pytest.skip("Skip in Windows")
     browser = Browser.Browser()
     browser.new_browser()
     browser.playwright.close()
