@@ -37,3 +37,231 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: docs # The folder the action should deploy.
+
+  build_browser_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
+          - os: windows-latest
+          - os: macos-13
+            arch: x64
+          - os: macos-latest
+            arch: arm64
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22.x"
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          uv pip install wheel invoke --python 3.13  --system --verbose
+          python -c "import sys;print(sys.platform)"
+          python -c "import sysconfig;print(sysconfig.get_platform())"
+          python -c "import platform;print(platform.machine().lower())"
+          inv deps
+      - name: Build Protos and check with tsc
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          inv node-build
+          python -m Browser.gen_stub
+      - name: Create Distributable Browser Package
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          inv create-package
+      - uses: actions/upload-artifact@v4
+        name: Upload rfbrowser-wheel
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: rfbrowser-wheel
+          path: dist/robotframework_browser-*-py3-none-any.whl
+          if-no-files-found: error
+      - name: Build test app
+        run: |
+          inv create-test-app
+      - name: Package demoapp
+        run: |
+          inv demo-app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demoapp-${{ matrix.os }}
+          path: zip_results/demoapp
+          if-no-files-found: error
+      - name: Create Distributable BrowserBatteries Package
+        run: |
+          inv package-nodejs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: browser-batteries-wheels-${{ matrix.os }}
+          path: browser_batteries/dist/robotframework_browser_batteries-*.whl
+          if-no-files-found: error
+
+  test_browser_wheels:
+    needs:
+      - build_browser_wheels
+    name: Test wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
+          - os: windows-latest
+          - os: macos-13
+            arch: x64
+          - os: macos-latest
+            arch: arm64
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.13
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22.x"
+      - name: Download rfbrowser-wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rfbrowser-wheel
+          path: rfbrowser-wheel
+      - name: Download BrowserBatteries wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: browser-batteries-wheels-${{ matrix.os }}
+          path: browser-batteries-wheels
+      - name: Download demoapp wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: demoapp-${{ matrix.os }}
+          path: demoapp
+      - name: Install Browser and BrowserBatteries on ${{ matrix.os }}
+        if: matrix.os != 'windows-latest'
+        run: |
+          python -m pip install --upgrade pip
+          pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
+          pip install browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl
+          rfbrowser --version
+          rfbrowser install  --with-deps
+      - name: Install Browser and BrowserBatteries On Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          python -m pip install --upgrade pip
+          pip install (Resolve-Path rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl)
+          pip install (Resolve-Path browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl)
+          rfbrowser --version
+          rfbrowser install
+      - name: Install test dependencies
+        run: |
+          pip install -r Browser/dev-requirements.txt
+      - name: Unzip demoapp *nix
+        if: matrix.os != 'windows-latest'
+        run: |
+          rm -rf Browser
+          rm -rf node
+          rm -rf browser_batteries
+          ls -l demoapp
+          unzip demoapp/demo-app*.zip -d .
+      - name: Unzip demoapp Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          Remove-Item -Path .\Browser -Force -Recurse
+          Remove-Item -Path .\node -Force -Recurse
+          Remove-Item -Path .\browser_batteries -Force -Recurse
+          dir demoapp
+          Expand-Archive -Path (Resolve-Path demoapp/demo-app*.zip) -DestinationPath .
+      - name: Run tests on ${{ matrix.os }} with packed demoapp
+        if : matrix.os == 'ubuntu-24.04-arm' || matrix.os == 'ubuntu-latest'
+        run: |
+          xvfb-run --auto-servernum invoke atest-robot --smoke
+      - name: Run tests on ${{ matrix.os }} with packed demoapp
+        if : matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+        run: |
+          inv atest-robot
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: Clean_install_results_${{ matrix.os }}
+          path: atest/output
+      - name: Github Job Summary
+        if: ${{ always() }}
+        run: |
+          python -m GHAReports --robotlog atest/output/output.xml
+
+  publish-browser-to-pypi:
+    needs:
+      - build_browser_wheels
+      - test_browser_wheels
+    name: Publish Browser to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/robotframework-browser
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download rfbrowser-wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: rfbrowser-wheel
+          path: dist
+      - name: Check
+        run: |
+          ls -l dist
+          python -m pip install --upgrade pip
+          pip install twine
+          twine check dist/*
+      - name: Publish Browser distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-browserbatteries-to-pypi:
+    needs:
+      - build_browser_wheels
+      - test_browser_wheels
+    name: Publish BrowserBatteries to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/robotframework-browser-batteries
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Download rfbrowser-browser-wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: browser-batteries-wheels-*
+          path: dist
+          merge-multiple: true
+      - name: Check
+        run: |
+          ls -l dist
+          python -m pip install --upgrade pip
+          pip install twine
+          twine check dist/*
+      - name: Publish BrowserBatteries distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
