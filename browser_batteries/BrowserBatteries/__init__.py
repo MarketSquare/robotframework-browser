@@ -48,7 +48,6 @@ def start_grpc_server(
         logger.trace(f"Setting {PLAYWRIGHT_BROWSERS_PATH} to '0'")
         os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
     logger.trace(f"GRPC startup parameters: {args}")
-    logger.warn(f"GRPC startup parameters: {args}")
     return Popen(
         args,
         cwd=workdir,
