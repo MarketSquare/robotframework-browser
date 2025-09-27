@@ -39,5 +39,4 @@ server.addService(
 
 server.bindAsync(`${host}:${port}`, ServerCredentials.createInsecure(), () => {
     logger.info(`Listening on ${host}:${port}`);
-    server.start();
 });

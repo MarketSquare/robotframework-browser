@@ -9,6 +9,13 @@ esbuild.build(
     bundle: true,
     platform: "node",
     outfile: "./Browser/wrapper/index.js",
-    plugins: [nodeExternalsPlugin()],
+    plugins: [nodeExternalsPlugin({
+      // Allow UUID to be bundled instead of external
+      // Needed when building with pkg
+      allowList: ['uuid']
+    })],
+    external: [
+      'playwright-core/*',
+    ],
   }
 ).catch(() => process.exit(1));

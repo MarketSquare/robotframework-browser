@@ -23,6 +23,8 @@ from typing import TYPE_CHECKING, ClassVar, Optional, Union
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.utils import get_link_path
 
+from Browser.utils.data_types import InstallableBrowser, InstallationOptions
+
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -633,3 +635,24 @@ class Control(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.ClearPermissions(Request().Empty())
             logger.info(response.log)
+
+    def install_browser(
+        self,
+        browser: Optional[InstallableBrowser] = None,
+        *options: InstallationOptions,
+    ):
+        """Executes a Playwright install command with the given arguments."""
+        with self.playwright.grpc_channel() as stub:
+            try:
+                response = stub.ExecutePlaywright(
+                    Request().Json(
+                        body=json.dumps(
+                            ["install"]
+                            + [opt.value for opt in options]
+                            + ([browser.value] if browser else [])
+                        )
+                    )
+                )
+                logger.info(response.log)
+            except Exception:
+                logger.error("Error executing Playwright command")

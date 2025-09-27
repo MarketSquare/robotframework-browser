@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robotframework-browser-batteries"
+version = "19.8.0"
+dependencies = ["robotframework-browser==19.8.0"]
+requires-python = ">= 3.9"
+authors = [
+  {name = "MarketSquare - Robot Framework community"}
+]
+maintainers = [
+  {name = "Tatu Aalto", email = "aalto.aalto@gmail.com"},
+  {name = "Mikko Korpela", email = "mikko.korpela@gmail.com"},
+  {name = "Kerkko Pelttari", email = "kerk.pelt@gmail.com"},
+  {name = "René Rohner", email = "rene@robotframework.org"}
+]
+description = "Robot Framework Browser batteries package which contains all necessary NodeJS side components for using the Browser library."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = ["robotframework", "playwright", "testing", "automation", "web", "browser"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Testing",
+  "Framework :: Robot Framework",
+  "Framework :: Robot Framework :: Library",
+]
+[project.urls]
+Homepage = "https://robotframework-browser.org/"
+Documentation = "https://marketsquare.github.io/robotframework-browser/Browser.html"
+Repository = "https://github.com/MarketSquare/robotframework-browser"
+Issues = "https://github.com/MarketSquare/robotframework-browser/issues"
+Changelog = "https://github.com/MarketSquare/robotframework-browser/tree/main/docs/releasenotes"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = [
+  "grpc_server",
+  "grpc_server.exe"
+]

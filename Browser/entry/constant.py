@@ -68,3 +68,23 @@ def log(message: str, silent_mode: bool = False):
 
 def write_marker(silent_mode: bool = False):
     log(f"\n{'=' * 70}", silent_mode)
+
+
+def get_browser_lib():
+    from ..browser import Browser, PlaywrightLogTypes  # noqa: PLC0415
+    from ..playwright import Playwright  # noqa: PLC0415
+
+    os.environ["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "error"
+    browser_lib = Browser()
+    browser_lib._playwright = Playwright(
+        library=browser_lib,
+        enable_playwright_debug=PlaywrightLogTypes.library,
+        playwright_log=sys.stdout,
+    )
+    return browser_lib
+
+
+def get_playwright_browser_path() -> Path:
+    if pw_env := os.getenv(PLAYWRIGHT_BROWSERS_PATH):
+        return Path(pw_env)
+    return NODE_MODULES / "playwright-core" / ".local-browsers"

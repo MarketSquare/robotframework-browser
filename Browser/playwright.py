@@ -20,10 +20,16 @@ import time
 from functools import cached_property
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, TextIO, Union
 
 import grpc  # type: ignore
 
+try:
+    from BrowserBatteries import start_grpc_server
+except ImportError:
+    start_grpc_server = None  # type: ignore[assignment]
+
+from Browser.entry.constant import PLAYWRIGHT_BROWSERS_PATH, get_playwright_browser_path
 from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
@@ -47,7 +53,7 @@ class Playwright(LibraryComponent):
         enable_playwright_debug: Union[PlaywrightLogTypes, bool],
         host: Optional[str] = None,
         port: Optional[int] = None,
-        playwright_log: Union[Path, None] = Path(Path.cwd()),
+        playwright_log: Optional[Union[Path, TextIO]] = Path(Path.cwd()),
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
@@ -65,8 +71,24 @@ class Playwright(LibraryComponent):
             time.sleep(1)  # To overcome problem with macOS Sonoma and hanging process
         return process
 
+    @cached_property
+    def _rfbrowser_dir(self) -> Path:
+        return Path(__file__).parent
+
+    @cached_property
+    def _browser_wrapper_dir(self) -> Path:
+        return self._rfbrowser_dir / "wrapper"
+
     def ensure_node_dependencies(self):
-        # Checks if node is in PATH, errors if it isn't
+        """Ensure that node dependencies are installed.
+
+        If BrowserBatteries is installed, does nothing.
+        """
+        if start_grpc_server is not None:
+            logger.trace(
+                "Running gRPC server from BrowserBatteries, no need to check node"
+            )
+            return
         try:
             run(["node", "-v"], stdout=DEVNULL, check=True)
         except (CalledProcessError, FileNotFoundError, PermissionError) as err:
@@ -76,14 +98,12 @@ class Playwright(LibraryComponent):
                 f"Original error is {err}"
             )
 
-        rfbrowser_dir = Path(__file__).parent
-        installation_dir = rfbrowser_dir / "wrapper"
         # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
-        project_folder = rfbrowser_dir.parent
+        project_folder = self._rfbrowser_dir.parent
         if any(
             [
                 (project_folder / "node_modules").is_dir(),
-                (installation_dir / "node_modules").is_dir(),
+                (self._browser_wrapper_dir / "node_modules").is_dir(),
             ]
         ):
             return
@@ -95,8 +115,15 @@ class Playwright(LibraryComponent):
             "\n#           Run `rfbrowser init` to install.                #"  # noqa: RUF001
             "\n#                                                           #"  # noqa: RUF001
             "\n#############################################################"
-            f"\nInstallation path: {installation_dir}"
+            f"\nInstallation path: {self._browser_wrapper_dir}"
         )
+
+    def _get_logfile(self) -> TextIO:
+        if isinstance(self.playwright_log, Path):
+            return self.playwright_log.open("w", encoding="utf-8")
+        if self.playwright_log is None:
+            return Path(os.devnull).open("w", encoding="utf-8")
+        return self.playwright_log
 
     def start_playwright(self) -> Optional[Popen]:
         env_node_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
@@ -114,22 +141,28 @@ class Playwright(LibraryComponent):
                     f"ROBOT_FRAMEWORK_BROWSER_NODE_PORT {existing_port} defined in env, skipping Browser process start"
                 )
             return None
-        current_dir = Path(__file__).parent
-        workdir = current_dir / "wrapper"
-        playwright_script = workdir / "index.js"
-        if self.playwright_log:
-            logfile = self.playwright_log.open("w", encoding="utf-8")
-        else:
-            logfile = Path(os.devnull).open("w", encoding="utf-8")  # noqa: SIM115
         host = str(self.host) if self.host is not None else "127.0.0.1"
         port = str(find_free_port())
+        self.host = host
+        self.port = port
+        if start_grpc_server is None:
+            return self._start_playwright_from_node(self._get_logfile(), host, port)
+        if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+            os.environ[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
+        return start_grpc_server(
+            self._get_logfile(), host, port, self.enable_playwright_debug
+        )
+
+    def _start_playwright_from_node(
+        self, logfile: TextIO, host: str, port: str
+    ) -> Popen:
+        """Start Playwright from nodejs wrapper."""
+        playwright_script = self._browser_wrapper_dir / "index.js"
         if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
             os.environ["DEBUG"] = "pw:api"
         logger.info(
             f"Starting Browser process {playwright_script} using at {host}:{port}"
         )
-        self.host = host
-        self.port = port
         node_args = ["node"]
         node_debug_options = os.environ.get(
             "ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS"
@@ -139,13 +172,13 @@ class Playwright(LibraryComponent):
         node_args.append(str(playwright_script))
         node_args.append(host)
         node_args.append(port)
-        if not os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
-            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+        if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+            os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
         logger.trace(f"Node startup parameters: {node_args}")
         return Popen(
             node_args,
             shell=False,
-            cwd=workdir,
+            cwd=self._browser_wrapper_dir,
             env=os.environ,
             stdout=logfile,
             stderr=STDOUT,

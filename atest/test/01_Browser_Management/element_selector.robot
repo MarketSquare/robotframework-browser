@@ -107,7 +107,6 @@ Get Element By Role
     FOR    ${el}    ${exp_text}    IN ZIP    ${element_list}    ${exp_list}
         Get Text    ${el}    ==    ${exp_text}
     END
-    Set Browser Timeout    timeout=100ms    scope=Test
     ${e} =    Get Element By Role    role=heading    all_elements=True
     Should Be Empty    ${e}
     Run Keyword And Expect Error    *Error: strict mode violation: getByRole('textbox') resolved to 4 elements*
@@ -175,4 +174,4 @@ Get Element By Role In Iframe
 *** Keywords ***
 Element Selector Setup
     Go To    ${FORM_URL}
-    Set Browser Timeout    500ms
+    Set Browser Timeout    500ms    scope=Test
