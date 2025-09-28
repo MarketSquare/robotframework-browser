@@ -864,11 +864,14 @@ def package_nodejs(c: Context, architecture=None):
         print(f"Building Browser Batteries package in {BROWSER_BATTERIES_DIR}")
         c.run("python -m build")
     _os_platform = sysconfig.get_platform()
+    print(f"Current os platform: {_os_platform}")
     _os_platform = _os_platform.replace("-", "_").replace(".", "_").replace(" ", "_")
     if _os_platform.startswith("macosx") and platform.machine().lower() == "x86_64":
         _os_platform = _os_platform.replace(
             "universal2", platform.machine().lower().lower()
         )
+    if _os_platform.startswith("linux"):
+        _os_platform = f"manylinux_2_17_{architecture}"  # manylinux_2_17 is for glibc 2.17+
     dist_dir = BROWSER_BATTERIES_DIR.joinpath("dist")
     wheel_pkg = dist_dir.glob("*.whl")
     wheel_pkg = list(wheel_pkg)[0]
