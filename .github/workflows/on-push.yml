@@ -420,12 +420,12 @@ jobs:
           rm -rf browser_batteries
           ls -l demoapp
           unzip demoapp/demo-app*.zip -d .
-      - name: Run tests on ${{ matrix.os }} with packed demoapp
-        if : matrix.os == 'ubuntu-latest'
+      - name: Run tests on Linux with packed demoapp
+        if : matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
         run: |
           xvfb-run --auto-servernum invoke atest-robot --smoke
-      - name: Run tests on ${{ matrix.os }} with packed demoapp
-        if : matrix.os == 'macos-latest'
+      - name: Run tests on MacOS with packed demoapp
+        if: matrix.os == 'macos-latest'
         run: |
           inv atest-robot
       - uses: actions/upload-artifact@v4
