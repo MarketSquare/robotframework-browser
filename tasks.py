@@ -870,8 +870,10 @@ def package_nodejs(c: Context, architecture=None):
         _os_platform = _os_platform.replace(
             "universal2", platform.machine().lower().lower()
         )
-    if _os_platform.startswith("linux"):
-        _os_platform = f"manylinux_2_17_{architecture}"  # manylinux_2_17 is for glibc 2.17+
+    if _os_platform == "linux-x86_64":
+        _os_platform = f"manylinux_2_17_{architecture}"
+    elif _os_platform == "linux-aarch64":
+        _os_platform = "manylinux_2_17_aarch64.manylinux2014_aarch64"
     dist_dir = BROWSER_BATTERIES_DIR.joinpath("dist")
     wheel_pkg = dist_dir.glob("*.whl")
     wheel_pkg = list(wheel_pkg)[0]
