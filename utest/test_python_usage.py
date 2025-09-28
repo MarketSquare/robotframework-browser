@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 import time
+import sys
 from unittest.mock import Mock
 
 import pytest
@@ -168,6 +169,10 @@ def test_new_browser_with_default_timeout(browser):
     browser.close_browser("ALL")
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Test causes issues on Windows due to how the Node procress needs to be closed",
+)
 def test_playwright_exit_handler(atexit_register):
     browser = Browser.Browser()
     try:
@@ -178,6 +183,10 @@ def test_playwright_exit_handler(atexit_register):
         browser.playwright.close()
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Test causes issues on Windows due to how the Node procress needs to be closed",
+)
 def test_playwright_double_close():
     browser = Browser.Browser()
     browser.new_browser()
