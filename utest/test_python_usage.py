@@ -1,7 +1,6 @@
 import subprocess
 from pathlib import Path
 import time
-import sys
 from unittest.mock import Mock
 
 import pytest
