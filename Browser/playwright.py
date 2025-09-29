@@ -16,9 +16,6 @@ import atexit
 import contextlib
 import os
 import platform
-import signal
-import subprocess
-import sys
 import time
 from functools import cached_property
 from pathlib import Path
@@ -31,12 +28,16 @@ from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
 from .base import LibraryComponent
-from .utils import AutoClosingLevel
+from .utils import (
+    AutoClosingLevel,
+    PlaywrightLogTypes,
+    close_process_tree,
+    find_free_port,
+    logger,
+)
 
 if TYPE_CHECKING:
     from .browser import Browser
-
-from .utils import PlaywrightLogTypes, find_free_port, logger
 
 
 class Playwright(LibraryComponent):
@@ -222,25 +223,7 @@ class Playwright(LibraryComponent):
         # Access (possibly) cached property without actually invoking it
         playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:
-            logger.trace("Closing Playwright process")
-            self._close_process(playwright_process)
+            logger.trace("Closing Playwright process tree")
+            close_process_tree(playwright_process)
         else:
             logger.trace("Disconnected from external Playwright process")
-
-    def _close_process(self, proc: Popen):
-        if sys.platform == "win32":
-            # Windows
-            proc.send_signal(signal.CTRL_C_EVENT)
-        else:
-            # Linux & MacOS
-            proc.send_signal(signal.SIGINT)
-
-        try:
-            exit_code = proc.wait(1)
-            logger.trace(f"Process stopped with exit code {exit_code}")
-        except KeyboardInterrupt:
-            logger.trace("Process stopped")
-        except subprocess.TimeoutExpired:
-            # Fallback
-            proc.kill()
-            logger.trace("Process killed")
