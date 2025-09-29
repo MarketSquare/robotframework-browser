@@ -1,6 +1,6 @@
 # Robot Framework BrowserBatteries
 Robot Framework
-[BrowserBatteries][https://pypi.org/project/robotframework-browser-batteries/]
+[BrowserBatteries](https://pypi.org/project/robotframework-browser-batteries/)
 Python package contains all the required NodeJS dependencies prebuilt inside of the
  Python wheel. The only thing user needs to do, is to install the Playwright browser
  binaries and then run tests.
