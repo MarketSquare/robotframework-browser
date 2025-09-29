@@ -149,8 +149,7 @@ def suppress_logging():
 
 
 def close_process_tree(proc: psutil.Popen, timeout=3):
-    """
-    Close a process and all it's child-processes.
+    """Close a process and all it's child-processes.
 
     Does nothing if the process is already closed.
     Warns if at least 1 process remains alive after timeout (seconds) has passed.
@@ -173,7 +172,7 @@ def close_process_tree(proc: psutil.Popen, timeout=3):
         callback=lambda p: logger.trace(f"Process {p.pid} closed"),
     )
 
-    if len(alive) == 0:
+    if not alive:
         logger.trace("Process tree closed")
         return
 
