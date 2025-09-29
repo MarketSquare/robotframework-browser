@@ -26,7 +26,7 @@ export async function executePlaywright(request: Request.Json): Promise<Response
     const args = JSON.parse(request.getBody());
     pwProgram.exitOverride();
     await pwProgram.parseAsync(args, { from: 'user' });
-    return emptyWithLog('Installed browsers');
+    return emptyWithLog('Executed Playwright command: ' + args.join(' '));
 }
 
 export async function grantPermissions(request: Request.Permissions, state: PlaywrightState): Promise<Response.Empty> {
