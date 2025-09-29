@@ -145,7 +145,7 @@ Run Rfbrowser To Combine Coverage Reports And No Raw Files
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
-    Should Be Equal As Integers    ${process.rc}    2
+    Should Be Equal As Integers    ${process.rc}    1
 
 Run Rfbrowser To Combine Coverage Reports And Invalid Config File
     Create Directory    ${OUTPUT_DIR}/no_raw_files
@@ -195,6 +195,21 @@ Merge Coverage Reports With Keyword
     New Page    ${uri}
     Get Text    .mcr-title    equal    Custom Merged Name
     Close Page
+    ${combined_folder} =    Merge Coverage Reports
+    ...    ${OUTPUT_DIR}/browser/coverage
+    ...    ${OUTPUT_DIR}/merge_coverage_reports_keyword_11
+    ...    name=Custom Merged Name
+    ...    reports=["markdown-summary", "markdown-details"]
+    ${files} =    List Files In Directory    ${combined_folder}
+    Length Should Be    ${files}    2
+    ${data} =    Get File    ${combined_folder}/${files}[1]
+    FOR    ${word}    IN    \# Custom Merged Name    Name    Coverage %    Covered    Uncovered    Total
+        Should Contain    ${data}    ${word}
+    END
+    ${data} =    Get File    ${combined_folder}/${files}[0]
+    FOR    ${word}    IN    \## Custom Merged Name    Name    Bytes    Statements    Branches    Functions    Lines    Uncovered Lines    overlay.html    Summary
+        Should Contain    ${data}    ${word}
+    END
 
 Merge Coverage Reports No Raw Reports
     Create Directory    ${OUTPUT_DIR}/no_raw_files_keyword

@@ -99,7 +99,7 @@ and Node components.
 ```
 inv version $VERSION
 inv build
-git add Browser/version.py package.json package-lock.json pyproject.toml docker/Dockerfile.latest_release
+git add Browser/version.py browser_batteries/pyproject.toml package.json package-lock.json pyproject.toml docker/Dockerfile.latest_release
 git commit -m "Update version to: $VERSION"
 git push
 ```
@@ -135,14 +135,11 @@ git push
 ```
 Update later if necessary.
 
-Also update Browser libdoc.
-
 ### Create release
-1. Use `inv release` to create and release artifacts and upload to PyPi
-2. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
-3. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
-4. Install package from PyPi and test that it works.
-5. Wait that Docker build is ready and check that [Docker hub](https://hub.docker.com/r/marketsquare/robotframework-browser/tags) looks good.
+1. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
+2. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
+3. Install package from PyPi and test that it works.
+4. Wait that Docker build is ready and check that [Docker hub](https://hub.docker.com/r/marketsquare/robotframework-browser/tags) looks good.
 
 ### Announce release
 Announce new release, at least in Slack and [Forum](https://forum.robotframework.org/t/browser-library-releases/685).

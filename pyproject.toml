@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-browser"
-version = "19.8.0"
+version = "19.9.0b3"
 dependencies = [
-  "grpcio == 1.75.0",
-  "grpcio-tools == 1.75.0",
+  "grpcio == 1.75.1",
+  "grpcio-tools == 1.75.1",
   "protobuf == 6.32.1",
   "robotframework >= 5.0.1, < 8.0.0",
   "robotframework-pythonlibcore >= 4.4.1, < 5.0.0",
@@ -47,6 +47,7 @@ rfbrowser = "Browser.entry.__main__:cli"
 
 [project.optional-dependencies]
 tidy = ["robotframework-tidy>=4.12.0"]
+bb = ["robotframework-browser-batteries>=19.7.2"]
 
 [project.urls]
 Homepage = "https://robotframework-browser.org/"
@@ -65,6 +66,7 @@ exclude = [
   "node_modules*",
   "docs*",
   "node*",
+  "browser_batteries*",
 ]
 
 [tool.setuptools.package-data]

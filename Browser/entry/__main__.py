@@ -18,22 +18,28 @@ import os
 import shutil
 import subprocess
 import sys
+import textwrap
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import click
 
+from Browser.utils.data_types import InstallableBrowser, InstallationOptions
+
 from .constant import (
     INSTALLATION_DIR,
     NODE_MODULES,
+    PLAYWRIGHT_BROWSERS_PATH,
     SHELL,
+    get_browser_lib,
+    get_playwright_browser_path,
     log,
     write_marker,
 )
 from .coverage_combine import combine
 from .get_versions import print_version
-from .install import log_install_dir, rfbrowser_init
+from .rfbrowser_init import log_install_dir, rfbrowser_init
 from .transform import transform as tidy_transform
 from .translation import compare_translation, get_library_translation
 
@@ -101,6 +107,7 @@ def cli(ctx, silent):
     \b
     Possible commands are:
     init
+    install
     clean-node
     coverage
     show-trace
@@ -115,6 +122,12 @@ def cli(ctx, silent):
     1) pip install robotframework-browser
     2) rfbrowser init.
 
+    install command will install the Playwright browsers. This command is needed when you install both Browser and
+    BrowserBatteries libraries. Example:
+    \b
+    1) pip install robotframework-browser robotframework-browser-batteries
+    2) rfbrowser install
+
     clean-node command is used to delete node side dependencies and installed browser binaries from the library
     default installation location. When upgrading browser library, it is recommended to clean old node side
     binaries after upgrading the Python side. Example:
@@ -123,6 +136,13 @@ def cli(ctx, silent):
     1) pip install -U robotframework-browser
     2) rfbrowser clean-node
     3) rfbrowser init.
+
+    Example with BrowserBatteries library:
+
+    \b
+    1) pip install -U robotframework-browser robotframework-browser-batteries
+    2) rfbrowser clean-node
+    3) rfbrowser install
 
     Run rfbrowser clean-node command also before uninstalling the library with pip. This makes sure that playwright
     browser binaries are not left in the disk after the pip uninstall command.
@@ -250,10 +270,8 @@ def show_trace(file: Path):
     """
     absolute_file = file.resolve(strict=True)
     log(f"Opening file: {absolute_file}")
-    playwright = NODE_MODULES / "playwright-core"
-    local_browsers = playwright / ".local-browsers"
     env = os.environ.copy()
-    env["PLAYWRIGHT_BROWSERS_PATH"] = str(local_browsers)
+    env[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
     trace_arguments = [
         "npx",
         "playwright",
@@ -364,6 +382,57 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
             name=key, value=value
         )
     return params
+
+
+@cli.command()
+@click.argument(
+    "browser",
+    type=click.Choice([b.value for b in InstallableBrowser]),
+    required=False,
+    default=None,
+)
+def install(browser: Optional[str] = None, **flags):
+    """Install Playwright Browsers binaries.
+
+    It installs the specified browser by executing 'npx playwright install' command.
+
+    You should only run this command if you have both Browser and BrowserBatteries
+    libraries installed. Also you do not need to run `rfbrowser init` when after or
+    before this command.
+
+    Also not run this command if you have only installed Browser library. When Browser
+    library is installed, run only the `rfbrowser init` command.
+    """
+    try:
+        import BrowserBatteries  # noqa: PLC0415 F401
+    except ImportError:
+        heading = "\nBrowserBatteries library is not installed."
+        body = (
+            "You should only run `rfbrowser install` command if you have both "
+            "Browser and BrowserBatteries libraries installed. If you have only "
+            "installed Browser library, run only the `rfbrowser init` command."
+        )
+
+        text_list = textwrap.wrap(body, width=50)
+        text_list.insert(0, "")
+        text_list.insert(0, heading)
+        raise RuntimeError("\n".join(text_list))
+    browser_enum = browser if browser is None else InstallableBrowser(browser)
+    selected = []
+    for name, enabled in flags.items():
+        if enabled:
+            key = name.replace("_", "-")  # e.g. with_deps -> with-deps
+            selected.append(InstallationOptions[key])
+    if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+        os.environ[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
+    browser_lib = get_browser_lib()
+    with contextlib.suppress(Exception):
+        browser_lib.install_browser(browser_enum, *selected)
+
+
+for opt in InstallationOptions:
+    param_name = opt.name.replace("-", "_")
+    install = click.option(opt.value, param_name, is_flag=True, help=opt.name)(install)
 
 
 @cli.command()
