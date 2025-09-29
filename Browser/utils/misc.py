@@ -148,7 +148,13 @@ def suppress_logging():
         BuiltIn()._context.output.set_log_level(log_level)
 
 
-def close_process_tree(proc: psutil.Popen):
+def close_process_tree(proc: psutil.Popen, timeout=3):
+    """
+    Close a process and all it's child-processes.
+
+    Does nothing if the process is already closed.
+    Warns if at least 1 process remains alive after timeout (seconds) has passed.
+    """
     try:
         parent = psutil.Process(proc.pid)
     except psutil.NoSuchProcess:
@@ -163,7 +169,7 @@ def close_process_tree(proc: psutil.Popen):
             p.kill()
     _gone, alive = psutil.wait_procs(
         to_close,
-        timeout=3,
+        timeout=timeout,
         callback=lambda p: logger.trace(f"Process {p.pid} closed"),
     )
 
