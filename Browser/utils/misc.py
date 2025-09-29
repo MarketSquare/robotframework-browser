@@ -22,7 +22,7 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import Any, Union
 
-import psutil
+import psutil  # type: ignore[import-untyped]
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
