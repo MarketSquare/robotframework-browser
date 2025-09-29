@@ -1,3 +1,4 @@
+import contextlib
 import os
 from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
@@ -6,8 +7,9 @@ from urllib.parse import urlparse
 
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
+import psutil
 
-from Browser.utils import find_free_port, FormatterKeywords
+from Browser.utils import find_free_port, FormatterKeywords, close_process_tree
 
 SERVERS: Dict = {}
 
@@ -83,23 +85,38 @@ def start_test_https_server(
 def stop_test_server(port: str):
     global SERVERS
     if port in SERVERS:
-        p = SERVERS[port]
-        if p.poll() is not None:
-            logger.warn(f"process has already exited")
-        else:
-            p.terminate()
-        try:
-            p.wait(timeout=5)
-        except:
-            logger.warn(f"process did not finish in time, killing")
-            p.kill()
-        outs = p.communicate(timeout=5)
-        if p.returncode is not None and p.returncode != 0:
-            logger.warn(f"Process exited with code {p.returncode}, output follows")
-            logger.warn(outs)
+        p: Popen = SERVERS[port]
+        close_process_tree(p)
         del SERVERS[port]
     else:
         logger.warn(f"Server with port {port} not found")
+
+
+def _close_process(proc: Popen):
+    try:
+        parent = psutil.Process(proc.pid)
+    except psutil.NoSuchProcess:
+        logger.trace("Process already closed")
+        return
+
+    to_close = parent.children(recursive=True)
+    to_close.append(parent)
+    for p in to_close:
+        logger.trace(f"Closing process <name={p.name()} pid={p.pid}>")
+        with contextlib.suppress(psutil.NoSuchProcess):
+            p.kill()
+    _gone, alive = psutil.wait_procs(
+        to_close,
+        timeout=3,
+        callback=lambda p: logger.trace(f"Process {p.pid} closed"),
+    )
+
+    if len(alive) == 0:
+        logger.trace("Process tree closed")
+        return
+
+    for p in alive:
+        logger.warn(f"Failed to close process. pid={p.pid}")
 
 
 def get_current_scope_from_lib(keyword: FormatterKeywords) -> list:

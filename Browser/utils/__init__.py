@@ -76,6 +76,7 @@ from .misc import (
     keyword,
     spawn_node_process,
     suppress_logging,
+    close_process_tree,
 )
 from .robot_booleans import is_falsy, is_truthy
 from .settings_stack import ScopedSetting, SettingsStack
