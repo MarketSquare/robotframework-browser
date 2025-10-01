@@ -88,7 +88,7 @@ tied together and having different versions of these packages is not supported.
 
 1. Update from commandline: `pip install -U robotframework-browser robotframework-browser-batteries`
 2. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
-3. Install the node dependencies for the newly installed version: `rfbrowser install-browser`
+3. Install the node dependencies for the newly installed version: `rfbrowser install`
 
 ## Update instructions with NodeJS
 
