@@ -43,8 +43,8 @@ and install NodeJS dependencies. See more detail in
 1. Update pip `pip install -U pip` to ensure latest version is used
 2. Install robotframework-browser and robotframework-browser-batteries from the commandline:
 `pip install robotframework-browser[bb]`
-3. Install the Playwright browser binaries, run: `rfbrowser install-browser`
-  - if `rfbrowser` is not found, try `python -m Browser.entry install-browser`
+3. Install the Playwright browser binaries, run: `rfbrowser install`
+  - if `rfbrowser` is not found, try `python -m Browser.entry install`
 
 ## Installation with NodeJS
 From Node side 20, 22 and 24 LTS versions are supported.
