@@ -33,6 +33,7 @@ Create Translation File With Python Plugin
     [Teardown]    Remove File    ${OUTPUT_DIR}/translation.json
 
 Create Translation File With JS Plugin
+    [Tags]    no-docker-pr
     ${entry_cmd} =    Get Enty Command
     ${process} =    Run Process
     ...    ${entry_cmd} translation ${OUTPUT_DIR}/translation.json --plugings ${CURDIR}/SomePlugin.py --jsextension ${CURDIR}/jsplugin.js

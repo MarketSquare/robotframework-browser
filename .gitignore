@@ -22,6 +22,7 @@ __pycache__
 robotframework_browser.egg-info/
 .venv
 zip_results
+mypy_stub
 
 # utest
 utest/output

@@ -5,10 +5,11 @@ Resource            imports.resource
 Test Setup          Open Browser To No Page
 Test Teardown       Close Browser
 
-Force Tags          slow
+Test Tags           slow
 
 *** Test Cases ***
 Open PDF In Another Tab And Download It
+    [Tags]    no-docker-pr
     [Setup]    New Browser    headless=${FALSE}    downloadsPath=${EXECDIR}
     New Context    acceptDownloads=${TRUE}
     Set Browser Timeout    30s

@@ -28,7 +28,7 @@ New Context Does Not Open A Page
     Should Be Equal    ${no_page_id}    NO PAGE OPEN
 
 Open Browser Opens Everything
-    [Tags]    slow
+    [Tags]    slow    no-docker-pr
     ${old_timeout} =    Set Browser Timeout    30 seconds
     Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
@@ -262,6 +262,7 @@ New Context With DefaultBrowserType Ff
     Set Browser Timeout    ${old_timeout}
 
 New Context With baseURL
+    [Tags]    no-docker-pr
     New Context    baseURL=${ROOT_URL}
     New Page    dist/#/
     Get Url    ==    ${LOGIN_URL}
@@ -440,6 +441,7 @@ Launch Browser Server Generated wsEndpoint
     [Teardown]    Close Browser Server    ${wsEndpoint}
 
 Launch Browser Server Via CLI
+    [Tags]    no-docker-pr
     ${python} =    Get Python Binary Path
     ${process1} =    Start Process
     ...    ${python}

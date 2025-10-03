@@ -47,6 +47,7 @@ Test Js Plugin Called From Python Plugin
     Get Scroll Position    ${None}    left    ==    30
 
 Pluging Keyword Example Location
+    [Tags]    no-docker-pr
     [Setup]    New Page    ${FORM_URL}
     ${location} =    Get Location Object
     ${url} =    Get Url

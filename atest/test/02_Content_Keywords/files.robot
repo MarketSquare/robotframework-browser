@@ -93,11 +93,13 @@ Invalid Upload Path
     ...    Upload File By Selector    \#file_chooser    NonExistentFile
 
 Relative Upload Path
+    [Tags]    no-docker-pr
     New Page    ${LOGIN_URL}
     File Should Exist    atest${/}test${/}02_Content_Keywords${/}test_upload_file
     Upload File By Selector    \#file_chooser    atest${/}test${/}02_Content_Keywords${/}test_upload_file
 
 Relative Upload Path With Promise
+    [Tags]    no-docker-pr
     File Should Exist    atest${/}test${/}..${/}test${/}02_Content_Keywords${/}test_upload_file
     Upload With Promise    atest${/}test${/}..${/}test${/}02_Content_Keywords${/}test_upload_file
 

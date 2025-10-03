@@ -1,5 +1,7 @@
 *** Settings ***
-Resource    imports.resource
+Resource        imports.resource
+
+Test Tags       no-docker-pr
 
 *** Test Cases ***
 Tranform Wait Until Network Is Idle Keyword
