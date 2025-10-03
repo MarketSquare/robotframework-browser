@@ -884,9 +884,9 @@ def package_nodejs(c: Context, architecture=None):
     _os_platform = _os_platform.replace("-", "_").replace(".", "_").replace(" ", "_")
     if _os_platform.startswith("macosx") and platform.machine().lower() == "x86_64":
         _os_platform = _os_platform.replace(
-            "universal2", platform.machine().lower().lower()
+            "universal2", platform.machine().lower()
         )
-    if sysconfig.get_platform().lower() == "linux-x86_64":
+    elif sysconfig.get_platform().lower() == "linux-x86_64":
         _os_platform = f"manylinux_2_17_{architecture}"
     elif sysconfig.get_platform().lower() == "linux-aarch64":
         _os_platform = "manylinux_2_17_aarch64.manylinux2014_aarch64"
