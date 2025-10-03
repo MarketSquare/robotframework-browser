@@ -29,7 +29,7 @@ Add Cookie Without Url, Path And Domain
     ...    Add Cookie    Foo    Bar
 
 Add Cookie With Url
-    [Tags]    no-windows-support
+    [Tags]    no-windows-support    no-docker-pr
     ${url} =    Get Url
     Add Cookie    Foo    Bar    url=${url}
     ${cookies} =    Get Cookies
@@ -37,7 +37,7 @@ Add Cookie With Url
     Should Be Equal    ${cookies}[0][path]    /
 
 Add Cookie With Domain And Path
-    [Tags]    no-windows-support
+    [Tags]    no-windows-support    no-docker-pr
     ${url} =    Get Url
     ${parsed_url} =    Common.Parse Url    ${url}
     Add Cookie    Foo    Bar    domain=${parsed_url.netloc}    path=${parsed_url.path}
@@ -58,6 +58,7 @@ Add Cookie With URL And Domain Should Fail
     ...    path=${parsed_url.path}
 
 Add Cookie With All Settings
+    [Tags]    no-docker-pr
     ${url} =    Get Url
     ${date_string} =    Get Current Date    increment=1 day
     Add Cookie
@@ -96,6 +97,7 @@ Add Cookie With All Settings As String
     Should Contain    ${cookies}    Tidii=Kala; Foo=Bar
 
 Add Cookie With Expiry As Epoch String
+    [Tags]    no-docker-pr
     ${url} =    Get Url
     ${epoch} =    Get Current Date    increment=1 day    result_format=epoch
     ${date_time} =    Convert Date    ${epoch}
@@ -114,6 +116,7 @@ Add Cookie With Expiry As Epoch String
     Should Be Equal    ${expires.year}    ${expires.year}
 
 Add Cookie With Expiry As Epoch Int
+    [Tags]    no-docker-pr
     ${url} =    Get Url
     ${epoch} =    Get Current Date    increment=1 day    result_format=epoch
     Add Cookie
@@ -149,6 +152,7 @@ Add Cookie With Expiry As Epoch In Different Format
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
 
 Add Cookie With Expiry As Datetime Object
+    [Tags]    no-docker-pr
     ${url} =    Get Url
     ${datetime} =    Evaluate    datetime.datetime.now() + datetime.timedelta(hours=1)    # local time
     Add Cookie

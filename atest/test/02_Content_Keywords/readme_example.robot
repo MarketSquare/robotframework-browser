@@ -3,7 +3,7 @@ Resource            imports.resource
 
 Suite Teardown      Close Page
 
-Force Tags          no-iframe    need-inet
+Test Tags           no-iframe    need-inet    no-docker-pr
 
 *** Test Cases ***
 Example

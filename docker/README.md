@@ -43,10 +43,26 @@ docker build --no-cache -t tidii --file Dockerfile.latest_release . > out.txt 2>
 
 Run test with locally build image
 ```bash
-docker run -v ./atest/:/test  -t tidii:latest bash -c "robot --outputdir /test/output /test"
+docker run -v ./atest/:/home/pwuser/test  -t tidii:latest bash -c "robot --outputdir /test/output /home/pwuser/test"
 ````
 
 To start bash in container
 ```bash
 docker run -i  -t tidii:latest bash
+```
+
+# Run docker pr build test
+
+1. Modify [Dockerfile.dev_pr](Dockerfile.dev_pr)
+> COPY docker/dist/*.whl /home/pwuser/
+
+to
+> COPY dist/*.whl /home/pwuser/
+2. Build Browser wheel with: `invoke package`
+3. Build Docker pr container
+> docker build -t tidii --file docker/Dockerfile.dev_pr .
+
+4. Run test with command below:
+```bash
+docker run -v ./atest/:/home/pwuser/test  -t tidii:latest bash -c "robot -v SERVER:host.docker.internal:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
 ```

@@ -3,6 +3,8 @@ Resource            imports.resource
 
 Suite Teardown      Close Browser    ALL
 
+Test Tags           no-docker-pr
+
 *** Test Cases ***
 Wrong Browser With Channel
     Run Keyword And Expect Error

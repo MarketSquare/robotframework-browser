@@ -164,7 +164,7 @@ Get Viewport Size Custom Error
     ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}
 
 Get Url Default Error
-    [Tags]    expect_error
+    [Tags]    expect_error    no-docker-pr
     Run Keyword And Expect Error
     ...    URL 'http://localhost:*' (str) should contain 'Valid' (str)
     ...    Get Url    contains    Valid

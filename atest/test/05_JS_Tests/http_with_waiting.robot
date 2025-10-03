@@ -28,6 +28,7 @@ POST With Waiting Json Response
     Should Be Equal    ${content}[request][postData][name]    George
 
 GET With Text Response
+    [Tags]    no-docker-pr
     ${promise} =    Promise To    Wait For Response    matcher=/http://\\w+:\\d+/api/get/text/i    timeout=3s
     &{response} =    HTTP    /api/get/text
     ${content} =    Wait For    ${promise}

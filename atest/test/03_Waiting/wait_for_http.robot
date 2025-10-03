@@ -27,6 +27,7 @@ Wait For Request Url
     Wait For Request    matcher=${ROOT_URL}api/get/json    timeout=1s
 
 Wait For Request Regex
+    [Tags]    no-docker-pr
     Click    \#delayed_request
     Wait For Request    matcher=/\\/\\/local\\w+\\:\\d+\\/api/    timeout=1s
 
@@ -76,6 +77,7 @@ Wait For Response Synchronous With Default Timeout
     Wait For Response
 
 Wait For Response Synchronous With Regex Matcher
+    [Tags]    no-docker-pr
     Click    \#delayed_request
     Wait For Response    matcher=/\\/\\/local\\w+\\:\\d+\\/api/
 

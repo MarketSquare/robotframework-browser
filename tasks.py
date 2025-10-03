@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import time
 import traceback
 import zipfile
 from collections.abc import Iterable
@@ -794,8 +795,33 @@ def docker_run_tmp_tests(c):
 
 
 @task(build)
-def run_test_app(c):
+def run_test_app(c: Context):
+    """Run dynamic test app."""
     c.run("node node/dynamic-test-app/dist/server.js")
+
+
+@task
+def run_test_app_no_build(c: Context, asynchronous=False):
+    """Run dynamic test app without building.
+
+    Args:
+        asynchronous: When true, returns immediately after starting the subprocess.
+    """
+    print("Running test app without building.")
+    c.run("node node/dynamic-test-app/dist/server.js", asynchronous=asynchronous)
+    time.sleep(4)
+    print(f"Test app started with asynchronous mode {asynchronous}.")
+
+
+@task
+def docker_copy_output(c: Context):
+    """Copy atest output from docker container to host."""
+    output = ROOT_DIR / "docker_last_container.txt"
+    output.unlink(missing_ok=True)
+    c.run(f"docker ps --all --last 1 --format '{{{{.ID}}}}' > {output}")
+    with output.open("r") as file:
+        container_id = file.read().strip()
+    c.run(f"docker cp {container_id}:/home/pwuser/output ./output_docker")
 
 
 @task
@@ -883,9 +909,7 @@ def package_nodejs(c: Context, architecture=None):
     print(f"Current os platform: {_os_platform}")
     _os_platform = _os_platform.replace("-", "_").replace(".", "_").replace(" ", "_")
     if _os_platform.startswith("macosx") and platform.machine().lower() == "x86_64":
-        _os_platform = _os_platform.replace(
-            "universal2", platform.machine().lower()
-        )
+        _os_platform = _os_platform.replace("universal2", platform.machine().lower())
     elif sysconfig.get_platform().lower() == "linux-x86_64":
         _os_platform = f"manylinux_2_17_{architecture}"
     elif sysconfig.get_platform().lower() == "linux-aarch64":

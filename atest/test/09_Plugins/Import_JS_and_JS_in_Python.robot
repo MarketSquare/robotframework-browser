@@ -11,7 +11,7 @@ Library             Browser
 Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
 Test Teardown       Close Context    ALL
 
-Force Tags          no-iframe
+Test Tags           no-iframe
 
 *** Test Cases ***
 Calling Custom Js Keyword
@@ -36,7 +36,7 @@ Calling Custom Js Keyword With Default Value
     Should Be Equal    ${val3}    EVEN
 
 Connecting And Creating A Remote Browser
-    [Tags]    slow
+    [Tags]    slow    no-docker-pr
     ${wsEndpoint} =    Create Remote Browser
     ${browser} =    Connect To Browser    ${wsEndpoint}
     Should Not Be Equal    ${browser}    ${NULL}
@@ -45,6 +45,7 @@ Connecting And Creating A Remote Browser
     [Teardown]    Close Remote Clean
 
 Defaults In The Keyword From Python To JS And Back
+    [Tags]    no-docker-pr
     ${result} =    MoreDefaults
     Should Be Equal    ${result}[bTrue]    ${TRUE}
     Should Be Equal    ${result}[bFalse]    ${FALSE}
@@ -69,6 +70,7 @@ Defaults In The Keyword From Python To JS And Back
     Should Be Equal    ${result8}[undefineder]    ${NONE}
 
 Crashing Keyword
+    [Tags]    no-docker-pr
     Run Keyword And Expect Error    Error: Crash    CrashKeyword
 
 Failing Import
@@ -108,6 +110,7 @@ Test Js Plugin Called From Python Plugin
     Get Scroll Position    ${None}    left    ==    30
 
 Pluging Keyword Example Location
+    [Tags]    no-docker-pr
     [Setup]    New Page    ${FORM_URL}
     ${location} =    Get Location Object
     ${url} =    Get Url

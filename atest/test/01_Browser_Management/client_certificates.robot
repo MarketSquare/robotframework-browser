@@ -6,6 +6,8 @@ Suite Setup         Setup
 Suite Teardown      Suite Teardown
 Test Teardown       Close Browser    ALL
 
+Test Tags           no-docker-pr
+
 *** Test Cases ***
 Open Browser With Client Certificate
     New Browser    browser=${BROWSER}    headless=${HEADLESS}

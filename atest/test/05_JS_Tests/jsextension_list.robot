@@ -37,7 +37,7 @@ Calling Custom Js Keyword With Default Value
     Should Be Equal    ${val3}    EVEN
 
 Connecting And Creating A Remote Browser
-    [Tags]    slow
+    [Tags]    slow    no-docker-pr
     ${wsEndpoint} =    Create Remote Browser
     ${browser} =    Connect To Browser    ${wsEndpoint}
     Should Not Be Equal    ${browser}    ${NULL}
@@ -46,6 +46,7 @@ Connecting And Creating A Remote Browser
     [Teardown]    Close Remote Clean
 
 Defaults In The Keyword From Python To JS And Back
+    [Tags]    no-docker-pr
     ${result} =    MoreDefaults
     Should Be Equal    ${result}[bTrue]    ${TRUE}
     Should Be Equal    ${result}[bFalse]    ${FALSE}
@@ -70,6 +71,7 @@ Defaults In The Keyword From Python To JS And Back
     Should Be Equal    ${result8}[undefineder]    ${NONE}
 
 Crashing Keyword
+    [Tags]    no-docker-pr
     Run Keyword And Expect Error    Error: Crash    CrashKeyword
 
 Failing Import
@@ -77,6 +79,7 @@ Failing Import
     ...    jsextension=${CURDIR}/wrong.js
 
 List Imports
+    [Tags]    no-docker-pr
     ${r} =    My Other Keyword    test
     Should Be Equal    ${r}    test
 

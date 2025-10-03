@@ -354,7 +354,7 @@ jobs:
           inv demo-app
       - uses: actions/upload-artifact@v4
         with:
-          name: demoapp--bb-test-${{ matrix.os }}
+          name: demoapp-bb-test-${{ matrix.os }}
           path: zip_results/demoapp
           if-no-files-found: error
       - name: Create Distributable BrowserBatteries Package
@@ -389,22 +389,22 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "22.x"
-      - name: Download rfbrowser-wheel for BrowserBatteries tests
+      - name: Download browser-wheel
         uses: actions/download-artifact@v5
         with:
           name: rfbrowser-wheel-bb-test
           path: rfbrowser-wheel
-      - name: Download BrowserBatteries wheels
+      - name: Download BrowserBatteries wheel
         uses: actions/download-artifact@v5
         with:
           name: browser-batteries-wheels-bb-test-${{ matrix.os }}
           path: browser-batteries-wheels
-      - name: Download demoapp wheels
+      - name: Download demoapp
         uses: actions/download-artifact@v5
         with:
-          name: demoapp--bb-test-${{ matrix.os }}
+          name: demoapp-bb-test-${{ matrix.os }}
           path: demoapp
-      - name: Install Browser and BrowserBatteries on ${{ matrix.os }}
+      - name: Install Browser and BrowserBatteries
         run: |
           python -m pip install --upgrade pip
           pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
@@ -422,7 +422,7 @@ jobs:
           ls -l demoapp
           unzip demoapp/demo-app*.zip -d .
       - name: Run tests on Linux with packed demoapp
-        if : matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
         run: |
           xvfb-run --auto-servernum invoke atest-robot --smoke
       - name: Run tests on MacOS with packed demoapp
@@ -439,4 +439,65 @@ jobs:
         run: |
           python -m GHAReports --robotlog atest/output/output.xml
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
+          cat fail.md
+
+  docker_image:
+    runs-on: ubuntu-latest
+    needs: build_browser_batteries_wheels
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: 'pip'
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/marketsquare/robotframework-browser/rfbrowser
+          tags: |
+            type=raw,value=tidii
+      - name: Download browser wheel
+        uses: actions/download-artifact@v5
+        with:
+          name: rfbrowser-wheel-bb-test
+          path: docker/dist
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build with GitHub Packages
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.dev_pr
+          tags: tidii
+          labels: ${{ steps.meta.outputs.labels }}
+          push: false
+      - name: Download demo app
+        uses: actions/download-artifact@v5
+        with:
+          name: demoapp-bb-test-ubuntu-latest
+          path: demoapp
+      - name: unzip demo app
+        run: |
+          rm -rf node
+          ls -l demoapp
+          unzip demoapp/demo-app*.zip -d .
+          ls -l node
+      - name: Start demo app and run tests with docker image
+        run: |
+          pip install uv
+          uv pip install invoke robotframework-ghareports --python 3.14 --system
+          invoke run-test-app-no-build --asynchronous
+          docker run -v ./atest/:/home/pwuser/test  -t tidii:latest bash -c "robot -v SERVER:172.17.0.1:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
+          inv docker-copy-output
+      - name: Github Job Summary
+        if: ${{ always() }}
+        run: |
+          python -m GHAReports --robotlog output_docker/output.xml
+          python -m GHAReports --robotlog output_docker/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md

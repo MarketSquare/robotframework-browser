@@ -21,15 +21,18 @@ Force Tags      no-iframe
 
 *** Test Cases ***
 Set Geolocation On Browser Startup
+    [Tags]    no-docker-pr
     Start Context With Geolocation
     Check Geolocation    42    -42.42
 
 Set Geolocation
+    [Tags]    no-docker-pr
     [Setup]    Start Context With Geolocation
     Set Geolocation    72.56    145.89    0.23
     Check Geolocation    72.56    145.89
 
 Enable Geolocation
+    [Tags]    no-docker-pr
     [Setup]    Start Context Without Geolocation
     Set Browser Timeout    timeout=500ms    scope=Test
     Set Geolocation    11.11    22.22    33.33
