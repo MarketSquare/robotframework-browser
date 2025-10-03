@@ -29,7 +29,10 @@ try:
 except ImportError:
     start_grpc_server = None  # type: ignore[assignment]
 
-from Browser.entry.constant import PLAYWRIGHT_BROWSERS_PATH, get_playwright_browser_path
+from Browser.entry.constant import (
+    PLAYWRIGHT_BROWSERS_PATH,
+    ensure_playwright_browsers_path,
+)
 from Browser.generated import playwright_pb2_grpc
 from Browser.generated.playwright_pb2 import Request
 
@@ -151,8 +154,8 @@ class Playwright(LibraryComponent):
         self.port = port
         if start_grpc_server is None:
             return self._start_playwright_from_node(self._get_logfile(), host, port)
-        if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
-            os.environ[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
+        ensure_playwright_browsers_path()
+
         return start_grpc_server(
             self._get_logfile(), host, port, self.enable_playwright_debug
         )
@@ -190,6 +193,9 @@ class Playwright(LibraryComponent):
 
     def wait_until_server_up(self):
         for _ in range(150):  # About 15 seconds
+            logger.debug(
+                f"Waiting for Playwright server at {self.host}:{self.port} to start..."
+            )
             with grpc.insecure_channel(f"{self.host}:{self.port}") as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)

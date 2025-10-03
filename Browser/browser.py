@@ -74,8 +74,6 @@ from .utils import (
 from .utils.data_types import (
     DelayedKeyword,
     HighLightElement,
-    InstallableBrowser,
-    InstallationOptions,
     KeywordCallStackEntry,
     LambdaFunction,
     RegExp,
@@ -1624,9 +1622,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                         return Path(item.get("path")).absolute()
         return None
 
-    def install_browser(
+    def execute_npx_playwright(
         self,
-        browser: Optional[InstallableBrowser] = None,
-        *options: InstallationOptions,
+        command: str,
+        *args: str,
     ):
-        self._browser_control.install_browser(browser, *options)
+        self._browser_control.execute_npx_playwright(command, *args)

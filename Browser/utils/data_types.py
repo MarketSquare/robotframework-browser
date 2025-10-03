@@ -1427,11 +1427,11 @@ InstallationOptions = Enum(
         "no-shell": "--no-shell",
     },
 )
-InstallationOptions.__doc__ = """Enum of installation options for `Install Browser` keyword.
-
-- with-deps   install system dependencies for browsers
-- dry-run     do not execute installation, only print information
-- list        prints list of browsers from all playwright installations
-- force       force reinstall of stable browser channels
-- only-shell  only install headless shell when installing chromium
-- no-shell    do not install chromium headless shell"""
+InstallationOptionsHelp = {
+    "with-deps": "install system dependencies for browsers",
+    "dry-run": "do not execute installation, only print information",
+    "list": "prints list of browsers from all playwright installations",
+    "force": "force reinstall of stable browser channels",
+    "only-shell": "only install headless shell when installing chromium",
+    "no-shell": "do not install chromium headless shell",
+}
