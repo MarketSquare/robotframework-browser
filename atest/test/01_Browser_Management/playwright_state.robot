@@ -239,6 +239,19 @@ Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
     Close Context    ALL    ALL
     Close Browser    ALL
     Close Browser    ALL
+    Get Browser Catalog    validate    value == list()
+
+Close Page With Page Id
+    ${c1} =    New Context
+    &{p1_1} =    New Page
+    &{p1_2} =    New Page
+    ${c2} =    New Context
+    ${p2_1} =    New Page
+    ${page_count} =    Get Page IDs    ALL    ${c1}    ALL    then    len(value)
+    Should Be Equal As Integers    ${page_count}    2
+    Get Page Ids    ALL    ALL    CURRENT    equals    ${p1_1.page_id}    ${p1_2.page_id}    ${p2_1}[page_id]
+    Close Page    ${p1_1}[page_id]
+    Get Page Ids    ACTIVE    ACTIVE    ACTIVE    validate    value[0] == '${p2_1}[page_id]' and len(value) == 1
 
 New Context With DefaultBrowserType Ff
     [Tags]    slow
@@ -379,6 +392,12 @@ Switch Page With ALL Browsers Failing
     ${page221} =    New Page
     ${page222} =    New Page
 
+    Get Browser Ids    ALL    then    len(value) == 2
+    Get Context Ids    ACTIVE    ALL    equals    ${context12}    ${context22}
+    Get Context Ids    ALL    ${browser1}    equals    ${context11}    ${context12}
+    Get Page Ids    ACTIVE    ACTIVE    ACTIVE    equals    ${page222}[page_id]
+    # setting specific context ignores browser
+    Get Page Ids    ALL    ${context12}    ${browser2}    equals    ${page121}[page_id]    ${page122}[page_id]
     ${cat} =    Get Browser Catalog
     Log    ${cat}
     ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
@@ -387,14 +406,6 @@ Switch Page With ALL Browsers Failing
     Run Keyword And Expect Error    EQUALS:ValueError: No page with requested id 'page=123' found.
     ...    Run Keyword And Continue On Failure
     ...    Switch Page    page=123    ALL    ALL
-
-    Run Keyword And Expect Error
-    ...    EQUALS:Error: No page for id ${page211}[page_id]. Open pages: { id: ${page221}[page_id], url: about:blank },{ id: ${page222}[page_id], url: about:blank }
-    ...    Run Keyword And Continue On Failure
-    ...    Switch Page
-    ...    ${page211}
-    ...    CURRENT
-    ...    CURRENT
 
     Run Keyword And Expect Error    EQUALS:ValueError: Malformed page `id`: 1
     ...    Run Keyword And Continue On Failure

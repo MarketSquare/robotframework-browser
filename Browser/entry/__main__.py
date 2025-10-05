@@ -33,6 +33,7 @@ from Browser.utils.data_types import (
 )
 
 from .constant import (
+    INSTALLATION_DIR,
     NODE_MODULES,
     SHELL,
     ensure_playwright_browsers_path,
@@ -284,38 +285,39 @@ def _normalize_traces(item: str) -> str:
     "--browser",
     "-b",
     type=click.Choice(tuple(SupportedBrowsers._member_names_), case_sensitive=False),
-    show_default=True,
+    default=None,
     help="Browser to use, one of chromium, firefox, webkit.",
 )
-# @click.option(
-#     "--host",
-#     "-h",
-#     type=str,
-#     default=None,
-#     help="Host to serve trace on; specifying this opens the trace in a browser tab.",
-# )
-# @click.option(
-#     "--port",
-#     "-p",
-#     type=click.IntRange(0, 65535),
-#     default=None,
-#     help="Port to serve trace on (0 for any free port); specifying this opens a browser tab.",
-# )
-# @click.option(
-#     "--stdin",
-#     is_flag=True,
-#     default=False,
-#     help="Accept trace URLs over stdin to update the viewer.",
-# )
+@click.option(
+    "--host",
+    "-h",
+    type=str,
+    default=None,
+    help="Host to serve trace on; specifying this opens the trace in a browser tab.",
+)
+@click.option(
+    "--port",
+    "-p",
+    type=click.IntRange(0, 65535),
+    default=None,
+    help="Port to serve trace on (0 for any free port); specifying this opens a browser tab.",
+)
+@click.option(
+    "--stdin",
+    is_flag=True,
+    default=False,
+    help="Accept trace URLs over stdin to update the viewer.",
+)
 def show_trace(
-    file: str,
-    browser: str,  # host: Optional[str], port: Optional[int], stdin: bool
+    file: str, browser: str, host: Optional[str], port: Optional[int], stdin: bool
 ):
     """Start the Playwright trace viewer.
 
     Accepts paths to trace .zip files and/or HTTP(S) URLs. Example:
 
         show-trace trace1.zip trace2.zip https://example.com/trace.zip
+
+    If using Browser Batteries, only --browser argument is supported.
 
     To stream more traces dynamically, use --stdin and write newline-separated URLs to stdin.
 
@@ -329,15 +331,33 @@ def show_trace(
     if not _is_url(normalized_trace):
         log(f"Opening file: {normalized_trace}")
     ensure_playwright_browsers_path()
-    args: list[str] = []
+    try:
+        _show_trace_via_npx(browser, host, port, stdin, normalized_trace)
+    except Exception:
+        _show_trace_via_grpc(browser, normalized_trace)
+
+
+def _show_trace_via_npx(browser, host, port, stdin, normalized_trace):
+    trace_arguments = ["npx", "playwright", "show-trace"]
     if browser:
+        trace_arguments.extend(["--browser", browser])
+    if host is not None:
+        trace_arguments.extend(["--host", host])
+    if port is not None:
+        trace_arguments.extend(["--port", str(port)])
+    if stdin:
+        trace_arguments.append("--stdin")
+    if normalized_trace:
+        trace_arguments.append(str(normalized_trace))
+    subprocess.run(  # noqa: PLW1510
+        trace_arguments, shell=SHELL, cwd=INSTALLATION_DIR
+    )
+
+
+def _show_trace_via_grpc(browser, normalized_trace):
+    args: list[str] = []
+    if browser is not None:
         args += ["--browser", browser]
-    # if host:
-    #     args += ["--host", host]
-    # if port is not None:
-    #     args += ["--port", str(port)]
-    # if stdin:
-    #     args += ["--stdin"]
     if normalized_trace:
         args += [normalized_trace]
     browser_lib = get_browser_lib()
