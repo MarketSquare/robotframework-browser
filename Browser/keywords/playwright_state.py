@@ -1464,7 +1464,8 @@ class PlaywrightState(LibraryComponent):
                     return browser["id"]
         raise ValueError(f"No context with requested id '{context_id}' found.")
 
-    @keyword(tags=("Getter", "BrowserControl"))
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    @with_assertion_polling
     def get_browser_ids(
         self,
         browser: SelectionType = SelectionType.ALL,
@@ -1495,7 +1496,8 @@ class PlaywrightState(LibraryComponent):
             message,
         )
 
-    @keyword(tags=("Getter", "BrowserControl"))
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    @with_assertion_polling
     def get_context_ids(
         self,
         context: SelectionType = SelectionType.ALL,
@@ -1578,7 +1580,8 @@ class PlaywrightState(LibraryComponent):
             or (browser == SelectionType.CURRENT and b.get("activeBrowser", False))
         ]
 
-    @keyword(tags=("Getter", "BrowserControl"))
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    @with_assertion_polling
     def get_page_ids(
         self,
         page: SelectionType = SelectionType.ALL,
