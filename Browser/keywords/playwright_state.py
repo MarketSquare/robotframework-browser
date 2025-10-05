@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 from uuid import uuid4
 
-from assertionengine import AssertionOperator, verify_assertion
+from assertionengine import AssertionOperator, list_verify_assertion, verify_assertion
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.utils import get_link_path
 
@@ -70,13 +70,6 @@ class PlaywrightState(LibraryComponent):
         if browser == SelectionType.CURRENT:
             return
         self.switch_browser(browser)
-
-    def _correct_context(self, context: Union[SelectionType, str]):
-        if context == SelectionType.ALL:
-            raise ValueError
-        if context == SelectionType.CURRENT:
-            return
-        self.switch_context(context)
 
     @keyword(tags=("Setter", "BrowserControl"))
     def open_browser(
@@ -194,6 +187,7 @@ class PlaywrightState(LibraryComponent):
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
         for browser_instance in self._get_browser_ids(browser):
+            # TODO: this looks weird. this ^ function should maybe not switch browsers
             if browser_instance["id"] == "NO BROWSER OPEN":
                 logger.info("No browsers open. can not closing context.")
                 return
@@ -249,26 +243,31 @@ class PlaywrightState(LibraryComponent):
             browser_ids = [browser]
         return [find_by_id(browser_id, catalog) for browser_id in browser_ids]
 
-    def _get_context_id(
-        self, context_selection: Union[str, SelectionType], contexts: list
-    ) -> list:
-        if context_selection == SelectionType.CURRENT:
-            current_ctx = self.switch_context("CURRENT")
-            if current_ctx == "NO CONTEXT OPEN":
-                return []
-            contexts = [find_by_id(current_ctx, contexts, log_error=False)]
-        elif context_selection != SelectionType.ALL:
-            contexts = [find_by_id(str(context_selection), contexts, log_error=False)]
-        return contexts
+    @staticmethod
+    def _get_active_triplet(
+        catalog: list[dict],
+    ) -> tuple[Optional[str], Optional[str], Optional[str]]:
+        browser = next((b for b in catalog if b.get("activeBrowser")), None)
+        if not browser:
+            return None, None, None
+        context_id = browser.get("activeContext")
+        if not context_id:
+            return browser["id"], None, None
+        context = next(
+            (c for c in browser.get("contexts", []) if c["id"] == context_id), None
+        )
+        if not context:
+            return browser["id"], context_id, None
+        return browser["id"], context_id, context.get("activePage")
 
     @keyword(tags=("Setter", "BrowserControl"))
     def close_page(
         self,
-        page: Union[SelectionType, str] = SelectionType.CURRENT,
+        page: Union[SelectionType, NewPageDetails, str] = SelectionType.CURRENT,
         context: Union[SelectionType, str] = SelectionType.CURRENT,
         browser: Union[SelectionType, str] = SelectionType.CURRENT,
         runBeforeUnload: bool = False,
-    ):
+    ) -> list[dict]:
         """Closes the ``page`` in ``context`` in ``browser``.
 
         Defaults to current for all three. Active page is set to the page that was active before this one.
@@ -293,44 +292,69 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4241|Comment >>]
         """
-        page = SelectionType.create(page)
+        page_id = (
+            self._get_page_uid(page)
+            if isinstance(page, dict)
+            else SelectionType.create(page)
+        )
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
-        result = []
-        browser_ids = self._get_browser_ids(browser)
-        with self.playwright.grpc_channel() as stub:
-            for browser_id in browser_ids:
-                self.switch_browser(browser_id["id"])
-                contexts_ids = browser_id["contexts"]
-                try:
-                    contexts_ids = self._get_context_id(context, contexts_ids)
-                except StopIteration:
-                    continue
-                for context_id in contexts_ids:
-                    self.switch_context(context_id["id"])
-                    if page == SelectionType.ALL:
-                        pages_ids = [p["id"] for p in context_id["pages"]]
-                    else:
-                        pages_ids = [page]
+        catalog = self._get_browser_catalog(False)
+        _active_browser, _active_context, active_page = self._get_active_triplet(
+            catalog
+        )
+        if (
+            page_id == SelectionType.CURRENT
+            and active_page
+            and context == SelectionType.CURRENT
+            and browser == SelectionType.CURRENT
+        ):
+            logger.info("Closing current active page.")
+            return [self._close_current_page(runBeforeUnload)]
+        if isinstance(page_id, str):
+            logger.debug(
+                f"Specific page id requested: {page_id}. Ignoring context and browser arguments."
+            )
+            if page_id == active_page:
+                logger.info("Closing current active page.")
+                return [self._close_current_page(runBeforeUnload)]
+            context = SelectionType.ALL
+            browser = SelectionType.ALL
+        if isinstance(context, str):
+            logger.debug(
+                f"Specific context id requested: {context}. Ignoring browser argument."
+            )
+            browser = SelectionType.ALL
+        catalog = self._get_filtered_browser_catalog(browser=browser, catalog=catalog)
+        context_list = self._get_filtered_context_items_from_catalog(
+            context=context, catalog=catalog
+        )
+        page_ids_to_close = [
+            p["id"]
+            for p in self._get_filtered_page_items_from_context_list(
+                page=page_id, context_list=context_list
+            )
+        ]
+        results = []
+        for page_to_close in page_ids_to_close:
+            self._switch_page(page_to_close)
+            results.append(self._close_current_page(runBeforeUnload))
+        if active_page and active_page not in page_ids_to_close:
+            self._switch_page(active_page)
+        return results
 
-                    for page_id in pages_ids:
-                        if page_id == "NO PAGE OPEN":
-                            return None
-                        if page != SelectionType.CURRENT:
-                            self.switch_page(page_id)
-                        response = stub.ClosePage(
-                            Request().ClosePage(runBeforeUnload=runBeforeUnload)
-                        )
-                        if response.log:
-                            logger.info(response.log)
-                        result.append(
-                            {
-                                "errors": json.loads(response.errors),
-                                "console": json.loads(response.console),
-                                "id": response.pageId,
-                            }
-                        )
-        return result
+    def _close_current_page(self, runBeforeUnload):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.ClosePage(
+                Request().ClosePage(runBeforeUnload=runBeforeUnload)
+            )
+            if response.log:
+                logger.info(response.log)
+            return {
+                "errors": json.loads(response.errors),
+                "console": json.loads(response.console),
+                "id": response.pageId,
+            }
 
     @keyword(tags=("Setter", "BrowserControl"))
     def set_default_run_before_unload(self, runBeforeUnload: bool) -> bool:
@@ -1271,9 +1295,18 @@ class PlaywrightState(LibraryComponent):
         logger.info(f"Switching browser to {id}")
         return self._switch_browser(id)
 
-    def _switch_browser(self, id: str, loglevel: LOGLEVEL = "INFO") -> str:  # noqa: A002
+    def _switch_browser(self, browser_id: str, loglevel: LOGLEVEL = "INFO") -> str:
         with self.playwright.grpc_channel() as stub:
-            response = stub.SwitchBrowser(Request().Index(index=id))
+            response = stub.SwitchBrowser(Request().Index(index=browser_id))
+            logger.write(
+                response.log,
+                loglevel=loglevel,
+            )
+            return response.body
+
+    def _switch_context(self, context_id, loglevel: LOGLEVEL = "INFO") -> str:
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SwitchContext(Request().Index(index=str(context_id)))
             logger.write(
                 response.log,
                 loglevel=loglevel,
@@ -1307,19 +1340,16 @@ class PlaywrightState(LibraryComponent):
         logger.info(f"Switching context to {id} in {browser}")
         browser = SelectionType.create(browser)
         id = SelectionType.create(id)  # noqa: A001
-
+        browser_catalog = self._get_browser_catalog(include_page_details=False)
         if isinstance(id, str):
-            parent_browser_id = self._get_context_parent_id(id)
+            parent_browser_id = self._get_context_parent_id(browser_catalog, id)
             if browser == SelectionType.ALL:
                 self._correct_browser(parent_browser_id)
             else:
                 if isinstance(browser, str) and browser != parent_browser_id:
                     raise ValueError(f"Context {id} is not in browser {browser}")
                 self._correct_browser(browser)
-        with self.playwright.grpc_channel() as stub:
-            response = stub.SwitchContext(Request().Index(index=str(id)))
-            logger.info(response.log)
-            return response.body
+        return self._switch_context(id)
 
     def _get_page_uid(self, id) -> str:  # noqa: A002
         if isinstance(id, dict):
@@ -1339,7 +1369,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_page(
         self,
-        id: Union[NewPageDetails, str],  # noqa: A002
+        id: Union[NewPageDetails, SelectionType, str],  # noqa: A002
         context: Union[SelectionType, str] = SelectionType.CURRENT,
         browser: Union[SelectionType, str] = SelectionType.CURRENT,
     ) -> str:
@@ -1361,46 +1391,53 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4336|Comment >>]
         """
+        if id == SelectionType.ALL:
+            raise ValueError(
+                "Page id cannot be ALL. Use NEW, CURRENT or a page id instead."
+            )
         logger.info(f"Switching to page {id},context {context}, browser {browser}")
+        return self._switch_page(id, context, browser)
+
+    def _switch_page(
+        self,
+        id: Union[NewPageDetails, SelectionType, str],  # noqa: A002
+        context: Union[SelectionType, str] = SelectionType.CURRENT,
+        browser: Union[SelectionType, str] = SelectionType.CURRENT,
+    ) -> str:
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
-        correct_context_selected = True
-        correct_browser_selected = True
         uid = self._get_page_uid(id)
-
-        if (
-            not (isinstance(uid, str) and uid.upper() == "NEW")
-            and uid != SelectionType.CURRENT
-        ):
-            parent_browser_id, parent_context_id = self._get_page_parent_ids(str(uid))
-            if isinstance(browser, str) and browser != parent_browser_id:
-                logger.error(
-                    f"Page {uid} is not in browser {browser}. Switching to browser {parent_browser_id}"
-                )
-                correct_browser_selected = False
-            if isinstance(context, str) and context != parent_context_id:
-                logger.error(
-                    f"Page {uid} is not in context {context}. Switching to context {parent_context_id}"
-                )
-                correct_context_selected = False
-            if not correct_context_selected or not correct_browser_selected:
-                raise ValueError(f"Page Switch to {uid} failed")
-
-            if context == SelectionType.ALL:
-                self.switch_context(parent_context_id, browser)
-            elif context == SelectionType.CURRENT and browser == SelectionType.ALL:
+        browser_catalog = self._get_browser_catalog(include_page_details=False)
+        active_browser, active_context, active_page = self._get_active_triplet(
+            browser_catalog
+        )
+        if isinstance(uid, str) and uid.upper() != "NEW":
+            logger.debug(
+                "Specific page id requested. Ignoring context and browser arguments."
+            )
+            if uid == active_page:
+                logger.debug("Page to switch is already the active page.")
+                return self._call_switch_page(SelectionType.CURRENT)
+            parent_browser_id, parent_context_id = self._get_page_parent_ids(
+                browser_catalog, str(uid)
+            )
+            if parent_browser_id != active_browser:
                 self.switch_browser(parent_browser_id)
-            elif context == SelectionType.ALL and browser == SelectionType.ALL:
-                self.switch_context(parent_context_id, parent_browser_id)
-            elif isinstance(context, str):
-                self.switch_context(context, browser)
-            elif context == SelectionType.CURRENT and isinstance(browser, str):
-                self.switch_browser(browser)
+            if parent_context_id != active_context:
+                self.switch_context(parent_context_id)
+            return self._call_switch_page(str(uid))
+        if isinstance(context, str) and context != active_context:
+            logger.debug("Specific context id requested. Ignoring browser argument.")
+            parent_browser_id = self._get_context_parent_id(browser_catalog, context)
+            self._switch_browser(parent_browser_id, loglevel="DEBUG")
+            self._switch_context(context, loglevel="DEBUG")
+        elif isinstance(browser, str) and browser != active_browser:
+            self._switch_browser(browser, loglevel="DEBUG")
+        if uid == SelectionType.CURRENT:
+            return self._call_switch_page(SelectionType.CURRENT)
+        return self._call_switch_page(uid)
 
-        logger.debug(f"Page:    {uid}")
-        logger.debug(f"Context: {context}")
-        logger.debug(f"Browser: {browser}")
-
+    def _call_switch_page(self, uid):
         with self.playwright.grpc_channel() as stub:
             response = stub.SwitchPage(
                 Request().IdWithTimeout(id=str(uid), timeout=self.timeout)
@@ -1408,25 +1445,34 @@ class PlaywrightState(LibraryComponent):
             logger.info(response.log)
             return response.body
 
-    def _get_page_parent_ids(self, page_id: str) -> tuple[str, str]:
-        browser_catalog = self._get_browser_catalog(include_page_details=False)
+    @staticmethod
+    def _get_page_parent_ids(
+        browser_catalog: list[dict], page_id: str
+    ) -> tuple[str, str]:
         for browser in browser_catalog:
-            for context in browser["contexts"]:
-                for page in context["pages"]:
-                    if page["id"] == page_id:
+            for context in browser.get("contexts", []):
+                for page in context.get("pages", []):
+                    if page.get("id") == page_id:
                         return browser["id"], context["id"]
         raise ValueError(f"No page with requested id '{page_id}' found.")
 
-    def _get_context_parent_id(self, context_id: str) -> str:
-        browser_catalog = self._get_browser_catalog(include_page_details=False)
+    @staticmethod
+    def _get_context_parent_id(browser_catalog: list[dict], context_id: str) -> str:
         for browser in browser_catalog:
-            for context in browser["contexts"]:
-                if context["id"] == context_id:
+            for context in browser.get("contexts", []):
+                if context.get("id") == context_id:
                     return browser["id"]
         raise ValueError(f"No context with requested id '{context_id}' found.")
 
-    @keyword(tags=("Getter", "BrowserControl"))
-    def get_browser_ids(self, browser: SelectionType = SelectionType.ALL) -> list[str]:
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    @with_assertion_polling
+    def get_browser_ids(
+        self,
+        browser: SelectionType = SelectionType.ALL,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected: Optional[Any],
+        message: Optional[str] = None,
+    ) -> list[str]:
         """Returns a list of ids from open browsers.
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
@@ -1442,24 +1488,23 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4260|Comment >>]
         """
-        if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(
-                self._get_browser_catalog(include_page_details=False)
-            )
-            if "id" in browser_item:
-                return [browser_item["id"]]
-        else:
-            return [
-                browser["id"]
-                for browser in self._get_browser_catalog(include_page_details=False)
-            ]
-        return []
+        return list_verify_assertion(
+            [b["id"] for b in self._get_filtered_browser_catalog(browser)],
+            assertion_operator,
+            list(assertion_expected),
+            "Browser IDs",
+            message,
+        )
 
-    @keyword(tags=("Getter", "BrowserControl"))
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    @with_assertion_polling
     def get_context_ids(
         self,
         context: SelectionType = SelectionType.ALL,
-        browser: SelectionType = SelectionType.ALL,
+        browser: Union[SelectionType, str] = SelectionType.ALL,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected: Optional[Any],
+        message: Optional[str] = None,
     ) -> list:
         """Returns a list of context ids based on the browser selection.
         See `Browser, Context and Page` for more information about Context and related concepts.
@@ -1475,35 +1520,76 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4264|Comment >>]
         """
-        if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(
-                self._get_browser_catalog(include_page_details=False)
-            )
-            if context == SelectionType.CURRENT:
-                if "activeContext" in browser_item:
-                    return [browser_item["activeContext"]]
-            elif "contexts" in browser_item:
-                return [context["id"] for context in browser_item["contexts"]]
-        elif context == SelectionType.CURRENT:
-            context_ids = []
-            for browser_item in self._get_browser_catalog(include_page_details=False):
-                if "activeContext" in browser_item:
-                    context_ids.append(browser_item["activeContext"])
-            return context_ids
-        else:
-            context_ids = []
-            for browser_item in self._get_browser_catalog(include_page_details=False):
-                for context_item in browser_item["contexts"]:
-                    context_ids.append(context_item["id"])
-            return context_ids
-        return []
+        browser = SelectionType.create(browser)
+        catalog = self._get_filtered_browser_catalog(browser)
+        if not catalog and isinstance(browser, str):
+            raise ValueError(f"No browser with id '{browser}' found.")
+        return list_verify_assertion(
+            [
+                c["id"]
+                for c in self._get_filtered_context_items_from_catalog(context, catalog)
+            ],
+            assertion_operator,
+            list(assertion_expected),
+            "Context IDs",
+            message,
+        )
 
-    @keyword(tags=("Getter", "BrowserControl"))
+    @staticmethod
+    def _get_filtered_page_items_from_context_list(
+        page: Union[SelectionType, str], context_list
+    ) -> list[dict]:
+        return [
+            page_item
+            for context_item in context_list
+            for page_item in context_item.get("pages", [])
+            if page == SelectionType.ALL
+            or (
+                page == SelectionType.CURRENT
+                and context_item.get("activePage") == page_item["id"]
+            )
+            or (isinstance(page, str) and page_item["id"] == page)
+        ]
+
+    @staticmethod
+    def _get_filtered_context_items_from_catalog(
+        context: Union[SelectionType, str], catalog: list[dict]
+    ) -> list[dict]:
+        return [
+            context_item
+            for browser_item in catalog
+            for context_item in browser_item.get("contexts", [])
+            if context == SelectionType.ALL
+            or (
+                context == SelectionType.CURRENT
+                and browser_item.get("activeContext") == context_item["id"]
+            )
+            or (isinstance(context, str) and context_item["id"] == context)
+        ]
+
+    def _get_filtered_browser_catalog(
+        self, browser: Union[SelectionType, str], catalog: Optional[list[dict]] = None
+    ) -> list[dict]:
+        if catalog is None:
+            catalog = self._get_browser_catalog(include_page_details=False)
+        return [
+            b
+            for b in catalog
+            if (isinstance(browser, str) and b.get("id") == browser)
+            or (browser == SelectionType.ALL)
+            or (browser == SelectionType.CURRENT and b.get("activeBrowser", False))
+        ]
+
+    @keyword(tags=("Getter", "BrowserControl", "Assertion"))
+    @with_assertion_polling
     def get_page_ids(
         self,
         page: SelectionType = SelectionType.ALL,
-        context: SelectionType = SelectionType.ALL,
-        browser: SelectionType = SelectionType.ALL,
+        context: Union[SelectionType, str] = SelectionType.ALL,
+        browser: Union[SelectionType, str] = SelectionType.ALL,
+        assertion_operator: Optional[AssertionOperator] = None,
+        *assertion_expected: Optional[Any],
+        message: Optional[str] = None,
     ) -> list:
         """Returns a list of page ids based on the context and browser selection.
         See `Browser, Context and Page` for more information about Page and related concepts.
@@ -1513,58 +1599,49 @@ class PlaywrightState(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``page``    | The page to get the ids from. ``ALL`` Returns all page ids as a list. ``ACTIVE`` Returns the id of the active page as a list. |
-        | ``context`` | The context to get the page ids from. ``ALL`` Page ids from all contexts shall be fetched. ``ACTIVE`` Only page ids from the active context shall be fetched. |
-        | ``browser`` | The browser to get the page ids from. ``ALL`` Page ids from all open browsers shall be fetched. ``ACTIVE`` Only page ids from the active browser shall be fetched. |
+        | ``context`` | The context id or selection to get the page ids from. ``ALL`` Page ids from all contexts shall be fetched. ``ACTIVE`` Only page ids from the active context shall be fetched. |
+        | ``browser`` | The browser id or selection to get the page ids from. ``ALL`` Page ids from all open browsers shall be fetched. ``ACTIVE`` Only page ids from the active browser shall be fetched. |
 
 
         Example:
         | Test Case
-        |     `New Page`    http://www.imbus.de
-        |     `New Page`    http://www.reaktor.com
+        |     `New Page`    https://www.imbus.de
+        |     `New Page`    https://www.reaktor.com
         |     ${current_page}=   `Get Page IDs`    ACTIVE    ACTIVE    ACTIVE
         |     Log                Current page ID is: ${current_page}[0]
         |     ${all_pages}=      `Get Page IDs`    CURRENT   CURRENT   ALL
         |     Log Many           These are all Page IDs    @{all_pages}
 
+        Example to count open pages of a specific context:
+        | Test Case
+        |    `New Browser`    firefox
+        |    ${context}=    `New Context`
+        |    `New Page`    https://www.imbus.de
+        |    `New Page`    https://www.op.fi
+        |    `New Context`
+        |    `New Page`    https://www.robocon.io
+        |    ${page_count}=    `Get Page IDs`    ALL    ${context}    ALL    then    len(value)
+        |    Should Be Equal As Integers    ${page_count}    2
+
         The ACTIVE page of the ACTIVE context of the ACTIVE Browser is the ``Current`` Page.
 
         [https://forum.robotframework.org/t//4274|Comment >>]
         """
-        if browser == SelectionType.CURRENT:
-            browser_item = self._get_active_browser_item(
-                self._get_browser_catalog(include_page_details=False)
-            )
-            if "contexts" in browser_item:
-                if context == SelectionType.CURRENT:
-                    return self._get_page_ids_from_context_list(
-                        page, self._get_active_context_item(browser_item)
-                    )
-                return self._get_page_ids_from_context_list(
-                    page, browser_item["contexts"]
-                )
-        else:
-            context_list = []
-            for browser_item in self._get_browser_catalog(include_page_details=False):
-                if "contexts" in browser_item:
-                    if context == SelectionType.CURRENT:
-                        context_list.extend(self._get_active_context_item(browser_item))
-                    else:
-                        context_list.extend(browser_item["contexts"])
-            return self._get_page_ids_from_context_list(page, context_list)
-        return []
-
-    @staticmethod
-    def _get_page_ids_from_context_list(
-        page_selection_type: SelectionType, context_list
-    ):
-        page_ids = []
-        for context_item in context_list:
-            if page_selection_type == SelectionType.CURRENT:
-                if "activePage" in context_item:
-                    page_ids.append(context_item["activePage"])
-            else:
-                page_ids.extend([page["id"] for page in context_item["pages"]])
-        return page_ids
+        context = SelectionType.create(context)
+        browser = SelectionType.create(browser)
+        if isinstance(context, str):
+            logger.debug("Specific context id requested. Ignoring browser argument.")
+            browser = SelectionType.ALL
+        catalog = self._get_filtered_browser_catalog(browser)
+        context_list = self._get_filtered_context_items_from_catalog(context, catalog)
+        page_items = self._get_filtered_page_items_from_context_list(page, context_list)
+        return list_verify_assertion(
+            [p["id"] for p in page_items],
+            assertion_operator,
+            list(assertion_expected),
+            "Page IDs",
+            message,
+        )
 
     @staticmethod
     def _get_active_browser_item(browser_catalog):
@@ -1572,16 +1649,6 @@ class PlaywrightState(LibraryComponent):
             if browser["activeBrowser"]:
                 return browser
         return {}
-
-    @staticmethod
-    def _get_active_context_item(browser_item):
-        for context in browser_item["contexts"]:
-            if (
-                "activeContext" in browser_item
-                and browser_item["activeContext"] == context["id"]
-            ):
-                return [context]
-        return []
 
     @keyword(tags=("Getter", "BrowserControl"))
     def save_storage_state(self) -> str:

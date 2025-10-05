@@ -980,7 +980,8 @@ export async function switchPage(
         const previous = browserState.page?.id || 'NO PAGE OPEN';
         browserState.page?.p.bringToFront();
         return stringResponse(previous, 'Returned active page id');
-    } else if (id === 'NEW') {
+    }
+    if (id === 'NEW') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
         const previousTime = browserState.page?.timestamp || 0;
         const latest = await findLatestPageAfter(previousTime, request.getTimeout(), context);

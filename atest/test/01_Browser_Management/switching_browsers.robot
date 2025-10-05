@@ -51,40 +51,36 @@ Switch Context
     ...    ${br2}
 
 Switch Page
-    ${br} =    New Browser    headless=True
-    ${ctx} =    New Context
-    ${pg} =    New Page    ${FORM_URL}
+    ${br1} =    New Browser    headless=True
+    ${ctx1_1} =    New Context
+    ${pg1_1_1} =    New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     ${br2} =    New Browser    headless=True    reuse_existing=False
-    ${ctx2} =    New Context
-    ${pg2} =    New Page    ${LOGIN_URL}
+    ${ctx2_1} =    New Context
+    ${pg2_1_1} =    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    ${pg3} =    New Page    ${ERROR_URL}
+    ${pg2_1_2} =    New Page    ${ERROR_URL}
     Get Title    ==    Error Page
 
-    Switch Page    ${pg}    ${ctx}    ${br}
+    Switch Page    ${pg1_1_1}    ${ctx1_1}    ${br1}
     Get Title    ==    prefilled_email_form.html
-    Switch Page    ${pg2}    ${ctx2}    ALL
+    Switch Page    ${pg2_1_1}    ${ctx2_1}    ALL
     Get Title    matches    (?i)login
-    Switch Page    ${pg}    ALL    ALL
+    Switch Page    ${pg1_1_1}    ALL    ALL
     Get Title    ==    prefilled_email_form.html
-    Switch Page    ${pg3}    CURRENT    ${br2}
+    Switch Page    ${pg2_1_2}    CURRENT    ${br2}
     Get Title    ==    Error Page
-    Switch Page    ${pg2}    CURRENT    CURRENT
+    Switch Page    ${pg2_1_1}    CURRENT    CURRENT
     Get Title    matches    (?i)login
-    Switch Page    ${pg}    CURRENT    ALL
+    Switch Page    ${pg1_1_1}    CURRENT    ALL
     Get Title    ==    prefilled_email_form.html
-    Run Keyword And Expect Error
-    ...    ValueError: Page Switch to ${pg2}[page_id] failed
-    ...    Switch Page
-    ...    ${pg2}
-    ...    ${ctx}
-    ...    ${br}
-    Get Title    ==    prefilled_email_form.html
-    Run Keyword And Expect Error
-    ...    ValueError: Page Switch to ${pg2}[page_id] failed
-    ...    Switch Page
-    ...    ${pg2}
-    ...    ${ctx}
+    Switch Page    # This passses because the browser and context are ignored
+    ...    ${pg2_1_2}
+    ...    ${ctx1_1}
+    ...    ${br1}
+    Get Title    ==    Error Page
+    Switch Page
+    ...    ${pg2_1_1}
+    ...    ${ctx1_1}
     ...    ANY
-    Get Title    ==    prefilled_email_form.html
+    Get Title    matches    (?i)login

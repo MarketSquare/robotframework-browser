@@ -14,26 +14,30 @@
 
 import contextlib
 import json
-import os
 import shutil
 import subprocess
 import sys
-import textwrap
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
+from urllib.parse import urlparse
 
 import click
 
-from Browser.utils.data_types import InstallableBrowser, InstallationOptions
+from Browser.utils.data_types import (
+    AutoClosingLevel,
+    InstallableBrowser,
+    InstallationOptions,
+    InstallationOptionsHelp,
+    SupportedBrowsers,
+)
 
 from .constant import (
     INSTALLATION_DIR,
     NODE_MODULES,
-    PLAYWRIGHT_BROWSERS_PATH,
     SHELL,
+    ensure_playwright_browsers_path,
     get_browser_lib,
-    get_playwright_browser_path,
     log,
     write_marker,
 )
@@ -256,31 +260,109 @@ def clean_node():
     shutil.rmtree(NODE_MODULES)
 
 
+def _is_url(value: str) -> bool:
+    p = urlparse(value)
+    return p.scheme in {"http", "https"} and bool(p.netloc)
+
+
+def _normalize_traces(item: str) -> str:
+    """Return a list of absolute file paths (for locals) and URLs (unchanged)."""
+    if _is_url(item):
+        return item
+    p = Path(item)
+    if not p.exists() or not p.is_file():
+        raise click.BadParameter(f"not a file or does not exist: {item!r}")
+    return str(p.resolve(strict=True))
+
+
 @cli.command(epilog="")
 @click.argument(
-    "file", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True
+    "file",
+    type=str,  # allow URLs and paths; we validate ourselves
+    required=False,
 )
-def show_trace(file: Path):
-    """Start the Playwright trace viewer tool.
+@click.option(
+    "--browser",
+    "-b",
+    type=click.Choice(tuple(SupportedBrowsers._member_names_), case_sensitive=False),
+    default=None,
+    help="Browser to use, one of chromium, firefox, webkit.",
+)
+@click.option(
+    "--host",
+    "-h",
+    type=str,
+    default=None,
+    help="Host to serve trace on; specifying this opens the trace in a browser tab.",
+)
+@click.option(
+    "--port",
+    "-p",
+    type=click.IntRange(0, 65535),
+    default=None,
+    help="Port to serve trace on (0 for any free port); specifying this opens a browser tab.",
+)
+@click.option(
+    "--stdin",
+    is_flag=True,
+    default=False,
+    help="Accept trace URLs over stdin to update the viewer.",
+)
+def show_trace(
+    file: str, browser: str, host: Optional[str], port: Optional[int], stdin: bool
+):
+    """Start the Playwright trace viewer.
 
-    Provide path to trace zip FILE.
+    Accepts paths to trace .zip files and/or HTTP(S) URLs. Example:
 
-    See New Context keyword documentation for more details how to create trace file:
-    https://marketsquare.github.io/robotframework-browser/Browser.html#New%20Contex
+        show-trace trace1.zip trace2.zip https://example.com/trace.zip
+
+    If using Browser Batteries, only --browser argument is supported.
+
+    To stream more traces dynamically, use --stdin and write newline-separated URLs to stdin.
+
+    See the "New Context" keyword docs for creating traces:
+    https://marketsquare.github.io/robotframework-browser/Browser.html#New%20Context
     """
-    absolute_file = file.resolve(strict=True)
-    log(f"Opening file: {absolute_file}")
-    env = os.environ.copy()
-    env[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
-    trace_arguments = [
-        "npx",
-        "playwright",
-        "show-trace",
-        str(absolute_file),
-    ]
+    try:
+        normalized_trace = _normalize_traces(file) if file else ""
+    except click.BadParameter as e:
+        raise click.UsageError(str(e)) from e
+    if not _is_url(normalized_trace):
+        log(f"Opening file: {normalized_trace}")
+    ensure_playwright_browsers_path()
+    try:
+        _show_trace_via_npx(browser, host, port, stdin, normalized_trace)
+    except Exception:
+        _show_trace_via_grpc(browser, normalized_trace)
+
+
+def _show_trace_via_npx(browser, host, port, stdin, normalized_trace):
+    trace_arguments = ["npx", "playwright", "show-trace"]
+    if browser:
+        trace_arguments.extend(["--browser", browser])
+    if host is not None:
+        trace_arguments.extend(["--host", host])
+    if port is not None:
+        trace_arguments.extend(["--port", str(port)])
+    if stdin:
+        trace_arguments.append("--stdin")
+    if normalized_trace:
+        trace_arguments.append(str(normalized_trace))
     subprocess.run(  # noqa: PLW1510
-        trace_arguments, env=env, shell=SHELL, cwd=INSTALLATION_DIR
+        trace_arguments, shell=SHELL, cwd=INSTALLATION_DIR
     )
+
+
+def _show_trace_via_grpc(browser, normalized_trace):
+    args: list[str] = []
+    if browser is not None:
+        args += ["--browser", browser]
+    if normalized_trace:
+        args += [normalized_trace]
+    browser_lib = get_browser_lib()
+    browser_lib._auto_closing_level = AutoClosingLevel.KEEP
+    browser_lib.execute_npx_playwright("show-trace", *args)
 
 
 @cli.command()
@@ -403,36 +485,50 @@ def install(browser: Optional[str] = None, **flags):
     Also not run this command if you have only installed Browser library. When Browser
     library is installed, run only the `rfbrowser init` command.
     """
-    try:
-        import BrowserBatteries  # noqa: PLC0415 F401
-    except ImportError:
-        heading = "\nBrowserBatteries library is not installed."
-        body = (
-            "You should only run `rfbrowser install` command if you have both "
-            "Browser and BrowserBatteries libraries installed. If you have only "
-            "installed Browser library, run only the `rfbrowser init` command."
-        )
-
-        text_list = textwrap.wrap(body, width=50)
-        text_list.insert(0, "")
-        text_list.insert(0, heading)
-        raise RuntimeError("\n".join(text_list))
-    browser_enum = browser if browser is None else InstallableBrowser(browser)
+    browser_enum = InstallableBrowser(browser) if browser else None
     selected = []
     for name, enabled in flags.items():
         if enabled:
             key = name.replace("_", "-")  # e.g. with_deps -> with-deps
             selected.append(InstallationOptions[key])
-    if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
-        os.environ[PLAYWRIGHT_BROWSERS_PATH] = str(get_playwright_browser_path())
+    ensure_playwright_browsers_path()
     browser_lib = get_browser_lib()
+    options = [opt.value for opt in selected]
+    if browser_enum:
+        options.append(browser_enum.value)
     with contextlib.suppress(Exception):
-        browser_lib.install_browser(browser_enum, *selected)
+        browser_lib.execute_npx_playwright("install", *options)
 
 
 for opt in InstallationOptions:
     param_name = opt.name.replace("-", "_")
-    install = click.option(opt.value, param_name, is_flag=True, help=opt.name)(install)
+    install = click.option(
+        opt.value, param_name, is_flag=True, help=InstallationOptionsHelp[opt.name]
+    )(install)
+
+
+@cli.command()
+@click.option(
+    "--all",
+    is_flag=True,
+    help="Removes all browsers used by Robot Framework Browser installation.",
+)
+def uninstall(all: bool):  # noqa: A002
+    """Uninstall Playwright Browsers binaries.
+
+    It uninstalls browsers by executing 'npx playwright uninstall' command.
+
+    This command removes browsers used by this installation of Robot Framework Browser from the system
+    (chromium, firefox, webkit, ffmpeg). This does not include branded channels.
+
+    If --all option is provided, it removes all browsers used by any Robot Framework Browser installation
+    from the system.
+    """
+    ensure_playwright_browsers_path()
+    browser_lib = get_browser_lib()
+    with contextlib.suppress(Exception):
+        args = ["--all"] if all else []
+        browser_lib.execute_npx_playwright("uninstall", *args)
 
 
 @cli.command()
